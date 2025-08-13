@@ -1,0 +1,154 @@
+/* style.css (Updated) */
+
+/* === Login Page Enhancements === */
+
+/* Membuat body dengan background gradien */
+body.login-page {
+    background: linear-gradient(135deg, #0d6efd 0%, #6f42c1 100%);
+}
+
+/* Mengupdate style kartu login yang sudah ada */
+.login-card {
+    border: none; /* Menghilangkan border agar lebih modern */
+    border-radius: 1rem; /* Sudut lebih tumpul */
+    padding: 2.5rem; /* Padding lebih besar */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    background-color: white;
+    transition: all 0.3s ease;
+    animation: fadeIn 0.5s ease-out; /* Animasi muncul */
+}
+
+
+
+
+.login-card .card-body {
+    display: flex; /* Mengaktifkan Flexbox */
+    flex-direction: column; /* Menyusun elemen secara vertikal */
+    align-items: center; /* Menengahkan semua elemen secara horizontal */
+    width: 100%;
+}
+
+.login-card form {
+    width: 100%; /* Memastikan form mengisi lebar kartu */
+}
+
+/* Sedikit penyesuaian pada logo agar tidak terlalu besar */
+.login-card .logo-container img {
+    max-width: 70px; /* Coba perkecil sedikit lagi */
+    margin-bottom: 1rem;
+}
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Wrapper untuk input field dengan ikon */
+.input-group-icon {
+    position: relative;
+}
+
+/* Style untuk ikon di dalam input */
+.input-group-icon .form-icon {
+    position: absolute;
+    top: 50%;
+    left: 15px;
+    transform: translateY(-50%);
+    color: #adb5bd;
+}
+
+/* Style untuk form-control saat ada ikon */
+.input-group-icon .form-control {
+    padding-left: 40px; /* Memberi ruang untuk ikon */
+}
+
+/* Efek focus pada input */
+.form-control:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Efek hover pada tombol login */
+.btn-login {
+    transition: all 0.3s ease;
+}
+
+.btn-login:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 15px rgba(13, 110, 253, 0.4);
+}
+
+/* Footer di halaman login */
+.login-footer {
+    position: absolute;
+    bottom: 20px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+}
+
+/* === Sidebar Styling (Updated) === */
+.sidebar {
+    background-color: white;
+    border-right: 1px solid #ddd;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+    height: 100vh;
+    padding: 1rem;
+    width: 250px;
+    position: sticky; /* Membuat sidebar tetap di tempat saat scroll */
+    top: 0;
+}
+
+/* Header di dalam sidebar untuk logo */
+.sidebar-header {
+    text-align: center;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.sidebar-header img {
+    max-width: 60px; /* Ubah angka ini sesuai kebutuhan */
+    height: auto;    /* Pastikan baris ini ada untuk menjaga rasio logo */
+}
+
+
+.sidebar .nav-link {
+    color: #333;
+    padding: 12px 15px; /* Sedikit menambah padding vertikal */
+    transition: all 0.2s ease-in-out;
+    border-radius: 6px; /* Menambah sedikit radius agar lebih modern */
+    margin-bottom: 5px; /* Memberi jarak antar menu */
+
+    /* UPDATED: Menggunakan flexbox untuk merapikan ikon dan teks */
+    display: flex;
+    align-items: center;
+}
+
+.sidebar .nav-link:hover {
+    background-color: #f8f9fa;
+    color: #0d6efd; /* Mengubah warna teks saat hover */
+}
+
+/* ADDED: Style untuk ikon di dalam menu */
+.sidebar .nav-link .bi {
+    margin-right: 12px; /* Jarak antara ikon dan teks */
+    font-size: 1.1rem;
+}
+
+/* ADDED: Style untuk menu yang sedang aktif */
+.sidebar .nav-link.active {
+    background-color: #0d6efd; /* Warna biru primer Bootstrap */
+    color: white;
+    font-weight: bold;
+}
+
+/* Mengatur agar menu logout tidak memiliki efek aktif */
+.sidebar .nav-link.logout:hover {
+    background-color: #dc3545;
+    color: white;
+}
