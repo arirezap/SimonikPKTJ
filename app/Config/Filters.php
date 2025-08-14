@@ -75,12 +75,12 @@ class Filters extends BaseFilters
     public array $globals = [
         'before' => [
             // 'honeypot',
-            // 'csrf',
-            // 'invalidchars',
+            'csrf',
+            // 'session', // Dihapus karena session bukan filter
         ],
         'after' => [
+            'toolbar',
             // 'honeypot',
-            // 'secureheaders',
         ],
     ];
 

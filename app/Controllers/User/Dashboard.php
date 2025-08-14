@@ -3,26 +3,55 @@
 namespace App\Controllers\User;
 
 use App\Controllers\BaseController;
+use App\Models\RencanaKinerja as RencanaKinerjaModel;
+use App\Models\User as UserModel;
 
 class Dashboard extends BaseController
 {
     public function index()
     {
-        // Siapkan data dummy untuk ditampilkan di view
+        $rencanaModel = new RencanaKinerjaModel();
+        $userModel = new UserModel();
+        $user_id = session()->get('user_id');
+        $tahun_sekarang = date('Y');
+
+        // Mengambil semua rencana kinerja untuk user ini & tahun sekarang
+        $rencana_kinerja = $rencanaModel->where('user_id', $user_id)
+                                        ->where('tahun_anggaran', $tahun_sekarang)
+                                        ->findAll();
+
+        // Menyiapkan data untuk grafik capaian tahunan
+        $chartLabels = [];
+        $chartTargets = [];
+        $chartRealisasi = [];
+        $totalIndikator = 0;
+
+        if (!empty($rencana_kinerja)) {
+            $totalIndikator = count($rencana_kinerja);
+            foreach ($rencana_kinerja as $rencana) {
+                // Ambil label dari nama indikator
+                $chartLabels[] = $rencana['indikator_kinerja'];
+                // Ambil data target tahunan
+                $chartTargets[] = $rencana['target_utama'];
+
+                // Hitung total realisasi dari data JSON bulanan
+                $realisasiBulanan = json_decode($rencana['realisasi_bulanan'], true) ?? [];
+                $totalRealisasi = array_sum($realisasiBulanan);
+                $chartRealisasi[] = $totalRealisasi;
+            }
+        }
+
+        // Menyiapkan data untuk dikirim ke view
         $data = [
             'page_title' => 'User Dashboard',
-            'jumlahTaruna' => 875,
-            'persentaseSerapanLulusan' => 92.5,
-            'totalPendapatan' => 5500000000,
-            'realisasiAnggaran' => 9850000000,
-            'labelsAnggaran' => ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'],
-            'dataTargetAnggaran' => [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000],
-            'dataRealisasiAnggaran' => [850, 900, 750, 1100, 950, 1000, 800, 1050, 900, 1150, 700, 800],
-            'labelsSerapan' => ['PNS/ASN', 'BUMN', 'Swasta Nasional', 'Wirausaha', 'Studi Lanjut'],
-            'dataSerapan' => [35, 25, 20, 15, 5],
+            'totalPengguna' => $userModel->countAllResults(), // Contoh data agregat
+            'totalIndikator' => $totalIndikator,
+            'tahun_sekarang' => $tahun_sekarang,
+            'chartLabels' => $chartLabels,
+            'chartTargets' => $chartTargets,
+            'chartRealisasi' => $chartRealisasi,
         ];
 
-        // Muat view dan kirimkan data ke dalamnya
         return view('user/dashboard', $data);
     }
 }
