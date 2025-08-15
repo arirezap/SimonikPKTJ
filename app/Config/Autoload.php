@@ -88,5 +88,8 @@ class Autoload extends AutoloadConfig
      *
      * @var list<string>
      */
-    public $helpers = [];
+    public array $helpers = [
+        'url', // Helper url biasanya sudah ada
+        'tanggal' // <-- TAMBAHKAN BARIS INI
+    ];
 }

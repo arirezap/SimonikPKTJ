@@ -12,12 +12,14 @@ class Auth extends BaseController
      */
     public function index()
     {
-        // Jika user sudah login, arahkan ke dashboard, jangan tampilkan form login lagi
+        // Jika user sudah login, arahkan ke dashboard yang sesuai
         if (session()->get('isLoggedIn')) {
-            return redirect()->to(session()->get('role') === 'admin' ? '/admin/dashboard' : '/user/dashboard');
+            // PERUBAHAN: Cek apakah role ada di dalam array ['admin', 'manajemen']
+            $isAdminOrManajemen = in_array(session()->get('role'), ['admin', 'manajemen']);
+            return redirect()->to($isAdminOrManajemen ? '/admin/dashboard' : '/user/dashboard');
         }
 
-        return view('login'); // Memuat file di app/Views/login.php
+        return view('login');
     }
 
     /**
@@ -42,13 +44,11 @@ class Auth extends BaseController
 
         // 3. Panggil Model untuk mencari user
         $userModel = new UserModel();
-        $user = $userModel->getUserByUsername($username);
+        $user = $userModel->getUserByUsername($this->request->getPost('username'));
+        $password = $this->request->getPost('password');
 
-        // 4. Verifikasi user dan password
         if ($user && password_verify($password, $user['password'])) {
-            // Jika user ditemukan dan password cocok
-
-            // 5. Buat data session
+            // ... (kode pembuatan session tidak berubah) ...
             $sessionData = [
                 'user_id'    => $user['id'],
                 'username'   => $user['username'],
@@ -58,15 +58,13 @@ class Auth extends BaseController
             ];
             session()->set($sessionData);
 
-            // 6. Arahkan ke dashboard yang sesuai
-            // di dalam Auth.php -> prosesLogin()
-            if ($user['role'] === 'admin') {
-                return redirect()->to('/admin/dashboard'); // Sesuai dengan route group
+            // PERUBAHAN: Cek apakah role adalah 'admin' ATAU 'manajemen'
+            if (in_array($user['role'], ['admin', 'manajemen'])) {
+                return redirect()->to('/admin/dashboard');
             } else {
-                return redirect()->to('/user/dashboard'); // Sesuai dengan route group
+                return redirect()->to('/user/dashboard');
             }
         } else {
-            // Jika user tidak ditemukan atau password salah
             return redirect()->back()->with('error', 'Username atau Password salah.');
         }
     }

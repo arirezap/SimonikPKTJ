@@ -3,12 +3,18 @@
 
 $current_uri = uri_string();
 
-// Logika untuk membuat menu induk "Kinerja" tetap aktif
+// Logika untuk menu user
 $isKinerjaActive = (
     str_starts_with($current_uri, 'user/rencana/input') || 
-    str_starts_with($current_uri, 'user/realisasi/input') || // Ditambahkan
+    str_starts_with($current_uri, 'user/realisasi/input') ||
     str_starts_with($current_uri, 'user/kinerja/update') || 
     str_starts_with($current_uri, 'user/alokasi/bulanan')
+);
+
+// Logika untuk menu admin
+$isAdminManagementActive = (
+    str_starts_with($current_uri, 'admin/users') || 
+    str_starts_with($current_uri, 'admin/monitoring')
 );
 ?>
 
@@ -17,9 +23,9 @@ $isKinerjaActive = (
         <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ">
     </div>
 
-    <?php if (session()->get('role') == 'admin'): ?>
+    <?php if (in_array(session()->get('role'), ['admin', 'manajemen'])): ?>
         <!-- ========================================================== -->
-        <!-- MENU UNTUK ADMIN -->
+        <!-- MENU UNTUK ADMIN & MANAJEMEN -->
         <!-- ========================================================== -->
         <ul class="nav flex-column">
             <li class="nav-item">
@@ -27,16 +33,28 @@ $isKinerjaActive = (
                     <i class="bi bi-grid-fill"></i><span>Dashboard</span>
                 </a>
             </li>
+            
+            <!-- Menu Dropdown Manajemen -->
             <li class="nav-item">
-                <a href="<?= site_url('admin/monitoring') ?>" class="nav-link <?= ($current_uri == 'admin/monitoring') ? 'active' : '' ?>">
-                    <i class="bi bi-bar-chart-line-fill"></i><span>Monitoring</span>
+                <a class="nav-link <?= $isAdminManagementActive ? '' : 'collapsed' ?>" href="#manajemenSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="<?= $isAdminManagementActive ? 'true' : 'false' ?>" aria-controls="manajemenSubmenu">
+                    <i class="bi bi-kanban-fill"></i><span>Manajemen</span>
                 </a>
+                <div class="collapse <?= $isAdminManagementActive ? 'show' : '' ?>" id="manajemenSubmenu">
+                    <ul class="nav flex-column ps-4">
+                        <li class="nav-item">
+                            <a href="<?= site_url('admin/users') ?>" class="nav-link sub-link <?= (str_starts_with($current_uri, 'admin/users')) ? 'active' : '' ?>">
+                                <span>Kelola Pengguna</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="<?= site_url('admin/monitoring') ?>" class="nav-link sub-link <?= (str_starts_with($current_uri, 'admin/monitoring')) ? 'active' : '' ?>">
+                                <span>Monitoring Kinerja</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </li>
-            <li class="nav-item">
-                <a href="<?= site_url('admin/users') ?>" class="nav-link <?= ($current_uri == 'admin/users') ? 'active' : '' ?>">
-                    <i class="bi bi-people-fill"></i><span>Kelola Pengguna</span>
-                </a>
-            </li>
+
             <li class="nav-item">
                 <a href="<?= site_url('profile') ?>" class="nav-link <?= ($current_uri == 'profile') ? 'active' : '' ?>">
                     <i class="bi bi-person-circle"></i><span>Profil</span>
@@ -49,10 +67,8 @@ $isKinerjaActive = (
             </li>
         </ul>
 
-    <?php else: // Menu User ?>
-        <!-- ========================================================== -->
-        <!-- MENU UNTUK USER -->
-        <!-- ========================================================== -->
+    <?php else: // Menu untuk User Biasa ?>
+        <!-- ... (menu user tidak berubah) ... -->
         <ul class="nav flex-column">
             <li class="nav-item">
                 <a href="<?= site_url('user/dashboard') ?>" class="nav-link <?= ($current_uri == 'user/dashboard') ? 'active' : '' ?>">

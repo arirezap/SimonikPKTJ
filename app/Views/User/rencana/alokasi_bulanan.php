@@ -46,10 +46,12 @@
                         $bulan_sekarang = date('n');
                         $tahun_sekarang = date('Y');
                         for ($i=1; $i<=12; $i++): 
-                        $nama_bulan = date("F", mktime(0,0,0,$i,10));
                     ?>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link <?= ($i == $bulan_sekarang && $tahun_terpilih == $tahun_sekarang) ? 'active' : '' ?>" id="tab-<?= $i ?>" data-bs-toggle="tab" data-bs-target="#konten-<?= $i ?>" type="button" role="tab" aria-controls="konten-<?= $i ?>" aria-selected="<?= ($i == $bulan_sekarang && $tahun_terpilih == $tahun_sekarang) ? 'true' : 'false' ?>"><?= $nama_bulan ?></button>
+                            <button class="nav-link <?= ($i == $bulan_sekarang && $tahun_terpilih == $tahun_sekarang) ? 'active' : '' ?>" id="tab-<?= $i ?>" data-bs-toggle="tab" data-bs-target="#konten-<?= $i ?>" type="button" role="tab" aria-controls="konten-<?= $i ?>" aria-selected="<?= ($i == $bulan_sekarang && $tahun_terpilih == $tahun_sekarang) ? 'true' : 'false' ?>">
+                                <!-- PERUBAHAN: Menggunakan helper bulan_indo() -->
+                                <?= bulan_indo($i) ?>
+                            </button>
                         </li>
                     <?php endfor; ?>
                 </ul>
@@ -58,7 +60,6 @@
                 <div class="tab-content p-3 border border-top-0" id="bulanTabContent">
                     <?php for ($i=0; $i<12; $i++): ?>
                         <?php
-                            // Logika untuk menonaktifkan input realisasi di masa depan
                             $bulan_index = $i + 1;
                             $is_future_month = ($tahun_terpilih > $tahun_sekarang) || ($tahun_terpilih == $tahun_sekarang && $bulan_index > $bulan_sekarang);
                             $readonly_attr = $is_future_month ? 'readonly' : '';
@@ -92,7 +93,6 @@
                                                     <input type="number" min="0" name="target_bulanan[<?= $row['id'] ?>][<?= $i ?>]" class="form-control" value="<?= $target_bulanan[$i] ?? 0 ?>">
                                                 </td>
                                                 <td>
-                                                    <!-- DITAMBAHKAN: Atribut readonly, placeholder, dan class background -->
                                                     <input type="number" min="0" name="realisasi_bulanan[<?= $row['id'] ?>][<?= $i ?>]" class="form-control <?= $bg_class ?>" value="<?= $realisasi_bulanan[$i] ?? '' ?>" placeholder="<?= $placeholder_text ?>" <?= $readonly_attr ?>>
                                                 </td>
                                             </tr>

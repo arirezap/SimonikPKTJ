@@ -38,12 +38,13 @@
                     </thead>
                     <tbody>
                         <?php if (!empty($rencana_kinerja)): ?>
-                            <?php $no = 1; foreach ($rencana_kinerja as $row): ?>
+                            <?php $no = 1;
+                            foreach ($rencana_kinerja as $row): ?>
                                 <?php
-                                    $target_bulanan = json_decode($row['target_bulanan'], true);
-                                    $realisasi_bulanan = json_decode($row['realisasi_bulanan'], true);
-                                    $target_bulan_ini = $target_bulanan[$bulan_sekarang - 1] ?? 0;
-                                    $realisasi_bulan_ini = $realisasi_bulanan[$bulan_sekarang - 1] ?? '';
+                                $target_bulanan = json_decode($row['target_bulanan'], true);
+                                $realisasi_bulanan = json_decode($row['realisasi_bulanan'], true);
+                                $target_bulan_ini = $target_bulanan[$bulan_sekarang - 1] ?? 0;
+                                $realisasi_bulan_ini = $realisasi_bulanan[$bulan_sekarang - 1] ?? '';
                                 ?>
                                 <tr>
                                     <td class="text-center"><?= $no++ ?></td>

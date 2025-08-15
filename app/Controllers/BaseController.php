@@ -41,7 +41,6 @@ abstract class BaseController extends Controller
      * Be sure to declare properties for any property fetch you initialized.
      * The creation of dynamic property is deprecated in PHP 8.2.
      */
-    // HAPUS TANDA KOMENTAR (//) DARI BARIS DI BAWAH INI
     protected $session;
 
     /**
@@ -53,8 +52,9 @@ abstract class BaseController extends Controller
         parent::initController($request, $response, $logger);
 
         // Preload any models, libraries, etc, here.
-
-        // HAPUS TANDA KOMENTAR (//) DARI BARIS DI BAWAH INI
         $this->session = service('session');
+
+        // TAMBAHKAN BARIS INI UNTUK MENGATUR BAHASA KE INDONESIA
+        setlocale(LC_TIME, 'id_ID.utf8', 'id_ID', 'Indonesian');
     }
 }
