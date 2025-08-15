@@ -15,41 +15,72 @@ class Dashboard extends BaseController
         $user_id = session()->get('user_id');
         $tahun_sekarang = date('Y');
 
-        // Mengambil semua rencana kinerja untuk user ini & tahun sekarang
         $rencana_kinerja = $rencanaModel->where('user_id', $user_id)
                                         ->where('tahun_anggaran', $tahun_sekarang)
                                         ->findAll();
 
-        // Menyiapkan data untuk grafik capaian tahunan
+        // Inisialisasi variabel untuk perhitungan
         $chartLabels = [];
         $chartTargets = [];
         $chartRealisasi = [];
         $totalIndikator = 0;
+        $totalPersentaseCapaian = 0;
+        $indikatorValidUntukRataRata = 0;
+
+        $monthly_targets_sum = array_fill(0, 12, 0);
+        $monthly_realisasi_sum = array_fill(0, 12, 0);
 
         if (!empty($rencana_kinerja)) {
             $totalIndikator = count($rencana_kinerja);
             foreach ($rencana_kinerja as $rencana) {
-                // Ambil label dari nama indikator
                 $chartLabels[] = $rencana['indikator_kinerja'];
-                // Ambil data target tahunan
-                $chartTargets[] = $rencana['target_utama'];
+                $target_utama = (float)$rencana['target_utama'];
+                $chartTargets[] = $target_utama;
 
-                // Hitung total realisasi dari data JSON bulanan
                 $realisasiBulanan = json_decode($rencana['realisasi_bulanan'], true) ?? [];
-                $totalRealisasi = array_sum($realisasiBulanan);
+                // PERBAIKAN: Pastikan semua nilai adalah angka sebelum dijumlahkan
+                $totalRealisasi = array_sum(array_map('floatval', $realisasiBulanan));
                 $chartRealisasi[] = $totalRealisasi;
+
+                if ($target_utama > 0) {
+                    $totalPersentaseCapaian += ($totalRealisasi / $target_utama) * 100;
+                    $indikatorValidUntukRataRata++;
+                }
+
+                $targetBulanan = json_decode($rencana['target_bulanan'], true) ?? [];
+                for ($i = 0; $i < 12; $i++) {
+                    // PERBAIKAN: Ubah nilai menjadi float untuk mencegah error
+                    $monthly_targets_sum[$i] += (float)($targetBulanan[$i] ?? 0);
+                    $monthly_realisasi_sum[$i] += (float)($realisasiBulanan[$i] ?? 0);
+                }
             }
         }
 
-        // Menyiapkan data untuk dikirim ke view
+        $rataRataCapaian = ($indikatorValidUntukRataRata > 0) ? $totalPersentaseCapaian / $indikatorValidUntukRataRata : 0;
+
+        $cumulative_targets = [];
+        $cumulative_realisasi = [];
+        $last_target = 0;
+        $last_realisasi = 0;
+        for ($i = 0; $i < 12; $i++) {
+            $last_target += $monthly_targets_sum[$i];
+            $last_realisasi += $monthly_realisasi_sum[$i];
+            $cumulative_targets[] = $last_target;
+            $cumulative_realisasi[] = $last_realisasi;
+        }
+
         $data = [
             'page_title' => 'User Dashboard',
-            'totalPengguna' => $userModel->countAllResults(), // Contoh data agregat
             'totalIndikator' => $totalIndikator,
+            'rataRataCapaian' => $rataRataCapaian,
+            'totalPengguna' => $userModel->countAllResults(),
             'tahun_sekarang' => $tahun_sekarang,
             'chartLabels' => $chartLabels,
             'chartTargets' => $chartTargets,
             'chartRealisasi' => $chartRealisasi,
+            'lineChartLabels' => ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'],
+            'lineChartTargetData' => $cumulative_targets,
+            'lineChartRealisasiData' => $cumulative_realisasi,
         ];
 
         return view('user/dashboard', $data);

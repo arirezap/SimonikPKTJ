@@ -3,10 +3,11 @@
 
 $current_uri = uri_string();
 
-// Logika pengecekan halaman aktif yang disederhanakan
+// Logika untuk membuat menu induk "Kinerja" tetap aktif
 $isKinerjaActive = (
-    $current_uri === 'user/rencana/input' ||
-    $current_uri === 'user/kinerja/update' ||
+    str_starts_with($current_uri, 'user/rencana/input') || 
+    str_starts_with($current_uri, 'user/realisasi/input') || // Ditambahkan
+    str_starts_with($current_uri, 'user/kinerja/update') || 
     str_starts_with($current_uri, 'user/alokasi/bulanan')
 );
 ?>
@@ -18,7 +19,7 @@ $isKinerjaActive = (
 
     <?php if (session()->get('role') == 'admin'): ?>
         <!-- ========================================================== -->
-        <!-- BAGIAN INI SUDAH DIISI DENGAN MENU ADMIN -->
+        <!-- MENU UNTUK ADMIN -->
         <!-- ========================================================== -->
         <ul class="nav flex-column">
             <li class="nav-item">
@@ -48,15 +49,17 @@ $isKinerjaActive = (
             </li>
         </ul>
 
-    <?php else: // Menu User 
-    ?>
+    <?php else: // Menu User ?>
+        <!-- ========================================================== -->
+        <!-- MENU UNTUK USER -->
+        <!-- ========================================================== -->
         <ul class="nav flex-column">
             <li class="nav-item">
                 <a href="<?= site_url('user/dashboard') ?>" class="nav-link <?= ($current_uri == 'user/dashboard') ? 'active' : '' ?>">
                     <i class="bi bi-grid-fill"></i><span>Dashboard</span>
                 </a>
             </li>
-
+            
             <li class="nav-item">
                 <a class="nav-link <?= $isKinerjaActive ? '' : 'collapsed' ?>" href="#kinerjaSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="<?= $isKinerjaActive ? 'true' : 'false' ?>" aria-controls="kinerjaSubmenu">
                     <i class="bi bi-graph-up-arrow"></i><span>Kinerja</span>
@@ -69,15 +72,20 @@ $isKinerjaActive = (
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="<?= site_url('user/kinerja/update') ?>" class="nav-link sub-link <?= ($current_uri == 'user/kinerja/update') ? 'active' : '' ?>">
+                            <a href="<?= site_url('user/realisasi/input') ?>" class="nav-link sub-link <?= ($current_uri == 'user/realisasi/input') ? 'active' : '' ?>">
+                                <span>Input Realisasi</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="<?= site_url('user/kinerja/update') ?>" class="nav-link sub-link <?= ($current_uri == 'user/kinerja/update' || str_starts_with($current_uri, 'user/alokasi/bulanan')) ? 'active' : '' ?>">
                                 <span>Kelola Target & Realisasi</span>
                             </a>
                         </li>
                     </ul>
                 </div>
             </li>
-
-            <li class="nav-item">
+            
+             <li class="nav-item">
                 <a href="<?= site_url('profile') ?>" class="nav-link <?= ($current_uri == 'profile') ? 'active' : '' ?>">
                     <i class="bi bi-person-circle"></i><span>Profil</span>
                 </a>

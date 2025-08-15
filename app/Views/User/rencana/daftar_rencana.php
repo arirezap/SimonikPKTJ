@@ -52,15 +52,28 @@
                 <thead class="table-light">
                     <tr>
                         <th style="width: 5%;">No</th>
-                        <th>Sasaran Program / Indikator Kinerja</th>
+                        <th>Indikator Kinerja</th>
                         <th class="text-center">Target Tahunan</th>
-                        <th>Kegiatan</th>
+                        <th class="text-center">Capaian Realisasi</th>
                         <th class="text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (!empty($rencana_kinerja)): ?>
                         <?php $no = 1; foreach ($rencana_kinerja as $row): ?>
+                            <?php
+                                // --- CALCULATE REALIZATION PROGRESS ---
+                                $realisasi_bulanan = json_decode($row['realisasi_bulanan'], true) ?? [];
+                                $total_realisasi = array_sum($realisasi_bulanan);
+                                $target_utama = (float)$row['target_utama'];
+                                $persentase_capaian = 0;
+                                if ($target_utama > 0) {
+                                    // PERUBAHAN: Menghapus fungsi min()
+                                    $persentase_capaian = ($total_realisasi / $target_utama) * 100;
+                                }
+                                // Untuk tampilan progress bar, tetap batasi di 100% agar tidak aneh
+                                $progress_bar_width = min(100, $persentase_capaian);
+                            ?>
                             <tr>
                                 <td class="text-center"><?= $no++; ?></td>
                                 <td>
@@ -68,10 +81,20 @@
                                     <small class="text-muted"><?= esc($row['indikator_kinerja']); ?></small>
                                 </td>
                                 <td class="text-center fs-5"><?= esc($row['target_utama']); ?> <span class="fs-6 text-muted"><?= esc($row['satuan']); ?></span></td>
-                                <td><?= nl2br(esc($row['kegiatan'])); ?></td>
+                                
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress flex-grow-1" style="height: 20px;">
+                                            <div class="progress-bar" role="progressbar" style="width: <?= $progress_bar_width ?>%;" aria-valuenow="<?= $persentase_capaian ?>" aria-valuemin="0" aria-valuemax="100">
+                                                <?= round($persentase_capaian) ?>%
+                                            </div>
+                                        </div>
+                                        <span class="ms-2 fw-bold"><?= $total_realisasi ?></span>
+                                    </div>
+                                </td>
+
                                 <td class="text-center">
-                                    <a href="<?= site_url('user/alokasi/bulanan?tahun=' . $row['tahun_anggaran']) ?>" class="btn btn-info btn-sm" title="Alokasi Target Bulanan"><i class="bi bi-calendar-week"></i></a>
-                                    <!-- TOMBOL EDIT BARU DENGAN DATA ATTRIBUTES -->
+                                    <a href="<?= site_url('user/alokasi/bulanan?tahun=' . $row['tahun_anggaran']) ?>" class="btn btn-info btn-sm" title="Kelola Target & Realisasi Bulanan"><i class="bi bi-calendar-week"></i></a>
                                     <button type="button" class="btn btn-warning btn-sm btn-edit" 
                                         data-bs-toggle="modal" 
                                         data-bs-target="#editModal"
@@ -88,7 +111,12 @@
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <tr><td colspan="5" class="text-center p-4">...</td></tr>
+                        <tr>
+                            <td colspan="5" class="text-center p-4">
+                                <p class="mb-1">Belum ada data rencana untuk tahun ini.</p>
+                                <a href="<?= site_url('user/rencana/input') ?>">Buat Rencana Baru</a>
+                            </td>
+                        </tr>
                     <?php endif; ?>
                 </tbody>
             </table>
@@ -100,9 +128,7 @@
 <!-- Form tersembunyi untuk proses hapus -->
 <form action="" method="POST" id="formHapus"><?= csrf_field() ?></form>
 
-<!-- ========================================================== -->
 <!-- MODAL UNTUK EDIT DATA -->
-<!-- ========================================================== -->
 <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">

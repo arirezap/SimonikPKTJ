@@ -25,8 +25,6 @@ $routes->group('admin', ['filter' => 'auth:admin'], static function ($routes) {
 });
 
 // --- Grup Rute User ---
-// di dalam app/Config/Routes.php
-
 $routes->group('user', ['filter' => 'auth:user'], static function ($routes) {
     $routes->get('dashboard', 'User\Dashboard::index');
 
@@ -34,11 +32,13 @@ $routes->group('user', ['filter' => 'auth:user'], static function ($routes) {
     $routes->get('rencana/input', 'User\InputRencana::index');
     $routes->post('rencana/store', 'User\InputRencana::store');
 
+    // RUTE BARU: Untuk Input Realisasi
+    $routes->get('realisasi/input', 'User\InputRealisasi::index');
+    $routes->post('realisasi/store', 'User\InputRealisasi::store');
+
     // Alur Kelola Rencana
     $routes->get('kinerja/update', 'User\DaftarRencana::index');
     $routes->post('rencana/update/(:num)', 'User\DaftarRencana::update/$1');
-
-    // PERBAIKI BARIS INI: Pastikan menunjuk ke DaftarRencana::delete
     $routes->post('rencana/delete/(:num)', 'User\DaftarRencana::delete/$1');
 
     // Alur Alokasi Bulanan
