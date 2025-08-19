@@ -45,4 +45,14 @@ $routes->group('user', ['filter' => 'auth:admin,manajemen,aak,kuk'], static func
     $routes->post('rencana/delete/(:num)', 'User\DaftarRencana::delete/$1');
     $routes->get('alokasi/bulanan', 'User\AlokasiController::index');
     $routes->post('alokasi/update', 'User\AlokasiController::update');
+    $routes->get('keuangan/input', 'User\InputKeuangan::index');
+    $routes->post('keuangan/store', 'User\InputKeuangan::store');
+
+    $routes->group('akademik', static function ($routes) {
+        $routes->get('/', 'User\AkademikController::index'); // Rangkuman
+        $routes->get('jadwal', 'User\AkademikController::jadwal'); // Kelola Jadwal
+        $routes->post('jadwal/store', 'User\AkademikController::storeJadwal'); // Simpan Jadwal
+    });
+    $routes->get('ketarunaan', 'User\KetarunaanController::index');
+    $routes->get('diklat', 'User\DiklatController::index');
 });

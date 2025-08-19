@@ -4,8 +4,12 @@
 <?= esc($page_title ?? 'User Dashboard') ?>
 <?= $this->endSection() ?>
 
+<?= $this->section('page_title') ?>
+Dashboard
+<?= $this->endSection() ?>
+
 <?= $this->section('content') ?>
-<h1 class="mb-4">Selamat datang, <?= esc(session()->get('nama_lengkap')) ?>!</h1>
+<h4 class="mb-4">Selamat datang, <?= esc(session()->get('nama_lengkap')) ?>!</h4>
 
 <!-- Baris untuk Kartu Statistik (KPI Cards) -->
 <div class="row g-4 mb-4">
