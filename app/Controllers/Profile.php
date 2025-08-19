@@ -17,7 +17,7 @@ class Profile extends BaseController
 
         $data = [
             'page_title' => 'Profil Saya',
-            'user' => $userModel->find($user_id) // Mengambil data user yang sedang login
+            'user' => $userModel->find($user_id)
         ];
 
         return view('profile', $data);
@@ -32,7 +32,6 @@ class Profile extends BaseController
         $rules = [
             'nama_lengkap' => 'required',
             'email'        => 'required|valid_email',
-            // Validasi password hanya jika diisi
             'password'     => 'if_exist|min_length[6]',
             'konfirmasi_password' => 'matches[password]'
         ];
@@ -44,25 +43,39 @@ class Profile extends BaseController
         $userModel = new UserModel();
         $user_id = session()->get('user_id');
 
-        // Siapkan data untuk diupdate
         $dataToUpdate = [
             'nama_lengkap' => $this->request->getPost('nama_lengkap'),
             'email'        => $this->request->getPost('email'),
         ];
 
-        // Jika password diisi, hash dan tambahkan ke data update
         $password = $this->request->getPost('password');
         if (!empty($password)) {
             $dataToUpdate['password'] = password_hash($password, PASSWORD_BCRYPT);
         }
 
-        // Lakukan update
         if ($userModel->update($user_id, $dataToUpdate)) {
-            // Perbarui juga nama di session jika berubah
-            session()->set('nama_lengkap', $dataToUpdate['nama_lengkap']);
+            // PERBAIKAN: Bangun ulang seluruh sesi setelah update berhasil
+            $updatedUser = $userModel->find($user_id);
+            $this->regenerateSession($updatedUser);
+            
             return redirect()->to('/profile')->with('success', 'Profil berhasil diperbarui.');
         }
 
         return redirect()->back()->with('error', 'Gagal memperbarui profil.');
+    }
+
+    /**
+     * Fungsi bantuan untuk membangun ulang sesi pengguna.
+     */
+    private function regenerateSession(array $user)
+    {
+        $sessionData = [
+            'user_id'    => $user['id'],
+            'username'   => $user['username'],
+            'nama_lengkap' => $user['nama_lengkap'],
+            'role'       => $user['role'],
+            'isLoggedIn' => true
+        ];
+        session()->set($sessionData);
     }
 }

@@ -12,40 +12,44 @@ use Dompdf\Options;
 
 class MonitoringController extends BaseController
 {
+    /**
+     * Menampilkan halaman monitoring yang dinamis untuk semua unit/pokja.
+     */
     public function index()
     {
         $userModel = new UserModel();
         $rencanaModel = new RencanaKinerjaModel();
 
+        // Ambil pilihan dari URL (GET request)
+        $selectedUserId = $this->request->getGet('unit');
+        $selectedYear = $this->request->getGet('tahun');
+
         $data = [
             'page_title' => 'Monitoring Kinerja',
-            'unit_pokja' => $userModel->where('role', 'user')->findAll(),
+            'selectedUserId' => $selectedUserId,
+            'selectedYear' => $selectedYear,
+            // PERBAIKAN: Hapus 'user' dari daftar peran
+            'unit_pokja' => $userModel->whereIn('role', ['manajemen', 'aak', 'kuk'])->findAll(),
             'daftar_tahun' => $rencanaModel->select('tahun_anggaran')->distinct()->orderBy('tahun_anggaran', 'DESC')->findAll(),
+            // Inisialisasi data detail (akan diisi jika ada pilihan)
+            'user' => null,
+            'rencana_kinerja' => []
         ];
 
-        return view('admin/monitoring_index', $data);
-    }
-
-    public function detail($userId, $tahun)
-    {
-        $userModel = new UserModel();
-        $rencanaModel = new RencanaKinerjaModel();
-
-        $user = $userModel->find($userId);
-        if (!$user || $user['role'] !== 'user') {
-            return redirect()->to('/admin/monitoring')->with('error', 'Tim/Unit/Pokja tidak ditemukan.');
+        // Jika pengguna sudah memilih Unit/Pokja DAN tahun, ambil data detailnya
+        if ($selectedUserId && $selectedYear) {
+            $user = $userModel->find($selectedUserId);
+            if ($user) {
+                $data['user'] = $user;
+                $data['rencana_kinerja'] = $rencanaModel->where('user_id', $selectedUserId)
+                                                      ->where('tahun_anggaran', $selectedYear)
+                                                      ->findAll();
+            } else {
+                session()->setFlashdata('error', 'Tim/Unit/Pokja yang dipilih tidak valid.');
+            }
         }
 
-        $data = [
-            'page_title'      => 'Detail Kinerja: ' . $user['nama_lengkap'],
-            'user'            => $user,
-            'tahun_terpilih'  => $tahun,
-            'rencana_kinerja' => $rencanaModel->where('user_id', $userId)
-                                              ->where('tahun_anggaran', $tahun)
-                                              ->findAll(),
-        ];
-
-        return view('admin/monitoring_detail', $data);
+        return view('admin/monitoring_index', $data);
     }
 
     /**
@@ -64,13 +68,11 @@ class MonitoringController extends BaseController
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
-        // Header
         $sheet->setCellValue('A1', 'Laporan Kinerja Tim/Unit/Pokja: ' . $user['nama_lengkap']);
         $sheet->setCellValue('A2', 'Tahun Anggaran: ' . $tahun);
         $sheet->mergeCells('A1:E1');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
 
-        // Judul Kolom
         $sheet->setCellValue('A4', 'No');
         $sheet->setCellValue('B4', 'Indikator Kinerja');
         $sheet->setCellValue('C4', 'Target Tahunan');
@@ -94,7 +96,6 @@ class MonitoringController extends BaseController
             $rowNumber++;
         }
 
-        // Atur lebar kolom
         foreach (range('B', 'E') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
@@ -127,7 +128,6 @@ class MonitoringController extends BaseController
             'rencana_kinerja' => $rencana_kinerja
         ];
 
-        // Muat view khusus untuk PDF
         $html = view('admin/monitoring_pdf', $data);
 
         $options = new Options();
@@ -136,10 +136,10 @@ class MonitoringController extends BaseController
 
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'landscape'); // Atur orientasi kertas
+        $dompdf->setPaper('A4', 'landscape');
         $dompdf->render();
         
         $fileName = 'Laporan_Kinerja_' . $user['username'] . '_' . $tahun . '.pdf';
-        $dompdf->stream($fileName, ['Attachment' => true]); // true untuk download, false untuk preview
+        $dompdf->stream($fileName, ['Attachment' => true]);
     }
 }

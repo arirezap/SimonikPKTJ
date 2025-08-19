@@ -15,7 +15,9 @@ class Dashboard extends BaseController
         $tahun_sekarang = date('Y');
 
         $all_kinerja = $rencanaModel->where('tahun_anggaran', $tahun_sekarang)->findAll();
-        $users = $userModel->where('role', 'user')->findAll();
+        
+        // PERBAIKAN: Ambil semua pengguna dengan peran yang relevan
+        $users = $userModel->whereIn('role', ['manajemen', 'aak', 'kuk'])->findAll();
 
         $kinerja_per_user = [];
         $total_persentase_capaian = 0;
@@ -44,7 +46,6 @@ class Dashboard extends BaseController
             }
         }
 
-        // --- Perhitungan Baru untuk Grafik Donat ---
         $performanceDistribution = [
             'Sangat Baik (>90%)' => 0,
             'Baik (75-90%)'      => 0,
@@ -59,7 +60,6 @@ class Dashboard extends BaseController
                 $total_persentase_capaian += $capaian;
                 $total_indikator_valid++;
 
-                // Kategorikan pengguna berdasarkan capaian
                 if ($capaian > 90) $performanceDistribution['Sangat Baik (>90%)']++;
                 elseif ($capaian >= 75) $performanceDistribution['Baik (75-90%)']++;
                 elseif ($capaian >= 50) $performanceDistribution['Cukup (50-75%)']++;

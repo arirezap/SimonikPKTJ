@@ -32,7 +32,20 @@
                 <img src="<?= base_url('assets/uploads/' . $foto_profil) ?>" alt="Foto Profil" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
                 <h4 class="card-title mb-1"><?= esc($user['nama_lengkap']); ?></h4>
                 <p class="text-muted mb-2">@<?= esc($user['username']); ?></p>
-                <span class="badge bg-primary text-capitalize"><?= esc($user['role']); ?></span>
+                
+                <!-- PERUBAHAN: Logika badge disesuaikan dengan peran baru -->
+                <?php
+                    $role = esc($user['role']);
+                    $badge_class = 'bg-secondary'; // Default
+                    if ($role === 'admin') $badge_class = 'bg-danger';
+                    if ($role === 'manajemen') $badge_class = 'bg-primary';
+                    if ($role === 'aak') $badge_class = 'bg-success';
+                    if ($role === 'kuk') $badge_class = 'bg-info text-dark';
+                    
+                    // Tampilkan teks sesuai peran
+                    $role_text = ($role === 'aak' || $role === 'kuk') ? strtoupper($role) : ucfirst($role);
+                ?>
+                <span class="badge <?= $badge_class ?>"><?= $role_text ?></span>
             </div>
         </div>
     </div>

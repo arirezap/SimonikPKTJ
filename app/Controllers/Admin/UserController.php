@@ -7,9 +7,6 @@ use App\Models\User as UserModel;
 
 class UserController extends BaseController
 {
-    /**
-     * Menampilkan halaman daftar pengguna.
-     */
     public function index()
     {
         $userModel = new UserModel();
@@ -23,23 +20,20 @@ class UserController extends BaseController
         return view('admin/users', $data);
     }
 
-    /**
-     * Memproses pembuatan pengguna baru.
-     */
     public function store()
     {
-        // Aturan validasi (tidak berubah)
+        // PERUBAHAN: Sesuaikan aturan validasi untuk peran baru
         $rules = [
             'nama_lengkap' => 'required',
             'username'     => 'required|is_unique[users.username]',
             'email'        => 'required|valid_email|is_unique[users.email]',
-            'role'         => 'required|in_list[admin,user,manajemen]',
+            'role'         => 'required|in_list[admin,manajemen,aak,kuk]',
             'password'     => 'required|min_length[6]',
             'konfirmasi_password' => 'required|matches[password]'
         ];
 
         if (!$this->validate($rules)) {
-            return redirect()->to('/admin/users')->withInput()->with('error', 'Terdapat kesalahan input. Silakan periksa kembali.')->with('show_modal', 'addUserModal');
+            return redirect()->to('/admin/users')->withInput()->with('error', 'Terdapat kesalahan input.')->with('show_modal', 'addUserModal');
         }
 
         $userModel = new UserModel();
@@ -66,13 +60,12 @@ class UserController extends BaseController
      */
     public function update($id)
     {
-        // Aturan validasi untuk update
+        // PERUBAHAN: Sesuaikan aturan validasi untuk peran baru
         $rules = [
             'nama_lengkap' => 'required',
-            // Username dan email harus unik, kecuali untuk user yang sedang diedit
             'username'     => "required|is_unique[users.username,id,{$id}]",
             'email'        => "required|valid_email|is_unique[users.email,id,{$id}]",
-            'role' => 'required|in_list[admin,user,manajemen]',
+            'role'         => 'required|in_list[admin,manajemen,aak,kuk]',
         ];
 
         // Validasi password hanya jika diisi
