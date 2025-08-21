@@ -4,37 +4,35 @@ namespace App\Controllers\User;
 
 use App\Controllers\BaseController;
 use App\Models\RencanaKinerja as RencanaKinerjaModel;
+use App\Models\Sasaran as SasaranModel;
+use App\Models\Indikator as IndikatorModel;
+use App\Models\Satuan as SatuanModel;
 
 class InputRencana extends BaseController
 {
-    /**
-     * Menampilkan form input/edit rencana tahunan.
-     */
     public function index()
     {
         $rencanaModel = new RencanaKinerjaModel();
         $user_id = session()->get('user_id');
-
-        // Ambil tahun dari URL, jika tidak ada, default ke tahun sekarang
         $tahun_terpilih = $this->request->getGet('tahun') ?? date('Y');
 
-        // Ambil semua tahun unik untuk dropdown filter
-        $existing_plans_years = $rencanaModel->select('tahun_anggaran')
-            ->where('user_id', $user_id)
-            ->distinct()
-            ->findAll();
-        $years_with_data = array_column($existing_plans_years, 'tahun_anggaran');
+        // Ambil data dari tabel master untuk dropdown
+        $sasaranModel = new SasaranModel();
+        $indikatorModel = new IndikatorModel();
+        $satuanModel = new SatuanModel();
 
-        // Ambil detail rencana untuk tahun yang dipilih
-        $rencana_kinerja = $rencanaModel->where('user_id', $user_id)
-            ->where('tahun_anggaran', $tahun_terpilih)
-            ->findAll();
+        $existing_plans_years = $rencanaModel->select('tahun_anggaran')->where('user_id', $user_id)->distinct()->findAll();
+        $years_with_data = array_column($existing_plans_years, 'tahun_anggaran');
 
         $data = [
             'page_title' => 'Input & Kelola Rencana Kerja',
             'tahun_terpilih' => $tahun_terpilih,
             'existing_years_json' => json_encode($years_with_data),
-            'rencana_kinerja' => $rencana_kinerja
+            'rencana_kinerja' => $rencanaModel->where('user_id', $user_id)->where('tahun_anggaran', $tahun_terpilih)->findAll(),
+            // Kirim data master ke view
+            'daftar_sasaran' => $sasaranModel->findAll(),
+            'daftar_indikator' => $indikatorModel->findAll(),
+            'daftar_satuan' => $satuanModel->findAll(),
         ];
 
         return view('user/rencana/input_tahunan', $data);

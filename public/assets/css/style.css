@@ -2,192 +2,194 @@
    VARIABLES & GENERAL STYLES
    =================================================================== */
 :root {
-  --primary-color: #0d6efd;
-  --danger-color: #dc3545;
-  --light-gray: #f8f9fa;
-  --sidebar-width: 280px;
+    --primary-color: #0d6efd;
+    --danger-color: #dc3545;
+    --light-gray: #f8f9fa;
+    --sidebar-width: 280px;
 }
 
 body {
-  background-color: var(--light-gray);
-  font-family: "Inter", sans-serif;
+    background-color: var(--light-gray);
+    font-family: "Inter", sans-serif;
 }
 
 /* ===================================================================
    LAYOUT & SIDEBAR TOGGLE
    =================================================================== */
 .main-wrapper {
-  display: flex;
-  width: 100%;
-  overflow-x: hidden;
+    display: flex;
+    width: 100%;
+    overflow-x: hidden;
 }
 
 .content-wrapper {
-  flex-grow: 1;
-  transition: all 0.3s ease-in-out;
-  width: 100%;
+    flex-grow: 1;
+    transition: all 0.3s ease-in-out;
+    width: 100%;
 }
 
 .sidebar {
-  flex-shrink: 0;
-  margin-left: 0;
-  transition: margin-left 0.3s ease-in-out;
-  width: var(--sidebar-width);
+    flex-shrink: 0;
+    margin-left: 0;
+    transition: margin-left 0.3s ease-in-out;
+    width: var(--sidebar-width);
 }
 
 .sidebar-toggled .sidebar {
-  margin-left: calc(-1 * var(--sidebar-width)); /* Menggunakan variabel */
+    margin-left: calc(-1 * var(--sidebar-width)); /* Menggunakan variabel */
 }
 
 .sidebar-toggle {
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #6c757d;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #6c757d;
 }
 
 /* ===================================================================
    LOGIN PAGE STYLES
    =================================================================== */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap");
+
 body.login-page {
-  background: linear-gradient(135deg, var(--primary-color) 0%, #6f42c1 100%);
+    background: linear-gradient(135deg, var(--primary-color) 0%, #6f42c1 100%);
 }
 
 .login-card {
-  border: none;
-  border-radius: 1rem;
-  padding: 2.5rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  background-color: white;
-  animation: fadeIn 0.5s ease-out;
+    border: none;
+    border-radius: 1rem;
+    padding: 2.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    background-color: white;
+    animation: fadeIn 0.5s ease-out;
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .login-card .card-body,
 .login-card form {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 .login-card .logo-container img {
-  max-width: 90px;
-  margin-bottom: 1rem;
+    max-width: 90px;
+    margin-bottom: 1rem;
 }
 .input-group-icon {
-  position: relative;
+    position: relative;
 }
 .input-group-icon .form-icon {
-  position: absolute;
-  top: 50%;
-  left: 15px;
-  transform: translateY(-50%);
-  color: #adb5bd;
-  z-index: 4;
+    position: absolute;
+    top: 50%;
+    left: 15px;
+    transform: translateY(-50%);
+    color: #adb5bd;
+    z-index: 4;
 }
 .input-group-icon .form-control {
-  padding-left: 40px;
-  padding-right: 50px;
+    padding-left: 40px;
+    padding-right: 50px;
 }
 .password-toggle-btn {
-  position: absolute;
-  top: 50%;
-  right: 5px;
-  transform: translateY(-50%);
-  z-index: 5;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  color: #6c757d;
+    position: absolute;
+    top: 50%;
+    right: 5px;
+    transform: translateY(-50%);
+    z-index: 5;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #6c757d;
 }
 .btn-login:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 15px rgba(13, 110, 253, 0.4);
+    transform: translateY(-3px);
+    box-shadow: 0 4px 15px rgba(13, 110, 253, 0.4);
 }
 .login-footer {
-  position: absolute;
-  bottom: 20px;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.9rem;
-  width: 100%;
-  text-align: center;
+    position: absolute;
+    bottom: 20px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    width: 100%;
+    text-align: center;
 }
 
 /* ===================================================================
    SIDEBAR STYLING
    =================================================================== */
 .sidebar {
-  background-color: white;
-  border-right: 1px solid #ddd;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
-  height: 100vh;
-  padding: 1rem;
-  position: sticky;
-  top: 0;
+    background-color: white;
+    border-right: 1px solid #ddd;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+    height: 100vh;
+    padding: 1rem;
+    position: sticky;
+    top: 0;
 }
 
 .sidebar-header {
-  text-align: center;
-  padding-bottom: 1rem;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid #eee;
+    text-align: center;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #eee;
 }
 
 .sidebar-header img {
-  max-width: 60px;
-  height: auto;
+    max-width: 60px;
+    height: auto;
 }
 
 .sidebar .nav-link {
-  color: #333;
-  padding: 12px 15px;
-  transition: all 0.2s ease-in-out;
-  border-radius: 6px;
-  margin-bottom: 5px;
-  display: flex;
-  align-items: center;
-  font-weight: 500;
+    color: #333;
+    padding: 12px 15px;
+    transition: all 0.2s ease-in-out;
+    border-radius: 6px;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    font-weight: 500;
 }
 
 .sidebar .nav-link:hover {
-  background-color: #e9ecef;
-  color: var(--primary-color);
+    background-color: #e9ecef;
+    color: var(--primary-color);
 }
 
 .sidebar .nav-link .bi {
-  margin-right: 12px;
-  font-size: 1.1rem;
-  width: 20px;
+    margin-right: 12px;
+    font-size: 1.1rem;
+    width: 20px;
 }
 
 .sidebar .nav-link.active {
-  background-color: var(--primary-color);
-  color: white;
-  font-weight: bold;
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: bold;
 }
 
 .sidebar .sub-link {
-  padding-left: 20px;
-  font-size: 0.9rem;
-  color: #495057;
+    padding-left: 20px;
+    font-size: 0.9rem;
+    color: #495057;
 }
 
 .sidebar .sub-link.active {
-  background-color: #e9ecef;
-  color: var(--primary-color);
-  font-weight: bold;
+    background-color: #e9ecef;
+    color: var(--primary-color);
+    font-weight: bold;
 }
 
 .sidebar .nav-link.logout:hover {
-  background-color: var(--danger-color);
-  color: white;
+    background-color: var(--danger-color);
+    color: white;
 }

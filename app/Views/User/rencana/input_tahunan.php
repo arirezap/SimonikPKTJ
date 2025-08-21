@@ -2,9 +2,11 @@
 
 <?= $this->section('title') ?><?= esc($page_title ?? 'Input Rencana Kerja') ?><?= $this->endSection() ?>
 
-<?= $this->section('content') ?>
-<h1>Input & Kelola Rencana Kerja Tahunan</h1>
+<?= $this->section('page_title') ?>
+Input & Kelola Rencana Kerja Tahunan
+<?= $this->endSection() ?>
 
+<?= $this->section('content') ?>
 <div class="card">
     <div class="card-body">
 
@@ -32,7 +34,6 @@
                     </select>
                 </div>
                 <div class="col-md-8">
-                    <!-- PERUBAHAN: Struktur Kotak Peringatan Dirapikan -->
                     <div class="alert alert-info d-none p-3 text-center" id="warning-box">
                         <p class="mb-2"><i class="bi bi-info-circle-fill me-2"></i>Data untuk tahun <strong id="tahun-terpilih"></strong> sudah ada. Anda bisa menambahkan atau memodifikasi rencana di bawah ini.</p>
                         <a href="#" id="link-edit" class="btn btn-sm btn-primary">Kelola Target & Realisasi Tahun Ini &rarr;</a>
@@ -66,9 +67,30 @@
                                     <tr>
                                         <input type="hidden" name="rencana_id[]" value="<?= esc($row['id']) ?>">
                                         <td class="nomor-baris text-center"><?= $index + 1 ?></td>
-                                        <td><textarea name="sasaran_program[]" class="form-control" rows="2" required><?= esc($row['sasaran_program']) ?></textarea></td>
-                                        <td><textarea name="indikator_kinerja[]" class="form-control" rows="2" required><?= esc($row['indikator_kinerja']) ?></textarea></td>
-                                        <td><input type="text" name="satuan[]" class="form-control" value="<?= esc($row['satuan']) ?>" required></td>
+                                        <td>
+                                            <select name="sasaran_program[]" class="form-select" required>
+                                                <option value="">-- Pilih Sasaran --</option>
+                                                <?php foreach($daftar_sasaran as $sasaran): ?>
+                                                    <option value="<?= esc($sasaran['nama_sasaran']) ?>" <?= ($row['sasaran_program'] == $sasaran['nama_sasaran']) ? 'selected' : '' ?>><?= esc($sasaran['nama_sasaran']) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select name="indikator_kinerja[]" class="form-select" required>
+                                                <option value="">-- Pilih Indikator --</option>
+                                                <?php foreach($daftar_indikator as $indikator): ?>
+                                                    <option value="<?= esc($indikator['nama_indikator']) ?>" <?= ($row['indikator_kinerja'] == $indikator['nama_indikator']) ? 'selected' : '' ?>><?= esc($indikator['nama_indikator']) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select name="satuan[]" class="form-select" required>
+                                                <option value="">-- Pilih Satuan --</option>
+                                                <?php foreach($daftar_satuan as $satuan): ?>
+                                                    <option value="<?= esc($satuan['nama_satuan']) ?>" <?= ($row['satuan'] == $satuan['nama_satuan']) ? 'selected' : '' ?>><?= esc($satuan['nama_satuan']) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </td>
                                         <td><input type="number" step="any" name="target_utama[]" class="form-control" value="<?= esc($row['target_utama']) ?>" required></td>
                                         <td><textarea name="kegiatan[]" class="form-control" rows="2"><?= esc($row['kegiatan']) ?></textarea></td>
                                         <td class="text-center"><button type="button" class="btn btn-danger btn-sm hapus-baris"><i class="bi bi-trash"></i></button></td>
@@ -78,9 +100,30 @@
                                 <tr>
                                     <input type="hidden" name="rencana_id[]" value="">
                                     <td class="nomor-baris text-center">1</td>
-                                    <td><textarea name="sasaran_program[]" class="form-control" rows="2" required></textarea></td>
-                                    <td><textarea name="indikator_kinerja[]" class="form-control" rows="2" required></textarea></td>
-                                    <td><input type="text" name="satuan[]" class="form-control" required></td>
+                                    <td>
+                                        <select name="sasaran_program[]" class="form-select" required>
+                                            <option value="">-- Pilih Sasaran --</option>
+                                            <?php foreach($daftar_sasaran as $sasaran): ?>
+                                                <option value="<?= esc($sasaran['nama_sasaran']) ?>"><?= esc($sasaran['nama_sasaran']) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select name="indikator_kinerja[]" class="form-select" required>
+                                            <option value="">-- Pilih Indikator --</option>
+                                            <?php foreach($daftar_indikator as $indikator): ?>
+                                                <option value="<?= esc($indikator['nama_indikator']) ?>"><?= esc($indikator['nama_indikator']) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select name="satuan[]" class="form-select" required>
+                                            <option value="">-- Pilih Satuan --</option>
+                                            <?php foreach($daftar_satuan as $satuan): ?>
+                                                <option value="<?= esc($satuan['nama_satuan']) ?>"><?= esc($satuan['nama_satuan']) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </td>
                                     <td><input type="number" step="any" name="target_utama[]" class="form-control" required></td>
                                     <td><textarea name="kegiatan[]" class="form-control" rows="2"></textarea></td>
                                     <td class="text-center"><button type="button" class="btn btn-danger btn-sm hapus-baris"><i class="bi bi-trash"></i></button></td>
@@ -102,27 +145,26 @@
 <?= $this->section('scripts') ?>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // --- BAGIAN 1: LOGIKA VALIDASI TAHUN ---
         const existingYears = <?= $existing_years_json ?? '[]' ?>;
         const tahunSelect = document.getElementById('tahun_anggaran_filter');
         const warningBox = document.getElementById('warning-box');
         const tahunTerpilihSpan = document.getElementById('tahun-terpilih');
         const linkEdit = document.getElementById('link-edit');
+        const formContent = document.getElementById('form-content');
 
         function checkYear(selectedYear) {
             if (existingYears.map(String).includes(selectedYear)) {
                 tahunTerpilihSpan.textContent = selectedYear;
-                // PERUBAHAN: Link sekarang menunjuk ke halaman alokasi bulanan
                 linkEdit.href = `<?= site_url('user/alokasi/bulanan?tahun=') ?>${selectedYear}`;
                 warningBox.classList.remove('d-none');
+                warningBox.classList.add('d-flex');
             } else {
                 warningBox.classList.add('d-none');
+                warningBox.classList.remove('d-flex');
             }
         }
-
         checkYear(tahunSelect.value);
 
-        // --- BAGIAN 2: LOGIKA TAMBAH/HAPUS BARIS ---
         const tabelRencana = document.getElementById('tabelRencana').getElementsByTagName('tbody')[0];
         const tambahBarisBtn = document.getElementById('tambahBaris');
 
@@ -134,30 +176,20 @@
         }
 
         tambahBarisBtn.addEventListener('click', function() {
-            if (tabelRencana.rows.length === 0) {
-                const newRowHtml = `
-                    <tr>
-                        <input type="hidden" name="rencana_id[]" value="">
-                        <td class="nomor-baris text-center">1</td>
-                        <td><textarea name="sasaran_program[]" class="form-control" rows="2" required></textarea></td>
-                        <td><textarea name="indikator_kinerja[]" class="form-control" rows="2" required></textarea></td>
-                        <td><input type="text" name="satuan[]" class="form-control" required></td>
-                        <td><input type="number" step="any" name="target_utama[]" class="form-control" required></td>
-                        <td><textarea name="kegiatan[]" class="form-control" rows="2"></textarea></td>
-                        <td class="text-center"><button type="button" class="btn btn-danger btn-sm hapus-baris"><i class="bi bi-trash"></i></button></td>
-                    </tr>`;
-                tabelRencana.innerHTML = newRowHtml;
-            } else {
-                const newRow = tabelRencana.rows[0].cloneNode(true);
-                const hiddenInput = newRow.querySelector('input[name="rencana_id[]"]');
-                if (hiddenInput) {
-                    hiddenInput.value = '';
-                }
-                newRow.querySelectorAll('input[type="text"], input[type="number"], textarea').forEach(input => {
-                    input.value = '';
-                });
-                tabelRencana.appendChild(newRow);
+            if (tabelRencana.rows.length === 0) return;
+            const newRow = tabelRencana.rows[0].cloneNode(true);
+            const hiddenInput = newRow.querySelector('input[name="rencana_id[]"]');
+            if (hiddenInput) {
+                hiddenInput.value = '';
             }
+            newRow.querySelectorAll('input[type="text"], input[type="number"], textarea, select').forEach(input => {
+                if(input.tagName === 'SELECT'){
+                    input.selectedIndex = 0;
+                } else {
+                    input.value = '';
+                }
+            });
+            tabelRencana.appendChild(newRow);
             updateRowNumbers();
         });
 
