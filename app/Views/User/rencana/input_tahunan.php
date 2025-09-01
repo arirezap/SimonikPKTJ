@@ -6,6 +6,12 @@
 Input & Kelola Rencana Kerja Tahunan
 <?= $this->endSection() ?>
 
+<?= $this->section('styles') ?>
+<!-- CSS untuk Select2 -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+<?= $this->endSection() ?>
+
 <?= $this->section('content') ?>
 <div class="card">
     <div class="card-body">
@@ -55,7 +61,7 @@ Input & Kelola Rencana Kerja Tahunan
                                 <th style="width: 5%;">No</th>
                                 <th>Sasaran Program/Kegiatan <span class="text-danger">*</span></th>
                                 <th>Indikator Kinerja <span class="text-danger">*</span></th>
-                                <th style="width: 10%;">Satuan <span class="text-danger">*</span></th>
+                                <th style="width: 15%;">Satuan <span class="text-danger">*</span></th>
                                 <th style="width: 15%;">Target Tahunan <span class="text-danger">*</span></th>
                                 <th>Kegiatan</th>
                                 <th style="width: 5%;">Aksi</th>
@@ -68,7 +74,7 @@ Input & Kelola Rencana Kerja Tahunan
                                         <input type="hidden" name="rencana_id[]" value="<?= esc($row['id']) ?>">
                                         <td class="nomor-baris text-center"><?= $index + 1 ?></td>
                                         <td>
-                                            <select name="sasaran_program[]" class="form-select" required>
+                                            <select name="sasaran_program[]" class="form-select select2-dropdown" required>
                                                 <option value="">-- Pilih Sasaran --</option>
                                                 <?php foreach($daftar_sasaran as $sasaran): ?>
                                                     <option value="<?= esc($sasaran['nama_sasaran']) ?>" <?= ($row['sasaran_program'] == $sasaran['nama_sasaran']) ? 'selected' : '' ?>><?= esc($sasaran['nama_sasaran']) ?></option>
@@ -76,7 +82,7 @@ Input & Kelola Rencana Kerja Tahunan
                                             </select>
                                         </td>
                                         <td>
-                                            <select name="indikator_kinerja[]" class="form-select" required>
+                                            <select name="indikator_kinerja[]" class="form-select select2-dropdown" required>
                                                 <option value="">-- Pilih Indikator --</option>
                                                 <?php foreach($daftar_indikator as $indikator): ?>
                                                     <option value="<?= esc($indikator['nama_indikator']) ?>" <?= ($row['indikator_kinerja'] == $indikator['nama_indikator']) ? 'selected' : '' ?>><?= esc($indikator['nama_indikator']) ?></option>
@@ -84,7 +90,7 @@ Input & Kelola Rencana Kerja Tahunan
                                             </select>
                                         </td>
                                         <td>
-                                            <select name="satuan[]" class="form-select" required>
+                                            <select name="satuan[]" class="form-select select2-dropdown" required>
                                                 <option value="">-- Pilih Satuan --</option>
                                                 <?php foreach($daftar_satuan as $satuan): ?>
                                                     <option value="<?= esc($satuan['nama_satuan']) ?>" <?= ($row['satuan'] == $satuan['nama_satuan']) ? 'selected' : '' ?>><?= esc($satuan['nama_satuan']) ?></option>
@@ -101,7 +107,7 @@ Input & Kelola Rencana Kerja Tahunan
                                     <input type="hidden" name="rencana_id[]" value="">
                                     <td class="nomor-baris text-center">1</td>
                                     <td>
-                                        <select name="sasaran_program[]" class="form-select" required>
+                                        <select name="sasaran_program[]" class="form-select select2-dropdown" required>
                                             <option value="">-- Pilih Sasaran --</option>
                                             <?php foreach($daftar_sasaran as $sasaran): ?>
                                                 <option value="<?= esc($sasaran['nama_sasaran']) ?>"><?= esc($sasaran['nama_sasaran']) ?></option>
@@ -109,7 +115,7 @@ Input & Kelola Rencana Kerja Tahunan
                                         </select>
                                     </td>
                                     <td>
-                                        <select name="indikator_kinerja[]" class="form-select" required>
+                                        <select name="indikator_kinerja[]" class="form-select select2-dropdown" required>
                                             <option value="">-- Pilih Indikator --</option>
                                             <?php foreach($daftar_indikator as $indikator): ?>
                                                 <option value="<?= esc($indikator['nama_indikator']) ?>"><?= esc($indikator['nama_indikator']) ?></option>
@@ -117,7 +123,7 @@ Input & Kelola Rencana Kerja Tahunan
                                         </select>
                                     </td>
                                     <td>
-                                        <select name="satuan[]" class="form-select" required>
+                                        <select name="satuan[]" class="form-select select2-dropdown" required>
                                             <option value="">-- Pilih Satuan --</option>
                                             <?php foreach($daftar_satuan as $satuan): ?>
                                                 <option value="<?= esc($satuan['nama_satuan']) ?>"><?= esc($satuan['nama_satuan']) ?></option>
@@ -143,14 +149,64 @@ Input & Kelola Rencana Kerja Tahunan
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
+<!-- jQuery & Select2 JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    $(document).ready(function() {
+        // Fungsi untuk inisialisasi Select2
+        function initSelect2(selector) {
+            selector.select2({
+                theme: 'bootstrap-5',
+                width: '100%'
+            });
+        }
+        
+        // Inisialisasi Select2 pada semua dropdown yang ada saat halaman dimuat
+        initSelect2($('.select2-dropdown'));
+
+        const tabelRencana = $('#tabelRencana tbody');
+        const tambahBarisBtn = $('#tambahBaris');
+
+        function updateRowNumbers() {
+            tabelRencana.find('tr').each(function(index) {
+                $(this).find('.nomor-baris').text(index + 1);
+            });
+        }
+
+        tambahBarisBtn.on('click', function() {
+            const newRow = tabelRencana.find('tr:first').clone();
+            
+            // Hapus instance Select2 yang lama dari baris yang di-clone
+            newRow.find('.select2-container').remove();
+            newRow.find('.select2-dropdown').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').removeAttr('aria-hidden').removeAttr('tabindex');
+
+            newRow.find('input[name="rencana_id[]"]').val('');
+            newRow.find('input[type="text"], input[type="number"], textarea, select').val('');
+            
+            tabelRencana.append(newRow);
+            
+            // Inisialisasi kembali Select2 pada dropdown di baris baru
+            initSelect2(newRow.find('.select2-dropdown'));
+
+            updateRowNumbers();
+        });
+
+        tabelRencana.on('click', '.hapus-baris', function() {
+            if (tabelRencana.find('tr').length > 1) {
+                $(this).closest('tr').remove();
+                updateRowNumbers();
+            } else {
+                alert('Minimal harus ada satu baris rencana.');
+            }
+        });
+
+        // Logika validasi tahun
         const existingYears = <?= $existing_years_json ?? '[]' ?>;
         const tahunSelect = document.getElementById('tahun_anggaran_filter');
         const warningBox = document.getElementById('warning-box');
         const tahunTerpilihSpan = document.getElementById('tahun-terpilih');
         const linkEdit = document.getElementById('link-edit');
-        const formContent = document.getElementById('form-content');
 
         function checkYear(selectedYear) {
             if (existingYears.map(String).includes(selectedYear)) {
@@ -164,47 +220,6 @@ Input & Kelola Rencana Kerja Tahunan
             }
         }
         checkYear(tahunSelect.value);
-
-        const tabelRencana = document.getElementById('tabelRencana').getElementsByTagName('tbody')[0];
-        const tambahBarisBtn = document.getElementById('tambahBaris');
-
-        function updateRowNumbers() {
-            const rows = tabelRencana.getElementsByTagName('tr');
-            for (let i = 0; i < rows.length; i++) {
-                rows[i].querySelector('.nomor-baris').textContent = i + 1;
-            }
-        }
-
-        tambahBarisBtn.addEventListener('click', function() {
-            if (tabelRencana.rows.length === 0) return;
-            const newRow = tabelRencana.rows[0].cloneNode(true);
-            const hiddenInput = newRow.querySelector('input[name="rencana_id[]"]');
-            if (hiddenInput) {
-                hiddenInput.value = '';
-            }
-            newRow.querySelectorAll('input[type="text"], input[type="number"], textarea, select').forEach(input => {
-                if(input.tagName === 'SELECT'){
-                    input.selectedIndex = 0;
-                } else {
-                    input.value = '';
-                }
-            });
-            tabelRencana.appendChild(newRow);
-            updateRowNumbers();
-        });
-
-        tabelRencana.addEventListener('click', function(e) {
-            const btn = e.target.closest('.hapus-baris');
-            if (btn) {
-                if (tabelRencana.rows.length > 1) {
-                    const rowToRemove = btn.closest('tr');
-                    rowToRemove.remove();
-                    updateRowNumbers();
-                } else {
-                    alert('Minimal harus ada satu baris rencana.');
-                }
-            }
-        });
     });
 </script>
 <?= $this->endSection() ?>
