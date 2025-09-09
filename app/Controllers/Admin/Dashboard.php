@@ -12,18 +12,23 @@ class Dashboard extends BaseController
     {
         $rencanaModel = new RencanaKinerjaModel();
         $userModel = new UserModel();
-        $tahun_sekarang = date('Y');
 
-        $all_kinerja = $rencanaModel->where('tahun_anggaran', $tahun_sekarang)->findAll();
+        // Ambil filter tahun dan bulan dari URL
+        $tahun_terpilih = $this->request->getGet('tahun') ?? date('Y');
+        $bulan_terpilih = $this->request->getGet('bulan'); // Bisa null jika "Semua Bulan"
+
+        // Ambil daftar semua Tim/Unit/Pokja untuk filter
+        $unit_pokja = $userModel->whereIn('role', ['manajemen', 'aak', 'kuk'])->findAll();
+        $daftar_tahun = $rencanaModel->select('tahun_anggaran')->distinct()->orderBy('tahun_anggaran', 'DESC')->findAll();
         
-        // PERBAIKAN: Ambil semua pengguna dengan peran yang relevan
-        $users = $userModel->whereIn('role', ['manajemen', 'aak', 'kuk'])->findAll();
+        // --- MULAI LOGIKA PENGOLAHAN DATA ---
+
+        $query = $rencanaModel->where('tahun_anggaran', $tahun_terpilih);
+        
+        $all_kinerja_tahunan = $query->findAll();
 
         $kinerja_per_user = [];
-        $total_persentase_capaian = 0;
-        $total_indikator_valid = 0;
-
-        foreach ($users as $user) {
+        foreach ($unit_pokja as $user) {
             $kinerja_per_user[$user['id']] = [
                 'nama' => $user['nama_lengkap'],
                 'total_target' => 0,
@@ -33,54 +38,67 @@ class Dashboard extends BaseController
             ];
         }
 
-        foreach ($all_kinerja as $kinerja) {
+        $totalCapaianGlobal = 0;
+        $userDenganKinerja = 0;
+
+        foreach ($all_kinerja_tahunan as $kinerja) {
             $user_id = $kinerja['user_id'];
             if (isset($kinerja_per_user[$user_id])) {
                 $target_utama = (float)$kinerja['target_utama'];
-                $realisasi_bulanan = json_decode($kinerja['realisasi_bulanan'], true) ?? [];
-                $total_realisasi = array_sum(array_map('floatval', $realisasi_bulanan));
 
-                $kinerja_per_user[$user_id]['total_target'] += $target_utama;
-                $kinerja_per_user[$user_id]['total_realisasi'] += $total_realisasi;
+                // Kalkulasi realisasi berdasarkan filter bulan
+                $realisasi_bulanan = json_decode($kinerja['realisasi_bulanan'], true) ?? [];
+                $total_realisasi_periode = 0;
+
+                if ($bulan_terpilih && $bulan_terpilih !== 'all') {
+                    $total_realisasi_periode = (float)($realisasi_bulanan[$bulan_terpilih - 1] ?? 0);
+                } else {
+                    $total_realisasi_periode = array_sum(array_map('floatval', $realisasi_bulanan));
+                }
+
+                // Kalkulasi target berdasarkan filter bulan
+                $target_bulanan = json_decode($kinerja['target_bulanan'], true) ?? [];
+                $total_target_periode = 0;
+
+                if ($bulan_terpilih && $bulan_terpilih !== 'all') {
+                    $total_target_periode = (float)($target_bulanan[$bulan_terpilih - 1] ?? 0);
+                } else {
+                    $total_target_periode = $target_utama;
+                }
+
+                $kinerja_per_user[$user_id]['total_target'] += $total_target_periode;
+                $kinerja_per_user[$user_id]['total_realisasi'] += $total_realisasi_periode;
                 $kinerja_per_user[$user_id]['jumlah_indikator']++;
             }
         }
-
-        $performanceDistribution = [
-            'Sangat Baik (>90%)' => 0,
-            'Baik (75-90%)'      => 0,
-            'Cukup (50-75%)'     => 0,
-            'Perlu Perhatian (<50%)' => 0,
-        ];
-
-        foreach ($kinerja_per_user as $id => &$user_data) {
+        
+        // Hitung persentase capaian per user dan global
+        foreach ($kinerja_per_user as &$user_data) { // Gunakan '&' untuk referensi
             if ($user_data['total_target'] > 0) {
                 $capaian = ($user_data['total_realisasi'] / $user_data['total_target']) * 100;
                 $user_data['persentase_capaian'] = $capaian;
-                $total_persentase_capaian += $capaian;
-                $total_indikator_valid++;
-
-                if ($capaian > 90) $performanceDistribution['Sangat Baik (>90%)']++;
-                elseif ($capaian >= 75) $performanceDistribution['Baik (75-90%)']++;
-                elseif ($capaian >= 50) $performanceDistribution['Cukup (50-75%)']++;
-                else $performanceDistribution['Perlu Perhatian (<50%)']++;
+                $totalCapaianGlobal += $capaian;
+                $userDenganKinerja++;
             }
         }
-
-        $rata_rata_capaian_global = ($total_indikator_valid > 0) ? $total_persentase_capaian / $total_indikator_valid : 0;
+        
+        $rataRataCapaianGlobal = ($userDenganKinerja > 0) ? $totalCapaianGlobal / $userDenganKinerja : 0;
+        $totalIndikatorGlobal = array_sum(array_column($kinerja_per_user, 'jumlah_indikator'));
 
         $data = [
             'page_title' => 'Admin Dashboard',
-            'totalIndikator' => count($all_kinerja),
-            'rataRataCapaianGlobal' => $rata_rata_capaian_global,
-            'tahun_sekarang' => $tahun_sekarang,
+            'tahun_sekarang' => date('Y'),
+            'daftar_tahun' => $daftar_tahun,
+            'tahun_terpilih' => $tahun_terpilih,
+            'bulan_terpilih' => $bulan_terpilih,
+            'totalIndikator' => $totalIndikatorGlobal,
+            'rataRataCapaianGlobal' => $rataRataCapaianGlobal,
             'kinerja_per_user' => $kinerja_per_user,
             'chartLabels' => array_column($kinerja_per_user, 'nama'),
             'chartData' => array_column($kinerja_per_user, 'persentase_capaian'),
-            'distribusiLabels' => array_keys($performanceDistribution),
-            'distribusiData' => array_values($performanceDistribution),
         ];
 
         return view('admin/dashboard', $data);
     }
 }
+
