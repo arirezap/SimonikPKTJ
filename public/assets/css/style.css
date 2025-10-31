@@ -19,13 +19,16 @@ body {
 .main-wrapper {
     display: flex;
     width: 100%;
-    overflow-x: hidden;
+    /* PERBAIKAN: overflow-x: hidden; DIHAPUS DARI SINI */
 }
 
 .content-wrapper {
     flex-grow: 1;
     transition: all 0.3s ease-in-out;
     width: 100%;
+    padding: 1.5rem; /* Padding default untuk konten */
+    /* PERBAIKAN: overflow-x: hidden; DIPINDAHKAN KE SINI */
+    overflow-x: hidden;
 }
 
 .sidebar {
@@ -33,6 +36,15 @@ body {
     margin-left: 0;
     transition: margin-left 0.3s ease-in-out;
     width: var(--sidebar-width);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    padding: 1rem;
+    background-color: white;
+    border-right: 1px solid #ddd;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
 }
 
 .sidebar-toggled .sidebar {
@@ -48,7 +60,7 @@ body {
 /* ===================================================================
    LOGIN PAGE STYLES
    =================================================================== */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap");
+/* Font import disarankan dipindah ke <head> HTML */
 
 body.login-page {
     background: linear-gradient(135deg, var(--primary-color) 0%, #6f42c1 100%);
@@ -121,26 +133,24 @@ body.login-page {
 /* ===================================================================
    SIDEBAR STYLING
    =================================================================== */
-.sidebar {
-    background-color: white;
-    border-right: 1px solid #ddd;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
-    height: 100vh;
-    padding: 1rem;
-    position: sticky;
-    top: 0;
-}
-
 .sidebar-header {
     text-align: center;
     padding-bottom: 1rem;
     margin-bottom: 1rem;
     border-bottom: 1px solid #eee;
+    flex-shrink: 0; 
 }
 
 .sidebar-header img {
     max-width: 60px;
     height: auto;
+}
+
+.sidebar-menu {
+    flex-grow: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 5px;
 }
 
 .sidebar .nav-link {
@@ -188,6 +198,22 @@ body.login-page {
     color: white;
 }
 
+.sidebar .menu-divider {
+    margin: 0.5rem 1rem;
+    border-top: 1px solid #eee;
+}
+
+.sidebar .nav-link .sidebar-toggle-icon {
+    font-size: 0.8rem;
+    margin-left: auto;
+    transition: transform 0.3s ease;
+}
+
+.sidebar .nav-link:not(.collapsed) .sidebar-toggle-icon {
+    transform: rotate(-180deg);
+}
+
+
 /* ===================================================================
    DROPDOWN & SELECT2 FIXES
    =================================================================== */
@@ -202,9 +228,8 @@ body.login-page {
 .select2-container--bootstrap-5 .select2-selection--single {
     height: auto !important;
     min-height: calc(1.5em + 0.75rem + 2px);
-    /* PERUBAHAN: Tambahkan max-height untuk membatasi tinggi */
-    max-height: 120px; /* Kira-kira 4 baris, sesuaikan jika perlu */
-    overflow-y: auto; /* Tambahkan scroll jika lebih panjang */
+    max-height: 120px;
+    overflow-y: auto;
 }
 
 .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {

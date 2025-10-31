@@ -19,11 +19,10 @@ $routes->get('/profile', 'Profile::index', ['filter' => 'auth']);
 $routes->post('/profile', 'Profile::update', ['filter' => 'auth']);
 
 // --- Grup Rute Admin ---
-// Akses untuk Admin dan Manajemen
-$routes->group('admin', ['filter' => 'auth:admin,manajemen'], static function ($routes) {
+// Akses untuk Admin, Manajemen, dan Kabag
+$routes->group('admin', ['filter' => 'auth:admin,manajemen,kabag_aak,kabag_kuk'], static function ($routes) {
     $routes->get('dashboard', 'Admin\Dashboard::index');
     $routes->get('monitoring', 'Admin\MonitoringController::index');
-    $routes->get('monitoring/detail/(:num)/(:num)', 'Admin\MonitoringController::detail/$1/$2');
     $routes->get('monitoring/excel/(:num)/(:num)', 'Admin\MonitoringController::exportExcel/$1/$2');
     $routes->get('monitoring/pdf/(:num)/(:num)', 'Admin\MonitoringController::exportPdf/$1/$2');
 
@@ -51,12 +50,26 @@ $routes->group('admin', ['filter' => 'auth:admin,manajemen'], static function ($
         $routes->post('satuan/store', 'Admin\MasterDataController::storeSatuan');
         $routes->post('satuan/update/(:num)', 'Admin\MasterDataController::updateSatuan/$1');
         $routes->post('satuan/delete/(:num)', 'Admin\MasterDataController::deleteSatuan/$1');
+
+        // Kriteria LED
+        $routes->get('led', 'Admin\MasterDataController::led');
+        $routes->post('led/store', 'Admin\MasterDataController::storeLed');
+        $routes->post('led/update/(:num)', 'Admin\MasterDataController::updateLed/$1');
+        $routes->post('led/delete/(:num)', 'Admin\MasterDataController::deleteLed/$1');
+        $routes->post('led/delete-batch', 'Admin\MasterDataController::deleteLedBatch');
+        $routes->post('led/import', 'Admin\MasterDataController::importLed');
+
+        // Kategori LED
+        $routes->get('led-kategori', 'Admin\MasterDataController::led_kategori');
+        $routes->post('led-kategori/store', 'Admin\MasterDataController::storeKategori');
+        $routes->post('led-kategori/update/(:num)', 'Admin\MasterDataController::updateKategori/$1');
+        $routes->post('led-kategori/delete/(:num)', 'Admin\MasterDataController::deleteKategori/$1');
     });
 });
 
 // --- Grup Rute User ---
-// Akses untuk Admin, Manajemen, AAK, dan KUK
-$routes->group('user', ['filter' => 'auth:admin,manajemen,aak,kuk'], static function ($routes) {
+// Akses untuk Admin, Manajemen, Kabag, AAK, KUK, dan SPM
+$routes->group('user', ['filter' => 'auth:admin,manajemen,kabag_aak,kabag_kuk,aak,kuk,spm'], static function ($routes) {
     $routes->get('dashboard', 'User\Dashboard::index');
     $routes->get('rencana/input', 'User\InputRencana::index');
     $routes->post('rencana/store', 'User\InputRencana::store');
@@ -69,7 +82,7 @@ $routes->group('user', ['filter' => 'auth:admin,manajemen,aak,kuk'], static func
     $routes->post('alokasi/update', 'User\AlokasiController::update');
     $routes->get('keuangan/input', 'User\InputKeuangan::index');
     $routes->post('keuangan/store', 'User\InputKeuangan::store');
-
+    
     $routes->group('akademik', static function ($routes) {
         $routes->get('/', 'User\AkademikController::index');
         $routes->get('jadwal', 'User\AkademikController::jadwal');
@@ -82,4 +95,22 @@ $routes->group('user', ['filter' => 'auth:admin,manajemen,aak,kuk'], static func
     $routes->post('diklat/store', 'User\DiklatController::store');
     $routes->post('diklat/update/(:num)', 'User\DiklatController::update/$1');
     $routes->post('diklat/delete/(:num)', 'User\DiklatController::delete/$1');
+});
+
+// --- Grup Rute ECC ---
+// PERBAIKAN: Rute ECC dipecah
+
+// Rute ECC - Publik (Bisa diakses AAK, KUK, Manajemen, Admin, Kabag, dan SPM)
+$routes->group('ecc', ['filter' => 'auth:admin,manajemen,kabag_aak,kabag_kuk,aak,kuk,spm'], static function ($routes) {
+    $routes->get('/', 'EccController::index'); // Dashboard ECC
+    $routes->get('lkps', 'EccController::lkps');
+    // Rute LED dipindah ke sini agar bisa diakses AAK/KUK
+    $routes->get('led', 'EccController::led');
+    $routes->post('led/store', 'EccController::storeLed');
+});
+
+// Rute ECC - Terbatas (Hanya untuk SPM)
+$routes->group('ecc', ['filter' => 'auth:spm'], static function ($routes) {
+    $routes->get('simulasi', 'EccController::simulasi');
+    $routes->post('simulasi/store', 'EccController::storeSimulasi');
 });

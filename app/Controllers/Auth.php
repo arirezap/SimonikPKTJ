@@ -14,8 +14,9 @@ class Auth extends BaseController
     {
         // Jika user sudah login, arahkan ke dashboard yang sesuai
         if (session()->get('isLoggedIn')) {
+            $role = session()->get('role');
             // PERUBAHAN: Cek apakah role ada di dalam array ['admin', 'manajemen']
-            $isAdminOrManajemen = in_array(session()->get('role'), ['admin', 'manajemen']);
+            $isAdminOrManajemen = in_array($role, ['admin', 'manajemen']);
             return redirect()->to($isAdminOrManajemen ? '/admin/dashboard' : '/user/dashboard');
         }
 
@@ -59,7 +60,7 @@ class Auth extends BaseController
             session()->set($sessionData);
 
             // PERUBAHAN: Cek apakah role adalah 'admin' ATAU 'manajemen'
-            if (in_array($user['role'], ['admin', 'manajemen'])) {
+            if (in_array($user['role'], ['admin', 'manajemen', 'kabag_aak', 'kabag_kuk'])) {
                 return redirect()->to('/admin/dashboard');
             } else {
                 return redirect()->to('/user/dashboard');

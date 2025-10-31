@@ -11,9 +11,13 @@ class UserController extends BaseController
     {
         $userModel = new UserModel();
 
+        // PERBARUI: Tambahkan 'spm' ke dalam urutan
         $data = [
             'page_title' => 'Kelola Pengguna',
-            'users'      => $userModel->findAll(),
+            'users'      => $userModel
+                            ->orderBy("FIELD(role, 'admin', 'manajemen', 'spm', 'kabag_aak', 'kabag_kuk', 'aak', 'kuk')")
+                            ->orderBy('nama_lengkap', 'ASC')
+                            ->findAll(),
             'validation' => \Config\Services::validation()
         ];
 
@@ -22,30 +26,30 @@ class UserController extends BaseController
 
     public function store()
     {
-        // PERUBAHAN: Sesuaikan aturan validasi untuk peran baru
+        // PERBARUI: Tambahkan 'spm' ke aturan validasi
         $rules = [
             'nama_lengkap' => 'required',
             'username'     => 'required|is_unique[users.username]',
             'email'        => 'required|valid_email|is_unique[users.email]',
-            'role'         => 'required|in_list[admin,manajemen,aak,kuk]',
+            'role'         => 'required|in_list[admin,manajemen,kabag_aak,kabag_kuk,aak,kuk,spm]',
             'password'     => 'required|min_length[6]',
             'konfirmasi_password' => 'required|matches[password]'
         ];
 
         if (!$this->validate($rules)) {
-            return redirect()->to('/admin/users')->withInput()->with('error', 'Terdapat kesalahan input.')->with('show_modal', 'addUserModal');
+            session()->setFlashdata('error', 'Terdapat kesalahan input. Silakan periksa kembali.');
+            return redirect()->to('/admin/users')->withInput()->with('show_modal', 'addUserModal');
         }
 
         $userModel = new UserModel();
 
-        // Siapkan data untuk disimpan
         $data = [
             'nama_lengkap' => $this->request->getPost('nama_lengkap'),
             'username'     => $this->request->getPost('username'),
             'email'        => $this->request->getPost('email'),
             'role'         => $this->request->getPost('role'),
             'password'     => password_hash($this->request->getPost('password'), PASSWORD_BCRYPT),
-            'foto'         => 'default.png', // <-- TAMBAHKAN BARIS INI
+            'foto'         => 'default.png',
         ];
 
         if ($userModel->insert($data)) {
@@ -55,17 +59,14 @@ class UserController extends BaseController
         return redirect()->back()->with('error', 'Gagal menambahkan pengguna baru.');
     }
 
-    /**
-     * FUNGSI BARU: Memproses pembaruan data pengguna.
-     */
     public function update($id)
     {
-        // PERUBAHAN: Sesuaikan aturan validasi untuk peran baru
+        // PERBARUI: Tambahkan 'spm' ke aturan validasi
         $rules = [
             'nama_lengkap' => 'required',
             'username'     => "required|is_unique[users.username,id,{$id}]",
             'email'        => "required|valid_email|is_unique[users.email,id,{$id}]",
-            'role'         => 'required|in_list[admin,manajemen,aak,kuk]',
+            'role'         => 'required|in_list[admin,manajemen,kabag_aak,kabag_kuk,aak,kuk,spm]',
         ];
 
         // Validasi password hanya jika diisi
@@ -75,7 +76,8 @@ class UserController extends BaseController
         }
 
         if (!$this->validate($rules)) {
-            return redirect()->to('/admin/users')->withInput()->with('error', 'Terdapat kesalahan input. Silakan periksa kembali.')->with('show_modal', 'editUserModal' . $id);
+            session()->setFlashdata('error', 'Terdapat kesalahan input. Silakan periksa kembali.');
+            return redirect()->to('/admin/users')->withInput()->with('show_modal', 'editUserModal-' . $id);
         }
 
         $userModel = new UserModel();
@@ -86,7 +88,6 @@ class UserController extends BaseController
             'role'         => $this->request->getPost('role'),
         ];
 
-        // Jika password diisi, hash dan tambahkan ke data update
         if ($this->request->getPost('password')) {
             $data['password'] = password_hash($this->request->getPost('password'), PASSWORD_BCRYPT);
         }
@@ -98,14 +99,10 @@ class UserController extends BaseController
         return redirect()->back()->with('error', 'Gagal memperbarui data pengguna.');
     }
 
-    /**
-     * FUNGSI BARU: Menghapus data pengguna.
-     */
     public function delete($id)
     {
         $userModel = new UserModel();
 
-        // Jangan biarkan user menghapus dirinya sendiri
         if ($id == session()->get('user_id')) {
             return redirect()->to('/admin/users')->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
         }
