@@ -13,17 +13,11 @@ class LedCriteria extends Model
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
 
-    /**
-     * INI ADALAH PERBAIKANNYA:
-     * Kita ganti 'kategori' dan 'nomor_kriteria' lama dengan
-     * 'prodi', 'id_kategori', dan 'role_assignment' yang baru.
-     */
     protected $allowedFields    = [
         'prodi', 
         'nama_kriteria', 
-        'id_kategori', // Ini yang hilang
+        'id_standar', // <--- PERBAIKAN DI SINI
         'role_assignment'
-        // 'sort_order' sudah kita hapus
     ];
 
     // Dates
@@ -33,7 +27,7 @@ class LedCriteria extends Model
     protected $validationRules      = [
         'prodi'           => 'required|string|max_length[50]',
         'nama_kriteria'   => 'required|string',
-        'id_kategori'     => 'permit_empty|integer',
+        'id_standar'     => 'permit_empty|integer', // <--- PERBAIKAN DI SINI
         'role_assignment' => 'permit_empty|string|max_length[50]',
     ];
     protected $validationMessages   = [

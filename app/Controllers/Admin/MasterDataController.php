@@ -7,8 +7,10 @@ use App\Models\Sasaran;
 use App\Models\Indikator;
 use App\Models\Satuan;
 use App\Models\LedCriteria;
-use App\Models\LedStandar; // Pastikan ini LedStandar
-use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
+use App\Models\LedStandar;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx as XlsxWriter;
+use PhpOffice\PhpSpreadsheet\Reader\Xlsx as XlsxReader;
 
 class MasterDataController extends BaseController
 {
@@ -169,7 +171,7 @@ class MasterDataController extends BaseController
 
         $all_items = $ledModel
             ->select('led_criteria.*, led_standar.nama_standar') 
-            ->join('led_standar', 'led_standar.id = led_criteria.id_kategori', 'left') 
+            ->join('led_standar', 'led_standar.id = led_criteria.id_standar', 'left') 
             ->where('led_criteria.prodi', $selectedProdi) 
             ->orderBy('led_criteria.id', 'ASC') 
             ->findAll();
@@ -190,7 +192,7 @@ class MasterDataController extends BaseController
         $data = [
             'prodi'           => $this->request->getPost('prodi'),
             'nama_kriteria'   => $this->request->getPost('nama_kriteria'),
-            'id_kategori'     => $this->request->getPost('id_kategori') ?: null, // Ini sudah benar
+            'id_standar'     => $this->request->getPost('id_standar') ?: null,
             'role_assignment' => $this->request->getPost('role_assignment'),
         ];
 
@@ -210,11 +212,10 @@ class MasterDataController extends BaseController
     {
         $ledModel = new LedCriteria();
         
-        // INI BAGIAN YANG DIPERBAIKI:
         $data = [
             'prodi'           => $this->request->getPost('prodi'),
             'nama_kriteria'   => $this->request->getPost('nama_kriteria'),
-            'id_kategori'     => $this->request->getPost('id_kategori') ?: null, // Mengambil 'id_kategori'
+            'id_standar'     => $this->request->getPost('id_standar') ?: null,
             'role_assignment' => $this->request->getPost('role_assignment'),
         ];
 
@@ -252,10 +253,98 @@ class MasterDataController extends BaseController
         return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('error', 'Tidak ada data yang dipilih untuk dihapus.');
     }
 
+    public function batchUpdateLed()
+    {
+        $ledModel = new \App\Models\LedCriteria();
+        $prodi = $this->request->getPost('prodi_filter') ?? config('Simonik')->prodiList[0];
+        $ids = $this->request->getPost('ids');
+        
+        $standarId = $this->request->getPost('id_standar');
+        $role = $this->request->getPost('role_assignment');
+
+        if (empty($ids)) {
+            return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('error', 'Tidak ada data yang dipilih untuk diubah.');
+        }
+
+        $dataToUpdate = [];
+
+        if ($standarId !== null && $standarId !== '') {
+            $dataToUpdate['id_standar'] = ($standarId === 'null') ? null : $standarId;
+        }
+
+        if ($role !== null && $role !== '') {
+            $dataToUpdate['role_assignment'] = ($role === 'null') ? null : $role;
+        }
+
+        if (empty($dataToUpdate)) {
+            return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('error', 'Tidak ada perubahan yang dipilih (Standar atau Role).');
+        }
+
+        if ($ledModel->whereIn('id', $ids)->set($dataToUpdate)->update()) {
+            return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('success', 'Data kriteria yang terpilih berhasil diperbarui.');
+        }
+
+        return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('error', 'Gagal memperbarui data kriteria.');
+    }
+
+    public function exportLed()
+    {
+        $ledModel = new LedCriteria();
+        
+        $selectedProdi = $this->request->getGet('prodi');
+
+        if (empty($selectedProdi)) {
+            return redirect()->to('admin/master-data/led')->with('error', 'Silakan pilih prodi terlebih dahulu.');
+        }
+
+        $items = $ledModel
+            ->select('led_criteria.*, led_standar.nama_standar') 
+            ->join('led_standar', 'led_standar.id = led_criteria.id_standar', 'left') 
+            ->where('led_criteria.prodi', $selectedProdi) 
+            ->orderBy('led_criteria.id', 'ASC') 
+            ->findAll();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        
+        $sheet->setTitle($selectedProdi);
+
+        $sheet->setCellValue('A1', 'ID (JANGAN DIUBAH)');
+        $sheet->setCellValue('B1', 'Nama Kriteria/Elemen/Indikator');
+        $sheet->setCellValue('C1', 'Standar');
+        $sheet->setCellValue('D1', 'Penanggung Jawab (aak, kuk, all)');
+        $sheet->getStyle('A1:D1')->getFont()->setBold(true);
+
+        $rowNumber = 2;
+        foreach ($items as $item) {
+            $sheet->setCellValue('A' . $rowNumber, $item['id']);
+            $sheet->setCellValue('B' . $rowNumber, $item['nama_kriteria']);
+            $sheet->setCellValue('C' . $rowNumber, $item['nama_standar']);
+            $sheet->setCellValue('D' . $rowNumber, $item['role_assignment']);
+            $rowNumber++;
+        }
+
+        $sheet->getColumnDimension('A')->setAutoSize(true);
+        $sheet->getColumnDimension('B')->setWidth(80);
+        $sheet->getColumnDimension('C')->setAutoSize(true);
+        $sheet->getColumnDimension('D')->setAutoSize(true);
+        
+        $sheet->getStyle('B2:B'.$rowNumber)->getAlignment()->setWrapText(true);
+
+        $writer = new XlsxWriter($spreadsheet);
+        $fileName = 'Export_LED_' . $selectedProdi . '_' . date('Y-m-d') . '.xlsx';
+        
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . urlencode($fileName) . '"');
+        $writer->save('php://output');
+        exit();
+    }
+
     public function importLed()
     {
         $file = $this->request->getFile('file_excel');
         $prodi = $this->request->getPost('prodi');
+        $ledModel = new LedCriteria();
 
         if (empty($prodi)) {
             return redirect()->to('admin/master-data/led')->with('error', 'Harap pilih Program Studi tujuan import.');
@@ -265,34 +354,90 @@ class MasterDataController extends BaseController
              return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('error', 'File tidak valid. Harap unggah file .xlsx');
         }
 
-        $reader = new Xlsx();
+        $reader = new XlsxReader();
         $spreadsheet = $reader->load($file->getTempName());
-        $sheet = $spreadsheet->getActiveSheet()->toArray();
+        $sheet = $spreadsheet->getActiveSheet()->toArray(null, true, true, true); 
 
         $standarModel = new LedStandar(); 
         $standarList = $standarModel->findAll(); 
         $standarMap = array_column($standarList, 'id', 'nama_standar'); 
 
         $dataToInsert = [];
-        foreach (array_slice($sheet, 1) as $row) {
-            if (!empty($row[0])) { 
-                $namaStandar = $row[1] ?? null; 
-                $idStandar = ($namaStandar && isset($standarMap[$namaStandar])) ? $standarMap[$namaStandar] : null; 
+        $dataToUpdate = [];
+        $updatedCount = 0;
+        $insertedCount = 0;
+        $skippedCount = 0;
+        $excelRowNames = []; 
 
-                $dataToInsert[] = [
-                    'prodi'           => $prodi, 
-                    'nama_kriteria'   => $row[0], 
-                    'id_kategori'     => $idStandar,
-                    'role_assignment' => $row[2] ?? null
-                ];
+        $allCriteriaForProdi = $ledModel->where('prodi', $prodi)
+                                        ->select('id, nama_kriteria')
+                                        ->findAll();
+        $criteriaNameMap = array_column($allCriteriaForProdi, 'id', 'nama_kriteria');
+        $criteriaIdMap = array_column($allCriteriaForProdi, 'id', 'id');
+
+        foreach (array_slice($sheet, 1, null, true) as $rowIndex => $row) {
+            
+            $id = trim($row['A'] ?? '');
+            $namaKriteria = trim($row['B'] ?? '');
+            $namaStandar = trim($row['C'] ?? '');
+            $roleAssignment = trim($row['D'] ?? '');
+
+            if (empty($namaKriteria)) {
+                continue; 
+            }
+
+            if (isset($excelRowNames[$namaKriteria])) {
+                $skippedCount++;
+                continue;
+            }
+            $excelRowNames[$namaKriteria] = true;
+
+            $idStandar = ($namaStandar && isset($standarMap[$namaStandar])) ? $standarMap[$namaStandar] : null; 
+
+            $rowData = [
+                'prodi'           => $prodi, 
+                'nama_kriteria'   => $namaKriteria,
+                'id_standar'     => $idStandar, 
+                'role_assignment' => $roleAssignment
+            ];
+
+            $foundById = false;
+            if (!empty($id) && is_numeric($id)) {
+                if (isset($criteriaIdMap[$id])) {
+                    $rowData['id'] = $id;
+                    $dataToUpdate[] = $rowData;
+                    $foundById = true;
+                }
+            }
+
+            if (!$foundById) {
+                if (isset($criteriaNameMap[$namaKriteria])) {
+                    $rowData['id'] = $criteriaNameMap[$namaKriteria];
+                    $dataToUpdate[] = $rowData;
+                } else {
+                    $dataToInsert[] = $rowData;
+                }
             }
         }
 
-        if (!empty($dataToInsert)) {
-            (new LedCriteria())->insertBatch($dataToInsert);
-            return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('success', 'Data berhasil diimpor untuk prodi ' . $prodi);
+        if (!empty($dataToUpdate)) {
+            $ledModel->updateBatch($dataToUpdate, 'id');
+            $updatedCount = count($dataToUpdate);
         }
-        return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('error', 'Gagal mengimpor data atau file kosong.');
+        if (!empty($dataToInsert)) {
+            $ledModel->insertBatch($dataToInsert);
+            $insertedCount = count($dataToInsert);
+        }
+
+        if ($updatedCount > 0 || $insertedCount > 0 || $skippedCount > 0) {
+            $message = "Import berhasil: {$insertedCount} data baru ditambahkan, {$updatedCount} data diperbarui.";
+            if ($skippedCount > 0) {
+                $message .= " {$skippedCount} baris duplikat (berdasarkan nama) di file Excel dilewati.";
+            }
+            return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('success', $message);
+        }
+
+        return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('error', 'Gagal mengimpor data atau file kosong (tidak ada baris yang diproses).');
     }
 
     // ==========================================================

@@ -53,10 +53,15 @@ $routes->group('admin', ['filter' => 'auth:admin,manajemen,kabag_aak,kabag_kuk']
 
         // Kriteria LED
         $routes->get('led', 'Admin\MasterDataController::led');
+        
+        // --- RUTE BARU DITAMBAHKAN DI SINI ---
+        $routes->get('led/export', 'Admin\MasterDataController::exportLed'); 
+
         $routes->post('led/store', 'Admin\MasterDataController::storeLed');
         $routes->post('led/update/(:num)', 'Admin\MasterDataController::updateLed/$1');
         $routes->post('led/delete/(:num)', 'Admin\MasterDataController::deleteLed/$1');
         $routes->post('led/delete-batch', 'Admin\MasterDataController::deleteLedBatch');
+        $routes->post('led/batch-update', 'Admin\MasterDataController::batchUpdateLed');
         $routes->post('led/import', 'Admin\MasterDataController::importLed');
 
         // Standar LED (Sudah diubah dari kategori)

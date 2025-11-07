@@ -5,22 +5,17 @@ namespace App\Controllers;
 use App\Controllers\BaseController;
 use App\Models\LedCriteria;
 use App\Models\LedSubmission;
-use App\Models\LedStandar; // Perubahan
+use App\Models\LedStandar;
 use App\Models\LedScore; 
-use App\Controllers\Traits\EccDataTrait; // Perubahan
+use App\Controllers\Traits\EccDataTrait;
 
 class EccController extends BaseController
 {
-    use EccDataTrait; // Perubahan
+    use EccDataTrait;
 
-    /**
-     * Menampilkan halaman Dashboard ECC (Diagram Jaring Laba-laba)
-     */
     public function index()
     {
         $selectedTahun = $this->request->getGet('tahun') ?? date('Y');
-
-        // PERBAIKAN: Gunakan Trait
         $eccData = $this->getDashboardEccData($selectedTahun);
 
         $data = [
@@ -32,9 +27,6 @@ class EccController extends BaseController
         return view('ecc/ecc_index', $data);
     }
 
-    /**
-     * Menampilkan halaman LKPS
-     */
     public function lkps()
     {
         $dataLkps = [
@@ -59,9 +51,6 @@ class EccController extends BaseController
         return view('ecc/lkps_index', $data);
     }
 
-    /**
-     * Menampilkan halaman LED (Checklist Kriteria)
-     */
     public function led()
     {
         $criteriaModel = new LedCriteria();
@@ -72,10 +61,12 @@ class EccController extends BaseController
         
         $role = session()->get('role');
 
-        // Ambil semua data master kriteria, filter berdasarkan peran DAN PRODI
         $criteriaQuery = $criteriaModel
-            ->select('led_criteria.*, led_standar.nama_standar') // Perubahan
-            ->join('led_standar', 'led_standar.id = led_criteria.id_standar', 'left') // Perubahan
+            ->select('led_criteria.*, led_standar.nama_standar')
+            
+            // --- PERBAIKAN SEBENARNYA ADA DI SINI ---
+            ->join('led_standar', 'led_standar.id = led_criteria.id_standar', 'left') 
+            
             ->where('led_criteria.prodi', $selectedProdi);
         
         if (in_array($role, ['admin', 'manajemen'])) {
@@ -117,9 +108,6 @@ class EccController extends BaseController
         return view('ecc/led_index', $data);
     }
 
-    /**
-     * Menyimpan data checklist LED
-     */
     public function storeLed()
     {
         $db = \Config\Database::connect();
@@ -216,8 +204,11 @@ class EccController extends BaseController
         $selectedProdi = $this->request->getGet('prodi') ?? config('Simonik')->prodiList[0];
 
         $all_criteria_raw = $criteriaModel
-            ->select('led_criteria.*, led_standar.nama_standar') // Perubahan
-            ->join('led_standar', 'led_standar.id = led_criteria.id_standar', 'left') // Perubahan
+            ->select('led_criteria.*, led_standar.nama_standar')
+            
+            // --- PERBAIKAN SEBENARNYA ADA DI SINI ---
+            ->join('led_standar', 'led_standar.id = led_criteria.id_standar', 'left') 
+            
             ->where('led_criteria.prodi', $selectedProdi)
             ->orderBy('led_criteria.id', 'ASC')
             ->findAll();

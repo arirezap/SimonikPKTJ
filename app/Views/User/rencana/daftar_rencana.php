@@ -63,12 +63,12 @@
                         <?php $no = 1; foreach ($rencana_kinerja as $row): ?>
                             <?php
                                 // --- CALCULATE REALIZATION PROGRESS ---
-                                $realisasi_bulanan = json_decode($row['realisasi_bulanan'], true) ?? [];
-                                $total_realisasi = array_sum($realisasi_bulanan);
+                                // PERBAIKAN: Hapus json_decode(). Model RencanaKinerja sudah otomatis mengubahnya jadi array.
+                                $realisasi_bulanan = $row['realisasi_bulanan'] ?? [];
+                                $total_realisasi = array_sum(array_map('floatval', $realisasi_bulanan));
                                 $target_utama = (float)$row['target_utama'];
                                 $persentase_capaian = 0;
                                 if ($target_utama > 0) {
-                                    // PERUBAHAN: Menghapus fungsi min()
                                     $persentase_capaian = ($total_realisasi / $target_utama) * 100;
                                 }
                                 // Untuk tampilan progress bar, tetap batasi di 100% agar tidak aneh

@@ -29,7 +29,8 @@
             <?php if (!empty($rencana_kinerja)): ?>
                 <?php $no = 1; foreach ($rencana_kinerja as $rencana): ?>
                     <?php
-                        $realisasi_bulanan = json_decode($rencana['realisasi_bulanan'], true) ?? [];
+                        // PERBAIKAN: Hapus json_decode() karena Model RencanaKinerja sudah otomatis mengubahnya jadi array
+                        $realisasi_bulanan = $rencana['realisasi_bulanan'] ?? [];
                         $total_realisasi = array_sum(array_map('floatval', $realisasi_bulanan));
                         $target_utama = (float)$rencana['target_utama'];
                         $persentase_capaian = ($target_utama > 0) ? ($total_realisasi / $target_utama) * 100 : 0;
