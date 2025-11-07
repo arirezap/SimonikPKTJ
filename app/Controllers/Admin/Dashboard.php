@@ -5,36 +5,35 @@ namespace App\Controllers\Admin;
 use App\Controllers\BaseController;
 use App\Models\RencanaKinerja as RencanaKinerjaModel;
 use App\Models\User as UserModel;
+// PERBAIKAN: Hapus model ECC, panggil Trait
+use App\Controllers\Traits\EccDataTrait; 
 
 class Dashboard extends BaseController
 {
+    use EccDataTrait; // Gunakan Trait
+
     public function index()
     {
         $rencanaModel = new RencanaKinerjaModel();
         $userModel = new UserModel();
 
-        // Ambil filter tahun dan bulan dari URL
         $tahun_terpilih = $this->request->getGet('tahun') ?? date('Y');
-        $bulan_terpilih = $this->request->getGet('bulan'); // Bisa null jika "Semua Bulan"
+        $bulan_terpilih = $this->request->getGet('bulan');
 
-        // Ambil daftar semua Tim/Unit/Pokja untuk filter
+        // Panggil fungsi dari Trait
+        $eccData = $this->getDashboardEccData($tahun_terpilih);
+        
         $unit_pokja = $userModel->whereIn('role', ['manajemen', 'aak', 'kuk'])->findAll();
-        $daftar_tahun = $rencanaModel->select('tahun_anggaran')->distinct()->orderBy('tahun_anggaran', 'DESC')->findAll();
         
-        // --- MULAI LOGIKA PENGOLAHAN DATA ---
-
+        // --- MULAI LOGIKA PENGOLAHAN DATA KINERJA ---
         $query = $rencanaModel->where('tahun_anggaran', $tahun_terpilih);
-        
         $all_kinerja_tahunan = $query->findAll();
-
         $kinerja_per_user = [];
         foreach ($unit_pokja as $user) {
             $kinerja_per_user[$user['id']] = [
                 'nama' => $user['nama_lengkap'],
-                'total_target' => 0,
-                'total_realisasi' => 0,
-                'jumlah_indikator' => 0,
-                'persentase_capaian' => 0
+                'total_target' => 0, 'total_realisasi' => 0,
+                'jumlah_indikator' => 0, 'persentase_capaian' => 0
             ];
         }
 
@@ -45,9 +44,8 @@ class Dashboard extends BaseController
             $user_id = $kinerja['user_id'];
             if (isset($kinerja_per_user[$user_id])) {
                 $target_utama = (float)$kinerja['target_utama'];
-
-                // Kalkulasi realisasi berdasarkan filter bulan
-                $realisasi_bulanan = json_decode($kinerja['realisasi_bulanan'], true) ?? [];
+                
+                $realisasi_bulanan = $kinerja['realisasi_bulanan'] ?? [];
                 $total_realisasi_periode = 0;
 
                 if ($bulan_terpilih && $bulan_terpilih !== 'all') {
@@ -56,8 +54,7 @@ class Dashboard extends BaseController
                     $total_realisasi_periode = array_sum(array_map('floatval', $realisasi_bulanan));
                 }
 
-                // Kalkulasi target berdasarkan filter bulan
-                $target_bulanan = json_decode($kinerja['target_bulanan'], true) ?? [];
+                $target_bulanan = $kinerja['target_bulanan'] ?? [];
                 $total_target_periode = 0;
 
                 if ($bulan_terpilih && $bulan_terpilih !== 'all') {
@@ -72,8 +69,7 @@ class Dashboard extends BaseController
             }
         }
         
-        // Hitung persentase capaian per user dan global
-        foreach ($kinerja_per_user as &$user_data) { // Gunakan '&' untuk referensi
+        foreach ($kinerja_per_user as &$user_data) {
             if ($user_data['total_target'] > 0) {
                 $capaian = ($user_data['total_realisasi'] / $user_data['total_target']) * 100;
                 $user_data['persentase_capaian'] = $capaian;
@@ -88,7 +84,7 @@ class Dashboard extends BaseController
         $data = [
             'page_title' => 'Admin Dashboard',
             'tahun_sekarang' => date('Y'),
-            'daftar_tahun' => $daftar_tahun,
+            'daftar_tahun' => $eccData['daftar_tahun'],
             'tahun_terpilih' => $tahun_terpilih,
             'bulan_terpilih' => $bulan_terpilih,
             'totalIndikator' => $totalIndikatorGlobal,
@@ -96,9 +92,9 @@ class Dashboard extends BaseController
             'kinerja_per_user' => $kinerja_per_user,
             'chartLabels' => array_column($kinerja_per_user, 'nama'),
             'chartData' => array_column($kinerja_per_user, 'persentase_capaian'),
+            'prodiData' => $eccData['prodiData'],
         ];
 
         return view('admin/dashboard', $data);
     }
 }
-

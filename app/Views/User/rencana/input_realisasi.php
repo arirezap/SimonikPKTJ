@@ -41,8 +41,9 @@
                             <?php $no = 1;
                             foreach ($rencana_kinerja as $row): ?>
                                 <?php
-                                $target_bulanan = json_decode($row['target_bulanan'], true);
-                                $realisasi_bulanan = json_decode($row['realisasi_bulanan'], true);
+                                // PERBAIKAN: Tidak perlu json_decode
+                                $target_bulanan = $row['target_bulanan'];
+                                $realisasi_bulanan = $row['realisasi_bulanan'];
                                 $target_bulan_ini = $target_bulanan[$bulan_sekarang - 1] ?? 0;
                                 $realisasi_bulan_ini = $realisasi_bulanan[$bulan_sekarang - 1] ?? '';
                                 ?>

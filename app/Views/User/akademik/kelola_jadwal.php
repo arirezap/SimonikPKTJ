@@ -45,7 +45,6 @@
     </div>
 </div>
 
-<!-- Modal Tambah Jadwal -->
 <div class="modal fade" id="addJadwalModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -59,9 +58,10 @@
                     <div class="mb-3">
                         <label class="form-label">Program Studi</label>
                         <select name="prodi" class="form-select" required>
-                            <option value="RSTJ">Rekayasa Sistem Transportasi Jalan</option>
-                            <option value="TRO">Teknologi Rekayasa Otomotif</option>
-                            <option value="TO">Teknologi Otomotif</option>
+                            <?php $prodiList = config('Simonik')->prodiList; ?>
+                            <?php foreach($prodiList as $prodi): ?>
+                                <option value="<?= $prodi; ?>"><?= $prodi; ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="mb-3">

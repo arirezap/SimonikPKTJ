@@ -22,22 +22,19 @@ $isEccActive = str_starts_with($current_uri, 'ecc');
         <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ">
     </div>
 
-    <!-- Wrapper untuk menu agar bisa scroll -->
     <div class="sidebar-menu">
         <ul class="nav flex-column">
 
             <?php if ($role === 'admin'): ?>
-                <!-- ================= MENU KHUSUS ADMIN (SEMUA AKSES) ================= -->
                 <li class="nav-item">
                     <a href="<?= site_url('admin/dashboard') ?>" class="nav-link <?= ($current_uri == 'admin/dashboard') ? 'active' : '' ?>">
                         <i class="bi bi-grid-fill"></i><span>Dashboard</span>
                     </a>
                 </li>
 
-                <!-- Menu Kinerja -->
                 <li class="nav-item">
                     <a class="nav-link <?= $isKinerjaActive ? '' : 'collapsed' ?>" href="#kinerjaSubmenu" data-bs-toggle="collapse" role="button">
-                        <i class="bi bi-graph-up-arrow"></i><span>Kinerja</span>
+                        <i class="bi bi-graph-up-arrow"></i><span>Kinerja (Input)</span>
                         <i class="bi bi-chevron-down sidebar-toggle-icon"></i>
                     </a>
                     <div class="collapse <?= $isKinerjaActive ? 'show' : '' ?>" id="kinerjaSubmenu">
@@ -51,7 +48,6 @@ $isEccActive = str_starts_with($current_uri, 'ecc');
                     </div>
                 </li>
 
-                <!-- Menu Akademik -->
                 <li class="nav-item">
                     <a class="nav-link <?= $isAkademikActive ? '' : 'collapsed' ?>" href="#akademikSubmenu" data-bs-toggle="collapse" role="button">
                         <i class="bi bi-book-half"></i><span>Data Akademik</span>
@@ -67,7 +63,6 @@ $isEccActive = str_starts_with($current_uri, 'ecc');
                 <li class="nav-item"><a href="<?= site_url('user/ketarunaan') ?>" class="nav-link <?= ($current_uri == 'user/ketarunaan') ? 'active' : '' ?>"><i class="bi bi-shield-check"></i><span>Data Ketarunaan</span></a></li>
                 <li class="nav-item"><a href="<?= site_url('user/diklat') ?>" class="nav-link <?= ($current_uri == 'user/diklat') ? 'active' : '' ?>"><i class="bi bi-easel-fill"></i><span>Data Diklat</span></a></li>
 
-                <!-- Menu Manajemen -->
                 <li class="nav-item"><a href="<?= site_url('admin/monitoring') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/monitoring')) ? 'active' : '' ?>"><i class="bi bi-kanban-fill"></i><span>Monitoring Kinerja</span></a></li>
                 <li class="nav-item">
                     <a class="nav-link <?= $isMasterDataActive ? '' : 'collapsed' ?>" href="#masterSubmenu" data-bs-toggle="collapse" role="button">
@@ -81,14 +76,13 @@ $isEccActive = str_starts_with($current_uri, 'ecc');
                             <li class="nav-item"><a href="<?= site_url('admin/master-data/satuan') ?>" class="nav-link sub-link <?= ($current_uri == 'admin/master-data/satuan') ? 'active' : '' ?>"><span>Satuan</span></a></li>
                             <li class="menu-divider"></li>
                             <li class="nav-item"><a href="<?= site_url('admin/master-data/led') ?>" class="nav-link sub-link <?= ($current_uri == 'admin/master-data/led') ? 'active' : '' ?>"><span>Kriteria LED</span></a></li>
-                            <li class="nav-item"><a href="<?= site_url('admin/master-data/led-kategori') ?>" class="nav-link sub-link <?= ($current_uri == 'admin/master-data/led-kategori') ? 'active' : '' ?>"><span>Kategori LED</span></a></li>
+                            <li class="nav-item"><a href="<?= site_url('admin/master-data/led-standar') ?>" class="nav-link sub-link <?= ($current_uri == 'admin/master-data/led-standar') ? 'active' : '' ?>"><span>Standar LED</span></a></li>
                         </ul>
                     </div>
                 </li>
                 <li class="nav-item"><a href="<?= site_url('admin/users') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/users')) ? 'active' : '' ?>"><i class="bi bi-people-fill"></i><span>Kelola Pengguna</span></a></li>
 
             <?php elseif ($role === 'manajemen'): ?>
-                <!-- ================= MENU GABUNGAN UNTUK MANAJEMEN ================= -->
                 <li class="nav-item"><a href="<?= site_url('admin/dashboard') ?>" class="nav-link <?= ($current_uri == 'admin/dashboard') ? 'active' : '' ?>"><i class="bi bi-grid-fill"></i><span>Dashboard Global</span></a></li>
                 <li class="nav-item">
                     <a class="nav-link <?= $isKinerjaActive ? '' : 'collapsed' ?>" href="#kinerjaSubmenu" data-bs-toggle="collapse" role="button">
@@ -116,13 +110,12 @@ $isEccActive = str_starts_with($current_uri, 'ecc');
                             <li class="nav-item"><a href="<?= site_url('admin/master-data/satuan') ?>" class="nav-link sub-link <?= ($current_uri == 'admin/master-data/satuan') ? 'active' : '' ?>"><span>Satuan</span></a></li>
                             <li class="menu-divider"></li>
                             <li class="nav-item"><a href="<?= site_url('admin/master-data/led') ?>" class="nav-link sub-link <?= ($current_uri == 'admin/master-data/led') ? 'active' : '' ?>"><span>Kriteria LED</span></a></li>
-                            <li class="nav-item"><a href="<?= site_url('admin/master-data/led-kategori') ?>" class="nav-link sub-link <?= ($current_uri == 'admin/master-data/led-kategori') ? 'active' : '' ?>"><span>Kategori LED</span></a></li>
+                            <li class="nav-item"><a href="<?= site_url('admin/master-data/led-standar') ?>" class="nav-link sub-link <?= ($current_uri == 'admin/master-data/led-standar') ? 'active' : '' ?>"><span>Standar LED</span></a></li>
                         </ul>
                     </div>
                 </li>
 
             <?php elseif ($role === 'kabag_aak'): ?>
-                <!-- ================= MENU KHUSUS KABAG AAK ================= -->
                 <li class="nav-item"><a href="<?= site_url('admin/dashboard') ?>" class="nav-link <?= ($current_uri == 'admin/dashboard') ? 'active' : '' ?>"><i class="bi bi-grid-fill"></i><span>Dashboard Global</span></a></li>
                 <li class="nav-item">
                     <a class="nav-link <?= $isKinerjaActive ? '' : 'collapsed' ?>" href="#kinerjaSubmenu" data-bs-toggle="collapse" role="button">
@@ -154,7 +147,6 @@ $isEccActive = str_starts_with($current_uri, 'ecc');
                 <li class="nav-item"><a href="<?= site_url('user/diklat') ?>" class="nav-link <?= ($current_uri == 'user/diklat') ? 'active' : '' ?>"><i class="bi bi-easel-fill"></i><span>Data Diklat</span></a></li>
 
             <?php elseif ($role === 'kabag_kuk'): ?>
-                <!-- ================= MENU KHUSUS KABAG KUK ================= -->
                 <li class="nav-item"><a href="<?= site_url('admin/dashboard') ?>" class="nav-link <?= ($current_uri == 'admin/dashboard') ? 'active' : '' ?>"><i class="bi bi-grid-fill"></i><span>Dashboard Global</span></a></li>
                 <li class="nav-item">
                     <a class="nav-link <?= $isKinerjaActive ? '' : 'collapsed' ?>" href="#kinerjaSubmenu" data-bs-toggle="collapse" role="button">
@@ -173,8 +165,7 @@ $isEccActive = str_starts_with($current_uri, 'ecc');
                 </li>
                 <li class="nav-item"><a href="<?= site_url('admin/monitoring') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/monitoring')) ? 'active' : '' ?>"><i class="bi bi-kanban-fill"></i><span>Monitoring Tim KUK</span></a></li>
 
-            <?php elseif (in_array($role, ['aak', 'spm'])): // PERUBAHAN: Gabungkan AAK dan SPM ?>
-                <!-- ================= MENU KHUSUS AAK ================= -->
+            <?php elseif (in_array($role, ['aak', 'spm'])): ?>
                 <li class="nav-item"><a href="<?= site_url('user/dashboard') ?>" class="nav-link <?= ($current_uri == 'user/dashboard') ? 'active' : '' ?>"><i class="bi bi-grid-fill"></i><span>Dashboard</span></a></li>
                 <li class="nav-item">
                     <a class="nav-link <?= $isKinerjaActive ? '' : 'collapsed' ?>" href="#kinerjaSubmenu" data-bs-toggle="collapse" role="button">
@@ -205,7 +196,6 @@ $isEccActive = str_starts_with($current_uri, 'ecc');
                 <li class="nav-item"><a href="<?= site_url('user/diklat') ?>" class="nav-link <?= ($current_uri == 'user/diklat') ? 'active' : '' ?>"><i class="bi bi-easel-fill"></i><span>Data Diklat</span></a></li>
 
             <?php elseif ($role === 'kuk'): ?>
-                <!-- ================= MENU KHUSUS KUK ================= -->
                 <li class="nav-item"><a href="<?= site_url('user/dashboard') ?>" class="nav-link <?= ($current_uri == 'user/dashboard') ? 'active' : '' ?>"><i class="bi bi-grid-fill"></i><span>Dashboard</span></a></li>
                 <li class="nav-item">
                     <a class="nav-link <?= $isKinerjaActive ? '' : 'collapsed' ?>" href="#kinerjaSubmenu" data-bs-toggle="collapse" role="button">
@@ -225,7 +215,6 @@ $isEccActive = str_starts_with($current_uri, 'ecc');
 
             <?php endif; ?>
 
-            <!-- ================= MENU BERSAMA UNTUK SEMUA ROLE ================= -->
             <li class="menu-divider-major"></li>
 
             <li class="nav-item">
@@ -238,8 +227,7 @@ $isEccActive = str_starts_with($current_uri, 'ecc');
                         <li class="nav-item"><a href="<?= site_url('ecc') ?>" class="nav-link sub-link <?= ($current_uri == 'ecc') ? 'active' : '' ?>"><span>Dashboard ECC</span></a></li>
                         <li class="nav-item"><a href="<?= site_url('ecc/led') ?>" class="nav-link sub-link <?= ($current_uri == 'ecc/led') ? 'active' : '' ?>"><span>LED</span></a></li>
 
-                        <?php if ($role === 'spm'): // Tampilkan Simulasi HANYA untuk SPM
-                        ?>
+                        <?php if ($role === 'spm' || $role === 'admin'): ?>
                             <li class="nav-item"><a href="<?= site_url('ecc/simulasi') ?>" class="nav-link sub-link <?= ($current_uri == 'ecc/simulasi') ? 'active' : '' ?>"><span>Simulasi Penilaian</span></a></li>
                         <?php endif; ?>
                     </ul>
@@ -257,5 +245,4 @@ $isEccActive = str_starts_with($current_uri, 'ecc');
                 </a>
             </li>
         </ul>
-    </div> <!-- Penutup div .sidebar-menu -->
-</div>
+    </div> </div>

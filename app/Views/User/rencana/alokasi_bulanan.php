@@ -40,7 +40,6 @@
 
             <?php if(!empty($rencana_kinerja)): ?>
                 
-                <!-- Navigasi Tab untuk Bulan -->
                 <ul class="nav nav-tabs" id="bulanTab" role="tablist">
                     <?php 
                         $bulan_sekarang = date('n');
@@ -49,14 +48,12 @@
                     ?>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link <?= ($i == $bulan_sekarang && $tahun_terpilih == $tahun_sekarang) ? 'active' : '' ?>" id="tab-<?= $i ?>" data-bs-toggle="tab" data-bs-target="#konten-<?= $i ?>" type="button" role="tab" aria-controls="konten-<?= $i ?>" aria-selected="<?= ($i == $bulan_sekarang && $tahun_terpilih == $tahun_sekarang) ? 'true' : 'false' ?>">
-                                <!-- PERUBAHAN: Menggunakan helper bulan_indo() -->
                                 <?= bulan_indo($i) ?>
                             </button>
                         </li>
                     <?php endfor; ?>
                 </ul>
 
-                <!-- Konten untuk Setiap Tab -->
                 <div class="tab-content p-3 border border-top-0" id="bulanTabContent">
                     <?php for ($i=0; $i<12; $i++): ?>
                         <?php
@@ -79,8 +76,9 @@
                                     <tbody>
                                         <?php foreach($rencana_kinerja as $row): ?>
                                             <?php 
-                                                $target_bulanan = json_decode($row['target_bulanan'], true);
-                                                $realisasi_bulanan = json_decode($row['realisasi_bulanan'], true);
+                                                // PERBAIKAN: Tidak perlu json_decode
+                                                $target_bulanan = $row['target_bulanan'];
+                                                $realisasi_bulanan = $row['realisasi_bulanan'];
                                             ?>
                                             <tr>
                                                 <td>

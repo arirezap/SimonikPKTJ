@@ -51,11 +51,15 @@ class InputRealisasi extends BaseController
                         $rencana = $rencanaModel->find($id_rencana);
                         // Pastikan data milik user yang benar
                         if ($rencana && $rencana['user_id'] == $user_id) {
-                            $realisasi_data = json_decode($rencana['realisasi_bulanan'], true) ?? array_fill(0, 12, null);
+                            
+                            // PERBAIKAN: Tidak perlu json_decode, $rencana['realisasi_bulanan'] sudah jadi array
+                            $realisasi_data = $rencana['realisasi_bulanan'];
+                            
                             // Update nilai untuk bulan sekarang
                             $realisasi_data[$bulan_sekarang - 1] = $nilai_realisasi;
                             
-                            $rencanaModel->update($id_rencana, ['realisasi_bulanan' => json_encode($realisasi_data)]);
+                            // PERBAIKAN: Tidak perlu json_encode, Model akan menanganinya
+                            $rencanaModel->update($id_rencana, ['realisasi_bulanan' => $realisasi_data]);
                         }
                     }
                 }

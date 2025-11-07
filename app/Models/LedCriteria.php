@@ -13,22 +13,32 @@ class LedCriteria extends Model
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
 
-    // PERBARUI: Tambahkan 'kategori' dan 'role_assignment'
-    protected $allowedFields    = ['nomor_kriteria', 'nama_kriteria', 'kategori', 'role_assignment'];
+    /**
+     * INI ADALAH PERBAIKANNYA:
+     * Kita ganti 'kategori' dan 'nomor_kriteria' lama dengan
+     * 'prodi', 'id_kategori', dan 'role_assignment' yang baru.
+     */
+    protected $allowedFields    = [
+        'prodi', 
+        'nama_kriteria', 
+        'id_kategori', // Ini yang hilang
+        'role_assignment'
+        // 'sort_order' sudah kita hapus
+    ];
 
     // Dates
-    protected $useTimestamps = false; // Di file migrasi kita tidak menambahkannya, jadi ini false
+    protected $useTimestamps = false; 
 
     // Validation
     protected $validationRules      = [
-        'nomor_kriteria' => 'required|string|max_length[50]',
-        'nama_kriteria'  => 'required|string',
-        'kategori'       => 'permit_empty|string|max_length[255]', // Kategori boleh kosong
-        'role_assignment'=> 'permit_empty|string|max_length[50]', // Penugasan peran boleh kosong
+        'prodi'           => 'required|string|max_length[50]',
+        'nama_kriteria'   => 'required|string',
+        'id_kategori'     => 'permit_empty|integer',
+        'role_assignment' => 'permit_empty|string|max_length[50]',
     ];
     protected $validationMessages   = [
-        'nomor_kriteria' => [
-            'required' => 'Nomor kriteria wajib diisi.',
+        'prodi' => [
+            'required' => 'Program Studi wajib diisi.',
         ],
         'nama_kriteria' => [
             'required' => 'Nama kriteria wajib diisi.',

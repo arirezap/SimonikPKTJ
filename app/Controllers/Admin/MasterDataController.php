@@ -7,7 +7,7 @@ use App\Models\Sasaran;
 use App\Models\Indikator;
 use App\Models\Satuan;
 use App\Models\LedCriteria;
-use App\Models\LedCategory; // Pastikan ini di-import
+use App\Models\LedStandar; // Pastikan ini LedStandar
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
 
 class MasterDataController extends BaseController
@@ -157,27 +157,29 @@ class MasterDataController extends BaseController
     }
     
     // ==========================================================
-    // FUNGSI-FUNGSI UNTUK KRITERIA LED (DENGAN KATEGORI)
+    // FUNGSI-FUNGSI UNTUK KRITERIA LED (DENGAN STANDAR)
     // ==========================================================
 
     public function led()
     {
         $ledModel = new LedCriteria();
-        $kategoriModel = new LedCategory(); // Ambil model Kategori
+        $standarModel = new LedStandar(); 
 
-        $all_items = $ledModel->findAll();
+        $selectedProdi = $this->request->getGet('prodi') ?? config('Simonik')->prodiList[0];
 
-        // Urutkan data menggunakan natural sort di PHP
-        usort($all_items, function($a, $b) {
-            return strnatcmp($a['nomor_kriteria'], $b['nomor_kriteria']);
-        });
+        $all_items = $ledModel
+            ->select('led_criteria.*, led_standar.nama_standar') 
+            ->join('led_standar', 'led_standar.id = led_criteria.id_kategori', 'left') 
+            ->where('led_criteria.prodi', $selectedProdi) 
+            ->orderBy('led_criteria.id', 'ASC') 
+            ->findAll();
 
         $data = [
             'page_title' => 'Master Kriteria LED',
             'items'      => $all_items,
-            // Kirim daftar kategori dari tabel baru ke view
-            'kategori_list' => $kategoriModel->orderBy('nama_kategori', 'ASC')->findAll(), 
-            'validation' => \Config\Services::validation()
+            'standar_list' => $standarModel->orderBy('nama_standar', 'ASC')->findAll(), 
+            'validation' => \Config\Services::validation(),
+            'selectedProdi' => $selectedProdi
         ];
         return view('Admin/master/led', $data);
     }
@@ -186,137 +188,159 @@ class MasterDataController extends BaseController
     {
         $ledModel = new LedCriteria();
         $data = [
-            'nomor_kriteria' => $this->request->getPost('nomor_kriteria'),
-            'nama_kriteria'  => $this->request->getPost('nama_kriteria'),
-            'kategori'       => $this->request->getPost('kategori'),
-            'role_assignment'=> $this->request->getPost('role_assignment'),
+            'prodi'           => $this->request->getPost('prodi'),
+            'nama_kriteria'   => $this->request->getPost('nama_kriteria'),
+            'id_kategori'     => $this->request->getPost('id_kategori') ?: null, // Ini sudah benar
+            'role_assignment' => $this->request->getPost('role_assignment'),
         ];
 
         if (!$ledModel->save($data)) {
-            return redirect()->to('admin/master-data/led')->withInput()
+            return redirect()->to('admin/master-data/led?prodi=' . $data['prodi'])->withInput()
                 ->with('error', 'Gagal menyimpan data. Silakan periksa error di bawah.')
                 ->with('show_modal', 'addModal');
         }
 
-        return redirect()->to('admin/master-data/led')->with('success', 'Kriteria LED baru berhasil ditambahkan.');
+        $newId = $ledModel->getInsertID();
+
+        return redirect()->to('admin/master-data/led?prodi=' . $data['prodi'] . '#kriteria-' . $newId)
+                         ->with('success', 'Kriteria LED baru berhasil ditambahkan.');
     }
 
     public function updateLed($id)
     {
         $ledModel = new LedCriteria();
+        
+        // INI BAGIAN YANG DIPERBAIKI:
         $data = [
-            'nomor_kriteria' => $this->request->getPost('nomor_kriteria'),
-            'nama_kriteria'  => $this->request->getPost('nama_kriteria'),
-            'kategori'       => $this->request->getPost('kategori'),
-            'role_assignment'=> $this->request->getPost('role_assignment'),
+            'prodi'           => $this->request->getPost('prodi'),
+            'nama_kriteria'   => $this->request->getPost('nama_kriteria'),
+            'id_kategori'     => $this->request->getPost('id_kategori') ?: null, // Mengambil 'id_kategori'
+            'role_assignment' => $this->request->getPost('role_assignment'),
         ];
 
         if (!$ledModel->update($id, $data)) {
-            return redirect()->to('admin/master-data/led')->withInput()
+            return redirect()->to('admin/master-data/led?prodi=' . $data['prodi'])->withInput()
                 ->with('error', 'Gagal memperbarui data. Silakan periksa error di bawah.')
                 ->with('show_modal', 'editModal-' . $id);
         }
 
-        return redirect()->to('admin/master-data/led')->with('success', 'Kriteria LED berhasil diperbarui.');
+        return redirect()->to('admin/master-data/led?prodi=' . $data['prodi'] . '#kriteria-' . $id)
+                         ->with('success', 'Kriteria LED berhasil diperbarui.');
     }
     
     public function deleteLed($id)
     {
         $ledModel = new LedCriteria();
+        $prodi = $this->request->getGet('prodi') ?? config('Simonik')->prodiList[0];
+        
         if ($ledModel->delete($id)) {
-            return redirect()->to('admin/master-data/led')->with('success', 'Kriteria LED berhasil dihapus.');
+            return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('success', 'Kriteria LED berhasil dihapus.');
         }
-        return redirect()->to('admin/master-data/led')->with('error', 'Gagal menghapus kriteria.');
+        return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('error', 'Gagal menghapus kriteria.');
     }
 
     public function deleteLedBatch()
     {
         $ledModel = new LedCriteria();
+        $prodi = $this->request->getPost('prodi_filter') ?? config('Simonik')->prodiList[0];
         $ids = $this->request->getPost('ids');
+        
         if (!empty($ids)) {
-            $ledModel->delete($ids); // Model CI4 bisa menangani array ID untuk delete
-            return redirect()->to('admin/master-data/led')->with('success', 'Data kriteria yang terpilih berhasil dihapus.');
+            $ledModel->delete($ids);
+            return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('success', 'Data kriteria yang terpilih berhasil dihapus.');
         }
-        return redirect()->to('admin/master-data/led')->with('error', 'Tidak ada data yang dipilih untuk dihapus.');
+        return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('error', 'Tidak ada data yang dipilih untuk dihapus.');
     }
 
     public function importLed()
     {
         $file = $this->request->getFile('file_excel');
+        $prodi = $this->request->getPost('prodi');
+
+        if (empty($prodi)) {
+            return redirect()->to('admin/master-data/led')->with('error', 'Harap pilih Program Studi tujuan import.');
+        }
+        
         if (!$file->isValid() || !in_array($file->getMimeType(), ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'])) {
-             return redirect()->to('admin/master-data/led')->with('error', 'File tidak valid. Harap unggah file .xlsx');
+             return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('error', 'File tidak valid. Harap unggah file .xlsx');
         }
 
         $reader = new Xlsx();
         $spreadsheet = $reader->load($file->getTempName());
         $sheet = $spreadsheet->getActiveSheet()->toArray();
 
+        $standarModel = new LedStandar(); 
+        $standarList = $standarModel->findAll(); 
+        $standarMap = array_column($standarList, 'id', 'nama_standar'); 
+
         $dataToInsert = [];
-        // Loop dari baris kedua (index 1) untuk melewati header
         foreach (array_slice($sheet, 1) as $row) {
-            // Asumsikan Kolom A = nomor, Kolom B = nama, Kolom C = kategori, Kolom D = role_assignment
-            if (!empty($row[0]) && !empty($row[1])) {
+            if (!empty($row[0])) { 
+                $namaStandar = $row[1] ?? null; 
+                $idStandar = ($namaStandar && isset($standarMap[$namaStandar])) ? $standarMap[$namaStandar] : null; 
+
                 $dataToInsert[] = [
-                    'nomor_kriteria' => $row[0],
-                    'nama_kriteria'  => $row[1],
-                    'kategori'       => $row[2] ?? null,
-                    'role_assignment'=> $row[3] ?? null
+                    'prodi'           => $prodi, 
+                    'nama_kriteria'   => $row[0], 
+                    'id_kategori'     => $idStandar,
+                    'role_assignment' => $row[2] ?? null
                 ];
             }
         }
 
         if (!empty($dataToInsert)) {
             (new LedCriteria())->insertBatch($dataToInsert);
-            return redirect()->to('admin/master-data/led')->with('success', 'Data berhasil diimpor.');
+            return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('success', 'Data berhasil diimpor untuk prodi ' . $prodi);
         }
-        return redirect()->to('admin/master-data/led')->with('error', 'Gagal mengimpor data atau file kosong.');
+        return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('error', 'Gagal mengimpor data atau file kosong.');
     }
 
     // ==========================================================
-    // FUNGSI-FUNGSI BARU UNTUK KATEGORI LED
+    // FUNGSI-FUNGSI BARU UNTUK STANDAR LED
     // ==========================================================
 
-    public function led_kategori()
+    public function led_standar()
     {
-        $kategoriModel = new LedCategory();
+        $standarModel = new LedStandar();
         $data = [
-            'page_title' => 'Master Kategori LED',
-            'items'      => $kategoriModel->orderBy('nama_kategori', 'ASC')->findAll(),
+            'page_title' => 'Master Standar LED',
+            'items'      => $standarModel->orderBy('nama_standar', 'ASC')->findAll(),
             'validation' => \Config\Services::validation()
         ];
-        return view('Admin/master/led_kategori', $data);
+        return view('Admin/master/led_standar', $data);
     }
 
-    public function storeKategori()
+    public function storeStandar()
     {
-        $kategoriModel = new LedCategory();
-        $data = ['nama_kategori' => $this->request->getPost('nama_kategori')];
+        $standarModel = new LedStandar();
+        $data = ['nama_standar' => $this->request->getPost('nama_standar')];
 
-        if (!$kategoriModel->save($data)) {
-            return redirect()->to('admin/master-data/led-kategori')->withInput()
-                ->with('error', 'Gagal menyimpan data. Pastikan nama kategori unik.');
+        if (!$standarModel->save($data)) {
+            return redirect()->to('admin/master-data/led-standar')->withInput()
+                ->with('error', 'Gagal menyimpan data. Pastikan nama standar unik.');
         }
-        return redirect()->to('admin/master-data/led-kategori')->with('success', 'Kategori baru berhasil ditambahkan.');
+        return redirect()->to('admin/master-data/led-standar')->with('success', 'Standar baru berhasil ditambahkan.');
     }
 
-    public function updateKategori($id)
+    public function updateStandar($id)
     {
-        $kategoriModel = new LedCategory();
-        $data = ['nama_kategori' => $this->request->getPost('nama_kategori')];
+        $standarModel = new LedStandar();
+        $data = ['nama_standar' => $this->request->getPost('nama_standar')];
 
-        if (!$kategoriModel->update($id, $data)) {
-            return redirect()->to('admin/master-data/led-kategori')->withInput()
-                ->with('error', 'Gagal memperbarui data. Pastikan nama kategori unik.');
+        if (!$standarModel->update($id, $data)) {
+            return redirect()->to('admin/master-data/led-standar')->withInput()
+                ->with('error', 'Gagal memperbarui data. Pastikan nama standar unik.');
         }
-        return redirect()->to('admin/master-data/led-kategori')->with('success', 'Kategori berhasil diperbarui.');
+        return redirect()->to('admin/master-data/led-standar')->with('success', 'Standar berhasil diperbarui.');
     }
 
-    public function deleteKategori($id)
+    public function deleteStandar($id)
     {
-        $kategoriModel = new LedCategory();
-        if ($kategoriModel->delete($id)) {
-            return redirect()->to('admin/master-data/led-kategori')->with('success', 'Kategori berhasil dihapus.');
+        $standarModel = new LedStandar();
+        
+        if ($standarModel->delete($id)) {
+            return redirect()->to('admin/master-data/led-standar')->with('success', 'Standar berhasil dihapus. Kriteria terkait kini tidak dikategorikan.');
         }
-        return redirect()->to('admin/master-data/led-kategori')->with('error', 'Gagal menghapus data.');
+        return redirect()->to('admin/master-data/led-standar')->with('error', 'Gagal menghapus data.');
     }
 }

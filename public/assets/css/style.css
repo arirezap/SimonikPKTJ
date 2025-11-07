@@ -11,6 +11,8 @@
 body {
     background-color: var(--light-gray);
     font-family: 'Inter', sans-serif;
+    /* PERBAIKAN: Pindahkan overflow-x: hidden ke body */
+    overflow-x: hidden;
 }
 
 /* ===================================================================
@@ -19,17 +21,31 @@ body {
 .main-wrapper {
     display: flex;
     width: 100%;
-    /* PERBAIKAN: overflow-x: hidden; DIHAPUS DARI SINI */
 }
 
 .content-wrapper {
     flex-grow: 1;
     transition: all 0.3s ease-in-out;
     width: 100%;
-    padding: 1.5rem; /* Padding default untuk konten */
-    /* PERBAIKAN: overflow-x: hidden; DIPINDAHKAN KE SINI */
-    overflow-x: hidden;
+    /* PERBAIKAN: Padding default dihapus dari sini agar sticky footer bekerja */
+    /* padding: 1.5rem; */ 
+    
+    /* PERBAIKAN: Hapus overflow-x: hidden; agar position:sticky berfungsi */
+    /* overflow-x: hidden; */
+    
+    /* Tambahkan ini agar content-wrapper bisa scroll jika kontennya panjang */
+    display: flex;
+    flex-direction: column;
+    max-height: 100vh;
+    overflow-y: auto;
 }
+
+/* PERBAIKAN: Buat wrapper baru untuk padding konten */
+.content-area {
+    padding: 1.5rem;
+    flex-grow: 1; /* Biarkan area konten tumbuh */
+}
+
 
 .sidebar {
     flex-shrink: 0;

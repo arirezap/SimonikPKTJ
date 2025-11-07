@@ -5,108 +5,29 @@ namespace App\Controllers;
 use App\Controllers\BaseController;
 use App\Models\LedCriteria;
 use App\Models\LedSubmission;
-use App\Models\LedCategory; 
+use App\Models\LedStandar; // Perubahan
 use App\Models\LedScore; 
+use App\Controllers\Traits\EccDataTrait; // Perubahan
 
 class EccController extends BaseController
 {
+    use EccDataTrait; // Perubahan
+
     /**
      * Menampilkan halaman Dashboard ECC (Diagram Jaring Laba-laba)
-     * Menggunakan data nyata dari led_scores
      */
     public function index()
     {
-        $scoreModel = new LedScore();
-        $criteriaModel = new LedCriteria();
-        $categoryModel = new LedCategory();
-
         $selectedTahun = $this->request->getGet('tahun') ?? date('Y');
 
-        // 1. Ambil semua Kategori dari Master Kategori (Label Grafik)
-        $categories_raw = $categoryModel->orderBy('nama_kategori', 'ASC')->findAll();
-        $chart_labels = array_column($categories_raw, 'nama_kategori');
-        
-        // 2. Ambil semua Kriteria (untuk pemetaan)
-        $all_criteria = $criteriaModel->findAll();
-        $criteriaMap = []; // Peta untuk [kriteria_id => kategori]
-        foreach ($all_criteria as $item) {
-            $criteriaMap[$item['id']] = $item['kategori'];
-        }
-
-        // 3. Ambil data SKOR untuk SEMUA prodi di TAHUN TERPILIH
-        $scores_data = $scoreModel
-            ->where('tahun', $selectedTahun)
-            ->findAll();
-
-        // 4. Inisialisasi data prodi
-        $prodiList = ['RSTJ', 'TRO', 'TO'];
-        $prodiData = [];
-
-        // 5. Inisialisasi struktur skor
-        $scores = [];
-        foreach ($prodiList as $prodi) {
-            foreach ($chart_labels as $label) {
-                $scores[$prodi][$label] = ['total_skor' => 0, 'jumlah_item' => 0];
-            }
-        }
-
-        // 6. Hitung 'total' item per kategori dari Master Kriteria
-        foreach ($all_criteria as $item) {
-            if (!empty($item['kategori']) && in_array($item['kategori'], $chart_labels)) {
-                foreach ($prodiList as $prodi) {
-                    if (isset($scores[$prodi][$item['kategori']])) {
-                        $scores[$prodi][$item['kategori']]['jumlah_item']++;
-                    }
-                }
-            }
-        }
-
-        // 7. Akumulasi 'total_skor' dari data Skor yang sudah diinput
-        foreach ($scores_data as $score) {
-            $prodi = $score['prodi'];
-            $kriteria_id = $score['led_criteria_id'];
-            
-            if (isset($criteriaMap[$kriteria_id]) && !empty($criteriaMap[$kriteria_id])) {
-                $kategori = $criteriaMap[$kriteria_id];
-                if(isset($scores[$prodi][$kategori])) {
-                     $scores[$prodi][$kategori]['total_skor'] += (float)$score['skor'];
-                }
-            }
-        }
-
-        // 8. Hitung Rata-rata skor per kategori dan siapkan data untuk view
-        foreach ($prodiList as $prodi) {
-            $chart_data = [];
-            foreach ($chart_labels as $label) {
-                $total_skor = $scores[$prodi][$label]['total_skor'];
-                $jumlah_item = $scores[$prodi][$label]['jumlah_item'];
-                
-                // Rata-rata skor untuk kategori tsb
-                $avg_score = ($jumlah_item > 0) ? ($total_skor / $jumlah_item) : 0; 
-                $chart_data[] = round($avg_score, 2);
-            }
-            
-            $prodiData[$prodi] = [
-                'id_prodi' => $prodi,
-                'nama_prodi' => $prodi,
-                'chart_labels' => $chart_labels,
-                'chart_data' => $chart_data
-            ];
-        }
-
-        // Ambil daftar tahun unik dari submissions untuk filter
-        $daftar_tahun_raw = $scoreModel->select('tahun')->distinct()->orderBy('tahun', 'DESC')->findAll();
-        $daftar_tahun = array_column($daftar_tahun_raw, 'tahun');
-        if (!in_array(date('Y'), $daftar_tahun)) {
-            $daftar_tahun[] = date('Y');
-            rsort($daftar_tahun);
-        }
+        // PERBAIKAN: Gunakan Trait
+        $eccData = $this->getDashboardEccData($selectedTahun);
 
         $data = [
             'page_title' => 'Dashboard ECC',
-            'prodiData' => $prodiData,
+            'prodiData' => $eccData['prodiData'],
             'selectedTahun' => $selectedTahun,
-            'daftar_tahun' => $daftar_tahun,
+            'daftar_tahun' => $eccData['daftar_tahun'],
         ];
         return view('ecc/ecc_index', $data);
     }
@@ -121,9 +42,19 @@ class EccController extends BaseController
             'TRO' => "Konten Laporan Kinerja Program Studi untuk TRO...",
             'TO' => "Konten Laporan Kinerja Program Studi untuk TO...",
         ];
+        
+        $prodiData = [];
+        foreach (config('Simonik')->prodiList as $prodi) {
+             $prodiData[$prodi] = [
+                'id_prodi' => $prodi, 
+                'nama_prodi' => $prodi, 
+                'lkps_content' => $dataLkps[$prodi] ?? "Konten untuk {$prodi} belum tersedia."
+            ];
+        }
+
         $data = [
             'page_title' => 'Laporan Kinerja Program Studi (LKPS)',
-            'dataLkps' => $dataLkps
+            'prodi_data' => $prodiData
         ];
         return view('ecc/lkps_index', $data);
     }
@@ -137,34 +68,31 @@ class EccController extends BaseController
         $submissionModel = new LedSubmission();
 
         $selectedTahun = $this->request->getGet('tahun') ?? date('Y');
-        $selectedProdi = $this->request->getGet('prodi') ?? 'RSTJ';
+        $selectedProdi = $this->request->getGet('prodi') ?? config('Simonik')->prodiList[0];
         
         $role = session()->get('role');
 
-        // Ambil semua data master kriteria, filter berdasarkan peran
-        $criteriaQuery = $criteriaModel;
+        // Ambil semua data master kriteria, filter berdasarkan peran DAN PRODI
+        $criteriaQuery = $criteriaModel
+            ->select('led_criteria.*, led_standar.nama_standar') // Perubahan
+            ->join('led_standar', 'led_standar.id = led_criteria.id_standar', 'left') // Perubahan
+            ->where('led_criteria.prodi', $selectedProdi);
         
         if (in_array($role, ['admin', 'manajemen'])) {
-             // Admin & Manajemen bisa melihat semua kriteria
-             $all_criteria_raw = $criteriaModel->findAll();
+             $all_criteria_raw = $criteriaQuery->orderBy('led_criteria.id', 'ASC')->findAll();
         } 
-        // Kabag melihat semua kriteria yang ditugaskan ke unitnya (AAK/KUK) atau 'all'
         elseif ($role === 'kabag_aak') {
-            $all_criteria_raw = $criteriaQuery->whereIn('role_assignment', ['aak', 'all'])->findAll();
+            $all_criteria_raw = $criteriaQuery->whereIn('role_assignment', ['aak', 'all'])->orderBy('led_criteria.id', 'ASC')->findAll();
         } elseif ($role === 'kabag_kuk') {
-            $all_criteria_raw = $criteriaQuery->whereIn('role_assignment', ['kuk', 'all'])->findAll();
+            $all_criteria_raw = $criteriaQuery->whereIn('role_assignment', ['kuk', 'all'])->orderBy('led_criteria.id', 'ASC')->findAll();
         }
-        // Staf AAK/KUK hanya melihat yang ditugaskan ke mereka atau 'all'
         else { 
              $all_criteria_raw = $criteriaQuery->whereIn('role_assignment', [$role, 'all'])
                                                ->orWhere('role_assignment IS NULL') 
                                                ->orWhere('role_assignment', '')
+                                               ->orderBy('led_criteria.id', 'ASC')
                                                ->findAll();
         }
-
-        usort($all_criteria_raw, function($a, $b) {
-            return strnatcmp($a['nomor_kriteria'], $b['nomor_kriteria']);
-        });
 
         $submissions = $submissionModel
             ->where('tahun', $selectedTahun)
@@ -182,7 +110,8 @@ class EccController extends BaseController
             'submitted_data' => $submitted_data,
             'selectedTahun' => $selectedTahun,
             'selectedProdi' => $selectedProdi,
-            'currentRole' => $role // Kirim data peran ke view
+            'currentRole' => $role,
+            'prodiList' => config('Simonik')->prodiList,
         ];
 
         return view('ecc/led_index', $data);
@@ -197,12 +126,11 @@ class EccController extends BaseController
         $submissionModel = new LedSubmission();
         
         $user_id = session()->get('user_id');
-        $role = session()->get('role'); // Ambil peran
+        $role = session()->get('role');
         
         $tahun = $this->request->getPost('tahun');
         $prodi = $this->request->getPost('prodi');
         
-        // Ambil data dari form
         $statuses = $this->request->getPost('status');
         $catatan = $this->request->getPost('catatan');
         $kabag_approvals = $this->request->getPost('kabag_approved');
@@ -212,7 +140,6 @@ class EccController extends BaseController
                 ->with('error', 'Data tidak lengkap. Pastikan tahun dan prodi dipilih.');
         }
         
-        // Tentukan data mana yang akan di-loop
         $loop_data = $catatan ?? $statuses ?? $kabag_approvals;
         if (empty($loop_data)) {
              return redirect()->to('ecc/led?prodi=' . $prodi . '&tahun=' . $tahun)
@@ -229,7 +156,6 @@ class EccController extends BaseController
                     ->where('led_criteria_id', $kriteria_id)
                     ->first();
 
-                // Siapkan data dasar
                 $data = [
                     'user_id'         => $user_id,
                     'prodi'           => $prodi,
@@ -237,27 +163,21 @@ class EccController extends BaseController
                     'led_criteria_id' => $kriteria_id,
                 ];
 
-                // --- LOGIKA PENYIMPANAN BERDASARKAN PERAN ---
                 if (in_array($role, ['admin', 'manajemen'])) {
-                    // Wadir/Manajemen: Hanya bisa mengubah 'status'
                     if(isset($statuses[$kriteria_id])) {
                         $data['status'] = $statuses[$kriteria_id];
                     }
                 } elseif (in_array($role, ['kabag_aak', 'kabag_kuk'])) {
-                    // Kabag: Hanya bisa mengubah 'kabag_approved'
                     if(isset($kabag_approvals[$kriteria_id])) {
                         $data['kabag_approved'] = $kabag_approvals[$kriteria_id];
                     }
                 } else {
-                    // AAK/KUK (Staf): Hanya bisa mengubah 'catatan'
                     if(isset($catatan[$kriteria_id])) {
                         $data['catatan'] = $catatan[$kriteria_id];
                     }
                 }
-                // --- Akhir Logika Peran ---
 
                 if ($existing) {
-                    // Gabungkan data baru dengan data lama yang tidak diubah
                     $data = array_merge($existing, $data);
                     $submissionModel->update($existing['id'], $data);
                 } else {
@@ -290,17 +210,18 @@ class EccController extends BaseController
     {
         $criteriaModel = new LedCriteria();
         $scoreModel = new LedScore();
-        $submissionModel = new LedSubmission(); // TAMBAHKAN MODEL SUBMISSION
+        $submissionModel = new LedSubmission();
 
         $selectedTahun = $this->request->getGet('tahun') ?? date('Y');
-        $selectedProdi = $this->request->getGet('prodi') ?? 'RSTJ';
+        $selectedProdi = $this->request->getGet('prodi') ?? config('Simonik')->prodiList[0];
 
-        $all_criteria_raw = $criteriaModel->findAll();
-        usort($all_criteria_raw, function($a, $b) {
-            return strnatcmp($a['nomor_kriteria'], $b['nomor_kriteria']);
-        });
+        $all_criteria_raw = $criteriaModel
+            ->select('led_criteria.*, led_standar.nama_standar') // Perubahan
+            ->join('led_standar', 'led_standar.id = led_criteria.id_standar', 'left') // Perubahan
+            ->where('led_criteria.prodi', $selectedProdi)
+            ->orderBy('led_criteria.id', 'ASC')
+            ->findAll();
 
-        // Ambil data skor yang sudah diinput
         $scores = $scoreModel
             ->where('tahun', $selectedTahun)
             ->where('prodi', $selectedProdi)
@@ -311,7 +232,6 @@ class EccController extends BaseController
             $submitted_scores[$score['led_criteria_id']] = $score;
         }
 
-        // BARU: Ambil data submission (link & status) yang sudah diinput
         $submissions = $submissionModel
             ->where('tahun', $selectedTahun)
             ->where('prodi', $selectedProdi)
@@ -321,15 +241,15 @@ class EccController extends BaseController
         foreach ($submissions as $sub) {
             $submitted_submissions[$sub['led_criteria_id']] = $sub;
         }
-        // AKHIR BARU
 
         $data = [
             'page_title' => 'Simulasi Penilaian LED',
             'all_criteria' => $all_criteria_raw,
             'submitted_scores' => $submitted_scores,
-            'submitted_submissions' => $submitted_submissions, // Kirim data submission ke view
+            'submitted_submissions' => $submitted_submissions,
             'selectedTahun' => $selectedTahun,
-            'selectedProdi' => $selectedProdi
+            'selectedProdi' => $selectedProdi,
+            'prodiList' => config('Simonik')->prodiList,
         ];
 
         return view('ecc/simulasi_index', $data);

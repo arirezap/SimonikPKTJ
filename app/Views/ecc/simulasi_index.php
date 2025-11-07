@@ -5,30 +5,21 @@
 
 <?= $this->section('styles') ?>
 <style>
-    .nav-tabs .nav-link.active {
-        background-color: #f8f9fa;
-        border-color: #dee2e6 #dee2e6 #f8f9fa;
-        color: #0d6efd;
-        font-weight: bold;
-    }
-    .tab-content {
-        background-color: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-top: 0;
-        border-radius: 0 0.375rem 0.375rem 0.375rem;
+    .sticky-footer-bar {
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: #ffffff;
+        padding: 1rem 1.5rem; /* Sesuaikan padding */
+        border-top: 1px solid #dee2e6;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        display: flex;
+        justify-content: flex-end;
+        z-index: 10;
     }
     .kriteria-row { border-bottom: 1px solid #eee; }
     .kriteria-row:last-child { border-bottom: none; }
-    
-    .sticky-footer-bar {
-        position: sticky; bottom: 0; left: 0; width: 100%;
-        background-color: #ffffff; padding: 1rem;
-        border-top: 1px solid #dee2e6;
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-        display: flex; justify-content: flex-end; z-index: 10;
-        margin-left: -1.5rem; margin-right: -1.5rem;
-        padding-left: 1.5rem; padding-right: 1.5rem;
-    }
 </style>
 <?= $this->endSection() ?>
 
@@ -48,7 +39,6 @@
     </div>
 <?php endif; ?>
 
-<!-- FORM FILTER (GET) -->
 <div class="card mb-4">
     <div class="card-body">
         <form action="<?= site_url('ecc/simulasi') ?>" method="GET" id="filterForm">
@@ -64,7 +54,6 @@
                 <div class="col-md-5">
                     <label for="prodi_filter" class="form-label fw-bold">Pilih Program Studi</label>
                     <select name="prodi" id="prodi_filter" class="form-select">
-                        <?php $prodiList = ['RSTJ', 'TRO', 'TO']; ?>
                         <?php foreach($prodiList as $prodi): ?>
                             <option value="<?= $prodi; ?>" <?= ($selectedProdi == $prodi) ? 'selected' : ''; ?>><?= $prodi; ?></option>
                         <?php endforeach; ?>
@@ -78,7 +67,6 @@
     </div>
 </div>
 
-<!-- FORM SIMPAN (POST) -->
 <form action="<?= site_url('ecc/simulasi/store') ?>" method="POST" id="simulasiForm">
     <div class="card">
         <div class="card-body">
@@ -92,26 +80,24 @@
                 <table class="table align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th style="width: 10%;" class="text-center">Nomor</th>
+                            <th style="width: 5%;" class="text-center">No</th>
                             <th>Kriteria/Elemen/Indikator</th>
-                            <th style="width: 15%;">Kategori</th>
-                            <th style="width: 20%;">Bukti & Status</th> <!-- KOLOM BARU -->
-                            <th style="width: 15%;" class="text-center">Skor (0-100)</th>
+                            <th style="width: 15%;">Standar</th>
+                            <th style="width: 20%;" class="text-center">Bukti & Status</th>
+                            <th style="width: 12%;" class="text-center">Skor (0-100)</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php if (!empty($all_criteria)): ?>
+                        <?php if (!empty($all_criteria)): $no = 1; ?>
                             <?php foreach ($all_criteria as $criteria): 
                                 $score_data = $submitted_scores[$criteria['id']] ?? null;
-                                $submission_data = $submitted_submissions[$criteria['id']] ?? null; // AMBIL DATA SUBMISSION
+                                $submission_data = $submitted_submissions[$criteria['id']] ?? null;
                             ?>
                             <tr class="kriteria-row">
-                                <td class="text-center fw-bold"><?= esc($criteria['nomor_kriteria']) ?></td>
+                                <td class="text-center fw-bold"><?= $no++ ?></td>
                                 <td><?= nl2br(esc($criteria['nama_kriteria'])) ?></td>
-                                <td><?= esc($criteria['kategori']) ?></td>
-                                <td>
-                                    <!-- TAMPILKAN LINK BUKTI -->
-                                    <?php if (!empty($submission_data['catatan'])): ?>
+                                <td><?= esc($criteria['nama_standar']) ?></td>
+                                <td class="text-center"> <?php if (!empty($submission_data['catatan'])): ?>
                                         <a href="<?= esc($submission_data['catatan'], 'attr') ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm mb-2 w-100">
                                             <i class="bi bi-link-45deg"></i> Lihat Bukti
                                         </a>
@@ -119,7 +105,6 @@
                                         <span class="badge bg-secondary mb-2 w-100">Bukti Belum Ada</span>
                                     <?php endif; ?>
 
-                                    <!-- TAMPILKAN STATUS -->
                                     <div class="d-flex justify-content-around small">
                                         <span>Kabag: 
                                             <?php if ($submission_data['kabag_approved'] ?? 0 == 1): ?>
@@ -138,7 +123,7 @@
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="4" class="text-center">Belum ada data Master Kriteria LED.</td>
+                                <td colspan="5" class="text-center">Belum ada data Master Kriteria LED untuk prodi <?= esc($selectedProdi) ?>.</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>
@@ -147,13 +132,14 @@
         </div>
     </div>
 </form>
+<?= $this->endSection() ?>
 
-<!-- Sticky Footer untuk Tombol Simpan -->
-<?php if (!empty($all_criteria)): ?>
-<div class="sticky-footer-bar">
-    <button type="button" id="submitSimulasiForm" class="btn btn-primary"><i class="bi bi-save me-2"></i> Simpan Skor</button>
-</div>
-<?php endif; ?>
+<?= $this->section('footer_bar') ?>
+    <?php if (!empty($all_criteria)): ?>
+    <div class="sticky-footer-bar">
+        <button type="button" id="submitSimulasiForm" class="btn btn-primary"><i class="bi bi-save me-2"></i> Simpan Skor</button>
+    </div>
+    <?php endif; ?>
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>

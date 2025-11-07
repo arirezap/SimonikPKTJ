@@ -59,11 +59,11 @@ $routes->group('admin', ['filter' => 'auth:admin,manajemen,kabag_aak,kabag_kuk']
         $routes->post('led/delete-batch', 'Admin\MasterDataController::deleteLedBatch');
         $routes->post('led/import', 'Admin\MasterDataController::importLed');
 
-        // Kategori LED
-        $routes->get('led-kategori', 'Admin\MasterDataController::led_kategori');
-        $routes->post('led-kategori/store', 'Admin\MasterDataController::storeKategori');
-        $routes->post('led-kategori/update/(:num)', 'Admin\MasterDataController::updateKategori/$1');
-        $routes->post('led-kategori/delete/(:num)', 'Admin\MasterDataController::deleteKategori/$1');
+        // Standar LED (Sudah diubah dari kategori)
+        $routes->get('led-standar', 'Admin\MasterDataController::led_standar');
+        $routes->post('led-standar/store', 'Admin\MasterDataController::storeStandar');
+        $routes->post('led-standar/update/(:num)', 'Admin\MasterDataController::updateStandar/$1');
+        $routes->post('led-standar/delete/(:num)', 'Admin\MasterDataController::deleteStandar/$1');
     });
 });
 
@@ -104,13 +104,13 @@ $routes->group('user', ['filter' => 'auth:admin,manajemen,kabag_aak,kabag_kuk,aa
 $routes->group('ecc', ['filter' => 'auth:admin,manajemen,kabag_aak,kabag_kuk,aak,kuk,spm'], static function ($routes) {
     $routes->get('/', 'EccController::index'); // Dashboard ECC
     $routes->get('lkps', 'EccController::lkps');
-    // Rute LED dipindah ke sini agar bisa diakses AAK/KUK
     $routes->get('led', 'EccController::led');
     $routes->post('led/store', 'EccController::storeLed');
 });
 
-// Rute ECC - Terbatas (Hanya untuk SPM)
-$routes->group('ecc', ['filter' => 'auth:spm'], static function ($routes) {
+// Rute ECC - Terbatas (Hanya untuk SPM dan Admin)
+// PERBAIKAN DI SINI: tambahkan 'admin'
+$routes->group('ecc', ['filter' => 'auth:spm,admin'], static function ($routes) {
     $routes->get('simulasi', 'EccController::simulasi');
     $routes->post('simulasi/store', 'EccController::storeSimulasi');
 });

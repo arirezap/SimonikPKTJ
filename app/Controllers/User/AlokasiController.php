@@ -45,19 +45,19 @@ class AlokasiController extends BaseController
         $indikator_arr = $this->request->getPost('indikator_kinerja');
         $target_utama_arr = $this->request->getPost('target_utama');
         $target_bulanan_arr = $this->request->getPost('target_bulanan');
-        // Ambil data realisasi yang baru
         $realisasi_bulanan_arr = $this->request->getPost('realisasi_bulanan');
 
         $rencanaModel->db->transStart();
 
         if (!empty($indikator_arr)) {
             foreach($indikator_arr as $id => $indikator) {
+                
+                // PERBAIKAN: Tidak perlu json_encode, kirim array langsung
                 $data = [
                     'indikator_kinerja' => $indikator,
                     'target_utama'      => $target_utama_arr[$id],
-                    'target_bulanan'    => json_encode(array_values($target_bulanan_arr[$id] ?? [])),
-                    // Tambahkan realisasi ke data update
-                    'realisasi_bulanan' => json_encode(array_values($realisasi_bulanan_arr[$id] ?? [])),
+                    'target_bulanan'    => array_values($target_bulanan_arr[$id] ?? []),
+                    'realisasi_bulanan' => array_values($realisasi_bulanan_arr[$id] ?? []),
                 ];
                 $rencanaModel->where('id', $id)->where('user_id', $user_id)->set($data)->update();
             }
