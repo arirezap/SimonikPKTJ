@@ -3,24 +3,28 @@
 namespace App\Controllers\Traits;
 
 use App\Models\LedCriteria;
-use App\Models\LedStandar; // <-- GANTI
+use App\Models\LedStandar;
 use App\Models\LedScore; 
+use App\Models\LedSubmission; 
 use App\Models\RencanaKinerja as RencanaKinerjaModel;
 
 trait EccDataTrait
 {
     /**
      * Mengambil data ECC dan daftar tahun gabungan untuk dashboard.
+     * Logika ini mengambil skor HANYA JIKA kriteria sudah diapprove
+     * oleh Kabag DAN Wadir/Manajemen.
      */
     private function getDashboardEccData($selectedTahun)
     {
         $scoreModel = new LedScore();
         $criteriaModel = new LedCriteria();
-        $standarModel = new LedStandar(); // <-- GANTI
+        $standarModel = new LedStandar();
+        $submissionModel = new LedSubmission(); 
 
-        // 1. Ambil semua Standar dari Master Standar (Label Grafik)
-        $standar_raw = $standarModel->orderBy('nama_standar', 'ASC')->findAll(); // <-- GANTI
-        $chart_labels = array_column($standar_raw, 'nama_standar'); // <-- GANTI
+        // 1. Ambil semua Standar (Label Grafik)
+        $standar_raw = $standarModel->orderBy('nama_standar', 'ASC')->findAll();
+        $chart_labels = array_column($standar_raw, 'nama_standar');
         
         $prodiList = config('Simonik')->prodiList;
         $prodiData = [];
@@ -35,22 +39,22 @@ trait EccDataTrait
         
         // 3. Ambil SEMUA Kriteria (untuk pemetaan dan penghitungan)
         $all_criteria = $criteriaModel
-            ->select('led_criteria.id, led_criteria.prodi, led_standar.nama_standar') // <-- GANTI
-            ->join('led_standar', 'led_standar.id = led_criteria.id_kategori', 'left') // <-- GANTI
+            ->select('led_criteria.id, led_criteria.prodi, led_standar.nama_standar')
+            ->join('led_standar', 'led_standar.id = led_criteria.id_standar', 'left') // Menggunakan id_standar
             ->findAll();
             
         $criteriaMap = []; // Peta untuk [kriteria_id => [nama_standar, prodi]]
         foreach ($all_criteria as $item) {
             $criteriaMap[$item['id']] = [
-                'kategori' => $item['nama_standar'], // <-- GANTI
+                'standar' => $item['nama_standar'], // Menggunakan nama_standar
                 'prodi' => $item['prodi']
             ];
             
             // 4. Hitung 'total' item per standar per prodi
             $prodi = $item['prodi'];
-            $kategori_nama = $item['nama_standar']; // <-- GANTI
-            if (!empty($kategori_nama) && in_array($kategori_nama, $chart_labels) && isset($scores[$prodi])) {
-                $scores[$prodi][$kategori_nama]['jumlah_item']++;
+            $standar_nama = $item['nama_standar'];
+            if (!empty($standar_nama) && in_array($standar_nama, $chart_labels) && isset($scores[$prodi])) {
+                $scores[$prodi][$standar_nama]['jumlah_item']++;
             }
         }
 
@@ -58,28 +62,54 @@ trait EccDataTrait
         $scores_data = $scoreModel
             ->where('tahun', $selectedTahun)
             ->findAll();
+        
+        // 6. Ambil data APPROVAL untuk SEMUA prodi di TAHUN TERPILIH
+        $submissions_data = $submissionModel
+            ->where('tahun', $selectedTahun)
+            ->findAll();
+        
+        // Buat Peta Persetujuan (Approval Map) untuk pengecekan cepat
+        $approvalMap = [];
+        foreach ($submissions_data as $sub) {
+            $is_kabag_approved = ($sub['kabag_approved'] ?? 0) == 1;
+            $is_wadir_approved = !empty($sub['status']);
+            
+            if ($is_kabag_approved && $is_wadir_approved) {
+                // Kunci unik: 'prodi-kriteria_id'
+                $key = $sub['prodi'] . '-' . $sub['led_criteria_id'];
+                $approvalMap[$key] = true;
+            }
+        }
 
-        // 6. Akumulasi 'total_skor' dari data Skor yang sudah diinput
+        // 7. Akumulasi 'total_skor' HANYA JIKA SUDAH DISETUJUI
         foreach ($scores_data as $score) {
             $prodi = $score['prodi'];
             $kriteria_id = $score['led_criteria_id'];
             
             if (isset($criteriaMap[$kriteria_id])) {
-                $kategori = $criteriaMap[$kriteria_id]['kategori'];
-                // Pastikan prodi-nya cocok
-                if(isset($scores[$prodi][$kategori]) && $criteriaMap[$kriteria_id]['prodi'] == $prodi) {
-                     $scores[$prodi][$kategori]['total_skor'] += (float)$score['skor'];
+                $standar = $criteriaMap[$kriteria_id]['standar'];
+                
+                // Cek Peta Persetujuan
+                $approvalKey = $prodi . '-' . $kriteria_id;
+                $is_approved = isset($approvalMap[$approvalKey]);
+
+                if(isset($scores[$prodi][$standar]) && $criteriaMap[$kriteria_id]['prodi'] == $prodi) {
+                     // Jika disetujui, tambahkan skor. Jika tidak, skornya dianggap 0 (tidak menambah total_skor).
+                     if ($is_approved) {
+                        $scores[$prodi][$standar]['total_skor'] += (float)$score['skor'];
+                     }
                 }
             }
         }
 
-        // 7. Hitung Rata-rata skor per standar dan siapkan data untuk view
+        // 8. Hitung Rata-rata skor per standar dan siapkan data untuk view
         foreach ($prodiList as $prodi) {
             $chart_data = [];
             foreach ($chart_labels as $label) {
                 $total_skor = $scores[$prodi][$label]['total_skor'];
                 $jumlah_item = $scores[$prodi][$label]['jumlah_item'];
                 
+                // Rata-rata dihitung berdasarkan total skor (yang sudah disetujui) dibagi jumlah total item
                 $avg_score = ($jumlah_item > 0) ? ($total_skor / $jumlah_item) : 0; 
                 $chart_data[] = round($avg_score, 2);
             }
