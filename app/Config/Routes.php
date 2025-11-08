@@ -26,6 +26,11 @@ $routes->group('admin', ['filter' => 'auth:admin,manajemen,kabag_aak,kabag_kuk']
     $routes->get('monitoring/excel/(:num)/(:num)', 'Admin\MonitoringController::exportExcel/$1/$2');
     $routes->get('monitoring/pdf/(:num)/(:num)', 'Admin\MonitoringController::exportPdf/$1/$2');
 
+    // --- RUTE BARU REMUNERASI ---
+    $routes->get('remunerasi', 'Admin\RemunerasiController::index');
+    $routes->post('remunerasi/store', 'Admin\RemunerasiController::store');
+    // --- AKHIR RUTE BARU ---
+
     $routes->get('users', 'Admin\UserController::index');
     $routes->post('users/store', 'Admin\UserController::store');
     $routes->post('users/update/(:num)', 'Admin\UserController::update/$1');
@@ -100,15 +105,9 @@ $routes->group('user', ['filter' => 'auth:admin,manajemen,kabag_aak,kabag_kuk,aa
 });
 
 // --- Grup Rute ECC ---
-// PERBAIKAN: Rute ECC dipecah
-
-// Rute ECC - Publik (Bisa diakses AAK, KUK, Manajemen, Admin, Kabag, dan SPM)
 $routes->group('ecc', ['filter' => 'auth:admin,manajemen,kabag_aak,kabag_kuk,aak,kuk,spm'], static function ($routes) {
-    // $routes->get('/', 'EccController::index'); // <-- DIHAPUS
-    
-    // Rute detail standar (standar_id, prodi, tahun)
+    // $routes->get('/', 'EccController::index'); // <-- Dihapus
     $routes->get('detail/(:num)/(:segment)/(:num)', 'EccController::detailStandar/$1/$2/$3');
-
     $routes->get('lkps', 'EccController::lkps');
     $routes->get('led', 'EccController::led');
     $routes->post('led/store', 'EccController::storeLed');

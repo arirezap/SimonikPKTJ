@@ -1,15 +1,13 @@
 <?php
 // app/Views/layouts/sidebar.php
 
-// --- PERBAIKAN: Tambahkan 4 baris ini ---
 $uri = service('uri');
 $segment1 = $uri->getSegment(1); // Cth: 'admin', 'user', 'ecc'
 $segment2 = $uri->getSegment(2); // Cth: 'dashboard', 'led', 'users'
 
-$current_uri = uri_string(); // Tetap digunakan untuk beberapa logika lama jika ada
+$current_uri = uri_string(); 
 $role = session()->get('role');
 
-// Logika untuk menu aktif (Contoh dari file lama Anda, bisa disesuaikan)
 $isKinerjaActive = (
     str_starts_with($current_uri, 'user/rencana') ||
     str_starts_with($current_uri, 'user/realisasi') ||
@@ -23,6 +21,8 @@ $isEccActive = str_starts_with($current_uri, 'ecc');
 ?>
 
 <div class="sidebar">
+    <i class="bi bi-list sidebar-toggle" id="sidebarToggle"></i>
+    
     <div class="sidebar-header">
         <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ">
     </div>
@@ -57,12 +57,12 @@ $isEccActive = str_starts_with($current_uri, 'ecc');
                         <?php if ($role === 'spm' || $role === 'admin'): ?>
                             <li class="nav-item"><a href="<?= site_url('ecc/simulasi') ?>" class="nav-link sub-link <?= ($segment2 == 'simulasi') ? 'active' : '' ?>"><span>Simulasi Penilaian</span></a></li>
                         <?php endif; ?>
-                         </ul>
+                    </ul>
                 </div>
             </li>
 
 
-            <?php if (in_array($role, ['admin', 'manajemen', 'kabag_aak', 'kabag_kuk', 'aak', 'kuk', 'spm'])): // Tampil untuk semua user kecuali role aneh ?>
+            <?php if (in_array($role, ['admin', 'manajemen', 'kabag_aak', 'kabag_kuk', 'aak', 'kuk', 'spm'])): ?>
                 <li class="nav-item">
                     <a class="nav-link <?= $isKinerjaActive ? '' : 'collapsed' ?>" href="#kinerjaSubmenu" data-bs-toggle="collapse" role="button">
                         <i class="bi bi-graph-up-arrow"></i><span>Kinerja</span>
@@ -103,6 +103,14 @@ $isEccActive = str_starts_with($current_uri, 'ecc');
 
             <?php if ($isAdmin || $isKabag): ?>
                 <li class="nav-item"><a href="<?= site_url('admin/monitoring') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/monitoring')) ? 'active' : '' ?>"><i class="bi bi-kanban-fill"></i><span>Monitoring Kinerja</span></a></li>
+                
+                <li class="nav-item">
+                    <a class="nav-link <?= ($segment1 == 'admin' && $segment2 == 'remunerasi') ? 'active' : '' ?>" 
+                       href="<?= site_url('admin/remunerasi') ?>">
+                        <i class="bi bi-wallet-fill"></i>
+                        <span>Input Remunerasi</span>
+                    </a>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link <?= $isMasterDataActive ? '' : 'collapsed' ?>" href="#masterSubmenu" data-bs-toggle="collapse" role="button">
                         <i class="bi bi-stack"></i><span>Master Data</span>

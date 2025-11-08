@@ -29,9 +29,9 @@
 
         <div class="content-wrapper">
             <div class="content-area">
+                
                 <div class="d-flex align-items-center mb-4">
-                    <i class="bi bi-list sidebar-toggle" id="sidebarToggle"></i>
-                    <h1 class="mb-0 ms-3"><?= $this->renderSection('page_title') ?></h1>
+                    <h1 class="mb-0"><?= $this->renderSection('page_title') ?></h1>
                 </div>
 
                 <?= $this->renderSection('content') ?>
@@ -44,21 +44,48 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
+        /**
+         * Fungsi ini menonaktifkan (atau mengaktifkan) atribut 'data-bs-toggle' 
+         * pada link sidebar. Ini PENTING agar saat mode mini, klik pada ikon 
+         * tidak memicu collapse Bootstrap, dan membiarkan CSS :hover 
+         * menangani fly-out menu.
+         */
+        function toggleCollapseBehavior(isToggled) {
+            const sidebarLinks = document.querySelectorAll('.sidebar-menu .nav-link[data-bs-toggle="collapse"]');
+            
+            sidebarLinks.forEach(link => {
+                if (isToggled) {
+                    // Jika sidebar di-toggle (mini), nonaktifkan data-bs-toggle
+                    link.dataset.bsToggle = 'disabled';
+                } else {
+                    // Jika sidebar normal, aktifkan kembali
+                    link.dataset.bsToggle = 'collapse';
+                }
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             const sidebarToggle = document.getElementById('sidebarToggle');
             const mainWrapper = document.querySelector('.main-wrapper');
+            const isToggled = localStorage.getItem('sidebarToggled') === 'true';
 
-            if (localStorage.getItem('sidebarToggled') === 'true') {
+            // Set state awal saat halaman dimuat
+            if (isToggled) {
                 mainWrapper.classList.add('sidebar-toggled');
             }
+            toggleCollapseBehavior(isToggled); // Panggil fungsi saat load
 
-            sidebarToggle.addEventListener('click', function() {
-                mainWrapper.classList.toggle('sidebar-toggled');
-                localStorage.setItem('sidebarToggled', mainWrapper.classList.contains('sidebar-toggled'));
-            });
+            // Event listener untuk tombol toggle
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', function() {
+                    mainWrapper.classList.toggle('sidebar-toggled');
+                    const isNowToggled = mainWrapper.classList.contains('sidebar-toggled');
+                    localStorage.setItem('sidebarToggled', isNowToggled);
+                    toggleCollapseBehavior(isNowToggled); // Panggil fungsi saat di-klik
+                });
+            }
         });
     </script>
-
     <?= $this->renderSection('scripts') ?>
 </body>
 

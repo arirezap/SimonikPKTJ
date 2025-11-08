@@ -5,14 +5,18 @@
     --primary-color: #0d6efd;
     --danger-color: #dc3545;
     --light-gray: #f8f9fa;
-    --sidebar-width: 280px;
+    
+    /* --- PERUBAHAN LEBAR --- */
+    --sidebar-width: 250px; /* Dipersempit dari 260px, font lebih kecil */
+    --sidebar-mini-width: 72px; /* Dipersempit dari 80px */
 }
 
 body {
     background-color: var(--light-gray);
     font-family: 'Inter', sans-serif;
-    /* PERBAIKAN: Pindahkan overflow-x: hidden ke body */
     overflow-x: hidden;
+    /* --- PERUBAHAN FONT --- */
+    font-size: 0.95rem; /* Perkecil font body sedikit */
 }
 
 /* ===================================================================
@@ -21,36 +25,27 @@ body {
 .main-wrapper {
     display: flex;
     width: 100%;
+    transition: all 0.3s ease-in-out;
 }
 
 .content-wrapper {
     flex-grow: 1;
     transition: all 0.3s ease-in-out;
-    width: 100%;
-    /* PERBAIKAN: Padding default dihapus dari sini agar sticky footer bekerja */
-    /* padding: 1.5rem; */ 
-    
-    /* PERBAIKAN: Hapus overflow-x: hidden; agar position:sticky berfungsi */
-    /* overflow-x: hidden; */
-    
-    /* Tambahkan ini agar content-wrapper bisa scroll jika kontennya panjang */
     display: flex;
     flex-direction: column;
     max-height: 100vh;
     overflow-y: auto;
 }
 
-/* PERBAIKAN: Buat wrapper baru untuk padding konten */
 .content-area {
     padding: 1.5rem;
-    flex-grow: 1; /* Biarkan area konten tumbuh */
+    flex-grow: 1; 
 }
 
 
 .sidebar {
     flex-shrink: 0;
-    margin-left: 0;
-    transition: margin-left 0.3s ease-in-out;
+    transition: width 0.3s ease-in-out; 
     width: var(--sidebar-width);
     display: flex;
     flex-direction: column;
@@ -61,27 +56,167 @@ body {
     background-color: white;
     border-right: 1px solid #ddd;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+    position: relative;
+    z-index: 100;
 }
 
+/* Logika Toggle Baru (Mode Mini) */
 .sidebar-toggled .sidebar {
-    margin-left: calc(-1 * var(--sidebar-width));
+    width: var(--sidebar-mini-width); 
 }
 
-.sidebar-toggle {
+/* Tombol Toggle (dipindahkan ke sidebar) */
+.sidebar .sidebar-toggle {
+    position: absolute;
+    top: 1rem;
+    right: 1.25rem;
     font-size: 1.5rem;
     cursor: pointer;
     color: #6c757d;
+    transition: all 0.3s ease-in-out;
+}
+
+.sidebar .sidebar-toggle:hover {
+    color: var(--primary-color);
+}
+
+/* Putar tombol dan pusatkan saat sidebar mini */
+.sidebar-toggled .sidebar .sidebar-toggle {
+    transform: rotate(180deg);
+    right: calc((var(--sidebar-mini-width) - 1.5rem) / 2); /* Pusatkan tombol */
 }
 
 /* ===================================================================
-   LOGIN PAGE STYLES
+   STYLING MODE MINI (ICON-ONLY)
    =================================================================== */
-/* Font import disarankan dipindah ke <head> HTML */
 
+/* Sembunyikan header logo & text, sisakan ruang */
+.sidebar-toggled .sidebar-header {
+    text-align: center;
+    padding-bottom: 1rem;
+    margin-top: 2rem; 
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.sidebar-toggled .sidebar-header img {
+    max-width: 36px; /* Perkecil logo */
+}
+
+.sidebar-menu {
+    flex-grow: 1;
+    overflow-y: auto;
+    overflow-x: hidden; /* Default: hidden */
+    padding-right: 5px;
+}
+
+/* --- PERBAIKAN PENTING --- */
+/* Saat mini, izinkan overflow-x agar menu fly-out bisa terlihat */
+.sidebar-toggled .sidebar-menu {
+    overflow-x: visible;
+}
+
+/* Sembunyikan text, pusatkan icon */
+.sidebar-toggled .sidebar .nav-link {
+    justify-content: center; 
+    padding: 12px 10px; 
+}
+
+.sidebar-toggled .sidebar .nav-link span {
+    display: none; /* Sembunyikan teks */
+}
+
+.sidebar-toggled .sidebar .nav-link .bi {
+    margin-right: 0; 
+    font-size: 1.3rem; 
+    width: auto;
+}
+
+.sidebar-toggled .sidebar .nav-link .sidebar-toggle-icon {
+    display: none; /* Sembunyikan panah dropdown */
+}
+
+.sidebar-toggled .sidebar .menu-divider {
+    margin: 0.5rem 0.2rem;
+ }
+ 
+/* ===================================================================
+   LOGIKA BARU: Fly-out Menu (Saat Mode Mini)
+   =================================================================== */
+
+/* 1. Buat .nav-item sebagai jangkar posisi */
+.sidebar-toggled .sidebar .nav-item {
+    position: relative; 
+}
+
+/* 2. Posisikan submenu (collapse) di sebelah kanan sidebar */
+.sidebar-toggled .sidebar .collapse {
+    position: absolute;
+    left: var(--sidebar-mini-width); /* Mulai persis di kanan sidebar mini */
+    top: 0;
+    z-index: 1050; /* Tampil di atas konten */
+    
+    width: 240px; /* --- PERLEBAR FLY-OUT DARI 220px --- */
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 0 6px 6px 0; /* Sudut bulat di kanan */
+    box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 0.5rem;
+
+    /* 3. Sembunyikan secara default */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease-out, visibility 0.2s ease-out;
+    pointer-events: none; /* Tidak bisa diklik saat tersembunyi */
+}
+
+/* 4. Tampilkan submenu saat .nav-item (induknya) di-hover */
+.sidebar-toggled .sidebar .nav-item:hover > .collapse {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto; /* Bisa diklik saat terlihat */
+}
+
+/* 5. Pastikan <ul> di dalam .collapse terlihat */
+.sidebar-toggled .sidebar .collapse .nav {
+    display: block !important;
+    visibility: visible !important;
+    height: auto !important;
+}
+
+/* 6. Atur ulang style link di dalam fly-out agar teks terlihat lagi */
+.sidebar-toggled .sidebar .collapse .nav-link span {
+    display: inline !important; /* Tampilkan teks lagi */
+}
+
+.sidebar-toggled .sidebar .collapse .nav-link .bi {
+    margin-right: 12px !important; /* Kembalikan margin icon */
+    font-size: 1rem !important; /* Kembalikan ukuran icon normal */
+}
+
+.sidebar-toggled .sidebar .collapse .nav-link {
+    justify-content: flex-start !important; /* Kembalikan rata kiri */
+    padding: 10px 15px; /* Padding normal untuk submenu */
+    
+    /* --- PERBAIKAN UTAMA: Izinkan text wrap di fly-out --- */
+    white-space: normal !important; 
+    height: auto; /* Biarkan tinggi menyesuaikan konten */
+    
+    /* Pastikan link di dalam fly-out bisa diklik */
+    pointer-events: auto !important;
+}
+
+.sidebar-toggled .sidebar .collapse .nav-link.sub-link {
+    padding-left: 20px !important;
+}
+
+
+/* ===================================================================
+   LOGIN PAGE STYLES (Tidak Berubah)
+   =================================================================== */
 body.login-page {
     background: linear-gradient(135deg, var(--primary-color) 0%, #6f42c1 100%);
 }
-
 .login-card {
     border: none;
     border-radius: 1rem;
@@ -90,12 +225,10 @@ body.login-page {
     background-color: white;
     animation: fadeIn 0.5s ease-out;
 }
-
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-20px); }
     to   { opacity: 1; transform: translateY(0); }
 }
-
 .login-card .card-body,
 .login-card form {
     width: 100%;
@@ -147,7 +280,7 @@ body.login-page {
 }
 
 /* ===================================================================
-   SIDEBAR STYLING
+   SIDEBAR STYLING (Mode Normal)
    =================================================================== */
 .sidebar-header {
     text-align: center;
@@ -155,29 +288,26 @@ body.login-page {
     margin-bottom: 1rem;
     border-bottom: 1px solid #eee;
     flex-shrink: 0; 
+    transition: all 0.3s ease-in-out;
 }
 
 .sidebar-header img {
     max-width: 60px;
     height: auto;
-}
-
-.sidebar-menu {
-    flex-grow: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding-right: 5px;
+    transition: all 0.3s ease-in-out;
 }
 
 .sidebar .nav-link {
     color: #333;
-    padding: 12px 15px;
+    padding: 10px 15px; /* Perkecil padding */
     transition: all 0.2s ease-in-out;
     border-radius: 6px;
-    margin-bottom: 5px;
+    margin-bottom: 4px; /* Kurangi margin */
     display: flex;
     align-items: center;
     font-weight: 500;
+    white-space: nowrap; 
+    font-size: 0.9rem; /* --- PERUBAHAN FONT --- */
 }
 
 .sidebar .nav-link:hover {
@@ -188,7 +318,8 @@ body.login-page {
 .sidebar .nav-link .bi {
     margin-right: 12px;
     font-size: 1.1rem;
-    width: 20px;
+    width: 20px; 
+    transition: all 0.3s ease-in-out;
 }
 
 .sidebar .nav-link.active {
@@ -199,8 +330,15 @@ body.login-page {
 
 .sidebar .sub-link {
     padding-left: 20px;
-    font-size: 0.9rem;
+    font-size: 0.85rem; /* --- PERUBAHAN FONT --- */
     color: #495057;
+
+    /* --- PERBAIKAN UTAMA DI SINI --- */
+    white-space: normal; /* Izinkan sub-menu untuk wrap */
+    height: auto; /* Izinkan tinggi untuk bertambah jika wrap */
+    line-height: 1.4; /* Atur jarak baris jika wrap */
+    padding-top: 10px;
+    padding-bottom: 10px;
 }
 
 .sidebar .sub-link.active {
@@ -217,6 +355,7 @@ body.login-page {
 .sidebar .menu-divider {
     margin: 0.5rem 1rem;
     border-top: 1px solid #eee;
+    transition: all 0.3s ease-in-out;
 }
 
 .sidebar .nav-link .sidebar-toggle-icon {
