@@ -21,8 +21,13 @@ trait EccDataTrait
         $submissionModel = new LedSubmission(); // Model baru untuk cek approval
 
         // 1. Ambil semua Standar dari Master Standar (Label Grafik)
-        $standar_raw = $standarModel->orderBy('nama_standar', 'ASC')->findAll();
+        // --- PERUBAHAN DI SINI: Ambil ID dan Nama Standar ---
+        $standar_raw = $standarModel->select('id, nama_standar')->orderBy('nama_standar', 'ASC')->findAll();
+        
+        // Pisahkan antara ID dan Label
         $chart_labels = array_column($standar_raw, 'nama_standar');
+        $chart_label_ids = array_column($standar_raw, 'id');
+        // --- SELESAI PERUBAHAN ---
         
         $prodiList = config('Simonik')->prodiList;
         $prodiData = [];
@@ -113,7 +118,8 @@ trait EccDataTrait
                 'id_prodi' => $prodi,
                 'nama_prodi' => $prodi,
                 'chart_labels' => $chart_labels,
-                'chart_data' => $chart_data
+                'chart_data' => $chart_data,
+                'chart_label_ids' => $chart_label_ids // <-- DATA BARU DITAMBAHKAN DI SINI
             ];
         }
 

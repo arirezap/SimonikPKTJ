@@ -12,6 +12,15 @@ use App\Controllers\Traits\EccDataTrait;
 class EccController extends BaseController
 {
     use EccDataTrait;
+    
+    // Definisikan properti $db
+    protected $db;
+
+    public function __construct()
+    {
+        // Inisialisasi koneksi database
+        $this->db = \Config\Database::connect();
+    }
 
     public function index()
     {
@@ -300,5 +309,100 @@ class EccController extends BaseController
             return redirect()->to('ecc/simulasi?prodi=' . $prodi . '&tahun=' . $tahun)
                 ->with('error', 'Gagal menyimpan data: ' . $e->getMessage());
         }
+    }
+    
+    // ==========================================================
+    // FUNGSI BARU UNTUK HALAMAN DETAIL STANDAR
+    // ==========================================================
+    public function detailStandar($standar_id, $prodi, $tahun)
+    {
+        $standarModel = new LedStandar();
+        $criteriaModel = new LedCriteria();
+
+        // 1. Ambil nama standar
+        $standar = $standarModel->find($standar_id);
+        if (!$standar) {
+            return redirect()->to('/ecc')->with('error', 'Standar tidak ditemukan.');
+        }
+
+        // 2. Ambil semua data terkait untuk standar, prodi, dan tahun ini
+        // Kita join semua tabel yang relevan
+        $criteria_data = $criteriaModel
+            ->select('
+                led_criteria.id, 
+                led_criteria.nama_kriteria, 
+                led_criteria.role_assignment,
+                s.status, 
+                s.catatan, 
+                s.kabag_approved,
+                sc.skor
+            ')
+            ->join('led_submissions s', 's.led_criteria_id = led_criteria.id AND s.prodi = led_criteria.prodi AND s.tahun = ' . $this->db->escape($tahun), 'left')
+            ->join('led_scores sc', 'sc.led_criteria_id = led_criteria.id AND sc.prodi = led_criteria.prodi AND sc.tahun = ' . $this->db->escape($tahun), 'left')
+            ->where('led_criteria.id_standar', $standar_id)
+            ->where('led_criteria.prodi', $prodi)
+            ->orderBy('led_criteria.id', 'ASC')
+            ->findAll();
+
+        // 3. Siapkan data for Bar Chart and Table
+        $barChartLabels = [];
+        $barChartScores = [];
+        $barChartTooltips = []; // <-- ARRAY BARU
+        $tableData = []; // <-- ARRAY BARU untuk view
+        $no = 1;
+
+        foreach ($criteria_data as $item) {
+            // --- LOGIKA BARU ---
+            $isApproved = ($item['kabag_approved'] == 1 && !empty($item['status']));
+            $raw_skor = (float)($item['skor'] ?? 0);
+            
+            // Skor yang akan ditampilkan dan dihitung di bar chart
+            $skor_display = $isApproved ? $raw_skor : 0;
+            
+            $skor_alasan = ''; // Alasan HANYA jika tidak disetujui
+            if (!$isApproved) {
+                 if (empty($item['catatan'])) {
+                    $skor_alasan = 'Bukti (link) belum diunggah.';
+                 } else if ($item['kabag_approved'] == 0) {
+                    $skor_alasan = 'Menunggu persetujuan Kabag.';
+                } elseif (empty($item['status'])) {
+                    $skor_alasan = 'Menunggu penilaian Wadir.';
+                } else {
+                    $skor_alasan = 'Item belum disetujui.'; // Fallback
+                }
+            }
+            // --- SELESAI LOGIKA BARU ---
+
+            // Data untuk Tabel
+            $tableRow = $item;
+            $tableRow['no'] = $no++;
+            $tableRow['skor_display'] = $skor_display;
+            $tableRow['skor_alasan_text'] = $skor_alasan; // Alasan untuk tooltip tabel
+            $tableRow['is_approved'] = $isApproved;
+            $tableData[] = $tableRow;
+
+            // Data untuk Chart
+            $barChartLabels[] = "Kriteria " . $tableRow['no']; // Label Sumbu X: "Kriteria 1", "Kriteria 2"
+            $barChartScores[] = $skor_display; // <-- Kirim skor yang sudah diproses
+            
+            // Data untuk Tooltip Chart
+            $barChartTooltips[] = [
+                'nama_kriteria' => $item['nama_kriteria'],
+                'skor_alasan' => $skor_alasan // Hanya berisi alasan (jika ada)
+            ];
+        }
+        
+        $data = [
+            'page_title' => 'Detail Standar: ' . $standar['nama_standar'],
+            'standar' => $standar,
+            'prodi' => $prodi,
+            'tahun' => $tahun,
+            'criteria_data' => $tableData, // <-- MODIFIED
+            'barChartLabels' => json_encode($barChartLabels),
+            'barChartScores' => json_encode($barChartScores),
+            'barChartTooltips' => json_encode($barChartTooltips) // <-- NEW
+        ];
+
+        return view('ecc/detail_standar', $data);
     }
 }

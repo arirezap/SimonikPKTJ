@@ -108,6 +108,12 @@ $routes->group('user', ['filter' => 'auth:admin,manajemen,kabag_aak,kabag_kuk,aa
 // Rute ECC - Publik (Bisa diakses AAK, KUK, Manajemen, Admin, Kabag, dan SPM)
 $routes->group('ecc', ['filter' => 'auth:admin,manajemen,kabag_aak,kabag_kuk,aak,kuk,spm'], static function ($routes) {
     $routes->get('/', 'EccController::index'); // Dashboard ECC
+    
+    // --- RUTE BARU DITAMBAHKAN DI SINI ---
+    // (standar_id, prodi, tahun)
+    $routes->get('detail/(:num)/(:segment)/(:num)', 'EccController::detailStandar/$1/$2/$3');
+    // --- BATAS RUTE BARU ---
+
     $routes->get('lkps', 'EccController::lkps');
     $routes->get('led', 'EccController::led');
     $routes->post('led/store', 'EccController::storeLed');

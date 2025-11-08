@@ -36,7 +36,6 @@ Dashboard ECC (Evidence Command Center)
 
 <?= $this->section('content') ?>
 
-<!-- Form Filter Tahun -->
 <div class="card mb-4">
     <div class="card-body">
         <form method="GET" action="<?= site_url('ecc') ?>" class="row g-3 align-items-end">
@@ -44,7 +43,6 @@ Dashboard ECC (Evidence Command Center)
                 <label for="tahun" class="form-label">Pilih Tahun</label>
                 <select name="tahun" id="tahun" class="form-select" onchange="this.form.submit()">
                     <?php foreach ($daftar_tahun as $tahun_item): ?>
-                        <?php // Perbaikan di sini: $tahun_item adalah string, bukan array ?>
                         <option value="<?= esc($tahun_item) ?>" <?= ($selectedTahun == $tahun_item) ? 'selected' : '' ?>>
                             <?= esc($tahun_item) ?>
                         </option>
@@ -55,7 +53,6 @@ Dashboard ECC (Evidence Command Center)
     </div>
 </div>
 
-<!-- Navigasi Tab untuk 3 Prodi -->
 <ul class="nav nav-tabs" id="prodiTab" role="tablist">
     <?php $first = true; ?>
     <?php foreach($prodiData as $prodi): ?>
@@ -68,7 +65,6 @@ Dashboard ECC (Evidence Command Center)
     <?php endforeach; ?>
 </ul>
 
-<!-- Konten Tab -->
 <div class="tab-content" id="prodiTabContent">
     <?php $first = true; ?>
     <?php foreach($prodiData as $prodi): ?>
@@ -85,6 +81,9 @@ Dashboard ECC (Evidence Command Center)
                         <div class="chart-container">
                             <canvas id="radarChart-<?= esc($prodi['id_prodi']) ?>"></canvas>
                         </div>
+                        <p class="text-center text-muted small mt-2 mb-0">
+                            <i class="bi bi-info-circle"></i> Klik pada nama standar (label) di grafik untuk melihat rincian detailnya.
+                        </p>
                     <?php endif; ?>
                 </div>
             </div>
@@ -102,6 +101,45 @@ Dashboard ECC (Evidence Command Center)
 document.addEventListener('DOMContentLoaded', function () {
     // Siapkan data dari PHP
     const prodiData = <?= json_encode($prodiData) ?>;
+    const selectedTahun = '<?= esc($selectedTahun) ?>';
+
+    /**
+     * Fungsi untuk mendeteksi label mana yang diklik pada grafik radar
+     */
+    function getClickedLabel(clickEvent, chart) {
+        const r = chart.scales.r;
+        const pointLabelItems = r._pointLabelItems; 
+        if (!pointLabelItems || pointLabelItems.length === 0) return null;
+
+        const { x, y } = clickEvent;
+        
+        let closestLabelIndex = -1;
+        let minDistance = Infinity;
+
+        for (let i = 0; i < pointLabelItems.length; i++) {
+            const item = pointLabelItems[i];
+            const distance = Math.sqrt(Math.pow(x - item.x, 2) + Math.pow(y - item.y, 2));
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestLabelIndex = i;
+            }
+        }
+
+        if (closestLabelIndex > -1) {
+            try {
+                const item = pointLabelItems[closestLabelIndex];
+                const itemWidth = item.options.bounds.width;
+                if (minDistance < (itemWidth / 2) + 10) { 
+                    return closestLabelIndex;
+                }
+            } catch (e) {
+                if (minDistance < 30) {
+                     return closestLabelIndex;
+                }
+            }
+        }
+        return null;
+    }
 
     // Loop melalui setiap data prodi dan buat grafiknya
     for (const [id, data] of Object.entries(prodiData)) {
@@ -111,6 +149,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 type: 'radar',
                 data: {
                     labels: data.chart_labels,
+                    labelIds: data.chart_label_ids, 
+                    prodi: data.id_prodi,
+                    tahun: selectedTahun,
                     datasets: [{
                         label: 'Skor ' + data.nama_prodi,
                         data: data.chart_data,
@@ -136,9 +177,22 @@ document.addEventListener('DOMContentLoaded', function () {
                             
                             pointLabels: {
                                 display: true,
+                                color: '#0d6efd', 
+                                hoverColor: '#0a58ca',
                                 font: {
                                     size: 12,
                                     weight: 'bold'
+                                },
+                                hoverFont: {
+                                    weight: 'bolder'
+                                },
+                                backdropPadding: 4,
+                                padding: 10, 
+                                onHover: (event, label) => {
+                                    event.native.target.style.cursor = 'pointer';
+                                },
+                                onLeave: (event, label) => {
+                                    event.native.target.style.cursor = 'default';
                                 }
                             },
                             ticks: {
@@ -149,6 +203,46 @@ document.addEventListener('DOMContentLoaded', function () {
                     plugins: {
                         legend: {
                             position: 'top',
+                        },
+                        // --- PERUBAHAN LOGIKA TOOLTIP DI SINI ---
+                        tooltip: {
+                            callbacks: {
+                                label: function(tooltipItem) {
+                                    let label = tooltipItem.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (tooltipItem.formattedValue !== null) {
+                                        label += tooltipItem.formattedValue;
+                                    }
+                                    return label;
+                                },
+                                afterLabel: function(tooltipItem) {
+                                    const score = tooltipItem.parsed.r;
+                                    if (score === 0) {
+                                        let lines = [
+                                            'Skor 0 karena item standar ini:',
+                                            '- Belum disetujui Kabag/Wadir',
+                                            '- Belum dinilai/disimulasi',
+                                            'Klik label untuk detail.'
+                                        ];
+                                        return lines;
+                                    }
+                                    return ''; // Kosong jika skor > 0
+                                }
+                            }
+                        }
+                        // --- SELESAI PERUBAHAN TOOLTIP ---
+                    },
+                    onClick: (e, elements, chart) => {
+                        const clickedLabelIndex = getClickedLabel(e, chart);
+                        
+                        if (clickedLabelIndex !== null) {
+                            const labelId = chart.config.data.labelIds[clickedLabelIndex];
+                            const prodi = chart.config.data.prodi;
+                            const tahun = chart.config.data.tahun;
+                            
+                            window.location.href = `<?= site_url('ecc/detail') ?>/${labelId}/${prodi}/${tahun}`;
                         }
                     }
                 }
