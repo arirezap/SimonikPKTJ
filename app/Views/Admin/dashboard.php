@@ -181,11 +181,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Siapkan data dari PHP
-    const prodiData = <?= json_encode($prodiData) ?>;
-    const selectedTahun = '<?= esc($tahun_terpilih) ?>';
-
     /**
      * Fungsi untuk mendeteksi label mana yang diklik pada grafik radar
      */
@@ -224,146 +219,161 @@ document.addEventListener('DOMContentLoaded', function () {
         return null;
     }
 
-    // Loop melalui setiap data prodi dan buat grafiknya
-    for (const [id, data] of Object.entries(prodiData)) {
-        const ctx = document.getElementById('radarChart-' + id);
-        if (ctx) {
-            new Chart(ctx, {
-                type: 'radar',
+    /**
+     * Bungkus semua logika chart dalam satu fungsi
+     */
+    function initDashboardCharts() {
+        console.log("Initializing dashboard charts..."); // Tambahkan log
+        
+        // --- 1. Logika Grafik Radar ECC ---
+        const prodiData = <?= json_encode($prodiData) ?>;
+        const selectedTahun = '<?= esc($tahun_terpilih) ?>';
+
+        for (const [id, data] of Object.entries(prodiData)) {
+            const canvasId = 'radarChart-' + id;
+            const ctx = document.getElementById(canvasId);
+            if (ctx) {
+                
+                // --- PERBAIKAN: Hancurkan chart lama jika ada ---
+                let existingRadarChart = Chart.getChart(canvasId);
+                if (existingRadarChart) {
+                    console.log("Destroying existing radar chart: " + canvasId);
+                    existingRadarChart.destroy();
+                }
+                // --- SELESAI PERBAIKAN ---
+
+                new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: data.chart_labels,
+                        labelIds: data.chart_label_ids, 
+                        prodi: data.id_prodi,
+                        tahun: selectedTahun,
+                        datasets: [{
+                            label: 'Skor ' + data.nama_prodi,
+                            data: data.chart_data,
+                            fill: true,
+                            backgroundColor: 'rgba(13, 110, 253, 0.2)',
+                            borderColor: 'rgba(13, 110, 253, 1)',
+                            pointBackgroundColor: 'rgba(13, 110, 253, 1)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgba(13, 110, 253, 1)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                angleLines: { display: true },
+                                suggestedMin: 0,
+                                suggestedMax: 100,
+                                pointLabels: { 
+                                    display: true, 
+                                    color: '#0d6efd', 
+                                    hoverColor: '#0a58ca',
+                                    font: { size: 12, weight: 'bold' },
+                                    hoverFont: { weight: 'bolder' },
+                                    backdropPadding: 4,
+                                    padding: 10, 
+                                    onHover: (event, label) => { event.native.target.style.cursor = 'pointer'; },
+                                    onLeave: (event, label) => { event.native.target.style.cursor = 'default'; }
+                                },
+                                ticks: { display: false }
+                            }
+                        },
+                        plugins: { 
+                            legend: { position: 'top' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(tooltipItem) {
+                                        let label = tooltipItem.dataset.label || '';
+                                        if (label) { label += ': '; }
+                                        if (tooltipItem.formattedValue !== null) {
+                                            label += tooltipItem.formattedValue;
+                                        }
+                                        return label;
+                                    },
+                                    afterLabel: function(tooltipItem) {
+                                        const score = tooltipItem.parsed.r;
+                                        if (score === 0) {
+                                            let lines = [
+                                                'Skor 0 karena item standar ini:',
+                                                '- Belum disetujui Kabag/Wadir',
+                                                '- Belum dinilai/disimulasi',
+                                                'Klik label untuk detail.'
+                                            ];
+                                            return lines;
+                                        }
+                                        return '';
+                                    }
+                                }
+                            }
+                        },
+                        onClick: (e, elements, chart) => {
+                            const clickedLabelIndex = getClickedLabel(e, chart);
+                            if (clickedLabelIndex !== null) {
+                                const labelId = chart.config.data.labelIds[clickedLabelIndex];
+                                const prodi = chart.config.data.prodi;
+                                const tahun = chart.config.data.tahun;
+                                const returnUrl = 'admin'; 
+                                window.location.href = `<?= site_url('ecc/detail') ?>/${labelId}/${prodi}/${tahun}?from=${returnUrl}`;
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // --- 2. Logika Grafik Bar Kinerja ---
+        <?php if (!empty($chartLabels)): ?>
+        const barCanvasId = 'userPerformanceChart';
+        const ctxBar = document.getElementById(barCanvasId);
+        if (ctxBar) {
+            let existingChart = Chart.getChart(barCanvasId);
+            if (existingChart) {
+                console.log("Destroying existing bar chart: " + barCanvasId);
+                existingChart.destroy();
+            }
+            
+            new Chart(ctxBar, {
+                type: 'bar',
                 data: {
-                    labels: data.chart_labels,
-                    labelIds: data.chart_label_ids, 
-                    prodi: data.id_prodi,
-                    tahun: selectedTahun,
+                    labels: <?= json_encode($chartLabels); ?>,
                     datasets: [{
-                        label: 'Skor ' + data.nama_prodi,
-                        data: data.chart_data,
-                        fill: true,
-                        backgroundColor: 'rgba(13, 110, 253, 0.2)',
-                        borderColor: 'rgba(13, 110, 253, 1)',
-                        pointBackgroundColor: 'rgba(13, 110, 253, 1)',
-                        pointBorderColor: '#fff',
-                        pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: 'rgba(13, 110, 253, 1)'
+                        label: 'Persentase Capaian',
+                        data: <?= json_encode($chartData); ?>,
+                        backgroundColor: 'rgba(13, 110, 253, 0.7)',
                     }]
                 },
                 options: {
+                    indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
-                    scales: {
-                        r: {
-                            angleLines: { display: true },
-                            suggestedMin: 0,
-                            suggestedMax: 100,
-                            pointLabels: { 
-                                display: true, 
-                                color: '#0d6efd', 
-                                hoverColor: '#0a58ca',
-                                font: {
-                                    size: 12,
-                                    weight: 'bold'
-                                },
-                                hoverFont: {
-                                    weight: 'bolder'
-                                },
-                                backdropPadding: 4,
-                                padding: 10, 
-                                onHover: (event, label) => {
-                                    event.native.target.style.cursor = 'pointer';
-                                },
-                                onLeave: (event, label) => {
-                                    event.native.target.style.cursor = 'default';
-                                }
-                            },
-                            ticks: { display: false }
-                        }
+                    scales: { 
+                        x: { 
+                            beginAtZero: true, 
+                            ticks: { 
+                                callback: value => value + "%" 
+                            } 
+                        } 
                     },
                     plugins: { 
-                        legend: { position: 'top' },
-                        // --- PERUBAHAN LOGIKA TOOLTIP DI SINI ---
-                        tooltip: {
-                            callbacks: {
-                                label: function(tooltipItem) {
-                                    let label = tooltipItem.dataset.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (tooltipItem.formattedValue !== null) {
-                                        label += tooltipItem.formattedValue;
-                                    }
-                                    return label;
-                                },
-                                afterLabel: function(tooltipItem) {
-                                    const score = tooltipItem.parsed.r;
-                                    if (score === 0) {
-                                        let lines = [
-                                            'Skor 0 karena item standar ini:',
-                                            '- Belum disetujui Kabag/Wadir',
-                                            '- Belum dinilai/disimulasi',
-                                            'Klik label untuk detail.'
-                                        ];
-                                        return lines;
-                                    }
-                                    return ''; // Kosong jika skor > 0
-                                }
-                            }
-                        }
-                        // --- SELESAI PERUBAHAN TOOLTIP ---
-                    },
-                    onClick: (e, elements, chart) => {
-                        const clickedLabelIndex = getClickedLabel(e, chart);
-                        
-                        if (clickedLabelIndex !== null) {
-                            const labelId = chart.config.data.labelIds[clickedLabelIndex];
-                            const prodi = chart.config.data.prodi;
-                            const tahun = chart.config.data.tahun;
-                            
-                            window.location.href = `<?= site_url('ecc/detail') ?>/${labelId}/${prodi}/${tahun}`;
-                        }
+                        legend: { 
+                            display: false 
+                        } 
                     }
                 }
             });
         }
+        <?php endif; ?>
     }
-});
-</script>
 
-<?php if (!empty($chartLabels)): ?>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const ctxBar = document.getElementById('userPerformanceChart');
-    if (ctxBar) { // Tambahkan pengecekan jika elemen ada
-        new Chart(ctxBar, {
-            type: 'bar',
-            data: {
-                labels: <?= json_encode($chartLabels); ?>,
-                datasets: [{
-                    label: 'Persentase Capaian',
-                    data: <?= json_encode($chartData); ?>,
-                    backgroundColor: 'rgba(13, 110, 253, 0.7)',
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: { 
-                    x: { 
-                        beginAtZero: true, 
-                        ticks: { 
-                            callback: value => value + "%" 
-                        } 
-                    } 
-                },
-                plugins: { 
-                    legend: { 
-                        display: false 
-                    } 
-                }
-            }
-        });
-    }
-});
+    // --- PERUBAHAN BARU: Hapus DOMContentLoaded, hanya gunakan 'pageshow' ---
+    // 'pageshow' berjalan SETELAH DOMContentLoaded pada pemuatan normal
+    // DAN berjalan sendirian pada pemuatan dari bfcache.
+    // Ini mencakup kedua skenario.
+    window.addEventListener('pageshow', initDashboardCharts);
 </script>
-<?php endif; ?>
 <?= $this->endSection() ?>

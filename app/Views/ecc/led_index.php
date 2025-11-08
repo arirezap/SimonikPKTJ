@@ -5,7 +5,6 @@
 
 <?= $this->section('styles') ?>
 <style>
-    /* Style untuk sticky footer button */
     .sticky-footer-bar {
         position: sticky;
         bottom: 0;
@@ -25,9 +24,20 @@
     .kriteria-row:last-child {
         border-bottom: none;
     }
-    /* Warna untuk status persetujuan Kabag */
-    .status-pending { color: #ffc107; }
-    .status-approved { color: #198754; }
+    /* Style untuk text area catatan review */
+    .review-notes {
+        font-size: 0.85rem;
+    }
+    .review-notes label {
+        color: #555;
+    }
+    .review-notes textarea {
+        background-color: #f8f9fa;
+    }
+    .review-notes textarea[readonly] {
+        background-color: #e9ecef;
+        cursor: not-allowed;
+    }
 </style>
 <?= $this->endSection() ?>
 
@@ -81,7 +91,7 @@
 
 
 <?php 
-    $is_staf = in_array($currentRole, ['aak', 'kuk']);
+    $is_staf = in_array($currentRole, ['aak', 'kuk', 'spm']); // SPM sekarang dianggap staf di sini
     $is_kabag = in_array($currentRole, ['kabag_aak', 'kabag_kuk']);
     $is_wadir = in_array($currentRole, ['admin', 'manajemen']);
 ?>
@@ -97,12 +107,13 @@
                 <h5 class="mb-3">Checklist untuk: <span class="text-primary"><?= esc($selectedProdi) ?> - <?= esc($selectedTahun) ?></span></h5>
                 
                 <div class="table-responsive">
-                    <table class="table align-middle">
+                    <table class="table align-middle" style="min-width: 1200px;">
                         <thead class="table-light">
                             <tr>
                                 <th style="width: 5%;" class="text-center">No</th>
                                 <th>Kriteria/Elemen/Indikator</th>
                                 <th style="width: 20%;" class="text-center">Link Lampiran (Staf)</th>
+                                <th style="width: 25%;" class="text-center">Catatan Review (Kabag/Wadir)</th>
                                 <th style="width: 12%;" class="text-center">Approve Kabag</th>
                                 <th style="width: 12%;" class="text-center">Status (Wadir)</th>
                             </tr>
@@ -114,6 +125,9 @@
                                     $link = $data['catatan'] ?? '';
                                     $kabag_approved = $data['kabag_approved'] ?? 0;
                                     $status = $data['status'] ?? '';
+                                    // Data Komentar Baru
+                                    $note_kabag = $data['catatan_kabag'] ?? '';
+                                    $note_wadir = $data['catatan_wadir'] ?? '';
                                 ?>
                                 <tr class="kriteria-row">
                                     <td class="text-center fw-bold"><?= $no++ ?></td>
@@ -128,9 +142,10 @@
                                             <span class="badge bg-secondary">Tugas: <?= strtoupper(esc($criteria['role_assignment'])) ?></span>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="text-center"> <?php if($is_staf): ?>
+                                    <td class="text-center">
+                                        <?php if($is_staf): // Staf hanya bisa isi link ?>
                                             <textarea name="catatan[<?= $criteria['id'] ?>]" class="form-control form-select-sm" rows="2" placeholder="Masukkan link Google Drive..."><?= esc($link) ?></textarea>
-                                        <?php else: ?>
+                                        <?php else: // Peran lain hanya bisa lihat link ?>
                                             <?php if (!empty($link)): ?>
                                                 <a href="<?= esc($link, 'attr') ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
                                                     <i class="bi bi-link-45deg"></i> Lihat Bukti
@@ -140,6 +155,51 @@
                                             <?php endif; ?>
                                         <?php endif; ?>
                                     </td>
+                                    
+                                    <td class="review-notes">
+                                        <?php if($is_staf): // Staf View (Read-only) ?>
+                                            <?php if(!empty($note_kabag)): ?>
+                                                <div class='mb-2'>
+                                                    <label class='form-label small fw-bold'>Catatan Kabag:</label>
+                                                    <textarea class='form-control form-control-sm' rows='2' readonly><?= esc($note_kabag) ?></textarea>
+                                                </div>
+                                            <?php endif; ?>
+                                            <?php if(!empty($note_wadir)): ?>
+                                                <div>
+                                                    <label class='form-label small fw-bold'>Catatan Wadir:</label>
+                                                    <textarea class='form-control form-control-sm' rows='2' readonly><?= esc($note_wadir) ?></textarea>
+                                                </div>
+                                            <?php endif; ?>
+                                            <?php if(empty($note_kabag) && empty($note_wadir)): ?>
+                                                <span class="text-muted small"><em>(Belum ada catatan)</em></span>
+                                            <?php endif; ?>
+
+                                        <?php elseif($is_kabag): // Kabag View (Edit Kabag, Read Wadir) ?>
+                                            <div class='mb-2'>
+                                                <label class='form-label small fw-bold'>Catatan Anda (Kabag):</label>
+                                                <textarea name="catatan_kabag[<?= $criteria['id'] ?>]" class="form-control form-control-sm" rows="2" placeholder="Beri masukan untuk staf..."><?= esc($note_kabag) ?></textarea>
+                                            </div>
+                                            <?php if(!empty($note_wadir)): ?>
+                                                <div>
+                                                    <label class='form-label small fw-bold'>Catatan Wadir:</label>
+                                                    <textarea class='form-control form-control-sm' rows='2' readonly><?= esc($note_wadir) ?></textarea>
+                                                </div>
+                                            <?php endif; ?>
+
+                                        <?php elseif($is_wadir): // Wadir/Admin View (Read Kabag, Edit Wadir) ?>
+                                            <?php if(!empty($note_kabag)): ?>
+                                                <div class='mb-2'>
+                                                    <label class='form-label small fw-bold'>Catatan Kabag:</label>
+                                                    <textarea class='form-control form-control-sm' rows='2' readonly><?= esc($note_kabag) ?></textarea>
+                                                </div>
+                                            <?php endif; ?>
+                                            <div>
+                                                <label class='form-label small fw-bold'>Catatan Anda (Wadir):</label>
+                                                <textarea name="catatan_wadir[<?= $criteria['id'] ?>]" class="form-control form-control-sm" rows="2" placeholder="Beri masukan..."><?= esc($note_wadir) ?></textarea>
+                                            </div>
+                                        <?php endif; ?>
+                                    </td>
+
                                     <td class="text-center">
                                         <?php if($is_kabag): ?>
                                             <select name="kabag_approved[<?= $criteria['id'] ?>]" class="form-select form-select-sm" <?= (empty($link)) ? 'disabled' : '' ?>>
@@ -176,7 +236,7 @@
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="5" class="text-center p-4">
+                                    <td colspan="6" class="text-center p-4">
                                         <?php if ($is_staf): ?>
                                             Belum ada Kriteria LED yang ditugaskan untuk Anda pada prodi ini.
                                         <?php else: ?>
@@ -195,7 +255,7 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('footer_bar') ?>
-    <?php if (!empty($all_criteria)): ?>
+    <?php if (!empty($all_criteria) && ($is_staf || $is_kabag || $is_wadir)): // Tampilkan tombol simpan jika ada rolenya ?>
     <div class="sticky-footer-bar">
         <button type="button" id="submitLedForm" class="btn btn-primary"><i class="bi bi-save me-2"></i> Simpan Perubahan</button>
     </div>

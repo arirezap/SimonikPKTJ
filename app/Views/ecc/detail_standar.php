@@ -13,8 +13,24 @@
         <h4 class="mb-0">Prodi: <span class="text-primary"><?= esc($prodi) ?></span> | Tahun: <span class="text-primary"><?= esc($tahun) ?></span></h4>
         <p class="text-muted">Menampilkan rincian kriteria dan skor untuk standar yang dipilih.</p>
     </div>
-    <a href="<?= site_url('ecc?tahun=' . $tahun) ?>" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Kembali ke Dashboard ECC</a>
-</div>
+    
+    <?php
+        $return_url = site_url('ecc?tahun=' . $tahun); // Default
+        $return_text = "Kembali ke Dashboard ECC";
+
+        if (isset($from_page) && $from_page === 'admin') {
+            // Kita asumsikan dashboard admin/user juga difilter berdasarkan tahun yang sama
+            $return_url = site_url('admin/dashboard?tahun=' . $tahun);
+            $return_text = "Kembali ke Dashboard Admin";
+        } elseif (isset($from_page) && $from_page === 'user') {
+            $return_url = site_url('user/dashboard?tahun=' . $tahun);
+            $return_text = "Kembali ke Dashboard User";
+        }
+    ?>
+    <a href="<?= $return_url ?>" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> <?= $return_text ?>
+    </a>
+    </div>
 
 <div class="card mb-4">
     <div class="card-header">
@@ -140,9 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         display: false 
                     },
                     tooltip: {
-                        // --- PERUBAHAN LOGIKA TOOLTIP ---
                         callbacks: {
-                            // Tampilkan Nama Kriteria Lengkap sebagai Judul
                             title: function(tooltipItems) {
                                 const index = tooltipItems[0].dataIndex;
                                 const fullText = barChartTooltips[index].nama_kriteria || '';
@@ -153,7 +167,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                 }
                                 return lines;
                             },
-                            // Tampilkan Skor di baris utama
                             label: function(tooltipItem) {
                                 let label = tooltipItem.dataset.label || 'Skor';
                                 if (label) {
@@ -164,25 +177,22 @@ document.addEventListener("DOMContentLoaded", () => {
                                 }
                                 return label;
                             },
-                            // Tampilkan Alasan di bawah label jika ada
                             afterLabel: function(tooltipItem) {
                                 const index = tooltipItem.dataIndex;
                                 const alasan = barChartTooltips[index].skor_alasan;
-                                // Hanya tampilkan jika alasan tidak kosong
                                 if (alasan) {
                                     return 'Alasan: ' + alasan;
                                 }
-                                return ''; // Kosong jika sudah diapprove
+                                return ''; 
                             }
                         }
-                        // --- SELESAI PERUBAHAN TOOLTIP ---
                     }
                 }
             }
         });
     }
 
-    // --- SCRIPT BARU: Inisialisasi Bootstrap Tooltip ---
+    // Inisialisasi Bootstrap Tooltip
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);

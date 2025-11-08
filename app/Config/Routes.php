@@ -53,10 +53,7 @@ $routes->group('admin', ['filter' => 'auth:admin,manajemen,kabag_aak,kabag_kuk']
 
         // Kriteria LED
         $routes->get('led', 'Admin\MasterDataController::led');
-        
-        // --- RUTE BARU DITAMBAHKAN DI SINI ---
         $routes->get('led/export', 'Admin\MasterDataController::exportLed'); 
-
         $routes->post('led/store', 'Admin\MasterDataController::storeLed');
         $routes->post('led/update/(:num)', 'Admin\MasterDataController::updateLed/$1');
         $routes->post('led/delete/(:num)', 'Admin\MasterDataController::deleteLed/$1');
@@ -107,12 +104,10 @@ $routes->group('user', ['filter' => 'auth:admin,manajemen,kabag_aak,kabag_kuk,aa
 
 // Rute ECC - Publik (Bisa diakses AAK, KUK, Manajemen, Admin, Kabag, dan SPM)
 $routes->group('ecc', ['filter' => 'auth:admin,manajemen,kabag_aak,kabag_kuk,aak,kuk,spm'], static function ($routes) {
-    $routes->get('/', 'EccController::index'); // Dashboard ECC
+    // $routes->get('/', 'EccController::index'); // <-- DIHAPUS
     
-    // --- RUTE BARU DITAMBAHKAN DI SINI ---
-    // (standar_id, prodi, tahun)
+    // Rute detail standar (standar_id, prodi, tahun)
     $routes->get('detail/(:num)/(:segment)/(:num)', 'EccController::detailStandar/$1/$2/$3');
-    // --- BATAS RUTE BARU ---
 
     $routes->get('lkps', 'EccController::lkps');
     $routes->get('led', 'EccController::led');
@@ -120,7 +115,6 @@ $routes->group('ecc', ['filter' => 'auth:admin,manajemen,kabag_aak,kabag_kuk,aak
 });
 
 // Rute ECC - Terbatas (Hanya untuk SPM dan Admin)
-// PERBAIKAN DI SINI: tambahkan 'admin'
 $routes->group('ecc', ['filter' => 'auth:spm,admin'], static function ($routes) {
     $routes->get('simulasi', 'EccController::simulasi');
     $routes->post('simulasi/store', 'EccController::storeSimulasi');

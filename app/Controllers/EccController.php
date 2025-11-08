@@ -22,6 +22,7 @@ class EccController extends BaseController
         $this->db = \Config\Database::connect();
     }
 
+    /* // FUNGSI INI DIHAPUS KARENA SUDAH TIDAK DIGUNAKAN
     public function index()
     {
         $selectedTahun = $this->request->getGet('tahun') ?? date('Y');
@@ -35,6 +36,7 @@ class EccController extends BaseController
         ];
         return view('ecc/ecc_index', $data);
     }
+    */
 
     public function lkps()
     {
@@ -72,10 +74,7 @@ class EccController extends BaseController
 
         $criteriaQuery = $criteriaModel
             ->select('led_criteria.*, led_standar.nama_standar')
-            
-            // --- PERBAIKAN SEBENARNYA ADA DI SINI ---
             ->join('led_standar', 'led_standar.id = led_criteria.id_standar', 'left') 
-            
             ->where('led_criteria.prodi', $selectedProdi);
         
         if (in_array($role, ['admin', 'manajemen'])) {
@@ -129,15 +128,17 @@ class EccController extends BaseController
         $prodi = $this->request->getPost('prodi');
         
         $statuses = $this->request->getPost('status');
-        $catatan = $this->request->getPost('catatan');
+        $catatan = $this->request->getPost('catatan'); // Link bukti dari staf
         $kabag_approvals = $this->request->getPost('kabag_approved');
+        $catatan_kabag = $this->request->getPost('catatan_kabag');
+        $catatan_wadir = $this->request->getPost('catatan_wadir');
         
         if (empty($tahun) || empty($prodi)) {
              return redirect()->to('ecc/led?prodi=' . $prodi . '&tahun=' . $tahun)
                 ->with('error', 'Data tidak lengkap. Pastikan tahun dan prodi dipilih.');
         }
         
-        $loop_data = $catatan ?? $statuses ?? $kabag_approvals;
+        $loop_data = $catatan ?? $statuses ?? $kabag_approvals ?? $catatan_kabag ?? $catatan_wadir;
         if (empty($loop_data)) {
              return redirect()->to('ecc/led?prodi=' . $prodi . '&tahun=' . $tahun)
                 ->with('error', 'Tidak ada data untuk disimpan.');
@@ -160,17 +161,23 @@ class EccController extends BaseController
                     'led_criteria_id' => $kriteria_id,
                 ];
 
-                if (in_array($role, ['admin', 'manajemen'])) {
+                if (in_array($role, ['admin', 'manajemen'])) { // Wadir / Admin
                     if(isset($statuses[$kriteria_id])) {
                         $data['status'] = $statuses[$kriteria_id];
                     }
-                } elseif (in_array($role, ['kabag_aak', 'kabag_kuk'])) {
+                    if(isset($catatan_wadir[$kriteria_id])) {
+                        $data['catatan_wadir'] = $catatan_wadir[$kriteria_id];
+                    }
+                } elseif (in_array($role, ['kabag_aak', 'kabag_kuk'])) { // Kabag
                     if(isset($kabag_approvals[$kriteria_id])) {
                         $data['kabag_approved'] = $kabag_approvals[$kriteria_id];
                     }
-                } else {
+                    if(isset($catatan_kabag[$kriteria_id])) {
+                        $data['catatan_kabag'] = $catatan_kabag[$kriteria_id];
+                    }
+                } else { // Staf (aak, kuk, spm)
                     if(isset($catatan[$kriteria_id])) {
-                        $data['catatan'] = $catatan[$kriteria_id];
+                        $data['catatan'] = $catatan[$kriteria_id]; // Ini adalah link bukti
                     }
                 }
 
@@ -214,10 +221,7 @@ class EccController extends BaseController
 
         $all_criteria_raw = $criteriaModel
             ->select('led_criteria.*, led_standar.nama_standar')
-            
-            // --- PERBAIKAN SEBENARNYA ADA DI SINI ---
             ->join('led_standar', 'led_standar.id = led_criteria.id_standar', 'left') 
-            
             ->where('led_criteria.prodi', $selectedProdi)
             ->orderBy('led_criteria.id', 'ASC')
             ->findAll();
@@ -312,7 +316,7 @@ class EccController extends BaseController
     }
     
     // ==========================================================
-    // FUNGSI BARU UNTUK HALAMAN DETAIL STANDAR
+    // FUNGSI UNTUK HALAMAN DETAIL STANDAR
     // ==========================================================
     public function detailStandar($standar_id, $prodi, $tahun)
     {
@@ -326,7 +330,6 @@ class EccController extends BaseController
         }
 
         // 2. Ambil semua data terkait untuk standar, prodi, dan tahun ini
-        // Kita join semua tabel yang relevan
         $criteria_data = $criteriaModel
             ->select('
                 led_criteria.id, 
@@ -335,6 +338,8 @@ class EccController extends BaseController
                 s.status, 
                 s.catatan, 
                 s.kabag_approved,
+                s.catatan_kabag, 
+                s.catatan_wadir, 
                 sc.skor
             ')
             ->join('led_submissions s', 's.led_criteria_id = led_criteria.id AND s.prodi = led_criteria.prodi AND s.tahun = ' . $this->db->escape($tahun), 'left')
@@ -347,19 +352,16 @@ class EccController extends BaseController
         // 3. Siapkan data for Bar Chart and Table
         $barChartLabels = [];
         $barChartScores = [];
-        $barChartTooltips = []; // <-- ARRAY BARU
-        $tableData = []; // <-- ARRAY BARU untuk view
+        $barChartTooltips = []; 
+        $tableData = []; 
         $no = 1;
 
         foreach ($criteria_data as $item) {
-            // --- LOGIKA BARU ---
             $isApproved = ($item['kabag_approved'] == 1 && !empty($item['status']));
             $raw_skor = (float)($item['skor'] ?? 0);
-            
-            // Skor yang akan ditampilkan dan dihitung di bar chart
             $skor_display = $isApproved ? $raw_skor : 0;
             
-            $skor_alasan = ''; // Alasan HANYA jika tidak disetujui
+            $skor_alasan = ''; 
             if (!$isApproved) {
                  if (empty($item['catatan'])) {
                     $skor_alasan = 'Bukti (link) belum diunggah.';
@@ -371,36 +373,35 @@ class EccController extends BaseController
                     $skor_alasan = 'Item belum disetujui.'; // Fallback
                 }
             }
-            // --- SELESAI LOGIKA BARU ---
 
-            // Data untuk Tabel
             $tableRow = $item;
             $tableRow['no'] = $no++;
             $tableRow['skor_display'] = $skor_display;
-            $tableRow['skor_alasan_text'] = $skor_alasan; // Alasan untuk tooltip tabel
+            $tableRow['skor_alasan_text'] = $skor_alasan; 
             $tableRow['is_approved'] = $isApproved;
             $tableData[] = $tableRow;
 
-            // Data untuk Chart
-            $barChartLabels[] = "Kriteria " . $tableRow['no']; // Label Sumbu X: "Kriteria 1", "Kriteria 2"
-            $barChartScores[] = $skor_display; // <-- Kirim skor yang sudah diproses
+            $barChartLabels[] = "Kriteria " . $tableRow['no']; 
+            $barChartScores[] = $skor_display; 
             
-            // Data untuk Tooltip Chart
             $barChartTooltips[] = [
                 'nama_kriteria' => $item['nama_kriteria'],
-                'skor_alasan' => $skor_alasan // Hanya berisi alasan (jika ada)
+                'skor_alasan' => $skor_alasan 
             ];
         }
         
+        $from_page = $this->request->getGet('from') ?? 'user'; // Default ke user jika tidak diset
+
         $data = [
             'page_title' => 'Detail Standar: ' . $standar['nama_standar'],
             'standar' => $standar,
             'prodi' => $prodi,
             'tahun' => $tahun,
-            'criteria_data' => $tableData, // <-- MODIFIED
+            'criteria_data' => $tableData, 
             'barChartLabels' => json_encode($barChartLabels),
             'barChartScores' => json_encode($barChartScores),
-            'barChartTooltips' => json_encode($barChartTooltips) // <-- NEW
+            'barChartTooltips' => json_encode($barChartTooltips),
+            'from_page' => $from_page 
         ];
 
         return view('ecc/detail_standar', $data);

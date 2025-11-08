@@ -13,8 +13,19 @@ class LedSubmission extends Model
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
     
-    // TAMBAHKAN 'kabag_approved'
-    protected $allowedFields    = ['user_id', 'prodi', 'tahun', 'led_criteria_id', 'status', 'catatan', 'file_bukti', 'kabag_approved'];
+    // PERUBAHAN DI SINI: Tambahkan 'catatan_kabag' dan 'catatan_wadir'
+    protected $allowedFields    = [
+        'user_id', 
+        'prodi', 
+        'tahun', 
+        'led_criteria_id', 
+        'status', 
+        'catatan', 
+        'file_bukti', 
+        'kabag_approved',
+        'catatan_kabag', // BARU
+        'catatan_wadir'  // BARU
+    ];
 
     // Dates
     protected $useTimestamps = true;
