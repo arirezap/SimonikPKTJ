@@ -28,7 +28,7 @@ class InputRealisasi extends BaseController
                                                ->findAll(),
         ];
 
-        return view('user/rencana/input_realisasi', $data);
+        return view('User/rencana/input_realisasi', $data);
     }
 
     /**

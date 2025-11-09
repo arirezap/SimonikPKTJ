@@ -49,7 +49,7 @@ class MonitoringController extends BaseController
             }
         }
 
-        return view('admin/monitoring_index', $data);
+        return view('Admin/monitoring_index', $data);
     }
 
     /**
@@ -128,7 +128,7 @@ class MonitoringController extends BaseController
             'rencana_kinerja' => $rencana_kinerja
         ];
 
-        $html = view('admin/monitoring_pdf', $data);
+        $html = view('Admin/monitoring_pdf', $data);
 
         $options = new Options();
         $options->set('isHtml5ParserEnabled', true);

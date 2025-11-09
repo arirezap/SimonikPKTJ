@@ -43,7 +43,7 @@ class RemunerasiController extends BaseController
             'selectedBulan'   => $selectedBulan,
         ];
 
-        return view('admin/remunerasi_index', $data);
+        return view('Admin/remunerasi_index', $data);
     }
 
     /**

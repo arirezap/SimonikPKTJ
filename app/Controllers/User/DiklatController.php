@@ -15,7 +15,7 @@ class DiklatController extends BaseController
             'daftar_diklat' => $diklatModel->orderBy('periode', 'DESC')->findAll(),
             'validation' => \Config\Services::validation()
         ];
-        return view('user/data/diklat', $data);
+        return view('User/data/diklat', $data);
     }
 
     public function store()

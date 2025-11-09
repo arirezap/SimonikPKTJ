@@ -16,7 +16,7 @@ class InputKeuangan extends BaseController
             'validation' => \Config\Services::validation()
         ];
 
-        return view('user/keuangan/input_progres', $data);
+        return view('User/keuangan/input_progres', $data);
     }
 
     /**

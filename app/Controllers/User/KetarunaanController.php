@@ -18,6 +18,6 @@ class KetarunaanController extends BaseController
             ]
         ];
 
-        return view('user/data/ketarunaan', $data);
+        return view('User/data/ketarunaan', $data);
     }
 }

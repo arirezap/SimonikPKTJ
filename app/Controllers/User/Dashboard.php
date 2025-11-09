@@ -94,6 +94,6 @@ class Dashboard extends BaseController
             'prodiData' => $eccData['prodiData'],
         ];
 
-        return view('user/dashboard', $data);
+        return view('User/dashboard', $data);
     }
 }
