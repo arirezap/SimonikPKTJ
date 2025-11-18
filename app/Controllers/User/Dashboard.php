@@ -5,12 +5,11 @@ namespace App\Controllers\User;
 use App\Controllers\BaseController;
 use App\Models\RencanaKinerja as RencanaKinerjaModel;
 use App\Models\User as UserModel;
-// PERBAIKAN: Hapus model ECC, panggil Trait
 use App\Controllers\Traits\EccDataTrait; 
 
 class Dashboard extends BaseController
 {
-    use EccDataTrait; // Gunakan Trait
+    use EccDataTrait; 
 
     public function index()
     {
@@ -20,38 +19,62 @@ class Dashboard extends BaseController
 
         $tahun_terpilih = $this->request->getGet('tahun') ?? date('Y');
 
-        // Panggil fungsi dari Trait
+        // 1. Ambil Data ECC (Radar Chart)
         $eccData = $this->getDashboardEccData($tahun_terpilih);
 
-        // --- AMBIL DATA KINERJA (Logika yang sudah ada) ---
+        // 2. Ambil Data Rencana Kinerja
         $rencana_kinerja = $rencanaModel->where('user_id', $user_id)
                                         ->where('tahun_anggaran', $tahun_terpilih) 
                                         ->findAll();
 
-        $chartLabels = [];
-        $chartTargets = [];
-        $chartRealisasi = [];
-        $totalIndikator = 0;
-        $totalPersentaseCapaian = 0;
-        $indikatorValidUntukRataRata = 0;
-
+        // --- INISIALISASI ARRAY DATA ---
+        $sasaranStats = [];   // Key: Nama Sasaran
+        $indikatorStats = []; // Key: Nama Indikator
+        
         $monthly_targets_sum = array_fill(0, 12, 0);
         $monthly_realisasi_sum = array_fill(0, 12, 0);
 
+        $totalPersentaseGlobal = 0;
+        $countItemGlobal = 0;
+
         if (!empty($rencana_kinerja)) {
-            $totalIndikator = count($rencana_kinerja);
             foreach ($rencana_kinerja as $rencana) {
-                $chartLabels[] = $rencana['indikator_kinerja'];
-                $target_utama = (float)$rencana['target_utama'];
-                $chartTargets[] = $target_utama;
-
+                $target = (float)$rencana['target_utama'];
+                
                 $realisasiBulanan = $rencana['realisasi_bulanan'] ?? [];
-                $totalRealisasi = array_sum(array_map('floatval', $realisasiBulanan));
-                $chartRealisasi[] = $totalRealisasi;
+                $realisasi = array_sum(array_map('floatval', $realisasiBulanan));
 
-                if ($target_utama > 0) {
-                    $totalPersentaseCapaian += ($totalRealisasi / $target_utama) * 100;
-                    $indikatorValidUntukRataRata++;
+                // Hitung Persentase Capaian per Baris (untuk rata-rata)
+                $persenCapaian = ($target > 0) ? ($realisasi / $target) * 100 : 0;
+                
+                // --- 1. GROUPING BERDASARKAN INDIKATOR KINERJA ---
+                // (Menjumlahkan Target & Realisasi jika indikatornya sama)
+                $namaIndikator = $rencana['indikator_kinerja'];
+                if (!isset($indikatorStats[$namaIndikator])) {
+                    $indikatorStats[$namaIndikator] = [
+                        'target' => 0,
+                        'realisasi' => 0
+                    ];
+                }
+                $indikatorStats[$namaIndikator]['target'] += $target;
+                $indikatorStats[$namaIndikator]['realisasi'] += $realisasi;
+
+                // --- 2. GROUPING BERDASARKAN SASARAN PROGRAM ---
+                // (Menghitung rata-rata capaian % dari semua indikator di bawah sasaran ini)
+                $namaSasaran = $rencana['sasaran_program'];
+                if (!isset($sasaranStats[$namaSasaran])) {
+                    $sasaranStats[$namaSasaran] = [
+                        'total_persen' => 0,
+                        'count' => 0
+                    ];
+                }
+                $sasaranStats[$namaSasaran]['total_persen'] += $persenCapaian;
+                $sasaranStats[$namaSasaran]['count']++;
+
+                // --- 3. DATA GLOBAL & TREN ---
+                if ($target > 0) {
+                    $totalPersentaseGlobal += $persenCapaian;
+                    $countItemGlobal++;
                 }
 
                 $targetBulanan = $rencana['target_bulanan'] ?? [];
@@ -62,8 +85,25 @@ class Dashboard extends BaseController
             }
         }
 
-        $rataRataCapaian = ($indikatorValidUntukRataRata > 0) ? $totalPersentaseCapaian / $indikatorValidUntukRataRata : 0;
+        // Siapkan Data View: Grafik Sasaran
+        $chartSasaranLabels = [];
+        $chartSasaranData = [];
+        foreach ($sasaranStats as $nama => $stat) {
+            $chartSasaranLabels[] = $nama;
+            $avg = ($stat['count'] > 0) ? $stat['total_persen'] / $stat['count'] : 0;
+            $chartSasaranData[] = round($avg, 2);
+        }
 
+        // Siapkan Data View: Grafik Indikator
+        $chartIndikatorLabels = array_keys($indikatorStats);
+        $chartIndikatorTargets = array_column($indikatorStats, 'target');
+        $chartIndikatorRealisasi = array_column($indikatorStats, 'realisasi');
+
+        // Statistik Kartu Atas
+        $totalIndikator = count($indikatorStats); // Hitung jumlah indikator unik
+        $rataRataCapaian = ($countItemGlobal > 0) ? $totalPersentaseGlobal / $countItemGlobal : 0;
+
+        // Data Tren Kumulatif
         $cumulative_targets = [];
         $cumulative_realisasi = [];
         $last_target = 0;
@@ -74,19 +114,24 @@ class Dashboard extends BaseController
             $cumulative_targets[] = $last_target;
             $cumulative_realisasi[] = $last_realisasi;
         }
-        // --- SELESAI DATA KINERJA ---
 
         $data = [
             'page_title' => 'User Dashboard',
             'totalIndikator' => $totalIndikator,
             'rataRataCapaian' => $rataRataCapaian,
-            'totalPengguna' => $userModel->countAllResults(),
             'tahun_terpilih' => $tahun_terpilih,
             'daftar_tahun' => $eccData['daftar_tahun'],
             
-            'chartLabels' => $chartLabels,
-            'chartTargets' => $chartTargets,
-            'chartRealisasi' => $chartRealisasi,
+            // Data Grafik 1 (Sasaran)
+            'chartSasaranLabels' => $chartSasaranLabels,
+            'chartSasaranData' => $chartSasaranData,
+
+            // Data Grafik 2 (Indikator)
+            'chartIndikatorLabels' => $chartIndikatorLabels,
+            'chartIndikatorTargets' => $chartIndikatorTargets,
+            'chartIndikatorRealisasi' => $chartIndikatorRealisasi,
+            
+            // Data Grafik 3 (Tren)
             'lineChartLabels' => ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'],
             'lineChartTargetData' => $cumulative_targets,
             'lineChartRealisasiData' => $cumulative_realisasi,
@@ -94,6 +139,6 @@ class Dashboard extends BaseController
             'prodiData' => $eccData['prodiData'],
         ];
 
-        return view('User/dashboard', $data);
+        return view('user/dashboard', $data);
     }
 }
