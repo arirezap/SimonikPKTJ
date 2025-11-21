@@ -7,7 +7,6 @@ Input & Kelola Rencana Kerja Tahunan
 <?= $this->endSection() ?>
 
 <?= $this->section('styles') ?>
-<!-- CSS untuk Select2 -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
 <?= $this->endSection() ?>
@@ -16,7 +15,6 @@ Input & Kelola Rencana Kerja Tahunan
 <div class="card">
     <div class="card-body">
 
-        <!-- Form 1: Filter Tahun -->
         <form method="GET" action="<?= site_url('user/rencana/input') ?>" id="filterTahunForm" class="mb-4">
             <div class="row align-items-center">
                 <div class="col-md-4">
@@ -48,7 +46,6 @@ Input & Kelola Rencana Kerja Tahunan
             </div>
         </form>
 
-        <!-- Form 2: Simpan Data -->
         <div id="form-content">
             <form action="<?= site_url('user/rencana/store') ?>" method="POST" id="formRencana">
                 <?= csrf_field() ?>
@@ -59,11 +56,11 @@ Input & Kelola Rencana Kerja Tahunan
                         <thead class="table-light">
                             <tr>
                                 <th style="width: 5%;">No</th>
-                                <th>Sasaran Program/Kegiatan <span class="text-danger">*</span></th>
-                                <th>Indikator Kinerja <span class="text-danger">*</span></th>
-                                <th style="width: 15%;">Satuan <span class="text-danger">*</span></th>
-                                <th style="width: 15%;">Target Tahunan <span class="text-danger">*</span></th>
-                                <th>Kegiatan</th>
+                                <th style="width: 25%; min-width: 300px;">Sasaran Program/Kegiatan <span class="text-danger">*</span></th>
+                                <th style="width: 25%; min-width: 300px;">Indikator Kinerja <span class="text-danger">*</span></th>
+                                <th style="width: 10%; min-width: 100px;">Satuan <span class="text-danger">*</span></th>
+                                <th style="width: 10%; min-width: 100px;">Target Tahunan <span class="text-danger">*</span></th>
+                                <th style="min-width: 200px;">Kegiatan</th>
                                 <th style="width: 5%;">Aksi</th>
                             </tr>
                         </thead>
@@ -149,7 +146,6 @@ Input & Kelola Rencana Kerja Tahunan
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
-<!-- jQuery & Select2 JS -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>

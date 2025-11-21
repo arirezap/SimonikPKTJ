@@ -43,49 +43,58 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script>
-        /**
-         * Fungsi ini menonaktifkan (atau mengaktifkan) atribut 'data-bs-toggle' 
-         * pada link sidebar. Ini PENTING agar saat mode mini, klik pada ikon 
-         * tidak memicu collapse Bootstrap, dan membiarkan CSS :hover 
-         * menangani fly-out menu.
-         */
-        function toggleCollapseBehavior(isToggled) {
-            const sidebarLinks = document.querySelectorAll('.sidebar-menu .nav-link[data-bs-toggle="collapse"]');
-            
-            sidebarLinks.forEach(link => {
-                if (isToggled) {
-                    // Jika sidebar di-toggle (mini), nonaktifkan data-bs-toggle
-                    link.dataset.bsToggle = 'disabled';
-                } else {
-                    // Jika sidebar normal, aktifkan kembali
-                    link.dataset.bsToggle = 'collapse';
-                }
-            });
-        }
+   <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const mainWrapper = document.querySelector('.main-wrapper');
+        
+        // Ambil semua link yang punya fungsi dropdown/collapse
+        const dropdownLinks = document.querySelectorAll('.sidebar .nav-link[data-bs-toggle="collapse"]');
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            const mainWrapper = document.querySelector('.main-wrapper');
-            const isToggled = localStorage.getItem('sidebarToggled') === 'true';
-
-            // Set state awal saat halaman dimuat
-            if (isToggled) {
+        // Fungsi untuk mengatur perilaku Dropdown (Accordion vs Hover)
+        function setSidebarState(isMini) {
+            if (isMini) {
                 mainWrapper.classList.add('sidebar-toggled');
-            }
-            toggleCollapseBehavior(isToggled); // Panggil fungsi saat load
+                
+                // MATIKAN fungsi klik Bootstrap collapse saat mode mini
+                // Agar saat diklik/hover dia tidak error, tapi pakai CSS hover
+                dropdownLinks.forEach(link => {
+                    link.setAttribute('data-bs-toggle-backup', 'collapse'); // Simpan atribut asli
+                    link.removeAttribute('data-bs-toggle'); // Hapus atribut pemicu
+                });
 
-            // Event listener untuk tombol toggle
-            if (sidebarToggle) {
-                sidebarToggle.addEventListener('click', function() {
-                    mainWrapper.classList.toggle('sidebar-toggled');
-                    const isNowToggled = mainWrapper.classList.contains('sidebar-toggled');
-                    localStorage.setItem('sidebarToggled', isNowToggled);
-                    toggleCollapseBehavior(isNowToggled); // Panggil fungsi saat di-klik
+                // Tutup semua menu yang sedang terbuka agar rapi
+                document.querySelectorAll('.sidebar .collapse.show').forEach(el => {
+                    el.classList.remove('show');
+                });
+
+            } else {
+                mainWrapper.classList.remove('sidebar-toggled');
+                
+                // KEMBALIKAN fungsi klik Bootstrap collapse saat mode normal
+                dropdownLinks.forEach(link => {
+                    link.setAttribute('data-bs-toggle', 'collapse');
                 });
             }
-        });
-    </script>
+        }
+
+        // Cek LocalStorage saat load
+        const isToggled = localStorage.getItem('sidebarToggled') === 'true';
+        setSidebarState(isToggled);
+
+        // Event Listener Tombol Toggle
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', function() {
+                const willBeToggled = !mainWrapper.classList.contains('sidebar-toggled');
+                
+                setSidebarState(willBeToggled);
+                
+                // Simpan preferensi user
+                localStorage.setItem('sidebarToggled', willBeToggled);
+            });
+        }
+    });
+</script>
     <?= $this->renderSection('scripts') ?>
 </body>
 
