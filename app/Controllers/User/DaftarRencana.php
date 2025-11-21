@@ -27,7 +27,7 @@ class DaftarRencana extends BaseController
                                                ->findAll()
         ];
 
-        return view('User/rencana/daftar_rencana', $data);
+        return view('user/rencana/daftar_rencana', $data);
     }
 
     /**

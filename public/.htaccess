@@ -1,4 +1,4 @@
-# Disable directory browsing
+# Disable directory browsing (Keamanan: Mencegah orang melihat daftar file)
 Options -Indexes
 
 # ----------------------------------------------------------------------
@@ -11,17 +11,19 @@ Options -Indexes
 	Options +FollowSymlinks
 	RewriteEngine On
 
-	# If you installed CodeIgniter in a subfolder, you will need to
-	# change the following line to match the subfolder you need.
+	# Jika Anda menginstal CodeIgniter di subfolder, Anda mungkin perlu
+	# mengubah baris berikut agar sesuai dengan subfolder yang Anda butuhkan.
 	# http://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewritebase
 	# RewriteBase /
 
 	# Redirect Trailing Slashes...
+	# Menghapus slash di akhir URL (misal: /dashboard/ -> /dashboard)
 	RewriteCond %{REQUEST_FILENAME} !-d
 	RewriteCond %{REQUEST_URI} (.+)/$
 	RewriteRule ^ %1 [L,R=301]
 
 	# Rewrite "www.example.com -> example.com"
+	# Memastikan URL konsisten tanpa www (Opsional, tapi bagus untuk SEO)
 	RewriteCond %{HTTPS} !=on
 	RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
 	RewriteRule ^ http://%1%{REQUEST_URI} [R=301,L]
@@ -31,7 +33,11 @@ Options -Indexes
 	# request to the front controller, index.php
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d
-	RewriteRule ^([\s\S]*)$ index.php/$1 [L,NC,QSA]
+	
+	# --- PERBAIKAN UTAMA DI SINI ---
+	# Menambahkan tanda tanya (?) setelah index.php
+	# Ini solusi ampuh untuk error "No Input File Specified" di cPanel
+	RewriteRule ^([\s\S]*)$ index.php?/$1 [L,NC,QSA]
 
 	# Ensure Authorization header is passed along
 	RewriteCond %{HTTP:Authorization} .

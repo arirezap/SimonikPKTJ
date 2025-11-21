@@ -21,7 +21,7 @@ class AkademikController extends BaseController
             'chart_data' => [450, 550, 250] // Contoh jumlah mahasiswa per prodi
         ];
 
-        return view('User/akademik/index', $data);
+        return view('user/akademik/index', $data);
     }
 
     /**
@@ -40,7 +40,7 @@ class AkademikController extends BaseController
             'validation' => \Config\Services::validation()
         ];
 
-        return view('User/akademik/kelola_jadwal', $data);
+        return view('user/akademik/kelola_jadwal', $data);
     }
 
     /**

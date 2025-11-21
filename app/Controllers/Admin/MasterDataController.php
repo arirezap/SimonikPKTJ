@@ -26,7 +26,7 @@ class MasterDataController extends BaseController
             'items'      => $sasaranModel->orderBy('nama_sasaran', 'ASC')->findAll(),
             'validation' => \Config\Services::validation()
         ];
-        return view('Admin/master/sasaran', $data);
+        return view('admin/master/sasaran', $data);
     }
 
     public function storeSasaran()
@@ -74,7 +74,7 @@ class MasterDataController extends BaseController
             'items'      => $indikatorModel->orderBy('nama_indikator', 'ASC')->findAll(),
             'validation' => \Config\Services::validation()
         ];
-        return view('Admin/master/indikator', $data);
+        return view('admin/master/indikator', $data);
     }
 
     public function storeIndikator()
@@ -122,7 +122,7 @@ class MasterDataController extends BaseController
             'items'      => $satuanModel->orderBy('nama_satuan', 'ASC')->findAll(),
             'validation' => \Config\Services::validation()
         ];
-        return view('Admin/master/satuan', $data);
+        return view('admin/master/satuan', $data);
     }
 
     public function storeSatuan()
@@ -183,7 +183,7 @@ class MasterDataController extends BaseController
             'validation' => \Config\Services::validation(),
             'selectedProdi' => $selectedProdi
         ];
-        return view('Admin/master/led', $data);
+        return view('admin/master/led', $data);
     }
 
     public function storeLed()
@@ -452,7 +452,7 @@ class MasterDataController extends BaseController
             'items'      => $standarModel->orderBy('nama_standar', 'ASC')->findAll(),
             'validation' => \Config\Services::validation()
         ];
-        return view('Admin/master/led_standar', $data);
+        return view('admin/master/led_standar', $data);
     }
 
     public function storeStandar()

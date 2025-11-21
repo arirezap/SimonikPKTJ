@@ -30,7 +30,7 @@ class AlokasiController extends BaseController
                                              ->findAll(),
         ];
 
-        return view('User/rencana/alokasi_bulanan', $data);
+        return view('user/rencana/alokasi_bulanan', $data);
     }
 
     /**

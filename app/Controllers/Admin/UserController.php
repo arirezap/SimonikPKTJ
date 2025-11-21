@@ -21,7 +21,7 @@ class UserController extends BaseController
             'validation' => \Config\Services::validation()
         ];
 
-        return view('Admin/users', $data);
+        return view('admin/users', $data);
     }
 
     public function store()

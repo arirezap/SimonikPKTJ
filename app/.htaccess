@@ -1,6 +1,25 @@
-<IfModule authz_core_module>
-	Require all denied
-</IfModule>
-<IfModule !authz_core_module>
-	Deny from all
-</IfModule>
+# ----------------------------------------------------------------------
+# KEAMANAN TINGKAT TINGGI UNTUK FOLDER ROOT CI4
+# ----------------------------------------------------------------------
+
+# 1. Blokir akses langsung ke folder dan file sensitif
+#    Ini mencegah orang membuka folder app, system, vendor, dll lewat browser.
+RewriteEngine On
+RewriteRule ^(app|system|tests|vendor|writable|\.git|\.github) - [F,L]
+
+# 2. Blokir akses ke file konfigurasi dan file sistem lainnya
+<FilesMatch "^\.env|composer\.(json|lock)|license\.txt|readme\.rst|spark|phpunit\.xml(\.dist)?$">
+    Order allow,deny
+    Deny from all
+    Satisfy All
+</FilesMatch>
+
+# 3. Mencegah listing directory (agar orang tidak bisa melihat daftar file jika index.php hilang)
+Options -Indexes
+
+# 4. (Opsional) Arahkan root domain ke folder public
+#    Jika Anda ingin akses `domain.com/ci4app` langsung masuk ke `domain.com/ci4app/public`
+#    tanpa user harus mengetik `/public`
+#    Hapus tanda pagar (#) di bawah ini jika diinginkan:
+# RewriteCond %{REQUEST_URI} !^/public/
+# RewriteRule ^(.*)$ public/$1 [L]

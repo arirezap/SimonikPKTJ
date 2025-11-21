@@ -35,7 +35,7 @@ class InputRencana extends BaseController
             'daftar_satuan' => $satuanModel->findAll(),
         ];
 
-        return view('User/rencana/input_tahunan', $data);
+        return view('user/rencana/input_tahunan', $data);
     }
 
     /**
