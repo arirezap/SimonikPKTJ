@@ -37,7 +37,7 @@
 <!-- Navigasi Tab -->
 <ul class="nav nav-tabs" id="prodiTab" role="tablist">
     <?php 
-    $isFirstTab = true; // Gunakan variabel yang jelas
+    $isFirstTab = true; 
     foreach($prodiData as $prodi): 
     ?>
         <li class="nav-item" role="presentation">
@@ -46,7 +46,7 @@
             </button>
         </li>
     <?php 
-        $isFirstTab = false; // Set false setelah iterasi pertama
+        $isFirstTab = false; 
     endforeach; 
     ?>
 </ul>
@@ -54,7 +54,7 @@
 <!-- Konten Tab -->
 <div class="tab-content mb-4" id="prodiTabContent">
     <?php 
-    $isFirstContent = true; // Reset variabel untuk konten
+    $isFirstContent = true; 
     foreach($prodiData as $prodi): 
     ?>
         <div class="tab-pane fade <?= $isFirstContent ? 'show active' : '' ?> p-3" id="content-<?= esc($prodi['id_prodi']) ?>" role="tabpanel" aria-labelledby="tab-<?= esc($prodi['id_prodi']) ?>">
@@ -80,7 +80,7 @@
 
         </div>
     <?php 
-        $isFirstContent = false; // Set false setelah iterasi pertama
+        $isFirstContent = false; 
     endforeach; 
     ?>
 </div>
@@ -196,7 +196,20 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
+// Variabel global untuk menyimpan instance chart agar bisa didestroy
+// Ini penting untuk mencegah chart menumpuk/bug saat navigasi balik (back)
+window.pageCharts = window.pageCharts || {};
+
 document.addEventListener('DOMContentLoaded', function () {
+    // Reset semua chart yang mungkin tersisa dari halaman sebelumnya (jika SPA/BF Cache)
+    // Ini langkah krusial untuk memperbaiki bug data 'tercampur'
+    for (let key in window.pageCharts) {
+        if (window.pageCharts[key]) {
+            window.pageCharts[key].destroy();
+            delete window.pageCharts[key];
+        }
+    }
+
     // Siapkan data dari PHP
     const prodiData = <?= json_encode($prodiData) ?>;
     const selectedTahun = '<?= esc($tahun_terpilih) ?>';
@@ -250,21 +263,21 @@ document.addEventListener('DOMContentLoaded', function () {
         return null;
     }
 
-    // Simpan instance chart agar bisa dimanage (dihancurkan jika perlu)
-    const chartInstances = {};
-
     // Loop melalui setiap data prodi dan buat grafiknya
     for (const [id, data] of Object.entries(prodiData)) {
         const canvasId = 'radarChart-' + id;
         const ctx = document.getElementById(canvasId);
         
         if (ctx) {
-            // Hancurkan chart lama jika ada (mencegah memory leak/double render)
-            if (chartInstances[id]) {
-                chartInstances[id].destroy();
+            // Pastikan canvas bersih sebelum inisialisasi baru
+            // (Double check selain reset global di atas)
+            const existingChart = Chart.getChart(ctx);
+            if (existingChart) {
+                existingChart.destroy();
             }
 
-            chartInstances[id] = new Chart(ctx, {
+            // Simpan instance baru ke variabel global window.pageCharts
+            window.pageCharts[canvasId] = new Chart(ctx, {
                 type: 'radar',
                 data: {
                     labels: data.chart_labels,
@@ -384,7 +397,14 @@ document.addEventListener('DOMContentLoaded', function () {
 document.addEventListener("DOMContentLoaded", () => {
     const ctxBar = document.getElementById('userPerformanceChart');
     if (ctxBar) { 
-        new Chart(ctxBar, {
+        // Hancurkan chart batang lama jika ada
+        const existingBarChart = Chart.getChart(ctxBar);
+        if (existingBarChart) {
+            existingBarChart.destroy();
+        }
+
+        // Simpan juga chart ini ke global var agar bisa didestroy saat navigasi
+        window.pageCharts['userPerformanceChart'] = new Chart(ctxBar, {
             type: 'bar',
             data: {
                 labels: <?= json_encode($chartLabels); ?>,

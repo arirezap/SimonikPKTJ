@@ -141,36 +141,71 @@ Dashboard
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
+// --- PERBAIKAN UTAMA DI SINI: Global State Management ---
+// Simpan semua instance chart di variabel global agar bisa dilacak dan dihapus
+window.userDashboardCharts = window.userDashboardCharts || {};
+
 document.addEventListener('DOMContentLoaded', function () {
-    // --- RADAR CHART CONFIG ---
+    
+    // 1. HAPUS CHART LAMA (Cleanup)
+    // Jika halaman dimuat ulang sebagian (back button/cache), chart lama mungkin masih "hidup"
+    for (let key in window.userDashboardCharts) {
+        if (window.userDashboardCharts[key]) {
+            window.userDashboardCharts[key].destroy();
+            delete window.userDashboardCharts[key];
+        }
+    }
+
+    // --- BAGIAN 1: RADAR CHART ECC ---
     const prodiData = <?= json_encode($prodiData) ?>;
+    const selectedTahun = '<?= esc($tahun_terpilih) ?>';
+
     function getClickedLabel(clickEvent, chart) {
+        // GUARD: Cek apakah scale 'r' tersedia
+        if (!chart || !chart.scales || !chart.scales.r) return null;
+        
         const r = chart.scales.r;
         const pointLabelItems = r._pointLabelItems; 
+        
         if (!pointLabelItems || pointLabelItems.length === 0) return null;
-        const { x, y } = clickEvent;
-        let closestLabelIndex = -1; let minDistance = Infinity;
+
+        // Gunakan helper Chart.js untuk posisi relatif yang akurat
+        const canvasPosition = Chart.helpers.getRelativePosition(clickEvent, chart);
+        const x = canvasPosition.x;
+        const y = canvasPosition.y;
+        
+        let closestLabelIndex = -1;
+        let minDistance = Infinity;
+
         for (let i = 0; i < pointLabelItems.length; i++) {
             const item = pointLabelItems[i];
             const distance = Math.sqrt(Math.pow(x - item.x, 2) + Math.pow(y - item.y, 2));
             if (distance < minDistance) { minDistance = distance; closestLabelIndex = i; }
         }
+
         if (closestLabelIndex > -1) {
             try {
                 const item = pointLabelItems[closestLabelIndex];
-                if (minDistance < (item.options.bounds.width / 2) + 10) return closestLabelIndex;
-            } catch (e) { if (minDistance < 30) return closestLabelIndex; }
+                const itemWidth = item.options?.bounds?.width || 50; 
+                if (minDistance < (itemWidth / 2) + 15) return closestLabelIndex;
+            } catch (e) { if (minDistance < 40) return closestLabelIndex; }
         }
         return null;
     }
 
     for (const [id, data] of Object.entries(prodiData)) {
-        const ctx = document.getElementById('radarChart-' + id);
+        const canvasId = 'radarChart-' + id;
+        const ctx = document.getElementById(canvasId);
         if (ctx) {
-            new Chart(ctx, {
+            // Double check & destroy jika canvas sudah dipakai chart lain
+            const existing = Chart.getChart(ctx);
+            if (existing) existing.destroy();
+
+            // Buat chart baru dan simpan di global
+            window.userDashboardCharts[canvasId] = new Chart(ctx, {
                 type: 'radar',
                 data: {
-                    labels: data.chart_labels, labelIds: data.chart_label_ids, prodi: data.id_prodi, tahun: '<?= $tahun_terpilih ?>',
+                    labels: data.chart_labels, labelIds: data.chart_label_ids, prodi: data.id_prodi, tahun: selectedTahun,
                     datasets: [{
                         label: 'Skor ' + data.nama_prodi, data: data.chart_data, fill: true,
                         backgroundColor: 'rgba(13, 110, 253, 0.2)', borderColor: 'rgba(13, 110, 253, 1)',
@@ -180,125 +215,112 @@ document.addEventListener('DOMContentLoaded', function () {
                 options: {
                     responsive: true, maintainAspectRatio: false,
                     scales: { r: { angleLines: { display: true }, suggestedMin: 0, suggestedMax: 100, grid: { color: 'rgba(0, 0, 0, 0.1)' }, pointLabels: { display: true, color: '#0d6efd', font: { size: 12, weight: 'bold' }, padding: 10 }, ticks: { display: false, stepSize: 25, maxTicksLimit: 5 } } },
+                    onHover: (event, activeElements, chart) => {
+                         const index = getClickedLabel(event, chart);
+                         event.native.target.style.cursor = (index !== null) ? 'pointer' : 'default';
+                    },
                     onClick: (e, elements, chart) => {
                         const idx = getClickedLabel(e, chart);
-                        if (idx !== null) window.location.href = `<?= site_url('ecc/detail') ?>/${chart.config.data.labelIds[idx]}/${chart.config.data.prodi}/${chart.config.data.tahun}`;
+                        if (idx !== null) {
+                            if (chart.config.data.labelIds && chart.config.data.labelIds[idx]) {
+                                const labelId = chart.config.data.labelIds[idx];
+                                document.body.style.cursor = 'wait'; 
+                                window.location.href = `<?= site_url('ecc/detail') ?>/${labelId}/${chart.config.data.prodi}/${chart.config.data.tahun}`;
+                            }
+                        }
                     }
                 }
             });
         }
     }
 
-    // --- CONFIG GRAFIK KINERJA (VERTIKAL) ---
-    
-    // Helper: Potong teks jika terlalu panjang
+    // Helper untuk label panjang
     const formatLongLabel = (val, ctx) => {
         const label = ctx.chart.data.labels[val];
-        // Batas karakter diperpanjang ke 50 karena grafik lebar
         return (label.length > 50) ? label.substring(0, 50) + '...' : label;
     };
 
+    // --- BAGIAN 2: GRAFIK KINERJA PERSONAL (User Specific) ---
+    
     <?php if (!empty($chartSasaranLabels)): ?>
-    // 1. CHART SASARAN (Label dari Master Sasaran)
-    new Chart(document.getElementById('chartSasaran'), {
-        type: 'bar',
-        data: {
-            labels: <?= json_encode($chartSasaranLabels); ?>,
-            datasets: [{
-                label: 'Rata-rata Capaian (%)',
-                data: <?= json_encode($chartSasaranData); ?>,
-                backgroundColor: 'rgba(25, 135, 84, 0.7)',
-                borderColor: 'rgba(25, 135, 84, 1)', borderWidth: 1
-            }]
-        },
-        options: {
-            indexAxis: 'x', // Vertikal
-            responsive: true, maintainAspectRatio: false,
-            layout: { padding: { bottom: 10 } },
-            scales: {
-                y: { beginAtZero: true, max: 100, title: { display: true, text: 'Persentase (%)', font: {weight: 'bold'} } },
-                x: { 
-                    ticks: { 
-                        autoSkip: false, maxRotation: 45, minRotation: 25, font: {size: 11},
-                        callback: function(val, index) { return formatLongLabel(val, {chart: this.chart}); } 
-                    } 
-                }
+    const ctxSasaran = document.getElementById('chartSasaran');
+    if (ctxSasaran) {
+        const existSasaran = Chart.getChart(ctxSasaran);
+        if (existSasaran) existSasaran.destroy();
+
+        window.userDashboardCharts['chartSasaran'] = new Chart(ctxSasaran, {
+            type: 'bar',
+            data: {
+                labels: <?= json_encode($chartSasaranLabels); ?>,
+                datasets: [{
+                    label: 'Rata-rata Capaian (%)',
+                    data: <?= json_encode($chartSasaranData); ?>,
+                    backgroundColor: 'rgba(25, 135, 84, 0.7)',
+                    borderColor: 'rgba(25, 135, 84, 1)', borderWidth: 1
+                }]
             },
-            plugins: {
-                legend: { position: 'top' },
-                tooltip: { callbacks: { title: (ctx) => ctx[0].label } }
+            options: {
+                indexAxis: 'x', responsive: true, maintainAspectRatio: false,
+                layout: { padding: { bottom: 10 } },
+                scales: {
+                    y: { beginAtZero: true, max: 100, title: { display: true, text: 'Persentase (%)', font: {weight: 'bold'} } },
+                    x: { ticks: { autoSkip: false, maxRotation: 45, minRotation: 25, font: {size: 11}, callback: function(val) { return formatLongLabel(val, {chart: this.chart}); } } }
+                },
+                plugins: { legend: { position: 'top' } }
             }
-        }
-    });
+        });
+    }
     <?php endif; ?>
 
     <?php if (!empty($chartIndikatorLabels)): ?>
-    // 2. CHART INDIKATOR (Label dari Master Indikator)
-    new Chart(document.getElementById('chartIndikator'), {
-        type: 'bar',
-        data: {
-            labels: <?= json_encode($chartIndikatorLabels); ?>,
-            datasets: [
-                {
-                    label: 'Total Target',
-                    data: <?= json_encode($chartIndikatorTargets); ?>,
-                    backgroundColor: 'rgba(255, 193, 7, 0.7)',
-                    borderColor: 'rgba(255, 193, 7, 1)', borderWidth: 1
-                },
-                {
-                    label: 'Total Realisasi',
-                    data: <?= json_encode($chartIndikatorRealisasi); ?>,
-                    backgroundColor: 'rgba(13, 110, 253, 0.7)',
-                    borderColor: 'rgba(13, 110, 253, 1)', borderWidth: 1
-                }
-            ]
-        },
-        options: {
-            indexAxis: 'x', // Vertikal
-            responsive: true, maintainAspectRatio: false,
-            layout: { padding: { bottom: 10 } },
-            scales: {
-                y: { beginAtZero: true, title: { display: true, text: 'Nilai / Jumlah', font: {weight: 'bold'} } },
-                x: { 
-                    ticks: { 
-                        autoSkip: false, maxRotation: 45, minRotation: 25, font: {size: 11},
-                        callback: function(val, index) { return formatLongLabel(val, {chart: this.chart}); } 
-                    } 
-                }
-            },
-            plugins: {
-                legend: { position: 'top' },
-                tooltip: { callbacks: { title: (ctx) => ctx[0].label } }
-            }
-        }
-    });
+    const ctxIndikator = document.getElementById('chartIndikator');
+    if (ctxIndikator) {
+        const existIndikator = Chart.getChart(ctxIndikator);
+        if (existIndikator) existIndikator.destroy();
 
-    // 3. CHART TREN
-    new Chart(document.getElementById('chartTren'), {
-        type: 'line',
-        data: {
-            labels: <?= json_encode($lineChartLabels); ?>,
-            datasets: [
-                {
-                    label: 'Target Kumulatif',
-                    data: <?= json_encode($lineChartTargetData); ?>,
-                    borderColor: 'rgba(255, 193, 7, 1)', backgroundColor: 'rgba(255, 193, 7, 0.2)',
-                    fill: true, tension: 0.3
+        window.userDashboardCharts['chartIndikator'] = new Chart(ctxIndikator, {
+            type: 'bar',
+            data: {
+                labels: <?= json_encode($chartIndikatorLabels); ?>,
+                datasets: [
+                    { label: 'Total Target', data: <?= json_encode($chartIndikatorTargets); ?>, backgroundColor: 'rgba(255, 193, 7, 0.7)', borderColor: 'rgba(255, 193, 7, 1)', borderWidth: 1 },
+                    { label: 'Total Realisasi', data: <?= json_encode($chartIndikatorRealisasi); ?>, backgroundColor: 'rgba(13, 110, 253, 0.7)', borderColor: 'rgba(13, 110, 253, 1)', borderWidth: 1 }
+                ]
+            },
+            options: {
+                indexAxis: 'x', responsive: true, maintainAspectRatio: false,
+                layout: { padding: { bottom: 10 } },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Nilai / Jumlah', font: {weight: 'bold'} } },
+                    x: { ticks: { autoSkip: false, maxRotation: 45, minRotation: 25, font: {size: 11}, callback: function(val) { return formatLongLabel(val, {chart: this.chart}); } } }
                 },
-                {
-                    label: 'Realisasi Kumulatif',
-                    data: <?= json_encode($lineChartRealisasiData); ?>,
-                    borderColor: 'rgba(13, 110, 253, 1)', backgroundColor: 'rgba(13, 110, 253, 0.1)',
-                    fill: true, tension: 0.3
-                }
-            ]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            scales: { y: { beginAtZero: true }, x: { grid: { display: false } } },
-            plugins: { legend: { position: 'top' } }
-        }
-    });
+                plugins: { legend: { position: 'top' } }
+            }
+        });
+    }
+
+    // 3. CHART TREN (User Specific)
+    const ctxTren = document.getElementById('chartTren');
+    if (ctxTren) {
+        const existTren = Chart.getChart(ctxTren);
+        if (existTren) existTren.destroy();
+
+        window.userDashboardCharts['chartTren'] = new Chart(ctxTren, {
+            type: 'line',
+            data: {
+                labels: <?= json_encode($lineChartLabels); ?>,
+                datasets: [
+                    { label: 'Target Kumulatif', data: <?= json_encode($lineChartTargetData); ?>, borderColor: 'rgba(255, 193, 7, 1)', backgroundColor: 'rgba(255, 193, 7, 0.2)', fill: true, tension: 0.3 },
+                    { label: 'Realisasi Kumulatif', data: <?= json_encode($lineChartRealisasiData); ?>, borderColor: 'rgba(13, 110, 253, 1)', backgroundColor: 'rgba(13, 110, 253, 0.1)', fill: true, tension: 0.3 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true }, x: { grid: { display: false } } },
+                plugins: { legend: { position: 'top' } }
+            }
+        });
+    }
     <?php endif; ?>
 });
 </script>
