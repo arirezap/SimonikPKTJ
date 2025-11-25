@@ -83,7 +83,7 @@ $isEccActive = str_starts_with($current_uri, 'ecc');
                 </li>
             <?php endif; ?>
 
-            <?php if (in_array($role, ['admin', 'kabag_aak', 'aak', 'spm'])): ?>
+            <?php if ($role === 'admin'): ?>
                 <li class="nav-item">
                     <a class="nav-link <?= $isAkademikActive ? '' : 'collapsed' ?>" href="#akademikSubmenu" data-bs-toggle="collapse" role="button">
                         <i class="bi bi-book-half"></i><span>Data Akademik</span>
@@ -104,6 +104,7 @@ $isEccActive = str_starts_with($current_uri, 'ecc');
             <?php if ($isAdmin || $isKabag): ?>
                 <li class="nav-item"><a href="<?= site_url('admin/monitoring') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/monitoring')) ? 'active' : '' ?>"><i class="bi bi-kanban-fill"></i><span>Monitoring Kinerja</span></a></li>
                 
+                <?php if ($role === 'admin'): ?>
                 <li class="nav-item">
                     <a class="nav-link <?= ($segment1 == 'admin' && $segment2 == 'remunerasi') ? 'active' : '' ?>" 
                        href="<?= site_url('admin/remunerasi') ?>">
@@ -111,6 +112,8 @@ $isEccActive = str_starts_with($current_uri, 'ecc');
                         <span>Input Remunerasi</span>
                     </a>
                 </li>
+                <?php endif; ?>
+
                 <li class="nav-item">
                     <a class="nav-link <?= $isMasterDataActive ? '' : 'collapsed' ?>" href="#masterSubmenu" data-bs-toggle="collapse" role="button">
                         <i class="bi bi-stack"></i><span>Master Data</span>
