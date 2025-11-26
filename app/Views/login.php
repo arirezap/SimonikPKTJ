@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - SIMONIK</title>
+    <title>Login - ECC</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
@@ -22,10 +21,11 @@
                 <div class="logo-container">
                     <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ">
                 </div>
-                <!-- PERUBAHAN: Menambahkan kelas text-uppercase -->
+                
                 <h4 class="fw-bold mb-1 text-uppercase">Selamat Datang!</h4>
-                <p class="text-muted mb-1">Login ke akun SIMONIK Anda</p>
-                <p class="text-muted mb-4">SISTEM INFORMASI MONITORING KINERJA</p>
+                <p class="text-muted mb-1">Login ke akun ECC Anda</p>
+                
+                <p class="text-black fw-bold mb-4">EVIDENCE COMMAND CENTER</p>
 
                 <?php if (session()->getFlashdata('success')): ?>
                     <div class="alert alert-success d-flex align-items-center" role="alert">

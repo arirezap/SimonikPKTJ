@@ -11,7 +11,7 @@
         left: 0;
         width: 100%;
         background-color: #ffffff;
-        padding: 1rem 1.5rem; /* Sesuaikan padding */
+        padding: 1rem 1.5rem;
         border-top: 1px solid #dee2e6;
         box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
         display: flex;
@@ -24,7 +24,6 @@
     .kriteria-row:last-child {
         border-bottom: none;
     }
-    /* Style untuk text area catatan review */
     .review-notes {
         font-size: 0.85rem;
     }
@@ -91,7 +90,7 @@
 
 
 <?php 
-    $is_staf = in_array($currentRole, ['aak', 'kuk', 'spm']); // SPM sekarang dianggap staf di sini
+    $is_staf = in_array($currentRole, ['aak', 'kuk', 'spm']); 
     $is_kabag = in_array($currentRole, ['kabag_aak', 'kabag_kuk']);
     $is_wadir = in_array($currentRole, ['admin', 'manajemen']);
 ?>
@@ -125,7 +124,6 @@
                                     $link = $data['catatan'] ?? '';
                                     $kabag_approved = $data['kabag_approved'] ?? 0;
                                     $status = $data['status'] ?? '';
-                                    // Data Komentar Baru
                                     $note_kabag = $data['catatan_kabag'] ?? '';
                                     $note_wadir = $data['catatan_wadir'] ?? '';
                                 ?>
@@ -143,13 +141,22 @@
                                         <?php endif; ?>
                                     </td>
                                     <td class="text-center">
-                                        <?php if($is_staf): // Staf hanya bisa isi link ?>
+                                        <?php if($is_staf): ?>
                                             <textarea name="catatan[<?= $criteria['id'] ?>]" class="form-control form-select-sm" rows="2" placeholder="Masukkan link Google Drive..."><?= esc($link) ?></textarea>
-                                        <?php else: // Peran lain hanya bisa lihat link ?>
+                                        <?php else: ?>
                                             <?php if (!empty($link)): ?>
-                                                <a href="<?= esc($link, 'attr') ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
-                                                    <i class="bi bi-link-45deg"></i> Lihat Bukti
-                                                </a>
+                                                <div class="d-flex flex-column align-items-center gap-1">
+                                                    <a href="<?= esc($link, 'attr') ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm w-100 mb-1">
+                                                        <i class="bi bi-link-45deg"></i> Lihat Bukti
+                                                    </a>
+                                                    
+                                                    <?php if (($is_kabag || $is_wadir) && isset($data['id'])): ?>
+                                                        <button type="button" class="btn btn-outline-danger btn-sm w-100" 
+                                                                onclick="if(confirm('Yakin ingin menghapus link ini? \nStatus persetujuan Kabag dan Wadir akan di-reset.')) { window.location.href='<?= site_url('ecc/deleteLedLink/' . $data['id']) ?>'; }">
+                                                            <i class="bi bi-trash"></i> Hapus Link
+                                                        </button>
+                                                    <?php endif; ?>
+                                                </div>
                                             <?php else: ?>
                                                 <span class="text-muted small"><em>(Belum diisi)</em></span>
                                             <?php endif; ?>
@@ -157,7 +164,7 @@
                                     </td>
                                     
                                     <td class="review-notes">
-                                        <?php if($is_staf): // Staf View (Read-only) ?>
+                                        <?php if($is_staf): ?>
                                             <?php if(!empty($note_kabag)): ?>
                                                 <div class='mb-2'>
                                                     <label class='form-label small fw-bold'>Catatan Kabag:</label>
@@ -174,7 +181,7 @@
                                                 <span class="text-muted small"><em>(Belum ada catatan)</em></span>
                                             <?php endif; ?>
 
-                                        <?php elseif($is_kabag): // Kabag View (Edit Kabag, Read Wadir) ?>
+                                        <?php elseif($is_kabag): ?>
                                             <div class='mb-2'>
                                                 <label class='form-label small fw-bold'>Catatan Anda (Kabag):</label>
                                                 <textarea name="catatan_kabag[<?= $criteria['id'] ?>]" class="form-control form-control-sm" rows="2" placeholder="Beri masukan untuk staf..."><?= esc($note_kabag) ?></textarea>
@@ -186,7 +193,7 @@
                                                 </div>
                                             <?php endif; ?>
 
-                                        <?php elseif($is_wadir): // Wadir/Admin View (Read Kabag, Edit Wadir) ?>
+                                        <?php elseif($is_wadir): ?>
                                             <?php if(!empty($note_kabag)): ?>
                                                 <div class='mb-2'>
                                                     <label class='form-label small fw-bold'>Catatan Kabag:</label>
@@ -255,7 +262,7 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('footer_bar') ?>
-    <?php if (!empty($all_criteria) && ($is_staf || $is_kabag || $is_wadir)): // Tampilkan tombol simpan jika ada rolenya ?>
+    <?php if (!empty($all_criteria) && ($is_staf || $is_kabag || $is_wadir)): ?>
     <div class="sticky-footer-bar">
         <button type="button" id="submitLedForm" class="btn btn-primary"><i class="bi bi-save me-2"></i> Simpan Perubahan</button>
     </div>
@@ -272,7 +279,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (submitButton) {
         submitButton.addEventListener('click', function() {
             // Saat menyimpan, aktifkan semua field yang dinonaktifkan
-            // agar nilainya ikut terkirim ke controller
             document.querySelectorAll('#ledForm select[disabled]').forEach(input => {
                 input.disabled = false;
             });

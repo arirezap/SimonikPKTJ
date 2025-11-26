@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $this->renderSection('title') ?? 'SIMONIK' ?></title>
+    <title><?= $this->renderSection('title') ?? 'ECC' ?></title>
 
     <link rel="shortcut icon" href="<?= base_url('favicon.ico') ?>">
     <link rel="icon" type="image/png" sizes="32x32" href="<?= base_url('favicon-32x32.png') ?>">
@@ -28,6 +28,38 @@
         <?php include(APPPATH . 'Views/layouts/sidebar.php'); ?>
 
         <div class="content-wrapper">
+            
+            <header class="navbar navbar-expand bg-white shadow-sm mb-4 rounded-3 px-4 py-3 border-bottom">
+                <div class="container-fluid px-0">
+                    <div class="d-flex flex-column">
+                        <span class="text-muted small text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                            <i class="bi bi-emoji-smile me-1"></i> Selamat Datang,
+                        </span>
+                        <h5 class="mb-0 fw-bold text-primary">
+                            <?= esc(session()->get('nama_lengkap') ?? 'Pengguna') ?>
+                        </h5>
+                    </div>
+
+                    <div class="ms-auto d-flex align-items-center gap-3">
+                        <div class="text-end d-none d-md-block">
+                            <span class="badge bg-light text-dark border">
+                                <?= strtoupper(esc(session()->get('role') ?? 'GUEST')) ?>
+                            </span>
+                            <div class="small text-muted mt-1" style="font-size: 0.8rem;">
+                                <i class="bi bi-calendar3 me-1"></i> <?= date('d M Y') ?>
+                            </div>
+                        </div>
+                        
+                        <div class="vr d-none d-md-block mx-2"></div>
+                        
+                        <a href="<?= site_url('profile') ?>" class="text-decoration-none" title="Lihat Profil">
+                            <div class="bg-primary bg-opacity-10 rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <i class="bi bi-person-fill fs-5 text-primary"></i>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </header>
             <div class="content-area">
                 
                 <div class="d-flex align-items-center mb-4">

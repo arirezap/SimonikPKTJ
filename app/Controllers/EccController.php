@@ -13,30 +13,12 @@ class EccController extends BaseController
 {
     use EccDataTrait;
     
-    // Definisikan properti $db
     protected $db;
 
     public function __construct()
     {
-        // Inisialisasi koneksi database
         $this->db = \Config\Database::connect();
     }
-
-    /* // FUNGSI INI DIHAPUS KARENA SUDAH TIDAK DIGUNAKAN
-    public function index()
-    {
-        $selectedTahun = $this->request->getGet('tahun') ?? date('Y');
-        $eccData = $this->getDashboardEccData($selectedTahun);
-
-        $data = [
-            'page_title' => 'Dashboard ECC',
-            'prodiData' => $eccData['prodiData'],
-            'selectedTahun' => $selectedTahun,
-            'daftar_tahun' => $eccData['daftar_tahun'],
-        ];
-        return view('ecc/ecc_index', $data);
-    }
-    */
 
     public function lkps()
     {
@@ -128,7 +110,7 @@ class EccController extends BaseController
         $prodi = $this->request->getPost('prodi');
         
         $statuses = $this->request->getPost('status');
-        $catatan = $this->request->getPost('catatan'); // Link bukti dari staf
+        $catatan = $this->request->getPost('catatan'); 
         $kabag_approvals = $this->request->getPost('kabag_approved');
         $catatan_kabag = $this->request->getPost('catatan_kabag');
         $catatan_wadir = $this->request->getPost('catatan_wadir');
@@ -175,9 +157,9 @@ class EccController extends BaseController
                     if(isset($catatan_kabag[$kriteria_id])) {
                         $data['catatan_kabag'] = $catatan_kabag[$kriteria_id];
                     }
-                } else { // Staf (aak, kuk, spm)
+                } else { // Staf
                     if(isset($catatan[$kriteria_id])) {
-                        $data['catatan'] = $catatan[$kriteria_id]; // Ini adalah link bukti
+                        $data['catatan'] = $catatan[$kriteria_id]; 
                     }
                 }
 
@@ -197,7 +179,7 @@ class EccController extends BaseController
             }
 
             return redirect()->to('ecc/led?prodi=' . $prodi . '&tahun=' . $tahun)
-                ->with('success', 'Data LED untuk prodi ' . $prodi . ' tahun ' . $tahun . ' berhasil disimpan.');
+                ->with('success', 'Data LED berhasil disimpan.');
                 
         } catch (\Exception $e) {
             $db->transRollback();
@@ -206,10 +188,39 @@ class EccController extends BaseController
         }
     }
 
-    // ==========================================================
-    // FUNGSI-FUNGSI SIMULASI PENILAIAN
-    // ==========================================================
-    
+    // --- FITUR HAPUS LINK & RESET APPROVAL (DIPERBARUI) ---
+    public function deleteLedLink($id)
+    {
+        $submissionModel = new LedSubmission();
+        $submission = $submissionModel->find($id);
+
+        if (!$submission) {
+            return redirect()->back()->with('error', 'Data tidak ditemukan.');
+        }
+
+        $role = strtolower(session()->get('role')); // Normalisasi role ke huruf kecil
+        $allowed_roles = ['admin', 'manajemen', 'kabag_aak', 'kabag_kuk'];
+
+        if (!in_array($role, $allowed_roles)) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk menghapus data ini.');
+        }
+
+        // PERBAIKAN: Reset semua field terkait
+        $updateData = [
+            'catatan' => null,       // Hapus link/bukti
+            'kabag_approved' => 0,   // Reset approval
+            'status' => null,        // Reset status wadir (Ada/Tidak Ada)
+            'catatan_kabag' => null, // Hapus catatan review kabag
+            'catatan_wadir' => null  // Hapus catatan review wadir
+        ];
+
+        if ($submissionModel->update($id, $updateData)) {
+            return redirect()->back()->with('success', 'Link dan seluruh riwayat review berhasil dihapus (reset).');
+        } else {
+            return redirect()->back()->with('error', 'Gagal menghapus link.');
+        }
+    }
+
     public function simulasi()
     {
         $criteriaModel = new LedCriteria();
@@ -306,7 +317,7 @@ class EccController extends BaseController
             }
 
             return redirect()->to('ecc/simulasi?prodi=' . $prodi . '&tahun=' . $tahun)
-                ->with('success', 'Skor simulasi untuk prodi ' . $prodi . ' tahun ' . $tahun . ' berhasil disimpan.');
+                ->with('success', 'Skor simulasi berhasil disimpan.');
                 
         } catch (\Exception $e) {
             $db->transRollback();
@@ -315,21 +326,16 @@ class EccController extends BaseController
         }
     }
     
-    // ==========================================================
-    // FUNGSI UNTUK HALAMAN DETAIL STANDAR
-    // ==========================================================
     public function detailStandar($standar_id, $prodi, $tahun)
     {
         $standarModel = new LedStandar();
         $criteriaModel = new LedCriteria();
 
-        // 1. Ambil nama standar
         $standar = $standarModel->find($standar_id);
         if (!$standar) {
             return redirect()->to('/ecc')->with('error', 'Standar tidak ditemukan.');
         }
 
-        // 2. Ambil semua data terkait untuk standar, prodi, dan tahun ini
         $criteria_data = $criteriaModel
             ->select('
                 led_criteria.id, 
@@ -349,7 +355,6 @@ class EccController extends BaseController
             ->orderBy('led_criteria.id', 'ASC')
             ->findAll();
 
-        // 3. Siapkan data for Bar Chart and Table
         $barChartLabels = [];
         $barChartScores = [];
         $barChartTooltips = []; 
@@ -370,7 +375,7 @@ class EccController extends BaseController
                 } elseif (empty($item['status'])) {
                     $skor_alasan = 'Menunggu penilaian Wadir.';
                 } else {
-                    $skor_alasan = 'Item belum disetujui.'; // Fallback
+                    $skor_alasan = 'Item belum disetujui.';
                 }
             }
 
@@ -390,7 +395,7 @@ class EccController extends BaseController
             ];
         }
         
-        $from_page = $this->request->getGet('from') ?? 'user'; // Default ke user jika tidak diset
+        $from_page = $this->request->getGet('from') ?? 'user'; 
 
         $data = [
             'page_title' => 'Detail Standar: ' . $standar['nama_standar'],
