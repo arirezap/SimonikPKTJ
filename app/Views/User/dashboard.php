@@ -10,12 +10,21 @@ Dashboard
 
 <?= $this->section('styles') ?>
 <style>
+    /* Tab Style Standard */
     .nav-tabs .nav-link { border-bottom-width: 0; color: #6c757d; }
-    .nav-tabs .nav-link.active { background-color: #f8f9fa; border-color: #dee2e6 #dee2e6 #f8f9fa; color: #0d6efd; font-weight: bold; }
-    .tab-content { background-color: #f8f9fa; border: 1px solid #dee2e6; border-top: 0; border-radius: 0 0.375rem 0.375rem 0.375rem; }
+    .nav-tabs .nav-link.active { background-color: #fff; border-color: #dee2e6 #dee2e6 #fff; color: #0d6efd; font-weight: bold; }
     
-    .radar-chart-container { position: relative; height: 450px; width: 100%; }
-    /* Tinggi container diperbesar agar grafik lebih mudah dibaca */
+    /* Card Effect untuk Konten Tab */
+    .tab-content { 
+        background-color: #ffffff; 
+        border: 1px solid #dee2e6; 
+        border-top: 0; 
+        border-radius: 0 0.375rem 0.375rem 0.375rem;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05); /* Shadow halus */
+        padding: 2rem;
+    }
+    
+    .radar-chart-container { position: relative; height: 500px; width: 100%; }
     .performance-chart-container { position: relative; height: 500px; width: 100%; }
 </style>
 <?= $this->endSection() ?>
@@ -23,6 +32,7 @@ Dashboard
 <?= $this->section('content') ?>
 
 <h4 class="mb-3">Dashboard ECC (Evidence Command Center)</h4>
+
 <div class="card mb-4 shadow-sm">
     <div class="card-body">
         <form method="GET" action="<?= site_url('user/dashboard') ?>" class="row g-3 align-items-end">
@@ -46,16 +56,22 @@ Dashboard
         </li>
     <?php $first = false; endforeach; ?>
 </ul>
-<div class="tab-content mb-5 shadow-sm" id="prodiTabContent">
+
+<div class="tab-content mb-5" id="prodiTabContent">
     <?php $first = true; foreach($prodiData as $prodi): ?>
-        <div class="tab-pane fade <?= $first ? 'show active' : '' ?> p-4" id="content-<?= esc($prodi['id_prodi']) ?>" role="tabpanel">
+        <div class="tab-pane fade <?= $first ? 'show active' : '' ?>" id="content-<?= esc($prodi['id_prodi']) ?>" role="tabpanel">
             <div class="row justify-content-center">
                 <div class="col-md-10">
                     <h5 class="text-center mb-4">Skor LED: <span class="text-primary"><?= esc($prodi['nama_prodi']) ?></span></h5>
                     <?php if (empty($prodi['chart_labels'])): ?>
                         <div class="alert alert-info text-center">Belum ada data Kategori LED.</div>
                     <?php else: ?>
-                        <div class="radar-chart-container"><canvas id="radarChart-<?= esc($prodi['id_prodi']) ?>"></canvas></div>
+                        <div class="radar-chart-container">
+                            <canvas id="radarChart-<?= esc($prodi['id_prodi']) ?>"></canvas>
+                        </div>
+                        <p class="text-center text-muted small mt-3">
+                            <i class="bi bi-info-circle me-1"></i> Klik pada nama standar (label) di grafik untuk melihat rincian detailnya.
+                        </p>
                     <?php endif; ?>
                 </div>
             </div>
@@ -141,14 +157,11 @@ Dashboard
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-// --- PERBAIKAN UTAMA DI SINI: Global State Management ---
-// Simpan semua instance chart di variabel global agar bisa dilacak dan dihapus
 window.userDashboardCharts = window.userDashboardCharts || {};
 
 document.addEventListener('DOMContentLoaded', function () {
     
-    // 1. HAPUS CHART LAMA (Cleanup)
-    // Jika halaman dimuat ulang sebagian (back button/cache), chart lama mungkin masih "hidup"
+    // Cleanup Old Charts
     for (let key in window.userDashboardCharts) {
         if (window.userDashboardCharts[key]) {
             window.userDashboardCharts[key].destroy();
@@ -156,56 +169,79 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // --- BAGIAN 1: RADAR CHART ECC ---
+    // --- Helper: Word Wrap ---
+    function splitLabel(label, maxLength = 25) {
+        if (label.length <= maxLength) return label;
+        const words = label.split(' ');
+        const lines = [];
+        let currentLine = words[0];
+
+        for (let i = 1; i < words.length; i++) {
+            if (currentLine.length + 1 + words[i].length <= maxLength) {
+                currentLine += ' ' + words[i];
+            } else {
+                lines.push(currentLine);
+                currentLine = words[i];
+            }
+        }
+        lines.push(currentLine);
+        return lines;
+    }
+
+    // --- Helper: Format Long Label ---
+    const formatLongLabel = (val, ctx) => {
+        const label = ctx.chart.data.labels[val];
+        return (label.length > 40) ? label.substring(0, 40) + '...' : label;
+    };
+
+    // --- DATA ---
     const prodiData = <?= json_encode($prodiData) ?>;
     const selectedTahun = '<?= esc($tahun_terpilih) ?>';
 
+    // --- EVENT KLIK LABEL ---
     function getClickedLabel(clickEvent, chart) {
-        // GUARD: Cek apakah scale 'r' tersedia
         if (!chart || !chart.scales || !chart.scales.r) return null;
-        
         const r = chart.scales.r;
         const pointLabelItems = r._pointLabelItems; 
-        
         if (!pointLabelItems || pointLabelItems.length === 0) return null;
-
-        // Gunakan helper Chart.js untuk posisi relatif yang akurat
         const canvasPosition = Chart.helpers.getRelativePosition(clickEvent, chart);
         const x = canvasPosition.x;
         const y = canvasPosition.y;
-        
         let closestLabelIndex = -1;
         let minDistance = Infinity;
-
         for (let i = 0; i < pointLabelItems.length; i++) {
             const item = pointLabelItems[i];
             const distance = Math.sqrt(Math.pow(x - item.x, 2) + Math.pow(y - item.y, 2));
             if (distance < minDistance) { minDistance = distance; closestLabelIndex = i; }
         }
-
         if (closestLabelIndex > -1) {
             try {
                 const item = pointLabelItems[closestLabelIndex];
-                const itemWidth = item.options?.bounds?.width || 50; 
-                if (minDistance < (itemWidth / 2) + 15) return closestLabelIndex;
-            } catch (e) { if (minDistance < 40) return closestLabelIndex; }
+                const itemWidth = item.options?.bounds?.width || 80; 
+                if (minDistance < (itemWidth / 2) + 20) return closestLabelIndex;
+            } catch (e) { if (minDistance < 50) return closestLabelIndex; }
         }
         return null;
     }
 
+    // --- INIT RADAR CHART ---
     for (const [id, data] of Object.entries(prodiData)) {
         const canvasId = 'radarChart-' + id;
         const ctx = document.getElementById(canvasId);
         if (ctx) {
-            // Double check & destroy jika canvas sudah dipakai chart lain
             const existing = Chart.getChart(ctx);
             if (existing) existing.destroy();
 
-            // Buat chart baru dan simpan di global
+            // Apply Word Wrap
+            const wrappedLabels = data.chart_labels.map(label => splitLabel(label, 25));
+
             window.userDashboardCharts[canvasId] = new Chart(ctx, {
                 type: 'radar',
                 data: {
-                    labels: data.chart_labels, labelIds: data.chart_label_ids, prodi: data.id_prodi, tahun: selectedTahun,
+                    labels: wrappedLabels,
+                    labelIds: data.chart_label_ids, 
+                    prodi: data.id_prodi, 
+                    tahun: selectedTahun,
                     datasets: [{
                         label: 'Skor ' + data.nama_prodi, data: data.chart_data, fill: true,
                         backgroundColor: 'rgba(13, 110, 253, 0.2)', borderColor: 'rgba(13, 110, 253, 1)',
@@ -213,8 +249,27 @@ document.addEventListener('DOMContentLoaded', function () {
                     }]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
-                    scales: { r: { angleLines: { display: true }, suggestedMin: 0, suggestedMax: 100, grid: { color: 'rgba(0, 0, 0, 0.1)' }, pointLabels: { display: true, color: '#0d6efd', font: { size: 12, weight: 'bold' }, padding: 10 }, ticks: { display: false, stepSize: 25, maxTicksLimit: 5 } } },
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    layout: { padding: 20 },
+                    scales: { 
+                        r: { 
+                            angleLines: { display: true },
+                            min: 0, max: 100,
+                            grid: { color: 'rgba(0, 0, 0, 0.1)' }, 
+                            pointLabels: { 
+                                display: true, 
+                                color: '#0d6efd', 
+                                font: { size: 11, weight: 'bold' }, 
+                                backdropPadding: 4,
+                                padding: 15, 
+                            }, 
+                            ticks: { 
+                                display: false, 
+                                stepSize: 33.3333, // 3 Bagian (Border)
+                            } 
+                        } 
+                    },
                     onHover: (event, activeElements, chart) => {
                          const index = getClickedLabel(event, chart);
                          event.native.target.style.cursor = (index !== null) ? 'pointer' : 'default';
@@ -234,14 +289,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Helper untuk label panjang
-    const formatLongLabel = (val, ctx) => {
-        const label = ctx.chart.data.labels[val];
-        return (label.length > 50) ? label.substring(0, 50) + '...' : label;
-    };
-
-    // --- BAGIAN 2: GRAFIK KINERJA PERSONAL (User Specific) ---
-    
+    // --- INIT BAR CHARTS ---
     <?php if (!empty($chartSasaranLabels)): ?>
     const ctxSasaran = document.getElementById('chartSasaran');
     if (ctxSasaran) {
@@ -299,7 +347,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // 3. CHART TREN (User Specific)
     const ctxTren = document.getElementById('chartTren');
     if (ctxTren) {
         const existTren = Chart.getChart(ctxTren);
