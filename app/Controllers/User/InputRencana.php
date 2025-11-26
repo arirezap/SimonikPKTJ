@@ -43,13 +43,25 @@ class InputRencana extends BaseController
      */
     public function store()
     {
-        // ... (Validasi server-side tetap sama seperti sebelumnya) ...
+        // Validasi Input
+        // Kita hanya menggunakan 'required' tanpa 'is_unique' agar user bisa input data kembar di baris berbeda
+        $rules = [
+            'tahun_anggaran'      => 'required|numeric',
+            'sasaran_program.*'   => 'required',
+            'indikator_kinerja.*' => 'required',
+            'satuan.*'            => 'required',
+            'target_utama.*'      => 'required|numeric',
+        ];
+
+        if (!$this->validate($rules)) {
+            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan. Pastikan semua kolom bertanda bintang (*) terisi.');
+        }
 
         $rencanaModel = new RencanaKinerjaModel();
         $user_id = session()->get('user_id');
         $tahun_anggaran = $this->request->getPost('tahun_anggaran');
 
-        // Ambil semua data dari form
+        // Ambil semua data dari form (Array)
         $rencana_ids = $this->request->getPost('rencana_id');
         $sasaran_program_arr = $this->request->getPost('sasaran_program');
         $indikator_kinerja_arr = $this->request->getPost('indikator_kinerja');
@@ -60,32 +72,38 @@ class InputRencana extends BaseController
         $dataToUpdate = [];
         $dataToInsert = [];
 
-        foreach ($sasaran_program_arr as $index => $sasaran) {
-            if (empty($sasaran)) continue; // Lewati baris kosong
+        // Loop data array
+        if ($sasaran_program_arr) {
+            foreach ($sasaran_program_arr as $index => $sasaran) {
+                // Lewati baris jika sasaran atau indikator kosong
+                if (empty($sasaran) || empty($indikator_kinerja_arr[$index])) continue;
 
-            $rowData = [
-                'user_id'           => $user_id,
-                'tahun_anggaran'    => $tahun_anggaran,
-                'sasaran_program'   => $sasaran,
-                'indikator_kinerja' => $indikator_kinerja_arr[$index],
-                'satuan'            => $satuan_arr[$index],
-                'target_utama'      => $target_utama_arr[$index],
-                'kegiatan'          => $kegiatan_arr[$index],
-            ];
+                $rowData = [
+                    'user_id'           => $user_id,
+                    'tahun_anggaran'    => $tahun_anggaran,
+                    'sasaran_program'   => $sasaran,
+                    'indikator_kinerja' => $indikator_kinerja_arr[$index],
+                    'satuan'            => $satuan_arr[$index],
+                    'target_utama'      => $target_utama_arr[$index],
+                    'kegiatan'          => $kegiatan_arr[$index] ?? '', 
+                ];
 
-            // Cek apakah ini data lama (ada id) atau data baru (id kosong)
-            if (!empty($rencana_ids[$index])) {
-                // Data untuk di-update
-                $rowData['id'] = $rencana_ids[$index];
-                $dataToUpdate[] = $rowData;
-            } else {
-                // Data baru untuk di-insert
-                $rowData['target_bulanan'] = json_encode(array_fill(0, 12, 0));
-                $dataToInsert[] = $rowData;
+                // Cek apakah ini data lama (ada ID) atau data baru (ID kosong)
+                if (!empty($rencana_ids[$index])) {
+                    // Data untuk di-update
+                    $rowData['id'] = $rencana_ids[$index];
+                    $dataToUpdate[] = $rowData;
+                } else {
+                    // Data baru untuk di-insert
+                    // Inisialisasi nilai bulanan default (0 untuk target, null untuk realisasi)
+                    $rowData['target_bulanan'] = json_encode(array_fill(0, 12, 0));
+                    $rowData['realisasi_bulanan'] = json_encode(array_fill(0, 12, null));
+                    $dataToInsert[] = $rowData;
+                }
             }
         }
 
-        // Jalankan query
+        // Jalankan query batch (Update & Insert)
         if (!empty($dataToUpdate)) {
             $rencanaModel->updateBatch($dataToUpdate, 'id');
         }
