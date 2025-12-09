@@ -24,7 +24,7 @@ class RencanaKinerja extends Model
         'tahun_anggaran'
     ];
     
-    // PERBAIKAN: Tambahkan Callbacks untuk JSON
+    // Callbacks
     protected $allowCallbacks = true;
     protected $afterFind      = ['decodeJsonColumns'];
     protected $beforeInsert   = ['encodeJsonColumns'];
@@ -39,11 +39,9 @@ class RencanaKinerja extends Model
             return $data;
         }
 
-        // Jika ini adalah satu data (find())
         if ($data['singleton']) {
             $data['data'] = $this->jsonHandler($data['data']);
         } else {
-            // Jika ini adalah banyak data (findAll())
             foreach ($data['data'] as $key => $row) {
                 $data['data'][$key] = $this->jsonHandler($row);
             }
@@ -52,33 +50,51 @@ class RencanaKinerja extends Model
     }
 
     /**
-     * Mengubah kolom array (array) menjadi JSON (string) sebelum disimpan.
+     * Mengubah kolom array menjadi JSON sebelum disimpan.
+     * UPDATE: Menambahkan pengecekan is_array agar tidak double-encode jika Controller sudah mengirim string.
      */
     protected function encodeJsonColumns(array $data)
     {
-        if (isset($data['data']['target_bulanan']) && is_array($data['data']['target_bulanan'])) {
-            $data['data']['target_bulanan'] = json_encode($data['data']['target_bulanan']);
+        // Target Bulanan
+        if (isset($data['data']['target_bulanan'])) {
+            if (is_array($data['data']['target_bulanan'])) {
+                $data['data']['target_bulanan'] = json_encode($data['data']['target_bulanan']);
+            }
         }
-        if (isset($data['data']['realisasi_bulanan']) && is_array($data['data']['realisasi_bulanan'])) {
-            $data['data']['realisasi_bulanan'] = json_encode($data['data']['realisasi_bulanan']);
+
+        // Realisasi Bulanan
+        if (isset($data['data']['realisasi_bulanan'])) {
+            if (is_array($data['data']['realisasi_bulanan'])) {
+                $data['data']['realisasi_bulanan'] = json_encode($data['data']['realisasi_bulanan']);
+            }
         }
+
         return $data;
     }
     
-    /**
-     * Helper privat untuk $afterFind
-     */
     private function jsonHandler(array $row): array
     {
-        if (isset($row['target_bulanan']) && is_string($row['target_bulanan'])) {
-            $row['target_bulanan'] = json_decode($row['target_bulanan'], true) ?? array_fill(0, 12, 0);
-        } else if (!isset($row['target_bulanan'])) {
+        // Decode Target
+        if (isset($row['target_bulanan'])) {
+            if (is_string($row['target_bulanan'])) {
+                $decoded = json_decode($row['target_bulanan'], true);
+                $row['target_bulanan'] = is_array($decoded) ? $decoded : array_fill(0, 12, 0);
+            } elseif (!is_array($row['target_bulanan'])) {
+                $row['target_bulanan'] = array_fill(0, 12, 0);
+            }
+        } else {
             $row['target_bulanan'] = array_fill(0, 12, 0);
         }
         
-        if (isset($row['realisasi_bulanan']) && is_string($row['realisasi_bulanan'])) {
-            $row['realisasi_bulanan'] = json_decode($row['realisasi_bulanan'], true) ?? array_fill(0, 12, null);
-        } else if (!isset($row['realisasi_bulanan'])) {
+        // Decode Realisasi
+        if (isset($row['realisasi_bulanan'])) {
+            if (is_string($row['realisasi_bulanan'])) {
+                $decoded = json_decode($row['realisasi_bulanan'], true);
+                $row['realisasi_bulanan'] = is_array($decoded) ? $decoded : array_fill(0, 12, null);
+            } elseif (!is_array($row['realisasi_bulanan'])) {
+                $row['realisasi_bulanan'] = array_fill(0, 12, null);
+            }
+        } else {
              $row['realisasi_bulanan'] = array_fill(0, 12, null);
         }
 

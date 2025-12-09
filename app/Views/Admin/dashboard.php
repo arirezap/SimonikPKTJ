@@ -4,12 +4,18 @@
 
 <?= $this->section('styles') ?>
 <style>
+    /* Tab Navigasi */
     .nav-tabs .nav-link { border-bottom-width: 0; color: #6c757d; }
     .nav-tabs .nav-link.active { background-color: #fff; border-color: #dee2e6 #dee2e6 #fff; color: #0d6efd; font-weight: bold; }
+    
+    /* Card Container */
     .tab-content, .chart-card-wrapper {
         background-color: #ffffff; border: 1px solid #dee2e6; border-top: 0;
         border-radius: 0 0.375rem 0.375rem 0.375rem; box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05); padding: 2rem;
     }
+    
+    /* Ukuran Chart */
+    .radar-chart-container { position: relative; height: 500px; width: 100%; }
     .chart-container { position: relative; height: 500px; width: 100%; }
     .performance-chart-container { position: relative; min-height: 600px; width: 100%; }
 </style>
@@ -33,11 +39,16 @@
             <div class="row justify-content-center">
                 <div class="col-md-10">
                     <h5 class="text-center mb-4">Rangkuman Skor LED: <span class="text-primary"><?= esc($prodi['nama_prodi']) ?></span> (Tahun <?= esc($tahun_terpilih) ?>)</h5>
+                    
                     <?php if (empty($prodi['chart_labels'])): ?>
                         <div class="alert alert-info text-center">Belum ada data Kategori LED.</div>
                     <?php else: ?>
-                        <div class="chart-container"><canvas id="radarChart-<?= esc($prodi['id_prodi']) ?>"></canvas></div>
-                        <p class="text-center text-muted small mt-3"><i class="bi bi-info-circle me-1"></i> Klik pada nama standar (label) di grafik untuk melihat detail.</p>
+                        <div class="radar-chart-container">
+                            <canvas id="radarChart-<?= esc($prodi['id_prodi']) ?>"></canvas>
+                        </div>
+                        <p class="text-center text-muted small mt-3">
+                            <i class="bi bi-info-circle me-1"></i> Klik pada nama standar (label) di grafik untuk melihat detail.
+                        </p>
                     <?php endif; ?>
                 </div>
             </div>
@@ -102,14 +113,14 @@
         <?php if (!empty($chartLabels)): ?>
             <div style="position: relative; height: 400px; width: 100%;"><canvas id="userPerformanceChart"></canvas></div>
         <?php else: ?>
-            <div class="alert alert-info">Belum ada data kinerja user.</div>
+            <div class="alert alert-info">Belum ada data kinerja dari Tim/Unit/Pokja.</div>
         <?php endif; ?>
     </div>
 </div>
 
 <div class="card shadow-sm mb-4">
     <div class="card-header bg-white py-3">
-        <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-bar-chart-fill me-2"></i>Persentase Capaian per Indikator Kinerja (Target vs Realisasi)</h5>
+        <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-bar-chart-fill me-2"></i>Persentase Capaian per Indikator Kinerja</h5>
     </div>
     <div class="card-body">
         <?php if (!empty($chartIndikatorLabels)): ?>
@@ -137,11 +148,15 @@
 window.pageCharts = window.pageCharts || {};
 
 document.addEventListener('DOMContentLoaded', function () {
+    // Cleanup chart lama
     for (let key in window.pageCharts) {
         if (window.pageCharts[key]) { window.pageCharts[key].destroy(); delete window.pageCharts[key]; }
     }
 
-    function splitLabel(label, maxLength = 35) {
+    // --- 1. HELPER FUNCTIONS (SAMA DENGAN USER) ---
+    
+    // Fungsi Split Label (Word Wrap)
+    function splitLabel(label, maxLength = 25) {
         if (label.length <= maxLength) return label;
         const words = label.split(' ');
         const lines = [];
@@ -158,12 +173,44 @@ document.addEventListener('DOMContentLoaded', function () {
         return lines;
     }
 
+    // Fungsi Format Angka
     const formatLongLabel = (val, ctx) => {
         const label = ctx.chart.data.labels[val];
         return (label.length > 40) ? label.substring(0, 40) + '...' : label;
     };
 
-    // 1. RADAR CHART
+    // Fungsi Deteksi Klik Radar (SAMA PERSIS DENGAN USER)
+    function getClickedLabel(clickEvent, chart) {
+        if (!chart || !chart.scales || !chart.scales.r) return null;
+        const r = chart.scales.r;
+        const pointLabelItems = r._pointLabelItems; 
+        if (!pointLabelItems || pointLabelItems.length === 0) return null;
+        
+        const canvasPosition = Chart.helpers.getRelativePosition(clickEvent, chart);
+        const x = canvasPosition.x;
+        const y = canvasPosition.y;
+        
+        let closestLabelIndex = -1;
+        let minDistance = Infinity;
+
+        for (let i = 0; i < pointLabelItems.length; i++) {
+            const item = pointLabelItems[i];
+            const distance = Math.sqrt(Math.pow(x - item.x, 2) + Math.pow(y - item.y, 2));
+            if (distance < minDistance) { minDistance = distance; closestLabelIndex = i; }
+        }
+
+        if (closestLabelIndex > -1) {
+            try {
+                const item = pointLabelItems[closestLabelIndex];
+                const itemWidth = item.options?.bounds?.width || 80; 
+                if (minDistance < (itemWidth / 2) + 20) return closestLabelIndex;
+            } catch (e) { if (minDistance < 50) return closestLabelIndex; }
+        }
+        return null;
+    }
+
+
+    // --- 2. INIT RADAR CHART (LOGIKA SAMA DENGAN USER) ---
     const prodiData = <?= json_encode($prodiData) ?>;
     const selectedTahun = '<?= esc($tahun_terpilih) ?>';
 
@@ -171,10 +218,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const canvasId = 'radarChart-' + id;
         const ctx = document.getElementById(canvasId);
         if (ctx) {
+            const wrappedLabels = data.chart_labels.map(label => splitLabel(label, 25));
+
             window.pageCharts[canvasId] = new Chart(ctx, {
                 type: 'radar',
                 data: {
-                    labels: data.chart_labels,
+                    labels: wrappedLabels,
                     labelIds: data.chart_label_ids, 
                     prodi: data.id_prodi,
                     tahun: selectedTahun,
@@ -185,23 +234,43 @@ document.addEventListener('DOMContentLoaded', function () {
                     }]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    layout: { padding: 20 },
                     scales: {
                         r: {
-                            angleLines: { display: true }, suggestedMin: 0, suggestedMax: 100,
+                            angleLines: { display: true },
+                            min: 0, max: 100,
                             grid: { color: 'rgba(0, 0, 0, 0.1)' },
-                            pointLabels: { display: true, color: '#0d6efd', font: { size: 11, weight: 'bold' }, padding: 10 },
-                            ticks: { display: false, stepSize: 25, maxTicksLimit: 5 }
+                            pointLabels: { 
+                                display: true, color: '#0d6efd', font: { size: 11, weight: 'bold' }, 
+                                backdropPadding: 4, padding: 15
+                            },
+                            ticks: { 
+                                display: false, 
+                                stepSize: 33.3333 // SKALA 3 GARIS
+                            }
                         }
                     },
                     plugins: { legend: { position: 'top' } },
+                    
+                    // EVENT HANDLERS (KLIK LABEL)
+                    onHover: (event, activeElements, chart) => {
+                         const index = getClickedLabel(event, chart);
+                         event.native.target.style.cursor = (index !== null) ? 'pointer' : 'default';
+                    },
                     onClick: (e, elements, chart) => {
-                        const points = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
-                        if (points.length) {
-                            const idx = points[0].index;
+                        // Deteksi klik pada Label (bukan dot)
+                        const idx = getClickedLabel(e, chart);
+                        if (idx !== null) {
                             if (chart.config.data.labelIds && chart.config.data.labelIds[idx]) {
+                                const labelId = chart.config.data.labelIds[idx];
+                                const prodi = chart.config.data.prodi;
+                                const tahun = chart.config.data.tahun;
+                                
                                 document.body.style.cursor = 'wait'; 
-                                window.location.href = `<?= site_url('ecc/detail') ?>/${chart.config.data.labelIds[idx]}/${chart.config.data.prodi}/${chart.config.data.tahun}`;
+                                // PERBAIKAN UTAMA: Tambahkan ?from=admin
+                                window.location.href = `<?= site_url('ecc/detail') ?>/${labelId}/${chart.config.data.prodi}/${chart.config.data.tahun}?from=admin`;
                             }
                         }
                     }
@@ -210,7 +279,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // 2. USER PERFORMANCE
+    // --- 3. CHART USER PERFORMANCE (ADMIN DATA) ---
     <?php if (!empty($chartLabels)): ?>
     const ctxBarUser = document.getElementById('userPerformanceChart');
     if (ctxBarUser) {
@@ -232,14 +301,15 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     <?php endif; ?>
 
-    // 3. INDIKATOR CHART (PERSENTASE)
+    // --- 4. CHART INDIKATOR (VERTICAL BAR) ---
     <?php if (!empty($chartIndikatorLabels)): ?>
     const ctxIndikator = document.getElementById('indikatorChart');
     if (ctxIndikator) {
         const rawLabels = <?= json_encode($chartIndikatorLabels); ?>;
         const metaData = <?= json_encode($chartIndikatorMeta ?? []); ?>;
         
-        const wrappedLabels = rawLabels.map(label => splitLabel(label, 45));
+        // Split label agar tidak melebar
+        const wrappedLabels = rawLabels.map(label => splitLabel(label, 45)); 
 
         window.pageCharts['indikatorChart'] = new Chart(ctxIndikator, {
             type: 'bar',
@@ -251,31 +321,38 @@ document.addEventListener('DOMContentLoaded', function () {
                         data: <?= json_encode($chartIndikatorPersen ?? []); ?>,
                         backgroundColor: function(context) {
                             const value = context.raw;
-                            if (value >= 100) return '#198754'; // Hijau
-                            if (value >= 80) return '#0d6efd';  // Biru
-                            if (value >= 50) return '#ffc107';  // Kuning
-                            return '#dc3545'; // Merah
+                            if (value >= 100) return '#198754';
+                            if (value >= 80) return '#0d6efd';
+                            if (value >= 50) return '#ffc107';
+                            return '#dc3545';
                         },
                         borderRadius: 4
                     }
                 ]
             },
             options: {
-                indexAxis: 'y', 
+                indexAxis: 'x', // Vertical
                 responsive: true,
                 maintainAspectRatio: false,
-                layout: { padding: { right: 20 } },
+                layout: { padding: { bottom: 20 } },
                 scales: {
-                    x: { 
+                    y: { 
                         beginAtZero: true, 
-                        max: 100, // Mengunci skala maks 100% (bisa lebih jika ada overachievement)
+                        max: 100, 
                         ticks: { callback: value => value + "%" },
                         grid: { borderDash: [2, 2] }
                     },
-                    y: { ticks: { autoSkip: false, font: { size: 11 } } }
+                    x: { 
+                        ticks: { 
+                            autoSkip: false, 
+                            maxRotation: 45, 
+                            minRotation: 25,
+                            font: { size: 10 } 
+                        } 
+                    }
                 },
                 plugins: {
-                    legend: { display: false }, // Sembunyikan legend karena hanya 1 dataset
+                    legend: { display: false },
                     tooltip: {
                         callbacks: {
                             title: function(context) {
@@ -286,10 +363,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 const idx = context.dataIndex;
                                 const item = metaData[idx];
                                 const percent = context.formattedValue;
-                                
-                                // Format angka ribuan
                                 const formatNum = (num) => new Intl.NumberFormat('id-ID').format(num);
-                                
                                 return [
                                     `Capaian: ${percent}%`,
                                     `Target: ${formatNum(item.target)} ${item.satuan}`,

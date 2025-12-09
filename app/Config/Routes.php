@@ -8,19 +8,17 @@ use CodeIgniter\Router\RouteCollection;
 
 $routes->setDefaultNamespace('App\Controllers');
 
-// --- PERBAIKAN DI SINI: Rute Utama diarahkan ke Home::index (Gatekeeper) ---
+// Rute Publik
 $routes->get('/', 'Home::index'); 
-
 $routes->get('/login', 'Auth::index');
 $routes->post('/login', 'Auth::prosesLogin');
 $routes->get('/logout', 'Auth::logout');
 
-// Rute yang Membutuhkan Login (Semua Peran)
+// Rute Profil
 $routes->get('/profile', 'Profile::index', ['filter' => 'auth']);
 $routes->post('/profile', 'Profile::update', ['filter' => 'auth']);
 
 // --- Grup Rute Admin ---
-// Akses untuk Admin, Manajemen, dan Kabag
 $routes->group('admin', ['filter' => 'auth:admin,manajemen,kabag_aak,kabag_kuk'], static function ($routes) {
     $routes->get('dashboard', 'Admin\Dashboard::index');
     $routes->get('monitoring', 'Admin\MonitoringController::index');
@@ -31,13 +29,13 @@ $routes->group('admin', ['filter' => 'auth:admin,manajemen,kabag_aak,kabag_kuk']
     $routes->get('remunerasi', 'Admin\RemunerasiController::index');
     $routes->post('remunerasi/store', 'Admin\RemunerasiController::store');
 
-    // Users
+    // User Management
     $routes->get('users', 'Admin\UserController::index');
     $routes->post('users/store', 'Admin\UserController::store');
     $routes->post('users/update/(:num)', 'Admin\UserController::update/$1');
     $routes->post('users/delete/(:num)', 'Admin\UserController::delete/$1');
 
-    // Grup Rute Master Data
+    // Master Data
     $routes->group('master-data', static function ($routes) {
         // Sasaran
         $routes->get('sasaran', 'Admin\MasterDataController::sasaran');
@@ -85,11 +83,17 @@ $routes->group('user', ['filter' => 'auth:admin,manajemen,kabag_aak,kabag_kuk,aa
     $routes->get('realisasi/input', 'User\InputRealisasi::index');
     $routes->post('realisasi/store', 'User\InputRealisasi::store');
     
+    // Daftar Rencana (Halaman Pilih Tahun)
     $routes->get('kinerja/update', 'User\DaftarRencana::index');
     $routes->post('rencana/update/(:num)', 'User\DaftarRencana::update/$1');
     $routes->post('rencana/delete/(:num)', 'User\DaftarRencana::delete/$1');
     
+    // Alokasi Bulanan
     $routes->get('alokasi/bulanan', 'User\AlokasiController::index');
+    
+    // PERBAIKAN DI SINI:
+    // Jika user mengakses update via GET (refresh/back), kembalikan ke Daftar Rencana (bukan index alokasi yang butuh param)
+    $routes->get('alokasi/update', 'User\DaftarRencana::index'); 
     $routes->post('alokasi/update', 'User\AlokasiController::update');
     
     $routes->get('keuangan/input', 'User\InputKeuangan::index');
@@ -113,7 +117,7 @@ $routes->group('user', ['filter' => 'auth:admin,manajemen,kabag_aak,kabag_kuk,aa
 $routes->group('ecc', ['filter' => 'auth:admin,manajemen,kabag_aak,kabag_kuk,aak,kuk,spm'], static function ($routes) {
     $routes->get('detail/(:num)/(:segment)/(:num)', 'EccController::detailStandar/$1/$2/$3');
     
-    // Route Hapus Link (PENTING)
+    // Route Hapus Link
     $routes->get('deleteLedLink/(:num)', 'EccController::deleteLedLink/$1');
     $routes->get('delete-link/(:num)', 'EccController::deleteLedLink/$1');
 
@@ -122,8 +126,12 @@ $routes->group('ecc', ['filter' => 'auth:admin,manajemen,kabag_aak,kabag_kuk,aak
     $routes->post('led/store', 'EccController::storeLed');
 });
 
-// Rute ECC - Terbatas (Hanya untuk SPM dan Admin)
+// Rute ECC - Terbatas
 $routes->group('ecc', ['filter' => 'auth:spm,admin'], static function ($routes) {
     $routes->get('simulasi', 'EccController::simulasi');
     $routes->post('simulasi/store', 'EccController::storeSimulasi');
 });
+
+if (is_file(APPPATH . 'Config/' . ENVIRONMENT . '/Routes.php')) {
+    require APPPATH . 'Config/' . ENVIRONMENT . '/Routes.php';
+}
