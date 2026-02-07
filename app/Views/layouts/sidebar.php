@@ -14,7 +14,9 @@ $isKinerjaActive = (
     str_starts_with($current_uri, 'user/realisasi') ||
     str_starts_with($current_uri, 'user/kinerja') ||
     str_starts_with($current_uri, 'user/alokasi') ||
-    str_starts_with($current_uri, 'user/keuangan')
+    str_starts_with($current_uri, 'user/keuangan') ||
+    str_starts_with($current_uri, 'user/kontrak') ||
+    str_starts_with($current_uri, 'user/pakta') // UPDATE: Tambahkan trigger aktif untuk Pakta
 );
 $isAkademikActive = str_starts_with($current_uri, 'user/akademik');
 $isMasterDataActive = str_starts_with($current_uri, 'admin/master-data');
@@ -60,7 +62,10 @@ $isManajemen = ($role === 'manajemen');
                 </div>
             </li>
 
-            <?php if (in_array($role, ['admin', 'manajemen', 'kabag_aak', 'kabag_kuk', 'aak', 'kuk', 'spm'])): ?>
+            <?php 
+            // Pastikan 'user' ada di dalam array pengecekan role
+            if (in_array($role, ['admin', 'manajemen', 'kabag_aak', 'kabag_kuk', 'aak', 'kuk', 'spm', 'user'])): 
+            ?>
                 <li class="nav-item">
                     <a class="nav-link <?= $isKinerjaActive ? '' : 'collapsed' ?>" href="#kinerjaSubmenu" data-bs-toggle="collapse" role="button">
                         <i class="bi bi-graph-up-arrow"></i><span>Kinerja</span>
@@ -69,6 +74,11 @@ $isManajemen = ($role === 'manajemen');
                     <div class="collapse <?= $isKinerjaActive ? 'show' : '' ?>" id="kinerjaSubmenu">
                         <ul class="nav flex-column ps-4">
                             <li class="nav-item"><a href="<?= site_url('user/rencana/input') ?>" class="nav-link sub-link <?= ($current_uri == 'user/rencana/input') ? 'active' : '' ?>"><span>Input Rencana Kerja</span></a></li>
+                            
+                            <li class="nav-item"><a href="<?= site_url('user/kontrak') ?>" class="nav-link sub-link <?= ($current_uri == 'user/kontrak') ? 'active' : '' ?>"><span>Kontrak Kinerja</span></a></li>
+
+                            <li class="nav-item"><a href="<?= site_url('user/pakta') ?>" class="nav-link sub-link <?= ($current_uri == 'user/pakta') ? 'active' : '' ?>"><span>Pakta Integritas</span></a></li>
+                            
                             <li class="nav-item"><a href="<?= site_url('user/realisasi/input') ?>" class="nav-link sub-link <?= ($current_uri == 'user/realisasi/input') ? 'active' : '' ?>"><span>Input Realisasi</span></a></li>
                             <li class="nav-item"><a href="<?= site_url('user/kinerja/update') ?>" class="nav-link sub-link <?= (str_starts_with($current_uri, 'user/kinerja/update') || str_starts_with($current_uri, 'user/alokasi/bulanan')) ? 'active' : '' ?>"><span>Kelola Target & Realisasi</span></a></li>
                             
