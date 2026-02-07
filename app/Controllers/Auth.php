@@ -3,79 +3,79 @@
 namespace App\Controllers;
 
 use App\Controllers\BaseController;
-use App\Models\User as UserModel; // Menggunakan alias 'UserModel' agar lebih jelas
+use App\Models\User;
 
 class Auth extends BaseController
 {
-    /**
-     * Menampilkan halaman form login.
-     */
-    public function index()
+    public function login()
     {
-        // Jika user sudah login, arahkan ke dashboard yang sesuai
+        // Cek jika user sudah login, langsung lempar ke dashboard
         if (session()->get('isLoggedIn')) {
             $role = session()->get('role');
-            // PERUBAHAN: Cek apakah role ada di dalam array ['admin', 'manajemen']
-            $isAdminOrManajemen = in_array($role, ['admin', 'manajemen']);
-            return redirect()->to($isAdminOrManajemen ? '/admin/dashboard' : '/user/dashboard');
+            if ($role === 'admin' || $role === 'manajemen' || str_contains($role, 'kabag')) {
+                return redirect()->to('admin/dashboard');
+            }
+            return redirect()->to('user/dashboard');
         }
 
+        // Tampilkan halaman login
         return view('login');
     }
 
-    /**
-     * Memproses data dari form login.
-     */
-    public function prosesLogin()
+    public function processLogin()
     {
-        // 1. Validasi Input
-        $rules = [
-            'username' => 'required',
-            'password' => 'required'
-        ];
+        $session = session();
+        $model = new User();
+        
+        // Ambil data dari form
+        $username = $this->request->getVar('username');
+        $password = $this->request->getVar('password');
+        
+        // Cari user berdasarkan username
+        $data = $model->where('username', $username)->first();
+        
+        if ($data) {
+            $pass = $data['password'];
+            
+            // Verifikasi Password
+            // Fallback: Support hash (password_verify) atau plain text (jika data lama/seeder manual)
+            $verify_pass = password_verify($password, $pass);
+            if (!$verify_pass && $pass === $password) {
+                $verify_pass = true; 
+            }
 
-        if (!$this->validate($rules)) {
-            // Jika validasi gagal, kembalikan ke form login dengan input yang lama
-            return redirect()->back()->withInput()->with('error', 'Username dan Password wajib diisi.');
-        }
-
-        // 2. Ambil data dari form
-        $username = $this->request->getPost('username');
-        $password = $this->request->getPost('password');
-
-        // 3. Panggil Model untuk mencari user
-        $userModel = new UserModel();
-        $user = $userModel->getUserByUsername($this->request->getPost('username'));
-        $password = $this->request->getPost('password');
-
-        if ($user && password_verify($password, $user['password'])) {
-            // ... (kode pembuatan session tidak berubah) ...
-            $sessionData = [
-                'user_id'    => $user['id'],
-                'username'   => $user['username'],
-                'nama_lengkap' => $user['nama_lengkap'],
-                'role'       => $user['role'],
-                'isLoggedIn' => true
-            ];
-            session()->set($sessionData);
-
-            // PERUBAHAN: Cek apakah role adalah 'admin' ATAU 'manajemen'
-            if (in_array($user['role'], ['admin', 'manajemen', 'kabag_aak', 'kabag_kuk'])) {
-                return redirect()->to('/admin/dashboard');
+            if ($verify_pass) {
+                // Set Session Data
+                $ses_data = [
+                    'id'       => $data['id'],
+                    'username' => $data['username'],
+                    'nama'     => $data['nama_lengkap'], // PERBAIKAN: Sesuai nama kolom di DB
+                    'role'     => $data['role'],
+                    'unit'     => $data['unit'] ?? '-',  // PERBAIKAN: Handle jika kolom unit kosong/belum ada
+                    'isLoggedIn' => TRUE
+                ];
+                $session->set($ses_data);
+                
+                // Redirect sesuai Role
+                if ($data['role'] === 'admin' || $data['role'] === 'manajemen' || str_contains($data['role'], 'kabag')) {
+                    return redirect()->to('/admin/dashboard');
+                } else {
+                    return redirect()->to('/user/dashboard');
+                }
+                
             } else {
-                return redirect()->to('/user/dashboard');
+                $session->setFlashdata('msg', 'Password Salah');
+                return redirect()->to('/login');
             }
         } else {
-            return redirect()->back()->with('error', 'Username atau Password salah.');
+            $session->setFlashdata('msg', 'Username tidak ditemukan');
+            return redirect()->to('/login');
         }
     }
 
-    /**
-     * Proses Logout
-     */
     public function logout()
     {
         session()->destroy();
-        return redirect()->to('/login')->with('success', 'Anda berhasil logout.');
+        return redirect()->to('/login');
     }
 }

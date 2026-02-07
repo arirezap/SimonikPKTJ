@@ -1,26 +1,35 @@
-<?php namespace App\Database\Migrations;
+<?php
+
+namespace App\Database\Migrations;
 
 use CodeIgniter\Database\Migration;
 
-class CreateUsersTable extends Migration
+class AddAtasanToUsers extends Migration
 {
     public function up()
     {
-        $this->forge->addField([
-            'id' => ['type' => 'INT', 'constraint' => 11, 'unsigned' => true, 'auto_increment' => true],
-            'username' => ['type' => 'VARCHAR', 'constraint' => 100],
-            'password' => ['type' => 'VARCHAR', 'constraint' => 255],
-            'nama_lengkap' => ['type' => 'VARCHAR', 'constraint' => 255],
-            'email' => ['type' => 'VARCHAR', 'constraint' => 255],
-            'role' => ['type' => 'VARCHAR', 'constraint' => 50],
-            'foto' => ['type' => 'VARCHAR', 'constraint' => 255, 'null' => true],
-        ]);
-        $this->forge->addKey('id', true);
-        $this->forge->createTable('users');
+        // Menambahkan kolom atasan_id
+        $fields = [
+            'atasan_id' => [
+                'type'       => 'INT',
+                'constraint' => 11,
+                'unsigned'   => true,
+                'null'       => true,
+                'after'      => 'role' // Letakkan setelah kolom role
+            ],
+        ];
+
+        // Cek agar tidak error jika dijalankan berulang
+        if (!$this->db->fieldExists('atasan_id', 'users')) {
+            $this->forge->addColumn('users', $fields);
+            
+            // Opsional: Menambahkan Foreign Key agar data konsisten
+            // $this->db->query('ALTER TABLE users ADD CONSTRAINT fk_users_atasan FOREIGN KEY (atasan_id) REFERENCES users(id) ON DELETE SET NULL');
+        }
     }
 
     public function down()
     {
-        $this->forge->dropTable('users');
+        $this->forge->dropColumn('users', 'atasan_id');
     }
 }

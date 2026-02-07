@@ -13,35 +13,39 @@ class User extends Model
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
     
-    // 1. ISI BAGIAN INI
-    protected $allowedFields    = ['username', 'password', 'nama_lengkap', 'email', 'role', 'foto'];
+    // UPDATE: Menambahkan 'atasan_id' ke allowedFields
+    protected $allowedFields    = [
+        'username', 
+        'password', 
+        'nama_lengkap', 
+        'email', 
+        'role', 
+        'atasan_id', // Field Baru
+        'foto',
+        'nip',
+        'jabatan',
+        'unit',
+        'pangkat'
+    ];
 
     // Dates
-    protected $useTimestamps = false;
+    protected $useTimestamps = false; // Ubah ke true jika ingin mencatat created_at/updated_at
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
-    protected $deletedField  = 'deleted_at';
 
-    // Validation
-    protected $validationRules      = [];
-    protected $validationMessages   = [];
-    protected $skipValidation       = false;
-    protected $cleanValidationRules = true;
-
-    // Callbacks
-    protected $allowCallbacks = true;
-    protected $beforeInsert   = [];
-    protected $afterInsert    = [];
-    protected $beforeUpdate   = [];
-    protected $afterUpdate    = [];
-    protected $beforeFind     = [];
-    protected $afterFind      = [];
-    protected $beforeDelete   = [];
-    protected $afterDelete    = [];
-
-    // 2. ISI FUNGSI INI
-    public function getUserByUsername($username)
+    // Helper untuk mengambil data atasan
+    public function getAtasan($userId)
     {
-        return $this->where('username', $username)->first();
+        $user = $this->find($userId);
+        if ($user && !empty($user['atasan_id'])) {
+            return $this->find($user['atasan_id']);
+        }
+        return null;
+    }
+
+    // Helper untuk mengambil daftar bawahan (jika diperlukan nanti)
+    public function getBawahan($atasanId)
+    {
+        return $this->where('atasan_id', $atasanId)->findAll();
     }
 }
