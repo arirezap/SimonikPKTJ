@@ -39,7 +39,6 @@ $routes->get('/', 'Home::index');
 $routes->get('login', 'Auth::login');
 $routes->post('login', 'Auth::processLogin');
 $routes->get('logout', 'Auth::logout');
-
 // Profile Routes
 $routes->get('profile', 'Profile::index');
 $routes->post('profile/update', 'Profile::update');
@@ -80,9 +79,11 @@ $routes->group('user', ['filter' => 'auth'], function ($routes) {
         $routes->post('store', 'User\InputRencana::store');
     });
 
-    // START UPDATE: Route untuk Kontrak Kinerja
+    // Kontrak Kinerja
     $routes->get('kontrak', 'User\KontrakController::index');
-    // END UPDATE
+
+    // Pakta Integritas (Pindahkan kesini biar rapi)
+    $routes->get('pakta', 'User\PaktaController::index');
 
     $routes->group('realisasi', function ($routes) {
         $routes->get('input', 'User\InputRealisasi::index');
@@ -105,6 +106,14 @@ $routes->group('user', ['filter' => 'auth'], function ($routes) {
 
     $routes->get('ketarunaan', 'User\KetarunaanController::index');
     $routes->get('diklat', 'User\DiklatController::index');
+
+    // --- PERBAIKAN DISINI (MASUKKAN KE DALAM GRUP) ---
+    // Hapus 'user/' di depannya karena sudah otomatis ikut grup user
+    $routes->get('skp', 'User\Skp::index');          // URL: user/skp
+    $routes->post('skp/store', 'User\Skp::store');   // URL: user/skp/store
+    $routes->get('skp/detail/(:num)', 'User\Skp::detail/$1');
+    // Di dalam $routes->group('user' ...
+    $routes->get('skp/delete/(:num)', 'User\Skp::delete/$1');
 });
 
 // ECC Routes

@@ -2,7 +2,6 @@
 
 namespace Config;
 
-use App\Controllers\Auth;
 use CodeIgniter\Config\Filters as BaseFilters;
 use CodeIgniter\Filters\Cors;
 use CodeIgniter\Filters\CSRF;
@@ -35,7 +34,8 @@ class Filters extends BaseFilters
         'forcehttps'    => ForceHTTPS::class,
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
-        'auth'     => \App\Filters\AuthFilter::class,
+        // Filter Custom Anda
+        'auth'          => \App\Filters\AuthFilter::class,
     ];
 
     /**
@@ -53,7 +53,7 @@ class Filters extends BaseFilters
      */
     public array $required = [
         'before' => [
-            'forcehttps', // Force Global Secure Requests
+            // 'forcehttps', // MATIKAN SAAT DI LOCALHOST (LARAGON) AGAR TIDAK ERROR
             // 'pagecache',  // Web Page Caching
         ],
         'after' => [
@@ -68,15 +68,14 @@ class Filters extends BaseFilters
      * applied before and after every request.
      *
      * @var array{
-     *     before: array<string, array{except: list<string>|string}>|list<string>,
-     *     after: array<string, array{except: list<string>|string}>|list<string>
+     * before: array<string, array{except: list<string>|string}>|list<string>,
+     * after: array<string, array{except: list<string>|string}>|list<string>
      * }
      */
     public array $globals = [
         'before' => [
             // 'honeypot',
-            'csrf',
-            // 'session', // Dihapus karena session bukan filter
+            'csrf', // CSRF Aktif Global (Aman)
         ],
         'after' => [
             'toolbar',
