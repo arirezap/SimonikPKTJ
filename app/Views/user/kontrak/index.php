@@ -20,10 +20,10 @@ function format_nama_gelar($text) {
         background-color: #fff;
         width: 210mm; 
         
-        /* FIX BLANK PAGE: Set tinggi sedikit kurang dari A4 murni untuk aman */
+        /* Tinggi Minimum Pas A4 */
         min-height: 296mm; 
         
-        /* UPDATE: Padding Atas/Bawah dikurangi jadi 10mm, Kiri/Kanan 20mm */
+        /* Padding: Atas/Bawah 10mm (Rapat), Kiri/Kanan 20mm */
         padding: 10mm 20mm; 
         
         margin: 0 auto;
@@ -33,13 +33,13 @@ function format_nama_gelar($text) {
         
         /* Font 12pt */
         font-size: 12pt; 
-        /* Line Height Rapat */
-        line-height: 1.15; 
+        /* Line Height Rapat 1.1 */
+        line-height: 1.1; 
         
         color: #000;
         box-sizing: border-box; 
         
-        /* FIX BLANK PAGE: Potong overflow */
+        /* Potong overflow agar tidak ada halaman kosong */
         overflow: hidden; 
     }
 
@@ -52,12 +52,12 @@ function format_nama_gelar($text) {
         box-sizing: border-box;
     }
 
-    /* --- HEADER (LOGO MERAPAT KE TENGAH) --- */
+    /* --- HEADER (LOGO TENGAH) --- */
     .header-layout {
         display: flex;
         justify-content: center; 
         align-items: center; 
-        gap: 20px; 
+        gap: 15px; 
         
         width: 100%;
         border-bottom: 2px solid #000; 
@@ -66,18 +66,20 @@ function format_nama_gelar($text) {
     }
 
     .header-logo {
-        width: 65px; 
-        height: 65px;
+        width: 60px; /* Logo Header */
+        height: 60px;
         object-fit: contain; 
+        flex-shrink: 0;
     }
 
     .header-text {
         text-align: center;
+        flex: 1;
     }
 
     .header-text h3 {
         margin: 0;
-        font-size: 12pt; 
+        font-size: 11pt; /* Judul Kop sedikit lebih kecil agar muat 1 baris */
         font-weight: bold;
         text-transform: uppercase;
         line-height: 1.2; 
@@ -86,7 +88,7 @@ function format_nama_gelar($text) {
     /* --- ISI DOKUMEN --- */
     .doc-text-justify { 
         text-align: justify; 
-        line-height: 1.15; 
+        line-height: 1.1; 
         font-size: 12pt; 
     }
     
@@ -116,10 +118,10 @@ function format_nama_gelar($text) {
         vertical-align: top; 
     }
     
-    /* Ruang TTD: Dikurangi sedikit agar muat */
-    .ttd-space { height: 65px; } 
+    /* Ruang TTD */
+    .ttd-space { height: 70px; } 
     
-    /* Paragraf: Margin dirapatkan */
+    /* Paragraf */
     p { margin-bottom: 5px; margin-top: 0; }
 
     /* --- MEDIA PRINT --- */
@@ -133,11 +135,11 @@ function format_nama_gelar($text) {
         #element-to-print {
             position: absolute; left: 0; top: 0; 
             width: 210mm; 
-            height: 296mm; /* Paksa tinggi fixed */
+            height: 296mm; 
             margin: 0; 
-            padding: 10mm 20mm !important; /* Samakan padding */
+            padding: 10mm 20mm !important; 
             box-shadow: none;
-            overflow: hidden; /* Hilangkan halaman blank */
+            overflow: hidden; 
         }
         
         .content-frame { border: 2px solid #000 !important; }
@@ -155,7 +157,7 @@ function format_nama_gelar($text) {
             </a>
             
             <button onclick="window.print()" class="btn btn-info btn-sm me-2 text-white">
-                <i class="bi bi-printer-fill"></i> Cetak Langsung
+                <i class="bi bi-printer-fill"></i> Cetak
             </button>
 
             <button onclick="downloadPDF()" class="btn btn-primary btn-sm">

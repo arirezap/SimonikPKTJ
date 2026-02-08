@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1
+-- version 5.2.3
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Waktu pembuatan: 23 Des 2025 pada 08.53
--- Versi server: 5.7.44
--- Versi PHP: 8.1.34
+-- Waktu pembuatan: 08 Feb 2026 pada 07.14
+-- Versi server: 8.4.3
+-- Versi PHP: 8.3.26
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `ekinerja_kinerja`
+-- Basis data: `ekinerja_kinerja`
 --
 
 -- --------------------------------------------------------
@@ -28,9 +28,9 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `indikator` (
-  `id` int(10) UNSIGNED NOT NULL,
+  `id` int UNSIGNED NOT NULL,
   `nama_indikator` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data untuk tabel `indikator`
@@ -63,15 +63,15 @@ INSERT INTO `indikator` (`id`, `nama_indikator`) VALUES
 --
 
 CREATE TABLE `jadwal_diklat` (
-  `id` int(11) UNSIGNED NOT NULL,
-  `user_id` int(11) UNSIGNED NOT NULL,
+  `id` int UNSIGNED NOT NULL,
+  `user_id` int UNSIGNED NOT NULL,
   `nama_diklat` varchar(255) NOT NULL,
   `periode` varchar(255) NOT NULL,
-  `jumlah_peserta` int(11) NOT NULL,
+  `jumlah_peserta` int NOT NULL,
   `status` varchar(50) NOT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -80,14 +80,14 @@ CREATE TABLE `jadwal_diklat` (
 --
 
 CREATE TABLE `led_criteria` (
-  `id` int(11) UNSIGNED NOT NULL,
+  `id` int UNSIGNED NOT NULL,
   `prodi` varchar(50) NOT NULL DEFAULT 'RSTJ',
   `nama_kriteria` text NOT NULL,
-  `id_standar` int(11) UNSIGNED DEFAULT NULL,
+  `id_standar` int UNSIGNED DEFAULT NULL,
   `role_assignment` varchar(50) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data untuk tabel `led_criteria`
@@ -286,15 +286,15 @@ INSERT INTO `led_criteria` (`id`, `prodi`, `nama_kriteria`, `id_standar`, `role_
 --
 
 CREATE TABLE `led_scores` (
-  `id` int(11) UNSIGNED NOT NULL,
-  `user_id` int(11) UNSIGNED NOT NULL,
+  `id` int UNSIGNED NOT NULL,
+  `user_id` int UNSIGNED NOT NULL,
   `prodi` varchar(50) NOT NULL,
-  `tahun` int(4) NOT NULL,
-  `led_criteria_id` int(11) UNSIGNED NOT NULL,
+  `tahun` int NOT NULL,
+  `led_criteria_id` int UNSIGNED NOT NULL,
   `skor` decimal(5,2) DEFAULT '0.00',
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data untuk tabel `led_scores`
@@ -557,11 +557,11 @@ INSERT INTO `led_scores` (`id`, `user_id`, `prodi`, `tahun`, `led_criteria_id`, 
 --
 
 CREATE TABLE `led_standar` (
-  `id` int(11) UNSIGNED NOT NULL,
+  `id` int UNSIGNED NOT NULL,
   `nama_standar` varchar(255) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data untuk tabel `led_standar`
@@ -583,11 +583,11 @@ INSERT INTO `led_standar` (`id`, `nama_standar`, `created_at`, `updated_at`) VAL
 --
 
 CREATE TABLE `led_submissions` (
-  `id` int(11) UNSIGNED NOT NULL,
-  `user_id` int(11) UNSIGNED NOT NULL,
+  `id` int UNSIGNED NOT NULL,
+  `user_id` int UNSIGNED NOT NULL,
   `prodi` varchar(50) NOT NULL,
-  `tahun` int(4) NOT NULL,
-  `led_criteria_id` int(11) UNSIGNED NOT NULL,
+  `tahun` int NOT NULL,
+  `led_criteria_id` int UNSIGNED NOT NULL,
   `status` varchar(50) DEFAULT NULL,
   `catatan_kabag` text COMMENT 'Catatan/revisi dari Kabag untuk staf',
   `catatan_wadir` text COMMENT 'Catatan/revisi dari Wadir untuk staf/kabag',
@@ -596,7 +596,7 @@ CREATE TABLE `led_submissions` (
   `file_bukti` varchar(255) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data untuk tabel `led_submissions`
@@ -1168,14 +1168,14 @@ INSERT INTO `led_submissions` (`id`, `user_id`, `prodi`, `tahun`, `led_criteria_
 --
 
 CREATE TABLE `migrations` (
-  `id` bigint(20) UNSIGNED NOT NULL,
+  `id` bigint UNSIGNED NOT NULL,
   `version` varchar(255) NOT NULL,
   `class` varchar(255) NOT NULL,
   `group` varchar(255) NOT NULL,
   `namespace` varchar(255) NOT NULL,
-  `time` int(11) NOT NULL,
-  `batch` int(11) UNSIGNED NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `time` int NOT NULL,
+  `batch` int UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data untuk tabel `migrations`
@@ -1202,7 +1202,9 @@ INSERT INTO `migrations` (`id`, `version`, `class`, `group`, `namespace`, `time`
 (27, '2025-11-07-122151', 'App\\Database\\Migrations\\FixLedSchemaConsistency', 'default', 'App', 1762528479, 14),
 (28, '2025-11-07-151021', 'App\\Database\\Migrations\\DropIdKategoriFromLedCriteria', 'default', 'App', 1762528530, 15),
 (29, '2025-11-08-025948', 'App\\Database\\Migrations\\AddCommentsToLedSubmissions', 'default', 'App', 1762570958, 16),
-(31, '2025-11-08-025948', 'App\\Database\\Migrations\\CreateRemunerasiTable', 'default', 'App', 1762583377, 17);
+(31, '2025-11-08-025948', 'App\\Database\\Migrations\\CreateRemunerasiTable', 'default', 'App', 1762583377, 17),
+(32, '2025-08-13-051242', 'App\\Database\\Migrations\\AddKinerjaColumnsToUsers', 'default', 'App', 1770444414, 18),
+(33, '2025-08-13-051242', 'App\\Database\\Migrations\\AddAtasanToUsers', 'default', 'App', 1770444606, 19);
 
 -- --------------------------------------------------------
 
@@ -1211,15 +1213,15 @@ INSERT INTO `migrations` (`id`, `version`, `class`, `group`, `namespace`, `time`
 --
 
 CREATE TABLE `remunerasi` (
-  `id` int(11) UNSIGNED NOT NULL,
-  `user_id` int(11) UNSIGNED NOT NULL,
-  `tahun` int(4) NOT NULL,
-  `bulan` int(2) NOT NULL,
+  `id` int UNSIGNED NOT NULL,
+  `user_id` int UNSIGNED NOT NULL,
+  `tahun` int NOT NULL,
+  `bulan` int NOT NULL,
   `jumlah` decimal(15,2) NOT NULL DEFAULT '0.00',
-  `created_by_user_id` int(11) UNSIGNED NOT NULL,
+  `created_by_user_id` int UNSIGNED NOT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -1228,8 +1230,8 @@ CREATE TABLE `remunerasi` (
 --
 
 CREATE TABLE `rencana_kinerja` (
-  `id` int(11) UNSIGNED NOT NULL,
-  `user_id` int(11) UNSIGNED NOT NULL,
+  `id` int UNSIGNED NOT NULL,
+  `user_id` int UNSIGNED NOT NULL,
   `sasaran_program` text NOT NULL,
   `indikator_kinerja` text NOT NULL,
   `satuan` varchar(100) NOT NULL,
@@ -1237,8 +1239,8 @@ CREATE TABLE `rencana_kinerja` (
   `kegiatan` text NOT NULL,
   `target_bulanan` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `realisasi_bulanan` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,
-  `tahun_anggaran` int(4) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `tahun_anggaran` int NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data untuk tabel `rencana_kinerja`
@@ -1313,9 +1315,9 @@ INSERT INTO `rencana_kinerja` (`id`, `user_id`, `sasaran_program`, `indikator_ki
 --
 
 CREATE TABLE `sasaran` (
-  `id` int(10) UNSIGNED NOT NULL,
+  `id` int UNSIGNED NOT NULL,
   `nama_sasaran` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data untuk tabel `sasaran`
@@ -1344,9 +1346,9 @@ INSERT INTO `sasaran` (`id`, `nama_sasaran`) VALUES
 --
 
 CREATE TABLE `satuan` (
-  `id` int(10) UNSIGNED NOT NULL,
+  `id` int UNSIGNED NOT NULL,
   `nama_satuan` varchar(100) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data untuk tabel `satuan`
@@ -1369,36 +1371,42 @@ INSERT INTO `satuan` (`id`, `nama_satuan`) VALUES
 --
 
 CREATE TABLE `users` (
-  `id` int(11) UNSIGNED NOT NULL,
+  `id` int UNSIGNED NOT NULL,
   `username` varchar(100) NOT NULL,
   `password` varchar(255) NOT NULL,
   `nama_lengkap` varchar(255) NOT NULL,
   `email` varchar(255) NOT NULL,
   `role` varchar(50) NOT NULL,
-  `foto` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `atasan_id` int UNSIGNED DEFAULT NULL,
+  `foto` varchar(255) DEFAULT NULL,
+  `nip` varchar(50) DEFAULT NULL,
+  `jabatan` varchar(100) DEFAULT NULL,
+  `unit` varchar(100) DEFAULT NULL,
+  `pangkat` varchar(100) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data untuk tabel `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `password`, `nama_lengkap`, `email`, `role`, `foto`) VALUES
-(1, 'admin', '$2y$10$pxxJBsCs/hg2IayNs96EP.acQRX36No8LOEVav03377bHvPzWa9Qq', 'Administrator Utama', 'admin@simonik.com', 'admin', 'default.png'),
-(5, 'itpktj', '$2y$10$fFEyXyikpIUfgTtckqX8d.6VLk49MclSPBiMzo.FazKhibujnUSb6', 'Unit Teknologi Informasi', 'it.pktj@pktj.ac.id', 'aak', 'default.png'),
-(6, 'direkturpktj', '$2y$10$HkZOrEwM5UspEBwcsGcyX.z/dMw/nBYw3fqw25fQ3HzOagpChfiI2', 'Direktur PKTJ', 'pktj@pktj.ac.id', 'manajemen', 'default.png'),
-(7, 'wadir1pktj', '$2y$10$CUHHeyP13BAWvOMN6pCUBeYyXSorJhNqf6tHJqOGyvsMXOnxNmqRq', 'Wakil Direktur 1', 'wadir1@gmail.com', 'manajemen', 'default.png'),
-(8, 'diklatpktj', '$2y$10$DMeeWEKxZD5Z9w.r4Ed1Pez0w1Qia.x2q0f7IOAX8st4Xt3.tV.W.', 'Pokja Diklat', 'diklat@pktj.ac.id', 'aak', 'default.png'),
-(9, 'keuanganpktj', '$2y$10$iJegL2gtWXf36zF.qKnLBuqLhojF8S/5l9SnzzcLH6W3pixOGAFVu', 'Keuangan PKTJ', 'keuangan@pktj.ac.id', 'kuk', 'default.png'),
-(10, 'wadir2', '$2y$10$4IzlifiiFbLXnTU5GgkTaOBd.Nkm1G25pVBmrXFW9GxGw0DIJzcr6', 'Wakil Direktur 2', 'wadir2@gmail.com', 'manajemen', 'default.png'),
-(11, 'wadir3', '$2y$10$Cc.p5W4Vw2umh/dTaU1pluEuMOtpfp1Mmt8QreodyJcEY1qlLELzy', 'Wakil Direktur 3', 'wadir3@gmail.com', 'manajemen', 'default.png'),
-(12, 'baakpktj', '$2y$10$aPcpd60VjQT/I8/rFhhg.ulAnqupe6FVaXi76LqxVRa2TPamWKuB6', 'Kabag AAK', 'baakpktj@pktj.ac.id', 'kabag_aak', 'default.png'),
-(13, 'kukpktj', '$2y$10$0B2mb/Vfm2QWNwXp/2Q6jOPqxi0rkGaNdsV6TROVYApC6/p6gDtoq', 'Kabag KUK', 'kukpktj@pktj.ac.id', 'kabag_kuk', 'default.png'),
-(14, 'spmpktj', '$2y$10$kWb9DPxTDUawqQzyLObLIuPngSFju0PU4V2dN/E58ILB8SDDNzvJG', 'SPM PKTJ', 'spm@pktj.ac.id', 'spm', 'default.png'),
-(15, 'pusbangkar', '$2y$10$cES7Gb82NRUSsMsiC1EJP.bvjuOwY8UJvVA9uCm3LKxitN0RcGlfu', 'Pusbangkar', 'pusbangkar@pktj.ac.id', 'aak', 'default.png'),
-(16, 'akademik', '$2y$10$I6SAmPW3wnduwnx7GYd3IOCqJG5mbgN.1hqpHwmTiPfgcxbpU.jSC', 'Akademik PKTJ', 'akademik@pktj.ac.id', 'aak', 'default.png');
+INSERT INTO `users` (`id`, `username`, `password`, `nama_lengkap`, `email`, `role`, `atasan_id`, `foto`, `nip`, `jabatan`, `unit`, `pangkat`) VALUES
+(1, 'admin', '$2y$10$pxxJBsCs/hg2IayNs96EP.acQRX36No8LOEVav03377bHvPzWa9Qq', 'Administrator Utama', 'admin@simonik.com', 'admin', NULL, 'default.png', NULL, NULL, NULL, NULL),
+(5, 'itpktj', '$2y$10$fFEyXyikpIUfgTtckqX8d.6VLk49MclSPBiMzo.FazKhibujnUSb6', 'Mokhammad Rifqi Tsani, S.Kom., M.Kom.', 'it.pktj@pktj.ac.id', 'manajemen', 12, 'default.png', '', '', '', ''),
+(6, 'direkturpktj', '$2y$10$HkZOrEwM5UspEBwcsGcyX.z/dMw/nBYw3fqw25fQ3HzOagpChfiI2', 'Bambang Istiyanto, S.SiT., M.T.', 'pktj@pktj.ac.id', 'manajemen', NULL, 'default.png', '197307011996021002', 'Direktur Politeknik Keselamatan Transportasi Jalan', 'Politeknik Keselamatan Transportasi Jalan', 'Pembina IV/a'),
+(7, 'wadir1pktj', '$2y$10$CUHHeyP13BAWvOMN6pCUBeYyXSorJhNqf6tHJqOGyvsMXOnxNmqRq', 'Edi Purwanto', 'wadir1@gmail.com', 'manajemen', 6, 'default.png', '', '', '', ''),
+(8, 'diklatpktj', '$2y$10$DMeeWEKxZD5Z9w.r4Ed1Pez0w1Qia.x2q0f7IOAX8st4Xt3.tV.W.', 'Pokja Diklat', 'diklat@pktj.ac.id', 'aak', NULL, 'default.png', NULL, NULL, NULL, NULL),
+(9, 'keuanganpktj', '$2y$10$iJegL2gtWXf36zF.qKnLBuqLhojF8S/5l9SnzzcLH6W3pixOGAFVu', 'Keuangan PKTJ', 'keuangan@pktj.ac.id', 'kuk', NULL, 'default.png', NULL, NULL, NULL, NULL),
+(10, 'wadir2', '$2y$10$4IzlifiiFbLXnTU5GgkTaOBd.Nkm1G25pVBmrXFW9GxGw0DIJzcr6', 'Wakil Direktur 2', 'wadir2@gmail.com', 'manajemen', NULL, 'default.png', NULL, NULL, NULL, NULL),
+(11, 'wadir3', '$2y$10$Cc.p5W4Vw2umh/dTaU1pluEuMOtpfp1Mmt8QreodyJcEY1qlLELzy', 'Wakil Direktur 3', 'wadir3@gmail.com', 'manajemen', NULL, 'default.png', NULL, NULL, NULL, NULL),
+(12, 'baakpktj', '$2y$10$aPcpd60VjQT/I8/rFhhg.ulAnqupe6FVaXi76LqxVRa2TPamWKuB6', 'Prima Anna Maria G. C., S.SiT.', 'baakpktj@pktj.ac.id', 'kabag_aak', NULL, 'default.png', '197402041997032005', 'Kepala Bagian Administrasi Akademik dan Ketarunaan', 'Bagian Administrasi Akademik dan Ketarunaan', 'Pembina (IV/a)'),
+(13, 'kukpktj', '$2y$10$0B2mb/Vfm2QWNwXp/2Q6jOPqxi0rkGaNdsV6TROVYApC6/p6gDtoq', 'Kabag KUK', 'kukpktj@pktj.ac.id', 'kabag_kuk', NULL, 'default.png', NULL, NULL, NULL, NULL),
+(14, 'spmpktj', '$2y$10$kWb9DPxTDUawqQzyLObLIuPngSFju0PU4V2dN/E58ILB8SDDNzvJG', 'SPM PKTJ', 'spm@pktj.ac.id', 'spm', NULL, 'default.png', NULL, NULL, NULL, NULL),
+(15, 'pusbangkar', '$2y$10$cES7Gb82NRUSsMsiC1EJP.bvjuOwY8UJvVA9uCm3LKxitN0RcGlfu', 'Pusbangkar', 'pusbangkar@pktj.ac.id', 'aak', NULL, 'default.png', NULL, NULL, NULL, NULL),
+(16, 'akademik', '$2y$10$I6SAmPW3wnduwnx7GYd3IOCqJG5mbgN.1hqpHwmTiPfgcxbpU.jSC', 'Akademik PKTJ', 'akademik@pktj.ac.id', 'aak', NULL, 'default.png', NULL, NULL, NULL, NULL),
+(17, 'arirezap', '$2y$10$BZPw9oQwkS6YGLAkA6ULFeRg3J6WYaSO1DwajLkLQkV7MNNE6RQTG', 'Ari Reza Prakasa, S.Kom.', 'ari@pktj.ac.id', 'user', 12, NULL, '199806112023211004', 'Pranata Komputer Ahli Pertama', 'Unit Teknologi Informasi', 'IX');
 
 --
--- Indexes for dumped tables
+-- Indeks untuk tabel yang dibuang
 --
 
 --
@@ -1484,73 +1492,73 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT untuk tabel `indikator`
 --
 ALTER TABLE `indikator`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT untuk tabel `jadwal_diklat`
 --
 ALTER TABLE `jadwal_diklat`
-  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT untuk tabel `led_criteria`
 --
 ALTER TABLE `led_criteria`
-  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=767;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=767;
 
 --
 -- AUTO_INCREMENT untuk tabel `led_scores`
 --
 ALTER TABLE `led_scores`
-  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=249;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=249;
 
 --
 -- AUTO_INCREMENT untuk tabel `led_standar`
 --
 ALTER TABLE `led_standar`
-  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT untuk tabel `led_submissions`
 --
 ALTER TABLE `led_submissions`
-  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=557;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=557;
 
 --
 -- AUTO_INCREMENT untuk tabel `migrations`
 --
 ALTER TABLE `migrations`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
 
 --
 -- AUTO_INCREMENT untuk tabel `remunerasi`
 --
 ALTER TABLE `remunerasi`
-  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT untuk tabel `rencana_kinerja`
 --
 ALTER TABLE `rencana_kinerja`
-  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=82;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=82;
 
 --
 -- AUTO_INCREMENT untuk tabel `sasaran`
 --
 ALTER TABLE `sasaran`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT untuk tabel `satuan`
 --
 ALTER TABLE `satuan`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT untuk tabel `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- Ketidakleluasaan untuk tabel pelimpahan (Dumped Tables)

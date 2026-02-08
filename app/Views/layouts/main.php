@@ -25,7 +25,7 @@
 
 <body>
     <div class="main-wrapper">
-        <?php include(APPPATH . 'Views/layouts/sidebar.php'); ?>
+        <?= $this->include('layouts/sidebar') ?>
 
         <div class="content-wrapper">
             
@@ -36,7 +36,7 @@
                             <i class="bi bi-emoji-smile me-1"></i> Selamat Datang,
                         </span>
                         <h5 class="mb-0 fw-bold text-primary">
-                            <?= esc(session()->get('nama_lengkap') ?? 'Pengguna') ?>
+                            <?= esc(session()->get('nama') ?? session()->get('nama_lengkap') ?? 'Pengguna') ?>
                         </h5>
                     </div>
 
@@ -54,12 +54,17 @@
                         
                         <a href="<?= site_url('profile') ?>" class="text-decoration-none" title="Lihat Profil">
                             <div class="bg-primary bg-opacity-10 rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                <i class="bi bi-person-fill fs-5 text-primary"></i>
+                                <?php if(session()->get('foto')) : ?>
+                                    <img src="<?= base_url('assets/uploads/profile/' . session()->get('foto')) ?>" class="rounded-circle" style="width: 100%; height: 100%; object-fit: cover;">
+                                <?php else : ?>
+                                    <i class="bi bi-person-fill fs-5 text-primary"></i>
+                                <?php endif; ?>
                             </div>
                         </a>
                     </div>
                 </div>
             </header>
+
             <div class="content-area">
                 
                 <div class="d-flex align-items-center mb-4">
@@ -89,10 +94,9 @@
                 mainWrapper.classList.add('sidebar-toggled');
                 
                 // MATIKAN fungsi klik Bootstrap collapse saat mode mini
-                // Agar saat diklik/hover dia tidak error, tapi pakai CSS hover
                 dropdownLinks.forEach(link => {
-                    link.setAttribute('data-bs-toggle-backup', 'collapse'); // Simpan atribut asli
-                    link.removeAttribute('data-bs-toggle'); // Hapus atribut pemicu
+                    link.setAttribute('data-bs-toggle-backup', 'collapse'); 
+                    link.removeAttribute('data-bs-toggle'); 
                 });
 
                 // Tutup semua menu yang sedang terbuka agar rapi
