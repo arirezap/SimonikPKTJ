@@ -113,6 +113,7 @@ $routes->group('user', ['filter' => 'auth'], function ($routes) {
     $routes->post('skp/store', 'User\Skp::store');   // URL: user/skp/store
     $routes->get('skp/detail/(:num)', 'User\Skp::detail/$1');
     // Di dalam $routes->group('user' ...
+    $routes->post('skp/target/store', 'User\Skp::storeTarget');
     $routes->get('skp/delete/(:num)', 'User\Skp::delete/$1');
 });
 

@@ -8,10 +8,11 @@ Detail Sasaran Kinerja Pegawai
 
 <?php
 // Helper Format Nama
-function format_nama_skp($nama, $gelar_depan = '', $gelar_belakang = '') {
+function format_nama_skp($nama, $gelar_depan = '', $gelar_belakang = '')
+{
     $nama_lengkap = strtoupper($nama);
-    if($gelar_depan) $nama_lengkap = $gelar_depan . ' ' . $nama_lengkap;
-    if($gelar_belakang) $nama_lengkap = $nama_lengkap . ', ' . $gelar_belakang;
+    if ($gelar_depan) $nama_lengkap = $gelar_depan . ' ' . $nama_lengkap;
+    if ($gelar_belakang) $nama_lengkap = $nama_lengkap . ', ' . $gelar_belakang;
     return $nama_lengkap;
 }
 ?>
@@ -25,7 +26,7 @@ function format_nama_skp($nama, $gelar_depan = '', $gelar_belakang = '') {
 
     <div class="d-flex flex-wrap gap-2 justify-content-between mb-3">
         <div>
-            <button class="btn text-white shadow-sm" style="background-color: #6f42c1;">
+            <button class="btn text-white shadow-sm" style="background-color: #6f42c1;" data-bs-toggle="modal" data-bs-target="#modalTambahRHK">
                 <i class="bi bi-plus-circle me-1"></i> Tambah RHK
             </button>
         </div>
@@ -110,69 +111,107 @@ function format_nama_skp($nama, $gelar_depan = '', $gelar_belakang = '') {
         </div>
     </div>
 
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-white py-3">
-            <h6 class="m-0 fw-bold text-uppercase small text-muted">HASIL KERJA</h6>
-        </div>
-        <div class="card-body p-0">
-            <table class="table table-bordered mb-0 align-middle" style="font-size: 0.9rem;">
-                <thead class="bg-light text-secondary text-uppercase text-center small align-middle">
-                    <tr>
-                        <th width="50">NO</th>
-                        <th width="25%">RENCANA HASIL KERJA PIMPINAN YANG DIINTERVENSI</th>
-                        <th width="25%">RENCANA HASIL KERJA</th>
-                        <th width="10%">ASPEK</th>
-                        <th width="25%">INDIKATOR KINERJA INDIVIDU</th>
-                        <th width="10%">TARGET TAHUNAN</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr class="bg-light fw-bold text-muted small">
-                        <td colspan="6" class="px-3">UTAMA</td>
-                    </tr>
-                    
-                    <?php 
-                    $noUtama = 1;
-                    $skpUtama = array_filter($targets, function($t) { return $t['jenis'] == 'Utama'; });
-                    
-                    if(empty($skpUtama)): ?>
-                        <tr><td colspan="6" class="text-center py-3 text-muted">Belum ada RHK Utama</td></tr>
-                    <?php else: 
-                        foreach($skpUtama as $row): ?>
-                        <tr>
-                            <td class="text-center"><?= $noUtama++ ?></td>
-                            <td><?= esc($row['rhk_pimpinan'] ?? '-') ?></td>
-                            <td><?= esc($row['rencana_kinerja']) ?></td>
-                            <td class="text-center fw-bold text-uppercase small"><?= esc($row['aspek']) ?></td>
-                            <td><?= esc($row['indikator']) ?></td>
-                            <td class="text-center"><?= esc($row['target']) ?> <?= esc($row['satuan']) ?></td>
-                        </tr>
-                    <?php endforeach; endif; ?>
+    <div class="modal fade" id="modalTambahRHK" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <form action="<?= site_url('user/skp/target/store') ?>" method="post">
+                <?= csrf_field() ?>
+                <input type="hidden" name="skp_header_id" value="<?= $header['id'] ?>">
 
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title fw-bold">Tambah Rencana Hasil Kerja</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
 
-                    <tr class="bg-light fw-bold text-muted small">
-                        <td colspan="6" class="px-3">TAMBAHAN</td>
-                    </tr>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-bold">Jenis RHK</label>
+                                <select name="jenis" class="form-select" required>
+                                    <option value="Utama">Utama</option>
+                                    <option value="Tambahan">Tambahan</option>
+                                </select>
+                            </div>
+                        </div>
 
-                    <?php 
-                    $noTambahan = 1;
-                    $skpTambahan = array_filter($targets, function($t) { return $t['jenis'] == 'Tambahan'; });
-                    
-                    if(empty($skpTambahan)): ?>
-                        <tr><td colspan="6" class="text-center py-3 text-muted fst-italic text-small">- Tidak ada RHK Tambahan -</td></tr>
-                    <?php else: 
-                        foreach($skpTambahan as $row): ?>
-                        <tr>
-                            <td class="text-center"><?= $noTambahan++ ?></td>
-                            <td>-</td> <td><?= esc($row['rencana_kinerja']) ?></td>
-                            <td class="text-center fw-bold text-uppercase small"><?= esc($row['aspek']) ?></td>
-                            <td><?= esc($row['indikator']) ?></td>
-                            <td class="text-center"><?= esc($row['target']) ?> <?= esc($row['satuan']) ?></td>
-                        </tr>
-                    <?php endforeach; endif; ?>
+                        <hr>
 
-                </tbody>
-            </table>
+                        <?php if ($isDirektur): ?>
+
+                            <div class="alert alert-info py-2 small">
+                                <i class="bi bi-info-circle me-1"></i> Sebagai Direktur, RHK Anda diambil dari Indikator Kinerja Utama.
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Rencana Hasil Kerja (Pilih dari Master Data)</label>
+                                <select name="rencana_kinerja_select" class="form-select" required>
+                                    <option value="">-- Pilih Indikator Kinerja Utama --</option>
+
+                                    <?php if (!empty($masterIndikator)): ?>
+                                        <?php foreach ($masterIndikator as $mi): ?>
+                                            <option value="<?= esc($mi['nama_indikator']) ?>">
+                                                <?= esc($mi['nama_indikator']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <option value="" disabled>Data Indikator Kosong.</option>
+                                    <?php endif; ?>
+
+                                </select>
+                                <div class="form-text">Data ini berasal dari Menu Admin > Master Data > Indikator Kinerja.</div>
+                            </div>
+
+                        <?php else: ?>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">RHK Pimpinan yang Diintervensi</label>
+                                <textarea name="rhk_pimpinan" class="form-control" rows="2" placeholder="Contoh: Terlaksananya kegiatan akademik..." required></textarea>
+                                <div class="form-text">Isi sesuai RHK atasan yang Anda dukung.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Rencana Hasil Kerja (Individu)</label>
+                                <textarea name="rencana_kinerja_text" class="form-control" rows="3" placeholder="Uraikan rencana kerja Anda..." required></textarea>
+                            </div>
+
+                        <?php endif; ?>
+
+                        <hr>
+                        <h6 class="fw-bold text-muted mb-3">INDIKATOR KINERJA INDIVIDU (IKI)</h6>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Aspek</label>
+                                <select name="aspek" class="form-select" required>
+                                    <option value="Kuantitas">Kuantitas</option>
+                                    <option value="Kualitas">Kualitas</option>
+                                    <option value="Waktu">Waktu</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label">Indikator (Kalimat)</label>
+                                <input type="text" name="indikator" class="form-control" placeholder="Cth: Jumlah dokumen laporan..." required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Target</label>
+                                <input type="text" name="target" class="form-control" placeholder="Cth: 100 / 90%" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Satuan</label>
+                                <input type="text" name="satuan" class="form-control" placeholder="Cth: Dokumen / Laporan / Kegiatan" required>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan RHK</button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 

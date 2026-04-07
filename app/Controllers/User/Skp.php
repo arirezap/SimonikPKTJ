@@ -4,18 +4,19 @@ namespace App\Controllers\User;
 
 use App\Controllers\BaseController;
 use App\Models\SkpHeaderModel;
-use App\Models\SkpModel; // <--- JANGAN LUPA USE INI
+use App\Models\SkpModel;
+use App\Models\MasterIndikatorModel;
+use App\Models\User; // <--- TAMBAHKAN INI AGAR RAPI
 
 class Skp extends BaseController
 {
     protected $skpHeaderModel;
-    protected $skpModel; // <--- TAMBAHKAN PROPERTI INI
+    protected $skpModel;
 
     public function __construct()
     {
-        // Inisialisasi kedua Model
         $this->skpHeaderModel = new SkpHeaderModel();
-        $this->skpModel       = new SkpModel(); // <--- INISIALISASI DISINI
+        $this->skpModel       = new SkpModel();
     }
 
     public function index()
@@ -32,14 +33,11 @@ class Skp extends BaseController
         return view('User/skp/index', $data);
     }
 
-    // UPDATE FUNGSI STORE
     public function store()
     {
         $userId = session()->get('id');
         $role   = session()->get('role');
         $tahun  = $this->request->getPost('tahun');
-
-        // Ambil inputan model SKP
         $modelSkp = $this->request->getPost('model_skp');
 
         if (!$tahun) {
@@ -52,7 +50,7 @@ class Skp extends BaseController
             return redirect()->back()->with('error', 'Anda sudah membuat SKP untuk tahun ' . $tahun);
         }
 
-        // 2. Cek Role Direktur (Logic validasi tetap sama)
+        // 2. Cek Role Direktur (Validasi Berjenjang)
         if ($role !== 'direktur') {
             $direkturSudahBuat = $this->skpHeaderModel->isDirekturSkpExists($tahun);
             if (!$direkturSudahBuat) {
@@ -60,11 +58,11 @@ class Skp extends BaseController
             }
         }
 
-        // 3. Simpan Data Header (UPDATE DISINI)
+        // 3. Simpan
         $this->skpHeaderModel->save([
             'user_id'       => $userId,
             'tahun'         => $tahun,
-            'model_skp'     => $modelSkp, // <--- Simpan Pilihan
+            'model_skp'     => $modelSkp,
             'periode_awal'  => $tahun . '-01-01',
             'periode_akhir' => $tahun . '-12-31',
             'status'        => 'Draft'
@@ -73,75 +71,99 @@ class Skp extends BaseController
         return redirect()->to('/user/skp')->with('success', 'SKP Tahun ' . $tahun . ' (' . $modelSkp . ') berhasil dibuat.');
     }
 
-    // ---------------------------------------------------------
-    // TAMBAHKAN FUNGSI DELETE INI
-    // ---------------------------------------------------------
     public function delete($id)
     {
-        // Cari data berdasarkan ID
         $skp = $this->skpHeaderModel->find($id);
 
-        // 1. Cek apakah data ada
         if (!$skp) {
             return redirect()->to('/user/skp')->with('error', 'Data SKP tidak ditemukan.');
         }
 
-        // 2. Security Check: Pastikan yang menghapus adalah pemilik data (User ID sama)
+        // Security Check: Hanya pemilik yang bisa hapus
         if ($skp['user_id'] != session()->get('id')) {
             return redirect()->to('/user/skp')->with('error', 'Anda tidak memiliki akses untuk menghapus data ini.');
         }
 
-        // 3. Cek Status: Hanya boleh hapus jika status 'Draft'
+        // Status Check
         if ($skp['status'] !== 'Draft') {
             return redirect()->to('/user/skp')->with('error', 'SKP yang sudah diajukan atau disetujui tidak dapat dihapus.');
         }
 
-        // 4. Lakukan Penghapusan
-        // Karena kita sudah set ON DELETE CASCADE di database (foreign key), 
-        // maka menghapus header akan otomatis menghapus target-target di dalamnya.
         $this->skpHeaderModel->delete($id);
 
         return redirect()->to('/user/skp')->with('success', 'Data SKP berhasil dihapus.');
     }
 
-
-    // ---------------------------------------------------------
-    // FUNGSI DETAIL SKP
-    // ---------------------------------------------------------
     public function detail($id)
     {
-        // Ambil Header SKP
         $header = $this->skpHeaderModel->find($id);
+        if (!$header) return redirect()->to('/user/skp')->with('error', 'Data tidak ditemukan.');
 
-        if (!$header) {
-            return redirect()->to('/user/skp')->with('error', 'Data SKP tidak ditemukan.');
-        }
-
-        // Ambil Data Pegawai
-        $userModel = new \App\Models\User();
+        // Gunakan use App\Models\User di atas agar lebih bersih
+        $userModel = new User(); 
         $pegawai = $userModel->find($header['user_id']);
+        
+        // Safety check jika user terhapus
+        if(!$pegawai) return redirect()->to('/user/skp')->with('error', 'Data Pegawai tidak ditemukan.');
 
-        // Ambil Data Atasan (Pejabat Penilai)
-        // Pastikan kolom 'atasan_id' ada di tabel users, atau sesuaikan logikanya
+        $rolePemilik = $pegawai['role'];
+
         $atasan = null;
         if (!empty($pegawai['atasan_id'])) {
             $atasan = $userModel->find($pegawai['atasan_id']);
         }
 
-        // Ambil Target SKP (RHK) dari tabel skp_targets
-        // INI YANG TADI ERROR KARENA $this->skpModel BELUM DI-LOAD
-        $targets = $this->skpModel->where('skp_header_id', $id)
-            ->orderBy('jenis', 'ASC')
-            ->findAll();
+        $targets = $this->skpModel->where('skp_header_id', $id)->orderBy('jenis', 'ASC')->findAll();
+
+        // Logika Dropdown Direktur
+        $masterIndikator = [];
+        if ($rolePemilik == 'direktur') {
+            $masterModel = new MasterIndikatorModel();
+            $masterIndikator = $masterModel->findAll();
+        }
 
         $data = [
-            'title'   => 'Detail Sasaran Kinerja Pegawai',
-            'header'  => $header,
-            'pegawai' => $pegawai,
-            'atasan'  => $atasan,
-            'targets' => $targets
+            'title'           => 'Detail Sasaran Kinerja Pegawai',
+            'header'          => $header,
+            'pegawai'         => $pegawai,
+            'atasan'          => $atasan,
+            'targets'         => $targets,
+            'masterIndikator' => $masterIndikator,
+            'isDirektur'      => ($rolePemilik == 'direktur')
         ];
 
         return view('User/skp/detail', $data);
+    }
+
+    public function storeTarget()
+    {
+        $headerId = $this->request->getPost('skp_header_id');
+        $userId   = session()->get('id');
+        $role     = session()->get('role');
+
+        if (!$headerId) return redirect()->back()->with('error', 'ID Header tidak valid.');
+
+        $data = [
+            'skp_header_id'   => $headerId,
+            'user_id'         => $userId,
+            'jenis'           => $this->request->getPost('jenis'),
+            'aspek'           => $this->request->getPost('aspek'),
+            'indikator'       => $this->request->getPost('indikator'),
+            'target'          => $this->request->getPost('target'),
+            'satuan'          => $this->request->getPost('satuan'),
+        ];
+
+        // LOGIKA INPUT BERDASARKAN ROLE
+        if ($role == 'direktur') {
+            $data['rhk_pimpinan']    = null; // Direktur tidak punya intervensi atasan
+            $data['rencana_kinerja'] = $this->request->getPost('rencana_kinerja_select'); // Dari Dropdown
+        } else {
+            $data['rhk_pimpinan']    = $this->request->getPost('rhk_pimpinan'); // Manual
+            $data['rencana_kinerja'] = $this->request->getPost('rencana_kinerja_text'); // Manual
+        }
+
+        $this->skpModel->save($data);
+
+        return redirect()->back()->with('success', 'Rencana Hasil Kerja berhasil ditambahkan.');
     }
 }

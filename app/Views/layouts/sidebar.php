@@ -17,7 +17,7 @@ $isKinerjaActive = (
     str_starts_with($current_uri, 'user/keuangan') ||
     str_starts_with($current_uri, 'user/kontrak') ||
     str_starts_with($current_uri, 'user/pakta') ||
-    str_starts_with($current_uri, 'user/skp') // UPDATE: Tambahkan trigger aktif untuk SKP
+    str_starts_with($current_uri, 'user/skp') 
 );
 $isAkademikActive = str_starts_with($current_uri, 'user/akademik');
 $isMasterDataActive = str_starts_with($current_uri, 'admin/master-data');
@@ -27,7 +27,7 @@ $isEccActive = str_starts_with($current_uri, 'ecc');
 $isAdmin = ($role === 'admin');
 $isKabag = in_array($role, ['kabag_aak', 'kabag_kuk']);
 $isManajemen = ($role === 'manajemen');
-$isDirektur = ($role === 'direktur'); // Helper baru untuk Direktur
+$isDirektur = ($role === 'direktur'); 
 ?>
 
 <div class="sidebar">
@@ -65,7 +65,7 @@ $isDirektur = ($role === 'direktur'); // Helper baru untuk Direktur
             </li>
 
             <?php
-            // UPDATE: Tambahkan 'direktur' di sini agar menu Kinerja muncul
+            // Menu Kinerja (Termasuk Direktur)
             if (in_array($role, ['admin', 'manajemen', 'direktur', 'kabag_aak', 'kabag_kuk', 'aak', 'kuk', 'spm', 'user'])):
             ?>
                 <li class="nav-item">
@@ -90,7 +90,7 @@ $isDirektur = ($role === 'direktur'); // Helper baru untuk Direktur
                             <li class="nav-item"><a href="<?= site_url('user/realisasi/input') ?>" class="nav-link sub-link <?= ($current_uri == 'user/realisasi/input') ? 'active' : '' ?>"><span>Input Realisasi</span></a></li>
                             <li class="nav-item"><a href="<?= site_url('user/kinerja/update') ?>" class="nav-link sub-link <?= (str_starts_with($current_uri, 'user/kinerja/update') || str_starts_with($current_uri, 'user/alokasi/bulanan')) ? 'active' : '' ?>"><span>Kelola Target & Realisasi</span></a></li>
 
-                            <?php if (in_array($role, ['admin', 'kabag_kuk', 'kuk'])): // Role Keuangan ?>
+                            <?php if (in_array($role, ['admin', 'kabag_kuk', 'kuk'])): ?>
                                 <li class="menu-divider"></li>
                                 <li class="nav-item"><a href="<?= site_url('user/keuangan/input') ?>" class="nav-link sub-link <?= ($current_uri == 'user/keuangan/input') ? 'active' : '' ?>"><span>Input Progres Keuangan</span></a></li>
                             <?php endif; ?>
@@ -119,17 +119,19 @@ $isDirektur = ($role === 'direktur'); // Helper baru untuk Direktur
 
             <?php if ($isAdmin || $isKabag): ?>
                 <li class="nav-item"><a href="<?= site_url('admin/monitoring') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/monitoring')) ? 'active' : '' ?>"><i class="bi bi-kanban-fill"></i><span>Monitoring Kinerja</span></a></li>
+            <?php endif; ?>
 
-                <?php if ($isAdmin): ?>
-                    <li class="nav-item">
-                        <a class="nav-link <?= ($segment1 == 'admin' && $segment2 == 'remunerasi') ? 'active' : '' ?>"
-                            href="<?= site_url('admin/remunerasi') ?>">
-                            <i class="bi bi-wallet-fill"></i>
-                            <span>Input Remunerasi</span>
-                        </a>
-                    </li>
-                <?php endif; ?>
+            <?php if ($isAdmin): ?>
+                <li class="nav-item">
+                    <a class="nav-link <?= ($segment1 == 'admin' && $segment2 == 'remunerasi') ? 'active' : '' ?>"
+                        href="<?= site_url('admin/remunerasi') ?>">
+                        <i class="bi bi-wallet-fill"></i>
+                        <span>Input Remunerasi</span>
+                    </a>
+                </li>
+            <?php endif; ?>
 
+            <?php if ($isAdmin || $isKabag || $isDirektur): ?>
                 <li class="nav-item">
                     <a class="nav-link <?= $isMasterDataActive ? '' : 'collapsed' ?>" href="#masterSubmenu" data-bs-toggle="collapse" role="button">
                         <i class="bi bi-stack"></i><span>Master Data</span>
@@ -148,7 +150,7 @@ $isDirektur = ($role === 'direktur'); // Helper baru untuk Direktur
                 </li>
             <?php endif; ?>
 
-            <?php if ($isAdmin): // Hanya Admin ?>
+            <?php if ($isAdmin): ?>
                 <li class="nav-item"><a href="<?= site_url('admin/users') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/users')) ? 'active' : '' ?>"><i class="bi bi-people-fill"></i><span>Kelola Pengguna</span></a></li>
             <?php endif; ?>
 
