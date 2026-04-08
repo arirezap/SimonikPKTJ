@@ -62,37 +62,37 @@ class RemunerasiController extends BaseController
             return redirect()->back()->with('error', 'Data tidak lengkap.');
         }
 
-        $dataToSave = [];
+        // Ambil data yang sudah ada SEKALI SAJA untuk efisiensi
+        $existingData = $remunModel
+            ->where('tahun', $tahun)
+            ->where('bulan', 'bulan')
+            ->findAll();
+        $existingMap = array_column($existingData, 'id', 'user_id'); // Map [user_id => remunerasi_id]
 
         // Loop data dari form
         foreach ($jumlah_arr as $user_id => $jumlah) {
             // Bersihkan nilai (hapus 'Rp.' atau '.')
             $cleaned_jumlah = preg_replace("/[^0-9]/", "", $jumlah);
-            
+
             if (empty($cleaned_jumlah)) {
                 $cleaned_jumlah = 0;
             }
-
-            // Cari data yang sudah ada
-            $existing = $remunModel
-                ->where('user_id', $user_id)
-                ->where('tahun', $tahun)
-                ->where('bulan', $bulan)
-                ->first();
 
             $data = [
                 'user_id' => $user_id,
                 'tahun'   => $tahun,
                 'bulan'   => $bulan,
                 'jumlah'  => $cleaned_jumlah,
-                'created_by_user_id' => $creator_id
             ];
 
-            if ($existing) {
-                // Jika ada, update (hanya jumlah dan updated_at)
-                $remunModel->update($existing['id'], ['jumlah' => $cleaned_jumlah]);
+            // OPTIMISASI: Cek dari map yang sudah diambil, bukan query ulang
+            if (array_key_exists($user_id, $existingMap)) {
+                // Jika ada, update
+                $remunasi_id = $existingMap[$user_id];
+                $remunModel->update($remunasi_id, ['jumlah' => $cleaned_jumlah]);
             } else {
-                // Jika tidak ada, insert
+                // Jika tidak ada, tambahkan creator_id dan insert
+                $data['created_by_user_id'] = $creator_id;
                 $remunModel->insert($data);
             }
         }

@@ -5,10 +5,64 @@
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2">Kelola Pengguna</h1>
         
-        <a href="<?= site_url('admin/users/create') ?>" class="btn btn-primary btn-sm">
-            <i class="bi bi-person-plus-fill"></i> Tambah Pengguna
-        </a>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#importModal" title="Impor banyak pengguna dari file CSV">
+                    <i class="bi bi-upload"></i> Import
+                </button>
+                <a href="<?= site_url('admin/users/export') ?>" class="btn btn-sm btn-outline-secondary" title="Unduh template CSV untuk impor">
+                    <i class="bi bi-download"></i> Export Template
+                </a>
+            </div>
+            <a href="<?= site_url('admin/users/create') ?>" class="btn btn-sm btn-primary">
+                <i class="bi bi-person-plus-fill"></i> Tambah Pengguna Baru
+            </a>
+        </div>
     </div>
+
+<!-- Letakkan kode Modal ini di bagian bawah file view -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importModalLabel">Import Pengguna dari CSV</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="<?= site_url('admin/users/import') ?>" method="post" enctype="multipart/form-data">
+                <?= csrf_field() ?>
+                <div class="modal-body">
+                    <p>
+                        Silakan unduh template terlebih dahulu untuk memastikan format data sesuai.
+                        <a href="<?= site_url('admin/users/export') ?>">Unduh Template Disini</a>.
+                    </p>
+                    <hr>
+                    <div class="mb-3">
+                        <label for="file_excel" class="form-label">Pilih File CSV (.csv)</label>
+                        <input class="form-control" type="file" name="file_excel" id="file_excel" required accept=".csv, text/csv">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Mulai Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Tambahkan ini untuk menampilkan error validasi dari proses import -->
+<?php if (session()->has('import_errors')): ?>
+    <div class="alert alert-danger">
+        <strong>Terjadi beberapa kesalahan saat import:</strong>
+        <ul>
+            <?php foreach (session('import_errors') as $error): ?>
+                <li><?= esc($error) ?></li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
+<?php endif; ?>
+
+<!-- ... sisa kode tabel pengguna Anda ... -->
 
     <?php if (session()->getFlashdata('success')): ?>
         <div class="alert alert-success"><?= session()->getFlashdata('success') ?></div>

@@ -46,19 +46,19 @@ $routes->get('user/pakta', 'User\PaktaController::index');
 // Admin Routes (Group)
 $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     $routes->get('dashboard', 'Admin\Dashboard::index');
-    $routes->get('users', 'Admin\UserController::index');
     $routes->get('monitoring', 'Admin\MonitoringController::index');
     $routes->get('remunerasi', 'Admin\RemunerasiController::index');
-    // app/Config/Routes.php (Di dalam group 'admin')
-
-    // app/Config/Routes.php (Di dalam group 'admin')
-
+    
+    // --- Rute untuk Kelola Pengguna (Users) ---
     $routes->get('users', 'Admin\UserController::index');
-    $routes->get('users/create', 'Admin\UserController::create');   // Route Create Baru
-    $routes->post('users/store', 'Admin\UserController::store');    // Route Store Baru
+    $routes->get('users/create', 'Admin\UserController::create');
+    $routes->post('users/store', 'Admin\UserController::store');
     $routes->get('users/edit/(:num)', 'Admin\UserController::edit/$1');
     $routes->post('users/update', 'Admin\UserController::update');
     $routes->get('users/delete/(:num)', 'Admin\UserController::delete/$1');
+    $routes->get('users/export', 'Admin\UserController::exportExcel'); // Rute untuk Export
+    $routes->post('users/import', 'Admin\UserController::importExcel'); // Rute untuk Import
+
     // Master Data Group
     $routes->group('master-data', function ($routes) {
         $routes->get('sasaran', 'Admin\MasterDataController::sasaran');
