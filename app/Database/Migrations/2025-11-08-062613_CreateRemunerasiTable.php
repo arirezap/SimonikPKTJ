@@ -51,8 +51,9 @@ class CreateRemunerasiTable extends Migration
         $this->forge->addForeignKey('user_id', 'users', 'id', 'CASCADE', 'CASCADE');
         $this->forge->addForeignKey('created_by_user_id', 'users', 'id', 'CASCADE', 'CASCADE');
         // Unique key agar 1 user hanya punya 1 entri per bulan per tahun
-        $this->forge->addUniqueKey(['user_id', 'tahun', 'bulan']); 
-        $this->forge->createTable('remunerasi');
+        $this->forge->addUniqueKey(['user_id', 'tahun', 'bulan']);
+        // Parameter TRUE artinya "IF NOT EXISTS"
+        $this->forge->createTable('remunerasi', true);
     }
 
     public function down()

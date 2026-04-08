@@ -4,6 +4,9 @@ namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
 use App\Models\User;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Reader\Xlsx as XlsxReader;
 
 class UserController extends BaseController
 {
@@ -139,5 +142,123 @@ class UserController extends BaseController
     {
         $this->userModel->delete($id);
         return redirect()->to('admin/users')->with('success', 'User berhasil dihapus');
+    }
+
+    /**
+     * Menghasilkan file CSV sebagai template atau backup data pengguna.
+     */
+    public function exportExcel()
+    {
+        $fileName = 'Template_Import_Pengguna_' . date('Y-m-d') . '.csv';
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . urlencode($fileName) . '"');
+        
+        $output = fopen('php://output', 'w');
+        fputcsv($output, [
+            'username (wajib, unik)',
+            'email (wajib, unik)',
+            'password (wajib, min: 4 karakter)',
+            'nama_lengkap (wajib)',
+            'role (wajib: admin, aak, kuk, spm, dll.)',
+            'nip',
+            'jabatan',
+            'pangkat',
+            'unit',
+            'atasan_id (opsional, ID dari user atasan)'
+        ]);
+        fclose($output);
+        exit();
+    }
+
+    /**
+     * Mengimpor data pengguna dari file CSV.
+     */
+    public function importExcel()
+    {
+        $file = $this->request->getFile('file_excel');
+
+        if (!$file || !$file->isValid() || $file->getExtension() !== 'csv') {
+            return redirect()->to('admin/users')->with('error', 'File tidak valid. Harap unggah file .csv');
+        }
+
+        $dataToInsert = [];
+        $insertedCount = 0;
+        $skippedCount = 0;
+        $errors = [];
+
+        // Ambil semua username dan email yang ada untuk validasi duplikat
+        $existingUsers = $this->userModel->select('username, email')->findAll();
+        $existingUsernames = array_column($existingUsers, 'username');
+        $existingEmails = array_column($existingUsers, 'email');
+
+        if (($handle = fopen($file->getTempName(), 'r')) !== false) {
+            $header = fgetcsv($handle, 1000, ',');
+            $rowIndex = 1;
+            
+            while (($row = fgetcsv($handle, 1000, ',')) !== false) {
+                $rowIndex++;
+                $username     = trim($row[0] ?? '');
+                $email        = trim($row[1] ?? '');
+                $password     = trim($row[2] ?? '');
+                $nama_lengkap = trim($row[3] ?? '');
+                $role         = trim($row[4] ?? '');
+
+                // Validasi dasar: Lewati baris jika data wajib kosong
+                if (empty($username) || empty($email) || empty($password) || empty($nama_lengkap) || empty($role)) {
+                    $skippedCount++;
+                    continue;
+                }
+
+                // Validasi duplikasi
+                if (in_array($username, $existingUsernames)) {
+                    $errors[] = "Baris {$rowIndex}: Username '{$username}' sudah ada di database.";
+                    $skippedCount++;
+                    continue;
+                }
+                if (in_array($email, $existingEmails)) {
+                    $errors[] = "Baris {$rowIndex}: Email '{$email}' sudah ada di database.";
+                    $skippedCount++;
+                    continue;
+                }
+
+                $dataToInsert[] = [
+                    'username'     => $username,
+                    'email'        => $email,
+                    'password'     => md5($password), // Telah menggunakan MD5
+                    // nama_lengkap dengan tanda kutip akan tersimpan dengan aman karena insertBatch CI4 mengemasnya lewat prepared statement
+                    'nama_lengkap' => $nama_lengkap,
+                    'role'         => $role,
+                    'nip'          => trim($row[5] ?? ''),
+                    'jabatan'      => trim($row[6] ?? ''),
+                    'pangkat'      => trim($row[7] ?? ''),
+                    'unit'         => trim($row[8] ?? ''),
+                    'atasan_id'    => !empty(trim($row[9] ?? '')) ? (int)trim($row[9]) : null,
+                ];
+
+                // Tambahkan username & email baru ke daftar pengecekan
+                $existingUsernames[] = $username;
+                $existingEmails[] = $email;
+            }
+            fclose($handle);
+        }
+
+        if (!empty($dataToInsert)) {
+            $this->userModel->insertBatch($dataToInsert);
+            $insertedCount = count($dataToInsert);
+        }
+
+        if ($insertedCount > 0) {
+            $message = "Import berhasil: {$insertedCount} pengguna baru berhasil ditambahkan.";
+            if ($skippedCount > 0) {
+                $message .= " {$skippedCount} baris dilewati karena data tidak lengkap atau duplikat.";
+            }
+            if (!empty($errors)) {
+                session()->setFlashdata('import_errors', $errors);
+            }
+            return redirect()->to('admin/users')->with('success', $message);
+        }
+
+        return redirect()->to('admin/users')->with('error', 'Tidak ada data pengguna baru yang dapat diimpor dari file yang diunggah.');
     }
 }

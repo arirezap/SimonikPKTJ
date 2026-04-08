@@ -5,7 +5,7 @@ $uri = service('uri');
 $segment1 = $uri->getSegment(1); // Cth: 'admin', 'user', 'ecc'
 $segment2 = $uri->getSegment(2); // Cth: 'dashboard', 'led', 'users'
 
-$current_uri = uri_string(); 
+$current_uri = uri_string();
 $role = session()->get('role');
 
 // Helper untuk status aktif menu
@@ -16,7 +16,8 @@ $isKinerjaActive = (
     str_starts_with($current_uri, 'user/alokasi') ||
     str_starts_with($current_uri, 'user/keuangan') ||
     str_starts_with($current_uri, 'user/kontrak') ||
-    str_starts_with($current_uri, 'user/pakta') // UPDATE: Tambahkan trigger aktif untuk Pakta
+    str_starts_with($current_uri, 'user/pakta') ||
+    str_starts_with($current_uri, 'user/skp') 
 );
 $isAkademikActive = str_starts_with($current_uri, 'user/akademik');
 $isMasterDataActive = str_starts_with($current_uri, 'admin/master-data');
@@ -26,11 +27,12 @@ $isEccActive = str_starts_with($current_uri, 'ecc');
 $isAdmin = ($role === 'admin');
 $isKabag = in_array($role, ['kabag_aak', 'kabag_kuk']);
 $isManajemen = ($role === 'manajemen');
+$isDirektur = ($role === 'direktur'); 
 ?>
 
 <div class="sidebar">
     <i class="bi bi-list sidebar-toggle" id="sidebarToggle"></i>
-    
+
     <div class="sidebar-header">
         <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ">
     </div>
@@ -39,8 +41,8 @@ $isManajemen = ($role === 'manajemen');
         <ul class="nav flex-column">
 
             <li class="nav-item">
-                <a class="nav-link <?= ($segment1 == 'admin' && $segment2 == 'dashboard') || ($segment1 == 'user' && $segment2 == 'dashboard') ? 'active' : '' ?>" 
-                   href="<?= ($isAdmin || $isManajemen || $isKabag) ? site_url('admin/dashboard') : site_url('user/dashboard') ?>">
+                <a class="nav-link <?= ($segment1 == 'admin' && $segment2 == 'dashboard') || ($segment1 == 'user' && $segment2 == 'dashboard') ? 'active' : '' ?>"
+                    href="<?= ($isAdmin || $isManajemen || $isKabag) ? site_url('admin/dashboard') : site_url('user/dashboard') ?>">
                     <i class="bi bi-grid-fill"></i>
                     <span>Dashboard</span>
                 </a>
@@ -54,7 +56,7 @@ $isManajemen = ($role === 'manajemen');
                 <div class="collapse <?= $isEccActive ? 'show' : '' ?>" id="eccSubmenu">
                     <ul class="nav flex-column ps-4">
                         <li class="nav-item"><a href="<?= site_url('ecc/led') ?>" class="nav-link sub-link <?= ($segment2 == 'led') ? 'active' : '' ?>"><span>LED</span></a></li>
-                        
+
                         <?php if ($role === 'spm' || $role === 'admin'): ?>
                             <li class="nav-item"><a href="<?= site_url('ecc/simulasi') ?>" class="nav-link sub-link <?= ($segment2 == 'simulasi') ? 'active' : '' ?>"><span>Simulasi Penilaian</span></a></li>
                         <?php endif; ?>
@@ -62,9 +64,9 @@ $isManajemen = ($role === 'manajemen');
                 </div>
             </li>
 
-            <?php 
-            // Pastikan 'user' ada di dalam array pengecekan role
-            if (in_array($role, ['admin', 'manajemen', 'kabag_aak', 'kabag_kuk', 'aak', 'kuk', 'spm', 'user'])): 
+            <?php
+            // Menu Kinerja (Termasuk Direktur)
+            if (in_array($role, ['admin', 'manajemen', 'direktur', 'kabag_aak', 'kabag_kuk', 'aak', 'kuk', 'spm', 'user'])):
             ?>
                 <li class="nav-item">
                     <a class="nav-link <?= $isKinerjaActive ? '' : 'collapsed' ?>" href="#kinerjaSubmenu" data-bs-toggle="collapse" role="button">
@@ -74,17 +76,23 @@ $isManajemen = ($role === 'manajemen');
                     <div class="collapse <?= $isKinerjaActive ? 'show' : '' ?>" id="kinerjaSubmenu">
                         <ul class="nav flex-column ps-4">
                             <li class="nav-item"><a href="<?= site_url('user/rencana/input') ?>" class="nav-link sub-link <?= ($current_uri == 'user/rencana/input') ? 'active' : '' ?>"><span>Input Rencana Kerja</span></a></li>
-                            
+
                             <li class="nav-item"><a href="<?= site_url('user/kontrak') ?>" class="nav-link sub-link <?= ($current_uri == 'user/kontrak') ? 'active' : '' ?>"><span>Kontrak Kinerja</span></a></li>
 
                             <li class="nav-item"><a href="<?= site_url('user/pakta') ?>" class="nav-link sub-link <?= ($current_uri == 'user/pakta') ? 'active' : '' ?>"><span>Pakta Integritas</span></a></li>
                             
+                            <li class="nav-item">
+                                <a class="nav-link sub-link <?= str_starts_with($current_uri, 'user/skp') ? 'active' : '' ?>" href="<?= site_url('user/skp') ?>">
+                                    <span>Sasaran Kinerja (SKP)</span>
+                                </a>
+                            </li>
+                            
                             <li class="nav-item"><a href="<?= site_url('user/realisasi/input') ?>" class="nav-link sub-link <?= ($current_uri == 'user/realisasi/input') ? 'active' : '' ?>"><span>Input Realisasi</span></a></li>
                             <li class="nav-item"><a href="<?= site_url('user/kinerja/update') ?>" class="nav-link sub-link <?= (str_starts_with($current_uri, 'user/kinerja/update') || str_starts_with($current_uri, 'user/alokasi/bulanan')) ? 'active' : '' ?>"><span>Kelola Target & Realisasi</span></a></li>
-                            
-                            <?php if(in_array($role, ['admin', 'kabag_kuk', 'kuk'])): // Role Keuangan ?>
-                            <li class="menu-divider"></li>
-                            <li class="nav-item"><a href="<?= site_url('user/keuangan/input') ?>" class="nav-link sub-link <?= ($current_uri == 'user/keuangan/input') ? 'active' : '' ?>"><span>Input Progres Keuangan</span></a></li>
+
+                            <?php if (in_array($role, ['admin', 'kabag_kuk', 'kuk'])): ?>
+                                <li class="menu-divider"></li>
+                                <li class="nav-item"><a href="<?= site_url('user/keuangan/input') ?>" class="nav-link sub-link <?= ($current_uri == 'user/keuangan/input') ? 'active' : '' ?>"><span>Input Progres Keuangan</span></a></li>
                             <?php endif; ?>
                         </ul>
                     </div>
@@ -111,17 +119,19 @@ $isManajemen = ($role === 'manajemen');
 
             <?php if ($isAdmin || $isKabag): ?>
                 <li class="nav-item"><a href="<?= site_url('admin/monitoring') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/monitoring')) ? 'active' : '' ?>"><i class="bi bi-kanban-fill"></i><span>Monitoring Kinerja</span></a></li>
-                
-                <?php if ($isAdmin): ?>
+            <?php endif; ?>
+
+            <?php if ($isAdmin): ?>
                 <li class="nav-item">
-                    <a class="nav-link <?= ($segment1 == 'admin' && $segment2 == 'remunerasi') ? 'active' : '' ?>" 
-                       href="<?= site_url('admin/remunerasi') ?>">
+                    <a class="nav-link <?= ($segment1 == 'admin' && $segment2 == 'remunerasi') ? 'active' : '' ?>"
+                        href="<?= site_url('admin/remunerasi') ?>">
                         <i class="bi bi-wallet-fill"></i>
                         <span>Input Remunerasi</span>
                     </a>
                 </li>
-                <?php endif; ?>
+            <?php endif; ?>
 
+            <?php if ($isAdmin || $isKabag || $isDirektur): ?>
                 <li class="nav-item">
                     <a class="nav-link <?= $isMasterDataActive ? '' : 'collapsed' ?>" href="#masterSubmenu" data-bs-toggle="collapse" role="button">
                         <i class="bi bi-stack"></i><span>Master Data</span>
@@ -139,8 +149,8 @@ $isManajemen = ($role === 'manajemen');
                     </div>
                 </li>
             <?php endif; ?>
-            
-            <?php if ($isAdmin): // Hanya Admin ?>
+
+            <?php if ($isAdmin): ?>
                 <li class="nav-item"><a href="<?= site_url('admin/users') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/users')) ? 'active' : '' ?>"><i class="bi bi-people-fill"></i><span>Kelola Pengguna</span></a></li>
             <?php endif; ?>
 

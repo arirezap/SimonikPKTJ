@@ -39,7 +39,6 @@ $routes->get('/', 'Home::index');
 $routes->get('login', 'Auth::login');
 $routes->post('login', 'Auth::processLogin');
 $routes->get('logout', 'Auth::logout');
-
 // Profile Routes
 $routes->get('profile', 'Profile::index');
 $routes->post('profile/update', 'Profile::update');
@@ -47,19 +46,19 @@ $routes->get('user/pakta', 'User\PaktaController::index');
 // Admin Routes (Group)
 $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     $routes->get('dashboard', 'Admin\Dashboard::index');
-    $routes->get('users', 'Admin\UserController::index');
     $routes->get('monitoring', 'Admin\MonitoringController::index');
     $routes->get('remunerasi', 'Admin\RemunerasiController::index');
-    // app/Config/Routes.php (Di dalam group 'admin')
-
-    // app/Config/Routes.php (Di dalam group 'admin')
-
+    
+    // --- Rute untuk Kelola Pengguna (Users) ---
     $routes->get('users', 'Admin\UserController::index');
-    $routes->get('users/create', 'Admin\UserController::create');   // Route Create Baru
-    $routes->post('users/store', 'Admin\UserController::store');    // Route Store Baru
+    $routes->get('users/create', 'Admin\UserController::create');
+    $routes->post('users/store', 'Admin\UserController::store');
     $routes->get('users/edit/(:num)', 'Admin\UserController::edit/$1');
     $routes->post('users/update', 'Admin\UserController::update');
     $routes->get('users/delete/(:num)', 'Admin\UserController::delete/$1');
+    $routes->get('users/export', 'Admin\UserController::exportExcel'); // Rute untuk Export
+    $routes->post('users/import', 'Admin\UserController::importExcel'); // Rute untuk Import
+
     // Master Data Group
     $routes->group('master-data', function ($routes) {
         $routes->get('sasaran', 'Admin\MasterDataController::sasaran');
@@ -80,9 +79,11 @@ $routes->group('user', ['filter' => 'auth'], function ($routes) {
         $routes->post('store', 'User\InputRencana::store');
     });
 
-    // START UPDATE: Route untuk Kontrak Kinerja
+    // Kontrak Kinerja
     $routes->get('kontrak', 'User\KontrakController::index');
-    // END UPDATE
+
+    // Pakta Integritas (Pindahkan kesini biar rapi)
+    $routes->get('pakta', 'User\PaktaController::index');
 
     $routes->group('realisasi', function ($routes) {
         $routes->get('input', 'User\InputRealisasi::index');
@@ -105,6 +106,15 @@ $routes->group('user', ['filter' => 'auth'], function ($routes) {
 
     $routes->get('ketarunaan', 'User\KetarunaanController::index');
     $routes->get('diklat', 'User\DiklatController::index');
+
+    // --- PERBAIKAN DISINI (MASUKKAN KE DALAM GRUP) ---
+    // Hapus 'user/' di depannya karena sudah otomatis ikut grup user
+    $routes->get('skp', 'User\Skp::index');          // URL: user/skp
+    $routes->post('skp/store', 'User\Skp::store');   // URL: user/skp/store
+    $routes->get('skp/detail/(:num)', 'User\Skp::detail/$1');
+    // Di dalam $routes->group('user' ...
+    $routes->post('skp/target/store', 'User\Skp::storeTarget');
+    $routes->get('skp/delete/(:num)', 'User\Skp::delete/$1');
 });
 
 // ECC Routes
