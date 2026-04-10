@@ -58,6 +58,7 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     $routes->get('users/delete/(:num)', 'Admin\UserController::delete/$1');
     $routes->get('users/export', 'Admin\UserController::exportExcel'); // Rute untuk Export
     $routes->post('users/import', 'Admin\UserController::importExcel'); // Rute untuk Import
+    $routes->post('users/batch_update', 'Admin\UserController::batch_update'); // Rute untuk Batch Edit
 
     // Master Data Group
     $routes->group('master-data', function ($routes) {
@@ -120,7 +121,13 @@ $routes->group('user', ['filter' => 'auth'], function ($routes) {
 // ECC Routes
 $routes->group('ecc', ['filter' => 'auth'], function ($routes) {
     $routes->get('led', 'EccController::led');
+    $routes->post('led/store', 'EccController::storeLed');
+    $routes->get('deleteLedLink/(:num)', 'EccController::deleteLedLink/$1');
+
     $routes->get('simulasi', 'EccController::simulasi');
+    $routes->post('simulasi/store', 'EccController::storeSimulasi');
+    $routes->get('detailStandar/(:num)/(:any)/(:any)', 'EccController::detailStandar/$1/$2/$3');
+    $routes->get('lkps', 'EccController::lkps');
 });
 
 /*

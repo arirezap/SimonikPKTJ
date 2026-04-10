@@ -1,5 +1,7 @@
 <?= $this->extend('layouts/main') ?>
 
+<?= $this->section('title') ?><?= esc($title ?? 'Profil Saya') ?><?= $this->endSection() ?>
+
 <?= $this->section('content') ?>
 <div class="container-fluid">
 
@@ -30,10 +32,15 @@
         <div class="col-xl-4 col-lg-5">
             <div class="card shadow mb-4">
                 <div class="card-body card-profile text-center">
-                    <?php 
-                        $foto = !empty($user['foto']) ? base_url('assets/uploads/profile/' . $user['foto']) : base_url('assets/uploads/profile/default.png');
+                    <?php
+                        $foto_path = 'assets/uploads/profile/' . ($user['foto'] ?? '');
+                        if (!empty($user['foto']) && file_exists(FCPATH . $foto_path)) {
+                            $foto_url = base_url($foto_path);
+                        } else {
+                            $foto_url = base_url('assets/uploads/profile/default.png');
+                        }
                     ?>
-                    <img class="img-profile rounded-circle mb-3" src="<?= $foto ?>" style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #e3e6f0;">
+                    <img class="img-profile rounded-circle mb-3" src="<?= $foto_url ?>" style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #e3e6f0;">
                     
                     <h5 class="font-weight-bold text-dark mb-1"><?= esc($user['nama_lengkap']) ?></h5>
                     <p class="text-muted mb-1"><?= esc($user['jabatan'] ?? '-') ?></p>

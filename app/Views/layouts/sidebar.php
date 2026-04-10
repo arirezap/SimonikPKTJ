@@ -15,8 +15,6 @@ $isKinerjaActive = (
     str_starts_with($current_uri, 'user/kinerja') ||
     str_starts_with($current_uri, 'user/alokasi') ||
     str_starts_with($current_uri, 'user/keuangan') ||
-    str_starts_with($current_uri, 'user/kontrak') ||
-    str_starts_with($current_uri, 'user/pakta') ||
     str_starts_with($current_uri, 'user/skp') 
 );
 $isAkademikActive = str_starts_with($current_uri, 'user/akademik');
@@ -68,38 +66,48 @@ $isDirektur = ($role === 'direktur');
             // Menu Kinerja (Termasuk Direktur)
             if (in_array($role, ['admin', 'manajemen', 'direktur', 'kabag_aak', 'kabag_kuk', 'aak', 'kuk', 'spm', 'user'])):
             ?>
+                <?php if (!$isAdmin): // Sembunyikan menu Kinerja untuk Admin ?>
+                    <li class="nav-item">
+                        <a class="nav-link <?= $isKinerjaActive ? '' : 'collapsed' ?>" href="#kinerjaSubmenu" data-bs-toggle="collapse" role="button">
+                            <i class="bi bi-graph-up-arrow"></i><span>Kinerja</span>
+                            <i class="bi bi-chevron-down sidebar-toggle-icon"></i>
+                        </a>
+                        <div class="collapse <?= $isKinerjaActive ? 'show' : '' ?>" id="kinerjaSubmenu">
+                            <ul class="nav flex-column ps-4">
+                                <li class="nav-item"><a href="<?= site_url('user/rencana/input') ?>" class="nav-link sub-link <?= ($current_uri == 'user/rencana/input') ? 'active' : '' ?>"><span>Input Rencana Kerja</span></a></li>
+
+                                <li class="nav-item">
+                                    <a class="nav-link sub-link <?= str_starts_with($current_uri, 'user/skp') ? 'active' : '' ?>" href="<?= site_url('user/skp') ?>">
+                                        <span>Sasaran Kinerja (SKP)</span>
+                                    </a>
+                                </li>
+                                
+                                <li class="nav-item"><a href="<?= site_url('user/realisasi/input') ?>" class="nav-link sub-link <?= ($current_uri == 'user/realisasi/input') ? 'active' : '' ?>"><span>Input Realisasi</span></a></li>
+                                <li class="nav-item"><a href="<?= site_url('user/kinerja/update') ?>" class="nav-link sub-link <?= (str_starts_with($current_uri, 'user/kinerja/update') || str_starts_with($current_uri, 'user/alokasi/bulanan')) ? 'active' : '' ?>"><span>Kelola Target & Realisasi</span></a></li>
+
+                                <?php if (in_array($role, ['admin', 'kabag_kuk', 'kuk'])): ?>
+                                    <li class="menu-divider"></li>
+                                    <li class="nav-item"><a href="<?= site_url('user/keuangan/input') ?>" class="nav-link sub-link <?= ($current_uri == 'user/keuangan/input') ? 'active' : '' ?>"><span>Input Progres Keuangan</span></a></li>
+                                <?php endif; ?>
+                            </ul>
+                        </div>
+                    </li>
+                <?php endif; ?>
+
                 <li class="nav-item">
-                    <a class="nav-link <?= $isKinerjaActive ? '' : 'collapsed' ?>" href="#kinerjaSubmenu" data-bs-toggle="collapse" role="button">
-                        <i class="bi bi-graph-up-arrow"></i><span>Kinerja</span>
-                        <i class="bi bi-chevron-down sidebar-toggle-icon"></i>
+                    <a class="nav-link <?= str_starts_with($current_uri, 'user/kontrak') ? 'active' : '' ?>" href="<?= site_url('user/kontrak') ?>">
+                        <i class="bi bi-file-earmark-text-fill"></i><span>Kontrak Kinerja</span>
                     </a>
-                    <div class="collapse <?= $isKinerjaActive ? 'show' : '' ?>" id="kinerjaSubmenu">
-                        <ul class="nav flex-column ps-4">
-                            <li class="nav-item"><a href="<?= site_url('user/rencana/input') ?>" class="nav-link sub-link <?= ($current_uri == 'user/rencana/input') ? 'active' : '' ?>"><span>Input Rencana Kerja</span></a></li>
+                </li>
 
-                            <li class="nav-item"><a href="<?= site_url('user/kontrak') ?>" class="nav-link sub-link <?= ($current_uri == 'user/kontrak') ? 'active' : '' ?>"><span>Kontrak Kinerja</span></a></li>
-
-                            <li class="nav-item"><a href="<?= site_url('user/pakta') ?>" class="nav-link sub-link <?= ($current_uri == 'user/pakta') ? 'active' : '' ?>"><span>Pakta Integritas</span></a></li>
-                            
-                            <li class="nav-item">
-                                <a class="nav-link sub-link <?= str_starts_with($current_uri, 'user/skp') ? 'active' : '' ?>" href="<?= site_url('user/skp') ?>">
-                                    <span>Sasaran Kinerja (SKP)</span>
-                                </a>
-                            </li>
-                            
-                            <li class="nav-item"><a href="<?= site_url('user/realisasi/input') ?>" class="nav-link sub-link <?= ($current_uri == 'user/realisasi/input') ? 'active' : '' ?>"><span>Input Realisasi</span></a></li>
-                            <li class="nav-item"><a href="<?= site_url('user/kinerja/update') ?>" class="nav-link sub-link <?= (str_starts_with($current_uri, 'user/kinerja/update') || str_starts_with($current_uri, 'user/alokasi/bulanan')) ? 'active' : '' ?>"><span>Kelola Target & Realisasi</span></a></li>
-
-                            <?php if (in_array($role, ['admin', 'kabag_kuk', 'kuk'])): ?>
-                                <li class="menu-divider"></li>
-                                <li class="nav-item"><a href="<?= site_url('user/keuangan/input') ?>" class="nav-link sub-link <?= ($current_uri == 'user/keuangan/input') ? 'active' : '' ?>"><span>Input Progres Keuangan</span></a></li>
-                            <?php endif; ?>
-                        </ul>
-                    </div>
+                <li class="nav-item">
+                    <a class="nav-link <?= str_starts_with($current_uri, 'user/pakta') ? 'active' : '' ?>" href="<?= site_url('user/pakta') ?>">
+                        <i class="bi bi-file-earmark-check-fill"></i><span>Pakta Integritas</span>
+                    </a>
                 </li>
             <?php endif; ?>
 
-            <?php if ($isAdmin): ?>
+            <?php if (false && $isAdmin): // Disembunyikan sementara ?>
                 <li class="nav-item">
                     <a class="nav-link <?= $isAkademikActive ? '' : 'collapsed' ?>" href="#akademikSubmenu" data-bs-toggle="collapse" role="button">
                         <i class="bi bi-book-half"></i><span>Data Akademik</span>
@@ -117,11 +125,11 @@ $isDirektur = ($role === 'direktur');
             <?php endif; ?>
 
 
-            <?php if ($isAdmin || $isKabag): ?>
+            <?php if ($isKabag): // Hanya untuk Kabag ?>
                 <li class="nav-item"><a href="<?= site_url('admin/monitoring') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/monitoring')) ? 'active' : '' ?>"><i class="bi bi-kanban-fill"></i><span>Monitoring Kinerja</span></a></li>
             <?php endif; ?>
 
-            <?php if ($isAdmin): ?>
+            <?php if (false && $isAdmin): // Disembunyikan sementara ?>
                 <li class="nav-item">
                     <a class="nav-link <?= ($segment1 == 'admin' && $segment2 == 'remunerasi') ? 'active' : '' ?>"
                         href="<?= site_url('admin/remunerasi') ?>">
@@ -152,19 +160,8 @@ $isDirektur = ($role === 'direktur');
 
             <?php if ($isAdmin): ?>
                 <li class="nav-item"><a href="<?= site_url('admin/users') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/users')) ? 'active' : '' ?>"><i class="bi bi-people-fill"></i><span>Kelola Pengguna</span></a></li>
-            <?php endif; ?>
+            <?php endif; ?> 
 
-            <li class="menu-divider-major"></li>
-            <li class="nav-item">
-                <a href="<?= site_url('profile') ?>" class="nav-link <?= ($current_uri == 'profile') ? 'active' : '' ?>">
-                    <i class="bi bi-person-circle"></i><span>Profil</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="<?= site_url('logout') ?>" class="nav-link logout">
-                    <i class="bi bi-box-arrow-left"></i><span>Logout</span>
-                </a>
-            </li>
         </ul>
     </div>
 </div>

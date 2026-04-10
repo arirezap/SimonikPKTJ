@@ -52,27 +52,40 @@ class EccController extends BaseController
         $selectedTahun = $this->request->getGet('tahun') ?? date('Y');
         $selectedProdi = $this->request->getGet('prodi') ?? config('Simonik')->prodiList[0];
         
-        $role = session()->get('role');
+        $currentRole = session()->get('role');
 
-        $criteriaQuery = $criteriaModel
+        // 1. Definisikan Role Flags
+        $is_staf     = in_array($currentRole, ['aak', 'kuk', 'spm']); 
+        $is_kabag    = in_array($currentRole, ['kabag_aak', 'kabag_kuk']);
+        $is_wadir    = in_array($currentRole, ['admin', 'manajemen']);
+
+        // 2. Ambil Semua Kriteria (Master) untuk prodi ini
+        $all_criteria = $criteriaModel
             ->select('led_criteria.*, led_standar.nama_standar')
             ->join('led_standar', 'led_standar.id = led_criteria.id_standar', 'left') 
-            ->where('led_criteria.prodi', $selectedProdi);
-        
-        if (in_array($role, ['admin', 'manajemen'])) {
-             $all_criteria_raw = $criteriaQuery->orderBy('led_criteria.id', 'ASC')->findAll();
-        } 
-        elseif ($role === 'kabag_aak') {
-            $all_criteria_raw = $criteriaQuery->whereIn('role_assignment', ['aak', 'all'])->orderBy('led_criteria.id', 'ASC')->findAll();
-        } elseif ($role === 'kabag_kuk') {
-            $all_criteria_raw = $criteriaQuery->whereIn('role_assignment', ['kuk', 'all'])->orderBy('led_criteria.id', 'ASC')->findAll();
-        }
-        else { 
-             $all_criteria_raw = $criteriaQuery->whereIn('role_assignment', [$role, 'all'])
-                                               ->orWhere('role_assignment IS NULL') 
-                                               ->orWhere('role_assignment', '')
-                                               ->orderBy('led_criteria.id', 'ASC')
-                                               ->findAll();
+            ->where('led_criteria.prodi', $selectedProdi)
+            ->orderBy('led_criteria.id', 'ASC')
+            ->findAll();
+            
+        // 3. Filter Kriteria berdasarkan Role
+        $filtered_criteria = [];
+        if (!empty($all_criteria)) {
+            foreach ($all_criteria as $c) {
+                $show = true;
+                if ($is_staf && $currentRole !== 'spm') {
+                    if ($c['role_assignment'] !== $currentRole && $c['role_assignment'] !== 'all') {
+                        $show = false;
+                    }
+                } elseif ($is_kabag) {
+                    $targetRole = str_replace('kabag_', '', $currentRole);
+                    if ($c['role_assignment'] !== $targetRole && $c['role_assignment'] !== 'all') {
+                        $show = false;
+                    }
+                }
+                if ($show) {
+                    $filtered_criteria[] = $c;
+                }
+            }
         }
 
         $submissions = $submissionModel
@@ -87,11 +100,15 @@ class EccController extends BaseController
 
         $data = [
             'page_title' => 'Laporan Evaluasi Diri (LED)',
-            'all_criteria' => $all_criteria_raw,
+            'all_criteria' => $all_criteria,
+            'filtered_criteria' => $filtered_criteria,
             'submitted_data' => $submitted_data,
             'selectedTahun' => $selectedTahun,
             'selectedProdi' => $selectedProdi,
-            'currentRole' => $role,
+            'currentRole' => $currentRole,
+            'is_staf' => $is_staf,
+            'is_kabag' => $is_kabag,
+            'is_wadir' => $is_wadir,
             'prodiList' => config('Simonik')->prodiList,
         ];
 

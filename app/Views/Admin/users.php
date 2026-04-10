@@ -1,5 +1,7 @@
 <?= $this->extend('layouts/main') ?>
 
+<?= $this->section('title') ?><?= esc($title ?? 'Kelola Pengguna') ?><?= $this->endSection() ?>
+
 <?= $this->section('content') ?>
 <div class="container-fluid">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -7,6 +9,9 @@
         
         <div class="btn-toolbar mb-2 mb-md-0">
             <div class="btn-group me-2">
+                <button type="button" class="btn btn-sm btn-outline-info" id="batchEditBtn" title="Ubah atasan banyak pengguna sekaligus">
+                    <i class="bi bi-people-fill"></i> Batch Edit Atasan
+                </button>
                 <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#importModal" title="Impor banyak pengguna dari file CSV">
                     <i class="bi bi-upload"></i> Import
                 </button>
@@ -20,6 +25,29 @@
         </div>
     </div>
 
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="<?= site_url('admin/users') ?>" method="GET" class="row g-3 align-items-end">
+                <div class="col-md-6">
+                    <label for="search" class="form-label fw-bold">Cari Pengguna</label>
+                    <input type="text" name="search" id="search" class="form-control" placeholder="Cari berdasarkan nama..." value="<?= esc($search ?? '') ?>">
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Cari
+                    </button>
+                </div>
+                <div class="col-md-3">
+                    <?php if (!empty($search) || (!empty($sortBy) && $sortBy !== 'nama_lengkap') || (!empty($sortOrder) && $sortOrder !== 'asc')): ?>
+                        <a href="<?= site_url('admin/users') ?>" class="btn btn-outline-secondary w-100">
+                            <i class="bi bi-arrow-counterclockwise"></i> Reset Filter
+                        </a>
+                    <?php endif; ?>
+                </div>
+            </form>
+        </div>
+    </div>
+
 <!-- Letakkan kode Modal ini di bagian bawah file view -->
 <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -28,7 +56,7 @@
                 <h5 class="modal-title" id="importModalLabel">Import Pengguna dari CSV</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="<?= site_url('admin/users/import') ?>" method="post" enctype="multipart/form-data">
+            <form action="<?= site_url('admin/users/import') ?>" method="post" enctype="multipart/form-data" autocomplete="off">
                 <?= csrf_field() ?>
                 <div class="modal-body">
                     <p>
@@ -44,6 +72,39 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary">Mulai Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Batch Edit Atasan -->
+<div class="modal fade" id="batchEditModal" tabindex="-1" aria-labelledby="batchEditModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="batchEditModalLabel">Batch Edit Atasan Langsung</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="<?= site_url('admin/users/batch_update') ?>" method="post" autocomplete="off">
+                <?= csrf_field() ?>
+                <input type="hidden" name="user_ids" id="batchUserIds">
+                <div class="modal-body">
+                    <p>Anda akan mengubah atasan untuk <strong id="batchEditCount">0</strong> pengguna terpilih.</p>
+                    <div class="mb-3">
+                        <label for="atasan_id_batch" class="form-label fw-bold">Pilih Atasan Langsung Baru</label>
+                        <select name="atasan_id" id="atasan_id_batch" class="form-select">
+                            <option value="">-- Hapus Atasan (Tidak Memiliki Atasan) --</option>
+                            <?php foreach ($potential_bosses as $boss): ?>
+                                <option value="<?= $boss['id'] ?>"><?= esc($boss['nama_lengkap']) ?> - <?= esc($boss['jabatan'] ?? 'Tanpa Jabatan') ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <div class="form-text">Semua pengguna yang dipilih akan memiliki atasan yang sama setelah disimpan.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Simpan Perubahan</button>
                 </div>
             </form>
         </div>
@@ -78,17 +139,52 @@
                 <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
                     <thead class="table-light">
                         <tr>
-                            <th width="5%">No</th>
-                            <th>Nama Lengkap</th>
-                            <th>Jabatan</th>
-                            <th>Role</th>
+                            <th width="3%"><input class="form-check-input" type="checkbox" id="selectAll" title="Pilih semua"></th>
+                            <th width="5%">No</th> 
+                            <th>
+                                <a href="<?= site_url('admin/users?search=' . esc($search ?? '') . '&sort_by=nama_lengkap&sort_order=' . (($sortBy === 'nama_lengkap' && $sortOrder === 'asc') ? 'desc' : 'asc')) ?>" class="text-decoration-none text-dark">
+                                    Nama Lengkap
+                                    <?php if ($sortBy === 'nama_lengkap'): ?>
+                                        <i class="bi bi-arrow-<?= ($sortOrder === 'asc') ? 'up' : 'down' ?>"></i>
+                                    <?php endif; ?>
+                                </a>
+                            </th>
+                            <th>
+                                <a href="<?= site_url('admin/users?search=' . esc($search ?? '') . '&sort_by=jabatan&sort_order=' . (($sortBy === 'jabatan' && $sortOrder === 'asc') ? 'desc' : 'asc')) ?>" class="text-decoration-none text-dark">
+                                    Jabatan
+                                    <?php if ($sortBy === 'jabatan'): ?>
+                                        <i class="bi bi-arrow-<?= ($sortOrder === 'asc') ? 'up' : 'down' ?>"></i>
+                                    <?php endif; ?>
+                                </a>
+                            </th>
+                            <th>
+                                <a href="<?= site_url('admin/users?search=' . esc($search ?? '') . '&sort_by=role&sort_order=' . (($sortBy === 'role' && $sortOrder === 'asc') ? 'desc' : 'asc')) ?>" class="text-decoration-none text-dark">
+                                    Role
+                                    <?php if ($sortBy === 'role'): ?>
+                                        <i class="bi bi-arrow-<?= ($sortOrder === 'asc') ? 'up' : 'down' ?>"></i>
+                                    <?php endif; ?>
+                                </a>
+                            </th>
+                            <th>Unit Kabag</th>
                             <th class="bg-info text-white">Atasan Langsung</th>
                             <th width="15%">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php $i = 1; foreach ($users as $user): ?>
+                        <?php 
+                        $i = 1; 
+                        // Jika ada pagination, sesuaikan nomor urut
+                        // Untuk saat ini, kita asumsikan tidak ada pagination atau dimulai dari 1
+                        // Jika pagination diimplementasikan, Anda bisa menggunakan:
+                        // $currentPage = $pager->getCurrentPage();
+                        // $perPage = $pager->getPerPage();
+                        // $i = ($currentPage - 1) * $perPage + 1;
+                        
+                        foreach ($users as $user): ?>
                         <tr>
+                            <td class="text-center">
+                                <input class="form-check-input user-checkbox" type="checkbox" value="<?= $user['id'] ?>" aria-label="Pilih pengguna <?= esc($user['nama_lengkap']) ?>">
+                            </td>
                             <td><?= $i++ ?></td>
                             <td>
                                 <strong><?= esc($user['nama_lengkap']) ?></strong><br>
@@ -96,6 +192,13 @@
                             </td>
                             <td><?= esc($user['jabatan'] ?? '-') ?></td>
                             <td><span class="badge bg-secondary"><?= esc($user['role']) ?></span></td>
+                            <td>
+                                <?php if (!empty($user['unit_kabag'])): ?>
+                                    <span class="badge bg-primary"><?= esc($user['unit_kabag']) ?></span>
+                                <?php else: ?>
+                                    <span class="text-muted" style="font-size: 0.85em;">-</span>
+                                <?php endif; ?>
+                            </td>
                             
                             <td>
                                 <?php if($user['nama_atasan'] != '-'): ?>
@@ -121,4 +224,44 @@
         </div>
     </div>
 </div>
+<?= $this->endSection() ?>
+
+<?= $this->section('scripts') ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const userCheckboxes = document.querySelectorAll('.user-checkbox');
+    const batchEditBtn = document.getElementById('batchEditBtn');
+    const batchEditModalEl = document.getElementById('batchEditModal');
+    
+    if (!batchEditModalEl) return; // Guard clause
+
+    const batchEditModal = new bootstrap.Modal(batchEditModalEl);
+    const batchUserIdsInput = document.getElementById('batchUserIds');
+    const batchEditCountSpan = document.getElementById('batchEditCount');
+
+    // Fungsi untuk select/deselect all
+    selectAllCheckbox.addEventListener('change', function() {
+        userCheckboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+    });
+
+    // Fungsi untuk tombol batch edit
+    batchEditBtn.addEventListener('click', function() {
+        const selectedIds = Array.from(userCheckboxes)
+                                 .filter(checkbox => checkbox.checked)
+                                 .map(checkbox => checkbox.value);
+
+        if (selectedIds.length === 0) {
+            alert('Peringatan: Silakan pilih minimal satu pengguna untuk diedit.');
+            return;
+        }
+
+        batchUserIdsInput.value = selectedIds.join(',');
+        batchEditCountSpan.textContent = selectedIds.length;
+        batchEditModal.show();
+    });
+});
+</script>
 <?= $this->endSection() ?>

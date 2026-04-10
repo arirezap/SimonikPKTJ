@@ -66,14 +66,22 @@ class Profile extends BaseController
 
         // 4. Handle Upload Foto
         $fileFoto = $this->request->getFile('foto');
+        $user = $this->userModel->find($userId); // Ambil data user saat ini untuk cek foto lama
+
         if ($fileFoto && $fileFoto->isValid() && !$fileFoto->hasMoved()) {
             // Generate nama random
             $namaFoto = $fileFoto->getRandomName();
-            // Pindahkan file ke folder public/assets/uploads/profile
-            $fileFoto->move('assets/uploads/profile', $namaFoto);
             
-            // Hapus foto lama jika bukan default (Opsional)
-            // ...
+            // Hapus foto lama jika ada dan bukan file default
+            if (!empty($user['foto']) && file_exists('assets/uploads/profile/' . $user['foto'])) {
+                // Anda bisa menambahkan pengecualian agar file 'default.png' tidak terhapus
+                if ($user['foto'] != 'default.png') {
+                    unlink('assets/uploads/profile/' . $user['foto']);
+                }
+            }
+
+            // Pindahkan file baru ke folder public/assets/uploads/profile
+            $fileFoto->move('assets/uploads/profile', $namaFoto);
 
             $data['foto'] = $namaFoto;
         }
@@ -81,11 +89,15 @@ class Profile extends BaseController
         // 5. Eksekusi Update ke Database
         $this->userModel->update($userId, $data);
 
-        // 6. Update Session Data (Agar nama di sidebar langsung berubah)
-        session()->set([
+        // 6. Update Session Data (Agar nama & FOTO di header langsung berubah)
+        $sessionData = [
             'nama' => $data['nama_lengkap'],
             'unit' => $data['unit']
-        ]);
+        ];
+        if (isset($data['foto'])) {
+            $sessionData['foto'] = $data['foto'];
+        }
+        session()->set($sessionData);
 
         return redirect()->to('profile')->with('success', 'Profil berhasil diperbarui.');
     }

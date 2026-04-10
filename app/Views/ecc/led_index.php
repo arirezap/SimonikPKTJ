@@ -88,13 +88,6 @@
     </div>
 </div>
 
-
-<?php 
-    $is_staf = in_array($currentRole, ['aak', 'kuk', 'spm']); 
-    $is_kabag = in_array($currentRole, ['kabag_aak', 'kabag_kuk']);
-    $is_wadir = in_array($currentRole, ['admin', 'manajemen']);
-?>
-
 <?php if (!empty($selectedProdi) && !empty($selectedTahun)): ?>
     <form action="<?= site_url('ecc/led/store') ?>" method="POST" id="ledForm">
         <div class="card">
@@ -118,8 +111,8 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if (!empty($all_criteria)): $no = 1; ?>
-                                <?php foreach ($all_criteria as $criteria): 
+                            <?php if (!empty($filtered_criteria)): $no = 1; ?>
+                                <?php foreach ($filtered_criteria as $criteria): 
                                     $data = $submitted_data[$criteria['id']] ?? null;
                                     $link = $data['catatan'] ?? '';
                                     $kabag_approved = $data['kabag_approved'] ?? 0;
@@ -244,10 +237,10 @@
                             <?php else: ?>
                                 <tr>
                                     <td colspan="6" class="text-center p-4">
-                                        <?php if ($is_staf): ?>
-                                            Belum ada Kriteria LED yang ditugaskan untuk Anda pada prodi ini.
-                                        <?php else: ?>
+                                        <?php if (empty($all_criteria)): ?>
                                             Belum ada data Master Kriteria LED untuk prodi ini.
+                                        <?php else: ?>
+                                            Belum ada Kriteria LED yang ditugaskan untuk Anda (sebagai <?= esc(strtoupper($currentRole)) ?>) pada prodi ini.
                                         <?php endif; ?>
                                     </td>
                                 </tr>
@@ -262,7 +255,7 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('footer_bar') ?>
-    <?php if (!empty($all_criteria) && ($is_staf || $is_kabag || $is_wadir)): ?>
+    <?php if (!empty($filtered_criteria) && ($is_staf || $is_kabag || $is_wadir)): ?>
     <div class="sticky-footer-bar">
         <button type="button" id="submitLedForm" class="btn btn-primary"><i class="bi bi-save me-2"></i> Simpan Perubahan</button>
     </div>

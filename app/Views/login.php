@@ -27,19 +27,6 @@
                 
                 <p class="text-black fw-bold mb-4">EVIDENCE COMMAND CENTER</p>
 
-                <?php if (session()->getFlashdata('success')): ?>
-                    <div class="alert alert-success d-flex align-items-center" role="alert">
-                        <i class="bi bi-check-circle-fill me-2"></i>
-                        <div><?= esc(session()->getFlashdata('success')) ?></div>
-                    </div>
-                <?php endif; ?>
-                <?php if (session()->getFlashdata('error')): ?>
-                    <div class="alert alert-danger d-flex align-items-center" role="alert">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                        <div><?= esc(session()->getFlashdata('error')) ?></div>
-                    </div>
-                <?php endif; ?>
-
                 <form action="<?= base_url('login') ?>" method="POST" autocomplete="off" class="w-100">
                     <?= csrf_field() ?>
                     <div class="px-md-3">
@@ -73,6 +60,7 @@
         <p>&copy; <?= date("Y"); ?> Politeknik Keselamatan Transportasi Jalan. Hak Cipta Dilindungi.</p>
     </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const togglePasswordButton = document.getElementById('togglePassword');
@@ -89,6 +77,26 @@
             });
         }
     });
+
+    // Tampilkan Popup SweetAlert Jika Ada Error
+    <?php if (session()->getFlashdata('error')): ?>
+    Swal.fire({
+        icon: 'error',
+        title: 'Login Gagal!',
+        text: '<?= esc(session()->getFlashdata('error')) ?>',
+        confirmButtonColor: '#0d6efd'
+    });
+    <?php endif; ?>
+
+    // Tampilkan Popup SweetAlert Jika Ada Sukses (Misal: setelah logout)
+    <?php if (session()->getFlashdata('success')): ?>
+    Swal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: '<?= esc(session()->getFlashdata('success')) ?>',
+        confirmButtonColor: '#0d6efd'
+    });
+    <?php endif; ?>
 </script>
 
 </body>

@@ -45,6 +45,11 @@ class Auth extends BaseController
             if (!$verify_pass && $pass === $password) {
                 $verify_pass = true; 
             }
+            
+            // Fallback MD5 (untuk data hasil import CSV yang menggunakan md5)
+            if (!$verify_pass && $pass === md5($password)) {
+                $verify_pass = true; 
+            }
 
             if ($verify_pass) {
                 // Simpan Session Lengkap
@@ -71,11 +76,11 @@ class Auth extends BaseController
                 }
                 
             } else {
-                $session->setFlashdata('msg', 'Password Salah');
+                $session->setFlashdata('error', 'Password yang Anda masukkan salah.');
                 return redirect()->to('/login');
             }
         } else {
-            $session->setFlashdata('msg', 'Username tidak ditemukan');
+            $session->setFlashdata('error', 'Username tidak ditemukan di sistem.');
             return redirect()->to('/login');
         }
     }

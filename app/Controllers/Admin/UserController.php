@@ -21,22 +21,48 @@ class UserController extends BaseController
     {
         $data = [
             'title' => 'Kelola Pengguna',
-            'users' => $this->userModel->findAll()
         ];
         
-        // Mapping nama atasan
+        $search = $this->request->getGet('search');
+        $sortBy = $this->request->getGet('sort_by') ?? 'nama_lengkap'; // Default sort by nama_lengkap
+        $sortOrder = $this->request->getGet('sort_order') ?? 'asc'; // Default sort order ascending
+
+        $query = $this->userModel;
+
+        if ($search) {
+            $query = $query->like('nama_lengkap', $search);
+        }
+
+        $query = $query->orderBy($sortBy, $sortOrder);
+        $data['users'] = $query->findAll();
+        $data['search'] = $search;
+        $data['sortBy'] = $sortBy;
+        $data['sortOrder'] = $sortOrder;
+
+        // Ambil data untuk dropdown atasan di modal batch edit
+        $data['potential_bosses'] = $this->userModel->orderBy('nama_lengkap', 'ASC')->findAll();
+
+        // Buat peta semua pengguna untuk pencarian yang efisien
         $userMap = [];
         foreach($data['users'] as $u) {
-            $userMap[$u['id']] = $u['nama_lengkap'];
+            $userMap[$u['id']] = $u;
         }
         
         foreach($data['users'] as &$u) {
+            // 1. Tentukan Nama Atasan
             $u['nama_atasan'] = ($u['atasan_id'] && isset($userMap[$u['atasan_id']])) 
-                                ? $userMap[$u['atasan_id']] 
+                                ? $userMap[$u['atasan_id']]['nama_lengkap'] 
                                 : '-';
+            
+            // 2. Tentukan Unit Kabag (AAK/KUK) jika rolenya 'user'
+            if ($u['role'] === 'user') {
+                $u['unit_kabag'] = $this->getKabagUnit($u['id'], $userMap);
+            } else {
+                $u['unit_kabag'] = null; // Tidak berlaku untuk non-user
+            }
         }
 
-        return view('Admin/users', $data);
+        return view('admin/users', $data);
     }
 
     // --- FITUR BARU: CREATE ---
@@ -50,7 +76,7 @@ class UserController extends BaseController
             'potential_bosses' => $potentialBosses
         ];
 
-        return view('Admin/user_create', $data);
+        return view('admin/user_create', $data);
     }
 
     public function store()
@@ -107,7 +133,7 @@ class UserController extends BaseController
             'potential_bosses' => $potentialBosses
         ];
 
-        return view('Admin/user_edit', $data);
+        return view('admin/user_edit', $data);
     }
 
     public function update()
@@ -137,11 +163,88 @@ class UserController extends BaseController
 
         return redirect()->to('admin/users')->with('success', 'Data pengguna berhasil diperbarui.');
     }
+
+    public function batch_update()
+    {
+        $userIds = $this->request->getPost('user_ids');
+        $atasanId = $this->request->getPost('atasan_id');
+
+        if (empty($userIds)) {
+            return redirect()->to('admin/users')->with('error', 'Tidak ada pengguna yang dipilih untuk diupdate.');
+        }
+
+        // Konversi string "1,2,3" menjadi array [1, 2, 3]
+        $idArray = explode(',', $userIds);
+
+        // Siapkan data untuk batch update
+        $dataToUpdate = [];
+        foreach ($idArray as $id) {
+            if (is_numeric(trim($id))) {
+                $dataToUpdate[] = [
+                    'id' => (int)trim($id),
+                    'atasan_id' => !empty($atasanId) ? (int)$atasanId : null
+                ];
+            }
+        }
+
+        if (empty($dataToUpdate)) {
+            return redirect()->to('admin/users')->with('error', 'Tidak ada data valid untuk diupdate.');
+        }
+
+        $this->userModel->updateBatch($dataToUpdate, 'id');
+
+        return redirect()->to('admin/users')->with('success', count($dataToUpdate) . ' data pengguna berhasil diperbarui.');
+    }
     
     public function delete($id)
     {
         $this->userModel->delete($id);
         return redirect()->to('admin/users')->with('success', 'User berhasil dihapus');
+    }
+
+    /**
+     * Mencari unit Kabag (AAK/KUK) dari seorang user berdasarkan hierarki atasan.
+     * @param int $userId ID user yang akan dicek
+     * @param array $userMap Peta semua user untuk lookup
+     * @return string|null 'AAK', 'KUK', atau null jika tidak ditemukan
+     */
+    private function getKabagUnit($userId, &$userMap)
+    {
+        if (!isset($userMap[$userId])) {
+            return null;
+        }
+
+        $currentUserId = $userId;
+
+        // Loop untuk menelusuri ke atas, dengan batas 10 level untuk keamanan
+        for ($i = 0; $i < 10; $i++) { 
+            // Cek apakah user saat ini punya atasan
+            if (empty($userMap[$currentUserId]['atasan_id'])) {
+                return null; 
+            }
+
+            $atasanId = $userMap[$currentUserId]['atasan_id'];
+
+            // Cek apakah atasan ada di map
+            if (!isset($userMap[$atasanId])) {
+                return null; // Hierarki terputus
+            }
+
+            $atasan = $userMap[$atasanId];
+
+            // Jika atasan adalah kabag yang dicari, kembalikan unitnya
+            if ($atasan['role'] === 'kabag_aak') {
+                return 'AAK';
+            }
+            if ($atasan['role'] === 'kabag_kuk') {
+                return 'KUK';
+            }
+
+            // Jika bukan, lanjutkan pencarian ke atasan dari atasan
+            $currentUserId = $atasanId;
+        }
+
+        return null; // Tidak ditemukan setelah 10 level
     }
 
     /**

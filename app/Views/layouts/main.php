@@ -52,15 +52,35 @@
                         
                         <div class="vr d-none d-md-block mx-2"></div>
                         
-                        <a href="<?= site_url('profile') ?>" class="text-decoration-none" title="Lihat Profil">
-                            <div class="bg-primary bg-opacity-10 rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                <?php if(session()->get('foto')) : ?>
-                                    <img src="<?= base_url('assets/uploads/profile/' . session()->get('foto')) ?>" class="rounded-circle" style="width: 100%; height: 100%; object-fit: cover;">
-                                <?php else : ?>
-                                    <i class="bi bi-person-fill fs-5 text-primary"></i>
-                                <?php endif; ?>
-                            </div>
-                        </a>
+                        <div class="dropdown">
+                            <a href="#" class="text-decoration-none" data-bs-toggle="dropdown" aria-expanded="false">
+                                <div class="bg-primary bg-opacity-10 rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                    <?php
+                                        $foto_session = session()->get('foto');
+                                        $foto_header_path = 'assets/uploads/profile/' . $foto_session;
+                                        if (!empty($foto_session) && file_exists(FCPATH . $foto_header_path)) :
+                                    ?>
+                                        <img src="<?= base_url($foto_header_path) ?>" class="rounded-circle" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <?php else : // Fallback ke ikon jika tidak ada foto atau file tidak ditemukan ?>
+                                        <i class="bi bi-person-fill fs-5 text-primary"></i>
+                                    <?php endif; ?>
+                                </div>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" style="min-width: 200px;">
+                                <li><h6 class="dropdown-header text-primary"><?= esc(session()->get('nama')) ?></h6></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="<?= site_url('profile') ?>">
+                                        <i class="bi bi-person-circle me-2"></i> Profil Saya
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="<?= site_url('logout') ?>">
+                                        <i class="bi bi-box-arrow-right me-2"></i> Logout
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </header>
