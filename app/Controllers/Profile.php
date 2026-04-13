@@ -38,12 +38,19 @@ class Profile extends BaseController
     {
         $userId = session()->get('id');
         
-        // 1. Validasi Input
-        if (!$this->validate([
+        // 1. Validasi Input Dasar
+        $rules = [
             'nama_lengkap' => 'required',
             'email'        => 'required|valid_email',
-            'foto'         => 'is_image[foto]|mime_in[foto,image/jpg,image/jpeg,image/png]|max_size[foto,2048]',
-        ])) {
+        ];
+
+        // Validasi foto hanya jika pengguna memilih file (tidak kosong)
+        $fileFoto = $this->request->getFile('foto');
+        if ($fileFoto && $fileFoto->getError() !== UPLOAD_ERR_NO_FILE) {
+            $rules['foto'] = 'is_image[foto]|mime_in[foto,image/jpg,image/jpeg,image/png]|max_size[foto,2048]';
+        }
+
+        if (!$this->validate($rules)) {
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
@@ -65,24 +72,26 @@ class Profile extends BaseController
         }
 
         // 4. Handle Upload Foto
-        $fileFoto = $this->request->getFile('foto');
-        $user = $this->userModel->find($userId); // Ambil data user saat ini untuk cek foto lama
+        $user = $this->userModel->find($userId); // Ambil data user saat ini untuk cek foto lama dan role
+        $hapusFoto = $this->request->getPost('hapus_foto');
 
-        if ($fileFoto && $fileFoto->isValid() && !$fileFoto->hasMoved()) {
-            // Generate nama random
+        if ($hapusFoto === '1') {
+            // Hapus foto lama jika ada dan bukan file default
+            if (!empty($user['foto']) && $user['foto'] !== 'default.png' && file_exists('assets/uploads/profile/' . $user['foto'])) {
+                unlink('assets/uploads/profile/' . $user['foto']);
+            }
+            $data['foto'] = null; // Set ke null di DB, akan otomatis pakai default.png
+        } elseif ($fileFoto && $fileFoto->isValid() && !$fileFoto->hasMoved()) {
+            // Jika ada file baru diupload, proses upload
             $namaFoto = $fileFoto->getRandomName();
             
             // Hapus foto lama jika ada dan bukan file default
-            if (!empty($user['foto']) && file_exists('assets/uploads/profile/' . $user['foto'])) {
-                // Anda bisa menambahkan pengecualian agar file 'default.png' tidak terhapus
-                if ($user['foto'] != 'default.png') {
-                    unlink('assets/uploads/profile/' . $user['foto']);
-                }
+            if (!empty($user['foto']) && $user['foto'] !== 'default.png' && file_exists('assets/uploads/profile/' . $user['foto'])) {
+                unlink('assets/uploads/profile/' . $user['foto']);
             }
 
-            // Pindahkan file baru ke folder public/assets/uploads/profile
+            // Pindahkan file baru ke folder
             $fileFoto->move('assets/uploads/profile', $namaFoto);
-
             $data['foto'] = $namaFoto;
         }
 

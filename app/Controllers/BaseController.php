@@ -56,5 +56,48 @@ abstract class BaseController extends Controller
 
         // TAMBAHKAN BARIS INI UNTUK MENGATUR BAHASA KE INDONESIA
         setlocale(LC_TIME, 'id_ID.utf8', 'id_ID', 'Indonesian');
+
+        // --- AUTO LOGIN (REMEMBER ME) ---
+        if (!$this->session->get('isLoggedIn')) {
+            helper('cookie');
+            $rememberToken = get_cookie('remember_me');
+            if ($rememberToken) {
+                $decoded = base64_decode($rememberToken);
+                if (strpos($decoded, '::') !== false) {
+                    list($userId, $hash) = explode('::', $decoded);
+                    $db = \Config\Database::connect();
+                    $user = $db->table('users')->where('id', $userId)->get()->getRowArray();
+                    if ($user) {
+                        $expectedHash = md5($user['id'] . $user['username'] . $user['password']);
+                        if (hash_equals($expectedHash, $hash)) {
+                            $role_aplikasi = $user['role'];
+                            if (strtolower(trim($user['unit'] ?? '')) === 'satuan penjaminan mutu') {
+                                $role_aplikasi = 'spm';
+                            }
+                            $ses_data = [
+                                'id'           => $user['id'],
+                                'username'     => $user['username'],
+                                'nama'         => $user['nama_lengkap'], 
+                                'nip'          => $user['nip'],           
+                                'role'         => $role_aplikasi,          
+                                'unit'         => $user['unit'] ?? '-', 
+                                'jabatan'      => $user['jabatan'] ?? '-',
+                                'pangkat'      => $user['pangkat'] ?? '-',
+                                'foto'         => $user['foto'] ?? null,
+                                'isLoggedIn'   => TRUE
+                            ];
+                            $this->session->set($ses_data);
+                        } else {
+                            delete_cookie('remember_me');
+                        }
+                    } else {
+                        delete_cookie('remember_me');
+                    }
+                } else {
+                    delete_cookie('remember_me');
+                }
+            }
+        }
+        // --------------------------------
     }
 }

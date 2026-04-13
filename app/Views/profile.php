@@ -40,7 +40,7 @@
                             $foto_url = base_url('assets/uploads/profile/default.png');
                         }
                     ?>
-                    <img class="img-profile rounded-circle mb-3" src="<?= $foto_url ?>" style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #e3e6f0;">
+                    <img id="profilePreview" class="img-profile rounded-circle mb-3" src="<?= $foto_url ?>" style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #e3e6f0;">
                     
                     <h5 class="font-weight-bold text-dark mb-1"><?= esc($user['nama_lengkap']) ?></h5>
                     <p class="text-muted mb-1"><?= esc($user['jabatan'] ?? '-') ?></p>
@@ -58,6 +58,7 @@
                     
                     <form action="<?= site_url('profile/update') ?>" method="post" enctype="multipart/form-data">
                         <?= csrf_field() ?>
+                        <input type="hidden" name="hapus_foto" id="hapusFotoFlag" value="0">
 
                         <h6 class="heading-small text-muted mb-4">Informasi User</h6>
                         <div class="row">
@@ -124,8 +125,13 @@
                             <div class="col-lg-6">
                                 <div class="mb-3">
                                     <label class="form-label">Ganti Foto Profil</label>
-                                    <input type="file" name="foto" class="form-control">
-                                    <small class="text-muted">Format: jpg, png. Max: 2MB</small>
+                                    <div class="input-group">
+                                        <input type="file" name="foto" id="fotoInput" class="form-control" accept="image/png, image/jpeg, image/jpg">
+                                        <button class="btn btn-outline-danger" type="button" id="hapusFotoBtn" title="Hapus foto dan kembali ke default">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">Format: JPG, PNG. Max: 2MB.</small>
                                 </div>
                             </div>
                         </div>
@@ -143,4 +149,43 @@
     </div>
 
 </div>
+<?= $this->endSection() ?>
+
+<?= $this->section('scripts') ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fotoInput = document.getElementById('fotoInput');
+    const profilePreview = document.getElementById('profilePreview');
+    const hapusFotoBtn = document.getElementById('hapusFotoBtn');
+    const hapusFotoFlag = document.getElementById('hapusFotoFlag');
+    const defaultFotoUrl = "<?= base_url('assets/uploads/profile/default.png') ?>";
+
+    fotoInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                profilePreview.src = e.target.result; // Tampilkan preview gambar seketika
+            }
+            reader.readAsDataURL(file);
+            // Jika user memilih file, pastikan flag hapus direset
+            hapusFotoFlag.value = '0';
+        }
+    });
+
+    // Event listener untuk tombol hapus foto
+    if (hapusFotoBtn) {
+        hapusFotoBtn.addEventListener('click', function() {
+            if (confirm('Apakah Anda yakin ingin menghapus foto profil?')) {
+                // Set preview ke gambar default
+                profilePreview.src = defaultFotoUrl;
+                // Kosongkan input file agar tidak ada file yang terkirim
+                fotoInput.value = '';
+                // Set flag untuk dikirim ke controller
+                hapusFotoFlag.value = '1';
+            }
+        });
+    }
+});
+</script>
 <?= $this->endSection() ?>

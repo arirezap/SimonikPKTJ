@@ -279,8 +279,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (idx !== null) {
                             if (chart.config.data.labelIds && chart.config.data.labelIds[idx]) {
                                 const labelId = chart.config.data.labelIds[idx];
+                                // SOLUSI: Ubah nama prodi menjadi lowercase dan perbaiki path URL
+                                const prodi = chart.config.data.prodi.toLowerCase();
+                                const tahun = chart.config.data.tahun;
                                 document.body.style.cursor = 'wait'; 
-                                window.location.href = `<?= site_url('ecc/detail') ?>/${labelId}/${chart.config.data.prodi}/${chart.config.data.tahun}`;
+                                window.location.href = `<?= site_url('ecc/detailStandar') ?>/${labelId}/${prodi}/${tahun}`;
                             }
                         }
                     }

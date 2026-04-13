@@ -73,6 +73,18 @@ class Auth extends BaseController
                 ];
                 $session->set($ses_data);
                 
+                // --- FITUR REMEMBER ME ---
+                $remember = $this->request->getVar('remember');
+                if ($remember) {
+                    helper('cookie');
+                    // Buat token: id::md5(id+username+password)
+                    $tokenString = $data['id'] . '::' . md5($data['id'] . $data['username'] . $data['password']);
+                    $token = base64_encode($tokenString);
+                    // Set cookie untuk 30 hari (2592000 detik)
+                    set_cookie('remember_me', $token, 2592000);
+                }
+                // -------------------------
+
                 // Redirect Sesuai Role
                 if ($role_aplikasi === 'admin' || str_contains($role_aplikasi, 'kabag')) {
                     return redirect()->to('/admin/dashboard');
@@ -94,6 +106,8 @@ class Auth extends BaseController
     public function logout()
     {
         session()->destroy();
+        helper('cookie');
+        delete_cookie('remember_me');
         return redirect()->to('/login');
     }
 }
