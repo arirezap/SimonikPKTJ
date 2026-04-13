@@ -55,9 +55,9 @@ class EccController extends BaseController
         $currentRole = session()->get('role');
 
         // 1. Definisikan Role Flags
-        $is_staf     = in_array($currentRole, ['aak', 'kuk', 'spm']); 
+        $is_staf     = in_array($currentRole, ['aak', 'kuk', 'user']); 
         $is_kabag    = in_array($currentRole, ['kabag_aak', 'kabag_kuk']);
-        $is_wadir    = in_array($currentRole, ['admin', 'manajemen']);
+        $is_wadir    = in_array($currentRole, ['admin', 'manajemen', 'direktur', 'spm']);
 
         // 2. Ambil Semua Kriteria (Master) untuk prodi ini
         $all_criteria = $criteriaModel
@@ -160,7 +160,7 @@ class EccController extends BaseController
                     'led_criteria_id' => $kriteria_id,
                 ];
 
-                if (in_array($role, ['admin', 'manajemen'])) { // Wadir / Admin
+                if (in_array($role, ['admin', 'manajemen', 'direktur', 'spm'])) { // Wadir / Admin / SPM
                     if(isset($statuses[$kriteria_id])) {
                         $data['status'] = $statuses[$kriteria_id];
                     }
@@ -216,7 +216,7 @@ class EccController extends BaseController
         }
 
         $role = strtolower(session()->get('role')); // Normalisasi role ke huruf kecil
-        $allowed_roles = ['admin', 'manajemen', 'kabag_aak', 'kabag_kuk'];
+        $allowed_roles = ['admin', 'manajemen', 'direktur', 'kabag_aak', 'kabag_kuk', 'spm'];
 
         if (!in_array($role, $allowed_roles)) {
             return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk menghapus data ini.');

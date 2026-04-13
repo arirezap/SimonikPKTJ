@@ -52,6 +52,6 @@ class KontrakController extends BaseController
             'tanggal' => $tanggalIndo 
         ];
 
-        return view('User/kontrak/index', $data);
+        return view('user/kontrak/index', $data);
     }
 }

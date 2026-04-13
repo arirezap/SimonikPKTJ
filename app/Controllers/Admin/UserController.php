@@ -99,13 +99,19 @@ class UserController extends BaseController
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
+        $unit = $this->request->getPost('unit');
+        $role = $this->request->getPost('role');
+        if (strtolower(trim($unit ?? '')) === 'satuan penjaminan mutu') {
+            $role = 'spm';
+        }
+
         $data = [
             'nama_lengkap' => $this->request->getPost('nama_lengkap'),
             'nip'          => $this->request->getPost('nip'),
             'jabatan'      => $this->request->getPost('jabatan'),
             'pangkat'      => $this->request->getPost('pangkat'),
-            'unit'         => $this->request->getPost('unit'),
-            'role'         => $this->request->getPost('role'),
+            'unit'         => $unit,
+            'role'         => $role,
             'email'        => $this->request->getPost('email'),
             'username'     => $this->request->getPost('username'),
             'password'     => password_hash($this->request->getPost('password'), PASSWORD_DEFAULT),
@@ -148,14 +154,20 @@ class UserController extends BaseController
     public function update()
     {
         $id = $this->request->getPost('id');
+
+        $unit = $this->request->getPost('unit');
+        $role = $this->request->getPost('role');
+        if (strtolower(trim($unit ?? '')) === 'satuan penjaminan mutu') {
+            $role = 'spm';
+        }
         
         $data = [
             'nama_lengkap' => $this->request->getPost('nama_lengkap'),
             'nip'          => $this->request->getPost('nip'),
             'jabatan'      => $this->request->getPost('jabatan'),
             'pangkat'      => $this->request->getPost('pangkat'),
-            'unit'         => $this->request->getPost('unit'),
-            'role'         => $this->request->getPost('role'),
+            'unit'         => $unit,
+            'role'         => $role,
             'email'        => $this->request->getPost('email'),
             'username'     => $this->request->getPost('username'),
         ];
@@ -189,6 +201,11 @@ class UserController extends BaseController
         }
 
         $updateData = ['unit' => $unit];
+
+        // Jika unit diubah menjadi Satuan Penjaminan Mutu, otomatis ubah role
+        if (strtolower(trim($unit ?? '')) === 'satuan penjaminan mutu') {
+            $updateData['role'] = 'spm';
+        }
 
         if ($this->userModel->update($userId, $updateData)) {
             // SOLUSI: Sertakan token CSRF yang baru di dalam response
@@ -321,6 +338,11 @@ class UserController extends BaseController
                     continue;
                 }
 
+                $unit = trim($row[8] ?? '');
+                if (strtolower($unit) === 'satuan penjaminan mutu') {
+                    $role = 'spm';
+                }
+
                 $dataToInsert[] = [
                     'username'     => $username,
                     'email'        => $email,
@@ -331,7 +353,7 @@ class UserController extends BaseController
                     'nip'          => trim($row[5] ?? ''),
                     'jabatan'      => trim($row[6] ?? ''),
                     'pangkat'      => trim($row[7] ?? ''),
-                    'unit'         => trim($row[8] ?? ''),
+                    'unit'         => $unit,
                     'atasan_id'    => !empty(trim($row[9] ?? '')) ? (int)trim($row[9]) : null,
                 ];
 

@@ -42,7 +42,6 @@ $routes->get('logout', 'Auth::logout');
 // Profile Routes
 $routes->get('profile', 'Profile::index');
 $routes->post('profile/update', 'Profile::update');
-$routes->get('user/pakta', 'User\PaktaController::index');
 // Admin Routes (Group)
 $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     $routes->get('dashboard', 'Admin\Dashboard::index');

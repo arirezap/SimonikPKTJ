@@ -639,7 +639,7 @@ class MasterDataController extends BaseController
             'currentRole'       => $currentRole,
             'is_staf'           => in_array($currentRole, ['aak', 'kuk', 'user']),
             'is_kabag'          => in_array($currentRole, ['kabag_aak', 'kabag_kuk']),
-            'is_wadir'          => in_array($currentRole, ['manajemen', 'direktur']),
+            'is_wadir'          => in_array($currentRole, ['manajemen', 'direktur', 'admin', 'spm']),
         ];
 
         return view('ecc/led_index', $data);

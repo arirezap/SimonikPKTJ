@@ -77,11 +77,11 @@
             <h5 class="mb-3">Input Skor untuk: <span class="text-primary"><?= esc($selectedProdi) ?> - <?= esc($selectedTahun) ?></span></h5>
             
             <div class="table-responsive">
-                <table class="table align-middle">
+                <table class="table table-bordered table-hover align-middle" style="min-width: 1100px;">
                     <thead class="table-light">
                         <tr>
                             <th style="width: 5%;" class="text-center">No</th>
-                            <th>Kriteria/Elemen/Indikator</th>
+                            <th style="min-width: 350px;">Kriteria/Elemen/Indikator</th>
                             <th style="width: 15%;">Standar</th>
                             <th style="width: 20%;" class="text-center">Bukti & Status</th>
                             <th style="width: 12%;" class="text-center">Skor (0-100)</th>
@@ -108,16 +108,23 @@
                                     <div class="d-flex justify-content-around small">
                                         <span>Kabag: 
                                             <?php if ($submission_data['kabag_approved'] ?? 0 == 1): ?>
-                                                <span class="badge bg-success">OK</span>
+                                                <span class="badge bg-success">Sesuai</span>
                                             <?php else: ?>
-                                                <span class="badge bg-warning text-dark">Pending</span>
+                                                <span class="badge bg-warning text-dark">Belum Sesuai</span>
                                             <?php endif; ?>
                                         </span>
-                                        <span>Wadir: <span class="badge bg-info text-dark"><?= esc($submission_data['status'] ?? 'N/A') ?></span></span>
+                                        <span>Wadir: <span class="badge bg-info text-dark"><?= esc($submission_data['status'] ?? 'Belum Dinilai') ?></span></span>
                                     </div>
                                 </td>
+                                <?php
+                                    // Cek apakah bukti sudah ada DAN disetujui Kabag DAN sudah direview Wadir
+                                    $is_approved = (!empty($submission_data['catatan']) && ($submission_data['kabag_approved'] ?? 0) == 1 && !empty($submission_data['status']));
+                                ?>
                                 <td>
-                                    <input type="number" min="0" max="100" name="skor[<?= $criteria['id'] ?>]" class="form-control text-center" value="<?= esc($score_data['skor'] ?? '0') ?>">
+                                    <input type="number" min="0" max="100" name="skor[<?= $criteria['id'] ?>]" class="form-control text-center <?= !$is_approved ? 'bg-light' : '' ?>" value="<?= esc($score_data['skor'] ?? '0') ?>" <?= !$is_approved ? 'readonly' : '' ?>>
+                                    <?php if (!$is_approved): ?>
+                                        <div class="text-danger mt-1 text-center" style="font-size: 0.75rem;"><i class="bi bi-lock-fill"></i> Belum Disetujui</div>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                             <?php endforeach; ?>

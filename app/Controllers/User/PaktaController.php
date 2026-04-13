@@ -46,6 +46,6 @@ class PaktaController extends BaseController
             'tanggal'  => $tanggalIndo 
         ];
 
-        return view('User/pakta/index', $data);
+        return view('user/pakta/index', $data);
     }
 }

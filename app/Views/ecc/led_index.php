@@ -99,15 +99,15 @@
                 <h5 class="mb-3">Checklist untuk: <span class="text-primary"><?= esc($selectedProdi) ?> - <?= esc($selectedTahun) ?></span></h5>
                 
                 <div class="table-responsive">
-                    <table class="table align-middle" style="min-width: 1200px;">
+                    <table class="table table-bordered table-hover align-middle" style="min-width: 1300px;">
                         <thead class="table-light">
                             <tr>
                                 <th style="width: 5%;" class="text-center">No</th>
-                                <th>Kriteria/Elemen/Indikator</th>
-                                <th style="width: 20%;" class="text-center">Link Lampiran (Staf)</th>
-                                <th style="width: 25%;" class="text-center">Catatan Review (Kabag/Wadir)</th>
+                                <th style="min-width: 350px;">Kriteria/Elemen/Indikator</th>
+                                <th style="width: 15%;" class="text-center">Link Lampiran (Staf)</th>
+                                <th style="min-width: 250px;">Catatan Review (Kabag/Wadir)</th>
                                 <th style="width: 12%;" class="text-center">Approve Kabag</th>
-                                <th style="width: 12%;" class="text-center">Status (Wadir)</th>
+                                <th style="width: 15%;" class="text-center">Status (Wadir)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -135,16 +135,16 @@
                                     </td>
                                     <td class="text-center">
                                         <?php if($is_staf): ?>
-                                            <textarea name="catatan[<?= $criteria['id'] ?>]" class="form-control form-select-sm" rows="2" placeholder="Masukkan link Google Drive..."><?= esc($link) ?></textarea>
+                                            <textarea name="catatan[<?= $criteria['id'] ?>]" class="form-control form-control-sm" rows="2" placeholder="Masukkan link Google Drive..."><?= esc($link) ?></textarea>
                                         <?php else: ?>
                                             <?php if (!empty($link)): ?>
                                                 <div class="d-flex flex-column align-items-center gap-1">
-                                                    <a href="<?= esc($link, 'attr') ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm w-100 mb-1">
+                                                    <a href="<?= esc($link, 'attr') ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm w-100 mb-1 text-nowrap">
                                                         <i class="bi bi-link-45deg"></i> Lihat Bukti
                                                     </a>
                                                     
                                                     <?php if (($is_kabag || $is_wadir) && isset($data['id'])): ?>
-                                                        <button type="button" class="btn btn-outline-danger btn-sm w-100" 
+                                                        <button type="button" class="btn btn-outline-danger btn-sm w-100 text-nowrap" 
                                                                 onclick="if(confirm('Yakin ingin menghapus link ini? \nStatus persetujuan Kabag dan Wadir akan di-reset.')) { window.location.href='<?= site_url('ecc/deleteLedLink/' . $data['id']) ?>'; }">
                                                             <i class="bi bi-trash"></i> Hapus Link
                                                         </button>
@@ -203,32 +203,32 @@
                                     <td class="text-center">
                                         <?php if($is_kabag): ?>
                                             <select name="kabag_approved[<?= $criteria['id'] ?>]" class="form-select form-select-sm" <?= (empty($link)) ? 'disabled' : '' ?>>
-                                                <option value="0" <?= ($kabag_approved == 0) ? 'selected' : '' ?>>Pending</option>
-                                                <option value="1" <?= ($kabag_approved == 1) ? 'selected' : '' ?>>Approved</option>
+                                                <option value="0" <?= ($kabag_approved == 0) ? 'selected' : '' ?>>Belum Sesuai / Pending</option>
+                                                <option value="1" <?= ($kabag_approved == 1) ? 'selected' : '' ?>>Sesuai</option>
                                             </select>
                                             <?php if(empty($link)): ?><small class="text-muted">(Link kosong)</small><?php endif; ?>
                                         <?php else: ?>
                                             <?php if ($kabag_approved == 1): ?>
-                                                <span class="badge bg-success">Approved</span>
+                                                <span class="badge bg-success">Sesuai</span>
                                             <?php else: ?>
-                                                <span class="badge bg-warning text-dark">Pending</span>
+                                                <span class="badge bg-warning text-dark">Belum Sesuai</span>
                                             <?php endif; ?>
                                         <?php endif; ?>
                                     </td>
                                     <td class="text-center">
                                         <?php if($is_wadir): ?>
                                             <select name="status[<?= $criteria['id'] ?>]" class="form-select form-select-sm" <?= ($kabag_approved == 0) ? 'disabled' : '' ?>>
-                                                <option value="" <?= ($status == '') ? 'selected' : '' ?>>-- Pilih --</option>
-                                                <option value="Ada" <?= ($status == 'Ada') ? 'selected' : '' ?>>Ada</option>
-                                                <option value="Tidak Ada" <?= ($status == 'Tidak Ada') ? 'selected' : '' ?>>Tidak Ada</option>
-                                                <option value="Terlampir" <?= ($status == 'Terlampir') ? 'selected' : '' ?>>Terlampir</option>
+                                                <option value="" <?= ($status == '') ? 'selected' : '' ?>>-- Pilih Status --</option>
+                                                <option value="Memenuhi Standar" <?= ($status == 'Memenuhi Standar') ? 'selected' : '' ?>>Memenuhi Standar</option>
+                                                <option value="Tidak Memenuhi Standar" <?= ($status == 'Tidak Memenuhi Standar') ? 'selected' : '' ?>>Tidak Memenuhi Standar</option>
+                                                <option value="Perlu Revisi" <?= ($status == 'Perlu Revisi') ? 'selected' : '' ?>>Perlu Revisi</option>
                                             </select>
                                             <?php if($kabag_approved == 0): ?><small class="text-muted">(Tunggu Kabag)</small><?php endif; ?>
                                         <?php else: ?>
                                             <?php if (!empty($status)): ?>
                                                 <span class="badge bg-primary"><?= esc($status) ?></span>
                                             <?php else: ?>
-                                                <span class="text-muted small"><em>(Belum diisi)</em></span>
+                                                <span class="text-muted small"><em>(Belum Dinilai)</em></span>
                                             <?php endif; ?>
                                         <?php endif; ?>
                                     </td>

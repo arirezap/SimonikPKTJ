@@ -89,10 +89,17 @@ class Profile extends BaseController
         // 5. Eksekusi Update ke Database
         $this->userModel->update($userId, $data);
 
-        // 6. Update Session Data (Agar nama & FOTO di header langsung berubah)
+        // Otomatis jadikan role 'spm' jika unit kerjanya diubah ke Satuan Penjaminan Mutu
+        $role_aplikasi = $user['role'];
+        if (strtolower(trim($data['unit'] ?? '')) === 'satuan penjaminan mutu') {
+            $role_aplikasi = 'spm';
+        }
+
+        // 6. Update Session Data (Agar nama, unit, role & FOTO di header langsung berubah)
         $sessionData = [
             'nama' => $data['nama_lengkap'],
-            'unit' => $data['unit']
+            'unit' => $data['unit'],
+            'role' => $role_aplikasi
         ];
         if (isset($data['foto'])) {
             $sessionData['foto'] = $data['foto'];

@@ -53,15 +53,16 @@
     </div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover align-middle">
+            <table class="table table-bordered table-hover align-middle" style="min-width: 1200px;">
                 <thead class="table-light">
                     <tr>
-                        <th style="width: 5%;">No.</th>
-                        <th>Nama Kriteria/Elemen/Indikator</th>
-                        <th class="text-center">Link Bukti</th>
-                        <th class="text-center">Status Kabag</th>
-                        <th class="text-center">Status Wadir</th>
-                        <th class="text-center">Skor</th>
+                        <th style="width: 5%;" class="text-center">No.</th>
+                        <th style="min-width: 350px;">Nama Kriteria/Elemen/Indikator</th>
+                        <th style="width: 12%;" class="text-center">Link Bukti</th>
+                        <th style="min-width: 250px;">Catatan Review</th>
+                        <th style="width: 12%;" class="text-center">Status Kabag</th>
+                        <th style="width: 15%;" class="text-center">Status Wadir</th>
+                        <th style="width: 8%;" class="text-center">Skor</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -72,25 +73,36 @@
                                 <td><?= nl2br(esc($item['nama_kriteria'])) ?></td>
                                 <td class="text-center">
                                     <?php if (!empty($item['catatan'])): ?>
-                                        <a href="<?= esc($item['catatan'], 'attr') ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
-                                            <i class="bi bi-link-45deg"></i> Lihat
+                                        <a href="<?= esc($item['catatan'], 'attr') ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm text-nowrap">
+                                            <i class="bi bi-link-45deg"></i> Lihat Bukti
                                         </a>
                                     <?php else: ?>
                                         <span class="text-muted small"><em>(Kosong)</em></span>
                                     <?php endif; ?>
                                 </td>
+                                <td style="font-size: 0.85rem;">
+                                    <?php if (!empty($item['catatan_kabag'])): ?>
+                                        <div class="mb-1"><strong>Kabag:</strong> <span class="text-muted"><?= nl2br(esc($item['catatan_kabag'])) ?></span></div>
+                                    <?php endif; ?>
+                                    <?php if (!empty($item['catatan_wadir'])): ?>
+                                        <div><strong>Wadir:</strong> <span class="text-muted"><?= nl2br(esc($item['catatan_wadir'])) ?></span></div>
+                                    <?php endif; ?>
+                                    <?php if (empty($item['catatan_kabag']) && empty($item['catatan_wadir'])): ?>
+                                        <span class="text-muted small"><em>(Tidak ada catatan)</em></span>
+                                    <?php endif; ?>
+                                </td>
                                 <td class="text-center">
                                     <?php if ($item['kabag_approved'] == 1): ?>
-                                        <span class="badge bg-success">Approved</span>
+                                        <span class="badge bg-success">Sesuai</span>
                                     <?php else: ?>
-                                        <span class="badge bg-warning text-dark">Pending</span>
+                                        <span class="badge bg-warning text-dark">Belum Sesuai</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="text-center">
                                     <?php if (!empty($item['status'])): ?>
                                         <span class="badge bg-primary"><?= esc($item['status']) ?></span>
                                     <?php else: ?>
-                                        <span class="text-muted small"><em>(N/A)</em></span>
+                                        <span class="text-muted small"><em>(Belum Dinilai)</em></span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="text-center fw-bold fs-5">
@@ -106,7 +118,7 @@
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="6" class="text-center p-4">
+                            <td colspan="7" class="text-center p-4">
                                 Tidak ada data kriteria yang ditemukan untuk standar, prodi, dan tahun ini.
                             </td>
                         </tr>

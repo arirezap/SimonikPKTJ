@@ -52,13 +52,19 @@ class Auth extends BaseController
             }
 
             if ($verify_pass) {
+                // Otomatis jadikan role 'spm' jika unit kerjanya adalah Satuan Penjaminan Mutu
+                $role_aplikasi = $data['role'];
+                if (strtolower(trim($data['unit'] ?? '')) === 'satuan penjaminan mutu') {
+                    $role_aplikasi = 'spm';
+                }
+
                 // Simpan Session Lengkap
                 $ses_data = [
                     'id'           => $data['id'],
                     'username'     => $data['username'],
                     'nama'         => $data['nama_lengkap'], 
                     'nip'          => $data['nip'],           
-                    'role'         => $data['role'],          
+                    'role'         => $role_aplikasi,          
                     'unit'         => $data['unit'] ?? '-', 
                     'jabatan'      => $data['jabatan'] ?? '-',
                     'pangkat'      => $data['pangkat'] ?? '-',
@@ -68,7 +74,7 @@ class Auth extends BaseController
                 $session->set($ses_data);
                 
                 // Redirect Sesuai Role
-                if ($data['role'] === 'admin' || str_contains($data['role'], 'kabag')) {
+                if ($role_aplikasi === 'admin' || str_contains($role_aplikasi, 'kabag')) {
                     return redirect()->to('/admin/dashboard');
                 } else {
                     // Direktur & Pegawai masuk sini

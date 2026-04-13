@@ -30,7 +30,7 @@ class Skp extends BaseController
                 ->findAll()
         ];
 
-        return view('User/skp/index', $data);
+        return view('user/skp/index', $data);
     }
 
     public function store()
@@ -132,7 +132,7 @@ class Skp extends BaseController
             'isDirektur'      => ($rolePemilik == 'direktur')
         ];
 
-        return view('User/skp/detail', $data);
+        return view('user/skp/detail', $data);
     }
 
     public function storeTarget()
