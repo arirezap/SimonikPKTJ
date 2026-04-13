@@ -6,6 +6,8 @@ use App\Controllers\BaseController;
 use App\Models\Sasaran;
 use App\Models\Indikator;
 use App\Models\Satuan;
+use App\Models\User;
+use App\Models\UnitKerja;
 use App\Models\LedCriteria;
 use App\Models\LedStandar;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -158,6 +160,60 @@ class MasterDataController extends BaseController
         return redirect()->to('admin/master-data/satuan')->with('error', 'Gagal menghapus data.');
     }
     
+    // ==========================================================
+    // FUNGSI-FUNGSI UNTUK UNIT KERJA
+    // ==========================================================
+
+    public function unitKerja()
+    {
+        $unitKerjaModel = new UnitKerja();
+        $data = [
+            'page_title' => 'Master Unit Kerja',
+            'items'      => $unitKerjaModel->orderBy('nama_unit', 'ASC')->findAll(),
+            'validation' => \Config\Services::validation()
+        ];
+        return view('admin/master/unit_kerja', $data);
+    }
+
+    public function storeUnitKerja()
+    {
+        $unitKerjaModel = new UnitKerja();
+        $data = [
+            'nama_unit' => $this->request->getPost('nama_unit'),
+            'parent_unit' => $this->request->getPost('parent_unit') ?: null,
+        ];
+
+        if (!$unitKerjaModel->save($data)) {
+            return redirect()->to('admin/master-data/unit-kerja')->withInput()
+                ->with('errors', $unitKerjaModel->errors());
+        }
+        return redirect()->to('admin/master-data/unit-kerja')->with('success', 'Unit Kerja baru berhasil ditambahkan.');
+    }
+
+    public function updateUnitKerja($id)
+    {
+        $unitKerjaModel = new UnitKerja();
+        $data = [
+            'nama_unit' => $this->request->getPost('nama_unit'),
+            'parent_unit' => $this->request->getPost('parent_unit') ?: null,
+        ];
+
+        if (!$unitKerjaModel->update($id, $data)) {
+            return redirect()->to('admin/master-data/unit-kerja')->withInput()
+                ->with('errors', $unitKerjaModel->errors());
+        }
+        return redirect()->to('admin/master-data/unit-kerja')->with('success', 'Unit Kerja berhasil diperbarui.');
+    }
+
+    public function deleteUnitKerja($id)
+    {
+        $unitKerjaModel = new UnitKerja();
+        if ($unitKerjaModel->delete($id)) {
+            return redirect()->to('admin/master-data/unit-kerja')->with('success', 'Unit Kerja berhasil dihapus.');
+        }
+        return redirect()->to('admin/master-data/unit-kerja')->with('error', 'Gagal menghapus data.');
+    }
+
     // ==========================================================
     // FUNGSI-FUNGSI UNTUK KRITERIA LED (DENGAN STANDAR)
     // ==========================================================
@@ -444,7 +500,7 @@ class MasterDataController extends BaseController
     // FUNGSI-FUNGSI BARU UNTUK STANDAR LED
     // ==========================================================
 
-    public function led_standar()
+    public function ledStandar()
     {
         $standarModel = new LedStandar();
         $data = [
@@ -487,5 +543,105 @@ class MasterDataController extends BaseController
             return redirect()->to('admin/master-data/led-standar')->with('success', 'Standar berhasil dihapus. Kriteria terkait kini tidak dikategorikan.');
         }
         return redirect()->to('admin/master-data/led-standar')->with('error', 'Gagal menghapus data.');
+    }
+
+    public function eccLed()
+    {
+        // Models
+        $ledModel = new LedCriteria();
+        $submissionModel = new \App\Models\LedSubmission(); // Asumsi model ini ada
+        $userModel = new User();
+        $unitKerjaModel = new UnitKerja();
+
+        // Gunakan query builder untuk memastikan semua kolom terbaca, menghindari masalah pada Model.
+        $db = \Config\Database::connect();
+
+        // 1. Get filters from URL
+        $selectedTahun = $this->request->getGet('tahun') ?? date('Y');
+        $selectedProdi = $this->request->getGet('prodi') ?? config('Simonik')->prodiList[0];
+
+        // 2. Get current user info
+        $user_id = session()->get('id');
+        $currentRole = session()->get('role');
+        $currentUser = $db->table('users')->where('id', $user_id)->get()->getRowArray();
+        if (!$currentUser) {
+            return redirect()->to('/login')->with('error', 'Sesi tidak valid, silakan login kembali.');
+        }
+
+        // 3. Get all criteria for the selected prodi
+        $all_criteria = $ledModel
+            ->select('led_criteria.*, led_standar.nama_standar')
+            ->join('led_standar', 'led_standar.id = led_criteria.id_standar', 'left')
+            ->where('led_criteria.prodi', $selectedProdi)
+            ->orderBy('led_criteria.id', 'ASC')
+            ->findAll();
+
+        // 4. Determine the user's "Unit Kabag" (aak/kuk) for filtering
+        $userUnitKabag = null;
+        // Priority 1: Direct role assignment
+        if (in_array($currentRole, ['aak', 'kabag_aak'])) {
+            $userUnitKabag = 'aak';
+        } elseif (in_array($currentRole, ['kuk', 'kabag_kuk'])) {
+            $userUnitKabag = 'kuk';
+        }
+        // Priority 2: For 'user' role, determine from superior's role
+        elseif ($currentRole === 'user' && !empty($currentUser['atasan_id'])) {
+            $atasan = $db->table('users')->where('id', $currentUser['atasan_id'])->get()->getRowArray();
+            if ($atasan) {
+                // PERBAIKAN: Gunakan strtolower() untuk membuat pengecekan role tidak case-sensitive
+                $atasanRole = strtolower($atasan['role']);
+                if (in_array($atasanRole, ['aak', 'kabag_aak'])) {
+                    $userUnitKabag = 'aak';
+                } elseif (in_array($atasanRole, ['kuk', 'kabag_kuk'])) {
+                    $userUnitKabag = 'kuk';
+                }
+            }
+        }
+        // Priority 3: Fallback for other roles (or 'user' without a valid superior) - look up from their assigned unit
+        elseif (!empty($currentUser['unit'])) {
+            $unitName = trim($currentUser['unit']);
+            $unitKerja = $unitKerjaModel->where('nama_unit', $unitName)->first();
+            if ($unitKerja) {
+                $userUnitKabag = $unitKerja['parent_unit'];
+            }
+        }
+
+        // 5. Filter criteria based on role
+        $unfilteredRoles = ['admin', 'spm', 'direktur', 'manajemen']; // Roles that see everything
+
+        if (in_array($currentRole, $unfilteredRoles)) {
+            // For super-viewer roles, show all criteria
+            $filtered_criteria = $all_criteria;
+        } else {
+            // For all other roles, filter based on their determined unit
+            $filtered_criteria = array_filter($all_criteria, function($criteria) use ($userUnitKabag) {
+                return in_array($criteria['role_assignment'], [$userUnitKabag, 'all', null, '']);
+            });
+        }
+
+        // 6. Get submitted data
+        $submitted_data = [];
+        if (!empty($filtered_criteria)) {
+            $criteria_ids = array_column($filtered_criteria, 'id');
+            $submitted_data_raw = $submissionModel->where('tahun', $selectedTahun)->where('prodi', $selectedProdi)->whereIn('led_criteria_id', $criteria_ids)->findAll();
+            $submitted_data = array_column($submitted_data_raw, null, 'led_criteria_id');
+        }
+
+        // 7. Define role groups for the view
+        $data = [
+            'page_title'        => 'Laporan Evaluasi Diri (LED)',
+            'selectedTahun'     => $selectedTahun,
+            'selectedProdi'     => $selectedProdi,
+            'prodiList'         => config('Simonik')->prodiList,
+            'all_criteria'      => $all_criteria,
+            'filtered_criteria' => array_values($filtered_criteria),
+            'submitted_data'    => $submitted_data,
+            'currentRole'       => $currentRole,
+            'is_staf'           => in_array($currentRole, ['aak', 'kuk', 'user']),
+            'is_kabag'          => in_array($currentRole, ['kabag_aak', 'kabag_kuk']),
+            'is_wadir'          => in_array($currentRole, ['manajemen', 'direktur']),
+        ];
+
+        return view('ecc/led_index', $data);
     }
 }

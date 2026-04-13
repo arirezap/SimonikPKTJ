@@ -23,46 +23,14 @@
 
 <?= $this->section('content') ?>
 
-<h4 class="mb-3">Dashboard ECC (Evidence Command Center)</h4>
-
-<ul class="nav nav-tabs" id="prodiTab" role="tablist">
-    <?php $isFirstTab = true; foreach($prodiData as $prodi): ?>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link <?= $isFirstTab ? 'active' : '' ?>" id="tab-<?= esc($prodi['id_prodi']) ?>" data-bs-toggle="tab" data-bs-target="#content-<?= esc($prodi['id_prodi']) ?>" type="button" role="tab"><?= esc($prodi['nama_prodi']) ?></button>
-        </li>
-    <?php $isFirstTab = false; endforeach; ?>
-</ul>
-
-<div class="tab-content mb-5" id="prodiTabContent">
-    <?php $isFirstContent = true; foreach($prodiData as $prodi): ?>
-        <div class="tab-pane fade <?= $isFirstContent ? 'show active' : '' ?>" id="content-<?= esc($prodi['id_prodi']) ?>" role="tabpanel">
-            <div class="row justify-content-center">
-                <div class="col-md-10">
-                    <h5 class="text-center mb-4">Rangkuman Skor LED: <span class="text-primary"><?= esc($prodi['nama_prodi']) ?></span> (Tahun <?= esc($tahun_terpilih) ?>)</h5>
-                    
-                    <?php if (empty($prodi['chart_labels'])): ?>
-                        <div class="alert alert-info text-center">Belum ada data Kategori LED.</div>
-                    <?php else: ?>
-                        <div class="radar-chart-container">
-                            <canvas id="radarChart-<?= esc($prodi['id_prodi']) ?>"></canvas>
-                        </div>
-                        <p class="text-center text-muted small mt-3">
-                            <i class="bi bi-info-circle me-1"></i> Klik pada nama standar (label) di grafik untuk melihat detail.
-                        </p>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-    <?php $isFirstContent = false; endforeach; ?>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Dashboard</h4>
 </div>
 
-<hr class="my-5 border-2">
-<h3 class="mb-4">Dashboard Monitoring Kinerja Global</h3>
-
-<div class="card mb-4 shadow-sm">
+<div class="card mb-5 shadow-sm">
     <div class="card-body">
         <form method="GET" action="<?= site_url('admin/dashboard') ?>" class="row g-3 align-items-end">
-            <div class="col-md-4">
+            <div class="col-md-5">
                 <label for="tahun" class="form-label fw-bold">Pilih Tahun</label>
                 <select class="form-select" id="tahun" name="tahun">
                     <?php foreach ($daftar_tahun as $tahun_item): ?>
@@ -70,8 +38,8 @@
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-md-4">
-                <label for="bulan" class="form-label fw-bold">Pilih Bulan</label>
+            <div class="col-md-5">
+                <label for="bulan" class="form-label fw-bold">Pilih Bulan (untuk Kinerja Global)</label>
                 <select class="form-select" id="bulan" name="bulan">
                     <option value="all" <?= ($bulan_terpilih === 'all' || !$bulan_terpilih) ? 'selected' : '' ?>>Semua Bulan (Tahunan)</option>
                     <?php for ($i = 1; $i <= 12; $i++): ?>
@@ -79,12 +47,43 @@
                     <?php endfor; ?>
                 </select>
             </div>
-            <div class="col-md-4">
-                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Tampilkan Data</button>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Filter</button>
             </div>
         </form>
     </div>
 </div>
+
+<h5 class="mb-3">Dashboard ECC (Evidence Command Center)</h5>
+
+<ul class="nav nav-tabs" id="prodiTab" role="tablist">
+    <?php foreach($prodiData as $prodi): ?>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-<?= esc($prodi['id_prodi']) ?>" data-bs-toggle="tab" data-bs-target="#content-<?= esc($prodi['id_prodi']) ?>" type="button" role="tab"><?= esc($prodi['nama_prodi']) ?></button>
+        </li>
+    <?php endforeach; ?>
+</ul>
+
+<div class="tab-content mb-5" id="prodiTabContent">
+    <?php foreach($prodiData as $prodi): ?>
+        <div class="tab-pane fade" id="content-<?= esc($prodi['id_prodi']) ?>" role="tabpanel">
+            <div class="row justify-content-center">
+                <div class="col-md-10">
+                    <h6 class="text-center mb-4">Rangkuman Skor LED: <span class="text-primary"><?= esc($prodi['nama_prodi']) ?></span> (Tahun <?= esc($tahun_terpilih) ?>)</h6>
+                    
+                    <?php if (empty($prodi['chart_labels'])): ?>
+                        <div class="alert alert-info text-center">Belum ada data Kategori LED untuk tahun ini.</div>
+                    <?php else: ?>
+                        <div class="radar-chart-container"><canvas id="radarChart-<?= esc($prodi['id_prodi']) ?>"></canvas></div>
+                        <p class="text-center text-muted small mt-3"><i class="bi bi-info-circle me-1"></i> Klik pada nama standar (label) di grafik untuk melihat detail.</p>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    <?php endforeach; ?>
+</div>
+
+<h5 class="mb-4">Dashboard Monitoring Kinerja Global</h5>
 
 <div class="row g-4 mb-4">
     <div class="col-md-6">
@@ -151,6 +150,40 @@ document.addEventListener('DOMContentLoaded', function () {
     // Cleanup chart lama
     for (let key in window.pageCharts) {
         if (window.pageCharts[key]) { window.pageCharts[key].destroy(); delete window.pageCharts[key]; }
+    }
+
+    // --- SCRIPT BARU UNTUK MENGINGAT TAB AKTIF ---
+    const prodiTabs = document.querySelectorAll('#prodiTab button[data-bs-toggle="tab"]');
+    const activeTabKey = 'activeProdiTab';
+
+    // 1. Saat tab diklik, simpan ID targetnya
+    prodiTabs.forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function (event) {
+            const targetId = event.target.getAttribute('data-bs-target');
+            if (targetId) {
+                sessionStorage.setItem(activeTabKey, targetId);
+            }
+        });
+    });
+
+    // 2. Saat halaman dimuat, aktifkan tab yang tersimpan atau tab pertama
+    const savedTabId = sessionStorage.getItem(activeTabKey);
+    let tabToActivate = null;
+
+    if (savedTabId) {
+        // Cari tombol yang menargetkan konten yang tersimpan
+        tabToActivate = document.querySelector(`button[data-bs-target="${savedTabId}"]`);
+    }
+
+    // Jika tab yang tersimpan tidak ditemukan, atau tidak ada yang tersimpan, aktifkan yang pertama
+    if (!tabToActivate) {
+        tabToActivate = document.querySelector('#prodiTab button[data-bs-toggle="tab"]');
+    }
+
+    // Tampilkan tab yang sudah ditentukan
+    if (tabToActivate) {
+        const tab = new bootstrap.Tab(tabToActivate);
+        tab.show();
     }
 
     // --- 1. HELPER FUNCTIONS (SAMA DENGAN USER) ---
@@ -265,12 +298,13 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (idx !== null) {
                             if (chart.config.data.labelIds && chart.config.data.labelIds[idx]) {
                                 const labelId = chart.config.data.labelIds[idx];
-                                const prodi = chart.config.data.prodi;
+                                // SOLUSI: Ubah nama prodi menjadi lowercase agar sesuai dengan aturan router
+                                const prodi = chart.config.data.prodi.toLowerCase();
                                 const tahun = chart.config.data.tahun;
                                 
                                 document.body.style.cursor = 'wait'; 
-                                // PERBAIKAN UTAMA: Tambahkan ?from=admin
-                                window.location.href = `<?= site_url('ecc/detail') ?>/${labelId}/${chart.config.data.prodi}/${chart.config.data.tahun}?from=admin`;
+                                // PERBAIKAN: Sesuaikan URL ke 'ecc/detailStandar' dan gunakan variabel prodi yang sudah di-lowercase
+                                window.location.href = `<?= site_url('ecc/detailStandar') ?>/${labelId}/${prodi}/${tahun}?from=admin`;
                             }
                         }
                     }

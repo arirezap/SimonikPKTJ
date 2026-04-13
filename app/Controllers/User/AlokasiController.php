@@ -10,7 +10,7 @@ class AlokasiController extends BaseController
     public function index()
     {
         $rencanaModel = new RencanaKinerjaModel();
-        $user_id = session()->get('user_id');
+        $user_id = session()->get('id');
         $tahun_terpilih = $this->request->getGet('tahun');
 
         if (!$tahun_terpilih) {
@@ -38,7 +38,7 @@ class AlokasiController extends BaseController
         ini_set('memory_limit', '512M');
 
         $rencanaModel = new RencanaKinerjaModel();
-        $user_id = session()->get('user_id');
+        $user_id = session()->get('id');
         
         // 2. Ambil JSON Data
         $jsonData = $this->request->getJSON(true); 

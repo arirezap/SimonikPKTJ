@@ -132,12 +132,10 @@ trait EccDataTrait
         $ecc_tahun = array_column($ecc_tahun_raw, 'tahun');
         $kinerja_tahun = array_column($kinerja_tahun_raw, 'tahun');
         
-        $daftar_tahun = array_unique(array_merge($ecc_tahun, $kinerja_tahun));
+        // Gabungkan semua tahun unik, dan pastikan tahun sekarang selalu ada.
+        $daftar_tahun = array_unique(array_merge([date('Y')], $ecc_tahun, $kinerja_tahun));
+        // Urutkan dari yang terbaru ke terlama
         rsort($daftar_tahun);
-        
-        if (empty($daftar_tahun)) {
-             $daftar_tahun[] = date('Y');
-        }
 
         return [
             'prodiData' => $prodiData,

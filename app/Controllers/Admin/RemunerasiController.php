@@ -56,7 +56,7 @@ class RemunerasiController extends BaseController
         $tahun = $this->request->getPost('tahun');
         $bulan = $this->request->getPost('bulan');
         $jumlah_arr = $this->request->getPost('jumlah');
-        $creator_id = session()->get('user_id');
+        $creator_id = session()->get('id');
 
         if (empty($tahun) || empty($bulan) || empty($jumlah_arr)) {
             return redirect()->back()->with('error', 'Data tidak lengkap.');

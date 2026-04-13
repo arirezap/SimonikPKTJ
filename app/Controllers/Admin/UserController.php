@@ -4,6 +4,7 @@ namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
 use App\Models\User;
+use App\Models\UnitKerja; // Tambahkan model UnitKerja
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx as XlsxReader;
@@ -42,11 +43,16 @@ class UserController extends BaseController
         // Ambil data untuk dropdown atasan di modal batch edit
         $data['potential_bosses'] = $this->userModel->orderBy('nama_lengkap', 'ASC')->findAll();
 
-        // Buat peta semua pengguna untuk pencarian yang efisien
+        // Buat peta semua pengguna untuk pencarian nama atasan
         $userMap = [];
         foreach($data['users'] as $u) {
             $userMap[$u['id']] = $u;
         }
+
+        // Buat peta unit kerja untuk pencarian penanggung jawab (AAK/KUK)
+        $unitKerjaModel = new UnitKerja();
+        $unitKerjaMap = array_column($unitKerjaModel->findAll(), 'parent_unit', 'nama_unit');
+        $data['unit_kerja_list'] = $unitKerjaModel->orderBy('nama_unit', 'ASC')->findAll();
         
         foreach($data['users'] as &$u) {
             // 1. Tentukan Nama Atasan
@@ -54,11 +60,10 @@ class UserController extends BaseController
                                 ? $userMap[$u['atasan_id']]['nama_lengkap'] 
                                 : '-';
             
-            // 2. Tentukan Unit Kabag (AAK/KUK) jika rolenya 'user'
-            if ($u['role'] === 'user') {
-                $u['unit_kabag'] = $this->getKabagUnit($u['id'], $userMap);
-            } else {
-                $u['unit_kabag'] = null; // Tidak berlaku untuk non-user
+            // 2. Tentukan Unit Kabag (AAK/KUK) dari master data unit kerja
+            $u['unit_kabag'] = null; // Default
+            if (!empty($u['unit']) && isset($unitKerjaMap[$u['unit']])) {
+                $u['unit_kabag'] = $unitKerjaMap[$u['unit']];
             }
         }
 
@@ -70,10 +75,12 @@ class UserController extends BaseController
     {
         // Ambil list semua user untuk dropdown "Pilih Atasan"
         $potentialBosses = $this->userModel->orderBy('nama_lengkap', 'ASC')->findAll();
+        $unitKerjaModel = new UnitKerja();
 
         $data = [
             'title' => 'Tambah Pengguna Baru',
-            'potential_bosses' => $potentialBosses
+            'potential_bosses' => $potentialBosses,
+            'unit_kerja_list' => $unitKerjaModel->orderBy('nama_unit', 'ASC')->findAll()
         ];
 
         return view('admin/user_create', $data);
@@ -126,11 +133,13 @@ class UserController extends BaseController
 
         // Kecualikan diri sendiri dari list atasan
         $potentialBosses = $this->userModel->where('id !=', $id)->orderBy('nama_lengkap', 'ASC')->findAll();
+        $unitKerjaModel = new UnitKerja();
 
         $data = [
             'title' => 'Edit Pengguna & Atasan',
             'user'  => $user,
-            'potential_bosses' => $potentialBosses
+            'potential_bosses' => $potentialBosses,
+            'unit_kerja_list' => $unitKerjaModel->orderBy('nama_unit', 'ASC')->findAll()
         ];
 
         return view('admin/user_edit', $data);
@@ -162,6 +171,38 @@ class UserController extends BaseController
         $this->userModel->update($id, $data);
 
         return redirect()->to('admin/users')->with('success', 'Data pengguna berhasil diperbarui.');
+    }
+
+    public function ajaxUpdateUnit()
+    {
+        // Check if it's an AJAX request for security
+        if (! $this->request->isAJAX()) {
+            return $this->response->setStatusCode(403, 'Forbidden');
+        }
+
+        $userId = $this->request->getPost('user_id');
+        $unit = $this->request->getPost('unit');
+
+        // Basic validation
+        if (empty($userId) || ! is_numeric($userId)) {
+            return $this->response->setJSON(['success' => false, 'message' => 'User ID tidak valid.'])->setStatusCode(400);
+        }
+
+        $updateData = ['unit' => $unit];
+
+        if ($this->userModel->update($userId, $updateData)) {
+            // SOLUSI: Sertakan token CSRF yang baru di dalam response
+            $response_data = [
+                'success' => true, 
+                'message' => 'Unit kerja berhasil diperbarui.',
+                csrf_token() => csrf_hash() // Menambahkan token baru ke response
+            ];
+            return $this->response->setJSON($response_data);
+        } else {
+            // Juga sertakan di response gagal untuk konsistensi
+            $response_data = ['success' => false, 'message' => 'Gagal memperbarui unit kerja.', csrf_token() => csrf_hash()];
+            return $this->response->setJSON($response_data)->setStatusCode(500);
+        }
     }
 
     public function batch_update()
@@ -200,51 +241,6 @@ class UserController extends BaseController
     {
         $this->userModel->delete($id);
         return redirect()->to('admin/users')->with('success', 'User berhasil dihapus');
-    }
-
-    /**
-     * Mencari unit Kabag (AAK/KUK) dari seorang user berdasarkan hierarki atasan.
-     * @param int $userId ID user yang akan dicek
-     * @param array $userMap Peta semua user untuk lookup
-     * @return string|null 'AAK', 'KUK', atau null jika tidak ditemukan
-     */
-    private function getKabagUnit($userId, &$userMap)
-    {
-        if (!isset($userMap[$userId])) {
-            return null;
-        }
-
-        $currentUserId = $userId;
-
-        // Loop untuk menelusuri ke atas, dengan batas 10 level untuk keamanan
-        for ($i = 0; $i < 10; $i++) { 
-            // Cek apakah user saat ini punya atasan
-            if (empty($userMap[$currentUserId]['atasan_id'])) {
-                return null; 
-            }
-
-            $atasanId = $userMap[$currentUserId]['atasan_id'];
-
-            // Cek apakah atasan ada di map
-            if (!isset($userMap[$atasanId])) {
-                return null; // Hierarki terputus
-            }
-
-            $atasan = $userMap[$atasanId];
-
-            // Jika atasan adalah kabag yang dicari, kembalikan unitnya
-            if ($atasan['role'] === 'kabag_aak') {
-                return 'AAK';
-            }
-            if ($atasan['role'] === 'kabag_kuk') {
-                return 'KUK';
-            }
-
-            // Jika bukan, lanjutkan pencarian ke atasan dari atasan
-            $currentUserId = $atasanId;
-        }
-
-        return null; // Tidak ditemukan setelah 10 level
     }
 
     /**

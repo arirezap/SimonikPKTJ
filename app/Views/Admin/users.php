@@ -141,7 +141,7 @@
                         <tr>
                             <th width="3%"><input class="form-check-input" type="checkbox" id="selectAll" title="Pilih semua"></th>
                             <th width="5%">No</th> 
-                            <th>
+                            <th style="min-width: 200px;">
                                 <a href="<?= site_url('admin/users?search=' . esc($search ?? '') . '&sort_by=nama_lengkap&sort_order=' . (($sortBy === 'nama_lengkap' && $sortOrder === 'asc') ? 'desc' : 'asc')) ?>" class="text-decoration-none text-dark">
                                     Nama Lengkap
                                     <?php if ($sortBy === 'nama_lengkap'): ?>
@@ -149,7 +149,7 @@
                                     <?php endif; ?>
                                 </a>
                             </th>
-                            <th>
+                            <th style="min-width: 180px;">
                                 <a href="<?= site_url('admin/users?search=' . esc($search ?? '') . '&sort_by=jabatan&sort_order=' . (($sortBy === 'jabatan' && $sortOrder === 'asc') ? 'desc' : 'asc')) ?>" class="text-decoration-none text-dark">
                                     Jabatan
                                     <?php if ($sortBy === 'jabatan'): ?>
@@ -157,6 +157,7 @@
                                     <?php endif; ?>
                                 </a>
                             </th>
+                            <th style="min-width: 220px;">Unit Kerja</th>
                             <th>
                                 <a href="<?= site_url('admin/users?search=' . esc($search ?? '') . '&sort_by=role&sort_order=' . (($sortBy === 'role' && $sortOrder === 'asc') ? 'desc' : 'asc')) ?>" class="text-decoration-none text-dark">
                                     Role
@@ -166,8 +167,8 @@
                                 </a>
                             </th>
                             <th>Unit Kabag</th>
-                            <th class="bg-info text-white">Atasan Langsung</th>
-                            <th width="15%">Aksi</th>
+                            <th class="bg-info text-white" style="min-width: 200px;">Atasan Langsung</th>
+                            <th width="10%" class="text-nowrap">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -191,10 +192,28 @@
                                 <small class="text-muted"><?= esc($user['nip'] ?? '-') ?></small>
                             </td>
                             <td><?= esc($user['jabatan'] ?? '-') ?></td>
+                            <td>
+                                <select class="form-select form-select-sm unit-kerja-select" data-user-id="<?= $user['id'] ?>" aria-label="Pilih unit kerja untuk <?= esc($user['nama_lengkap']) ?>">
+                                    <option value="">-- Pilih --</option>
+                                    <?php if (!empty($unit_kerja_list)): ?>
+                                        <?php foreach ($unit_kerja_list as $unit_kerja): ?>
+                                            <option value="<?= esc($unit_kerja['nama_unit']) ?>" <?= ($user['unit'] == $unit_kerja['nama_unit']) ? 'selected' : '' ?>>
+                                                <?= esc($unit_kerja['nama_unit']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                                <div class="update-status small mt-1"></div>
+                            </td>
                             <td><span class="badge bg-secondary"><?= esc($user['role']) ?></span></td>
                             <td>
-                                <?php if (!empty($user['unit_kabag'])): ?>
-                                    <span class="badge bg-primary"><?= esc($user['unit_kabag']) ?></span>
+                                <?php if (!empty($user['unit_kabag'])):
+                                    $unit_kabag = esc($user['unit_kabag']);
+                                    $badge_class = 'bg-secondary';
+                                    if ($unit_kabag === 'aak') $badge_class = 'bg-success';
+                                    if ($unit_kabag === 'kuk') $badge_class = 'bg-info text-dark';
+                                ?>
+                                    <span class="badge <?= $badge_class ?>"><?= strtoupper($unit_kabag) ?></span>
                                 <?php else: ?>
                                     <span class="text-muted" style="font-size: 0.85em;">-</span>
                                 <?php endif; ?>
@@ -208,7 +227,7 @@
                                 <?php endif; ?>
                             </td>
 
-                            <td>
+                            <td class="text-nowrap">
                                 <a href="<?= site_url('admin/users/edit/'.$user['id']) ?>" class="btn btn-warning btn-sm" title="Edit">
                                     <i class="bi bi-pencil-square"></i>
                                 </a>
@@ -261,6 +280,62 @@ document.addEventListener('DOMContentLoaded', function() {
         batchUserIdsInput.value = selectedIds.join(',');
         batchEditCountSpan.textContent = selectedIds.length;
         batchEditModal.show();
+    });
+
+    // --- SCRIPT BARU UNTUK AJAX UNIT KERJA UPDATE ---
+    const unitKerjaSelects = document.querySelectorAll('.unit-kerja-select');
+    
+    unitKerjaSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            const userId = this.dataset.userId;
+            const newUnit = this.value;
+            const statusDiv = this.nextElementSibling; // Div .update-status
+
+            // Tampilkan indikator loading
+            statusDiv.innerHTML = '<i class="bi bi-arrow-repeat"></i> Menyimpan...';
+            statusDiv.className = 'update-status small mt-1 text-muted';
+
+            const csrfTokenName = '<?= csrf_token() ?>';
+            // Ambil hash terbaru dari salah satu form di halaman
+            const csrfHash = document.querySelector('input[name="' + csrfTokenName + '"]').value;
+
+            const formData = new FormData();
+            formData.append('user_id', userId);
+            formData.append('unit', newUnit);
+            formData.append(csrfTokenName, csrfHash);
+
+            fetch('<?= site_url('admin/users/ajax_update_unit') ?>', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Perbarui nilai CSRF token di semua form untuk request selanjutnya
+                if (data[csrfTokenName]) {
+                    document.querySelectorAll('input[name="' + csrfTokenName + '"]').forEach(input => {
+                        input.value = data[csrfTokenName];
+                    });
+                }
+
+                if (data.success) {
+                    statusDiv.innerHTML = '<i class="bi bi-check-circle-fill"></i> Tersimpan';
+                    statusDiv.className = 'update-status small mt-1 text-success';
+                } else {
+                    statusDiv.innerHTML = '<i class="bi bi-x-circle-fill"></i> Gagal';
+                    statusDiv.className = 'update-status small mt-1 text-danger';
+                }
+                setTimeout(() => { statusDiv.innerHTML = ''; }, 3000); // Hilangkan pesan setelah 3 detik
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                statusDiv.innerHTML = '<i class="bi bi-x-circle-fill"></i> Error!';
+                statusDiv.className = 'update-status small mt-1 text-danger';
+                setTimeout(() => { statusDiv.innerHTML = ''; }, 3000);
+            });
+        });
     });
 });
 </script>

@@ -175,16 +175,14 @@ class Dashboard extends BaseController
         $eccData = $this->getDashboardEccData($tahun);
         $prodiData = $eccData['prodiData']; // Hasilnya sudah format standar (label, data, ids)
 
-        // ----------------------------------------------------------------
-        
-        $currentYear = date('Y');
-        $daftar_tahun = range($currentYear, $currentYear - 4);
+        // Ambil daftar tahun dari trait agar konsisten dengan dashboard lain
+        $daftar_tahun = $eccData['daftar_tahun'];
 
         $data = [
             'page_title' => 'Dashboard Admin',
             'tahun_terpilih' => $tahun,
             'bulan_terpilih' => $bulan,
-            'daftar_tahun' => $daftar_tahun,
+            'daftar_tahun' => $daftar_tahun, // Gunakan daftar tahun dari trait
             
             'totalIndikator' => $totalIndikator,
             'rataRataCapaianGlobal' => $rataRataCapaianGlobal,

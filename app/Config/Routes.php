@@ -58,6 +58,7 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     $routes->get('users/delete/(:num)', 'Admin\UserController::delete/$1');
     $routes->get('users/export', 'Admin\UserController::exportExcel'); // Rute untuk Export
     $routes->post('users/import', 'Admin\UserController::importExcel'); // Rute untuk Import
+    $routes->post('users/ajax_update_unit', 'Admin\UserController::ajaxUpdateUnit'); // Rute untuk AJAX update unit kerja
     $routes->post('users/batch_update', 'Admin\UserController::batch_update'); // Rute untuk Batch Edit
 
     // Master Data Group
@@ -65,8 +66,18 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
         $routes->get('sasaran', 'Admin\MasterDataController::sasaran');
         $routes->get('indikator', 'Admin\MasterDataController::indikator');
         $routes->get('satuan', 'Admin\MasterDataController::satuan');
+        // Rute untuk Unit Kerja
+        $routes->get('unit-kerja', 'Admin\MasterDataController::unitKerja');
+        $routes->post('unit-kerja/store', 'Admin\MasterDataController::storeUnitKerja');
+        $routes->post('unit-kerja/update/(:num)', 'Admin\MasterDataController::updateUnitKerja/$1');
+        $routes->get('unit-kerja/delete/(:num)', 'Admin\MasterDataController::deleteUnitKerja/$1');
         $routes->get('led', 'Admin\MasterDataController::led');
         $routes->get('led-standar', 'Admin\MasterDataController::ledStandar');
+        
+        // Rute untuk Aksi (Store, Update, Delete) Standar LED
+        $routes->post('led-standar/store', 'Admin\MasterDataController::storeStandar');
+        $routes->post('led-standar/update/(:num)', 'Admin\MasterDataController::updateStandar/$1');
+        $routes->post('led-standar/delete/(:num)', 'Admin\MasterDataController::deleteStandar/$1');
     });
 });
 
@@ -120,7 +131,7 @@ $routes->group('user', ['filter' => 'auth'], function ($routes) {
 
 // ECC Routes
 $routes->group('ecc', ['filter' => 'auth'], function ($routes) {
-    $routes->get('led', 'EccController::led');
+    $routes->get('led', 'Admin\MasterDataController::eccLed');
     $routes->post('led/store', 'EccController::storeLed');
     $routes->get('deleteLedLink/(:num)', 'EccController::deleteLedLink/$1');
 

@@ -70,7 +70,16 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Unit Kerja</label>
-                            <input type="text" name="unit" class="form-control" value="<?= esc($user['unit']) ?>">
+                            <select name="unit" class="form-select">
+                                <option value="">-- Pilih Unit Kerja --</option>
+                                <?php if (!empty($unit_kerja_list)): ?>
+                                    <?php foreach ($unit_kerja_list as $unit_kerja): ?>
+                                        <option value="<?= esc($unit_kerja['nama_unit']) ?>" <?= ($user['unit'] == $unit_kerja['nama_unit']) ? 'selected' : '' ?>>
+                                            <?= esc($unit_kerja['nama_unit']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </select>
                         </div>
 
                         <div class="mb-3 p-3 bg-light border rounded">
