@@ -13,8 +13,8 @@ class Auth extends BaseController
         if (session()->get('isLoggedIn')) {
             $role = session()->get('role');
             
-            // ADMIN & KABAG -> Admin Dashboard
-            if ($role === 'admin' || str_contains($role, 'kabag')) {
+            // ADMIN, MANAJEMEN, & KABAG -> Admin Dashboard
+            if (in_array($role, ['admin', 'manajemen']) || str_contains($role, 'kabag')) {
                 return redirect()->to('admin/dashboard');
             }
             
@@ -86,7 +86,7 @@ class Auth extends BaseController
                 // -------------------------
 
                 // Redirect Sesuai Role
-                if ($role_aplikasi === 'admin' || str_contains($role_aplikasi, 'kabag')) {
+                if (in_array($role_aplikasi, ['admin', 'manajemen']) || str_contains($role_aplikasi, 'kabag')) {
                     return redirect()->to('/admin/dashboard');
                 } else {
                     // Direktur & Pegawai masuk sini

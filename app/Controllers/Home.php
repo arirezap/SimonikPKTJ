@@ -12,8 +12,8 @@ class Home extends BaseController
             $role = session()->get('role');
 
             // 2. Cek Role untuk menentukan arah Dashboard
-            // Role Admin, Manajemen (Wadir), dan Kabag masuk ke Dashboard Admin
-            if (in_array($role, ['admin', 'manajemen', 'kabag_aak', 'kabag_kuk'])) {
+            // Role Admin, Manajemen (Wadir), dan Kabag (semua jenis kabag) masuk ke Dashboard Admin
+            if (in_array($role, ['admin', 'manajemen']) || str_contains($role, 'kabag')) {
                 return redirect()->to('admin/dashboard');
             }
 

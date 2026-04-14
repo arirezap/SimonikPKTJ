@@ -36,7 +36,8 @@ class AuthFilter implements FilterInterface
             // Cek apakah peran pengguna ada di dalam daftar yang diizinkan
             if (!in_array($userRole, $allowed_roles)) {
                 // Jika tidak diizinkan, kembalikan ke dashboard yang sesuai
-                if (in_array(session()->get('role'), ['admin', 'manajemen'])) {
+                $currentRole = (string) session()->get('role');
+                if (in_array($currentRole, ['admin', 'manajemen']) || str_contains($currentRole, 'kabag')) {
                     return redirect()->to('/admin/dashboard');
                 } else {
                     return redirect()->to('/user/dashboard');

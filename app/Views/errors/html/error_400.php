@@ -1,84 +1,79 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="utf-8">
-    <title><?= lang('Errors.badRequest') ?></title>
+    <title>400 - Permintaan Tidak Valid</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <style>
-        div.logo {
-            height: 200px;
-            width: 155px;
-            display: inline-block;
-            opacity: 0.08;
-            position: absolute;
-            top: 2rem;
-            left: 50%;
-            margin-left: -73px;
-        }
         body {
-            height: 100%;
-            background: #fafafa;
-            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-            color: #777;
-            font-weight: 300;
+            background-color: #f8f9fa;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
         }
-        h1 {
-            font-weight: lighter;
-            letter-spacing: normal;
-            font-size: 3rem;
-            margin-top: 0;
-            margin-bottom: 0;
-            color: #222;
-        }
-        .wrap {
-            max-width: 1024px;
-            margin: 5rem auto;
-            padding: 2rem;
-            background: #fff;
+        .error-card {
             text-align: center;
-            border: 1px solid #efefef;
-            border-radius: 0.5rem;
-            position: relative;
+            background: #ffffff;
+            padding: 3rem 2rem;
+            border-radius: 12px;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08);
+            max-width: 500px;
+            width: 90%;
+            border-top: 5px solid #ffc107;
         }
-        pre {
-            white-space: normal;
-            margin-top: 1.5rem;
+        .error-icon {
+            font-size: 5rem;
+            color: #ffc107;
+            line-height: 1;
+            margin-bottom: 1rem;
         }
-        code {
-            background: #fafafa;
-            border: 1px solid #efefef;
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            display: block;
+        .error-title {
+            font-weight: 700;
+            color: #212529;
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
         }
-        p {
-            margin-top: 1.5rem;
+        .error-subtitle {
+            font-size: 1.1rem;
+            color: #495057;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
         }
-        .footer {
-            margin-top: 2rem;
-            border-top: 1px solid #efefef;
-            padding: 1em 2em 0 2em;
-            font-size: 85%;
-            color: #999;
-        }
-        a:active,
-        a:link,
-        a:visited {
-            color: #dd4814;
+        .error-text {
+            color: #6c757d;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+            line-height: 1.5;
         }
     </style>
 </head>
 <body>
-<div class="wrap">
-    <h1>400</h1>
+    <div class="error-card">
+        <i class="bi bi-exclamation-triangle error-icon"></i>
+        <h1 class="error-title">400</h1>
+        <h4 class="error-subtitle">Permintaan Tidak Valid (Bad Request)</h4>
 
-    <p>
+        <p class="error-text">
         <?php if (ENVIRONMENT !== 'production') : ?>
             <?= nl2br(esc($message)) ?>
         <?php else : ?>
-            <?= lang('Errors.sorryBadRequest') ?>
+            Maaf, permintaan yang dikirimkan oleh peramban Anda tidak dapat diproses oleh server kami.
         <?php endif; ?>
-    </p>
-</div>
+        </p>
+        
+        <a href="<?= site_url() ?>" class="btn btn-warning px-4 py-2 fw-medium text-dark">
+            <i class="bi bi-house-door me-2"></i>Kembali ke Beranda
+        </a>
+    </div>
 </body>
 </html>
