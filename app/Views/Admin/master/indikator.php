@@ -40,7 +40,7 @@
                             <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editModal-<?= $item['id'] ?>">
                                 <i class="bi bi-pencil-fill"></i> Edit
                             </button>
-                            <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete(<?= $item['id'] ?>, '<?= esc($item['nama_indikator']) ?>')">
+                            <button type="button" class="btn btn-danger btn-sm btn-hapus" data-id="<?= $item['id'] ?>" data-nama="<?= esc($item['nama_indikator']) ?>">
                                 <i class="bi bi-trash"></i> Hapus
                             </button>
                         </td>
@@ -136,15 +136,24 @@ document.addEventListener('DOMContentLoaded', function() {
             modal.show();
         }
     <?php endif; ?>
-});
 
-// Fungsi konfirmasi hapus
-function confirmDelete(id, name) {
-    if (confirm(`Apakah Anda yakin ingin menghapus Indikator Kinerja:\n"${name}"?`)) {
-        const form = document.getElementById('formHapus');
-        form.action = `<?= site_url('admin/master-data/indikator/delete/') ?>${id}`;
-        form.submit();
+    // Logika event listener untuk tombol hapus
+    const table = document.querySelector('.table');
+    if (table) {
+        table.addEventListener('click', function(e) {
+            const btnHapus = e.target.closest('.btn-hapus');
+            if (btnHapus) {
+                const id = btnHapus.dataset.id;
+                const nama = btnHapus.dataset.nama;
+                
+                if (confirm(`Apakah Anda yakin ingin menghapus Indikator Kinerja:\n"${nama}"?`)) {
+                    const form = document.getElementById('formHapus');
+                    form.action = `<?= site_url('admin/master-data/indikator/delete/') ?>${id}`;
+                    form.submit();
+                }
+            }
+        });
     }
-}
+});
 </script>
 <?= $this->endSection() ?>

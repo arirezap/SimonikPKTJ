@@ -46,7 +46,11 @@ $routes->post('profile/update', 'Profile::update');
 $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     $routes->get('dashboard', 'Admin\Dashboard::index');
     $routes->get('monitoring', 'Admin\MonitoringController::index');
+    $routes->get('monitoring/exportExcel/(:num)/(:num)', 'Admin\MonitoringController::exportExcel/$1/$2');
+    $routes->get('monitoring/exportPdf/(:num)/(:num)', 'Admin\MonitoringController::exportPdf/$1/$2');
+
     $routes->get('remunerasi', 'Admin\RemunerasiController::index');
+    $routes->post('remunerasi/store', 'Admin\RemunerasiController::store');
     
     // --- Rute untuk Kelola Pengguna (Users) ---
     $routes->get('users', 'Admin\UserController::index');
@@ -54,7 +58,7 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     $routes->post('users/store', 'Admin\UserController::store');
     $routes->get('users/edit/(:num)', 'Admin\UserController::edit/$1');
     $routes->post('users/update', 'Admin\UserController::update');
-    $routes->get('users/delete/(:num)', 'Admin\UserController::delete/$1');
+    $routes->match(['get', 'post'], 'users/delete/(:num)', 'Admin\UserController::delete/$1');
     $routes->get('users/export', 'Admin\UserController::exportExcel'); // Rute untuk Export
     $routes->post('users/import', 'Admin\UserController::importExcel'); // Rute untuk Import
     $routes->post('users/ajax_update_unit', 'Admin\UserController::ajaxUpdateUnit'); // Rute untuk AJAX update unit kerja
@@ -62,21 +66,47 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
 
     // Master Data Group
     $routes->group('master-data', function ($routes) {
+        // Rute untuk Sasaran Program
         $routes->get('sasaran', 'Admin\MasterDataController::sasaran');
+        $routes->post('sasaran/store', 'Admin\MasterDataController::storeSasaran');
+        $routes->post('sasaran/update/(:num)', 'Admin\MasterDataController::updateSasaran/$1');
+        $routes->match(['get', 'post'], 'sasaran/delete/(:num)', 'Admin\MasterDataController::deleteSasaran/$1');
+
+        // Rute untuk Indikator Kinerja
         $routes->get('indikator', 'Admin\MasterDataController::indikator');
+        $routes->post('indikator/store', 'Admin\MasterDataController::storeIndikator');
+        $routes->post('indikator/update/(:num)', 'Admin\MasterDataController::updateIndikator/$1');
+        $routes->match(['get', 'post'], 'indikator/delete/(:num)', 'Admin\MasterDataController::deleteIndikator/$1');
+
+        // Rute untuk Satuan
         $routes->get('satuan', 'Admin\MasterDataController::satuan');
+        $routes->post('satuan/store', 'Admin\MasterDataController::storeSatuan');
+        $routes->post('satuan/update/(:num)', 'Admin\MasterDataController::updateSatuan/$1');
+        $routes->match(['get', 'post'], 'satuan/delete/(:num)', 'Admin\MasterDataController::deleteSatuan/$1');
+
         // Rute untuk Unit Kerja
         $routes->get('unit-kerja', 'Admin\MasterDataController::unitKerja');
         $routes->post('unit-kerja/store', 'Admin\MasterDataController::storeUnitKerja');
         $routes->post('unit-kerja/update/(:num)', 'Admin\MasterDataController::updateUnitKerja/$1');
-        $routes->get('unit-kerja/delete/(:num)', 'Admin\MasterDataController::deleteUnitKerja/$1');
+        $routes->match(['get', 'post'], 'unit-kerja/delete/(:num)', 'Admin\MasterDataController::deleteUnitKerja/$1');
+        
+        // Rute untuk Kriteria LED
         $routes->get('led', 'Admin\MasterDataController::led');
+        $routes->post('led/store', 'Admin\MasterDataController::storeLed');
+        $routes->post('led/update/(:num)', 'Admin\MasterDataController::updateLed/$1');
+        $routes->match(['get', 'post'], 'led/delete/(:num)', 'Admin\MasterDataController::deleteLed/$1');
+        $routes->post('led/deleteBatch', 'Admin\MasterDataController::deleteLedBatch');
+        $routes->post('led/batchUpdate', 'Admin\MasterDataController::batchUpdateLed');
+        $routes->get('led/export', 'Admin\MasterDataController::exportLed');
+        $routes->post('led/import', 'Admin\MasterDataController::importLed');
+
+        // Rute untuk Standar LED
         $routes->get('led-standar', 'Admin\MasterDataController::ledStandar');
         
         // Rute untuk Aksi (Store, Update, Delete) Standar LED
         $routes->post('led-standar/store', 'Admin\MasterDataController::storeStandar');
         $routes->post('led-standar/update/(:num)', 'Admin\MasterDataController::updateStandar/$1');
-        $routes->post('led-standar/delete/(:num)', 'Admin\MasterDataController::deleteStandar/$1');
+        $routes->match(['get', 'post'], 'led-standar/delete/(:num)', 'Admin\MasterDataController::deleteStandar/$1');
     });
 });
 
@@ -125,14 +155,14 @@ $routes->group('user', ['filter' => 'auth'], function ($routes) {
     $routes->get('skp/detail/(:num)', 'User\Skp::detail/$1');
     // Di dalam $routes->group('user' ...
     $routes->post('skp/target/store', 'User\Skp::storeTarget');
-    $routes->get('skp/delete/(:num)', 'User\Skp::delete/$1');
+    $routes->match(['get', 'post'], 'skp/delete/(:num)', 'User\Skp::delete/$1');
 });
 
 // ECC Routes
 $routes->group('ecc', ['filter' => 'auth'], function ($routes) {
     $routes->get('led', 'Admin\MasterDataController::eccLed');
     $routes->post('led/store', 'EccController::storeLed');
-    $routes->get('deleteLedLink/(:num)', 'EccController::deleteLedLink/$1');
+    $routes->match(['get', 'post'], 'deleteLedLink/(:num)', 'EccController::deleteLedLink/$1');
 
     $routes->get('simulasi', 'EccController::simulasi');
     $routes->post('simulasi/store', 'EccController::storeSimulasi');
