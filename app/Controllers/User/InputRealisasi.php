@@ -70,7 +70,7 @@ class InputRealisasi extends BaseController
                  return redirect()->back()->with('error', 'Gagal menyimpan data realisasi.');
             }
 
-            return redirect()->to('/user/realisasi/input')->with('success', 'Data realisasi berhasil disimpan!');
+            return redirect()->to('/realisasi/input')->with('success', 'Data realisasi berhasil disimpan!');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }

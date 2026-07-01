@@ -60,7 +60,7 @@
                                     <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editModal-<?= $item['id'] ?>" title="Edit">
                                         <i class="bi bi-pencil-square"></i>
                                     </button>
-                                    <a href="<?= site_url('admin/master-data/unit-kerja/delete/'.$item['id']) ?>" class="btn btn-danger btn-sm" onclick="return confirm('Yakin hapus data ini?')" title="Hapus">
+                                    <a href="<?= site_url('master-data/unit-kerja/delete/'.$item['id']) ?>" class="btn btn-danger btn-sm" onclick="return confirm('Yakin hapus data ini?')" title="Hapus">
                                         <i class="bi bi-trash"></i>
                                     </a>
                                 </td>
@@ -74,7 +74,7 @@
                                             <h5 class="modal-title" id="editModalLabel-<?= $item['id'] ?>">Edit Unit Kerja</h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
-                                        <form action="<?= site_url('admin/master-data/unit-kerja/update/'.$item['id']) ?>" method="post">
+                                        <form action="<?= site_url('master-data/unit-kerja/update/'.$item['id']) ?>" method="post">
                                             <?= csrf_field() ?>
                                             <div class="modal-body">
                                                 <div class="mb-3">
@@ -119,7 +119,7 @@
                 <h5 class="modal-title" id="addModalLabel">Tambah Unit Kerja Baru</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="<?= site_url('admin/master-data/unit-kerja/store') ?>" method="post">
+            <form action="<?= site_url('master-data/unit-kerja/store') ?>" method="post">
                 <?= csrf_field() ?>
                 <div class="modal-body">
                     <div class="mb-3">

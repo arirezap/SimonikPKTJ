@@ -52,7 +52,7 @@
                 <h5 class="modal-title">Form Jadwal Kuliah Baru</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="<?= site_url('user/akademik/jadwal/store') ?>" method="POST">
+            <form action="<?= site_url('akademik/jadwal/store') ?>" method="POST">
                 <?= csrf_field() ?>
                 <div class="modal-body">
                     <div class="mb-3">

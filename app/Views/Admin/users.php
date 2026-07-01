@@ -15,11 +15,11 @@
                 <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#importModal" title="Impor banyak pengguna dari file CSV">
                     <i class="bi bi-upload"></i> Import
                 </button>
-                <a href="<?= site_url('admin/users/export') ?>" class="btn btn-sm btn-outline-secondary" title="Unduh template CSV untuk impor">
+                <a href="<?= site_url('users/export') ?>" class="btn btn-sm btn-outline-secondary" title="Unduh template CSV untuk impor">
                     <i class="bi bi-download"></i> Export Template
                 </a>
             </div>
-            <a href="<?= site_url('admin/users/create') ?>" class="btn btn-sm btn-primary">
+            <a href="<?= site_url('users/create') ?>" class="btn btn-sm btn-primary">
                 <i class="bi bi-person-plus-fill"></i> Tambah Pengguna Baru
             </a>
         </div>
@@ -27,7 +27,7 @@
 
     <div class="card mb-4">
         <div class="card-body">
-            <form action="<?= site_url('admin/users') ?>" method="GET" class="row g-3 align-items-end">
+            <form action="<?= site_url('users') ?>" method="GET" class="row g-3 align-items-end">
                 <div class="col-md-6">
                     <label for="search" class="form-label fw-bold">Cari Pengguna</label>
                     <input type="text" name="search" id="search" class="form-control" placeholder="Cari berdasarkan nama..." value="<?= esc($search ?? '') ?>">
@@ -39,7 +39,7 @@
                 </div>
                 <div class="col-md-3">
                     <?php if (!empty($search) || (!empty($sortBy) && $sortBy !== 'nama_lengkap') || (!empty($sortOrder) && $sortOrder !== 'asc')): ?>
-                        <a href="<?= site_url('admin/users') ?>" class="btn btn-outline-secondary w-100">
+                        <a href="<?= site_url('users') ?>" class="btn btn-outline-secondary w-100">
                             <i class="bi bi-arrow-counterclockwise"></i> Reset Filter
                         </a>
                     <?php endif; ?>
@@ -56,12 +56,12 @@
                 <h5 class="modal-title" id="importModalLabel">Import Pengguna dari CSV</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="<?= site_url('admin/users/import') ?>" method="post" enctype="multipart/form-data" autocomplete="off">
+            <form action="<?= site_url('users/import') ?>" method="post" enctype="multipart/form-data" autocomplete="off">
                 <?= csrf_field() ?>
                 <div class="modal-body">
                     <p>
                         Silakan unduh template terlebih dahulu untuk memastikan format data sesuai.
-                        <a href="<?= site_url('admin/users/export') ?>">Unduh Template Disini</a>.
+                        <a href="<?= site_url('users/export') ?>">Unduh Template Disini</a>.
                     </p>
                     <hr>
                     <div class="mb-3">
@@ -86,7 +86,7 @@
                 <h5 class="modal-title" id="batchEditModalLabel">Batch Edit Atasan Langsung</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="<?= site_url('admin/users/batch_update') ?>" method="post" autocomplete="off">
+            <form action="<?= site_url('users/batch_update') ?>" method="post" autocomplete="off">
                 <?= csrf_field() ?>
                 <input type="hidden" name="user_ids" id="batchUserIds">
                 <div class="modal-body">
@@ -142,7 +142,7 @@
                             <th width="3%"><input class="form-check-input" type="checkbox" id="selectAll" title="Pilih semua"></th>
                             <th width="5%">No</th> 
                             <th style="min-width: 200px;">
-                                <a href="<?= site_url('admin/users?search=' . esc($search ?? '') . '&sort_by=nama_lengkap&sort_order=' . (($sortBy === 'nama_lengkap' && $sortOrder === 'asc') ? 'desc' : 'asc')) ?>" class="text-decoration-none text-dark">
+                                <a href="<?= site_url('users?search=' . esc($search ?? '') . '&sort_by=nama_lengkap&sort_order=' . (($sortBy === 'nama_lengkap' && $sortOrder === 'asc') ? 'desc' : 'asc')) ?>" class="text-decoration-none text-dark">
                                     Nama Lengkap
                                     <?php if ($sortBy === 'nama_lengkap'): ?>
                                         <i class="bi bi-arrow-<?= ($sortOrder === 'asc') ? 'up' : 'down' ?>"></i>
@@ -150,7 +150,7 @@
                                 </a>
                             </th>
                             <th style="min-width: 180px;">
-                                <a href="<?= site_url('admin/users?search=' . esc($search ?? '') . '&sort_by=jabatan&sort_order=' . (($sortBy === 'jabatan' && $sortOrder === 'asc') ? 'desc' : 'asc')) ?>" class="text-decoration-none text-dark">
+                                <a href="<?= site_url('users?search=' . esc($search ?? '') . '&sort_by=jabatan&sort_order=' . (($sortBy === 'jabatan' && $sortOrder === 'asc') ? 'desc' : 'asc')) ?>" class="text-decoration-none text-dark">
                                     Jabatan
                                     <?php if ($sortBy === 'jabatan'): ?>
                                         <i class="bi bi-arrow-<?= ($sortOrder === 'asc') ? 'up' : 'down' ?>"></i>
@@ -159,7 +159,7 @@
                             </th>
                             <th style="min-width: 220px;">Unit Kerja</th>
                             <th>
-                                <a href="<?= site_url('admin/users?search=' . esc($search ?? '') . '&sort_by=role&sort_order=' . (($sortBy === 'role' && $sortOrder === 'asc') ? 'desc' : 'asc')) ?>" class="text-decoration-none text-dark">
+                                <a href="<?= site_url('users?search=' . esc($search ?? '') . '&sort_by=role&sort_order=' . (($sortBy === 'role' && $sortOrder === 'asc') ? 'desc' : 'asc')) ?>" class="text-decoration-none text-dark">
                                     Role
                                     <?php if ($sortBy === 'role'): ?>
                                         <i class="bi bi-arrow-<?= ($sortOrder === 'asc') ? 'up' : 'down' ?>"></i>
@@ -228,10 +228,10 @@
                             </td>
 
                             <td class="text-nowrap">
-                                <a href="<?= site_url('admin/users/edit/'.$user['id']) ?>" class="btn btn-warning btn-sm" title="Edit">
+                                <a href="<?= site_url('users/edit/'.$user['id']) ?>" class="btn btn-warning btn-sm" title="Edit">
                                     <i class="bi bi-pencil-square"></i>
                                 </a>
-                                <a href="<?= site_url('admin/users/delete/'.$user['id']) ?>" class="btn btn-danger btn-sm" onclick="return confirm('Yakin hapus user ini?')" title="Hapus">
+                                <a href="<?= site_url('users/delete/'.$user['id']) ?>" class="btn btn-danger btn-sm" onclick="return confirm('Yakin hapus user ini?')" title="Hapus">
                                     <i class="bi bi-trash"></i>
                                 </a>
                             </td>
@@ -304,7 +304,7 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('unit', newUnit);
             formData.append(csrfTokenName, csrfHash);
 
-            fetch('<?= site_url('admin/users/ajax_update_unit') ?>', {
+            fetch('<?= site_url('users/ajax_update_unit') ?>', {
                 method: 'POST',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'

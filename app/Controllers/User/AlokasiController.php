@@ -14,7 +14,7 @@ class AlokasiController extends BaseController
         $tahun_terpilih = $this->request->getGet('tahun');
 
         if (!$tahun_terpilih) {
-            return redirect()->to('/user/kinerja/update')->with('error', 'Silakan pilih tahun rencana terlebih dahulu.');
+            return redirect()->to('/kinerja/update')->with('error', 'Silakan pilih tahun rencana terlebih dahulu.');
         }
 
         $data = [
@@ -98,7 +98,7 @@ class AlokasiController extends BaseController
             return $this->response->setJSON([
                 'status' => 'success',
                 'message' => 'Berhasil menyimpan ' . count($updateData) . ' data!',
-                'redirect' => site_url('user/alokasi/bulanan?tahun=' . $tahun)
+                'redirect' => site_url('alokasi/bulanan?tahun=' . $tahun)
             ]);
 
         } catch (\Exception $e) {

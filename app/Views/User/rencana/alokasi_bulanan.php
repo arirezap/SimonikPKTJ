@@ -105,7 +105,7 @@
             <?php else: ?>
                 <div class="text-center p-5 bg-light rounded">
                     <p class="mb-3 text-muted">Belum ada data rencana kerja untuk tahun ini.</p>
-                    <a href="<?= site_url('user/rencana/input?tahun='.$tahun_terpilih) ?>" class="btn btn-outline-primary">Buat Rencana Kerja</a>
+                    <a href="<?= site_url('rencana/input?tahun='.$tahun_terpilih) ?>" class="btn btn-outline-primary">Buat Rencana Kerja</a>
                 </div>
             <?php endif; ?>
         </form>
@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 items: Object.values(collectedData)
             };
 
-            fetch('<?= site_url('user/alokasi/update') ?>', {
+            fetch('<?= site_url('alokasi/update') ?>', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

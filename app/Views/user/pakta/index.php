@@ -167,7 +167,7 @@ function format_nama_gelar($text) {
     <div class="d-flex justify-content-between align-items-center mb-4 btn-print-area">
         <h1 class="h3 mb-0 text-gray-800">Pakta Integritas</h1>
         <div>
-            <a href="<?= site_url('user/dashboard') ?>" class="btn btn-secondary btn-sm me-2">
+            <a href="<?= site_url('dashboard') ?>" class="btn btn-secondary btn-sm me-2">
                 <i class="bi bi-arrow-left"></i> Kembali
             </a>
             <button onclick="window.print()" class="btn btn-info btn-sm me-2 text-white">

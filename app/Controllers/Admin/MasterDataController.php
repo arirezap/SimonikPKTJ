@@ -37,10 +37,10 @@ class MasterDataController extends BaseController
         $data = ['nama_sasaran' => $this->request->getPost('nama_sasaran')];
 
         if (!$sasaranModel->save($data)) {
-            return redirect()->to('admin/master-data/sasaran')->withInput()
+            return redirect()->to('master-data/sasaran')->withInput()
                 ->with('error', 'Gagal menyimpan data.');
         }
-        return redirect()->to('admin/master-data/sasaran')->with('success', 'Sasaran baru berhasil ditambahkan.');
+        return redirect()->to('master-data/sasaran')->with('success', 'Sasaran baru berhasil ditambahkan.');
     }
 
     public function updateSasaran($id)
@@ -49,19 +49,19 @@ class MasterDataController extends BaseController
         $data = ['nama_sasaran' => $this->request->getPost('nama_sasaran')];
 
         if (!$sasaranModel->update($id, $data)) {
-            return redirect()->to('admin/master-data/sasaran')->withInput()
+            return redirect()->to('master-data/sasaran')->withInput()
                 ->with('error', 'Gagal memperbarui data.');
         }
-        return redirect()->to('admin/master-data/sasaran')->with('success', 'Sasaran berhasil diperbarui.');
+        return redirect()->to('master-data/sasaran')->with('success', 'Sasaran berhasil diperbarui.');
     }
 
     public function deleteSasaran($id)
     {
         $sasaranModel = new Sasaran();
         if ($sasaranModel->delete($id)) {
-            return redirect()->to('admin/master-data/sasaran')->with('success', 'Sasaran berhasil dihapus.');
+            return redirect()->to('master-data/sasaran')->with('success', 'Sasaran berhasil dihapus.');
         }
-        return redirect()->to('admin/master-data/sasaran')->with('error', 'Gagal menghapus data.');
+        return redirect()->to('master-data/sasaran')->with('error', 'Gagal menghapus data.');
     }
 
     // ==========================================================
@@ -85,10 +85,10 @@ class MasterDataController extends BaseController
         $data = ['nama_indikator' => $this->request->getPost('nama_indikator')];
 
         if (!$indikatorModel->save($data)) {
-            return redirect()->to('admin/master-data/indikator')->withInput()
+            return redirect()->to('master-data/indikator')->withInput()
                 ->with('error', 'Gagal menyimpan data.');
         }
-        return redirect()->to('admin/master-data/indikator')->with('success', 'Indikator baru berhasil ditambahkan.');
+        return redirect()->to('master-data/indikator')->with('success', 'Indikator baru berhasil ditambahkan.');
     }
 
     public function updateIndikator($id)
@@ -97,19 +97,19 @@ class MasterDataController extends BaseController
         $data = ['nama_indikator' => $this->request->getPost('nama_indikator')];
 
         if (!$indikatorModel->update($id, $data)) {
-            return redirect()->to('admin/master-data/indikator')->withInput()
+            return redirect()->to('master-data/indikator')->withInput()
                 ->with('error', 'Gagal memperbarui data.');
         }
-        return redirect()->to('admin/master-data/indikator')->with('success', 'Indikator berhasil diperbarui.');
+        return redirect()->to('master-data/indikator')->with('success', 'Indikator berhasil diperbarui.');
     }
 
     public function deleteIndikator($id)
     {
         $indikatorModel = new Indikator();
         if ($indikatorModel->delete($id)) {
-            return redirect()->to('admin/master-data/indikator')->with('success', 'Indikator berhasil dihapus.');
+            return redirect()->to('master-data/indikator')->with('success', 'Indikator berhasil dihapus.');
         }
-        return redirect()->to('admin/master-data/indikator')->with('error', 'Gagal menghapus data.');
+        return redirect()->to('master-data/indikator')->with('error', 'Gagal menghapus data.');
     }
     
     // ==========================================================
@@ -133,10 +133,10 @@ class MasterDataController extends BaseController
         $data = ['nama_satuan' => $this->request->getPost('nama_satuan')];
 
         if (!$satuanModel->save($data)) {
-            return redirect()->to('admin/master-data/satuan')->withInput()
+            return redirect()->to('master-data/satuan')->withInput()
                 ->with('error', 'Gagal menyimpan data.');
         }
-        return redirect()->to('admin/master-data/satuan')->with('success', 'Satuan baru berhasil ditambahkan.');
+        return redirect()->to('master-data/satuan')->with('success', 'Satuan baru berhasil ditambahkan.');
     }
 
     public function updateSatuan($id)
@@ -145,19 +145,19 @@ class MasterDataController extends BaseController
         $data = ['nama_satuan' => $this->request->getPost('nama_satuan')];
 
         if (!$satuanModel->update($id, $data)) {
-            return redirect()->to('admin/master-data/satuan')->withInput()
+            return redirect()->to('master-data/satuan')->withInput()
                 ->with('error', 'Gagal memperbarui data.');
         }
-        return redirect()->to('admin/master-data/satuan')->with('success', 'Satuan berhasil diperbarui.');
+        return redirect()->to('master-data/satuan')->with('success', 'Satuan berhasil diperbarui.');
     }
 
     public function deleteSatuan($id)
     {
         $satuanModel = new Satuan();
         if ($satuanModel->delete($id)) {
-            return redirect()->to('admin/master-data/satuan')->with('success', 'Satuan berhasil dihapus.');
+            return redirect()->to('master-data/satuan')->with('success', 'Satuan berhasil dihapus.');
         }
-        return redirect()->to('admin/master-data/satuan')->with('error', 'Gagal menghapus data.');
+        return redirect()->to('master-data/satuan')->with('error', 'Gagal menghapus data.');
     }
     
     // ==========================================================
@@ -184,10 +184,10 @@ class MasterDataController extends BaseController
         ];
 
         if (!$unitKerjaModel->save($data)) {
-            return redirect()->to('admin/master-data/unit-kerja')->withInput()
+            return redirect()->to('master-data/unit-kerja')->withInput()
                 ->with('errors', $unitKerjaModel->errors());
         }
-        return redirect()->to('admin/master-data/unit-kerja')->with('success', 'Unit Kerja baru berhasil ditambahkan.');
+        return redirect()->to('master-data/unit-kerja')->with('success', 'Unit Kerja baru berhasil ditambahkan.');
     }
 
     public function updateUnitKerja($id)
@@ -199,19 +199,19 @@ class MasterDataController extends BaseController
         ];
 
         if (!$unitKerjaModel->update($id, $data)) {
-            return redirect()->to('admin/master-data/unit-kerja')->withInput()
+            return redirect()->to('master-data/unit-kerja')->withInput()
                 ->with('errors', $unitKerjaModel->errors());
         }
-        return redirect()->to('admin/master-data/unit-kerja')->with('success', 'Unit Kerja berhasil diperbarui.');
+        return redirect()->to('master-data/unit-kerja')->with('success', 'Unit Kerja berhasil diperbarui.');
     }
 
     public function deleteUnitKerja($id)
     {
         $unitKerjaModel = new UnitKerja();
         if ($unitKerjaModel->delete($id)) {
-            return redirect()->to('admin/master-data/unit-kerja')->with('success', 'Unit Kerja berhasil dihapus.');
+            return redirect()->to('master-data/unit-kerja')->with('success', 'Unit Kerja berhasil dihapus.');
         }
-        return redirect()->to('admin/master-data/unit-kerja')->with('error', 'Gagal menghapus data.');
+        return redirect()->to('master-data/unit-kerja')->with('error', 'Gagal menghapus data.');
     }
 
     // ==========================================================
@@ -253,14 +253,14 @@ class MasterDataController extends BaseController
         ];
 
         if (!$ledModel->save($data)) {
-            return redirect()->to('admin/master-data/led?prodi=' . $data['prodi'])->withInput()
+            return redirect()->to('master-data/led?prodi=' . $data['prodi'])->withInput()
                 ->with('error', 'Gagal menyimpan data. Silakan periksa error di bawah.')
                 ->with('show_modal', 'addModal');
         }
 
         $newId = $ledModel->getInsertID();
 
-        return redirect()->to('admin/master-data/led?prodi=' . $data['prodi'] . '#kriteria-' . $newId)
+        return redirect()->to('master-data/led?prodi=' . $data['prodi'] . '#kriteria-' . $newId)
                          ->with('success', 'Kriteria LED baru berhasil ditambahkan.');
     }
 
@@ -276,12 +276,12 @@ class MasterDataController extends BaseController
         ];
 
         if (!$ledModel->update($id, $data)) {
-            return redirect()->to('admin/master-data/led?prodi=' . $data['prodi'])->withInput()
+            return redirect()->to('master-data/led?prodi=' . $data['prodi'])->withInput()
                 ->with('error', 'Gagal memperbarui data. Silakan periksa error di bawah.')
                 ->with('show_modal', 'editModal-' . $id);
         }
 
-        return redirect()->to('admin/master-data/led?prodi=' . $data['prodi'] . '#kriteria-' . $id)
+        return redirect()->to('master-data/led?prodi=' . $data['prodi'] . '#kriteria-' . $id)
                          ->with('success', 'Kriteria LED berhasil diperbarui.');
     }
     
@@ -291,9 +291,9 @@ class MasterDataController extends BaseController
         $prodi = $this->request->getGet('prodi') ?? config('Simonik')->prodiList[0];
         
         if ($ledModel->delete($id)) {
-            return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('success', 'Kriteria LED berhasil dihapus.');
+            return redirect()->to('master-data/led?prodi=' . $prodi)->with('success', 'Kriteria LED berhasil dihapus.');
         }
-        return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('error', 'Gagal menghapus kriteria.');
+        return redirect()->to('master-data/led?prodi=' . $prodi)->with('error', 'Gagal menghapus kriteria.');
     }
 
     public function deleteLedBatch()
@@ -304,9 +304,9 @@ class MasterDataController extends BaseController
         
         if (!empty($ids)) {
             $ledModel->delete($ids);
-            return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('success', 'Data kriteria yang terpilih berhasil dihapus.');
+            return redirect()->to('master-data/led?prodi=' . $prodi)->with('success', 'Data kriteria yang terpilih berhasil dihapus.');
         }
-        return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('error', 'Tidak ada data yang dipilih untuk dihapus.');
+        return redirect()->to('master-data/led?prodi=' . $prodi)->with('error', 'Tidak ada data yang dipilih untuk dihapus.');
     }
 
     public function batchUpdateLed()
@@ -319,7 +319,7 @@ class MasterDataController extends BaseController
         $role = $this->request->getPost('role_assignment');
 
         if (empty($ids)) {
-            return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('error', 'Tidak ada data yang dipilih untuk diubah.');
+            return redirect()->to('master-data/led?prodi=' . $prodi)->with('error', 'Tidak ada data yang dipilih untuk diubah.');
         }
 
         $dataToUpdate = [];
@@ -333,14 +333,14 @@ class MasterDataController extends BaseController
         }
 
         if (empty($dataToUpdate)) {
-            return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('error', 'Tidak ada perubahan yang dipilih (Standar atau Role).');
+            return redirect()->to('master-data/led?prodi=' . $prodi)->with('error', 'Tidak ada perubahan yang dipilih (Standar atau Role).');
         }
 
         if ($ledModel->whereIn('id', $ids)->set($dataToUpdate)->update()) {
-            return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('success', 'Data kriteria yang terpilih berhasil diperbarui.');
+            return redirect()->to('master-data/led?prodi=' . $prodi)->with('success', 'Data kriteria yang terpilih berhasil diperbarui.');
         }
 
-        return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('error', 'Gagal memperbarui data kriteria.');
+        return redirect()->to('master-data/led?prodi=' . $prodi)->with('error', 'Gagal memperbarui data kriteria.');
     }
 
     public function exportLed()
@@ -350,7 +350,7 @@ class MasterDataController extends BaseController
         $selectedProdi = $this->request->getGet('prodi');
 
         if (empty($selectedProdi)) {
-            return redirect()->to('admin/master-data/led')->with('error', 'Silakan pilih prodi terlebih dahulu.');
+            return redirect()->to('master-data/led')->with('error', 'Silakan pilih prodi terlebih dahulu.');
         }
 
         $items = $ledModel
@@ -403,11 +403,11 @@ class MasterDataController extends BaseController
         $ledModel = new LedCriteria();
 
         if (empty($prodi)) {
-            return redirect()->to('admin/master-data/led')->with('error', 'Harap pilih Program Studi tujuan import.');
+            return redirect()->to('master-data/led')->with('error', 'Harap pilih Program Studi tujuan import.');
         }
         
         if (!$file->isValid() || !in_array($file->getMimeType(), ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'])) {
-             return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('error', 'File tidak valid. Harap unggah file .xlsx');
+             return redirect()->to('master-data/led?prodi=' . $prodi)->with('error', 'File tidak valid. Harap unggah file .xlsx');
         }
 
         $reader = new XlsxReader();
@@ -490,10 +490,10 @@ class MasterDataController extends BaseController
             if ($skippedCount > 0) {
                 $message .= " {$skippedCount} baris duplikat (berdasarkan nama) di file Excel dilewati.";
             }
-            return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('success', $message);
+            return redirect()->to('master-data/led?prodi=' . $prodi)->with('success', $message);
         }
 
-        return redirect()->to('admin/master-data/led?prodi=' . $prodi)->with('error', 'Gagal mengimpor data atau file kosong (tidak ada baris yang diproses).');
+        return redirect()->to('master-data/led?prodi=' . $prodi)->with('error', 'Gagal mengimpor data atau file kosong (tidak ada baris yang diproses).');
     }
 
     // ==========================================================
@@ -517,10 +517,10 @@ class MasterDataController extends BaseController
         $data = ['nama_standar' => $this->request->getPost('nama_standar')];
 
         if (!$standarModel->save($data)) {
-            return redirect()->to('admin/master-data/led-standar')->withInput()
+            return redirect()->to('master-data/led-standar')->withInput()
                 ->with('error', 'Gagal menyimpan data. Pastikan nama standar unik.');
         }
-        return redirect()->to('admin/master-data/led-standar')->with('success', 'Standar baru berhasil ditambahkan.');
+        return redirect()->to('master-data/led-standar')->with('success', 'Standar baru berhasil ditambahkan.');
     }
 
     public function updateStandar($id)
@@ -529,10 +529,10 @@ class MasterDataController extends BaseController
         $data = ['nama_standar' => $this->request->getPost('nama_standar')];
 
         if (!$standarModel->update($id, $data)) {
-            return redirect()->to('admin/master-data/led-standar')->withInput()
+            return redirect()->to('master-data/led-standar')->withInput()
                 ->with('error', 'Gagal memperbarui data. Pastikan nama standar unik.');
         }
-        return redirect()->to('admin/master-data/led-standar')->with('success', 'Standar berhasil diperbarui.');
+        return redirect()->to('master-data/led-standar')->with('success', 'Standar berhasil diperbarui.');
     }
 
     public function deleteStandar($id)
@@ -540,9 +540,9 @@ class MasterDataController extends BaseController
         $standarModel = new LedStandar();
         
         if ($standarModel->delete($id)) {
-            return redirect()->to('admin/master-data/led-standar')->with('success', 'Standar berhasil dihapus. Kriteria terkait kini tidak dikategorikan.');
+            return redirect()->to('master-data/led-standar')->with('success', 'Standar berhasil dihapus. Kriteria terkait kini tidak dikategorikan.');
         }
-        return redirect()->to('admin/master-data/led-standar')->with('error', 'Gagal menghapus data.');
+        return redirect()->to('master-data/led-standar')->with('error', 'Gagal menghapus data.');
     }
 
     public function eccLed()

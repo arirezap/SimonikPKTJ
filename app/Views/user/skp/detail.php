@@ -113,7 +113,7 @@ function format_nama_skp($nama, $gelar_depan = '', $gelar_belakang = '')
 
     <div class="modal fade" id="modalTambahRHK" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
-            <form action="<?= site_url('user/skp/target/store') ?>" method="post">
+            <form action="<?= site_url('skp/target/store') ?>" method="post">
                 <?= csrf_field() ?>
                 <input type="hidden" name="skp_header_id" value="<?= $header['id'] ?>">
 

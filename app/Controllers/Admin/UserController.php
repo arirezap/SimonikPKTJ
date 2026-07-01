@@ -125,7 +125,7 @@ class UserController extends BaseController
 
         $this->userModel->insert($data);
 
-        return redirect()->to('admin/users')->with('success', 'User baru berhasil ditambahkan.');
+        return redirect()->to('users')->with('success', 'User baru berhasil ditambahkan.');
     }
     // --- END FITUR BARU ---
 
@@ -134,7 +134,7 @@ class UserController extends BaseController
         $user = $this->userModel->find($id);
 
         if (!$user) {
-            return redirect()->to('admin/users')->with('error', 'User tidak ditemukan');
+            return redirect()->to('users')->with('error', 'User tidak ditemukan');
         }
 
         // Kecualikan diri sendiri dari list atasan
@@ -182,7 +182,7 @@ class UserController extends BaseController
 
         $this->userModel->update($id, $data);
 
-        return redirect()->to('admin/users')->with('success', 'Data pengguna berhasil diperbarui.');
+        return redirect()->to('users')->with('success', 'Data pengguna berhasil diperbarui.');
     }
 
     public function ajaxUpdateUnit()
@@ -228,7 +228,7 @@ class UserController extends BaseController
         $atasanId = $this->request->getPost('atasan_id');
 
         if (empty($userIds)) {
-            return redirect()->to('admin/users')->with('error', 'Tidak ada pengguna yang dipilih untuk diupdate.');
+            return redirect()->to('users')->with('error', 'Tidak ada pengguna yang dipilih untuk diupdate.');
         }
 
         // Konversi string "1,2,3" menjadi array [1, 2, 3]
@@ -246,18 +246,18 @@ class UserController extends BaseController
         }
 
         if (empty($dataToUpdate)) {
-            return redirect()->to('admin/users')->with('error', 'Tidak ada data valid untuk diupdate.');
+            return redirect()->to('users')->with('error', 'Tidak ada data valid untuk diupdate.');
         }
 
         $this->userModel->updateBatch($dataToUpdate, 'id');
 
-        return redirect()->to('admin/users')->with('success', count($dataToUpdate) . ' data pengguna berhasil diperbarui.');
+        return redirect()->to('users')->with('success', count($dataToUpdate) . ' data pengguna berhasil diperbarui.');
     }
     
     public function delete($id)
     {
         $this->userModel->delete($id);
-        return redirect()->to('admin/users')->with('success', 'User berhasil dihapus');
+        return redirect()->to('users')->with('success', 'User berhasil dihapus');
     }
 
     /**
@@ -295,7 +295,7 @@ class UserController extends BaseController
         $file = $this->request->getFile('file_excel');
 
         if (!$file || !$file->isValid() || $file->getExtension() !== 'csv') {
-            return redirect()->to('admin/users')->with('error', 'File tidak valid. Harap unggah file .csv');
+            return redirect()->to('users')->with('error', 'File tidak valid. Harap unggah file .csv');
         }
 
         $dataToInsert = [];
@@ -377,9 +377,9 @@ class UserController extends BaseController
             if (!empty($errors)) {
                 session()->setFlashdata('import_errors', $errors);
             }
-            return redirect()->to('admin/users')->with('success', $message);
+            return redirect()->to('users')->with('success', $message);
         }
 
-        return redirect()->to('admin/users')->with('error', 'Tidak ada data pengguna baru yang dapat diimpor dari file yang diunggah.');
+        return redirect()->to('users')->with('error', 'Tidak ada data pengguna baru yang dapat diimpor dari file yang diunggah.');
     }
 }

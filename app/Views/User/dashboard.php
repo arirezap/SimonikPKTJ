@@ -35,7 +35,7 @@ Dashboard
 
 <div class="card mb-4 shadow-sm">
     <div class="card-body">
-        <form method="GET" action="<?= site_url('user/dashboard') ?>" class="row g-3 align-items-end">
+        <form method="GET" action="<?= site_url('dashboard') ?>" class="row g-3 align-items-end">
             <div class="col-md-4">
                 <label for="tahun" class="form-label fw-bold">Pilih Tahun</label>
                 <select name="tahun" id="tahun" class="form-select" onchange="this.form.submit()">

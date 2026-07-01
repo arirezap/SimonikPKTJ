@@ -29,7 +29,7 @@
 
 <div class="card mb-5 shadow-sm">
     <div class="card-body">
-        <form method="GET" action="<?= site_url('admin/dashboard') ?>" class="row g-3 align-items-end">
+        <form method="GET" action="<?= site_url('dashboard') ?>" class="row g-3 align-items-end">
             <div class="col-md-5">
                 <label for="tahun" class="form-label fw-bold">Pilih Tahun</label>
                 <select class="form-select" id="tahun" name="tahun">

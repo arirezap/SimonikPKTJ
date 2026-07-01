@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Waktu pembuatan: 08 Feb 2026 pada 07.14
+-- Waktu pembuatan: 19 Jun 2026 pada 07.31
 -- Versi server: 8.4.3
 -- Versi PHP: 8.3.26
 
@@ -973,51 +973,51 @@ INSERT INTO `led_submissions` (`id`, `user_id`, `prodi`, `tahun`, `led_criteria_
 (368, 5, 'TO', 2025, 516, NULL, NULL, NULL, 0, '', NULL, '2025-11-17 09:24:39', '2025-11-17 09:24:39'),
 (369, 5, 'TO', 2025, 517, NULL, NULL, NULL, 0, '', NULL, '2025-11-17 09:24:39', '2025-11-17 09:24:39'),
 (370, 5, 'TO', 2025, 518, NULL, NULL, NULL, 0, '', NULL, '2025-11-17 09:24:39', '2025-11-17 09:24:39'),
-(371, 7, 'RSTJ', 2025, 583, 'Ada', 'sudah lengkap', 'dokumen sudah sesuai dengan VMTS', 1, 'https://drive.google.com/file/d/1dv-Cl_uXVAjv4qOc8gI5frbhlg2SaUrb/view?usp=drive_link', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(372, 7, 'RSTJ', 2025, 586, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(373, 7, 'RSTJ', 2025, 594, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(374, 7, 'RSTJ', 2025, 595, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(375, 7, 'RSTJ', 2025, 596, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(376, 7, 'RSTJ', 2025, 597, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(377, 7, 'RSTJ', 2025, 598, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(378, 7, 'RSTJ', 2025, 599, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(379, 7, 'RSTJ', 2025, 600, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(380, 7, 'RSTJ', 2025, 601, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(381, 7, 'RSTJ', 2025, 602, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(382, 7, 'RSTJ', 2025, 603, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(383, 7, 'RSTJ', 2025, 604, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(384, 7, 'RSTJ', 2025, 605, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(385, 7, 'RSTJ', 2025, 606, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(386, 7, 'RSTJ', 2025, 607, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(387, 7, 'RSTJ', 2025, 608, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(388, 7, 'RSTJ', 2025, 609, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(389, 7, 'RSTJ', 2025, 610, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(390, 7, 'RSTJ', 2025, 611, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(391, 7, 'RSTJ', 2025, 612, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(392, 7, 'RSTJ', 2025, 613, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(393, 7, 'RSTJ', 2025, 615, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(394, 7, 'RSTJ', 2025, 616, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(395, 7, 'RSTJ', 2025, 617, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(396, 7, 'RSTJ', 2025, 618, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(397, 7, 'RSTJ', 2025, 619, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(398, 7, 'RSTJ', 2025, 620, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(399, 7, 'RSTJ', 2025, 621, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(400, 7, 'RSTJ', 2025, 622, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(401, 7, 'RSTJ', 2025, 625, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(402, 7, 'RSTJ', 2025, 626, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25');
+(371, 0, 'RSTJ', 2025, 583, 'Ada', 'sudah lengkap', 'dokumen sudah sesuai dengan VMTS', 1, 'https://drive.google.com/file/d/1dv-Cl_uXVAjv4qOc8gI5frbhlg2SaUrb/view?usp=drive_link', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(372, 0, 'RSTJ', 2025, 586, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(373, 0, 'RSTJ', 2025, 594, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(374, 0, 'RSTJ', 2025, 595, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(375, 0, 'RSTJ', 2025, 596, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(376, 0, 'RSTJ', 2025, 597, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(377, 0, 'RSTJ', 2025, 598, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(378, 0, 'RSTJ', 2025, 599, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(379, 0, 'RSTJ', 2025, 600, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(380, 0, 'RSTJ', 2025, 601, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(381, 0, 'RSTJ', 2025, 602, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(382, 0, 'RSTJ', 2025, 603, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(383, 0, 'RSTJ', 2025, 604, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(384, 0, 'RSTJ', 2025, 605, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(385, 0, 'RSTJ', 2025, 606, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(386, 0, 'RSTJ', 2025, 607, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(387, 0, 'RSTJ', 2025, 608, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(388, 0, 'RSTJ', 2025, 609, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(389, 0, 'RSTJ', 2025, 610, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(390, 0, 'RSTJ', 2025, 611, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(391, 0, 'RSTJ', 2025, 612, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(392, 0, 'RSTJ', 2025, 613, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(393, 0, 'RSTJ', 2025, 615, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(394, 0, 'RSTJ', 2025, 616, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(395, 0, 'RSTJ', 2025, 617, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(396, 0, 'RSTJ', 2025, 618, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(397, 0, 'RSTJ', 2025, 619, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(398, 0, 'RSTJ', 2025, 620, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(399, 0, 'RSTJ', 2025, 621, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(400, 0, 'RSTJ', 2025, 622, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(401, 0, 'RSTJ', 2025, 625, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(402, 0, 'RSTJ', 2025, 626, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38');
 INSERT INTO `led_submissions` (`id`, `user_id`, `prodi`, `tahun`, `led_criteria_id`, `status`, `catatan_kabag`, `catatan_wadir`, `kabag_approved`, `catatan`, `file_bukti`, `created_at`, `updated_at`) VALUES
-(403, 7, 'RSTJ', 2025, 627, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(404, 7, 'RSTJ', 2025, 628, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(405, 7, 'RSTJ', 2025, 629, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(406, 7, 'RSTJ', 2025, 630, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(407, 7, 'RSTJ', 2025, 631, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(408, 7, 'RSTJ', 2025, 632, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(409, 7, 'RSTJ', 2025, 633, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(410, 7, 'RSTJ', 2025, 634, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(411, 7, 'RSTJ', 2025, 635, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(412, 7, 'RSTJ', 2025, 636, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(413, 7, 'RSTJ', 2025, 637, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
-(414, 7, 'RSTJ', 2025, 638, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:34:25'),
+(403, 0, 'RSTJ', 2025, 627, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(404, 0, 'RSTJ', 2025, 628, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(405, 0, 'RSTJ', 2025, 629, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(406, 0, 'RSTJ', 2025, 630, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(407, 0, 'RSTJ', 2025, 631, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(408, 0, 'RSTJ', 2025, 632, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(409, 0, 'RSTJ', 2025, 633, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(410, 0, 'RSTJ', 2025, 634, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(411, 0, 'RSTJ', 2025, 635, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(412, 0, 'RSTJ', 2025, 636, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(413, 0, 'RSTJ', 2025, 637, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
+(414, 0, 'RSTJ', 2025, 638, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2026-04-09 08:19:38'),
 (415, 16, 'RSTJ', 2025, 676, NULL, NULL, NULL, 0, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:05', '2025-11-27 03:30:52'),
 (416, 7, 'TRO', 2025, 647, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:56', '2025-11-17 15:06:14'),
 (417, 7, 'TRO', 2025, 650, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:45:56', '2025-11-17 15:06:14'),
@@ -1100,26 +1100,26 @@ INSERT INTO `led_submissions` (`id`, `user_id`, `prodi`, `tahun`, `led_criteria_
 (494, 7, 'TO', 2025, 756, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:46:25', '2025-11-17 15:09:18'),
 (495, 7, 'TO', 2025, 757, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:46:25', '2025-11-17 15:09:18'),
 (496, 7, 'TO', 2025, 758, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:46:25', '2025-11-17 15:09:18'),
-(497, 7, 'RSTJ', 2025, 584, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2025-11-27 03:34:25'),
-(498, 7, 'RSTJ', 2025, 585, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2025-11-27 03:34:25'),
-(499, 7, 'RSTJ', 2025, 587, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2025-11-27 03:34:25'),
-(500, 7, 'RSTJ', 2025, 588, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2025-11-27 03:34:25'),
-(501, 7, 'RSTJ', 2025, 589, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2025-11-27 03:34:25'),
-(502, 7, 'RSTJ', 2025, 590, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2025-11-27 03:34:25'),
-(503, 7, 'RSTJ', 2025, 591, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2025-11-27 03:34:25'),
-(504, 7, 'RSTJ', 2025, 592, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2025-11-27 03:34:25'),
-(505, 7, 'RSTJ', 2025, 593, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2025-11-27 03:34:25'),
-(506, 7, 'RSTJ', 2025, 614, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2025-11-27 03:34:25'),
-(507, 7, 'RSTJ', 2025, 623, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2025-11-27 03:34:25'),
-(508, 7, 'RSTJ', 2025, 624, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2025-11-27 03:34:25'),
-(509, 7, 'RSTJ', 2025, 639, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2025-11-27 03:34:25'),
-(510, 7, 'RSTJ', 2025, 640, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2025-11-27 03:34:25'),
-(511, 7, 'RSTJ', 2025, 641, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2025-11-27 03:34:25'),
-(512, 7, 'RSTJ', 2025, 642, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2025-11-27 03:34:25'),
-(513, 7, 'RSTJ', 2025, 643, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2025-11-27 03:34:25'),
-(514, 7, 'RSTJ', 2025, 644, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2025-11-27 03:34:25'),
-(515, 7, 'RSTJ', 2025, 645, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2025-11-27 03:34:25'),
-(516, 7, 'RSTJ', 2025, 646, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2025-11-27 03:34:25'),
+(497, 0, 'RSTJ', 2025, 584, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2026-04-09 08:19:38'),
+(498, 0, 'RSTJ', 2025, 585, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2026-04-09 08:19:38'),
+(499, 0, 'RSTJ', 2025, 587, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2026-04-09 08:19:38'),
+(500, 0, 'RSTJ', 2025, 588, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2026-04-09 08:19:38'),
+(501, 0, 'RSTJ', 2025, 589, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2026-04-09 08:19:38'),
+(502, 0, 'RSTJ', 2025, 590, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2026-04-09 08:19:38'),
+(503, 0, 'RSTJ', 2025, 591, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2026-04-09 08:19:38'),
+(504, 0, 'RSTJ', 2025, 592, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2026-04-09 08:19:38'),
+(505, 0, 'RSTJ', 2025, 593, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2026-04-09 08:19:38'),
+(506, 0, 'RSTJ', 2025, 614, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2026-04-09 08:19:38'),
+(507, 0, 'RSTJ', 2025, 623, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2026-04-09 08:19:38'),
+(508, 0, 'RSTJ', 2025, 624, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2026-04-09 08:19:38'),
+(509, 0, 'RSTJ', 2025, 639, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2026-04-09 08:19:38'),
+(510, 0, 'RSTJ', 2025, 640, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2026-04-09 08:19:38'),
+(511, 0, 'RSTJ', 2025, 641, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2026-04-09 08:19:38'),
+(512, 0, 'RSTJ', 2025, 642, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2026-04-09 08:19:38'),
+(513, 0, 'RSTJ', 2025, 643, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2026-04-09 08:19:38'),
+(514, 0, 'RSTJ', 2025, 644, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2026-04-09 08:19:38'),
+(515, 0, 'RSTJ', 2025, 645, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2026-04-09 08:19:38'),
+(516, 0, 'RSTJ', 2025, 646, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:15', '2026-04-09 08:19:38'),
 (517, 7, 'TRO', 2025, 648, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:40', '2025-11-17 15:06:14'),
 (518, 7, 'TRO', 2025, 649, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:40', '2025-11-17 15:06:14'),
 (519, 7, 'TRO', 2025, 651, 'Ada', 'oke', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:40', '2025-11-17 15:06:14'),
@@ -1159,7 +1159,76 @@ INSERT INTO `led_submissions` (`id`, `user_id`, `prodi`, `tahun`, `led_criteria_
 (553, 7, 'TO', 2025, 763, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:58', '2025-11-17 15:09:18'),
 (554, 7, 'TO', 2025, 764, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:58', '2025-11-17 15:09:18'),
 (555, 7, 'TO', 2025, 765, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:58', '2025-11-17 15:09:18'),
-(556, 7, 'TO', 2025, 766, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:58', '2025-11-17 15:09:18');
+(556, 7, 'TO', 2025, 766, 'Ada', 'baik', 'baik', 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2025-11-17 14:56:58', '2025-11-17 15:09:18'),
+(557, 173, 'RSTJ', 2026, 583, NULL, 'sudah lengkap', NULL, 1, 'https://drive.google.com/drive/folders/113HrM1O_tAadOE5PNQOfpmIpbX4ySnJj?usp=sharing', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(558, 173, 'RSTJ', 2026, 586, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(559, 173, 'RSTJ', 2026, 594, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(560, 173, 'RSTJ', 2026, 595, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(561, 173, 'RSTJ', 2026, 596, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(562, 173, 'RSTJ', 2026, 597, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(563, 173, 'RSTJ', 2026, 598, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(564, 173, 'RSTJ', 2026, 599, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(565, 173, 'RSTJ', 2026, 600, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(566, 173, 'RSTJ', 2026, 601, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(567, 173, 'RSTJ', 2026, 602, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(568, 173, 'RSTJ', 2026, 603, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(569, 173, 'RSTJ', 2026, 604, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(570, 173, 'RSTJ', 2026, 605, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(571, 173, 'RSTJ', 2026, 606, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(572, 173, 'RSTJ', 2026, 607, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(573, 173, 'RSTJ', 2026, 608, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(574, 173, 'RSTJ', 2026, 609, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(575, 173, 'RSTJ', 2026, 610, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(576, 173, 'RSTJ', 2026, 611, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(577, 173, 'RSTJ', 2026, 612, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(578, 173, 'RSTJ', 2026, 613, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(579, 173, 'RSTJ', 2026, 615, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(580, 173, 'RSTJ', 2026, 616, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(581, 173, 'RSTJ', 2026, 617, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(582, 173, 'RSTJ', 2026, 618, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(583, 173, 'RSTJ', 2026, 619, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(584, 173, 'RSTJ', 2026, 620, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(585, 173, 'RSTJ', 2026, 621, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(586, 173, 'RSTJ', 2026, 622, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(587, 173, 'RSTJ', 2026, 625, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(588, 173, 'RSTJ', 2026, 626, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(589, 173, 'RSTJ', 2026, 627, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(590, 173, 'RSTJ', 2026, 628, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(591, 173, 'RSTJ', 2026, 629, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(592, 173, 'RSTJ', 2026, 630, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(593, 173, 'RSTJ', 2026, 631, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(594, 173, 'RSTJ', 2026, 632, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(595, 173, 'RSTJ', 2026, 633, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(596, 173, 'RSTJ', 2026, 634, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(597, 173, 'RSTJ', 2026, 635, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(598, 173, 'RSTJ', 2026, 636, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(599, 173, 'RSTJ', 2026, 637, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18'),
+(600, 173, 'RSTJ', 2026, 638, NULL, '', NULL, 0, '', NULL, '2026-04-13 02:47:07', '2026-04-13 02:48:18');
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `master_indikator`
+--
+
+CREATE TABLE `master_indikator` (
+  `id` int UNSIGNED NOT NULL,
+  `sasaran_id` int UNSIGNED DEFAULT NULL,
+  `nama_indikator` text COLLATE utf8mb4_general_ci NOT NULL,
+  `satuan` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data untuk tabel `master_indikator`
+--
+
+INSERT INTO `master_indikator` (`id`, `sasaran_id`, `nama_indikator`, `satuan`, `created_at`, `updated_at`) VALUES
+(1, NULL, 'Persentase Lulusan yang Terserap Dunia Kerja', 'Persen', NULL, NULL),
+(2, NULL, 'Jumlah Publikasi Ilmiah Internasional', 'Dokumen', NULL, NULL),
+(3, NULL, 'Indeks Kepuasan Masyarakat', 'Indeks', NULL, NULL),
+(4, NULL, 'Nilai SAKIP Instansi', 'Nilai', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1204,7 +1273,16 @@ INSERT INTO `migrations` (`id`, `version`, `class`, `group`, `namespace`, `time`
 (29, '2025-11-08-025948', 'App\\Database\\Migrations\\AddCommentsToLedSubmissions', 'default', 'App', 1762570958, 16),
 (31, '2025-11-08-025948', 'App\\Database\\Migrations\\CreateRemunerasiTable', 'default', 'App', 1762583377, 17),
 (32, '2025-08-13-051242', 'App\\Database\\Migrations\\AddKinerjaColumnsToUsers', 'default', 'App', 1770444414, 18),
-(33, '2025-08-13-051242', 'App\\Database\\Migrations\\AddAtasanToUsers', 'default', 'App', 1770444606, 19);
+(33, '2025-08-13-051242', 'App\\Database\\Migrations\\AddAtasanToUsers', 'default', 'App', 1770444606, 19),
+(34, '2025-11-08-062613', 'App\\Database\\Migrations\\CreateRemunerasiTable', 'default', 'App', 1770536390, 20),
+(35, '2026-02-07-060611', 'App\\Database\\Migrations\\AddKinerjaColumnsToUsers', 'default', 'App', 1770536390, 20),
+(36, '2026-02-07-060946', 'App\\Database\\Migrations\\AddAtasanToUsers', 'default', 'App', 1770536390, 20),
+(37, '2026-02-08-073109', 'App\\Database\\Migrations\\CreateSkpTable', 'default', 'App', 1770536390, 20),
+(38, '2026-02-08-074335', 'App\\Database\\Migrations\\CreateSkpHeaders', 'default', 'App', 1770536631, 21),
+(39, '2026-02-08-081237', 'App\\Database\\Migrations\\AddFieldsToSkpTargets', 'default', 'App', 1770538591, 22),
+(40, '2026-02-08-085653', 'App\\Database\\Migrations\\CreateMasterIndikator', 'default', 'App', 1770541030, 23),
+(42, '2026-04-10-030246', 'App\\Database\\Migrations\\CreateUnitKerjaTable', 'default', 'App', 1775793092, 24),
+(43, '2026-04-10-035010', 'App\\Database\\Migrations\\AddParentUnitToUnitKerja', 'default', 'App', 1775793141, 25);
 
 -- --------------------------------------------------------
 
@@ -1367,6 +1445,87 @@ INSERT INTO `satuan` (`id`, `nama_satuan`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Struktur dari tabel `skp_headers`
+--
+
+CREATE TABLE `skp_headers` (
+  `id` int UNSIGNED NOT NULL,
+  `user_id` int UNSIGNED NOT NULL,
+  `tahun` year NOT NULL,
+  `model_skp` enum('Kuantitatif','Kualitatif') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'Kuantitatif',
+  `periode_awal` date NOT NULL,
+  `periode_akhir` date NOT NULL,
+  `status` enum('Draft','Diajukan','Disetujui') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'Draft',
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `skp_targets`
+--
+
+CREATE TABLE `skp_targets` (
+  `id` int UNSIGNED NOT NULL,
+  `user_id` int UNSIGNED NOT NULL,
+  `skp_header_id` int UNSIGNED DEFAULT NULL,
+  `tahun` year NOT NULL,
+  `jenis` enum('Utama','Tambahan') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'Utama',
+  `rhk_pimpinan` text COLLATE utf8mb4_general_ci,
+  `rencana_kinerja` text COLLATE utf8mb4_general_ci NOT NULL,
+  `aspek` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `indikator` text COLLATE utf8mb4_general_ci NOT NULL,
+  `target` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `satuan` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `unit_kerja`
+--
+
+CREATE TABLE `unit_kerja` (
+  `id` int UNSIGNED NOT NULL,
+  `nama_unit` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `parent_unit` enum('aak','kuk') COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT 'Penanggung jawab utama (AAK atau KUK)',
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data untuk tabel `unit_kerja`
+--
+
+INSERT INTO `unit_kerja` (`id`, `nama_unit`, `parent_unit`, `created_at`, `updated_at`) VALUES
+(1, 'Unit Teknik Informatika', 'aak', '2026-04-10 03:55:45', '2026-04-10 03:55:45'),
+(2, 'Tim Substansi Bidang Umum', 'kuk', '2026-04-10 08:45:53', '2026-04-10 08:45:53'),
+(3, 'Tim Substansi Bidang Keuangan', 'kuk', '2026-04-10 08:46:23', '2026-04-10 08:46:23'),
+(4, 'Tim Substansi Bidang Kerjasama', 'kuk', '2026-04-10 08:46:43', '2026-04-10 08:46:43'),
+(5, 'Tim Substansi Bidang Administrasi Akademik', 'aak', '2026-04-10 08:47:00', '2026-04-10 08:47:00'),
+(6, 'Tim Substansi Bidang Administrasi Ketarunaan dan Alumni', 'aak', '2026-04-10 08:47:33', '2026-04-10 08:47:33'),
+(7, 'Satuan Pemeriksaan Internal', 'kuk', '2026-04-10 08:47:49', '2026-04-10 08:47:49'),
+(8, 'Satuan Penjaminan Mutu', 'kuk', '2026-04-10 08:47:56', '2026-04-10 08:47:56'),
+(9, 'Pusat Penelitian dan Pengabdian Masyarakat', 'kuk', '2026-04-10 08:48:15', '2026-04-10 08:48:15'),
+(10, 'Pusat Pengembangan Karakter', 'aak', '2026-04-10 08:48:22', '2026-04-10 08:48:22'),
+(11, 'Prodi TRO', 'aak', '2026-04-10 08:48:31', '2026-04-10 08:48:31'),
+(12, 'Prodi RSTJ', 'aak', '2026-04-10 08:48:38', '2026-04-10 08:48:38'),
+(13, 'Prodi TO', 'aak', '2026-04-10 08:48:47', '2026-04-10 08:48:47'),
+(14, 'Unit Laboratorium', 'aak', '2026-04-10 08:49:13', '2026-04-10 08:49:13'),
+(15, 'Unit Perpustakaan', 'aak', '2026-04-10 08:49:29', '2026-04-10 08:49:29'),
+(16, 'Unit Bahasa', 'aak', '2026-04-10 08:49:37', '2026-04-10 08:49:37'),
+(17, 'Unit Pengembangan Usaha', 'kuk', '2026-04-10 08:50:01', '2026-04-10 08:50:01'),
+(18, 'Unit Asrama', 'kuk', '2026-04-10 08:50:15', '2026-04-10 08:50:15'),
+(19, 'Unit Kesehatan', 'kuk', '2026-04-10 08:50:26', '2026-04-10 08:50:26'),
+(20, 'Pokja Diklat', 'aak', '2026-04-10 08:50:41', '2026-04-10 08:50:41'),
+(21, 'Pokja Humas dan PPID', 'kuk', '2026-04-10 08:50:48', '2026-04-10 08:50:48');
+
+-- --------------------------------------------------------
+
+--
 -- Struktur dari tabel `users`
 --
 
@@ -1390,20 +1549,166 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `password`, `nama_lengkap`, `email`, `role`, `atasan_id`, `foto`, `nip`, `jabatan`, `unit`, `pangkat`) VALUES
-(1, 'admin', '$2y$10$pxxJBsCs/hg2IayNs96EP.acQRX36No8LOEVav03377bHvPzWa9Qq', 'Administrator Utama', 'admin@simonik.com', 'admin', NULL, 'default.png', NULL, NULL, NULL, NULL),
-(5, 'itpktj', '$2y$10$fFEyXyikpIUfgTtckqX8d.6VLk49MclSPBiMzo.FazKhibujnUSb6', 'Mokhammad Rifqi Tsani, S.Kom., M.Kom.', 'it.pktj@pktj.ac.id', 'manajemen', 12, 'default.png', '', '', '', ''),
-(6, 'direkturpktj', '$2y$10$HkZOrEwM5UspEBwcsGcyX.z/dMw/nBYw3fqw25fQ3HzOagpChfiI2', 'Bambang Istiyanto, S.SiT., M.T.', 'pktj@pktj.ac.id', 'manajemen', NULL, 'default.png', '197307011996021002', 'Direktur Politeknik Keselamatan Transportasi Jalan', 'Politeknik Keselamatan Transportasi Jalan', 'Pembina IV/a'),
-(7, 'wadir1pktj', '$2y$10$CUHHeyP13BAWvOMN6pCUBeYyXSorJhNqf6tHJqOGyvsMXOnxNmqRq', 'Edi Purwanto', 'wadir1@gmail.com', 'manajemen', 6, 'default.png', '', '', '', ''),
-(8, 'diklatpktj', '$2y$10$DMeeWEKxZD5Z9w.r4Ed1Pez0w1Qia.x2q0f7IOAX8st4Xt3.tV.W.', 'Pokja Diklat', 'diklat@pktj.ac.id', 'aak', NULL, 'default.png', NULL, NULL, NULL, NULL),
+(1, 'admin', '$2y$10$UkLmczVlKdYiRFLjnVqyHenXPX026.PvzPzlb8iN1Uy8oKpx7ODsG', 'Administrator Utama', 'admin@simonik.com', 'admin', NULL, 'default.png', '', '', '', ''),
+(8, 'diklatpktj', '$2y$10$DMeeWEKxZD5Z9w.r4Ed1Pez0w1Qia.x2q0f7IOAX8st4Xt3.tV.W.', 'Pokja Diklat', 'diklat@pktj.ac.id', 'user', 12, 'default.png', '', '', '', ''),
 (9, 'keuanganpktj', '$2y$10$iJegL2gtWXf36zF.qKnLBuqLhojF8S/5l9SnzzcLH6W3pixOGAFVu', 'Keuangan PKTJ', 'keuangan@pktj.ac.id', 'kuk', NULL, 'default.png', NULL, NULL, NULL, NULL),
-(10, 'wadir2', '$2y$10$4IzlifiiFbLXnTU5GgkTaOBd.Nkm1G25pVBmrXFW9GxGw0DIJzcr6', 'Wakil Direktur 2', 'wadir2@gmail.com', 'manajemen', NULL, 'default.png', NULL, NULL, NULL, NULL),
-(11, 'wadir3', '$2y$10$Cc.p5W4Vw2umh/dTaU1pluEuMOtpfp1Mmt8QreodyJcEY1qlLELzy', 'Wakil Direktur 3', 'wadir3@gmail.com', 'manajemen', NULL, 'default.png', NULL, NULL, NULL, NULL),
-(12, 'baakpktj', '$2y$10$aPcpd60VjQT/I8/rFhhg.ulAnqupe6FVaXi76LqxVRa2TPamWKuB6', 'Prima Anna Maria G. C., S.SiT.', 'baakpktj@pktj.ac.id', 'kabag_aak', NULL, 'default.png', '197402041997032005', 'Kepala Bagian Administrasi Akademik dan Ketarunaan', 'Bagian Administrasi Akademik dan Ketarunaan', 'Pembina (IV/a)'),
-(13, 'kukpktj', '$2y$10$0B2mb/Vfm2QWNwXp/2Q6jOPqxi0rkGaNdsV6TROVYApC6/p6gDtoq', 'Kabag KUK', 'kukpktj@pktj.ac.id', 'kabag_kuk', NULL, 'default.png', NULL, NULL, NULL, NULL),
+(13, 'kukpktj', '$2y$10$0B2mb/Vfm2QWNwXp/2Q6jOPqxi0rkGaNdsV6TROVYApC6/p6gDtoq', 'Kabag KUK', 'kukpktj@pktj.ac.id', 'kabag_kuk', 50, 'default.png', '', '', '', ''),
 (14, 'spmpktj', '$2y$10$kWb9DPxTDUawqQzyLObLIuPngSFju0PU4V2dN/E58ILB8SDDNzvJG', 'SPM PKTJ', 'spm@pktj.ac.id', 'spm', NULL, 'default.png', NULL, NULL, NULL, NULL),
-(15, 'pusbangkar', '$2y$10$cES7Gb82NRUSsMsiC1EJP.bvjuOwY8UJvVA9uCm3LKxitN0RcGlfu', 'Pusbangkar', 'pusbangkar@pktj.ac.id', 'aak', NULL, 'default.png', NULL, NULL, NULL, NULL),
-(16, 'akademik', '$2y$10$I6SAmPW3wnduwnx7GYd3IOCqJG5mbgN.1hqpHwmTiPfgcxbpU.jSC', 'Akademik PKTJ', 'akademik@pktj.ac.id', 'aak', NULL, 'default.png', NULL, NULL, NULL, NULL),
-(17, 'arirezap', '$2y$10$BZPw9oQwkS6YGLAkA6ULFeRg3J6WYaSO1DwajLkLQkV7MNNE6RQTG', 'Ari Reza Prakasa, S.Kom.', 'ari@pktj.ac.id', 'user', 12, NULL, '199806112023211004', 'Pranata Komputer Ahli Pertama', 'Unit Teknologi Informasi', 'IX');
+(18, '198008012008121001', '0527794b060365bd33c5572ecbebf8cc', 'AGUS HARIYANTO', '198008012008121001@pktj.ac.id', 'kabag_kuk', 50, NULL, '198008012008121001', 'Kepala Bagian Keuangan, Umum, Kerjasama', 'Bagian Keuangan, Umum, Kerjasama', ''),
+(20, '199710162020122005', 'cdbf4732b3922aa3c918b47e98bc71dc', 'GHINA KHAIRUNISSA', '199710162020122005@pktj.ac.id', 'user', 0, NULL, '199710162020122005', '', '', ''),
+(21, '199807242022101001', 'c3df22b55ae6153c8a560a12b0c1b73e', 'ILHAM BAGUS PRASETYO', '199807242022101001@pktj.ac.id', 'user', 173, NULL, '199807242022101001', '', '', ''),
+(22, '199910162022102001', 'fe602edc5c0ac1c36f482715603a8ee7', 'NORMALITA TRI WIDYASTUTI', '199910162022102001@pktj.ac.id', 'user', 0, NULL, '199910162022102001', '', '', ''),
+(23, '200001282022102001', '8f7da64dd68c616155fcaee502d8baf8', 'DYAH PANGESTU SUHARTATI', '200001282022102001@pktj.ac.id', 'user', 0, NULL, '200001282022102001', '', '', ''),
+(24, '200007292022102001', '8b2f4d5023b4f19c8370d8e74aa4d6bc', 'META HARISMA NOR AINI', '200007292022102001@pktj.ac.id', 'user', 0, NULL, '200007292022102001', '', '', ''),
+(25, '198307032006041001', '2d51335eb61f893733840f1cac53fff6', 'ALAN JULIARAMA TEDJAKUSUMAH', '198307032006041001@pktj.ac.id', 'user', 0, NULL, '198307032006041001', '', 'Tim Substansi Bidang Umum', ''),
+(26, '199907122023102001', 'b6f8f53008f4ed59bd20a6c21d236008', 'NADILLA EKA KUSUMAWATI', '199907122023102001@pktj.ac.id', 'user', 0, NULL, '199907122023102001', '', '', ''),
+(27, '200010252023101001', '24e92386898863da2e59be6ff7900f38', 'MUHAMMAD ISRO`RISQI', '200010252023101001@pktj.ac.id', 'user', 173, NULL, '200010252023101001', '', '', ''),
+(28, '200009172022101001', '0870b322722d3b9e93904820b41a5f89', 'MUHAMMAD AL ALI FAIZAL', '200009172022101001@pktj.ac.id', 'user', 0, NULL, '200009172022101001', '', '', ''),
+(29, '199704202018122003', '646383ccfea1273fb77d4ce022bdcdd5', 'SALLY APRIYANTI NASUTION', '199704202018122003@pktj.ac.id', 'user', 0, NULL, '199704202018122003', '', '', ''),
+(30, '198707212010121005', 'f19544c77cb6d11fc5d2bd0ba0123a65', 'FARIZQI', '198707212010121005@pktj.ac.id', 'user', 173, NULL, '198707212010121005', '', '', ''),
+(31, '199711102020121004', 'e1e473b0ced29190157ee474e403aff9', 'BAGUS IKAPRAJA', '199711102020121004@pktj.ac.id', 'user', 173, NULL, '199711102020121004', '', '', ''),
+(32, '197708312007121001', '551c5c393d27fe0a3ff2225d6d82d901', 'ANZAL BURHANI HAQQI', '197708312007121001@pktj.ac.id', 'user', 0, NULL, '197708312007121001', '', '', ''),
+(33, '196910152012121002', 'e2096629b369a3d87efe8138100ef6e6', 'TUGAS BUDIARTO', '196910152012121002@pktj.ac.id', 'user', 0, NULL, '196910152012121002', '', '', ''),
+(34, '197707292012121002', '85afaecf189045eb6b6b97da2c7a9a9c', 'SURATMAN', '197707292012121002@pktj.ac.id', 'user', 0, NULL, '197707292012121002', '', '', ''),
+(35, '197808242012121004', '1a1892e03330e7bc083e6680f5a5f3d0', 'NOWO SAKTI WIBOWO', '197808242012121004@pktj.ac.id', 'user', 173, NULL, '197808242012121004', '', '', ''),
+(36, '199505182022031013', 'c4f85adc28677d94230166ea3661963e', 'MUHAMAD FAHRI AZIZI', '199505182022031013@pktj.ac.id', 'user', 173, NULL, '199505182022031013', '', '', ''),
+(37, '199505222022032017', '246be18cfab77f01cca0280d095d64bc', 'PUTRI MEINDRI PERMATASARI', '199505222022032017@pktj.ac.id', 'user', 0, NULL, '199505222022032017', '', '', ''),
+(38, '199807172020121005', '77664c5158f5f181840f1125579be91e', 'MUHAMAD YULI  DWI RIVANGI', '199807172020121005@pktj.ac.id', 'user', 173, NULL, '199807172020121005', '', '', ''),
+(39, '200001312021121001', '829417b794053f7c859a576504bf8127', 'ARIK WIJAYA', '200001312021121001@pktj.ac.id', 'user', 0, NULL, '200001312021121001', '', '', ''),
+(40, '200011102023102001', '18357aea2a45e6332b21ca7e3c77a38f', 'DENISYA HADDAD FIRDAUS', '200011102023102001@pktj.ac.id', 'user', 173, NULL, '200011102023102001', '', '', ''),
+(41, '199901062024121001', '674227b5700abdcf78e0078d6a0c50f8', 'RIFQI JINAN ALBADI', '199901062024121001@pktj.ac.id', 'user', 18, NULL, '199901062024121001', '', 'Tim Substansi Bidang Keuangan', ''),
+(42, '196802071990031012', '9ee039fedd49e6997cef59b81d342c0c', 'EDI PURWANTO', '196802071990031012@pktj.ac.id', 'manajemen', 50, NULL, '196802071990031012', 'Wakil Direktur 1', '', ''),
+(43, '196606011991031004', '89761696506df0c04b45a3e03057f917', 'SUGIANTO', '196606011991031004@pktj.ac.id', 'manajemen', 50, NULL, '196606011991031004', 'Wakil Direktur 2', '', ''),
+(44, '196502201988031007', '458f66ae957fc32e5bb06f40358662c5', 'BUANG TURASNO', '196502201988031007@pktj.ac.id', 'user', 0, NULL, '196502201988031007', '', '', ''),
+(45, '198111182008122002', 'd214712c5364c3f7a2dc47b33ca495cc', 'INDRI PUSPITASARI', '198111182008122002@pktj.ac.id', 'user', 0, NULL, '198111182008122002', '', '', ''),
+(46, '196212181989031006', 'fd72a0736c1ba842120023ee338c327c', 'GUNAWAN', '196212181989031006@pktj.ac.id', 'user', 0, NULL, '196212181989031006', '', '', ''),
+(47, '196603261986031007', 'ff9f3cf535e4790640392e49e9a3b3ca', 'AGUS BUDI PURWANTORO', '196603261986031007@pktj.ac.id', 'user', 0, NULL, '196603261986031007', '', '', ''),
+(48, '197006041996031002', '71eb14122bdb11c5023aab21eb4b7a76', 'MOHAMAD HERMAWAN', '197006041996031002@pktj.ac.id', 'user', 0, NULL, '197006041996031002', '', '', ''),
+(49, '197005191993011001', 'c03be0d9e481bbf9a4621a1fb0244d35', 'HANENDYO PUTRO', '197005191993011001@pktj.ac.id', 'user', 0, NULL, '197005191993011001', '', '', ''),
+(50, '197307011996021002', 'e6aa1c30351a38622b00030e87a1b460', 'BAMBANG ISTIYANTO', '197307011996021002@pktj.ac.id', 'manajemen', NULL, '1776056545_e5aa8872b3b475849e96.png', '197307011996021002', 'Direktur', '', ''),
+(51, '197311092005022001', '43029d75ee00afbb970fe0aef7c863a2', 'NOVITASARI TRI NUGRAH ENI', '197311092005022001@pktj.ac.id', 'user', 0, NULL, '197311092005022001', '', '', ''),
+(52, '197302052005021001', '2b19c53d1db36f134485c1e8c1764dce', 'CORSINUS TRISNO SUSANTO', '197302052005021001@pktj.ac.id', 'user', 173, NULL, '197302052005021001', '', '', ''),
+(53, '197411292006041001', '5564f5aa6e28fed743f4b077e5382907', 'R.ARIEF NOVIANTO', '197411292006041001@pktj.ac.id', 'user', 173, NULL, '197411292006041001', '', '', ''),
+(54, '197411261998031001', '754cf3f24efea9d901a5ad2db801e725', 'SOLEKHUDIN', '197411261998031001@pktj.ac.id', 'user', 0, NULL, '197411261998031001', '', '', ''),
+(55, '198105222008121002', '6840a457fb50c0988687de6755f18727', 'SETYA WIJAYANTA', '198105222008121002@pktj.ac.id', 'manajemen', 50, NULL, '198105222008121002', 'Wakil Direktur 2', '', ''),
+(56, '198002022008122001', '8f74ce498b2cb0188e29b047d42ee055', 'NAOMI SRIE KUSUMASTUTIE', '198002022008122001@pktj.ac.id', 'user', 0, NULL, '198002022008122001', '', '', ''),
+(57, '198208132003121003', 'c404f23a23f3d7996b4bd2a409c8c3d9', 'SETIA HADI PRAMUDI', '198208132003121003@pktj.ac.id', 'manajemen', 18, NULL, '198208132003121003', '', 'Satuan Penjaminan Mutu', ''),
+(58, '197102191991031001', '072a9a28a7eddfb73a3aa12a98dafe24', 'SUGIYARSO', '197102191991031001@pktj.ac.id', 'user', 173, NULL, '197102191991031001', '', '', ''),
+(59, '198305042008121001', '81eb6ae231768e828f5da0e126e3a3b8', 'ANTON BUDIHARJO', '198305042008121001@pktj.ac.id', 'user', 0, NULL, '198305042008121001', '', '', ''),
+(60, '198110132005021001', '15e70cec4b2cadddcf885dde8585240a', 'KARYONO', '198110132005021001@pktj.ac.id', 'user', 0, NULL, '198110132005021001', '', '', ''),
+(61, '197510282008121002', '9bea5d71d1d361d35bfd6e054f09401c', 'NANANG OKTA WIDIANDARU', '197510282008121002@pktj.ac.id', 'user', 0, NULL, '197510282008121002', '', '', ''),
+(62, '198409232008121002', 'de2380166a8662faea6c3c82bbf42e8d', 'ALFAN BAHARUDDIN', '198409232008121002@pktj.ac.id', 'user', 0, NULL, '198409232008121002', '', '', ''),
+(63, '198311072008122002', 'b5a5cb8e2de56caa1c4fa3cd59f6ee74', 'SUPRIATIN', '198311072008122002@pktj.ac.id', 'user', 173, NULL, '198311072008122002', '', '', ''),
+(64, '198501072008121003', 'c25bfb6e1bd3d8b9e866329227231dee', 'SUGIYARTO', '198501072008121003@pktj.ac.id', 'user', 173, NULL, '198501072008121003', '', '', ''),
+(65, '198401262008121001', 'e5e67dfe0d8ed13c9a561efcba7a9ae0', 'GUNAWAN', '198401262008121001@pktj.ac.id', 'user', 173, NULL, '198401262008121001', '', '', ''),
+(66, '198307042009121004', '4a8866216e4b9b1b626f65320919c46a', 'ERY MUTHORIQ', '198307042009121004@pktj.ac.id', 'user', 0, NULL, '198307042009121004', '', '', ''),
+(67, '197702192003121001', '363defe126361462d264b9039635e881', 'KUNTO ANDHITO', '197702192003121001@pktj.ac.id', 'user', 0, NULL, '197702192003121001', '', '', ''),
+(68, '198401302009121002', '51a32d29d8a2eeacecb91bb2cb6f2df6', 'ERMAWAN PRASETYA', '198401302009121002@pktj.ac.id', 'user', 0, NULL, '198401302009121002', '', '', ''),
+(69, '198409282009121004', '358006196592289c7d7349680d822aa6', 'IRFAN TRIANDANA', '198409282009121004@pktj.ac.id', 'user', 0, NULL, '198409282009121004', '', '', ''),
+(70, '198504072009122003', '4da02092b52cc2c5ec135c41deb850f9', 'IMA NATRIA', '198504072009122003@pktj.ac.id', 'user', 173, NULL, '198504072009122003', '', '', ''),
+(71, '198301312009121004', 'b1d8a03202019cc43de334f4e16f3258', 'EDI SUTRISNO', '198301312009121004@pktj.ac.id', 'user', 0, NULL, '198301312009121004', '', '', ''),
+(72, '198507012008121002', '949c0f190de9813240bd2cc206cb2398', 'AJI RONALDO', '198507012008121002@pktj.ac.id', 'user', 173, NULL, '198507012008121002', '', 'Tim Substansi Bidang Administrasi Ketarunaan dan Alumni', ''),
+(73, '197601041998031001', '3290160c862f6caf10ed58771d3e15a2', 'SUPARTONO', '197601041998031001@pktj.ac.id', 'user', 173, NULL, '197601041998031001', '', '', ''),
+(74, '198506052008122002', 'ab7cb372fed192ae80bb8044e7fed118', 'PIPIT RUSMANDANI', '198506052008122002@pktj.ac.id', 'user', 173, NULL, '198506052008122002', '', '', ''),
+(75, '198006022009121001', 'e175684d7c272a7d2ad06e7a41595afd', 'ETHYS PRANOTO', '198006022009121001@pktj.ac.id', 'user', 173, NULL, '198006022009121001', '', '', ''),
+(76, '198503112008121004', '6132edfff8b10a0a228f36f3a5b32076', 'FAHRIZAL ADHIKRISNA', '198503112008121004@pktj.ac.id', 'user', 0, NULL, '198503112008121004', '', '', ''),
+(77, '198805282019021002', '791a84bc82095f6b11c38882116a0d89', 'JOKO SISWANTO', '198805282019021002@pktj.ac.id', 'user', 57, NULL, '198805282019021002', '', 'Satuan Penjaminan Mutu', ''),
+(78, '198908222019021001', 'a1188516719869b8cd9a6b5fcb721242', 'MOKHAMMAD RIFQI TSANI', '198908222019021001@pktj.ac.id', 'manajemen', 173, NULL, '198908222019021001', '', '', ''),
+(79, '199301042019021002', '2c3bada0cd26f95e2dbef5abc87989ed', 'MUHAMMAD IMAN NUR HAKIM', '199301042019021002@pktj.ac.id', 'user', 173, NULL, '199301042019021002', '', '', ''),
+(80, '199210092019021002', '5ac119e07726701a59ca47ef5c3913b8', 'MOCH. AZIZ KURNIAWAN', '199210092019021002@pktj.ac.id', 'user', 0, NULL, '199210092019021002', '', '', ''),
+(81, '198309252008121001', '242fc07bdf10cabc0a7907342b8bf851', 'AHMAD BASUKI', '198309252008121001@pktj.ac.id', 'user', 0, NULL, '198309252008121001', '', '', ''),
+(82, '198806052019021004', '58823f8c68529f259fb7f288c7dc3ce6', 'FRANS TOHOM', '198806052019021004@pktj.ac.id', 'user', 173, NULL, '198806052019021004', '', '', ''),
+(83, '198806272019021001', '7e6ccd9df7ddec9839d165cb46e39a2b', 'AAT ESKA FAHMADI', '198806272019021001@pktj.ac.id', 'user', 173, NULL, '198806272019021001', '', 'Unit Bahasa', ''),
+(84, '199110242019021002', 'd52cb16cd36efff0928a50b38979681e', 'YOGI OKTOPIANTO', '199110242019021002@pktj.ac.id', 'user', 173, NULL, '199110242019021002', '', '', ''),
+(85, '199112052019021002', '7d275d5840458b86cb4d0eddb0b1cbab', 'SUPRAPTO HADI', '199112052019021002@pktj.ac.id', 'user', 173, NULL, '199112052019021002', '', '', ''),
+(86, '198507162019021001', '344601f8f9483c564169da3ddc02304e', 'RIZA PHAHLEVI MARWANTO', '198507162019021001@pktj.ac.id', 'user', 173, NULL, '198507162019021001', '', '', ''),
+(87, '198712092019021001', 'bdd93b3a690ca6922fa7dbff5bb0c5d1', 'BRASIE PRADANA SELA BUNGA RISKA AYU', '198712092019021001@pktj.ac.id', 'user', 0, NULL, '198712092019021001', '', '', ''),
+(88, '198511282019021001', 'd82b7a7620b5a5ef97712a3a59c377ef', 'REZA YOGA ANINDITA', '198511282019021001@pktj.ac.id', 'user', 0, NULL, '198511282019021001', '', '', ''),
+(89, '199104152019021005', 'b653a3ca1df05657d269d9c380b12e8d', 'RIZAL APRIANTO', '199104152019021005@pktj.ac.id', 'user', 173, NULL, '199104152019021005', '', '', ''),
+(90, '198504152019021003', '1091bfe44a8c28148717a18e32b72dcf', 'RIFANO', '198504152019021003@pktj.ac.id', 'user', 173, NULL, '198504152019021003', '', '', ''),
+(91, '198508122019021001', '0859890ba1e0b96e9bc74df62d329f41', 'RAKA PRATINDY', '198508122019021001@pktj.ac.id', 'user', 173, NULL, '198508122019021001', '', '', ''),
+(92, '198909192019022001', 'e0ba2c2cb8efac2839502ed453ed9f96', 'SITI SHOFIAH', '198909192019022001@pktj.ac.id', 'user', 173, NULL, '198909192019022001', '', '', ''),
+(93, '199006212019021001', '83b65abc63930505d5a26dfaa00a328a', 'HELMI WIBOWO', '199006212019021001@pktj.ac.id', 'user', 0, NULL, '199006212019021001', '', '', ''),
+(94, '199104162019022002', '5ea5c7240c4f30590f13bec3d1642653', 'NURUL FITRIANI', '199104162019022002@pktj.ac.id', 'user', 173, NULL, '199104162019022002', '', '', ''),
+(95, '199306172019022002', '8f7465d373e1652d36ceb3dcc131adc5', 'AINUN RAHMAWATI', '199306172019022002@pktj.ac.id', 'user', 0, NULL, '199306172019022002', '', 'Prodi RSTJ', ''),
+(96, '199105132010121003', 'b1e276695af4a4a3cb0993b4b66655be', 'KORNELIUS JEPRIADI', '199105132010121003@pktj.ac.id', 'user', 0, NULL, '199105132010121003', '', '', ''),
+(97, '198707052019021003', '84b9ab16cfb96f3e5ddfc89ff867f0c0', 'SRIANTO', '198707052019021003@pktj.ac.id', 'user', 0, NULL, '198707052019021003', '', '', ''),
+(98, '198710042019021001', '4d4d5a765268d13a4027b2405950496e', 'ABDUL HARIS FIRMANSYAH', '198710042019021001@pktj.ac.id', 'user', 0, NULL, '198710042019021001', '', '', ''),
+(99, '199309072019021001', '3c3b380a4f9fbb486c43bacdad94c345', 'LANGGENG ASMORO', '199309072019021001@pktj.ac.id', 'user', 173, NULL, '199309072019021001', '', '', ''),
+(100, '198402292019021001', '2d38e985ce359ee6c92ffa73436016a9', 'DWI WAHYU HIDAYAT', '198402292019021001@pktj.ac.id', 'user', 173, NULL, '198402292019021001', '', '', ''),
+(101, '199406302019022007', '09de66fb3a5136b37f42b5e19a500f0a', 'JUNIANA PASARIBU', '199406302019022007@pktj.ac.id', 'user', 0, NULL, '199406302019022007', '', '', ''),
+(102, '199011102019021002', '8c5c4e0b32eb4e9d35c2bf79a41d15e8', 'FARIS HUMAMI', '199011102019021002@pktj.ac.id', 'user', 173, NULL, '199011102019021002', '', '', ''),
+(103, '198804192010121003', '6538281b448d3a5f6768187c7adc55e7', 'AJIE SETIAWAN', '198804192010121003@pktj.ac.id', 'user', 0, NULL, '198804192010121003', '', 'Pokja Humas dan PPID', ''),
+(104, '198912272010122002', '1c3bcb7794fe85b9745a2fceb640741c', 'DESTRIA RAHMITA', '198912272010122002@pktj.ac.id', 'user', 173, NULL, '198912272010122002', '', '', ''),
+(105, '198408162008121002', '435fa192f35ba82a5aeefe9314886444', 'AGUS HARRY SETIAWAN', '198408162008121002@pktj.ac.id', 'user', 18, NULL, '198408162008121002', '', 'Satuan Pemeriksaan Internal', ''),
+(106, '198505162009031006', 'af7305ebbcf624b06401157af37b4840', 'SIHAR AMBARITA', '198505162009031006@pktj.ac.id', 'user', 0, NULL, '198505162009031006', '', '', ''),
+(107, '198907142009121003', '4acc59e682cdfa828e05691c3c28a617', 'JOHAN HERMAWAN', '198907142009121003@pktj.ac.id', 'user', 173, NULL, '198907142009121003', '', '', ''),
+(108, '198312282008122001', 'd794d77e66d07e29af00e686cf23fe06', 'DESSY ASTRIANI', '198312282008122001@pktj.ac.id', 'user', 0, NULL, '198312282008122001', '', '', ''),
+(109, '199009102019021005', '8084c20d12b01fddcb9fab57b59c922f', 'ANDI YUSUF DAULAY', '199009102019021005@pktj.ac.id', 'user', 0, NULL, '199009102019021005', '', '', ''),
+(110, '199403102022031011', '4e787cd2e04b4abf65ad2ac20aae3529', 'RAMADHAN DWI PRASETYO', '199403102022031011@pktj.ac.id', 'user', 173, NULL, '199403102022031011', '', '', ''),
+(111, '198106182009121001', 'e9ca9b9fcbdd99b3f58fe38e9a8fe95a', 'SYAIBANI IKHSAN', '198106182009121001@pktj.ac.id', 'user', 173, NULL, '198106182009121001', '', '', ''),
+(112, '198901282010121007', 'b60919ef56dd16c96220af930d6ac448', 'AGUNG BACHRUDIN', '198901282010121007@pktj.ac.id', 'user', 18, NULL, '198901282010121007', '', 'Unit Asrama', ''),
+(113, '198208022010121004', 'e6e4d13094da4f5da90cfd9746c48b84', 'MUHAMMAD ABDUL MUHLIS', '198208022010121004@pktj.ac.id', 'user', 0, NULL, '198208022010121004', '', '', ''),
+(114, '199303252019021001', 'f4a00ba7e418d3f30e0d14b017be1969', 'BAGUS RIYADI FITRIYAN', '199303252019021001@pktj.ac.id', 'user', 0, NULL, '199303252019021001', '', '', ''),
+(115, '199502132019022003', '8f8c28d9c1a5c603adb91b0b0fb15285', 'ASTRI LESTARI', '199502132019022003@pktj.ac.id', 'user', 0, NULL, '199502132019022003', '', '', ''),
+(116, '198705282008121001', '9d7fca87f3ea92d5f67cd31654db6d44', 'VINNO EL TOSI', '198705282008121001@pktj.ac.id', 'user', 0, NULL, '198705282008121001', '', '', ''),
+(117, '198512122010121005', '73e2baa437eac79e35a4aa054fecae74', 'BAREG SEPTY MARTINDO', '198512122010121005@pktj.ac.id', 'user', 173, NULL, '198512122010121005', '', '', ''),
+(118, '198909242010121002', '06ea8069c6efb07bb4559a9c716bea7d', 'AGUNG BUDI DHARMAWAN', '198909242010121002@pktj.ac.id', 'user', 173, NULL, '198909242010121002', '', 'Pokja Diklat', ''),
+(119, '199308022019022003', '5164ab88409a005a3608a18a0127c8ea', 'INAS FADIYAH HANIN', '199308022019022003@pktj.ac.id', 'user', 0, NULL, '199308022019022003', '', '', ''),
+(120, '199501172019021002', 'cbad9063f1ac2dffb9c04f2a54cd4c86', 'ALIF ANGGRIAT', '199501172019021002@pktj.ac.id', 'user', 0, NULL, '199501172019021002', '', '', ''),
+(121, '198912142019022006', 'b4910228a7f4ca07aa6a381e62256d4f', 'EVY PRIHANA', '198912142019022006@pktj.ac.id', 'user', 0, NULL, '198912142019022006', '', '', ''),
+(122, '198204012009121001', 'e61aa1c92552bc6c9cc54858c0368876', 'SULIFAN NUR AZMI', '198204012009121001@pktj.ac.id', 'user', 0, NULL, '198204012009121001', '', '', ''),
+(123, '198302152006041003', '62e806a1f05328327827c8297d7f2010', 'SABAR KRISTANTO', '198302152006041003@pktj.ac.id', 'user', 0, NULL, '198302152006041003', '', '', ''),
+(124, '198907182011011003', '0e33a78823b2dbb2da75dff779e0d4ed', 'AHMAD ASHARI', '198907182011011003@pktj.ac.id', 'user', 18, NULL, '198907182011011003', '', 'Tim Substansi Bidang Umum', ''),
+(125, '199205152015031003', '01f64903e0d72e99b7c245a9d4744f39', 'AHMAD FAUZI', '199205152015031003@pktj.ac.id', 'user', 0, NULL, '199205152015031003', '', 'Tim Substansi Bidang Keuangan', ''),
+(126, '199310072020122009', '741c5c29d00c0c5b31d1aea7e022e033', 'AMALINA WINDA ILHAMI', '199310072020122009@pktj.ac.id', 'user', 0, NULL, '199310072020122009', '', '', ''),
+(127, '199702182020121008', 'a9126a1eee693bb795856edc88d5f43a', 'MUHAMMAD REZA ARTHA NUGRAHA', '199702182020121008@pktj.ac.id', 'user', 173, NULL, '199702182020121008', '', '', ''),
+(128, '197911242010122002', '3c26b92dace2d3e0480aedf9ab95ea9f', 'SAKEM NOVITA SARI', '197911242010122002@pktj.ac.id', 'user', 0, NULL, '197911242010122002', '', '', ''),
+(129, '197609062009121001', 'f26593f6f4f74881ef3984f38255ee27', 'FATKHUROZAK', '197609062009121001@pktj.ac.id', 'user', 173, NULL, '197609062009121001', '', '', ''),
+(130, '199506052022031019', '0c9afbcce0ddd5610bfde2f4b4500217', 'DARU ADE JUNIARTO', '199506052022031019@pktj.ac.id', 'user', 173, NULL, '199506052022031019', '', '', ''),
+(131, '199704212022032017', 'e3f3de3c6c1c376067e2780afacad5ad', 'DIAJENG AYU DEWI PRITO', '199704212022032017@pktj.ac.id', 'user', 173, NULL, '199704212022032017', '', '', ''),
+(132, '198104072023212005', 'b161fddaa063f2238101584bb15e5309', 'HENI PURWANTININGRUM', '198104072023212005@pktj.ac.id', 'user', 0, NULL, '198104072023212005', '', '', ''),
+(133, '198408152023212004', 'f46143861fe51490e36f81a41f6dab43', 'SANTI IVANA', '198408152023212004@pktj.ac.id', 'user', 0, NULL, '198408152023212004', '', '', ''),
+(134, '198905262023212002', 'd296debae9b6561ec4eb8a5a7b92a6f2', 'ATIN KHOLISAH', '198905262023212002@pktj.ac.id', 'user', 0, NULL, '198905262023212002', '', '', ''),
+(135, '198806092023212028', 'c64b32c813318b5bed7768ca4cb280b4', 'DANI FITRIA BRILIANTI', '198806092023212028@pktj.ac.id', 'user', 173, NULL, '198806092023212028', '', '', ''),
+(136, '199211102023212045', '234bfb68b811f3755aa049c1f7988d6f', 'ARINI NOVIATUL BAROROH', '199211102023212045@pktj.ac.id', 'user', 0, NULL, '199211102023212045', '', '', ''),
+(137, '199212172023211017', 'd9fecd7a3af84aa2ba3636ac7778413d', 'BAGUS ARDI PRAYOGO', '199212172023211017@pktj.ac.id', 'user', 173, NULL, '199212172023211017', '', '', ''),
+(138, '199401122023212029', '66b6762170f0fc518adbd590edddae57', 'EMA PRATAMI ROSYADA', '199401122023212029@pktj.ac.id', 'user', 173, NULL, '199401122023212029', '', '', ''),
+(139, '199707152023211002', '8efe40a1430e511d21b4f73360034c20', 'GIGIH BAHTIAR TRIADY', '199707152023211002@pktj.ac.id', 'user', 0, NULL, '199707152023211002', '', '', ''),
+(140, '199811252023211001', 'c3f33ea8f5168af27935efe9d3ab09af', 'MASRUKHIN', '199811252023211001@pktj.ac.id', 'user', 173, NULL, '199811252023211001', '', '', ''),
+(141, '198601272023211016', 'bbfdd124a0682a3ebeac462cc9a12259', 'JONI HERIYANTO', '198601272023211016@pktj.ac.id', 'user', 173, NULL, '198601272023211016', '', '', ''),
+(142, '198808042023211017', 'c9b564e10ac9f1143532a9cd2da7acfb', 'AJI PRAMUJO', '198808042023211017@pktj.ac.id', 'user', 173, NULL, '198808042023211017', '', 'Tim Substansi Bidang Administrasi Akademik', ''),
+(143, '199010232023211024', '7ffccfd9bb46816c0e970df96ba84525', 'IBNU AFAN', '199010232023211024@pktj.ac.id', 'user', 0, NULL, '199010232023211024', '', 'Satuan Penjaminan Mutu', ''),
+(144, '199206152023212050', '833755d06845759cdb403ac1d7317730', 'UMUL MU\'MININ', '199206152023212050@pktj.ac.id', 'user', 0, NULL, '199206152023212050', '', '', ''),
+(145, '199505312023212038', '3dc5858d604c25e294519b8af75749df', 'FARAH MEIGHINA', '199505312023212038@pktj.ac.id', 'user', 0, NULL, '199505312023212038', '', '', ''),
+(146, '199806112023211004', '708f2626a4234918e1a748d41c16e815', 'ARI REZA PRAKASA', 'ari@pktj.ac.id', 'user', 173, '1775787299_6d2401313512eaf5f6f8.png', '199806112023211004', 'Pranata Komputer Ahli Pertama', 'Unit Teknik Informatika', 'IX'),
+(147, '199006082024212019', 'd3a381acf8fddaebceae3e69cb11ff16', 'DYAH AYU LARASATI', '199006082024212019@pktj.ac.id', 'user', 0, NULL, '199006082024212019', '', '', ''),
+(148, '199201142024212015', '642a0b9587cb2824d0def9382048ce35', 'LURA SATIVA', '199201142024212015@pktj.ac.id', 'user', 0, NULL, '199201142024212015', '', '', ''),
+(149, '199309152024212017', '4deae42d70f30ab44e898585a1e340b0', 'FRISCA LEVI INDRIYANA', '199309152024212017@pktj.ac.id', 'user', 0, NULL, '199309152024212017', '', '', ''),
+(150, '199403222024212016', 'fecb1f7a1a7967d91e0f7f3a775ded00', 'SHELLA ARIES TANTIA YUSUF', '199403222024212016@pktj.ac.id', 'user', 173, NULL, '199403222024212016', '', '', ''),
+(151, '199604272024211006', 'b7bda0fdc4b1fc26092d5cd81743fc8f', 'ARIP NUGRAHA', '199604272024211006@pktj.ac.id', 'user', 0, NULL, '199604272024211006', '', '', ''),
+(152, '199606152024212024', '70cafb20d237cfd7e1d771e28ae4fb23', 'WINI PRIMADIANTI', '199606152024212024@pktj.ac.id', 'user', 0, NULL, '199606152024212024', '', '', ''),
+(153, '200002232024212014', '4c641606680a9242b2085b5d35a5fd32', 'AISAH FARHANI', '200002232024212014@pktj.ac.id', 'user', 0, NULL, '200002232024212014', '', '', ''),
+(154, '200003022024212008', 'd2b5d59e72a63f1e7dbf35e0b2a0381b', 'MIFTAH IMTI SHOLIKHAH', '200003022024212008@pktj.ac.id', 'user', 0, NULL, '200003022024212008', '', '', ''),
+(155, '197905162025211020', '8475c980436b6f3b8eea33118813215c', 'RACHMAT MURDIANTO', '197905162025211020@pktj.ac.id', 'user', 173, NULL, '197905162025211020', '', '', ''),
+(156, '197906162025211021', 'cc94a98f0fa56999d207749180be2203', 'LUKMAN HAKIM', '197906162025211021@pktj.ac.id', 'user', 0, NULL, '197906162025211021', '', '', ''),
+(157, '198110072025212021', '0c8f8a29a5419de16424c7f62c821a5a', 'DHI ASTUTI RAHMAWATI DEWI', '198110072025212021@pktj.ac.id', 'user', 173, NULL, '198110072025212021', '', '', ''),
+(158, '198305052025211027', 'a2189517c66c7bd9dd78aed56147df05', 'DIMAS TRI ADHITIAWARMAN', '198305052025211027@pktj.ac.id', 'user', 0, NULL, '198305052025211027', '', '', ''),
+(159, '198402142025212016', 'f6ef6b8308f5872577d9738b3d94fe44', 'MULIANI CHAERUN NISA', '198402142025212016@pktj.ac.id', 'user', 0, NULL, '198402142025212016', '', '', ''),
+(160, '198403032025212024', '6e195cfdbc7e87d0f4c0aa32a076f6ce', 'WARKONI', '198403032025212024@pktj.ac.id', 'user', 0, NULL, '198403032025212024', '', '', ''),
+(161, '198608082025211042', 'f19c1cf9dd7127b5505e97664c07b01c', 'HERI PURNOMO', '198608082025211042@pktj.ac.id', 'user', 0, NULL, '198608082025211042', '', '', ''),
+(162, '198710292025211026', 'b75a3033d61dc302238042fd997d0b1b', 'ZULFIKKAAR ARIF SETIAWAN', '198710292025211026@pktj.ac.id', 'user', 0, NULL, '198710292025211026', '', '', ''),
+(163, '198805022025212029', 'f313e7ec112a4fd40e75f0e5cf173367', 'RAHMI NUR ARIFIANTI', '198805022025212029@pktj.ac.id', 'user', 0, NULL, '198805022025212029', '', '', ''),
+(164, '198909082025211028', '1a12753d0835752b4376ab1fc978b092', 'SHOLEHUDIN', '198909082025211028@pktj.ac.id', 'user', 0, NULL, '198909082025211028', '', '', ''),
+(165, '199108122025211022', '6a71411817f1b82d5e4529982d6848e4', 'AGUS SUTRISNO', '199108122025211022@pktj.ac.id', 'user', 173, NULL, '199108122025211022', '', 'Tim Substansi Bidang Administrasi Ketarunaan dan Alumni', ''),
+(166, '199201042025211033', '3c8afc561415d0798765359af494a2c1', 'MUHAMMAD MAHFUD SETIAWAN YUSUF', '199201042025211033@pktj.ac.id', 'user', 0, NULL, '199201042025211033', '', '', ''),
+(167, '199302082025211021', 'e5290c8ddf2c66bf033fc2f628fa7586', 'SUTOWO', '199302082025211021@pktj.ac.id', 'user', 0, NULL, '199302082025211021', '', '', ''),
+(168, '199807172025211009', '0f4b7a071ca51c6f612eedb9bbfedd89', 'RIYAN DWI PRIHARTANTO', '199807172025211009@pktj.ac.id', 'user', 0, NULL, '199807172025211009', '', '', ''),
+(169, '198012012025212019', 'c0ec235de71748b09caa53d2cf727ef3', 'DESSI ROSDIANA', '198012012025212019@pktj.ac.id', 'user', 173, NULL, '198012012025212019', '', '', ''),
+(170, '198307052025212025', 'cefbd275e968910b13848e54b917dbe0', 'HERNI SETIYOWATI', '198307052025212025@pktj.ac.id', 'user', 0, NULL, '198307052025212025', '', '', ''),
+(171, '198312292025212014', '2ec1a96dbcb7a6561d02b4c55f37dfc8', 'PIPIN WIDYASARI', '198312292025212014@pktj.ac.id', 'user', 173, NULL, '198312292025212014', '', '', ''),
+(172, '199905292025211006', 'fc6ce807d9c8cb1ebb0c28d1734982b3', 'RADEN BERLIAWAN KARTIKA PUTRA', '199905292025211006@pktj.ac.id', 'user', 0, NULL, '199905292025211006', '', '', ''),
+(173, '197402041997032005', '$2y$10$75N/KdQ2gldpBFtE3aUDB.qn7cgEZFPuGDFk6fgcpiksNtkZXWsLu', 'PRIMA ANNA MARIA GORETY CORNELIS', '197402041997032005@pktj.ac.id', 'kabag_aak', 50, NULL, '197402041997032005', 'Kabag AAK', 'Tim Substansi Bidang Administrasi Ketarunaan dan Alumni', '');
 
 --
 -- Indeks untuk tabel yang dibuang
@@ -1447,6 +1752,12 @@ ALTER TABLE `led_submissions`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indeks untuk tabel `master_indikator`
+--
+ALTER TABLE `master_indikator`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indeks untuk tabel `migrations`
 --
 ALTER TABLE `migrations`
@@ -1479,6 +1790,26 @@ ALTER TABLE `satuan`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indeks untuk tabel `skp_headers`
+--
+ALTER TABLE `skp_headers`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `skp_headers_user_id_foreign` (`user_id`);
+
+--
+-- Indeks untuk tabel `skp_targets`
+--
+ALTER TABLE `skp_targets`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indeks untuk tabel `unit_kerja`
+--
+ALTER TABLE `unit_kerja`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `nama_unit` (`nama_unit`);
+
+--
 -- Indeks untuk tabel `users`
 --
 ALTER TABLE `users`
@@ -1492,7 +1823,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT untuk tabel `indikator`
 --
 ALTER TABLE `indikator`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT untuk tabel `jadwal_diklat`
@@ -1504,7 +1835,7 @@ ALTER TABLE `jadwal_diklat`
 -- AUTO_INCREMENT untuk tabel `led_criteria`
 --
 ALTER TABLE `led_criteria`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=767;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=768;
 
 --
 -- AUTO_INCREMENT untuk tabel `led_scores`
@@ -1516,19 +1847,25 @@ ALTER TABLE `led_scores`
 -- AUTO_INCREMENT untuk tabel `led_standar`
 --
 ALTER TABLE `led_standar`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT untuk tabel `led_submissions`
 --
 ALTER TABLE `led_submissions`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=557;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=601;
+
+--
+-- AUTO_INCREMENT untuk tabel `master_indikator`
+--
+ALTER TABLE `master_indikator`
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT untuk tabel `migrations`
 --
 ALTER TABLE `migrations`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
 
 --
 -- AUTO_INCREMENT untuk tabel `remunerasi`
@@ -1546,19 +1883,37 @@ ALTER TABLE `rencana_kinerja`
 -- AUTO_INCREMENT untuk tabel `sasaran`
 --
 ALTER TABLE `sasaran`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT untuk tabel `satuan`
 --
 ALTER TABLE `satuan`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
+-- AUTO_INCREMENT untuk tabel `skp_headers`
+--
+ALTER TABLE `skp_headers`
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT untuk tabel `skp_targets`
+--
+ALTER TABLE `skp_targets`
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT untuk tabel `unit_kerja`
+--
+ALTER TABLE `unit_kerja`
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT untuk tabel `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=174;
 
 --
 -- Ketidakleluasaan untuk tabel pelimpahan (Dumped Tables)
@@ -1570,6 +1925,12 @@ ALTER TABLE `users`
 ALTER TABLE `remunerasi`
   ADD CONSTRAINT `remunerasi_created_by_user_id_foreign` FOREIGN KEY (`created_by_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `remunerasi_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ketidakleluasaan untuk tabel `skp_headers`
+--
+ALTER TABLE `skp_headers`
+  ADD CONSTRAINT `skp_headers_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

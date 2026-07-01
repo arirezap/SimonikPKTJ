@@ -20,7 +20,7 @@ Input Progres Keuangan
         <h5>Formulir Laporan Keuangan Bulanan</h5>
     </div>
     <div class="card-body">
-        <form action="<?= site_url('user/keuangan/store') ?>" method="POST" enctype="multipart/form-data">
+        <form action="<?= site_url('keuangan/store') ?>" method="POST" enctype="multipart/form-data">
             <?= csrf_field() ?>
             <div class="row g-3">
                 <div class="col-md-6">

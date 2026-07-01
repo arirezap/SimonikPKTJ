@@ -97,7 +97,7 @@ class RemunerasiController extends BaseController
             }
         }
 
-        return redirect()->to("admin/remunerasi?tahun=$tahun&bulan=$bulan")
+        return redirect()->to("remunerasi?tahun=$tahun&bulan=$bulan")
                          ->with('success', 'Data remunerasi berhasil disimpan.');
     }
 }

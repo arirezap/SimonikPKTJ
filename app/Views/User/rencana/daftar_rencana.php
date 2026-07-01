@@ -5,7 +5,7 @@
 <?= $this->section('content') ?>
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Kelola Rencana Kinerja</h1>
-    <a href="<?= site_url('user/rencana/input') ?>" class="btn btn-success"><i class="bi bi-plus-circle me-2"></i> Buat Rencana Baru</a>
+    <a href="<?= site_url('rencana/input') ?>" class="btn btn-success"><i class="bi bi-plus-circle me-2"></i> Buat Rencana Baru</a>
 </div>
 
 <?php if (session()->getFlashdata('success')): ?>
@@ -94,7 +94,7 @@
                                 </td>
 
                                 <td class="text-center">
-                                    <a href="<?= site_url('user/alokasi/bulanan?tahun=' . $row['tahun_anggaran']) ?>" class="btn btn-info btn-sm" title="Kelola Target & Realisasi Bulanan"><i class="bi bi-calendar-week"></i></a>
+                                    <a href="<?= site_url('alokasi/bulanan?tahun=' . $row['tahun_anggaran']) ?>" class="btn btn-info btn-sm" title="Kelola Target & Realisasi Bulanan"><i class="bi bi-calendar-week"></i></a>
                                     <button type="button" class="btn btn-warning btn-sm btn-edit" 
                                         data-bs-toggle="modal" 
                                         data-bs-target="#editModal"
@@ -114,7 +114,7 @@
                         <tr>
                             <td colspan="5" class="text-center p-4">
                                 <p class="mb-1">Belum ada data rencana untuk tahun ini.</p>
-                                <a href="<?= site_url('user/rencana/input') ?>">Buat Rencana Baru</a>
+                                <a href="<?= site_url('rencana/input') ?>">Buat Rencana Baru</a>
                             </td>
                         </tr>
                     <?php endif; ?>
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const kegiatan = this.dataset.kegiatan;
 
             // Set action form modal
-            editForm.action = `<?= site_url('user/rencana/update/') ?>${id}`;
+            editForm.action = `<?= site_url('rencana/update/') ?>${id}`;
 
             // Isi form di dalam modal dengan data
             document.getElementById('edit_sasaran').value = sasaran;
@@ -212,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const nama = btnHapus.dataset.nama;
                 
                 if (confirm(`Apakah Anda yakin ingin menghapus Rencana Kinerja:\n"${nama}"?`)) {
-                    formHapus.action = `<?= site_url('user/rencana/delete/') ?>${id}`;
+                    formHapus.action = `<?= site_url('rencana/delete/') ?>${id}`;
                     formHapus.submit();
                 }
             }

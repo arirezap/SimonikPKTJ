@@ -20,10 +20,10 @@
 
         if (isset($from_page) && $from_page === 'admin') {
             // Kita asumsikan dashboard admin/user juga difilter berdasarkan tahun yang sama
-            $return_url = site_url('admin/dashboard?tahun=' . $tahun);
+            $return_url = site_url('dashboard?tahun=' . $tahun);
             $return_text = "Kembali ke Dashboard Admin";
         } elseif (isset($from_page) && $from_page === 'user') {
-            $return_url = site_url('user/dashboard?tahun=' . $tahun);
+            $return_url = site_url('dashboard?tahun=' . $tahun);
             $return_text = "Kembali ke Dashboard User";
         }
     ?>

@@ -48,6 +48,6 @@ class InputKeuangan extends BaseController
         //     'catatan' => $this->request->getPost('catatan'),
         // ]);
 
-        return redirect()->to('/user/keuangan/input')->with('success', 'Data progres keuangan berhasil disimpan!');
+        return redirect()->to('/keuangan/input')->with('success', 'Data progres keuangan berhasil disimpan!');
     }
 }

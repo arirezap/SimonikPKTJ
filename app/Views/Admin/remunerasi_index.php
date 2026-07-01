@@ -53,7 +53,7 @@
         <h5>Formulir Remunerasi: <?= bulan_indo($selectedBulan) ?> <?= esc($selectedTahun) ?></h5>
     </div>
     <div class="card-body">
-        <form action="<?= site_url('admin/remunerasi/store') ?>" method="POST">
+        <form action="<?= site_url('remunerasi/store') ?>" method="POST">
             <?= csrf_field() ?>
             <input type="hidden" name="tahun" value="<?= esc($selectedTahun) ?>">
             <input type="hidden" name="bulan" value="<?= esc($selectedBulan) ?>">

@@ -66,7 +66,7 @@
         <h5 class="modal-title" id="addModalLabel">Form Tambah Indikator Kinerja</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form action="<?= site_url('admin/master-data/indikator/store') ?>" method="POST">
+      <form action="<?= site_url('master-data/indikator/store') ?>" method="POST">
         <?= csrf_field() ?>
         <div class="modal-body">
             <?php if ($validation->getErrors() && session()->getFlashdata('show_modal') === 'addModal'): ?>
@@ -100,7 +100,7 @@
         <h5 class="modal-title" id="editModalLabel-<?= $item['id'] ?>">Edit Indikator Kinerja</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form action="<?= site_url('admin/master-data/indikator/update/' . $item['id']) ?>" method="POST">
+      <form action="<?= site_url('master-data/indikator/update/' . $item['id']) ?>" method="POST">
         <?= csrf_field() ?>
         <div class="modal-body">
             <?php if ($validation->getErrors() && session()->getFlashdata('show_modal') === 'editModal-' . $item['id']): ?>
@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (confirm(`Apakah Anda yakin ingin menghapus Indikator Kinerja:\n"${nama}"?`)) {
                     const form = document.getElementById('formHapus');
-                    form.action = `<?= site_url('admin/master-data/indikator/delete/') ?>${id}`;
+                    form.action = `<?= site_url('master-data/indikator/delete/') ?>${id}`;
                     form.submit();
                 }
             }

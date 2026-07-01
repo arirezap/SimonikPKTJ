@@ -38,9 +38,9 @@ class AuthFilter implements FilterInterface
                 // Jika tidak diizinkan, kembalikan ke dashboard yang sesuai
                 $currentRole = (string) session()->get('role');
                 if (in_array($currentRole, ['admin', 'manajemen']) || str_contains($currentRole, 'kabag')) {
-                    return redirect()->to('/admin/dashboard');
+                    return redirect()->to('/dashboard');
                 } else {
-                    return redirect()->to('/user/dashboard');
+                    return redirect()->to('/dashboard');
                 }
             }
         }

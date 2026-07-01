@@ -50,6 +50,6 @@ class AkademikController extends BaseController
     public function storeJadwal()
     {
         // Logika validasi dan penyimpanan data baru
-        return redirect()->to('/user/akademik/jadwal')->with('success', 'Jadwal baru berhasil ditambahkan.');
+        return redirect()->to('/akademik/jadwal')->with('success', 'Jadwal baru berhasil ditambahkan.');
     }
 }

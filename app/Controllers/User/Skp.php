@@ -68,7 +68,7 @@ class Skp extends BaseController
             'status'        => 'Draft'
         ]);
 
-        return redirect()->to('/user/skp')->with('success', 'SKP Tahun ' . $tahun . ' (' . $modelSkp . ') berhasil dibuat.');
+        return redirect()->to('/skp')->with('success', 'SKP Tahun ' . $tahun . ' (' . $modelSkp . ') berhasil dibuat.');
     }
 
     public function delete($id)
@@ -76,35 +76,35 @@ class Skp extends BaseController
         $skp = $this->skpHeaderModel->find($id);
 
         if (!$skp) {
-            return redirect()->to('/user/skp')->with('error', 'Data SKP tidak ditemukan.');
+            return redirect()->to('/skp')->with('error', 'Data SKP tidak ditemukan.');
         }
 
         // Security Check: Hanya pemilik yang bisa hapus
         if ($skp['user_id'] != session()->get('id')) {
-            return redirect()->to('/user/skp')->with('error', 'Anda tidak memiliki akses untuk menghapus data ini.');
+            return redirect()->to('/skp')->with('error', 'Anda tidak memiliki akses untuk menghapus data ini.');
         }
 
         // Status Check
         if ($skp['status'] !== 'Draft') {
-            return redirect()->to('/user/skp')->with('error', 'SKP yang sudah diajukan atau disetujui tidak dapat dihapus.');
+            return redirect()->to('/skp')->with('error', 'SKP yang sudah diajukan atau disetujui tidak dapat dihapus.');
         }
 
         $this->skpHeaderModel->delete($id);
 
-        return redirect()->to('/user/skp')->with('success', 'Data SKP berhasil dihapus.');
+        return redirect()->to('/skp')->with('success', 'Data SKP berhasil dihapus.');
     }
 
     public function detail($id)
     {
         $header = $this->skpHeaderModel->find($id);
-        if (!$header) return redirect()->to('/user/skp')->with('error', 'Data tidak ditemukan.');
+        if (!$header) return redirect()->to('/skp')->with('error', 'Data tidak ditemukan.');
 
         // Gunakan use App\Models\User di atas agar lebih bersih
         $userModel = new User(); 
         $pegawai = $userModel->find($header['user_id']);
         
         // Safety check jika user terhapus
-        if(!$pegawai) return redirect()->to('/user/skp')->with('error', 'Data Pegawai tidak ditemukan.');
+        if(!$pegawai) return redirect()->to('/skp')->with('error', 'Data Pegawai tidak ditemukan.');
 
         $rolePemilik = $pegawai['role'];
 

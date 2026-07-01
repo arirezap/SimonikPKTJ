@@ -64,7 +64,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header"><h5 class="modal-title">Form Program Diklat Baru</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-            <form action="<?= site_url('user/diklat/store') ?>" method="POST">
+            <form action="<?= site_url('diklat/store') ?>" method="POST">
                 <?= csrf_field() ?>
                 <div class="modal-body">
                     <div class="mb-3"><label class="form-label">Nama Program</label><input type="text" name="nama_diklat" class="form-control" value="<?= old('nama_diklat') ?>" required></div>
@@ -84,7 +84,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header"><h5 class="modal-title">Edit Program Diklat</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-            <form action="<?= site_url('user/diklat/update/' . $diklat['id']) ?>" method="POST">
+            <form action="<?= site_url('diklat/update/' . $diklat['id']) ?>" method="POST">
                 <?= csrf_field() ?>
                 <div class="modal-body">
                     <div class="mb-3"><label class="form-label">Nama Program</label><input type="text" name="nama_diklat" class="form-control" value="<?= old('nama_diklat', $diklat['nama_diklat']) ?>" required></div>
@@ -107,7 +107,7 @@
 function confirmDelete(id, name) {
     if (confirm(`Apakah Anda yakin ingin menghapus program diklat "${name}"?`)) {
         const form = document.getElementById('formHapus');
-        form.action = `<?= site_url('user/diklat/delete/') ?>${id}`;
+        form.action = `<?= site_url('diklat/delete/') ?>${id}`;
         form.submit();
     }
 }

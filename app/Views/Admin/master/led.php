@@ -27,7 +27,7 @@
 
 <div class="card mb-4">
     <div class="card-body">
-        <form action="<?= site_url('admin/master-data/led') ?>" method="GET" id="filterForm">
+        <form action="<?= site_url('master-data/led') ?>" method="GET" id="filterForm">
             <div class="row align-items-end">
                 <div class="col-md-6">
                     <label for="prodi_filter" class="form-label fw-bold">Tampilkan Kriteria untuk Program Studi</label>
@@ -119,7 +119,7 @@
                 <h5 class="modal-title" id="addModalLabel">Form Tambah Kriteria LED</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="<?= site_url('admin/master-data/led/store') ?>" method="POST" class="form-simpan-scroll">
+            <form action="<?= site_url('master-data/led/store') ?>" method="POST" class="form-simpan-scroll">
                 <?= csrf_field() ?>
                 <div class="modal-body">
                     <?php if (isset($validation) && $validation->getErrors() && session()->getFlashdata('show_modal') === 'addModal'): ?>
@@ -181,7 +181,7 @@
                 <h5 class="modal-title" id="importModalLabel">Import Kriteria LED dari Excel</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="<?= site_url('admin/master-data/led/import') ?>" method="POST" enctype="multipart/form-data" class="form-simpan-scroll">
+            <form action="<?= site_url('master-data/led/import') ?>" method="POST" enctype="multipart/form-data" class="form-simpan-scroll">
                 <?= csrf_field() ?>
                 <div class="modal-body">
                     <div class="mb-3">
@@ -226,7 +226,7 @@
                 <h5 class="modal-title" id="editModalLabel-<?= $item['id'] ?>">Edit Kriteria LED</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="<?= site_url('admin/master-data/led/update/' . $item['id']) ?>" method="POST" class="editForm form-simpan-scroll">
+            <form action="<?= site_url('master-data/led/update/' . $item['id']) ?>" method="POST" class="editForm form-simpan-scroll">
                 <?= csrf_field() ?>
                 <div class="modal-body">
                     <?php if (isset($validation) && $validation->getErrors() && session()->getFlashdata('show_modal') === 'editModal-' . $item['id']): ?>
@@ -361,7 +361,7 @@
 <!-- ========================================================== -->
 <?= $this->section('footer_bar') ?>
 <div class="sticky-footer-bar">
-    <a href="<?= site_url('admin/master-data/led/export?prodi=' . esc($selectedProdi)) ?>" class="btn btn-dark btn-sm">
+    <a href="<?= site_url('master-data/led/export?prodi=' . esc($selectedProdi)) ?>" class="btn btn-dark btn-sm">
         <i class="bi bi-download me-2"></i> Export Excel
     </a>
     <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#importModal">
@@ -451,7 +451,7 @@
         if (confirmDeleteButton) {
             confirmDeleteButton.addEventListener('click', function() {
                 saveScrollPosition();
-                bulkActionForm.action = "<?= site_url('admin/master-data/led/delete-batch') ?>";
+                bulkActionForm.action = "<?= site_url('master-data/led/delete-batch') ?>";
                 bulkActionForm.submit();
             });
         }
@@ -478,7 +478,7 @@
                 }
 
                 saveScrollPosition();
-                bulkActionForm.action = "<?= site_url('admin/master-data/led/batch-update') ?>";
+                bulkActionForm.action = "<?= site_url('master-data/led/batch-update') ?>";
                 bulkActionForm.submit();
             });
         }
@@ -493,7 +493,7 @@
         if (confirm(`Apakah Anda yakin ingin menghapus Kriteria:\n"${name}"?`)) {
             saveScrollPosition();
             const form = document.getElementById('formHapus');
-            form.action = `<?= site_url('admin/master-data/led/delete/') ?>${id}?prodi=<?= esc($selectedProdi) ?>`;
+            form.action = `<?= site_url('master-data/led/delete/') ?>${id}?prodi=<?= esc($selectedProdi) ?>`;
             form.submit();
         }
     }

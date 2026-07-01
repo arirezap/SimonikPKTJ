@@ -111,7 +111,7 @@ class InputRencana extends BaseController
             $rencanaModel->insertBatch($dataToInsert);
         }
 
-        return redirect()->to('/user/alokasi/bulanan?tahun=' . $tahun_anggaran)
+        return redirect()->to('/alokasi/bulanan?tahun=' . $tahun_anggaran)
             ->with('success', 'Rencana kerja tahun ' . $tahun_anggaran . ' berhasil disimpan!');
     }
 }

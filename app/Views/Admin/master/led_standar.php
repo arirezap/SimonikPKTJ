@@ -42,7 +42,7 @@
         <div class="card">
             <div class="card-header"><h5>Tambah Standar Baru</h5></div>
             <div class="card-body">
-                <form action="<?= site_url('admin/master-data/led-standar/store') ?>" method="POST">
+                <form action="<?= site_url('master-data/led-standar/store') ?>" method="POST">
                     <?= csrf_field() ?>
                     <div class="mb-3">
                         <label for="add_nama_standar" class="form-label">Nama Standar</label>
@@ -68,7 +68,7 @@
                 <h5 class="modal-title">Edit Standar</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="<?= site_url('admin/master-data/led-standar/update/' . $item['id']) ?>" method="POST">
+            <form action="<?= site_url('master-data/led-standar/update/' . $item['id']) ?>" method="POST">
                 <?= csrf_field() ?>
                 <div class="modal-body">
                     <div class="mb-3">
@@ -94,7 +94,7 @@
 function confirmDelete(id, name) {
     if (confirm(`Apakah Anda yakin ingin menghapus standar "${name}"?`)) {
         const form = document.getElementById('formHapus');
-        form.action = `<?= site_url('admin/master-data/led-standar/delete/') ?>${id}`;
+        form.action = `<?= site_url('master-data/led-standar/delete/') ?>${id}`;
         form.submit();
     }
 }

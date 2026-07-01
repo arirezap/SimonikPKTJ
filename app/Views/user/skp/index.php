@@ -57,12 +57,12 @@ Daftar Sasaran Kinerja Pegawai
 
                         <div class="col-md-4 text-md-end mt-3 mt-md-0">
                             <div class="d-flex flex-wrap gap-2 justify-content-md-end">
-                                <a href="<?= site_url('user/skp/detail/' . $skp['id']) ?>" class="btn btn-outline-primary btn-sm">
+                                <a href="<?= site_url('skp/detail/' . $skp['id']) ?>" class="btn btn-outline-primary btn-sm">
                                     <i class="bi bi-list-task me-1"></i> Detail
                                 </a>
                                 
                                 <?php if($skp['status'] == 'Draft'): ?>
-                                    <a href="<?= site_url('user/skp/delete/' . $skp['id']) ?>" 
+                                    <a href="<?= site_url('skp/delete/' . $skp['id']) ?>" 
                                        class="btn btn-outline-danger btn-sm"
                                        onclick="return confirm('Apakah Anda yakin ingin menghapus SKP Periode <?= $skp['tahun'] ?> ini? Data yang dihapus tidak dapat dikembalikan.');">
                                         <i class="bi bi-trash"></i> Hapus
@@ -80,7 +80,7 @@ Daftar Sasaran Kinerja Pegawai
 
 <div class="modal fade" id="modalTambahSKP" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-        <form action="<?= site_url('user/skp/store') ?>" method="post">
+        <form action="<?= site_url('skp/store') ?>" method="post">
             <?= csrf_field() ?>
             <div class="modal-content">
                 <div class="modal-header">

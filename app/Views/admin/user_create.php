@@ -6,7 +6,7 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2">Tambah Pengguna Baru</h1>
-        <a href="<?= site_url('admin/users') ?>" class="btn btn-secondary btn-sm">
+        <a href="<?= site_url('users') ?>" class="btn btn-secondary btn-sm">
             <i class="bi bi-arrow-left"></i> Kembali
         </a>
     </div>
@@ -26,7 +26,7 @@
             <h6 class="m-0 font-weight-bold text-primary">Formulir User Baru</h6>
         </div>
         <div class="card-body">
-            <form action="<?= site_url('admin/users/store') ?>" method="post">
+            <form action="<?= site_url('users/store') ?>" method="post">
                 <?= csrf_field() ?>
 
                 <div class="row">

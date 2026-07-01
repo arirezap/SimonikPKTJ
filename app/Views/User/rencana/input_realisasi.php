@@ -24,7 +24,7 @@
         <h5>Formulir Input Realisasi Bulan Ini</h5>
     </div>
     <div class="card-body">
-        <form action="<?= site_url('user/realisasi/store') ?>" method="POST">
+        <form action="<?= site_url('realisasi/store') ?>" method="POST">
             <?= csrf_field() ?>
             <div class="table-responsive">
                 <table class="table table-bordered align-middle">
@@ -60,7 +60,7 @@
                             <tr>
                                 <td colspan="4" class="text-center p-4">
                                     <p class="mb-1">Belum ada data Rencana Kerja untuk tahun ini.</p>
-                                    <a href="<?= site_url('user/rencana/input') ?>">Buat Rencana Kerja Baru</a>
+                                    <a href="<?= site_url('rencana/input') ?>">Buat Rencana Kerja Baru</a>
                                 </td>
                             </tr>
                         <?php endif; ?>

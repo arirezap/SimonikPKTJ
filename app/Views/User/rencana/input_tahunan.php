@@ -29,7 +29,7 @@ Input & Kelola Rencana Kerja Tahunan
     <div class="card-body">
 
         <!-- Filter Tahun -->
-        <form method="GET" action="<?= site_url('user/rencana/input') ?>" id="filterTahunForm" class="mb-4">
+        <form method="GET" action="<?= site_url('rencana/input') ?>" id="filterTahunForm" class="mb-4">
             <div class="row align-items-center">
                 <div class="col-md-4">
                     <label for="tahun_anggaran_filter" class="form-label fw-bold">Pilih Tahun Perencanaan</label>
@@ -68,7 +68,7 @@ Input & Kelola Rencana Kerja Tahunan
 
         <!-- Form Input Utama -->
         <div id="form-content">
-            <form action="<?= site_url('user/rencana/store') ?>" method="POST" id="formRencana">
+            <form action="<?= site_url('rencana/store') ?>" method="POST" id="formRencana">
                 <?= csrf_field() ?>
                 <input type="hidden" name="tahun_anggaran" value="<?= esc($tahun_terpilih) ?>">
 
@@ -261,7 +261,7 @@ Input & Kelola Rencana Kerja Tahunan
         function checkYear(selectedYear) {
             if (existingYears.map(String).includes(selectedYear)) {
                 tahunTerpilihSpan.textContent = selectedYear;
-                linkEdit.href = `<?= site_url('user/alokasi/bulanan?tahun=') ?>${selectedYear}`;
+                linkEdit.href = `<?= site_url('alokasi/bulanan?tahun=') ?>${selectedYear}`;
                 warningBox.classList.remove('d-none');
                 warningBox.classList.add('d-flex');
             } else {

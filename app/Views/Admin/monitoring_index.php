@@ -84,7 +84,7 @@
                 </div>
             </div>
             <div class="col-md-2">
-                <a href="<?= site_url('admin/monitoring') ?>" class="btn btn-outline-secondary w-100"><i class="bi bi-arrow-counterclockwise"></i> Reset</a>
+                <a href="<?= site_url('monitoring') ?>" class="btn btn-outline-secondary w-100"><i class="bi bi-arrow-counterclockwise"></i> Reset</a>
             </div>
         </form>
     </div>
@@ -99,10 +99,10 @@
             <span class="badge bg-light text-dark border">Role: <?= strtoupper(esc($user['role'])) ?></span>
         </div>
         <div class="d-flex gap-2">
-            <a href="<?= site_url('admin/monitoring/excel/' . $user['id'] . '/' . $selectedYear) ?>" class="btn btn-success btn-sm shadow-sm">
+            <a href="<?= site_url('monitoring/excel/' . $user['id'] . '/' . $selectedYear) ?>" class="btn btn-success btn-sm shadow-sm">
                 <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
             </a>
-            <a href="<?= site_url('admin/monitoring/pdf/' . $user['id'] . '/' . $selectedYear) ?>" class="btn btn-danger btn-sm shadow-sm">
+            <a href="<?= site_url('monitoring/pdf/' . $user['id'] . '/' . $selectedYear) ?>" class="btn btn-danger btn-sm shadow-sm">
                 <i class="bi bi-file-earmark-pdf me-1"></i> Export PDF
             </a>
         </div>

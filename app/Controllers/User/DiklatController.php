@@ -28,7 +28,7 @@ class DiklatController extends BaseController
         ];
 
         if (!$this->validate($rules)) {
-            return redirect()->to('/user/diklat')->withInput()->with('error', 'Terdapat kesalahan input.')->with('show_modal', 'addDiklatModal');
+            return redirect()->to('/diklat')->withInput()->with('error', 'Terdapat kesalahan input.')->with('show_modal', 'addDiklatModal');
         }
 
         $diklatModel = new JadwalDiklatModel();
@@ -40,7 +40,7 @@ class DiklatController extends BaseController
             'status' => $this->request->getPost('status'),
         ]);
 
-        return redirect()->to('/user/diklat')->with('success', 'Program Diklat baru berhasil ditambahkan.');
+        return redirect()->to('/diklat')->with('success', 'Program Diklat baru berhasil ditambahkan.');
     }
 
     public function update($id)
@@ -53,7 +53,7 @@ class DiklatController extends BaseController
         ];
 
         if (!$this->validate($rules)) {
-            return redirect()->to('/user/diklat')->withInput()->with('error', 'Terdapat kesalahan input.')->with('show_modal', 'editDiklatModal-' . $id);
+            return redirect()->to('/diklat')->withInput()->with('error', 'Terdapat kesalahan input.')->with('show_modal', 'editDiklatModal-' . $id);
         }
 
         $diklatModel = new JadwalDiklatModel();
@@ -64,13 +64,13 @@ class DiklatController extends BaseController
             'status' => $this->request->getPost('status'),
         ]);
 
-        return redirect()->to('/user/diklat')->with('success', 'Data Diklat berhasil diperbarui.');
+        return redirect()->to('/diklat')->with('success', 'Data Diklat berhasil diperbarui.');
     }
 
     public function delete($id)
     {
         $diklatModel = new JadwalDiklatModel();
         $diklatModel->delete($id);
-        return redirect()->to('/user/diklat')->with('success', 'Data Diklat berhasil dihapus.');
+        return redirect()->to('/diklat')->with('success', 'Data Diklat berhasil dihapus.');
     }
 }

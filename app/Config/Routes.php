@@ -43,8 +43,8 @@ $routes->get('logout', 'Auth::logout');
 $routes->get('profile', 'Profile::index');
 $routes->post('profile/update', 'Profile::update');
 // Admin Routes (Group)
-$routes->group('admin', ['filter' => 'auth'], function ($routes) {
-    $routes->get('dashboard', 'Admin\Dashboard::index');
+$routes->group('', ['filter' => 'auth'], function ($routes) {
+    $routes->get('dashboard', 'DashboardController::index');
     $routes->get('monitoring', 'Admin\MonitoringController::index');
     $routes->get('monitoring/exportExcel/(:num)/(:num)', 'Admin\MonitoringController::exportExcel/$1/$2');
     $routes->get('monitoring/exportPdf/(:num)/(:num)', 'Admin\MonitoringController::exportPdf/$1/$2');
@@ -57,6 +57,10 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     $routes->get('users/create', 'Admin\UserController::create');
     $routes->post('users/store', 'Admin\UserController::store');
     $routes->get('users/edit/(:num)', 'Admin\UserController::edit/$1');
+
+    // Pengaturan Sistem
+    $routes->get('settings', 'Admin\SettingsController::index');
+    $routes->post('settings/store', 'Admin\SettingsController::store');
     $routes->post('users/update', 'Admin\UserController::update');
     $routes->match(['get', 'post'], 'users/delete/(:num)', 'Admin\UserController::delete/$1');
     $routes->get('users/export', 'Admin\UserController::exportExcel'); // Rute untuk Export
@@ -111,8 +115,8 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
 });
 
 // User Routes (Group)
-$routes->group('user', ['filter' => 'auth'], function ($routes) {
-    $routes->get('dashboard', 'User\Dashboard::index');
+$routes->group('', ['filter' => 'auth'], function ($routes) {
+    // $routes->get('dashboard', 'User\Dashboard::index'); // Ditangani oleh DashboardController
 
     // Kinerja Group
     $routes->group('rencana', function ($routes) {
@@ -156,6 +160,20 @@ $routes->group('user', ['filter' => 'auth'], function ($routes) {
     // Di dalam $routes->group('user' ...
     $routes->post('skp/target/store', 'User\Skp::storeTarget');
     $routes->match(['get', 'post'], 'skp/delete/(:num)', 'User\Skp::delete/$1');
+    // --- Laporan Kinerja Harian ---
+    $routes->match(['get', 'post'], 'laporan-harian', 'User\LaporanHarianController::index');
+    $routes->post('laporan-harian/store', 'User\LaporanHarianController::store');
+    $routes->post('laporan-harian/hapus', 'User\LaporanHarianController::hapus');
+
+    // --- Log Kegiatan Harian ---
+    $routes->match(['get', 'post'], 'log-kegiatan', 'User\LogKegiatanController::index');
+    $routes->post('log-kegiatan/store', 'User\LogKegiatanController::store');
+    $routes->post('log-kegiatan/hapus', 'User\LogKegiatanController::hapus');
+
+    // --- Rekap & Penilaian Kinerja ---
+    $routes->match(['get', 'post'], 'penilaian-kinerja', 'User\PenilaianKinerjaController::index');
+    $routes->post('penilaian-kinerja/store', 'User\PenilaianKinerjaController::store');
+
 });
 
 // ECC Routes

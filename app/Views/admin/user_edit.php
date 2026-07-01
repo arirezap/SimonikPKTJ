@@ -6,7 +6,7 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2">Edit Pengguna & Hierarki</h1>
-        <a href="<?= site_url('admin/users') ?>" class="btn btn-secondary btn-sm">
+        <a href="<?= site_url('users') ?>" class="btn btn-secondary btn-sm">
             <i class="bi bi-arrow-left"></i> Kembali
         </a>
     </div>
@@ -16,7 +16,7 @@
             <h6 class="m-0 font-weight-bold text-primary">Formulir Data Pegawai</h6>
         </div>
         <div class="card-body">
-            <form action="<?= site_url('admin/users/update') ?>" method="post">
+            <form action="<?= site_url('users/update') ?>" method="post">
                 <?= csrf_field() ?>
                 
                 <input type="hidden" name="id" value="<?= esc($user['id']) ?>">

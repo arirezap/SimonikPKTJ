@@ -56,7 +56,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header"><h5 class="modal-title">Form Tambah Sasaran Baru</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-            <form action="<?= site_url('admin/master-data/sasaran/store') ?>" method="POST">
+            <form action="<?= site_url('master-data/sasaran/store') ?>" method="POST">
                 <?= csrf_field() ?>
                 <div class="modal-body">
                     <?php if ($validation->getErrors() && old('nama_sasaran')): ?><div class="alert alert-danger">Terdapat kesalahan input.</div><?php endif; ?>
@@ -78,7 +78,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header"><h5 class="modal-title">Edit Sasaran</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-            <form action="<?= site_url('admin/master-data/sasaran/update/' . $item['id']) ?>" method="POST">
+            <form action="<?= site_url('master-data/sasaran/update/' . $item['id']) ?>" method="POST">
                 <?= csrf_field() ?>
                 <div class="modal-body">
                     <div class="mb-3">
@@ -102,7 +102,7 @@
     function confirmDelete(id, name) {
         if (confirm(`Apakah Anda yakin ingin menghapus sasaran "${name}"?`)) {
             const form = document.getElementById('formHapus');
-            form.action = `<?= site_url('admin/master-data/sasaran/delete/') ?>${id}`;
+            form.action = `<?= site_url('master-data/sasaran/delete/') ?>${id}`;
             form.submit();
         }
     }
