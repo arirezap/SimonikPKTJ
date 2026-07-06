@@ -173,6 +173,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     // --- Rekap & Penilaian Kinerja ---
     $routes->match(['get', 'post'], 'penilaian-kinerja', 'User\PenilaianKinerjaController::index');
     $routes->post('penilaian-kinerja/store', 'User\PenilaianKinerjaController::store');
+    $routes->get('penilaian-kinerja/api-chart', 'User\PenilaianKinerjaController::getChartDataApi');
 
 });
 

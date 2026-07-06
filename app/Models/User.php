@@ -46,6 +46,6 @@ class User extends Model
     // Helper untuk mengambil daftar bawahan (jika diperlukan nanti)
     public function getBawahan($atasanId)
     {
-        return $this->where('atasan_id', $atasanId)->findAll();
+        return $this->where('atasan_id', $atasanId)->orderBy('nama_lengkap', 'ASC')->findAll();
     }
 }

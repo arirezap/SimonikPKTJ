@@ -7,6 +7,7 @@ Rekap & Penilaian Kinerja
 <?= $this->endSection() ?>
 
 <?= $this->section('styles') ?>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
     .table th {
         background-color: #f8f9fa !important;
@@ -41,6 +42,14 @@ Rekap & Penilaian Kinerja
         margin-bottom: 2px;
         display: block;
     }
+    .card-pegawai {
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+    }
+    .card-pegawai:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    }
 </style>
 <?= $this->endSection() ?>
 
@@ -57,34 +66,68 @@ Rekap & Penilaian Kinerja
     <div class="card-body">
         
         <!-- Filter Bar -->
-        <form method="POST" action="<?= site_url('penilaian-kinerja') ?>" class="mb-4 p-3 bg-light rounded border">
+        <form method="POST" action="<?= site_url('penilaian-kinerja') ?>" class="mb-4 p-3 bg-light rounded border" id="filterForm">
             <?= csrf_field() ?>
-            <div class="row align-items-center">
-                <div class="col-md-3 mb-3 mb-md-0">
-                    <label class="form-label fw-bold text-primary">Pilih Bulan</label>
-                    <select name="bulan" class="form-select border-primary" onchange="this.form.submit()">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label fw-bold text-primary mb-1" style="font-size: 0.9rem;">Bulan</label>
+                    <select name="bulan" class="form-select form-select-sm border-primary" onchange="this.form.submit()">
                         <?php foreach($bulan_indo as $index => $nama): ?>
                             <option value="<?= $index + 1 ?>" <?= ($bulan_terpilih == $index + 1) ? 'selected' : '' ?>><?= $nama ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="col-md-2 mb-3 mb-md-0">
-                    <label class="form-label fw-bold text-primary">Tahun</label>
-                    <input type="number" name="tahun" class="form-control border-primary" value="<?= esc($tahun_terpilih) ?>" onchange="this.form.submit()">
+                <div class="col-md-2">
+                    <label class="form-label fw-bold text-primary mb-1" style="font-size: 0.9rem;">Tahun</label>
+                    <input type="number" name="tahun" class="form-control form-control-sm border-primary" value="<?= esc($tahun_terpilih) ?>" onchange="this.form.submit()">
                 </div>
                 
                 <?php if ($is_atasan): ?>
-                <div class="col-md-4">
-                    <label class="form-label fw-bold text-success"><i class="bi bi-people-fill"></i> Pilih Bawahan (Khusus Penilai)</label>
-                    <select name="bawahan_id" class="form-select border-success" onchange="this.form.submit()">
-                        <option value="">-- Tampilkan Data Saya Sendiri --</option>
+                
+                <?php if (isset($is_super) && $is_super): ?>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-success mb-1" style="font-size: 0.9rem;"><i class="bi bi-building"></i> Unit Kerja</label>
+                    <select name="unit_kerja" id="selectUnit" class="form-select form-select-sm border-success" onchange="this.form.submit()">
+                        <option value="">-- Semua Unit --</option>
+                        <?php foreach($daftar_unit as $unit): ?>
+                            <option value="<?= esc($unit) ?>" <?= ($unit_kerja_terpilih == $unit) ? 'selected' : '' ?>><?= esc($unit) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-success mb-1" style="font-size: 0.9rem;"><i class="bi bi-people-fill"></i> Pegawai</label>
+                    <select name="bawahan_id" id="selectBawahan" class="form-select form-select-sm border-success">
+                        <option value="">-- Semua Pegawai --</option>
                         <?php foreach($daftar_bawahan as $bawahan): ?>
                             <option value="<?= esc($bawahan['id']) ?>" <?= ($bawahan_id_terpilih == $bawahan['id']) ? 'selected' : '' ?>>
-                                <?= esc($bawahan['nama_lengkap']) ?> (<?= esc($bawahan['jabatan']) ?>)
+                                <?= esc($bawahan['nama_lengkap']) ?> <?= !empty($bawahan['jabatan']) ? '('.esc($bawahan['jabatan']).')' : '' ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-outline-danger btn-sm w-100 fw-bold" onclick="resetPencarian()">
+                        <i class="bi bi-arrow-counterclockwise"></i> Reset
+                    </button>
+                </div>
+                <?php else: ?>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold text-success mb-1" style="font-size: 0.9rem;"><i class="bi bi-people-fill"></i> Pilih Pegawai</label>
+                    <select name="bawahan_id" id="selectBawahan" class="form-select form-select-sm border-success">
+                        <option value="">-- Tampilkan Data Saya Sendiri --</option>
+                        <?php foreach($daftar_bawahan as $bawahan): ?>
+                            <option value="<?= esc($bawahan['id']) ?>" <?= ($bawahan_id_terpilih == $bawahan['id']) ? 'selected' : '' ?>>
+                                <?= esc($bawahan['nama_lengkap']) ?> <?= !empty($bawahan['jabatan']) ? '('.esc($bawahan['jabatan']).')' : '' ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-outline-danger btn-sm w-100 fw-bold" onclick="resetPencarian()">
+                        <i class="bi bi-arrow-counterclockwise"></i> Kembali
+                    </button>
+                </div>
+                <?php endif; ?>
                 <?php endif; ?>
             </div>
         </form>
@@ -149,6 +192,8 @@ Rekap & Penilaian Kinerja
                 <span class="fs-4 fw-bold text-<?= $warnaScore ?>"><?= number_format($rataRataIndividu, 2, ',', '.') ?></span>
             </div>
         </div>
+
+        <!-- Chart Analytics Section dipindahkan ke Modal -->
 
         <!-- Form Penilaian (Jika Penilai) -->
         <?php if ($is_penilai): ?>
@@ -277,7 +322,7 @@ Rekap & Penilaian Kinerja
                         <?php else: ?>
                             <?php foreach ($rekap_dashboard as $rek): ?>
                                 <div class="col-md-6 col-lg-4">
-                                    <div class="card h-100 border-0 shadow-sm" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                                    <div class="card h-100 border-0 shadow-sm card-pegawai" data-id="<?= esc($rek['bawahan']['id']) ?>" data-nama="<?= esc($rek['bawahan']['nama_lengkap']) ?>" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                                         <div class="card-body">
                                             <h6 class="card-title fw-bold text-dark mb-1"><?= esc($rek['bawahan']['nama_lengkap']) ?></h6>
                                             <p class="card-text text-muted small mb-3"><?= esc($rek['bawahan']['jabatan']) ?></p>
@@ -317,12 +362,166 @@ Rekap & Penilaian Kinerja
     </div>
 </div>
 
+<!-- Modal Chart -->
+<div class="modal fade" id="chartModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header border-0 bg-light">
+        <h5 class="modal-title fw-bold text-primary"><i class="bi bi-bar-chart-fill me-2"></i> Analisis Kinerja: <span id="modalPegawaiName"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body bg-light">
+          <!-- Loading Spinner -->
+          <div id="chartLoading" class="text-center py-5">
+              <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
+              </div>
+              <p class="mt-2 text-muted">Memuat data analitik...</p>
+          </div>
+          <!-- Chart Analytics Section -->
+          <div class="row g-3" id="chartContainer" style="display: none;">
+              <div class="col-md-6">
+                  <div class="card shadow-sm h-100 border-0 bg-white">
+                      <div class="card-body">
+                          <h6 class="card-title fw-bold text-secondary mb-3"><i class="bi bi-graph-up text-primary"></i> Tren Nilai 6 Bulan Terakhir</h6>
+                          <div style="height: 250px;">
+                              <canvas id="trendChart"></canvas>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+              <div class="col-md-6">
+                  <div class="card shadow-sm h-100 border-0 bg-white">
+                      <div class="card-body">
+                          <h6 class="card-title fw-bold text-secondary mb-3"><i class="bi bi-pie-chart text-success"></i> Kualitas & Ketepatan Waktu (Bulan Ini)</h6>
+                          <div style="height: 250px;">
+                              <canvas id="qualityChart"></canvas>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+              <div class="col-md-6">
+                  <div class="card shadow-sm h-100 border-0 bg-white">
+                      <div class="card-body">
+                          <h6 class="card-title fw-bold text-secondary mb-3"><i class="bi bi-heptagon text-warning"></i> Disiplin vs Kerjasama (Bulan Ini)</h6>
+                          <div style="height: 250px;">
+                              <canvas id="sikapChart"></canvas>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+              <div class="col-md-6">
+                  <div class="card shadow-sm h-100 border-0 bg-white">
+                      <div class="card-body">
+                          <h6 class="card-title fw-bold text-secondary mb-3"><i class="bi bi-bar-chart-steps text-info"></i> Capaian Realisasi Pekerjaan (Bulan Ini)</h6>
+                          <div style="height: 250px;">
+                              <canvas id="targetChart"></canvas>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    let trendChartInstance = null;
+    let qualityChartInstance = null;
+    let sikapChartInstance = null;
+    let targetChartInstance = null;
+
+    const bulanTerpilih = <?= esc($bulan_terpilih) ?>;
+    const tahunTerpilih = <?= esc($tahun_terpilih) ?>;
+
     $(document).ready(function() {
+        // Inisialisasi Select2
+        if ($('#selectBawahan').length) {
+            $('#selectBawahan').select2({ 
+                width: '100%', 
+                placeholder: "Cari Nama...",
+                allowClear: false // Matikan clear kecil karena sudah ada tombol besar
+            });
+            $('#selectBawahan').on('select2:select', function (e) { $(this).closest('form').submit(); });
+        }
+        
+        // Klik pada Kartu Pegawai
+        $('.card-pegawai').on('click', function() {
+            const userId = $(this).data('id');
+            const userName = $(this).data('nama');
+            
+            $('#modalPegawaiName').text(userName);
+            $('#chartLoading').show();
+            $('#chartContainer').hide();
+            
+            const chartModal = new bootstrap.Modal(document.getElementById('chartModal'));
+            chartModal.show();
+            
+            $.ajax({
+                url: '<?= site_url('penilaian-kinerja/api-chart') ?>',
+                method: 'GET',
+                data: { user_id: userId, bulan: bulanTerpilih, tahun: tahunTerpilih },
+                success: function(res) {
+                    $('#chartLoading').hide();
+                    $('#chartContainer').show();
+                    renderCharts(res);
+                },
+                error: function() {
+                    $('#chartLoading').hide();
+                    alert('Gagal memuat data grafik.');
+                }
+            });
+        });
+        
+        function renderCharts(data) {
+            // Hancurkan instance chart lama jika ada
+            if(trendChartInstance) trendChartInstance.destroy();
+            if(qualityChartInstance) qualityChartInstance.destroy();
+            if(sikapChartInstance) sikapChartInstance.destroy();
+            if(targetChartInstance) targetChartInstance.destroy();
+
+            // 1. Trend Chart
+            trendChartInstance = new Chart(document.getElementById('trendChart'), {
+                type: 'line',
+                data: { labels: data.trend_labels, datasets: [{ label: 'Rata-rata Nilai', data: data.trend_data, borderColor: '#0d6efd', tension: 0.3, fill: true, backgroundColor: 'rgba(13, 110, 253, 0.1)' }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100 } }, plugins: { legend: { display: false } } }
+            });
+
+            // 2. Quality Chart
+            qualityChartInstance = new Chart(document.getElementById('qualityChart'), {
+                type: 'doughnut',
+                data: { labels: ['Tepat Waktu', 'Terlambat'], datasets: [{ data: [data.kualitas.tepat, data.kualitas.lambat], backgroundColor: ['#198754', '#dc3545'] }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+            });
+
+            // 3. Sikap Chart
+            sikapChartInstance = new Chart(document.getElementById('sikapChart'), {
+                type: 'bar',
+                data: { labels: ['Disiplin', 'Kerjasama'], datasets: [{ label: 'Rata-rata', data: [data.sikap.disiplin, data.sikap.kerjasama], backgroundColor: ['#ffc107', '#0dcaf0'] }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100 } }, plugins: { legend: { display: false } } }
+            });
+
+            // 4. Target Chart
+            targetChartInstance = new Chart(document.getElementById('targetChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Produktivitas'],
+                    datasets: [
+                        { label: 'Realisasi', data: [data.produktivitas.realisasi], backgroundColor: '#198754' },
+                        { label: 'Target Tersisa', data: [data.produktivitas.sisa], backgroundColor: '#e9ecef' }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', scales: { x: { stacked: true }, y: { stacked: true } } }
+            });
+        }
+
         // Otomatis hitung Nilai Harian saat Disiplin atau Kerjasama diubah
         $('.input-disiplin, .input-kerjasama').on('input', function() {
             var row = $(this).closest('tr');
@@ -336,6 +535,17 @@ Rekap & Penilaian Kinerja
                 row.find('.input-nilai-harian').val('');
             }
         });
+        
+        // Fungsi Reset Pencarian
+        window.resetPencarian = function() {
+            if ($('#selectUnit').length) {
+                $('#selectUnit').val('');
+            }
+            if ($('#selectBawahan').length) {
+                $('#selectBawahan').val(''); // Kosongkan nilai tanpa mengubah DOM optionnya
+            }
+            $('#filterForm').submit();
+        };
     });
 </script>
 <?= $this->endSection() ?>
