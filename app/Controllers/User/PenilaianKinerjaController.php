@@ -32,6 +32,33 @@ class PenilaianKinerjaController extends BaseController
         $daftarBawahan = $userModel->getBawahan($userId);
         $isAtasan = !empty($daftarBawahan);
 
+        $rekapDashboard = [];
+        if ($isAtasan) {
+            foreach ($daftarBawahan as $bawahan) {
+                $logs = $logModel->getLogByMonth($bawahan['id'], $bulanTerpilih, $tahunTerpilih);
+                $total_laporan = count($logs);
+                
+                $dinilai = 0;
+                $total_nilai = 0;
+                foreach ($logs as $l) {
+                    if (!empty($l['nilai_harian'])) {
+                        $dinilai++;
+                        $total_nilai += (float)$l['nilai_harian'];
+                    }
+                }
+                
+                $rata_rata = $dinilai > 0 ? round($total_nilai / $dinilai, 2) : 0;
+                
+                $rekapDashboard[] = [
+                    'bawahan' => $bawahan,
+                    'total_laporan' => $total_laporan,
+                    'dinilai' => $dinilai,
+                    'belum_dinilai' => $total_laporan - $dinilai,
+                    'rata_rata' => $rata_rata
+                ];
+            }
+        }
+
         // Tentukan data siapa yang akan ditampilkan
         $targetUserId = $userId; // Default lihat sendiri
         $isPenilai = false; // Mode read-only
@@ -63,7 +90,8 @@ class PenilaianKinerjaController extends BaseController
             'bawahan_id_terpilih' => $bawahanIdTerpilih,
             'is_atasan' => $isAtasan,
             'is_penilai' => $isPenilai,
-            'rekap_data' => $rekapData
+            'rekap_data' => $rekapData,
+            'rekap_dashboard' => $rekapDashboard
         ];
 
         return view('user/penilaian_kinerja/index', $data);
@@ -80,9 +108,6 @@ class PenilaianKinerjaController extends BaseController
         $disiplin_arr = $this->request->getPost('disiplin');
         $kerjasama_arr = $this->request->getPost('kerjasama');
         $nilai_harian_arr = $this->request->getPost('nilai_harian'); // Diisi via JS di frontend
-        
-        $edit_deskripsi_arr = $this->request->getPost('edit_deskripsi');
-        $edit_capaian_arr = $this->request->getPost('edit_capaian');
 
         $bulan = $this->request->getPost('bulan');
         $tahun = $this->request->getPost('tahun');
@@ -102,13 +127,6 @@ class PenilaianKinerjaController extends BaseController
                     'kerjasama' => $kerjasama_arr[$index] ?? null,
                     'nilai_harian' => $nilai_harian_arr[$index] ?? null,
                 ];
-
-                if (isset($edit_deskripsi_arr[$index])) {
-                    $rowUpdate['deskripsi_kegiatan'] = $edit_deskripsi_arr[$index];
-                }
-                if (isset($edit_capaian_arr[$index])) {
-                    $rowUpdate['jumlah_capaian'] = $edit_capaian_arr[$index];
-                }
 
                 $dataToUpdate[] = $rowUpdate;
             }

@@ -89,6 +89,24 @@ Rekap & Penilaian Kinerja
             </div>
         </form>
 
+        <?php if ($is_atasan): ?>
+            <ul class="nav nav-tabs mb-4" id="penilaianTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active fw-bold text-primary" id="individu-tab" data-bs-toggle="tab" data-bs-target="#individu" type="button" role="tab" aria-controls="individu" aria-selected="true">
+                        <i class="bi bi-person-lines-fill me-1"></i> Penilaian Individu
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold text-success" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button" role="tab" aria-controls="dashboard" aria-selected="false">
+                        <i class="bi bi-bar-chart-line-fill me-1"></i> Dashboard Rekap Pegawai
+                    </button>
+                </li>
+            </ul>
+            <div class="tab-content" id="penilaianTabsContent">
+                <!-- Tab Penilaian Individu -->
+                <div class="tab-pane fade show active" id="individu" role="tabpanel" aria-labelledby="individu-tab">
+        <?php endif; ?>
+
         <?php if ($is_penilai && empty($rekap_data)): ?>
             <div class="alert alert-info">
                 <i class="bi bi-info-circle me-2"></i> Pegawai ini belum memiliki rekap kegiatan harian pada bulan tersebut.
@@ -99,6 +117,39 @@ Rekap & Penilaian Kinerja
             </div>
         <?php else: ?>
         
+        <?php
+            // Hitung rata-rata nilai untuk ditampilkan di atas tabel
+            $jmlDinilai = 0;
+            $totalNilai = 0;
+            foreach ($rekap_data as $rd) {
+                if (!empty($rd['nilai_harian'])) {
+                    $jmlDinilai++;
+                    $totalNilai += (float)$rd['nilai_harian'];
+                }
+            }
+            $rataRataIndividu = $jmlDinilai > 0 ? round($totalNilai / $jmlDinilai, 2) : 0;
+            
+            $warnaScore = 'success';
+            if ($jmlDinilai == 0) {
+                $warnaScore = 'secondary';
+            } elseif ($rataRataIndividu < 60) {
+                $warnaScore = 'danger';
+            } elseif ($rataRataIndividu < 75) {
+                $warnaScore = 'warning text-dark';
+            }
+        ?>
+        
+        <div class="alert alert-light border-<?= $warnaScore === 'warning text-dark' ? 'warning' : $warnaScore ?> border-start border-4 shadow-sm mb-4 d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="fw-bold mb-1 text-dark">Ringkasan Kinerja Bulan Ini</h6>
+                <small class="text-muted">Dari <?= count($rekap_data) ?> total aktivitas harian yang dilaporkan, <?= $jmlDinilai ?> aktivitas telah dievaluasi.</small>
+            </div>
+            <div class="text-end">
+                <span class="d-block small fw-bold text-<?= $warnaScore ?> mb-1">RATA-RATA NILAI</span>
+                <span class="fs-4 fw-bold text-<?= $warnaScore ?>"><?= number_format($rataRataIndividu, 2, ',', '.') ?></span>
+            </div>
+        </div>
+
         <!-- Form Penilaian (Jika Penilai) -->
         <?php if ($is_penilai): ?>
         <form action="<?= site_url('penilaian-kinerja/store') ?>" method="POST" id="formPenilaian">
@@ -136,22 +187,11 @@ Rekap & Penilaian Kinerja
                                     ?>
                                 </td>
                                     <td>
-                                        <?php if ($is_penilai): ?>
-                                            <textarea name="edit_deskripsi[]" class="form-control form-control-sm" rows="2" required><?= esc($row['deskripsi_kegiatan']) ?></textarea>
-                                        <?php else: ?>
-                                            <?= nl2br(esc($row['deskripsi_kegiatan'])) ?>
-                                        <?php endif; ?>
+                                        <?= nl2br(esc($row['deskripsi_kegiatan'])) ?>
                                     </td>
                                     <td><?= intval($row['target_bulanan']) ?> <?= esc($row['satuan']) ?></td>
                                     <td>
-                                        <?php if ($is_penilai): ?>
-                                            <div class="input-group input-group-sm">
-                                                <input type="number" step="1" name="edit_capaian[]" class="form-control text-center" value="<?= intval($row['jumlah_capaian']) ?>" required>
-                                                <span class="input-group-text"><?= esc($row['satuan']) ?></span>
-                                            </div>
-                                        <?php else: ?>
-                                            <div class="text-center"><?= intval($row['jumlah_capaian']) ?> <?= esc($row['satuan']) ?></div>
-                                        <?php endif; ?>
+                                        <div class="text-center"><?= intval($row['jumlah_capaian']) ?> <?= esc($row['satuan']) ?></div>
                                     </td>
                                     <td class="text-center">
                                         <?php if (!empty($row['link_bukti'])): ?>
@@ -222,6 +262,57 @@ Rekap & Penilaian Kinerja
         </form>
         <?php endif; ?>
 
+        <?php endif; ?>
+        
+        <?php if ($is_atasan): ?>
+                </div> <!-- End Tab Individu -->
+                
+                <!-- Tab Dashboard -->
+                <div class="tab-pane fade" id="dashboard" role="tabpanel" aria-labelledby="dashboard-tab">
+                    <div class="row g-3">
+                        <?php if (empty($rekap_dashboard)): ?>
+                            <div class="col-12">
+                                <div class="alert alert-info">Belum ada bawahan yang terdaftar.</div>
+                            </div>
+                        <?php else: ?>
+                            <?php foreach ($rekap_dashboard as $rek): ?>
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="card h-100 border-0 shadow-sm" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                                        <div class="card-body">
+                                            <h6 class="card-title fw-bold text-dark mb-1"><?= esc($rek['bawahan']['nama_lengkap']) ?></h6>
+                                            <p class="card-text text-muted small mb-3"><?= esc($rek['bawahan']['jabatan']) ?></p>
+                                            
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span class="small fw-semibold text-secondary">Total Laporan</span>
+                                                <span class="badge bg-primary rounded-pill"><?= $rek['total_laporan'] ?></span>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span class="small fw-semibold text-secondary">Rata-rata Nilai</span>
+                                                <?php 
+                                                    $warnaDash = 'success';
+                                                    if ($rek['dinilai'] == 0) $warnaDash = 'secondary';
+                                                    elseif ($rek['rata_rata'] < 60) $warnaDash = 'danger';
+                                                    elseif ($rek['rata_rata'] < 75) $warnaDash = 'warning text-dark';
+                                                ?>
+                                                <span class="badge bg-<?= $warnaDash ?> rounded-pill"><?= number_format($rek['rata_rata'], 2, ',', '.') ?></span>
+                                            </div>
+                                            <div class="progress mt-3" style="height: 6px;">
+                                                <?php 
+                                                    $pct = $rek['total_laporan'] > 0 ? ($rek['dinilai'] / $rek['total_laporan'] * 100) : 0;
+                                                ?>
+                                                <div class="progress-bar bg-success" role="progressbar" style="width: <?= $pct ?>%;" aria-valuenow="<?= $pct ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                            <div class="text-end mt-1">
+                                                <small class="text-muted" style="font-size: 0.7rem;">Dinilai: <?= $rek['dinilai'] ?> / <?= $rek['total_laporan'] ?></small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                </div> <!-- End Tab Dashboard -->
+            </div> <!-- End Tab Content -->
         <?php endif; ?>
     </div>
 </div>
