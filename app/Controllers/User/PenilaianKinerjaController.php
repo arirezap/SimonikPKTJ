@@ -68,21 +68,36 @@ class PenilaianKinerjaController extends BaseController
                 
                 $dinilai = 0;
                 $total_nilai = 0;
+                $total_disiplin = 0;
+                $total_kerjasama = 0;
+                $tepat_waktu = 0;
+                $terlambat = 0;
+
                 foreach ($logs as $l) {
                     if (!empty($l['nilai_harian'])) {
                         $dinilai++;
                         $total_nilai += (float)$l['nilai_harian'];
+                        $total_disiplin += (float)($l['disiplin'] ?? 0);
+                        $total_kerjasama += (float)($l['kerjasama'] ?? 0);
                     }
+                    if (($l['waktu_penyelesaian'] ?? '') === 'Tepat waktu') $tepat_waktu++;
+                    elseif (($l['waktu_penyelesaian'] ?? '') === 'Terlambat') $terlambat++;
                 }
                 
                 $rata_rata = $dinilai > 0 ? round($total_nilai / $dinilai, 2) : 0;
+                $rata_disiplin = $dinilai > 0 ? round($total_disiplin / $dinilai, 2) : 0;
+                $rata_kerjasama = $dinilai > 0 ? round($total_kerjasama / $dinilai, 2) : 0;
                 
                 $rekapDashboard[] = [
                     'bawahan' => $bawahan,
                     'total_laporan' => $total_laporan,
                     'dinilai' => $dinilai,
                     'belum_dinilai' => $total_laporan - $dinilai,
-                    'rata_rata' => $rata_rata
+                    'rata_rata' => $rata_rata,
+                    'rata_disiplin' => $rata_disiplin,
+                    'rata_kerjasama' => $rata_kerjasama,
+                    'tepat_waktu' => $tepat_waktu,
+                    'terlambat' => $terlambat
                 ];
             }
         }

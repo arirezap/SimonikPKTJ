@@ -132,23 +132,34 @@ Rekap & Penilaian Kinerja
             </div>
         </form>
 
-        <?php if ($is_atasan): ?>
-            <ul class="nav nav-tabs mb-4" id="penilaianTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active fw-bold text-primary" id="individu-tab" data-bs-toggle="tab" data-bs-target="#individu" type="button" role="tab" aria-controls="individu" aria-selected="true">
-                        <i class="bi bi-person-lines-fill me-1"></i> Penilaian Individu
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link fw-bold text-success" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button" role="tab" aria-controls="dashboard" aria-selected="false">
-                        <i class="bi bi-bar-chart-line-fill me-1"></i> Dashboard Rekap Pegawai
-                    </button>
-                </li>
-            </ul>
-            <div class="tab-content" id="penilaianTabsContent">
-                <!-- Tab Penilaian Individu -->
-                <div class="tab-pane fade show active" id="individu" role="tabpanel" aria-labelledby="individu-tab">
-        <?php endif; ?>
+        <ul class="nav nav-tabs mb-4" id="penilaianTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active fw-bold text-primary" id="individu-tab" data-bs-toggle="tab" data-bs-target="#individu" type="button" role="tab" aria-controls="individu" aria-selected="true">
+                    <i class="bi bi-person-lines-fill me-1"></i> <?= $is_atasan ? 'Penilaian Individu' : 'Laporan Harian' ?>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold text-info" id="analisis-tab" data-bs-toggle="tab" data-bs-target="#analisis" type="button" role="tab" aria-controls="analisis" aria-selected="false">
+                    <i class="bi bi-pie-chart-fill me-1"></i> Analisis Kinerja
+                </button>
+            </li>
+            <?php if ($is_atasan): ?>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold" id="keseluruhan-tab" data-bs-toggle="tab" data-bs-target="#keseluruhan" type="button" role="tab" aria-controls="keseluruhan" aria-selected="false" style="color: #6f42c1;">
+                    <i class="bi bi-diagram-3-fill me-1"></i> Analisis Keseluruhan
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold text-success" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button" role="tab" aria-controls="dashboard" aria-selected="false">
+                    <i class="bi bi-bar-chart-line-fill me-1"></i> Dashboard Rekap Pegawai
+                </button>
+            </li>
+            <?php endif; ?>
+        </ul>
+
+        <div class="tab-content" id="penilaianTabsContent">
+            <!-- TAB: PENILAIAN INDIVIDU -->
+            <div class="tab-pane fade show active" id="individu" role="tabpanel" aria-labelledby="individu-tab">
 
         <?php if ($is_penilai && empty($rekap_data)): ?>
             <div class="alert alert-info">
@@ -193,15 +204,14 @@ Rekap & Penilaian Kinerja
             </div>
         </div>
 
-        <!-- Chart Analytics Section dipindahkan ke Modal -->
-
         <!-- Form Penilaian (Jika Penilai) -->
         <?php if ($is_penilai): ?>
         <form action="<?= site_url('penilaian-kinerja/store') ?>" method="POST" id="formPenilaian">
             <?= csrf_field() ?>
+            <input type="hidden" name="bawahan_id" value="<?= esc($bawahan_id_terpilih) ?>">
             <input type="hidden" name="bulan" value="<?= esc($bulan_terpilih) ?>">
             <input type="hidden" name="tahun" value="<?= esc($tahun_terpilih) ?>">
-            <input type="hidden" name="bawahan_id" value="<?= esc($bawahan_id_terpilih) ?>">
+            <input type="hidden" name="unit_kerja" value="<?= esc($unit_kerja_terpilih) ?>">
         <?php endif; ?>
 
             <div class="table-responsive">
@@ -308,10 +318,235 @@ Rekap & Penilaian Kinerja
         <?php endif; ?>
 
         <?php endif; ?>
-        
+        </div> <!-- End Tab Individu -->
+
+        <!-- TAB ANALISIS KINERJA -->
+        <div class="tab-pane fade" id="analisis" role="tabpanel" aria-labelledby="analisis-tab">
+            <div id="analisisLoading" class="text-center py-5">
+                <div class="spinner-border text-info" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Memuat data analitik...</p>
+            </div>
+            <div class="row g-3" id="analisisContainer" style="display: none;">
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100 border-0 bg-white">
+                        <div class="card-body">
+                            <h6 class="card-title fw-bold text-secondary mb-3"><i class="bi bi-graph-up text-primary"></i> Tren Kinerja Semesteran</h6>
+                            <div style="height: 250px;">
+                                <canvas id="trendChartAnalisis"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100 border-0 bg-white">
+                        <div class="card-body">
+                            <h6 class="card-title fw-bold text-secondary mb-3"><i class="bi bi-pie-chart text-success"></i> Kualitas & Ketepatan Waktu</h6>
+                            <div style="height: 250px;">
+                                <canvas id="qualityChartAnalisis"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100 border-0 bg-white">
+                        <div class="card-body">
+                            <h6 class="card-title fw-bold text-secondary mb-3"><i class="bi bi-heptagon text-warning"></i> Pilar Perilaku Profesional</h6>
+                            <div style="height: 250px;">
+                                <canvas id="sikapChartAnalisis"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100 border-0 bg-white">
+                        <div class="card-body">
+                            <h6 class="card-title fw-bold text-secondary mb-3"><i class="bi bi-bar-chart-steps text-info"></i> Capaian Produktivitas Target</h6>
+                            <div style="height: 250px;">
+                                <canvas id="targetChartAnalisis"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <?php if ($is_atasan): ?>
-                </div> <!-- End Tab Individu -->
                 
+                <!-- TAB: ANALISIS KESELURUHAN (UNIT & PEGAWAI) -->
+                <?php
+                    // Agregasi Data
+                    $unitData = [];
+                    $pegawaiData = [];
+                    $waktuData = ['Tepat Waktu' => 0, 'Terlambat' => 0];
+                    $kualitasDist = ['Sangat Baik' => 0, 'Baik' => 0, 'Cukup' => 0, 'Kurang' => 0];
+
+                    foreach ($rekap_dashboard as $rek) {
+                        $u = $rek['bawahan']['unit_kerja'] ?? 'Lainnya';
+                        if (!isset($unitData[$u])) {
+                            $unitData[$u] = [
+                                'total_nilai' => 0, 
+                                'jml_pegawai' => 0,
+                                'total_disiplin' => 0,
+                                'total_kerjasama' => 0,
+                                'dinilai' => 0,
+                                'belum' => 0
+                            ];
+                        }
+                        $unitData[$u]['total_nilai'] += $rek['rata_rata'];
+                        $unitData[$u]['jml_pegawai']++;
+                        $unitData[$u]['total_disiplin'] += ($rek['rata_disiplin'] ?? 0);
+                        $unitData[$u]['total_kerjasama'] += ($rek['rata_kerjasama'] ?? 0);
+                        $unitData[$u]['dinilai'] += ($rek['dinilai'] ?? 0);
+                        $unitData[$u]['belum'] += ($rek['belum_dinilai'] ?? 0);
+
+                        $pegawaiData[] = [
+                            'nama' => $rek['bawahan']['nama_lengkap'],
+                            'nilai' => $rek['rata_rata']
+                        ];
+
+                        $waktuData['Tepat Waktu'] += ($rek['tepat_waktu'] ?? 0);
+                        $waktuData['Terlambat'] += ($rek['terlambat'] ?? 0);
+
+                        if ($rek['rata_rata'] >= 90) $kualitasDist['Sangat Baik']++;
+                        elseif ($rek['rata_rata'] >= 75) $kualitasDist['Baik']++;
+                        elseif ($rek['rata_rata'] >= 60) $kualitasDist['Cukup']++;
+                        elseif ($rek['rata_rata'] > 0) $kualitasDist['Kurang']++;
+                    }
+
+                    $sikapUnit = [];
+                    $statusUnit = [];
+                    foreach ($unitData as $u => &$d) {
+                        $d['rata_rata'] = $d['jml_pegawai'] > 0 ? round($d['total_nilai'] / $d['jml_pegawai'], 2) : 0;
+                        $sikapUnit[] = [
+                            'unit' => $u,
+                            'disiplin' => $d['jml_pegawai'] > 0 ? round($d['total_disiplin'] / $d['jml_pegawai'], 2) : 0,
+                            'kerjasama' => $d['jml_pegawai'] > 0 ? round($d['total_kerjasama'] / $d['jml_pegawai'], 2) : 0
+                        ];
+                        $statusUnit[] = [
+                            'unit' => $u,
+                            'dinilai' => $d['dinilai'],
+                            'belum' => $d['belum']
+                        ];
+                    }
+                    
+                    // Sort Pegawai descending
+                    usort($pegawaiData, function($a, $b) { return $b['nilai'] <=> $a['nilai']; });
+                    $topPerformers = array_slice($pegawaiData, 0, 5);
+                ?>
+
+                <div class="tab-pane fade" id="keseluruhan" role="tabpanel" aria-labelledby="keseluruhan-tab">
+                    <div class="row g-4">
+                        <!-- BAGIAN 1: PERFORMA UNIT KERJA -->
+                        <div class="col-12">
+                            <h5 class="fw-bold mb-3" style="color: #6f42c1;"><i class="bi bi-diagram-3-fill me-2"></i> Performa Unit Kerja</h5>
+                            <div class="card shadow-sm border-0 bg-white">
+                                <div class="card-body">
+                                    <?php if (count($unitData) > 1): ?>
+                                        <h6 class="card-title fw-bold text-secondary mb-3">Perbandingan Rata-Rata Nilai Antar Unit</h6>
+                                        <div style="height: 300px;">
+                                            <canvas id="chartUnitKeseluruhan"></canvas>
+                                        </div>
+                                    <?php else: ?>
+                                        <?php 
+                                            $uName = key($unitData);
+                                            $uAvg = $unitData[$uName]['rata_rata'] ?? 0;
+                                        ?>
+                                        <div class="text-center py-4">
+                                            <h6 class="text-muted text-uppercase mb-2">Nilai Rata-Rata Keseluruhan Unit</h6>
+                                            <h1 class="display-3 fw-bold text-primary mb-0"><?= number_format($uAvg, 2, ',', '.') ?></h1>
+                                            <p class="text-muted mt-2">Berdasarkan <?= $unitData[$uName]['jml_pegawai'] ?? 0 ?> pegawai</p>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BAGIAN 2: PERFORMA PEGAWAI -->
+                        <div class="col-12">
+                            <h5 class="fw-bold mb-3 mt-2 text-primary"><i class="bi bi-people-fill me-2"></i> Performa Pegawai</h5>
+                            <div class="row g-3">
+                                <div class="col-md-8">
+                                    <div class="card shadow-sm h-100 border-0 bg-white">
+                                        <div class="card-body">
+                                            <h6 class="card-title fw-bold text-secondary mb-3">Peringkat Kinerja Seluruh Pegawai</h6>
+                                            <div style="max-height: 450px; overflow-y: auto; overflow-x: hidden;">
+                                                <div style="height: <?= max(300, count($pegawaiData) * 30) ?>px; position: relative;">
+                                                    <canvas id="chartPegawaiRanking"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card shadow-sm border-0 bg-white mb-3">
+                                        <div class="card-body">
+                                            <h6 class="card-title fw-bold text-secondary mb-3">Distribusi Kualitas</h6>
+                                            <div style="height: 200px;">
+                                                <canvas id="chartDistribusiKualitas"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card shadow-sm border-0 bg-white">
+                                        <div class="card-header bg-success text-white fw-bold">
+                                            <i class="bi bi-award-fill me-1"></i> Top Performers
+                                        </div>
+                                        <ul class="list-group list-group-flush">
+                                            <?php if (empty($topPerformers)): ?>
+                                                <li class="list-group-item text-muted text-center small">Belum ada data</li>
+                                            <?php endif; ?>
+                                            <?php foreach ($topPerformers as $i => $tp): ?>
+                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                    <span class="small fw-semibold">
+                                                        <?= ($i==0) ? '🥇 ' : (($i==1) ? '🥈 ' : (($i==2) ? '🥉 ' : '')) ?>
+                                                        <?= esc($tp['nama']) ?>
+                                                    </span>
+                                                    <span class="badge bg-success rounded-pill"><?= $tp['nilai'] ?></span>
+                                                </li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <!-- Grafik Sikap -->
+                                <div class="col-md-6 mt-3">
+                                    <div class="card shadow-sm border-0 bg-white h-100">
+                                        <div class="card-body">
+                                            <h6 class="card-title fw-bold text-secondary mb-3">Sikap Profesional (Disiplin vs Kerjasama)</h6>
+                                            <div style="height: 280px;">
+                                                <canvas id="chartSikapUnit"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Grafik Waktu & Status -->
+                                <div class="col-md-6 mt-3">
+                                    <div class="card shadow-sm border-0 bg-white h-100">
+                                        <div class="card-body">
+                                            <h6 class="card-title fw-bold text-secondary mb-3">Evaluasi Target & Ketepatan Waktu</h6>
+                                            <div class="row align-items-center h-100">
+                                                <div class="col-5">
+                                                    <div style="height: 200px;">
+                                                        <canvas id="chartWaktuKeseluruhan"></canvas>
+                                                    </div>
+                                                </div>
+                                                <div class="col-7">
+                                                    <div style="height: 250px;">
+                                                        <canvas id="chartStatusEvaluasi"></canvas>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Tab Dashboard -->
                 <div class="tab-pane fade" id="dashboard" role="tabpanel" aria-labelledby="dashboard-tab">
                     <div class="row g-3">
@@ -521,6 +756,191 @@ Rekap & Penilaian Kinerja
                 options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', scales: { x: { stacked: true }, y: { stacked: true } } }
             });
         }
+
+        // Logic untuk Tab Analisis Kinerja
+        let analisisChartInstance1 = null;
+        let analisisChartInstance2 = null;
+        let analisisChartInstance3 = null;
+        let analisisChartInstance4 = null;
+        let analisisLoaded = false;
+
+        $('#analisis-tab').on('shown.bs.tab', function (e) {
+            if (!analisisLoaded) {
+                const targetUserId = "<?= !empty($bawahan_id_terpilih) ? esc($bawahan_id_terpilih) : session()->get('id') ?>";
+                
+                $.ajax({
+                    url: '<?= site_url('penilaian-kinerja/api-chart') ?>',
+                    method: 'GET',
+                    data: { user_id: targetUserId, bulan: bulanTerpilih, tahun: tahunTerpilih },
+                    success: function(res) {
+                        $('#analisisLoading').hide();
+                        $('#analisisContainer').show();
+                        
+                        analisisChartInstance1 = new Chart(document.getElementById('trendChartAnalisis'), {
+                            type: 'line',
+                            data: { labels: res.trend_labels, datasets: [{ label: 'Rata-rata Nilai', data: res.trend_data, borderColor: '#0d6efd', tension: 0.3, fill: true, backgroundColor: 'rgba(13, 110, 253, 0.1)' }] },
+                            options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100 } }, plugins: { legend: { display: false } } }
+                        });
+
+                        analisisChartInstance2 = new Chart(document.getElementById('qualityChartAnalisis'), {
+                            type: 'doughnut',
+                            data: { labels: ['Tepat Waktu', 'Terlambat'], datasets: [{ data: [res.kualitas.tepat, res.kualitas.lambat], backgroundColor: ['#198754', '#dc3545'] }] },
+                            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+                        });
+
+                        analisisChartInstance3 = new Chart(document.getElementById('sikapChartAnalisis'), {
+                            type: 'bar',
+                            data: { labels: ['Disiplin', 'Kerjasama'], datasets: [{ label: 'Rata-rata', data: [res.sikap.disiplin, res.sikap.kerjasama], backgroundColor: ['#ffc107', '#0dcaf0'] }] },
+                            options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100 } }, plugins: { legend: { display: false } } }
+                        });
+
+                        analisisChartInstance4 = new Chart(document.getElementById('targetChartAnalisis'), {
+                            type: 'bar',
+                            data: {
+                                labels: ['Produktivitas'],
+                                datasets: [
+                                    { label: 'Realisasi', data: [res.produktivitas.realisasi], backgroundColor: '#198754' },
+                                    { label: 'Target Tersisa', data: [res.produktivitas.sisa], backgroundColor: '#e9ecef' }
+                                ]
+                            },
+                            options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', scales: { x: { stacked: true }, y: { stacked: true } } }
+                        });
+                        
+                        analisisLoaded = true;
+                    },
+                    error: function() {
+                        $('#analisisLoading').hide();
+                        alert('Gagal memuat data analitik.');
+                    }
+                });
+            }
+        });
+
+        <?php if ($is_atasan): ?>
+        // Render Grafik Analisis Keseluruhan (Unit & Pegawai)
+        $('#keseluruhan-tab').on('shown.bs.tab', function (e) {
+            // Render Chart Unit (jika ada)
+            if ($('#chartUnitKeseluruhan').length && !window.chartUnitKeseluruhanInit) {
+                const unitLabels = <?= json_encode(array_keys($unitData ?? [])) ?>;
+                const unitScores = <?= json_encode(array_column($unitData ?? [], 'rata_rata')) ?>;
+                
+                new Chart(document.getElementById('chartUnitKeseluruhan'), {
+                    type: 'bar',
+                    data: {
+                        labels: unitLabels,
+                        datasets: [{
+                            label: 'Rata-rata Nilai',
+                            data: unitScores,
+                            backgroundColor: '#6f42c1',
+                            borderRadius: 4
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100 } }, plugins: { legend: { display: false } } }
+                });
+                window.chartUnitKeseluruhanInit = true;
+            }
+
+            // Render Chart Ranking Pegawai
+            if ($('#chartPegawaiRanking').length && !window.chartPegawaiRankingInit) {
+                const pegLabels = <?= json_encode(array_column($pegawaiData ?? [], 'nama')) ?>;
+                const pegScores = <?= json_encode(array_column($pegawaiData ?? [], 'nilai')) ?>;
+                
+                new Chart(document.getElementById('chartPegawaiRanking'), {
+                    type: 'bar',
+                    data: {
+                        labels: pegLabels,
+                        datasets: [{
+                            label: 'Rata-rata Nilai',
+                            data: pegScores,
+                            backgroundColor: pegScores.map(score => score >= 90 ? '#198754' : (score >= 75 ? '#0d6efd' : (score >= 60 ? '#ffc107' : '#dc3545'))),
+                            borderRadius: 4
+                        }]
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false, 
+                        indexAxis: 'y', 
+                        scales: { x: { min: 0, max: 100 } }, 
+                        plugins: { legend: { display: false } } 
+                    }
+                });
+                window.chartPegawaiRankingInit = true;
+            }
+
+            // Render Chart Distribusi Kualitas
+            if ($('#chartDistribusiKualitas').length && !window.chartDistribusiKualitasInit) {
+                const distData = <?= json_encode(array_values($kualitasDist ?? [])) ?>;
+                
+                new Chart(document.getElementById('chartDistribusiKualitas'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Sangat Baik', 'Baik', 'Cukup', 'Kurang'],
+                        datasets: [{
+                            data: distData,
+                            backgroundColor: ['#198754', '#0d6efd', '#ffc107', '#dc3545']
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12 } } } }
+                });
+                window.chartDistribusiKualitasInit = true;
+            }
+
+            // Render Chart Sikap
+            if ($('#chartSikapUnit').length && !window.chartSikapUnitInit) {
+                const sikapLabels = <?= json_encode(array_column($sikapUnit ?? [], 'unit')) ?>;
+                const disiplinScores = <?= json_encode(array_column($sikapUnit ?? [], 'disiplin')) ?>;
+                const kerjasamaScores = <?= json_encode(array_column($sikapUnit ?? [], 'kerjasama')) ?>;
+                
+                new Chart(document.getElementById('chartSikapUnit'), {
+                    type: 'bar',
+                    data: {
+                        labels: sikapLabels,
+                        datasets: [
+                            { label: 'Rata-rata Disiplin', data: disiplinScores, backgroundColor: '#ffc107', borderRadius: 4 },
+                            { label: 'Rata-rata Kerjasama', data: kerjasamaScores, backgroundColor: '#0dcaf0', borderRadius: 4 }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', scales: { x: { min: 0, max: 100 } }, plugins: { legend: { position: 'top' } } }
+                });
+                window.chartSikapUnitInit = true;
+            }
+
+            // Render Chart Waktu
+            if ($('#chartWaktuKeseluruhan').length && !window.chartWaktuKeseluruhanInit) {
+                const waktuData = <?= json_encode(array_values($waktuData ?? [])) ?>;
+                
+                new Chart(document.getElementById('chartWaktuKeseluruhan'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Tepat Waktu', 'Terlambat'],
+                        datasets: [{ data: waktuData, backgroundColor: ['#198754', '#dc3545'] }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                });
+                window.chartWaktuKeseluruhanInit = true;
+            }
+
+            // Render Chart Status Evaluasi
+            if ($('#chartStatusEvaluasi').length && !window.chartStatusEvaluasiInit) {
+                const statusLabels = <?= json_encode(array_column($statusUnit ?? [], 'unit')) ?>;
+                const dinilaiData = <?= json_encode(array_column($statusUnit ?? [], 'dinilai')) ?>;
+                const belumData = <?= json_encode(array_column($statusUnit ?? [], 'belum')) ?>;
+                
+                new Chart(document.getElementById('chartStatusEvaluasi'), {
+                    type: 'bar',
+                    data: {
+                        labels: statusLabels,
+                        datasets: [
+                            { label: 'Sudah Dinilai', data: dinilaiData, backgroundColor: '#0d6efd' },
+                            { label: 'Belum Dinilai', data: belumData, backgroundColor: '#adb5bd' }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', scales: { x: { stacked: true }, y: { stacked: true } } }
+                });
+                window.chartStatusEvaluasiInit = true;
+            }
+        });
+        <?php endif; ?>
 
         // Otomatis hitung Nilai Harian saat Disiplin atau Kerjasama diubah
         $('.input-disiplin, .input-kerjasama').on('input', function() {
