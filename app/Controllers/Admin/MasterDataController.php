@@ -223,7 +223,7 @@ class MasterDataController extends BaseController
         $ledModel = new LedCriteria();
         $standarModel = new LedStandar(); 
 
-        $selectedProdi = $this->request->getGet('prodi') ?? config('Simonik')->prodiList[0];
+        $selectedProdi = $this->request->getGet('prodi') ?? config('Ecc')->prodiList[0];
 
         $all_items = $ledModel
             ->select('led_criteria.*, led_standar.nama_standar') 
@@ -288,7 +288,7 @@ class MasterDataController extends BaseController
     public function deleteLed($id)
     {
         $ledModel = new LedCriteria();
-        $prodi = $this->request->getGet('prodi') ?? config('Simonik')->prodiList[0];
+        $prodi = $this->request->getGet('prodi') ?? config('Ecc')->prodiList[0];
         
         if ($ledModel->delete($id)) {
             return redirect()->to('master-data/led?prodi=' . $prodi)->with('success', 'Kriteria LED berhasil dihapus.');
@@ -299,7 +299,7 @@ class MasterDataController extends BaseController
     public function deleteLedBatch()
     {
         $ledModel = new LedCriteria();
-        $prodi = $this->request->getPost('prodi_filter') ?? config('Simonik')->prodiList[0];
+        $prodi = $this->request->getPost('prodi_filter') ?? config('Ecc')->prodiList[0];
         $ids = $this->request->getPost('ids');
         
         if (!empty($ids)) {
@@ -312,7 +312,7 @@ class MasterDataController extends BaseController
     public function batchUpdateLed()
     {
         $ledModel = new \App\Models\LedCriteria();
-        $prodi = $this->request->getPost('prodi_filter') ?? config('Simonik')->prodiList[0];
+        $prodi = $this->request->getPost('prodi_filter') ?? config('Ecc')->prodiList[0];
         $ids = $this->request->getPost('ids');
         
         $standarId = $this->request->getPost('id_standar');
@@ -558,7 +558,7 @@ class MasterDataController extends BaseController
 
         // 1. Get filters from URL
         $selectedTahun = $this->request->getGet('tahun') ?? date('Y');
-        $selectedProdi = $this->request->getGet('prodi') ?? config('Simonik')->prodiList[0];
+        $selectedProdi = $this->request->getGet('prodi') ?? config('Ecc')->prodiList[0];
 
         // 2. Get current user info
         $user_id = session()->get('id');
@@ -607,7 +607,7 @@ class MasterDataController extends BaseController
         }
 
         // 5. Filter criteria based on role
-        $unfilteredRoles = ['admin', 'spm', 'direktur', 'manajemen']; // Roles that see everything
+        $unfilteredRoles = ['admin', 'spm', 'direktur', 'wadir', 'manajemen']; // Roles that see everything
 
         if (in_array($currentRole, $unfilteredRoles)) {
             // For super-viewer roles, show all criteria
@@ -632,14 +632,14 @@ class MasterDataController extends BaseController
             'page_title'        => 'Laporan Evaluasi Diri (LED)',
             'selectedTahun'     => $selectedTahun,
             'selectedProdi'     => $selectedProdi,
-            'prodiList'         => config('Simonik')->prodiList,
+            'prodiList'         => config('Ecc')->prodiList,
             'all_criteria'      => $all_criteria,
             'filtered_criteria' => array_values($filtered_criteria),
             'submitted_data'    => $submitted_data,
             'currentRole'       => $currentRole,
             'is_staf'           => in_array($currentRole, ['aak', 'kuk', 'user']),
             'is_kabag'          => in_array($currentRole, ['kabag_aak', 'kabag_kuk']),
-            'is_wadir'          => in_array($currentRole, ['manajemen', 'direktur', 'admin', 'spm']),
+            'is_wadir'          => in_array($currentRole, ['manajemen', 'direktur', 'wadir', 'admin', 'spm']),
         ];
 
         return view('ecc/led_index', $data);

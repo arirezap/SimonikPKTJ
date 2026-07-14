@@ -115,6 +115,101 @@ class Dashboard extends BaseController
             $cumulative_realisasi[] = $last_realisasi;
         }
 
+        // --- DASHBOARD REKAP PEGAWAI LOGIC ---
+        $role = session()->get('role');
+        $isSuper = in_array($role, ['admin', 'direktur', 'wadir', 'manajemen']);
+        $logModel = new \App\Models\LogKegiatanHarian();
+        $bulanTerpilih = date('n');
+
+        if ($isSuper) {
+            $daftarBawahan = $userModel->where('id !=', $user_id)->orderBy('nama_lengkap', 'ASC')->findAll();
+            $isAtasan = true;
+        } else {
+            $daftarBawahan = $userModel->getBawahan($user_id);
+            $isAtasan = !empty($daftarBawahan);
+        }
+
+        $rekapDashboard = [];
+        if ($isAtasan) {
+            foreach ($daftarBawahan as $bawahan) {
+                $logs = $logModel->getLogByMonth($bawahan['id'], $bulanTerpilih, $tahun_terpilih);
+                $total_laporan = count($logs);
+                
+                $dinilai = 0;
+                $total_nilai = 0;
+                $total_disiplin = 0;
+                $total_kerjasama = 0;
+                $tepat_waktu = 0;
+                $terlambat = 0;
+
+                foreach ($logs as $l) {
+                    if (!empty($l['nilai_harian'])) {
+                        $dinilai++;
+                        $total_nilai += (float)$l['nilai_harian'];
+                        $total_disiplin += (float)($l['disiplin'] ?? 0);
+                        $total_kerjasama += (float)($l['kerjasama'] ?? 0);
+                    }
+                    if (($l['waktu_penyelesaian'] ?? '') === 'Tepat waktu') $tepat_waktu++;
+                    elseif (($l['waktu_penyelesaian'] ?? '') === 'Terlambat') $terlambat++;
+                }
+                
+                $rata_rata = $dinilai > 0 ? round($total_nilai / $dinilai, 2) : 0;
+                $rata_disiplin = $dinilai > 0 ? round($total_disiplin / $dinilai, 2) : 0;
+                $rata_kerjasama = $dinilai > 0 ? round($total_kerjasama / $dinilai, 2) : 0;
+                
+                $rekapDashboard[] = [
+                    'bawahan' => $bawahan,
+                    'total_laporan' => $total_laporan,
+                    'dinilai' => $dinilai,
+                    'belum_dinilai' => $total_laporan - $dinilai,
+                    'rata_rata' => $rata_rata,
+                    'rata_disiplin' => $rata_disiplin,
+                    'rata_kerjasama' => $rata_kerjasama,
+                    'tepat_waktu' => $tepat_waktu,
+                    'terlambat' => $terlambat
+                ];
+            }
+        }
+
+        // --- AGREGASI DATA KINERJA PEGAWAI PER UNIT (KHUSUS DIREKTUR/WADIR) ---
+        $unitStats = [];
+        $chartPegawaiUnitLabels = [];
+        $chartPegawaiUnitData = [];
+        
+        if ($isSuper && !empty($rekapDashboard)) {
+            foreach ($rekapDashboard as $rekap) {
+                $unitName = trim($rekap['bawahan']['unit'] ?? '');
+                if (empty($unitName)) {
+                    $unitName = 'Tanpa Unit';
+                }
+                
+                if (!isset($unitStats[$unitName])) {
+                    $unitStats[$unitName] = ['total_rata' => 0, 'count' => 0, 'anggota' => []];
+                }
+                $unitStats[$unitName]['total_rata'] += $rekap['rata_rata'];
+                $unitStats[$unitName]['count']++;
+                $unitStats[$unitName]['anggota'][] = [
+                    'nama' => $rekap['bawahan']['nama_lengkap'],
+                    'jabatan' => $rekap['bawahan']['jabatan'] ?? '-',
+                    'rata_rata' => $rekap['rata_rata'],
+                    'dinilai' => $rekap['dinilai'],
+                    'total_laporan' => $rekap['total_laporan']
+                ];
+            }
+            
+            // Sort by average score descending
+            uasort($unitStats, function($a, $b) {
+                $avgA = $a['count'] > 0 ? $a['total_rata'] / $a['count'] : 0;
+                $avgB = $b['count'] > 0 ? $b['total_rata'] / $b['count'] : 0;
+                return $avgB <=> $avgA;
+            });
+            
+            foreach ($unitStats as $unitName => $stat) {
+                $chartPegawaiUnitLabels[] = $unitName;
+                $chartPegawaiUnitData[] = round($stat['total_rata'] / $stat['count'], 2);
+            }
+        }
+
         $data = [
             'page_title' => 'User Dashboard',
             'totalIndikator' => $totalIndikator,
@@ -137,6 +232,13 @@ class Dashboard extends BaseController
             'lineChartRealisasiData' => $cumulative_realisasi,
 
             'prodiData' => $eccData['prodiData'],
+
+            // Data Grafik Kinerja Pegawai Per Unit (Direktur/Wadir)
+            'isSuper' => $isSuper,
+            'chartPegawaiUnitLabels' => $chartPegawaiUnitLabels,
+            'chartPegawaiUnitData' => $chartPegawaiUnitData,
+            'unitStats' => $unitStats,
+            
         ];
 
         return view('user/dashboard', $data);

@@ -32,28 +32,28 @@
 
         <div class="content-wrapper">
             
-            <header class="navbar navbar-expand bg-white shadow-sm mb-4 rounded-3 px-3 px-md-4 py-3 border-bottom">
+            <header class="navbar navbar-expand header-promax mb-4 px-3 px-md-4 py-2">
                 <div class="container-fluid px-0">
                     <div class="d-flex align-items-center">
-                        <button class="btn btn-link text-dark d-lg-none me-2 p-0 text-decoration-none" id="mobileMenuToggle">
-                            <i class="bi bi-list fs-2"></i>
+                        <button class="btn btn-link text-primary d-lg-none me-2 p-0 text-decoration-none" id="mobileMenuToggle">
+                            <i class="bi bi-list fs-1 text-primary"></i>
                         </button>
                         <div class="d-flex flex-column">
-                            <span class="text-muted small text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">
-                                <i class="bi bi-emoji-smile me-1"></i> Selamat Datang,
+                            <span class="greeting-text text-uppercase">
+                                Selamat Datang,
                             </span>
-                            <h5 class="mb-0 fw-bold text-primary">
+                            <span class="user-name mt-1">
                                 <?= esc(session()->get('nama') ?? session()->get('nama_lengkap') ?? 'Pengguna') ?>
-                            </h5>
+                            </span>
                         </div>
                     </div>
 
                     <div class="ms-auto d-flex align-items-center gap-3">
                         <div class="text-end d-none d-md-block">
-                            <span class="badge bg-light text-dark border">
+                            <div class="role-badge mb-1">
                                 <?= strtoupper(esc(session()->get('role') ?? 'GUEST')) ?>
-                            </span>
-                            <div class="small text-muted mt-1" style="font-size: 0.8rem;">
+                            </div>
+                            <div class="date-text">
                                 <i class="bi bi-calendar3 me-1"></i> <?= date('d M Y') ?>
                             </div>
                         </div>
@@ -62,7 +62,7 @@
                         
                         <div class="dropdown">
                             <a href="#" class="text-decoration-none" data-bs-toggle="dropdown" aria-expanded="false">
-                                <div class="bg-primary bg-opacity-10 rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <div class="bg-primary bg-opacity-10 rounded-circle p-2 d-flex align-items-center justify-content-center profile-icon-wrapper" style="width: 40px; height: 40px;">
                                     <?php
                                         $foto_session = session()->get('foto');
                                         $foto_header_path = 'assets/uploads/profile/' . $foto_session;
@@ -103,10 +103,9 @@
             </div>
             
             <!-- Footer Aplikasi -->
-            <footer class="footer py-3 border-top bg-white text-center text-muted small mt-auto">
-                <div class="container-fluid">
-                    <span class="fw-medium">&copy; <?= date('Y') ?> PKTJ (Evidence Command Center).</span> Hak Cipta Dilindungi.
-                </div>
+            <footer class="footer-promax py-3 mt-auto d-flex justify-content-between px-4 align-items-center">
+                <span class="footer-text">&copy; <?= date('Y') ?> ECC (Evidence Command Center)</span>
+                <span class="version-badge text-muted">v1.0.0</span>
             </footer>
 
             <?= $this->renderSection('footer_bar') ?>

@@ -29,9 +29,9 @@
 
     <div class="row">
 
-        <div class="col-xl-4 col-lg-5">
-            <div class="card shadow mb-4">
-                <div class="card-body card-profile text-center">
+        <div class="col-xl-4 col-lg-4 mb-4">
+            <div class="card shadow-sm border-0 rounded-4 h-100">
+                <div class="card-body p-4 card-profile text-center d-flex flex-column justify-content-center align-items-center">
                     <?php
                         $foto_path = 'assets/uploads/profile/' . ($user['foto'] ?? '');
                         if (!empty($user['foto']) && file_exists(FCPATH . $foto_path)) {
@@ -40,108 +40,94 @@
                             $foto_url = base_url('assets/uploads/profile/default.png');
                         }
                     ?>
-                    <img id="profilePreview" class="img-profile rounded-circle mb-3" src="<?= $foto_url ?>" style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #e3e6f0;">
+                    <div class="position-relative d-inline-block mb-4">
+                        <img id="profilePreview" class="img-profile rounded-circle shadow-sm" src="<?= $foto_url ?>" style="width: 160px; height: 160px; object-fit: cover; border: 4px solid #ffffff;">
+                    </div>
                     
-                    <h5 class="font-weight-bold text-dark mb-1"><?= esc($user['nama_lengkap']) ?></h5>
-                    <p class="text-muted mb-1"><?= esc($user['jabatan'] ?? '-') ?></p>
-                    <span class="badge bg-primary"><?= esc(ucfirst($user['role'])) ?></span>
+                    <h5 class="fw-bold text-dark mb-1"><?= esc($user['nama_lengkap']) ?></h5>
+                    <p class="text-muted small fw-medium mb-3"><?= esc($user['jabatan'] ?? '-') ?> • <?= esc($user['nip']) ?></p>
+                    <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill fw-bold text-uppercase" style="letter-spacing: 1px; font-size: 0.75rem;">
+                        <?= esc($user['role']) ?>
+                    </span>
                 </div>
             </div>
         </div>
 
-        <div class="col-xl-8 col-lg-7">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Edit Informasi Profil</h6>
+        <div class="col-xl-8 col-lg-8 mb-4">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-white border-bottom border-light p-4 d-flex align-items-center">
+                    <div class="bg-primary bg-opacity-10 rounded-circle p-2 d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                        <i class="bi bi-person-lines-fill fs-5 text-primary"></i>
+                    </div>
+                    <h6 class="m-0 fw-bold text-dark fs-5">Pengaturan Profil</h6>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-4">
                     
                     <form action="<?= site_url('profile/update') ?>" method="post" enctype="multipart/form-data">
                         <?= csrf_field() ?>
                         <input type="hidden" name="hapus_foto" id="hapusFotoFlag" value="0">
 
-                        <h6 class="heading-small text-muted mb-4">Informasi User</h6>
-                        <div class="row">
-                            <div class="col-lg-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Username</label>
-                                    <input type="text" name="username" class="form-control" value="<?= esc($user['username']) ?>">
-                                </div>
-                            </div>
-                            <div class="col-lg-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Email Address</label>
-                                    <input type="email" name="email" class="form-control" value="<?= esc($user['email']) ?>">
-                                </div>
-                            </div>
-                        </div>
-
-                        <hr class="my-4">
-
-                        <h6 class="heading-small text-muted mb-4">Data Kepegawaian</h6>
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="mb-3">
-                                    <label class="form-label">Nama Lengkap (Beserta Gelar)</label>
+                        <div class="mb-4">
+                            <h6 class="fw-bold text-uppercase text-primary small mb-3" style="letter-spacing: 0.5px;">Data Kepegawaian</h6>
+                            <div class="row g-3">
+                                <div class="col-md-12">
+                                    <label class="form-label text-muted small fw-bold text-uppercase">Nama Lengkap (Beserta Gelar)</label>
                                     <input type="text" name="nama_lengkap" class="form-control" value="<?= esc($user['nama_lengkap']) ?>">
                                 </div>
-                            </div>
-                            <div class="col-lg-6">
-                                <div class="mb-3">
-                                    <label class="form-label">NIP</label>
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted small fw-bold text-uppercase">NIP</label>
                                     <input type="text" name="nip" class="form-control" value="<?= esc($user['nip']) ?>">
                                 </div>
-                            </div>
-                            <div class="col-lg-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Unit Kerja</label>
-                                    <input type="text" name="unit" class="form-control" value="<?= esc($user['unit']) ?>">
-                                </div>
-                            </div>
-                            <div class="col-lg-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Jabatan</label>
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted small fw-bold text-uppercase">Jabatan</label>
                                     <input type="text" name="jabatan" class="form-control" value="<?= esc($user['jabatan']) ?>">
                                 </div>
-                            </div>
-                            <div class="col-lg-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Pangkat / Golongan</label>
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted small fw-bold text-uppercase">Unit Kerja</label>
+                                    <input type="text" name="unit" class="form-control" value="<?= esc($user['unit']) ?>">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted small fw-bold text-uppercase">Pangkat / Golongan</label>
                                     <input type="text" name="pangkat" class="form-control" value="<?= esc($user['pangkat']) ?>">
                                 </div>
                             </div>
                         </div>
 
-                        <hr class="my-4">
+                        <hr class="border-light my-4">
 
-                        <h6 class="heading-small text-muted mb-4">Keamanan & Foto</h6>
-                        <div class="row">
-                            <div class="col-lg-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Ganti Password <small class="text-danger">(Kosongkan jika tidak ingin ganti)</small></label>
-                                    <input type="password" name="password" class="form-control" placeholder="Password Baru...">
+                        <div class="mb-4">
+                            <h6 class="fw-bold text-uppercase text-primary small mb-3" style="letter-spacing: 0.5px;">Kredensial & Keamanan</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted small fw-bold text-uppercase">Username</label>
+                                    <input type="text" name="username" class="form-control" value="<?= esc($user['username']) ?>">
                                 </div>
-                            </div>
-                            <div class="col-lg-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Ganti Foto Profil</label>
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted small fw-bold text-uppercase">Email Address</label>
+                                    <input type="email" name="email" class="form-control" value="<?= esc($user['email']) ?>">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted small fw-bold text-uppercase">Ganti Password</label>
+                                    <input type="password" name="password" class="form-control" placeholder="Kosongkan jika tidak ganti...">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted small fw-bold text-uppercase">Foto Profil</label>
                                     <div class="input-group">
                                         <input type="file" name="foto" id="fotoInput" class="form-control" accept="image/png, image/jpeg, image/jpg">
-                                        <button class="btn btn-outline-danger" type="button" id="hapusFotoBtn" title="Hapus foto dan kembali ke default">
-                                            <i class="bi bi-trash"></i>
+                                        <button class="btn btn-outline-danger px-3" type="button" id="hapusFotoBtn" title="Hapus foto dan kembali ke default">
+                                            <i class="bi bi-trash-fill"></i>
                                         </button>
                                     </div>
-                                    <small class="text-muted">Format: JPG, PNG. Max: 2MB.</small>
+                                    <div class="form-text small mt-1">Format: JPG/PNG. Maks: 2MB.</div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save-fill"></i> Simpan Perubahan
+                        <div class="d-flex justify-content-end mt-4 pt-3 border-top border-light">
+                            <button type="submit" class="btn btn-primary px-4 py-2 rounded-3 shadow-sm">
+                                <i class="bi bi-save2-fill me-2"></i> Simpan Perubahan
                             </button>
                         </div>
-
                     </form>
                 </div>
             </div>

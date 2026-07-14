@@ -49,7 +49,7 @@ class LogKegiatanController extends BaseController
         }
 
         $data = [
-            'title' => 'Laporan Kegiatan Harian',
+            'title' => 'Lapor Kegiatan Harian',
             'tanggal_terpilih' => $tanggalTerpilih,
             'daftar_target' => $daftarTarget,
             'rekap_data' => $rekapData,
@@ -83,6 +83,11 @@ class LogKegiatanController extends BaseController
         $batasLog = (int) $settingModel->getValue('batas_input_log', 3);
         $tanggalTerpilihObj = new \DateTime($tanggal);
         $todayObj = new \DateTime(date('Y-m-d'));
+        
+        if ($tanggalTerpilihObj > $todayObj) {
+            return redirect()->back()->with('error', 'Gagal menyimpan. Anda tidak dapat melaporkan kegiatan untuk tanggal di masa depan.');
+        }
+
         $diff = $todayObj->diff($tanggalTerpilihObj)->days;
         if ($todayObj > $tanggalTerpilihObj && $diff > $batasLog) {
             return redirect()->back()->with('error', 'Gagal menyimpan. Batas waktu pelaporan harian untuk tanggal ini sudah ditutup.');

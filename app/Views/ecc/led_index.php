@@ -37,6 +37,34 @@
         background-color: #e9ecef;
         cursor: not-allowed;
     }
+    
+    /* Pagination Styles */
+    .page-btn {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        background: transparent;
+        color: #6c757d;
+        transition: all 0.2s;
+        font-size: 0.85rem;
+    }
+    .page-btn.active {
+        background-color: rgba(30, 58, 138, 0.1);
+        color: var(--primary-color);
+        border: 1px solid var(--primary-color);
+        font-weight: bold;
+    }
+    .page-btn:hover:not(.active) {
+        background-color: #f1f5f9;
+        color: #333;
+    }
+    .page-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
 </style>
 <?= $this->endSection() ?>
 
@@ -248,6 +276,37 @@
                         </tbody>
                     </table>
                 </div>
+                
+                <!-- Custom Pagination -->
+                <div class="custom-pagination mt-4 d-flex justify-content-center" id="ledPaginationContainer" style="display: none !important;">
+                    <div class="d-flex align-items-center bg-white shadow-sm rounded-pill px-3 py-2 border">
+                        <!-- Prev -->
+                        <button type="button" class="page-btn rounded-circle me-1" id="btnPrev"><i class="bi bi-chevron-left"></i></button>
+                        
+                        <!-- Page Numbers -->
+                        <div id="pageNumbers" class="d-flex align-items-center mx-2 gap-1"></div>
+
+                        <!-- Next -->
+                        <button type="button" class="page-btn rounded-circle ms-1" id="btnNext"><i class="bi bi-chevron-right"></i></button>
+
+                        <div class="vr mx-3"></div>
+
+                        <!-- Items Per Page -->
+                        <select id="itemsPerPage" class="form-select form-select-sm rounded-pill me-3 border-0 bg-light" style="width: 105px; cursor: pointer;">
+                            <option value="10">10 / page</option>
+                            <option value="25">25 / page</option>
+                            <option value="50">50 / page</option>
+                        </select>
+
+                        <!-- Go To Page -->
+                        <div class="d-flex align-items-center">
+                            <span class="me-2 text-muted small">Go to</span>
+                            <input type="number" id="goToPage" class="form-control form-control-sm rounded-pill text-center me-2 border-primary" style="width: 60px;" min="1">
+                            <span class="text-muted small">Page</span>
+                        </div>
+                    </div>
+                </div>
+                
             </div>
         </div>
     </form>
@@ -278,6 +337,115 @@ document.addEventListener('DOMContentLoaded', function() {
             
             ledForm.submit();
         });
+    }
+
+    // --- Custom Pagination Logic ---
+    const tableBody = document.querySelector(".table tbody");
+    if (tableBody) {
+        const rows = Array.from(tableBody.querySelectorAll("tr.kriteria-row"));
+        if (rows.length > 0) {
+            // Tampilkan paginator jika ada baris data
+            const container = document.getElementById('ledPaginationContainer');
+            if(container) container.style.setProperty('display', 'flex', 'important');
+            
+            let currentPage = 1;
+            let rowsPerPage = 10;
+            
+            const btnPrev = document.getElementById("btnPrev");
+            const btnNext = document.getElementById("btnNext");
+            const pageNumbersContainer = document.getElementById("pageNumbers");
+            const itemsPerPageSelect = document.getElementById("itemsPerPage");
+            const goToPageInput = document.getElementById("goToPage");
+
+            function renderTable() {
+                const totalPages = Math.ceil(rows.length / rowsPerPage);
+                if (currentPage < 1) currentPage = 1;
+                if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
+                
+                rows.forEach((row, index) => {
+                    row.style.display = "none";
+                    if (index >= (currentPage - 1) * rowsPerPage && index < currentPage * rowsPerPage) {
+                        row.style.display = "";
+                    }
+                });
+                
+                renderPagination(totalPages);
+            }
+
+            function renderPagination(totalPages) {
+                if(!pageNumbersContainer) return;
+                pageNumbersContainer.innerHTML = "";
+                
+                // Menentukan range tombol (maksimal 5 halaman tampil)
+                let startPage = Math.max(1, currentPage - 2);
+                let endPage = Math.min(totalPages, startPage + 4);
+                if (endPage - startPage < 4) {
+                    startPage = Math.max(1, endPage - 4);
+                }
+
+                for (let i = startPage; i <= endPage; i++) {
+                    const btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.className = "page-btn rounded-circle " + (i === currentPage ? "active" : "");
+                    btn.textContent = i;
+                    btn.addEventListener("click", () => {
+                        currentPage = i;
+                        if(goToPageInput) goToPageInput.value = i;
+                        renderTable();
+                    });
+                    pageNumbersContainer.appendChild(btn);
+                }
+
+                if(btnPrev) btnPrev.disabled = currentPage === 1;
+                if(btnNext) btnNext.disabled = currentPage === totalPages || totalPages === 0;
+            }
+
+            if(btnPrev) {
+                btnPrev.addEventListener("click", () => {
+                    if (currentPage > 1) { 
+                        currentPage--; 
+                        if(goToPageInput) goToPageInput.value = currentPage; 
+                        renderTable(); 
+                    }
+                });
+            }
+
+            if(btnNext) {
+                btnNext.addEventListener("click", () => {
+                    const totalPages = Math.ceil(rows.length / rowsPerPage);
+                    if (currentPage < totalPages) { 
+                        currentPage++; 
+                        if(goToPageInput) goToPageInput.value = currentPage; 
+                        renderTable(); 
+                    }
+                });
+            }
+
+            if(itemsPerPageSelect) {
+                itemsPerPageSelect.addEventListener("change", (e) => {
+                    rowsPerPage = parseInt(e.target.value);
+                    currentPage = 1;
+                    if(goToPageInput) goToPageInput.value = 1;
+                    renderTable();
+                });
+            }
+
+            if(goToPageInput) {
+                goToPageInput.addEventListener("change", (e) => {
+                    const page = parseInt(e.target.value);
+                    const totalPages = Math.ceil(rows.length / rowsPerPage);
+                    if (page >= 1 && page <= totalPages) {
+                        currentPage = page;
+                        renderTable();
+                    } else {
+                        e.target.value = currentPage; 
+                    }
+                });
+            }
+
+            if(goToPageInput) goToPageInput.value = currentPage;
+            renderTable();
+        }
     }
 });
 </script>

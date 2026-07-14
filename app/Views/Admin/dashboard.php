@@ -54,7 +54,8 @@
     </div>
 </div>
 
-<h5 class="mb-3">Dashboard ECC (Evidence Command Center)</h5>
+<!-- ECC Dashboard (Paling Atas) -->
+<h5 class="mb-3 fw-bold text-dark mt-4"><i class="bi bi-shield-check text-success me-2"></i> Dashboard ECC (Evidence Command Center)</h5>
 
 <ul class="nav nav-tabs" id="prodiTab" role="tablist">
     <?php foreach($prodiData as $prodi): ?>
@@ -83,58 +84,201 @@
     <?php endforeach; ?>
 </div>
 
-<h5 class="mb-4">Dashboard Monitoring Kinerja Global</h5>
+<hr class="my-5 text-muted">
 
+<h5 class="mb-3 mt-4 fw-bold text-dark"><i class="bi bi-activity text-primary me-2"></i> Command Center: Analitik Instansi</h5>
+
+<!-- Baris 1: Summary Cards -->
 <div class="row g-4 mb-4">
-    <div class="col-md-6">
-        <div class="card text-bg-info shadow h-100 border-0">
-            <div class="card-body p-4 text-center">
-                <h2 class="display-6 fw-bold mb-0"><?= esc($totalIndikator) ?></h2>
-                <p class="card-text fs-5">Total Indikator Kinerja</p>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100" style="background: linear-gradient(135deg, #0d6efd 0%, #0043a8 100%); color: white;">
+            <div class="card-body p-4 d-flex flex-column justify-content-center">
+                <div class="text-white-50 fw-bold mb-1 text-uppercase small">Rata-Rata Kinerja Bulanan</div>
+                <h2 class="display-5 fw-bold mb-0">
+                    <?php 
+                        $rataRataValue = 0;
+                        if (!empty($unitStats)) {
+                            $totalAll = array_sum(array_column($unitStats, 'total_rata'));
+                            $countAll = array_sum(array_column($unitStats, 'count'));
+                            $rataRataValue = $countAll > 0 ? round($totalAll / $countAll, 2) : 0;
+                        }
+                        echo esc($rataRataValue);
+                    ?>
+                </h2>
+                <div class="mt-2 text-white-50 small"><i class="bi bi-graph-up-arrow"></i> Skor Agregat Seluruh Pegawai</div>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card text-bg-success shadow h-100 border-0">
-            <div class="card-body p-4 text-center">
-                <h2 class="display-6 fw-bold mb-0"><?= round($rataRataCapaianGlobal, 2) ?>%</h2>
-                <p class="card-text fs-5">Rata-rata Capaian Global</p>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+            <div class="card-body p-4 d-flex flex-column justify-content-center">
+                <div class="text-muted fw-bold mb-1 text-uppercase small">Total Laporan Dinilai</div>
+                <h2 class="display-5 fw-bold text-dark mb-0"><?= esc($globalTotalDinilai) ?></h2>
+                <div class="mt-2 text-success small"><i class="bi bi-check-circle-fill"></i> Laporan telah diperiksa atasan</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+            <div class="card-body p-4 d-flex flex-column justify-content-center">
+                <div class="text-muted fw-bold mb-1 text-uppercase small">Ketepatan Waktu Penyelesaian</div>
+                <h2 class="display-5 fw-bold text-dark mb-0">
+                    <?php 
+                        $totWaktu = $globalTepatWaktu + $globalTerlambat;
+                        echo $totWaktu > 0 ? round(($globalTepatWaktu / $totWaktu) * 100, 1) : 0;
+                    ?>%
+                </h2>
+                <div class="mt-2 text-muted small"><i class="bi bi-clock-history"></i> Tepat Waktu: <?= $globalTepatWaktu ?> | Terlambat: <?= $globalTerlambat ?></div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card mb-5 shadow-sm">
-    <div class="card-header bg-white py-3">
-        <h5 class="mb-0 fw-bold text-dark">Perbandingan Capaian per Tim/Unit/Pokja (%)</h5>
+<!-- Baris 2: Doughnut & Line Chart -->
+<div class="row g-4 mb-4">
+    <!-- Ketepatan Waktu (Doughnut) -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-4 text-dark">Rasio Ketepatan Waktu</h6>
+                <div style="height: 280px; position: relative;">
+                    <canvas id="punctualityChart"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="card-body">
-        <?php if (!empty($chartLabels)): ?>
-            <div style="position: relative; height: 400px; width: 100%;"><canvas id="userPerformanceChart"></canvas></div>
+    <!-- Line Chart Tren Tahunan -->
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-4 text-dark">Tren Kinerja Bulanan Organisasi (Tahun <?= esc($tahun_terpilih) ?>)</h6>
+                <div style="height: 280px; position: relative;">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Baris 4: Leaderboard & Needs Attention -->
+<div class="row g-4 mb-5">
+    <!-- Top 5 Performers -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3 text-dark"><i class="bi bi-trophy-fill text-warning me-2"></i>Top 5 Pegawai Berkinerja Terbaik</h6>
+                <div class="table-responsive">
+                    <table class="table table-borderless table-hover align-middle mb-0">
+                        <tbody>
+                            <?php if(empty($top5)): ?>
+                                <tr><td class="text-center text-muted">Belum ada data</td></tr>
+                            <?php else: ?>
+                                <?php foreach($top5 as $i => $t): ?>
+                                <tr>
+                                    <td style="width: 40px;" class="text-center">
+                                        <?php if($i == 0): ?><span class="badge rounded-circle bg-warning text-dark p-2 fs-6">1</span>
+                                        <?php elseif($i == 1): ?><span class="badge rounded-circle bg-secondary text-white p-2 fs-6">2</span>
+                                        <?php elseif($i == 2): ?><span class="badge rounded-circle p-2 fs-6 text-white" style="background-color: #cd7f32;">3</span>
+                                        <?php else: ?><span class="fw-bold text-muted"><?= $i+1 ?></span><?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark"><?= esc($t['bawahan']['nama_lengkap']) ?></div>
+                                        <div class="small text-muted"><?= esc($t['bawahan']['jabatan'] ?? '-') ?></div>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge bg-success bg-opacity-10 text-success fs-6 border border-success"><?= esc($t['rata_rata']) ?></span>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Needs Attention -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3 text-dark"><i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Perlu Perhatian Khusus (Terbawah)</h6>
+                <div class="table-responsive">
+                    <table class="table table-borderless table-hover align-middle mb-0">
+                        <tbody>
+                            <?php if(empty($bottom5)): ?>
+                                <tr><td class="text-center text-muted">Belum ada data</td></tr>
+                            <?php else: ?>
+                                <?php foreach($bottom5 as $i => $b): ?>
+                                <tr>
+                                    <td style="width: 40px;" class="text-center">
+                                        <span class="fw-bold text-danger"><?= $i+1 ?></span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark"><?= esc($b['bawahan']['nama_lengkap']) ?></div>
+                                        <div class="small text-muted"><?= esc($b['bawahan']['jabatan'] ?? '-') ?></div>
+                                    </td>
+                                    <td class="text-end">
+                                        <?php $color = $b['rata_rata'] < 60 ? 'danger' : 'warning'; ?>
+                                        <span class="badge bg-<?= $color ?> bg-opacity-10 text-<?= $color ?> fs-6 border border-<?= $color ?>"><?= esc($b['rata_rata']) ?></span>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="d-flex align-items-center mb-4 mt-5">
+    <h4 class="mb-0 me-3">Kinerja Seluruh Pegawai (Per Unit Kerja)</h4>
+    <span class="badge bg-primary bg-opacity-10 text-primary fs-6">Direktur / Wadir</span>
+</div>
+
+<div class="card shadow-sm border-0 rounded-4 mb-5">
+    <div class="card-body p-4">
+        <?php if (empty($chartPegawaiUnitLabels)): ?>
+            <div class="alert alert-info border-0 shadow-sm"><i class="bi bi-info-circle me-2"></i> Belum ada data rekap kinerja bawahan untuk bulan ini.</div>
         <?php else: ?>
-            <div class="alert alert-info">Belum ada data kinerja dari Tim/Unit/Pokja.</div>
+            <div class="performance-chart-container" style="height: 400px; position: relative; width: 100%;">
+                <canvas id="unitPerformanceChart"></canvas>
+            </div>
+            <p class="text-center text-muted small mt-3"><i class="bi bi-info-circle me-1"></i> Klik pada grafik batang untuk melihat detail anggota unit kerja.</p>
         <?php endif; ?>
     </div>
 </div>
 
-<div class="card shadow-sm mb-4">
-    <div class="card-header bg-white py-3">
-        <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-bar-chart-fill me-2"></i>Persentase Capaian per Indikator Kinerja</h5>
-    </div>
-    <div class="card-body">
-        <?php if (!empty($chartIndikatorLabels)): ?>
-            <div class="performance-chart-container">
-                <canvas id="indikatorChart"></canvas>
+<!-- Modal Detail Unit -->
+<div class="modal fade" id="unitDetailModal" tabindex="-1" aria-labelledby="unitDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold" id="unitDetailModalLabel">Detail Pegawai: <span id="modalUnitName" class="text-primary"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <p class="text-muted small text-center mt-2">
-                * Grafik menampilkan <strong>Persentase Capaian</strong>. Arahkan kursor (hover) pada batang untuk melihat nilai <strong>Target & Realisasi</strong> asli.
-            </p>
-        <?php else: ?>
-            <div class="alert alert-light text-center p-5">
-                <i class="bi bi-clipboard-data display-4 text-muted mb-3 d-block"></i>
-                Belum ada data Indikator Kinerja untuk ditampilkan.
+            <div class="modal-body pt-3 pb-4">
+                <div class="table-responsive">
+                    <table class="table table-hover table-borderless align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-secondary small fw-bold text-uppercase rounded-start">Nama Pegawai</th>
+                                <th class="text-secondary small fw-bold text-uppercase text-center">Laporan Dinilai</th>
+                                <th class="text-secondary small fw-bold text-uppercase text-center rounded-end">Rata-rata Nilai</th>
+                            </tr>
+                        </thead>
+                        <tbody id="unitDetailTbody">
+                            <!-- Injected via JS -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        <?php endif; ?>
+        </div>
     </div>
 </div>
 
@@ -242,7 +386,6 @@ document.addEventListener('DOMContentLoaded', function () {
         return null;
     }
 
-
     // --- 2. INIT RADAR CHART (LOGIKA SAMA DENGAN USER) ---
     const prodiData = <?= json_encode($prodiData) ?>;
     const selectedTahun = '<?= esc($tahun_terpilih) ?>';
@@ -313,104 +456,164 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // --- 3. CHART USER PERFORMANCE (ADMIN DATA) ---
-    <?php if (!empty($chartLabels)): ?>
-    const ctxBarUser = document.getElementById('userPerformanceChart');
-    if (ctxBarUser) {
-        window.pageCharts['userPerformanceChart'] = new Chart(ctxBarUser, {
+    <?php if (!empty($chartPegawaiUnitLabels)): ?>
+    const ctxUnit = document.getElementById('unitPerformanceChart');
+    if (ctxUnit) {
+        const unitStats = <?= json_encode($unitStats ?? []) ?>;
+        const unitLabels = <?= json_encode($chartPegawaiUnitLabels) ?>;
+        const unitData = <?= json_encode($chartPegawaiUnitData) ?>;
+        
+        // Adjust height based on number of labels so it's not squished (dikecilkan ~50% sesuai request)
+        const dynamicHeight = Math.max(200, unitLabels.length * 25);
+        ctxUnit.parentElement.style.height = dynamicHeight + 'px';
+        
+        const unitChart = new Chart(ctxUnit, {
             type: 'bar',
             data: {
-                labels: <?= json_encode($chartLabels); ?>,
+                labels: unitLabels,
                 datasets: [{
-                    label: 'Capaian (%)', data: <?= json_encode($chartData); ?>,
-                    backgroundColor: 'rgba(13, 110, 253, 0.7)', borderColor: 'rgba(13, 110, 253, 1)', borderWidth: 1, borderRadius: 4
+                    label: 'Rata-Rata Kinerja',
+                    data: unitData,
+                    backgroundColor: 'rgba(13, 110, 253, 0.8)',
+                    borderColor: '#0d6efd',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    maxBarThickness: 30
                 }]
             },
             options: {
-                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-                scales: { x: { beginAtZero: true, max: 100, ticks: { callback: value => value + "%" } } },
-                plugins: { legend: { display: false } }
-            }
-        });
-    }
-    <?php endif; ?>
-
-    // --- 4. CHART INDIKATOR (VERTICAL BAR) ---
-    <?php if (!empty($chartIndikatorLabels)): ?>
-    const ctxIndikator = document.getElementById('indikatorChart');
-    if (ctxIndikator) {
-        const rawLabels = <?= json_encode($chartIndikatorLabels); ?>;
-        const metaData = <?= json_encode($chartIndikatorMeta ?? []); ?>;
-        
-        // Split label agar tidak melebar
-        const wrappedLabels = rawLabels.map(label => splitLabel(label, 45)); 
-
-        window.pageCharts['indikatorChart'] = new Chart(ctxIndikator, {
-            type: 'bar',
-            data: {
-                labels: wrappedLabels,
-                datasets: [
-                    {
-                        label: 'Capaian (%)',
-                        data: <?= json_encode($chartIndikatorPersen ?? []); ?>,
-                        backgroundColor: function(context) {
-                            const value = context.raw;
-                            if (value >= 100) return '#198754';
-                            if (value >= 80) return '#0d6efd';
-                            if (value >= 50) return '#ffc107';
-                            return '#dc3545';
-                        },
-                        borderRadius: 4
-                    }
-                ]
-            },
-            options: {
-                indexAxis: 'x', // Vertical
+                indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
-                layout: { padding: { bottom: 20 } },
-                scales: {
-                    y: { 
-                        beginAtZero: true, 
-                        max: 100, 
-                        ticks: { callback: value => value + "%" },
-                        grid: { borderDash: [2, 2] }
-                    },
-                    x: { 
-                        ticks: { 
-                            autoSkip: false, 
-                            maxRotation: 45, 
-                            minRotation: 25,
-                            font: { size: 10 } 
-                        } 
-                    }
-                },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
                         callbacks: {
-                            title: function(context) {
-                                const label = context[0].label;
-                                return Array.isArray(label) ? label.join(' ') : label;
-                            },
                             label: function(context) {
-                                const idx = context.dataIndex;
-                                const item = metaData[idx];
-                                const percent = context.formattedValue;
-                                const formatNum = (num) => new Intl.NumberFormat('id-ID').format(num);
-                                return [
-                                    `Capaian: ${percent}%`,
-                                    `Target: ${formatNum(item.target)} ${item.satuan}`,
-                                    `Realisasi: ${formatNum(item.realisasi)} ${item.satuan}`
-                                ];
+                                return 'Rata-Rata: ' + context.parsed.x;
                             }
                         }
                     }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { borderDash: [2, 4], color: '#e9ecef' }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: {
+                            font: { size: 11 }
+                        }
+                    }
+                },
+                onClick: (e, elements) => {
+                    if (elements.length > 0) {
+                        const idx = elements[0].index;
+                        const selectedUnit = unitLabels[idx];
+                        const details = unitStats[selectedUnit].anggota;
+                        
+                        document.getElementById('modalUnitName').innerText = selectedUnit;
+                        
+                        let tbody = '';
+                        if(details && details.length > 0) {
+                            details.forEach(item => {
+                                let badgeClass = 'bg-success';
+                                if(item.rata_rata < 60) badgeClass = 'bg-danger';
+                                else if(item.rata_rata < 75) badgeClass = 'bg-warning text-dark';
+                                
+                                tbody += `
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold text-dark">${item.nama}</div>
+                                            <div class="small text-muted">${item.jabatan}</div>
+                                        </td>
+                                        <td class="text-center">${item.dinilai} / ${item.total_laporan}</td>
+                                        <td class="text-center">
+                                            <span class="badge ${badgeClass} fs-6">${item.rata_rata}</span>
+                                        </td>
+                                    </tr>
+                                `;
+                            });
+                        } else {
+                            tbody = `<tr><td colspan="3" class="text-center text-muted">Data kosong</td></tr>`;
+                        }
+                        document.getElementById('unitDetailTbody').innerHTML = tbody;
+                        
+                        new bootstrap.Modal(document.getElementById('unitDetailModal')).show();
+                    }
+                },
+                onHover: (e, elements) => {
+                    e.native.target.style.cursor = elements.length ? 'pointer' : 'default';
                 }
             }
         });
     }
     <?php endif; ?>
+
+    // --- PRO MAX ANALYTICS CHARTS ---
+    
+    // 1. Punctuality Doughnut Chart
+    const ctxPunctuality = document.getElementById('punctualityChart');
+    if (ctxPunctuality) {
+        new Chart(ctxPunctuality, {
+            type: 'doughnut',
+            data: {
+                labels: ['Tepat Waktu', 'Terlambat'],
+                datasets: [{
+                    data: [<?= $globalTepatWaktu ?>, <?= $globalTerlambat ?>],
+                    backgroundColor: ['#198754', '#dc3545'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } }
+                }
+            }
+        });
+    }
+
+    // 4. Monthly Trend Line Chart
+    const ctxTrend = document.getElementById('trendChart');
+    if (ctxTrend) {
+        const trendData = <?= json_encode($trendBulananData) ?>;
+        new Chart(ctxTrend, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+                datasets: [{
+                    label: 'Rata-rata Nilai Instansi',
+                    data: trendData,
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#0d6efd',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    fill: true,
+                    tension: 0.4 // Smooth curve
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { min: 0, max: 100, grid: { borderDash: [4, 4] } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
 });
 </script>
 <?= $this->endSection() ?>

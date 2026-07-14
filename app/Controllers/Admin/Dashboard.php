@@ -178,6 +178,122 @@ class Dashboard extends BaseController
         // Ambil daftar tahun dari trait agar konsisten dengan dashboard lain
         $daftar_tahun = $eccData['daftar_tahun'];
 
+        // ----------------------------------------------------------------
+        // 5. DATA KINERJA HARIAN PEGAWAI PER UNIT (KHUSUS DIREKTUR/WADIR DLL)
+        // ----------------------------------------------------------------
+        $logModel = new \App\Models\LogKegiatanHarian();
+        $bulanAngka = date('n'); // Gunakan bulan berjalan atau sesuai filter bulan
+        if ($bulan !== 'all') {
+            $bulanAngka = (int)$bulan;
+        }
+        
+        // Ambil semua bawahan (semua user jika admin)
+        $user_id = session()->get('user_id');
+        $daftarSemuaUser = $this->userModel->where('id !=', $user_id)->orderBy('nama_lengkap', 'ASC')->findAll();
+
+        $rekapDashboard = [];
+        $globalTepatWaktu = 0;
+        $globalTerlambat = 0;
+        $globalTotalDisiplin = 0;
+        $globalTotalKerjasama = 0;
+        $globalTotalDinilai = 0;
+        
+        foreach ($daftarSemuaUser as $bawahan) {
+            $logs = $logModel->getLogByMonth($bawahan['id'], $bulanAngka, $tahun);
+            $total_laporan = count($logs);
+            
+            $dinilai = 0;
+            $total_nilai = 0;
+
+            foreach ($logs as $l) {
+                if (!empty($l['nilai_harian'])) {
+                    $dinilai++;
+                    $total_nilai += (float)$l['nilai_harian'];
+                    $globalTotalDisiplin += (float)($l['disiplin'] ?? 0);
+                    $globalTotalKerjasama += (float)($l['kerjasama'] ?? 0);
+                    $globalTotalDinilai++;
+                }
+                if (($l['waktu_penyelesaian'] ?? '') === 'Tepat waktu') {
+                    $globalTepatWaktu++;
+                } elseif (($l['waktu_penyelesaian'] ?? '') === 'Terlambat') {
+                    $globalTerlambat++;
+                }
+            }
+            
+            $rata_rata = $dinilai > 0 ? round($total_nilai / $dinilai, 2) : 0;
+            
+            $rekapDashboard[] = [
+                'bawahan' => $bawahan,
+                'total_laporan' => $total_laporan,
+                'dinilai' => $dinilai,
+                'rata_rata' => $rata_rata,
+            ];
+        }
+
+        // ----------------------------------------------------------------
+        // 6. TREN KINERJA BULANAN & LEADERBOARD (PRO MAX UI)
+        // ----------------------------------------------------------------
+        $db = \Config\Database::connect();
+        $builder = $db->table('log_kegiatan_harian');
+        $builder->select('MONTH(tanggal_kegiatan) as bulan, AVG(nilai_harian) as avg_nilai');
+        $builder->where('YEAR(tanggal_kegiatan)', $tahun);
+        $builder->where('nilai_harian IS NOT NULL');
+        $builder->where('nilai_harian >', 0);
+        $builder->groupBy('MONTH(tanggal_kegiatan)');
+        $trendQuery = $builder->get()->getResultArray();
+        
+        $trendBulananData = array_fill(0, 12, 0); // Default 0 (index 0=Jan, 11=Des)
+        foreach ($trendQuery as $tq) {
+            $trendBulananData[(int)$tq['bulan'] - 1] = round($tq['avg_nilai'], 2);
+        }
+
+        // Sort for Leaderboard
+        $leaderboardData = $rekapDashboard;
+        usort($leaderboardData, function($a, $b) {
+            return $b['rata_rata'] <=> $a['rata_rata'];
+        });
+        
+        $top5 = array_slice($leaderboardData, 0, 5);
+        $bottom5 = array_slice(array_reverse($leaderboardData), 0, 5); // Reverse to get worst, but then slice
+
+        $unitStats = [];
+        $chartPegawaiUnitLabels = [];
+        $chartPegawaiUnitData = [];
+        
+        if (!empty($rekapDashboard)) {
+            foreach ($rekapDashboard as $rekap) {
+                $unitName = trim($rekap['bawahan']['unit'] ?? '');
+                if (empty($unitName)) {
+                    $unitName = 'Tanpa Unit';
+                }
+                
+                if (!isset($unitStats[$unitName])) {
+                    $unitStats[$unitName] = ['total_rata' => 0, 'count' => 0, 'anggota' => []];
+                }
+                $unitStats[$unitName]['total_rata'] += $rekap['rata_rata'];
+                $unitStats[$unitName]['count']++;
+                $unitStats[$unitName]['anggota'][] = [
+                    'nama' => $rekap['bawahan']['nama_lengkap'],
+                    'jabatan' => $rekap['bawahan']['jabatan'] ?? '-',
+                    'rata_rata' => $rekap['rata_rata'],
+                    'dinilai' => $rekap['dinilai'],
+                    'total_laporan' => $rekap['total_laporan']
+                ];
+            }
+            
+            // Sort by average score descending
+            uasort($unitStats, function($a, $b) {
+                $avgA = $a['count'] > 0 ? $a['total_rata'] / $a['count'] : 0;
+                $avgB = $b['count'] > 0 ? $b['total_rata'] / $b['count'] : 0;
+                return $avgB <=> $avgA;
+            });
+            
+            foreach ($unitStats as $unitName => $stat) {
+                $chartPegawaiUnitLabels[] = $unitName;
+                $chartPegawaiUnitData[] = round($stat['total_rata'] / $stat['count'], 2);
+            }
+        }
+
         $data = [
             'page_title' => 'Dashboard Admin',
             'tahun_terpilih' => $tahun,
@@ -197,7 +313,23 @@ class Dashboard extends BaseController
             'kinerja_per_user' => $kinerja_per_user,
             
             // Data Radar Chart dari Trait
-            'prodiData' => $prodiData
+            'prodiData' => $prodiData,
+
+            // Data Advanced Analytics (Pro Max)
+            'globalTepatWaktu' => $globalTepatWaktu,
+            'globalTerlambat' => $globalTerlambat,
+            'globalTotalDinilai' => $globalTotalDinilai,
+            'avgGlobalDisiplin' => $globalTotalDinilai > 0 ? round($globalTotalDisiplin / $globalTotalDinilai, 2) : 0,
+            'avgGlobalKerjasama' => $globalTotalDinilai > 0 ? round($globalTotalKerjasama / $globalTotalDinilai, 2) : 0,
+            'trendBulananData' => $trendBulananData,
+            'top5' => $top5,
+            'bottom5' => $bottom5,
+
+            // Data Grafik Kinerja Pegawai Per Unit
+            'chartPegawaiUnitLabels' => $chartPegawaiUnitLabels,
+            'chartPegawaiUnitData' => $chartPegawaiUnitData,
+            'unitStats' => $unitStats,
+            
         ];
 
         return view('admin/dashboard', $data);

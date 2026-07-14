@@ -25,22 +25,40 @@
         </div>
     </div>
 
-    <div class="card mb-4">
-        <div class="card-body">
+    <div class="card mb-4 border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
             <form action="<?= site_url('users') ?>" method="GET" class="row g-3 align-items-end">
-                <div class="col-md-6">
-                    <label for="search" class="form-label fw-bold">Cari Pengguna</label>
-                    <input type="text" name="search" id="search" class="form-control" placeholder="Cari berdasarkan nama..." value="<?= esc($search ?? '') ?>">
+                <div class="col-md-4">
+                    <label for="search" class="form-label text-muted small fw-bold text-uppercase">Pencarian</label>
+                    <input type="text" name="search" id="search" class="form-control form-control-sm" placeholder="Nama atau Username..." value="<?= esc($search ?? '') ?>">
                 </div>
                 <div class="col-md-3">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-search"></i> Cari
+                    <label for="role" class="form-label text-muted small fw-bold text-uppercase">Role</label>
+                    <select name="role" id="role" class="form-select form-select-sm">
+                        <option value="">Semua Role</option>
+                        <option value="admin" <?= (isset($filter_role) && $filter_role == 'admin') ? 'selected' : '' ?>>Admin</option>
+                        <option value="direktur" <?= (isset($filter_role) && $filter_role == 'direktur') ? 'selected' : '' ?>>Direktur</option>
+                        <option value="wadir" <?= (isset($filter_role) && $filter_role == 'wadir') ? 'selected' : '' ?>>Wakil Direktur</option>
+                        <option value="user" <?= (isset($filter_role) && $filter_role == 'user') ? 'selected' : '' ?>>User</option>
+                        <option value="kabag" <?= (isset($filter_role) && $filter_role == 'kabag') ? 'selected' : '' ?>>Kabag (AAK/KUK)</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="unit" class="form-label text-muted small fw-bold text-uppercase">Unit Kerja</label>
+                    <select name="unit" id="unit" class="form-select form-select-sm">
+                        <option value="">Semua Unit</option>
+                        <?php foreach($unit_kerja_list as $uk): ?>
+                            <option value="<?= esc($uk['nama_unit']) ?>" <?= (isset($filter_unit) && $filter_unit == $uk['nama_unit']) ? 'selected' : '' ?>><?= esc($uk['nama_unit']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-sm btn-primary flex-grow-1">
+                        <i class="bi bi-funnel-fill"></i> Filter
                     </button>
-                </div>
-                <div class="col-md-3">
-                    <?php if (!empty($search) || (!empty($sortBy) && $sortBy !== 'nama_lengkap') || (!empty($sortOrder) && $sortOrder !== 'asc')): ?>
-                        <a href="<?= site_url('users') ?>" class="btn btn-outline-secondary w-100">
-                            <i class="bi bi-arrow-counterclockwise"></i> Reset Filter
+                    <?php if (!empty($search) || !empty($filter_role) || !empty($filter_unit) || (!empty($sortBy) && $sortBy !== 'users.nama_lengkap') || (!empty($sortOrder) && $sortOrder !== 'asc')): ?>
+                        <a href="<?= site_url('users') ?>" class="btn btn-sm btn-light border" title="Reset Filter">
+                            <i class="bi bi-x-circle text-danger"></i>
                         </a>
                     <?php endif; ?>
                 </div>
@@ -133,57 +151,70 @@
         <div class="alert alert-danger"><?= session()->getFlashdata('error') ?></div>
     <?php endif; ?>
 
-    <div class="card shadow mb-4">
-        <div class="card-body">
+    <?php
+    // Helper function for sorting links
+    $queryParams = $_GET;
+    function getSortUrl($column, $queryParams, $currentSortBy, $currentSortOrder) {
+        $params = $queryParams;
+        $params['sort_by'] = $column;
+        $params['sort_order'] = ($currentSortBy === $column && $currentSortOrder === 'asc') ? 'desc' : 'asc';
+        unset($params['page_users']); // Reset pagination when sorting
+        return site_url('users?' . http_build_query($params));
+    }
+    ?>
+
+    <div class="card shadow-sm border-0 mb-4 rounded-4">
+        <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                <table class="table table-hover align-middle mb-0" id="dataTable" width="100%" cellspacing="0">
                     <thead class="table-light">
                         <tr>
-                            <th width="3%"><input class="form-check-input" type="checkbox" id="selectAll" title="Pilih semua"></th>
-                            <th width="5%">No</th> 
-                            <th style="min-width: 200px;">
-                                <a href="<?= site_url('users?search=' . esc($search ?? '') . '&sort_by=nama_lengkap&sort_order=' . (($sortBy === 'nama_lengkap' && $sortOrder === 'asc') ? 'desc' : 'asc')) ?>" class="text-decoration-none text-dark">
+                            <th width="3%" class="px-4 py-3"><input class="form-check-input" type="checkbox" id="selectAll" title="Pilih semua"></th>
+                            <th width="5%" class="py-3">No</th> 
+                            <th style="min-width: 200px;" class="py-3">
+                                <a href="<?= getSortUrl('users.nama_lengkap', $queryParams, $sortBy, $sortOrder) ?>" class="text-decoration-none text-dark fw-bold">
                                     Nama Lengkap
-                                    <?php if ($sortBy === 'nama_lengkap'): ?>
+                                    <?php if ($sortBy === 'users.nama_lengkap'): ?>
                                         <i class="bi bi-arrow-<?= ($sortOrder === 'asc') ? 'up' : 'down' ?>"></i>
                                     <?php endif; ?>
                                 </a>
                             </th>
-                            <th style="min-width: 180px;">
-                                <a href="<?= site_url('users?search=' . esc($search ?? '') . '&sort_by=jabatan&sort_order=' . (($sortBy === 'jabatan' && $sortOrder === 'asc') ? 'desc' : 'asc')) ?>" class="text-decoration-none text-dark">
+                            <th style="min-width: 180px;" class="py-3">
+                                <a href="<?= getSortUrl('users.jabatan', $queryParams, $sortBy, $sortOrder) ?>" class="text-decoration-none text-dark fw-bold">
                                     Jabatan
-                                    <?php if ($sortBy === 'jabatan'): ?>
+                                    <?php if ($sortBy === 'users.jabatan'): ?>
                                         <i class="bi bi-arrow-<?= ($sortOrder === 'asc') ? 'up' : 'down' ?>"></i>
                                     <?php endif; ?>
                                 </a>
                             </th>
-                            <th style="min-width: 220px;">Unit Kerja</th>
-                            <th>
-                                <a href="<?= site_url('users?search=' . esc($search ?? '') . '&sort_by=role&sort_order=' . (($sortBy === 'role' && $sortOrder === 'asc') ? 'desc' : 'asc')) ?>" class="text-decoration-none text-dark">
+                            <th style="min-width: 220px;" class="py-3 fw-bold text-dark">Unit Kerja</th>
+                            <th class="py-3">
+                                <a href="<?= getSortUrl('users.role', $queryParams, $sortBy, $sortOrder) ?>" class="text-decoration-none text-dark fw-bold">
                                     Role
-                                    <?php if ($sortBy === 'role'): ?>
+                                    <?php if ($sortBy === 'users.role'): ?>
                                         <i class="bi bi-arrow-<?= ($sortOrder === 'asc') ? 'up' : 'down' ?>"></i>
                                     <?php endif; ?>
                                 </a>
                             </th>
-                            <th>Unit Kabag</th>
-                            <th class="bg-info text-white" style="min-width: 200px;">Atasan Langsung</th>
-                            <th width="10%" class="text-nowrap">Aksi</th>
+                            <th class="py-3 fw-bold text-dark">Unit Kabag</th>
+                            <th class="bg-light text-dark fw-bold py-3" style="min-width: 200px;">Atasan Langsung</th>
+                            <th width="10%" class="text-nowrap text-center py-3 fw-bold text-dark px-4">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php 
-                        $i = 1; 
-                        // Jika ada pagination, sesuaikan nomor urut
-                        // Untuk saat ini, kita asumsikan tidak ada pagination atau dimulai dari 1
-                        // Jika pagination diimplementasikan, Anda bisa menggunakan:
-                        // $currentPage = $pager->getCurrentPage();
-                        // $perPage = $pager->getPerPage();
-                        // $i = ($currentPage - 1) * $perPage + 1;
+                        $currentPage = $pager->getCurrentPage('users');
+                        $i = ($currentPage - 1) * $per_page + 1;
+                        
+                        if (empty($users)): ?>
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted">Tidak ada data pengguna ditemukan.</td>
+                        </tr>
+                        <?php endif;
                         
                         foreach ($users as $user): ?>
                         <tr>
-                            <td class="text-center">
+                            <td class="text-center px-4">
                                 <input class="form-check-input user-checkbox" type="checkbox" value="<?= $user['id'] ?>" aria-label="Pilih pengguna <?= esc($user['nama_lengkap']) ?>">
                             </td>
                             <td><?= $i++ ?></td>
@@ -240,6 +271,12 @@
                     </tbody>
                 </table>
             </div>
+
+            <?php if ($pager): ?>
+            <div class="card-footer bg-white border-top-0 py-3 px-4 d-flex justify-content-end">
+                <?= $pager->links('default', 'bootstrap') ?>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>

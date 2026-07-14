@@ -1,9 +1,9 @@
 <?= $this->extend('layouts/main') ?>
 
-<?= $this->section('title') ?>Laporan Kegiatan Harian<?= $this->endSection() ?>
+<?= $this->section('title') ?>Lapor Kegiatan Harian<?= $this->endSection() ?>
 
 <?= $this->section('page_title') ?>
-Laporan Kegiatan Harian
+Lapor Kegiatan Harian
 <?= $this->endSection() ?>
 
 <?= $this->section('styles') ?>
@@ -51,7 +51,7 @@ Laporan Kegiatan Harian
             <div class="row align-items-center">
                 <div class="col-md-4">
                     <label class="form-label fw-bold text-primary">Pilih Tanggal Kegiatan</label>
-                    <input type="date" name="tanggal" class="form-control border-primary" value="<?= esc($tanggal_terpilih) ?>" onchange="this.form.submit()">
+                    <input type="date" name="tanggal" class="form-control border-primary" value="<?= esc($tanggal_terpilih) ?>" max="<?= date('Y-m-d') ?>" onchange="this.form.submit()">
                 </div>
                 <div class="col-md-8 text-muted mt-3 mt-md-0 pt-md-4">
                     <i class="bi bi-info-circle me-1"></i> Jika pilihan target (RHK) kosong, silakan buat <strong>Target Kinerja Bulanan</strong> terlebih dahulu untuk bulan ini.

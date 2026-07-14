@@ -25,42 +25,62 @@ class UserController extends BaseController
         ];
         
         $search = $this->request->getGet('search');
-        $sortBy = $this->request->getGet('sort_by') ?? 'nama_lengkap'; // Default sort by nama_lengkap
-        $sortOrder = $this->request->getGet('sort_order') ?? 'asc'; // Default sort order ascending
+        $role = $this->request->getGet('role');
+        $unit = $this->request->getGet('unit');
+        $perPage = $this->request->getGet('per_page') ?? 10;
+        
+        $sortBy = $this->request->getGet('sort_by') ?? 'users.nama_lengkap';
+        $sortOrder = $this->request->getGet('sort_order') ?? 'asc';
 
-        $query = $this->userModel;
+        // Join dengan tabel users (self join) untuk mengambil nama atasan
+        $query = $this->userModel->select('users.*, atasan.nama_lengkap as nama_atasan')
+                                 ->join('users as atasan', 'atasan.id = users.atasan_id', 'left');
 
-        if ($search) {
-            $query = $query->like('nama_lengkap', $search);
+        if (!empty($search)) {
+            $query = $query->groupStart()
+                           ->like('users.nama_lengkap', $search)
+                           ->orLike('users.username', $search)
+                           ->groupEnd();
+        }
+        
+        if (!empty($role)) {
+            if ($role === 'kabag') {
+                $query = $query->like('users.role', 'kabag', 'after');
+            } else {
+                $query = $query->where('users.role', $role);
+            }
+        }
+        
+        if (!empty($unit)) {
+            $query = $query->where('users.unit', $unit);
         }
 
         $query = $query->orderBy($sortBy, $sortOrder);
-        $data['users'] = $query->findAll();
+        
+        // Paginate results
+        $data['users'] = $query->paginate($perPage, 'default');
+        $data['pager'] = $this->userModel->pager;
+
         $data['search'] = $search;
+        $data['filter_role'] = $role;
+        $data['filter_unit'] = $unit;
+        $data['per_page'] = $perPage;
         $data['sortBy'] = $sortBy;
         $data['sortOrder'] = $sortOrder;
 
         // Ambil data untuk dropdown atasan di modal batch edit
         $data['potential_bosses'] = $this->userModel->orderBy('nama_lengkap', 'ASC')->findAll();
 
-        // Buat peta semua pengguna untuk pencarian nama atasan
-        $userMap = [];
-        foreach($data['users'] as $u) {
-            $userMap[$u['id']] = $u;
-        }
-
-        // Buat peta unit kerja untuk pencarian penanggung jawab (AAK/KUK)
+        // Ambil master unit kerja
         $unitKerjaModel = new UnitKerja();
         $unitKerjaMap = array_column($unitKerjaModel->findAll(), 'parent_unit', 'nama_unit');
         $data['unit_kerja_list'] = $unitKerjaModel->orderBy('nama_unit', 'ASC')->findAll();
         
         foreach($data['users'] as &$u) {
-            // 1. Tentukan Nama Atasan
-            $u['nama_atasan'] = ($u['atasan_id'] && isset($userMap[$u['atasan_id']])) 
-                                ? $userMap[$u['atasan_id']]['nama_lengkap'] 
-                                : '-';
+            // Jika nama_atasan null, ubah jadi strip
+            $u['nama_atasan'] = $u['nama_atasan'] ?? '-';
             
-            // 2. Tentukan Unit Kabag (AAK/KUK) dari master data unit kerja
+            // Tentukan Unit Kabag (AAK/KUK) dari master data unit kerja
             $u['unit_kabag'] = null; // Default
             if (!empty($u['unit']) && isset($unitKerjaMap[$u['unit']])) {
                 $u['unit_kabag'] = $unitKerjaMap[$u['unit']];

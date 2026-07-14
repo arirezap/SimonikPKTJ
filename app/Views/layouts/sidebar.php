@@ -28,21 +28,6 @@ $isKabagKuk = ($role === 'kabag_kuk');
 $isDirektur = ($role === 'direktur'); 
 ?>
 
-<style>
-    .sidebar-menu .nav-link {
-        padding: 0.5rem 1rem !important; /* Reduce padding slightly */
-    }
-    .sidebar-menu .nav-link span {
-        font-size: 0.75rem !important;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .sidebar-menu .nav-link i {
-        font-size: 0.85rem !important;
-        margin-right: 8px !important; /* Reduce gap between icon and text if it was bigger */
-    }
-</style>
 
 <div class="sidebar">
     <i class="bi bi-list sidebar-toggle" id="sidebarToggle"></i>
@@ -120,7 +105,7 @@ $isDirektur = ($role === 'direktur');
 
             <li class="nav-item">
                 <a class="nav-link <?= str_starts_with($current_uri, 'user/log-kegiatan') ? 'active' : '' ?>" href="<?= site_url('log-kegiatan') ?>">
-                    <i class="bi bi-calendar-check-fill"></i><span>Laporan Kegiatan Harian</span>
+                    <i class="bi bi-calendar-check-fill"></i><span>Lapor Kegiatan Harian</span>
                 </a>
             </li>
 

@@ -9,7 +9,7 @@ class DashboardController extends BaseController
     public function index()
     {
         $role = session()->get('role');
-        $adminRoles = ['admin', 'manajemen', 'kabag_aak', 'kabag_kuk'];
+        $adminRoles = ['admin', 'direktur', 'wadir', 'manajemen', 'kabag_aak', 'kabag_kuk'];
         
         if (in_array($role, $adminRoles)) {
             $adminDashboard = new \App\Controllers\Admin\Dashboard();

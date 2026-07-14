@@ -51,7 +51,9 @@
                                 <option value="admin">Administrator</option>
                                 <option value="kabag_aak">Kabag AAK</option>
                                 <option value="kabag_kuk">Kabag KUK</option>
-                                <option value="manajemen">Manajemen (Direktur/Wadir)</option>
+                                <option value="direktur">Direktur</option>
+                                <option value="wadir">Wakil Direktur</option>
+                                <option value="manajemen">Manajemen (Lainnya)</option>
                             </select>
                         </div>
                     </div>

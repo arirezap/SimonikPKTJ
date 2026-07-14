@@ -43,7 +43,9 @@
                                 <option value="admin" <?= $user['role'] == 'admin' ? 'selected' : '' ?>>Administrator</option>
                                 <option value="kabag_aak" <?= $user['role'] == 'kabag_aak' ? 'selected' : '' ?>>Kabag AAK</option>
                                 <option value="kabag_kuk" <?= $user['role'] == 'kabag_kuk' ? 'selected' : '' ?>>Kabag KUK</option>
-                                <option value="manajemen" <?= $user['role'] == 'manajemen' ? 'selected' : '' ?>>Manajemen (Direktur/Wadir)</option>
+                                <option value="direktur" <?= $user['role'] == 'direktur' ? 'selected' : '' ?>>Direktur</option>
+                                <option value="wadir" <?= $user['role'] == 'wadir' ? 'selected' : '' ?>>Wakil Direktur</option>
+                                <option value="manajemen" <?= $user['role'] == 'manajemen' ? 'selected' : '' ?>>Manajemen (Lainnya)</option>
                             </select>
                         </div>
                     </div>

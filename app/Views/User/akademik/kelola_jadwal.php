@@ -58,7 +58,7 @@
                     <div class="mb-3">
                         <label class="form-label">Program Studi</label>
                         <select name="prodi" class="form-select" required>
-                            <?php $prodiList = config('Simonik')->prodiList; ?>
+                            <?php $prodiList = config('Ecc')->prodiList; ?>
                             <?php foreach($prodiList as $prodi): ?>
                                 <option value="<?= $prodi; ?>"><?= $prodi; ?></option>
                             <?php endforeach; ?>

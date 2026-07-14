@@ -29,7 +29,7 @@ trait EccDataTrait
         $chart_label_ids = array_column($standar_raw, 'id');
         // --- SELESAI PERUBAHAN ---
         
-        $prodiList = config('Simonik')->prodiList;
+        $prodiList = config('Ecc')->prodiList;
         $prodiData = [];
         $scores = [];
 

@@ -29,7 +29,7 @@ class EccController extends BaseController
         ];
         
         $prodiData = [];
-        foreach (config('Simonik')->prodiList as $prodi) {
+        foreach (config('Ecc')->prodiList as $prodi) {
              $prodiData[$prodi] = [
                 'id_prodi' => $prodi, 
                 'nama_prodi' => $prodi, 
@@ -50,7 +50,7 @@ class EccController extends BaseController
         $submissionModel = new LedSubmission();
 
         $selectedTahun = $this->request->getGet('tahun') ?? date('Y');
-        $selectedProdi = $this->request->getGet('prodi') ?? config('Simonik')->prodiList[0];
+        $selectedProdi = $this->request->getGet('prodi') ?? config('Ecc')->prodiList[0];
         
         $currentRole = session()->get('role');
 
@@ -109,7 +109,7 @@ class EccController extends BaseController
             'is_staf' => $is_staf,
             'is_kabag' => $is_kabag,
             'is_wadir' => $is_wadir,
-            'prodiList' => config('Simonik')->prodiList,
+            'prodiList' => config('Ecc')->prodiList,
         ];
 
         return view('ecc/led_index', $data);
@@ -160,7 +160,7 @@ class EccController extends BaseController
                     'led_criteria_id' => $kriteria_id,
                 ];
 
-                if (in_array($role, ['admin', 'manajemen', 'direktur', 'spm'])) { // Wadir / Admin / SPM
+                if (in_array($role, ['admin', 'manajemen', 'direktur', 'wadir', 'spm'])) { // Wadir / Admin / SPM
                     if(isset($statuses[$kriteria_id])) {
                         $data['status'] = $statuses[$kriteria_id];
                     }
@@ -245,7 +245,7 @@ class EccController extends BaseController
         $submissionModel = new LedSubmission();
 
         $selectedTahun = $this->request->getGet('tahun') ?? date('Y');
-        $selectedProdi = $this->request->getGet('prodi') ?? config('Simonik')->prodiList[0];
+        $selectedProdi = $this->request->getGet('prodi') ?? config('Ecc')->prodiList[0];
 
         $all_criteria_raw = $criteriaModel
             ->select('led_criteria.*, led_standar.nama_standar')
@@ -281,7 +281,7 @@ class EccController extends BaseController
             'submitted_submissions' => $submitted_submissions,
             'selectedTahun' => $selectedTahun,
             'selectedProdi' => $selectedProdi,
-            'prodiList' => config('Simonik')->prodiList,
+            'prodiList' => config('Ecc')->prodiList,
         ];
 
         return view('ecc/simulasi_index', $data);

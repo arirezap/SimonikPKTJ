@@ -32,7 +32,7 @@
                 <div class="col-md-6">
                     <label for="prodi_filter" class="form-label fw-bold">Tampilkan Kriteria untuk Program Studi</label>
                     <select name="prodi" id="prodi_filter" class="form-select" onchange="this.form.submit()">
-                        <?php $prodiList = config('Simonik')->prodiList; ?>
+                        <?php $prodiList = config('Ecc')->prodiList; ?>
                         <?php foreach($prodiList as $prodi): ?>
                             <option value="<?= $prodi; ?>" <?= ($selectedProdi == $prodi) ? 'selected' : ''; ?>><?= $prodi; ?></option>
                         <?php endforeach; ?>

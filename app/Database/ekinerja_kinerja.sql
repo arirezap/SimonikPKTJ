@@ -1549,7 +1549,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `password`, `nama_lengkap`, `email`, `role`, `atasan_id`, `foto`, `nip`, `jabatan`, `unit`, `pangkat`) VALUES
-(1, 'admin', '$2y$10$UkLmczVlKdYiRFLjnVqyHenXPX026.PvzPzlb8iN1Uy8oKpx7ODsG', 'Administrator Utama', 'admin@simonik.com', 'admin', NULL, 'default.png', '', '', '', ''),
+(1, 'admin', '$2y$10$UkLmczVlKdYiRFLjnVqyHenXPX026.PvzPzlb8iN1Uy8oKpx7ODsG', 'Administrator Utama', 'admin@ecc.com', 'admin', NULL, 'default.png', '', '', '', ''),
 (8, 'diklatpktj', '$2y$10$DMeeWEKxZD5Z9w.r4Ed1Pez0w1Qia.x2q0f7IOAX8st4Xt3.tV.W.', 'Pokja Diklat', 'diklat@pktj.ac.id', 'user', 12, 'default.png', '', '', '', ''),
 (9, 'keuanganpktj', '$2y$10$iJegL2gtWXf36zF.qKnLBuqLhojF8S/5l9SnzzcLH6W3pixOGAFVu', 'Keuangan PKTJ', 'keuangan@pktj.ac.id', 'kuk', NULL, 'default.png', NULL, NULL, NULL, NULL),
 (13, 'kukpktj', '$2y$10$0B2mb/Vfm2QWNwXp/2Q6jOPqxi0rkGaNdsV6TROVYApC6/p6gDtoq', 'Kabag KUK', 'kukpktj@pktj.ac.id', 'kabag_kuk', 50, 'default.png', '', '', '', ''),

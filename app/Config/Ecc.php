@@ -4,7 +4,7 @@ namespace Config;
 
 use CodeIgniter\Config\BaseConfig;
 
-class Simonik extends BaseConfig
+class Ecc extends BaseConfig
 {
     /**
      * Daftar Program Studi yang digunakan di seluruh aplikasi.

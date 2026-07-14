@@ -13,7 +13,7 @@
 
     <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=' . filemtime(FCPATH . 'assets/css/style.css')) ?>">
 </head>
-<body class="login-page d-flex align-items-center justify-content-center vh-100 position-relative">
+<body class="login-page d-flex flex-column align-items-center justify-content-center min-vh-100 py-4">
 
     <div class="container px-3 px-md-4">
         <div class="row justify-content-center">
@@ -36,8 +36,8 @@
                             </div>
 
                             <div class="mb-4 pb-3 border-bottom text-center text-md-start">
-                                <h4 class="fw-bold text-dark mb-2">Log In</h4>
-                                <p class="text-muted small mb-0">Silakan masukkan kredensial Anda untuk mengakses sistem.</p>
+                                <h3 class="fw-bold text-dark mb-2" style="letter-spacing: -0.5px;">Selamat Datang</h3>
+                                <p class="text-muted mb-0">Silakan masuk ke akun Anda untuk melanjutkan.</p>
                             </div>
 
                             <form action="<?= base_url('login') ?>" method="POST" autocomplete="off" id="loginForm">

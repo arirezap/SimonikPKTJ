@@ -13,7 +13,7 @@ class UserSeeder extends Seeder
             'username'     => 'admin',
             'password'     => password_hash('admin123', PASSWORD_BCRYPT), // Password: admin123
             'nama_lengkap' => 'Administrator Utama',
-            'email'        => 'admin@simonik.com',
+            'email'        => 'admin@ecc.com',
             'role'         => 'admin',
             'foto'         => 'default.png',
         ];
@@ -23,7 +23,7 @@ class UserSeeder extends Seeder
             'username'     => 'user',
             'password'     => password_hash('user123', PASSWORD_BCRYPT), // Password: user123
             'nama_lengkap' => 'Pengguna Biasa',
-            'email'        => 'user@simonik.com',
+            'email'        => 'user@ecc.com',
             'role'         => 'user',
             'foto'         => 'default.png',
         ];

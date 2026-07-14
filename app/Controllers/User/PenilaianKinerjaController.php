@@ -31,7 +31,7 @@ class PenilaianKinerjaController extends BaseController
         $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
         $role = session()->get('role');
-        $isSuper = in_array($role, ['admin', 'direktur', 'manajemen']);
+        $isSuper = in_array($role, ['admin', 'direktur', 'wadir', 'manajemen']);
 
         // Ambil daftar unit kerja untuk filter (Hanya untuk Super)
         $daftarUnit = [];
@@ -56,51 +56,6 @@ class PenilaianKinerjaController extends BaseController
         }
 
         $rekapDashboard = [];
-        if ($isAtasan) {
-            foreach ($daftarBawahan as $bawahan) {
-                // Filter Dashboard berdasarkan pilihan Nama (bawahanIdTerpilih) jika ada
-                if (!empty($bawahanIdTerpilih) && $bawahan['id'] != $bawahanIdTerpilih) {
-                    continue;
-                }
-
-                $logs = $logModel->getLogByMonth($bawahan['id'], $bulanTerpilih, $tahunTerpilih);
-                $total_laporan = count($logs);
-                
-                $dinilai = 0;
-                $total_nilai = 0;
-                $total_disiplin = 0;
-                $total_kerjasama = 0;
-                $tepat_waktu = 0;
-                $terlambat = 0;
-
-                foreach ($logs as $l) {
-                    if (!empty($l['nilai_harian'])) {
-                        $dinilai++;
-                        $total_nilai += (float)$l['nilai_harian'];
-                        $total_disiplin += (float)($l['disiplin'] ?? 0);
-                        $total_kerjasama += (float)($l['kerjasama'] ?? 0);
-                    }
-                    if (($l['waktu_penyelesaian'] ?? '') === 'Tepat waktu') $tepat_waktu++;
-                    elseif (($l['waktu_penyelesaian'] ?? '') === 'Terlambat') $terlambat++;
-                }
-                
-                $rata_rata = $dinilai > 0 ? round($total_nilai / $dinilai, 2) : 0;
-                $rata_disiplin = $dinilai > 0 ? round($total_disiplin / $dinilai, 2) : 0;
-                $rata_kerjasama = $dinilai > 0 ? round($total_kerjasama / $dinilai, 2) : 0;
-                
-                $rekapDashboard[] = [
-                    'bawahan' => $bawahan,
-                    'total_laporan' => $total_laporan,
-                    'dinilai' => $dinilai,
-                    'belum_dinilai' => $total_laporan - $dinilai,
-                    'rata_rata' => $rata_rata,
-                    'rata_disiplin' => $rata_disiplin,
-                    'rata_kerjasama' => $rata_kerjasama,
-                    'tepat_waktu' => $tepat_waktu,
-                    'terlambat' => $terlambat
-                ];
-            }
-        }
 
         // Tentukan data siapa yang akan ditampilkan
         $targetUserId = $userId; // Default lihat sendiri
