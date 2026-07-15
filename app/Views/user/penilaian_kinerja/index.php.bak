@@ -94,22 +94,28 @@ Rekap & Penilaian Kinerja
                 </div>
                 <?php endif; ?>
 
+                <?php if ($is_atasan): ?>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold text-primary mb-1" style="font-size: 0.9rem;">Pilih Bawahan (Untuk Dinilai)</label>
+                    <select name="bawahan_id" id="selectBawahan" class="form-select form-select-sm border-primary">
+                        <option value="">-- Pilih Bawahan --</option>
+                        <?php foreach ($daftar_bawahan as $b): ?>
+                            <option value="<?= $b['id'] ?>" <?= ($b['id'] == $bawahan_id_terpilih) ? 'selected' : '' ?>>
+                                <?= esc($b['nama_lengkap']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <?php endif; ?>
             </div>
         </form>
 
         <ul class="nav nav-tabs mb-4" id="penilaianTabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link <?= empty($bawahan_id_terpilih) ? 'active' : '' ?> fw-bold text-primary" id="individu-tab" data-bs-toggle="tab" data-bs-target="#individu" type="button" role="tab" aria-controls="individu" aria-selected="<?= empty($bawahan_id_terpilih) ? 'true' : 'false' ?>">
-                    <i class="bi bi-person-lines-fill me-1"></i> Laporan Harian
+                <button class="nav-link active fw-bold text-primary" id="individu-tab" data-bs-toggle="tab" data-bs-target="#individu" type="button" role="tab" aria-controls="individu" aria-selected="true">
+                    <i class="bi bi-person-lines-fill me-1"></i> <?= $is_atasan ? 'Penilaian Individu' : 'Laporan Harian' ?>
                 </button>
             </li>
-            <?php if ($is_atasan): ?>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link <?= !empty($bawahan_id_terpilih) ? 'active' : '' ?> fw-bold text-success" id="bawahan-tab" data-bs-toggle="tab" data-bs-target="#bawahan" type="button" role="tab" aria-controls="bawahan" aria-selected="<?= !empty($bawahan_id_terpilih) ? 'true' : 'false' ?>">
-                    <i class="bi bi-people-fill me-1"></i> Penilaian Bawahan
-                </button>
-            </li>
-            <?php endif; ?>
             <li class="nav-item" role="presentation">
                 <button class="nav-link fw-bold text-info" id="analisis-tab" data-bs-toggle="tab" data-bs-target="#analisis" type="button" role="tab" aria-controls="analisis" aria-selected="false">
                     <i class="bi bi-pie-chart-fill me-1"></i> Analisis Kinerja
@@ -118,324 +124,169 @@ Rekap & Penilaian Kinerja
         </ul>
 
         <div class="tab-content" id="penilaianTabsContent">
-            <!-- TAB: LAPORAN HARIAN (SENDIRI) -->
-            <div class="tab-pane fade <?= empty($bawahan_id_terpilih) ? 'show active' : '' ?>" id="individu" role="tabpanel" aria-labelledby="individu-tab">
-                <?php if (empty($rekap_data_sendiri)): ?>
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle me-2"></i> Anda belum memiliki rekap kegiatan harian pada bulan ini.
-                    </div>
-                <?php else: ?>
-                    <?php
-                        $jmlDinilai = 0;
-                        $totalNilai = 0;
-                        foreach ($rekap_data_sendiri as $rd) {
-                            if (!empty($rd['nilai_harian'])) {
-                                $jmlDinilai++;
-                                $totalNilai += (float)$rd['nilai_harian'];
-                            }
-                        }
-                        $rataRataIndividu = $jmlDinilai > 0 ? round($totalNilai / $jmlDinilai, 2) : 0;
-                        
-                        $warnaScore = 'success';
-                        if ($jmlDinilai == 0) {
-                            $warnaScore = 'secondary';
-                        } elseif ($rataRataIndividu < 60) {
-                            $warnaScore = 'danger';
-                        } elseif ($rataRataIndividu < 75) {
-                            $warnaScore = 'warning text-dark';
-                        }
-                    ?>
-                    <div class="alert alert-light border-<?= $warnaScore === 'warning text-dark' ? 'warning' : $warnaScore ?> border-start border-4 shadow-sm mb-4 d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="fw-bold mb-1 text-dark">Ringkasan Kinerja Bulan Ini</h6>
-                            <small class="text-muted">Dari <?= count($rekap_data_sendiri) ?> total aktivitas harian yang dilaporkan, <?= $jmlDinilai ?> aktivitas telah dievaluasi.</small>
-                        </div>
-                        <div class="text-end">
-                            <span class="d-block small fw-bold text-<?= $warnaScore ?> mb-1">RATA-RATA NILAI</span>
-                            <span class="fs-4 fw-bold text-<?= $warnaScore ?>"><?= number_format($rataRataIndividu, 2, ',', '.') ?></span>
-                        </div>
-                    </div>
+            <!-- TAB: PENILAIAN INDIVIDU -->
+            <div class="tab-pane fade show active" id="individu" role="tabpanel" aria-labelledby="individu-tab">
 
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover">
-                    <thead>
-                        <tr>
-                            <th style="width: 40px;">No</th>
-                            <th style="width: 100px;">Tanggal</th>
-                            <th class="col-deskripsi">Aktivitas Harian</th>
-                            <th class="col-target">Target Pekerjaan</th>
-                            <th>Realisasi</th>
-                            <th class="col-bukti">Bukti Pekerjaan</th>
-                            <th style="min-width: 160px;">Evaluasi Kinerja</th>
-                            <th style="min-width: 170px;">Sikap & Perilaku</th>
-                            <th class="col-nilai">Nilai Harian</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($rekap_data_sendiri as $index => $row): ?>
-                            <tr>
-                                <td class="text-center"><?= $index + 1 ?></td>
-                                <td>
-                                    <?php 
-                                        $tgl = date('j', strtotime($row['tanggal_kegiatan']));
-                                        $bln = $bulan_indo[date('n', strtotime($row['tanggal_kegiatan'])) - 1];
-                                        $thn = date('Y', strtotime($row['tanggal_kegiatan']));
-                                        echo $tgl . ' ' . $bln . ' ' . $thn;
-                                    ?>
-                                </td>
-                                    <td>
-                                        <?= nl2br(esc($row['deskripsi_kegiatan'])) ?>
-                                    </td>
-                                    <td><?= intval($row['target_bulanan']) ?> <?= esc($row['satuan']) ?></td>
-                                    <td>
-                                        <div class="text-center"><?= intval($row['jumlah_capaian']) ?> <?= esc($row['satuan']) ?></div>
-                                    </td>
-                                    <td class="text-center">
-                                        <?php if (!empty($row['link_bukti'])): ?>
-                                            <a href="<?= esc($row['link_bukti']) ?>" target="_blank" class="btn btn-sm btn-outline-primary" title="Lihat Bukti Pekerjaan"><i class="bi bi-link-45deg"></i> Buka</a>
-                                        <?php else: ?>
-                                            <span class="text-muted">-</span>
-                                        <?php endif; ?>
-                                    </td>
-                                
-                                <?php if (false): ?>
-                                    <!-- Kolom Input untuk Atasan -->
-                                    <input type="hidden" name="log_id[]" value="<?= esc($row['id']) ?>">
-                                    <td>
-                                        <select name="waktu_penyelesaian[]" class="form-select form-select-sm mb-2" title="Waktu Penyelesaian">
-                                            <option value="">- Waktu -</option>
-                                            <option value="Tepat waktu" <?= ($row['waktu_penyelesaian'] == 'Tepat waktu') ? 'selected' : '' ?>>Tepat waktu</option>
-                                            <option value="Terlambat" <?= ($row['waktu_penyelesaian'] == 'Terlambat') ? 'selected' : '' ?>>Terlambat</option>
-                                        </select>
-                                        <select name="kualitas_hasil[]" class="form-select form-select-sm" title="Kualitas Hasil">
-                                            <option value="">- Kualitas -</option>
-                                            <option value="Sangat Baik" <?= ($row['kualitas_hasil'] == 'Sangat Baik') ? 'selected' : '' ?>>Sangat Baik</option>
-                                            <option value="Baik" <?= ($row['kualitas_hasil'] == 'Baik') ? 'selected' : '' ?>>Baik</option>
-                                            <option value="Cukup" <?= ($row['kualitas_hasil'] == 'Cukup') ? 'selected' : '' ?>>Cukup</option>
-                                            <option value="Kurang" <?= ($row['kualitas_hasil'] == 'Kurang') ? 'selected' : '' ?>>Kurang</option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <div class="input-group input-group-sm mb-2">
-                                            <span class="input-group-text" style="width: 85px;">Disiplin</span>
-                                            <input type="number" name="disiplin[]" class="form-control text-center input-disiplin" value="<?= esc($row['disiplin']) ?>" min="0" max="100">
-                                        </div>
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-text" style="width: 85px;">Kerjasama</span>
-                                            <input type="number" name="kerjasama[]" class="form-control text-center input-kerjasama" value="<?= esc($row['kerjasama']) ?>" min="0" max="100">
-                                        </div>
-                                    </td>
-                                    <td class="text-center align-middle">
-                                        <input type="number" name="nilai_harian[]" class="form-control form-control-sm text-center input-nilai-harian fw-bold" value="<?= esc($row['nilai_harian']) ?>" readonly>
-                                    </td>
-                                <?php else: ?>
-                                    <!-- Kolom Read-Only untuk Pegawai Biasa -->
-                                    <td>
-                                        <span class="eval-label">Waktu Penyelesaian:</span>
-                                        <div class="mb-1 fw-bold"><?= esc($row['waktu_penyelesaian']) ?: '-' ?></div>
-                                        <span class="eval-label">Kualitas Hasil:</span>
-                                        <div class="fw-bold"><?= esc($row['kualitas_hasil']) ?: '-' ?></div>
-                                    </td>
-                                    <td>
-                                        <span class="eval-label">Disiplin:</span>
-                                        <div class="mb-1 fw-bold"><?= esc($row['disiplin']) ?: '-' ?></div>
-                                        <span class="eval-label">Kerjasama:</span>
-                                        <div class="fw-bold"><?= esc($row['kerjasama']) ?: '-' ?></div>
-                                    </td>
-                                    <td class="text-center align-middle readonly-text fw-bold fs-5 text-primary">
-                                        <?= esc($row['nilai_harian']) ?: '-' ?>
-                                    </td>
-                                <?php endif; ?>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+        <?php if ($is_penilai && empty($rekap_data)): ?>
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i> Pegawai ini belum memiliki rekap kegiatan harian pada bulan tersebut.
             </div>
-
-                <?php endif; ?>
-            </div> <!-- End Tab Individu -->
-
-            <?php if ($is_atasan): ?>
-            <!-- TAB: PENILAIAN BAWAHAN (KHUSUS ATASAN) -->
-            <div class="tab-pane fade <?= !empty($bawahan_id_terpilih) ? 'show active' : '' ?>" id="bawahan" role="tabpanel" aria-labelledby="bawahan-tab">
-                
-                <form method="POST" action="<?= site_url('penilaian-kinerja') ?>" class="mb-4 p-3 bg-light rounded border" id="formPilihBawahan">
-                    <?= csrf_field() ?>
-                    <input type="hidden" name="bulan" value="<?= esc($bulan_terpilih) ?>">
-                    <input type="hidden" name="tahun" value="<?= esc($tahun_terpilih) ?>">
-                    <input type="hidden" name="unit_kerja" value="<?= esc($unit_kerja_terpilih) ?>">
-                    
-                    <div class="row align-items-end">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold text-success mb-1" style="font-size: 0.9rem;">Pilih Bawahan yang Akan Dinilai</label>
-                            <select name="bawahan_id" id="selectBawahan" class="form-select border-success" onchange="this.form.submit()">
-                                <option value="">-- Pilih Bawahan --</option>
-                                <?php foreach ($daftar_bawahan as $b): ?>
-                                    <option value="<?= $b['id'] ?>" <?= ($b['id'] == $bawahan_id_terpilih) ? 'selected' : '' ?>>
-                                        <?= esc($b['nama_lengkap']) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                    </div>
-                </form>
-
-                <?php if (!empty($bawahan_id_terpilih)): ?>
-                    <?php if (empty($rekap_data_bawahan)): ?>
-                        <div class="alert alert-info mt-3">
-                            <i class="bi bi-info-circle me-2"></i> Pegawai ini belum memiliki rekap kegiatan harian pada bulan tersebut.
-                        </div>
-                    <?php else: ?>
-                        <?php
-                            $jmlDinilaiBwh = 0;
-                            $totalNilaiBwh = 0;
-                            foreach ($rekap_data_bawahan as $rd) {
-                                if (!empty($rd['nilai_harian'])) {
-                                    $jmlDinilaiBwh++;
-                                    $totalNilaiBwh += (float)$rd['nilai_harian'];
-                                }
-                            }
-                            $rataRataBwh = $jmlDinilaiBwh > 0 ? round($totalNilaiBwh / $jmlDinilaiBwh, 2) : 0;
-                            
-                            $warnaScoreBwh = 'success';
-                            if ($jmlDinilaiBwh == 0) {
-                                $warnaScoreBwh = 'secondary';
-                            } elseif ($rataRataBwh < 60) {
-                                $warnaScoreBwh = 'danger';
-                            } elseif ($rataRataBwh < 75) {
-                                $warnaScoreBwh = 'warning text-dark';
-                            }
-                        ?>
-                        <div class="alert alert-light border-<?= $warnaScoreBwh === 'warning text-dark' ? 'warning' : $warnaScoreBwh ?> border-start border-4 shadow-sm mb-4 mt-3 d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="fw-bold mb-1 text-dark">Ringkasan Kinerja Bawahan Bulan Ini</h6>
-                                <small class="text-muted">Dari <?= count($rekap_data_bawahan) ?> aktivitas yang dilaporkan, <?= $jmlDinilaiBwh ?> telah dievaluasi.</small>
-                            </div>
-                            <div class="text-end">
-                                <span class="d-block small fw-bold text-<?= $warnaScoreBwh ?> mb-1">RATA-RATA NILAI</span>
-                                <span class="fs-4 fw-bold text-<?= $warnaScoreBwh ?>"><?= number_format($rataRataBwh, 2, ',', '.') ?></span>
-                            </div>
-                        </div>
-
-                        <form action="<?= site_url('penilaian-kinerja/store') ?>" method="POST" id="formPenilaian">
-                            <?= csrf_field() ?>
-                            <input type="hidden" name="bawahan_id" value="<?= esc($bawahan_id_terpilih) ?>">
-                            <input type="hidden" name="bulan" value="<?= esc($bulan_terpilih) ?>">
-                            <input type="hidden" name="tahun" value="<?= esc($tahun_terpilih) ?>">
-                            <input type="hidden" name="unit_kerja" value="<?= esc($unit_kerja_terpilih) ?>">
-
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover">
-                    <thead>
-                        <tr>
-                            <th style="width: 40px;">No</th>
-                            <th style="width: 100px;">Tanggal</th>
-                            <th class="col-deskripsi">Aktivitas Harian</th>
-                            <th class="col-target">Target Pekerjaan</th>
-                            <th>Realisasi</th>
-                            <th class="col-bukti">Bukti Pekerjaan</th>
-                            <th style="min-width: 160px;">Evaluasi Kinerja</th>
-                            <th style="min-width: 170px;">Sikap & Perilaku</th>
-                            <th class="col-nilai">Nilai Harian</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($rekap_data_bawahan as $index => $row): ?>
-                            <tr>
-                                <td class="text-center"><?= $index + 1 ?></td>
-                                <td>
-                                    <?php 
-                                        $tgl = date('j', strtotime($row['tanggal_kegiatan']));
-                                        $bln = $bulan_indo[date('n', strtotime($row['tanggal_kegiatan'])) - 1];
-                                        $thn = date('Y', strtotime($row['tanggal_kegiatan']));
-                                        echo $tgl . ' ' . $bln . ' ' . $thn;
-                                    ?>
-                                </td>
-                                    <td>
-                                        <?= nl2br(esc($row['deskripsi_kegiatan'])) ?>
-                                    </td>
-                                    <td><?= intval($row['target_bulanan']) ?> <?= esc($row['satuan']) ?></td>
-                                    <td>
-                                        <div class="text-center"><?= intval($row['jumlah_capaian']) ?> <?= esc($row['satuan']) ?></div>
-                                    </td>
-                                    <td class="text-center">
-                                        <?php if (!empty($row['link_bukti'])): ?>
-                                            <a href="<?= esc($row['link_bukti']) ?>" target="_blank" class="btn btn-sm btn-outline-primary" title="Lihat Bukti Pekerjaan"><i class="bi bi-link-45deg"></i> Buka</a>
-                                        <?php else: ?>
-                                            <span class="text-muted">-</span>
-                                        <?php endif; ?>
-                                    </td>
-                                
-                                <?php if (true): ?>
-                                    <!-- Kolom Input untuk Atasan -->
-                                    <input type="hidden" name="log_id[]" value="<?= esc($row['id']) ?>">
-                                    <td>
-                                        <select name="waktu_penyelesaian[]" class="form-select form-select-sm mb-2" title="Waktu Penyelesaian">
-                                            <option value="">- Waktu -</option>
-                                            <option value="Tepat waktu" <?= ($row['waktu_penyelesaian'] == 'Tepat waktu') ? 'selected' : '' ?>>Tepat waktu</option>
-                                            <option value="Terlambat" <?= ($row['waktu_penyelesaian'] == 'Terlambat') ? 'selected' : '' ?>>Terlambat</option>
-                                        </select>
-                                        <select name="kualitas_hasil[]" class="form-select form-select-sm" title="Kualitas Hasil">
-                                            <option value="">- Kualitas -</option>
-                                            <option value="Sangat Baik" <?= ($row['kualitas_hasil'] == 'Sangat Baik') ? 'selected' : '' ?>>Sangat Baik</option>
-                                            <option value="Baik" <?= ($row['kualitas_hasil'] == 'Baik') ? 'selected' : '' ?>>Baik</option>
-                                            <option value="Cukup" <?= ($row['kualitas_hasil'] == 'Cukup') ? 'selected' : '' ?>>Cukup</option>
-                                            <option value="Kurang" <?= ($row['kualitas_hasil'] == 'Kurang') ? 'selected' : '' ?>>Kurang</option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <div class="input-group input-group-sm mb-2">
-                                            <span class="input-group-text" style="width: 85px;">Disiplin</span>
-                                            <input type="number" name="disiplin[]" class="form-control text-center input-disiplin" value="<?= esc($row['disiplin']) ?>" min="0" max="100">
-                                        </div>
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-text" style="width: 85px;">Kerjasama</span>
-                                            <input type="number" name="kerjasama[]" class="form-control text-center input-kerjasama" value="<?= esc($row['kerjasama']) ?>" min="0" max="100">
-                                        </div>
-                                    </td>
-                                    <td class="text-center align-middle">
-                                        <input type="number" name="nilai_harian[]" class="form-control form-control-sm text-center input-nilai-harian fw-bold" value="<?= esc($row['nilai_harian']) ?>" readonly>
-                                    </td>
-                                <?php else: ?>
-                                    <!-- Kolom Read-Only untuk Pegawai Biasa -->
-                                    <td>
-                                        <span class="eval-label">Waktu Penyelesaian:</span>
-                                        <div class="mb-1 fw-bold"><?= esc($row['waktu_penyelesaian']) ?: '-' ?></div>
-                                        <span class="eval-label">Kualitas Hasil:</span>
-                                        <div class="fw-bold"><?= esc($row['kualitas_hasil']) ?: '-' ?></div>
-                                    </td>
-                                    <td>
-                                        <span class="eval-label">Disiplin:</span>
-                                        <div class="mb-1 fw-bold"><?= esc($row['disiplin']) ?: '-' ?></div>
-                                        <span class="eval-label">Kerjasama:</span>
-                                        <div class="fw-bold"><?= esc($row['kerjasama']) ?: '-' ?></div>
-                                    </td>
-                                    <td class="text-center align-middle readonly-text fw-bold fs-5 text-primary">
-                                        <?= esc($row['nilai_harian']) ?: '-' ?>
-                                    </td>
-                                <?php endif; ?>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+        <?php elseif (empty($rekap_data)): ?>
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i> Anda belum memiliki rekap kegiatan harian pada bulan ini.
             </div>
-
-                            <div class="mt-4 text-end">
-                                <button type="submit" class="btn btn-success px-4"><i class="bi bi-save me-2"></i> Simpan Penilaian Bawahan</button>
-                            </div>
-                        </form>
-                    <?php endif; ?>
-                <?php else: ?>
-                    <div class="alert alert-secondary mt-3">
-                        <i class="bi bi-arrow-up-circle me-2"></i> Silakan pilih bawahan pada dropdown di atas untuk memulai penilaian.
-                    </div>
-                <?php endif; ?>
-
-            </div> <!-- End Tab Bawahan -->
-            <?php endif; ?>
-
+        <?php else: ?>
+        
+        <?php
+            // Hitung rata-rata nilai untuk ditampilkan di atas tabel
+            $jmlDinilai = 0;
+            $totalNilai = 0;
+            foreach ($rekap_data as $rd) {
+                if (!empty($rd['nilai_harian'])) {
+                    $jmlDinilai++;
+                    $totalNilai += (float)$rd['nilai_harian'];
+                }
+            }
+            $rataRataIndividu = $jmlDinilai > 0 ? round($totalNilai / $jmlDinilai, 2) : 0;
             
-<!-- TAB ANALISIS KINERJA -->
+            $warnaScore = 'success';
+            if ($jmlDinilai == 0) {
+                $warnaScore = 'secondary';
+            } elseif ($rataRataIndividu < 60) {
+                $warnaScore = 'danger';
+            } elseif ($rataRataIndividu < 75) {
+                $warnaScore = 'warning text-dark';
+            }
+        ?>
+        
+        <div class="alert alert-light border-<?= $warnaScore === 'warning text-dark' ? 'warning' : $warnaScore ?> border-start border-4 shadow-sm mb-4 d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="fw-bold mb-1 text-dark">Ringkasan Kinerja Bulan Ini</h6>
+                <small class="text-muted">Dari <?= count($rekap_data) ?> total aktivitas harian yang dilaporkan, <?= $jmlDinilai ?> aktivitas telah dievaluasi.</small>
+            </div>
+            <div class="text-end">
+                <span class="d-block small fw-bold text-<?= $warnaScore ?> mb-1">RATA-RATA NILAI</span>
+                <span class="fs-4 fw-bold text-<?= $warnaScore ?>"><?= number_format($rataRataIndividu, 2, ',', '.') ?></span>
+            </div>
+        </div>
+
+        <!-- Form Penilaian (Jika Penilai) -->
+        <?php if ($is_penilai): ?>
+        <form action="<?= site_url('penilaian-kinerja/store') ?>" method="POST" id="formPenilaian">
+            <?= csrf_field() ?>
+            <input type="hidden" name="bawahan_id" value="<?= esc($bawahan_id_terpilih) ?>">
+            <input type="hidden" name="bulan" value="<?= esc($bulan_terpilih) ?>">
+            <input type="hidden" name="tahun" value="<?= esc($tahun_terpilih) ?>">
+            <input type="hidden" name="unit_kerja" value="<?= esc($unit_kerja_terpilih) ?>">
+        <?php endif; ?>
+
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">No</th>
+                            <th style="width: 100px;">Tanggal</th>
+                            <th class="col-deskripsi">Aktivitas Harian</th>
+                            <th class="col-target">Target Pekerjaan</th>
+                            <th>Realisasi</th>
+                            <th class="col-bukti">Bukti Pekerjaan</th>
+                            <th style="min-width: 160px;">Evaluasi Kinerja</th>
+                            <th style="min-width: 170px;">Sikap & Perilaku</th>
+                            <th class="col-nilai">Nilai Harian</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($rekap_data as $index => $row): ?>
+                            <tr>
+                                <td class="text-center"><?= $index + 1 ?></td>
+                                <td>
+                                    <?php 
+                                        $tgl = date('j', strtotime($row['tanggal_kegiatan']));
+                                        $bln = $bulan_indo[date('n', strtotime($row['tanggal_kegiatan'])) - 1];
+                                        $thn = date('Y', strtotime($row['tanggal_kegiatan']));
+                                        echo $tgl . ' ' . $bln . ' ' . $thn;
+                                    ?>
+                                </td>
+                                    <td>
+                                        <?= nl2br(esc($row['deskripsi_kegiatan'])) ?>
+                                    </td>
+                                    <td><?= intval($row['target_bulanan']) ?> <?= esc($row['satuan']) ?></td>
+                                    <td>
+                                        <div class="text-center"><?= intval($row['jumlah_capaian']) ?> <?= esc($row['satuan']) ?></div>
+                                    </td>
+                                    <td class="text-center">
+                                        <?php if (!empty($row['link_bukti'])): ?>
+                                            <a href="<?= esc($row['link_bukti']) ?>" target="_blank" class="btn btn-sm btn-outline-primary" title="Lihat Bukti Pekerjaan"><i class="bi bi-link-45deg"></i> Buka</a>
+                                        <?php else: ?>
+                                            <span class="text-muted">-</span>
+                                        <?php endif; ?>
+                                    </td>
+                                
+                                <?php if ($is_penilai): ?>
+                                    <!-- Kolom Input untuk Atasan -->
+                                    <input type="hidden" name="log_id[]" value="<?= esc($row['id']) ?>">
+                                    <td>
+                                        <select name="waktu_penyelesaian[]" class="form-select form-select-sm mb-2" title="Waktu Penyelesaian">
+                                            <option value="">- Waktu -</option>
+                                            <option value="Tepat waktu" <?= ($row['waktu_penyelesaian'] == 'Tepat waktu') ? 'selected' : '' ?>>Tepat waktu</option>
+                                            <option value="Terlambat" <?= ($row['waktu_penyelesaian'] == 'Terlambat') ? 'selected' : '' ?>>Terlambat</option>
+                                        </select>
+                                        <select name="kualitas_hasil[]" class="form-select form-select-sm" title="Kualitas Hasil">
+                                            <option value="">- Kualitas -</option>
+                                            <option value="Sangat Baik" <?= ($row['kualitas_hasil'] == 'Sangat Baik') ? 'selected' : '' ?>>Sangat Baik</option>
+                                            <option value="Baik" <?= ($row['kualitas_hasil'] == 'Baik') ? 'selected' : '' ?>>Baik</option>
+                                            <option value="Cukup" <?= ($row['kualitas_hasil'] == 'Cukup') ? 'selected' : '' ?>>Cukup</option>
+                                            <option value="Kurang" <?= ($row['kualitas_hasil'] == 'Kurang') ? 'selected' : '' ?>>Kurang</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <div class="input-group input-group-sm mb-2">
+                                            <span class="input-group-text" style="width: 85px;">Disiplin</span>
+                                            <input type="number" name="disiplin[]" class="form-control text-center input-disiplin" value="<?= esc($row['disiplin']) ?>" min="0" max="100">
+                                        </div>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text" style="width: 85px;">Kerjasama</span>
+                                            <input type="number" name="kerjasama[]" class="form-control text-center input-kerjasama" value="<?= esc($row['kerjasama']) ?>" min="0" max="100">
+                                        </div>
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        <input type="number" name="nilai_harian[]" class="form-control form-control-sm text-center input-nilai-harian fw-bold" value="<?= esc($row['nilai_harian']) ?>" readonly>
+                                    </td>
+                                <?php else: ?>
+                                    <!-- Kolom Read-Only untuk Pegawai Biasa -->
+                                    <td>
+                                        <span class="eval-label">Waktu Penyelesaian:</span>
+                                        <div class="mb-1 fw-bold"><?= esc($row['waktu_penyelesaian']) ?: '-' ?></div>
+                                        <span class="eval-label">Kualitas Hasil:</span>
+                                        <div class="fw-bold"><?= esc($row['kualitas_hasil']) ?: '-' ?></div>
+                                    </td>
+                                    <td>
+                                        <span class="eval-label">Disiplin:</span>
+                                        <div class="mb-1 fw-bold"><?= esc($row['disiplin']) ?: '-' ?></div>
+                                        <span class="eval-label">Kerjasama:</span>
+                                        <div class="fw-bold"><?= esc($row['kerjasama']) ?: '-' ?></div>
+                                    </td>
+                                    <td class="text-center align-middle readonly-text fw-bold fs-5 text-primary">
+                                        <?= esc($row['nilai_harian']) ?: '-' ?>
+                                    </td>
+                                <?php endif; ?>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+
+        <?php if ($is_penilai): ?>
+            <div class="mt-4 text-end">
+                <button type="submit" class="btn btn-primary px-4"><i class="bi bi-save me-2"></i> Simpan Penilaian</button>
+            </div>
+        </form>
+        <?php endif; ?>
+
+        <?php endif; ?>
+        </div> <!-- End Tab Individu -->
+
+        <!-- TAB ANALISIS KINERJA -->
         <div class="tab-pane fade" id="analisis" role="tabpanel" aria-labelledby="analisis-tab">
             <div id="analisisLoading" class="text-center py-5">
                 <div class="spinner-border text-info" role="status">

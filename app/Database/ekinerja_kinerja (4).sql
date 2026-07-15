@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Waktu pembuatan: 14 Jul 2026 pada 10.14
+-- Waktu pembuatan: 15 Jul 2026 pada 02.09
 -- Versi server: 8.4.3
 -- Versi PHP: 8.2.32
 
@@ -29,7 +29,7 @@ SET time_zone = "+00:00";
 CREATE TABLE `indikator` (
   `id` int UNSIGNED NOT NULL,
   `nama_indikator` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data untuk tabel `indikator`
@@ -70,7 +70,7 @@ CREATE TABLE `jadwal_diklat` (
   `status` varchar(50) NOT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -118,7 +118,7 @@ CREATE TABLE `led_criteria` (
   `role_assignment` varchar(50) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data untuk tabel `led_criteria`
@@ -325,7 +325,7 @@ CREATE TABLE `led_scores` (
   `skor` decimal(5,2) DEFAULT '0.00',
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data untuk tabel `led_scores`
@@ -592,7 +592,7 @@ CREATE TABLE `led_standar` (
   `nama_standar` varchar(255) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data untuk tabel `led_standar`
@@ -627,7 +627,7 @@ CREATE TABLE `led_submissions` (
   `file_bukti` varchar(255) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data untuk tabel `led_submissions`
@@ -1307,7 +1307,7 @@ CREATE TABLE `migrations` (
   `namespace` varchar(255) NOT NULL,
   `time` int NOT NULL,
   `batch` int UNSIGNED NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data untuk tabel `migrations`
@@ -1367,7 +1367,7 @@ CREATE TABLE `remunerasi` (
   `created_by_user_id` int UNSIGNED NOT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -1386,7 +1386,7 @@ CREATE TABLE `rencana_kinerja` (
   `target_bulanan` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `realisasi_bulanan` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,
   `tahun_anggaran` int NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data untuk tabel `rencana_kinerja`
@@ -1463,7 +1463,7 @@ INSERT INTO `rencana_kinerja` (`id`, `user_id`, `sasaran_program`, `indikator_ki
 CREATE TABLE `sasaran` (
   `id` int UNSIGNED NOT NULL,
   `nama_sasaran` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data untuk tabel `sasaran`
@@ -1494,7 +1494,7 @@ INSERT INTO `sasaran` (`id`, `nama_sasaran`) VALUES
 CREATE TABLE `satuan` (
   `id` int UNSIGNED NOT NULL,
   `nama_satuan` varchar(100) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data untuk tabel `satuan`
@@ -1633,18 +1633,18 @@ CREATE TABLE `users` (
   `jabatan` varchar(100) DEFAULT NULL,
   `unit` varchar(100) DEFAULT NULL,
   `pangkat` varchar(100) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data untuk tabel `users`
 --
 
 INSERT INTO `users` (`id`, `username`, `password`, `nama_lengkap`, `email`, `role`, `atasan_id`, `foto`, `nip`, `jabatan`, `unit`, `pangkat`) VALUES
-(1, 'admin', '$2y$10$UkLmczVlKdYiRFLjnVqyHenXPX026.PvzPzlb8iN1Uy8oKpx7ODsG', 'Administrator Utama', 'admin@simonik.com', 'admin', NULL, 'default.png', '', '', '', ''),
+(1, 'admin', '$2y$10$UkLmczVlKdYiRFLjnVqyHenXPX026.PvzPzlb8iN1Uy8oKpx7ODsG', 'Administrator Utama', 'admin@simonik.com', 'admin', 0, 'default.png', '', '', '', ''),
 (8, 'diklatpktj', '$2y$10$DMeeWEKxZD5Z9w.r4Ed1Pez0w1Qia.x2q0f7IOAX8st4Xt3.tV.W.', 'Pokja Diklat', 'diklat@pktj.ac.id', 'user', 12, 'default.png', '', '', '', ''),
-(9, 'keuanganpktj', '$2y$10$iJegL2gtWXf36zF.qKnLBuqLhojF8S/5l9SnzzcLH6W3pixOGAFVu', 'Keuangan PKTJ', 'keuangan@pktj.ac.id', 'kuk', NULL, 'default.png', NULL, NULL, NULL, NULL),
+(9, 'keuanganpktj', '$2y$10$iJegL2gtWXf36zF.qKnLBuqLhojF8S/5l9SnzzcLH6W3pixOGAFVu', 'Keuangan PKTJ', 'keuangan@pktj.ac.id', 'kuk', 0, 'default.png', NULL, NULL, '', NULL),
 (13, 'kukpktj', '$2y$10$0B2mb/Vfm2QWNwXp/2Q6jOPqxi0rkGaNdsV6TROVYApC6/p6gDtoq', 'Kabag KUK', 'kukpktj@pktj.ac.id', 'kabag_kuk', 50, 'default.png', '', '', '', ''),
-(14, 'spmpktj', '$2y$10$kWb9DPxTDUawqQzyLObLIuPngSFju0PU4V2dN/E58ILB8SDDNzvJG', 'SPM PKTJ', 'spm@pktj.ac.id', 'spm', NULL, 'default.png', NULL, NULL, NULL, NULL),
+(14, 'spmpktj', '$2y$10$kWb9DPxTDUawqQzyLObLIuPngSFju0PU4V2dN/E58ILB8SDDNzvJG', 'SPM PKTJ', 'spm@pktj.ac.id', 'spm', 0, 'default.png', NULL, NULL, '', NULL),
 (18, '198008012008121001', '0527794b060365bd33c5572ecbebf8cc', 'AGUS HARIYANTO', '198008012008121001@pktj.ac.id', 'kabag_kuk', 50, NULL, '198008012008121001', 'Kepala Bagian Keuangan, Umum, Kerjasama', 'Bagian Keuangan, Umum, Kerjasama', ''),
 (20, '199710162020122005', 'cdbf4732b3922aa3c918b47e98bc71dc', 'GHINA KHAIRUNISSA', '199710162020122005@pktj.ac.id', 'user', 0, NULL, '199710162020122005', '', '', ''),
 (21, '199807242022101001', 'c3df22b55ae6153c8a560a12b0c1b73e', 'ILHAM BAGUS PRASETYO', '199807242022101001@pktj.ac.id', 'user', 173, NULL, '199807242022101001', '', '', ''),
@@ -1676,7 +1676,7 @@ INSERT INTO `users` (`id`, `username`, `password`, `nama_lengkap`, `email`, `rol
 (47, '196603261986031007', 'ff9f3cf535e4790640392e49e9a3b3ca', 'AGUS BUDI PURWANTORO', '196603261986031007@pktj.ac.id', 'user', 0, NULL, '196603261986031007', '', '', ''),
 (48, '197006041996031002', '71eb14122bdb11c5023aab21eb4b7a76', 'MOHAMAD HERMAWAN', '197006041996031002@pktj.ac.id', 'user', 0, NULL, '197006041996031002', '', '', ''),
 (49, '197005191993011001', 'c03be0d9e481bbf9a4621a1fb0244d35', 'HANENDYO PUTRO', '197005191993011001@pktj.ac.id', 'user', 0, NULL, '197005191993011001', '', '', ''),
-(50, '197307011996021002', 'e6aa1c30351a38622b00030e87a1b460', 'BAMBANG ISTIYANTO', '197307011996021002@pktj.ac.id', 'direktur', NULL, '1776056545_e5aa8872b3b475849e96.png', '197307011996021002', 'Direktur', '', ''),
+(50, '197307011996021002', 'e6aa1c30351a38622b00030e87a1b460', 'BAMBANG ISTIYANTO', '197307011996021002@pktj.ac.id', 'direktur', 0, '1776056545_e5aa8872b3b475849e96.png', '197307011996021002', 'Direktur', '', ''),
 (51, '197311092005022001', '43029d75ee00afbb970fe0aef7c863a2', 'NOVITASARI TRI NUGRAH ENI', '197311092005022001@pktj.ac.id', 'user', 0, NULL, '197311092005022001', '', '', ''),
 (52, '197302052005021001', '2b19c53d1db36f134485c1e8c1764dce', 'CORSINUS TRISNO SUSANTO', '197302052005021001@pktj.ac.id', 'user', 173, NULL, '197302052005021001', '', '', ''),
 (53, '197411292006041001', '5564f5aa6e28fed743f4b077e5382907', 'R.ARIEF NOVIANTO', '197411292006041001@pktj.ac.id', 'user', 173, NULL, '197411292006041001', '', '', ''),
@@ -1704,7 +1704,7 @@ INSERT INTO `users` (`id`, `username`, `password`, `nama_lengkap`, `email`, `rol
 (75, '198006022009121001', 'e175684d7c272a7d2ad06e7a41595afd', 'ETHYS PRANOTO', '198006022009121001@pktj.ac.id', 'user', 173, NULL, '198006022009121001', '', '', ''),
 (76, '198503112008121004', '6132edfff8b10a0a228f36f3a5b32076', 'FAHRIZAL ADHIKRISNA', '198503112008121004@pktj.ac.id', 'user', 0, NULL, '198503112008121004', '', '', ''),
 (77, '198805282019021002', '791a84bc82095f6b11c38882116a0d89', 'JOKO SISWANTO', '198805282019021002@pktj.ac.id', 'user', 57, NULL, '198805282019021002', '', 'Satuan Penjaminan Mutu', ''),
-(78, '198908222019021001', 'a1188516719869b8cd9a6b5fcb721242', 'MOKHAMMAD RIFQI TSANI', '198908222019021001@pktj.ac.id', 'manajemen', 173, NULL, '198908222019021001', '', 'Unit Teknik Informatika', ''),
+(78, '198908222019021001', 'a1188516719869b8cd9a6b5fcb721242', 'MOKHAMMAD RIFQI TSANI', '198908222019021001@pktj.ac.id', 'manajemen', 173, NULL, '198908222019021001', 'Kepala Unit TI', 'Unit Teknik Informatika', ''),
 (79, '199301042019021002', '2c3bada0cd26f95e2dbef5abc87989ed', 'MUHAMMAD IMAN NUR HAKIM', '199301042019021002@pktj.ac.id', 'user', 173, NULL, '199301042019021002', '', '', ''),
 (80, '199210092019021002', '5ac119e07726701a59ca47ef5c3913b8', 'MOCH. AZIZ KURNIAWAN', '199210092019021002@pktj.ac.id', 'user', 0, NULL, '199210092019021002', '', '', ''),
 (81, '198309252008121001', '242fc07bdf10cabc0a7907342b8bf851', 'AHMAD BASUKI', '198309252008121001@pktj.ac.id', 'user', 0, NULL, '198309252008121001', '', '', ''),
@@ -1772,7 +1772,7 @@ INSERT INTO `users` (`id`, `username`, `password`, `nama_lengkap`, `email`, `rol
 (143, '199010232023211024', '7ffccfd9bb46816c0e970df96ba84525', 'IBNU AFAN', '199010232023211024@pktj.ac.id', 'user', 0, NULL, '199010232023211024', '', 'Satuan Penjaminan Mutu', ''),
 (144, '199206152023212050', '833755d06845759cdb403ac1d7317730', 'UMUL MU\'MININ', '199206152023212050@pktj.ac.id', 'user', 0, NULL, '199206152023212050', '', '', ''),
 (145, '199505312023212038', '3dc5858d604c25e294519b8af75749df', 'FARAH MEIGHINA', '199505312023212038@pktj.ac.id', 'user', 0, NULL, '199505312023212038', '', '', ''),
-(146, '199806112023211004', '708f2626a4234918e1a748d41c16e815', 'ARI REZA PRAKASA', 'ari@pktj.ac.id', 'user', NULL, '1775787299_6d2401313512eaf5f6f8.png', '199806112023211004', 'Pranata Komputer Ahli Pertama', '', 'IX'),
+(146, '199806112023211004', '708f2626a4234918e1a748d41c16e815', 'ARI REZA PRAKASA', 'ari@pktj.ac.id', 'user', 78, '1775787299_6d2401313512eaf5f6f8.png', '199806112023211004', 'Pranata Komputer Ahli Pertama', 'Unit Teknik Informatika', 'IX'),
 (147, '199006082024212019', 'd3a381acf8fddaebceae3e69cb11ff16', 'DYAH AYU LARASATI', '199006082024212019@pktj.ac.id', 'user', 0, NULL, '199006082024212019', '', '', ''),
 (148, '199201142024212015', '642a0b9587cb2824d0def9382048ce35', 'LURA SATIVA', '199201142024212015@pktj.ac.id', 'user', 0, NULL, '199201142024212015', '', '', ''),
 (149, '199309152024212017', '4deae42d70f30ab44e898585a1e340b0', 'FRISCA LEVI INDRIYANA', '199309152024212017@pktj.ac.id', 'user', 0, NULL, '199309152024212017', '', '', ''),

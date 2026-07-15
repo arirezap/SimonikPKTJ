@@ -15,6 +15,17 @@ class PenilaianKinerjaController extends BaseController
 
         $userId = session()->get('id') ?? session()->get('user_id');
         
+        // Failsafe: Jika user menggunakan session versi lama (dimana id berisi NIP/Username)
+        if (!is_numeric($userId) || strlen((string)$userId) > 10) {
+            $userDb = $userModel->where('username', $userId)
+                                ->orWhere('nip', $userId)
+                                ->orWhere('id', $userId) // fallback
+                                ->first();
+            if ($userDb) {
+                $userId = $userDb['id'];
+            }
+        }
+        
         // Gunakan session agar URL tetap bersih
         if ($this->request->getMethod() === 'POST' || $this->request->getMethod() === 'post') {
             if ($this->request->getPost('bulan')) session()->set('penilaian_bulan', $this->request->getPost('bulan'));
@@ -51,15 +62,27 @@ class PenilaianKinerjaController extends BaseController
             $daftarBawahan = $builder->orderBy('nama_lengkap', 'ASC')->findAll();
             $isAtasan = true;
         } else {
-            $daftarBawahan = $userModel->getAllBawahan($userId, $role);
+            // Samakan logika dengan TimController: Ambil bawahan berdasarkan atasan_id ATAU unit yang sama
+            $me = $userModel->find($userId);
+            $myUnit = $me['unit'] ?? null;
+            
+            $bawahanQuery = $userModel->where('id !=', $userId);
+            if (!empty($myUnit)) {
+                $bawahanQuery->groupStart()
+                             ->where('atasan_id', $userId)
+                             ->orWhere('unit', $myUnit)
+                             ->groupEnd();
+            } else {
+                $bawahanQuery->where('atasan_id', $userId);
+            }
+            $daftarBawahan = $bawahanQuery->orderBy('nama_lengkap', 'ASC')->findAll();
             $isAtasan = !empty($daftarBawahan);
         }
 
         $rekapDashboard = [];
 
         // Tentukan data siapa yang akan ditampilkan
-        $targetUserId = $userId; // Default lihat sendiri
-        $isPenilai = false; // Mode read-only
+        $isPenilai = false; // Mode form penilaian aktif?
 
         if ($isAtasan && !empty($bawahanIdTerpilih)) {
             // Validasi apakah benar bawahannya
@@ -71,15 +94,20 @@ class PenilaianKinerjaController extends BaseController
                 }
             }
             if ($isValidBawahan) {
-                $targetUserId = $bawahanIdTerpilih;
                 $isPenilai = true; // Atasan bisa menilai
             } else {
                 $bawahanIdTerpilih = ''; // Reset jika ternyata tidak valid (misal pindah unit)
             }
         }
 
-        // Ambil rekap data sebulan penuh
-        $rekapData = $logModel->getLogByMonth($targetUserId, $bulanTerpilih, $tahunTerpilih);
+        // Ambil rekap data sebulan penuh untuk diri sendiri (selalu ada)
+        $rekapDataSendiri = $logModel->getLogByMonth($userId, $bulanTerpilih, $tahunTerpilih);
+        
+        // Ambil rekap data bawahan terpilih (jika ada)
+        $rekapDataBawahan = [];
+        if ($isPenilai) {
+            $rekapDataBawahan = $logModel->getLogByMonth($bawahanIdTerpilih, $bulanTerpilih, $tahunTerpilih);
+        }
 
         $data = [
             'title' => 'Rekap & Penilaian Kinerja',
@@ -90,7 +118,8 @@ class PenilaianKinerjaController extends BaseController
             'bawahan_id_terpilih' => $bawahanIdTerpilih,
             'is_atasan' => $isAtasan,
             'is_penilai' => $isPenilai,
-            'rekap_data' => $rekapData,
+            'rekap_data_sendiri' => $rekapDataSendiri,
+            'rekap_data_bawahan' => $rekapDataBawahan,
             'rekap_dashboard' => $rekapDashboard,
             'is_super' => $isSuper,
             'daftar_unit' => $daftarUnit,

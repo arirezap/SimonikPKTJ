@@ -208,3 +208,10 @@ $routes->group('ecc', ['filter' => 'auth'], function ($routes) {
 if (file_exists(APPPATH . 'Config/' . ENVIRONMENT . '/Routes.php')) {
     require APPPATH . 'Config/' . ENVIRONMENT . '/Routes.php';
 }
+
+
+
+
+$routes->get('test', 'TestController::index');
+
+$routes->get('test3', 'TestController3::index');
