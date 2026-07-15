@@ -2,6 +2,18 @@
 
 <?= $this->section('title') ?><?= esc($title ?? 'Kelola Pengguna') ?><?= $this->endSection() ?>
 
+<?= $this->section('styles') ?>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+<style>
+/* Custom style to make select2 fit nicely in a table cell */
+.select2-container--bootstrap-5 .select2-selection--single {
+    font-size: 0.875rem;
+    min-height: 31px;
+}
+</style>
+<?= $this->endSection() ?>
+
 <?= $this->section('content') ?>
 <div class="container-fluid">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -47,6 +59,7 @@
                     <label for="unit" class="form-label text-muted small fw-bold text-uppercase">Unit Kerja</label>
                     <select name="unit" id="unit" class="form-select form-select-sm">
                         <option value="">Semua Unit</option>
+                        <option value="kosong" <?= (isset($filter_unit) && $filter_unit === 'kosong') ? 'selected' : '' ?>>-- Belum Diatur / Kosong --</option>
                         <?php foreach($unit_kerja_list as $uk): ?>
                             <option value="<?= esc($uk['nama_unit']) ?>" <?= (isset($filter_unit) && $filter_unit == $uk['nama_unit']) ? 'selected' : '' ?>><?= esc($uk['nama_unit']) ?></option>
                         <?php endforeach; ?>
@@ -203,8 +216,7 @@
                     </thead>
                     <tbody>
                         <?php 
-                        $currentPage = $pager->getCurrentPage('users');
-                        $i = ($currentPage - 1) * $per_page + 1;
+                        $i = 1;
                         
                         if (empty($users)): ?>
                         <tr>
@@ -212,8 +224,10 @@
                         </tr>
                         <?php endif;
                         
-                        foreach ($users as $user): ?>
-                        <tr>
+                        foreach ($users as $user): 
+                            $rowClass = ($i > 10) ? 'd-none user-row-hidden' : 'user-row-visible';
+                        ?>
+                        <tr class="<?= $rowClass ?>">
                             <td class="text-center px-4">
                                 <input class="form-check-input user-checkbox" type="checkbox" value="<?= $user['id'] ?>" aria-label="Pilih pengguna <?= esc($user['nama_lengkap']) ?>">
                             </td>
@@ -224,17 +238,23 @@
                             </td>
                             <td><?= esc($user['jabatan'] ?? '-') ?></td>
                             <td>
-                                <select class="form-select form-select-sm unit-kerja-select" data-user-id="<?= $user['id'] ?>" aria-label="Pilih unit kerja untuk <?= esc($user['nama_lengkap']) ?>">
-                                    <option value="">-- Pilih --</option>
-                                    <?php if (!empty($unit_kerja_list)): ?>
-                                        <?php foreach ($unit_kerja_list as $unit_kerja): ?>
-                                            <option value="<?= esc($unit_kerja['nama_unit']) ?>" <?= ($user['unit'] == $unit_kerja['nama_unit']) ? 'selected' : '' ?>>
-                                                <?= esc($unit_kerja['nama_unit']) ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </select>
-                                <div class="update-status small mt-1"></div>
+                                <?php if ($user['role'] === 'direktur'): ?>
+                                    <span class="badge bg-danger">Direktur</span>
+                                <?php elseif ($user['role'] === 'wadir'): ?>
+                                    <span class="badge bg-warning text-dark">Wakil Direktur</span>
+                                <?php else: ?>
+                                    <select class="form-select form-select-sm unit-kerja-select" data-user-id="<?= $user['id'] ?>" aria-label="Pilih unit kerja untuk <?= esc($user['nama_lengkap']) ?>">
+                                        <option value="">-- Pilih --</option>
+                                        <?php if (!empty($unit_kerja_list)): ?>
+                                            <?php foreach ($unit_kerja_list as $unit_kerja): ?>
+                                                <option value="<?= esc($unit_kerja['nama_unit']) ?>" <?= ($user['unit'] == $unit_kerja['nama_unit']) ? 'selected' : '' ?>>
+                                                    <?= esc($unit_kerja['nama_unit']) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
+                                    </select>
+                                    <div class="update-status small mt-1"></div>
+                                <?php endif; ?>
                             </td>
                             <td>
                                 <?php 
@@ -298,69 +318,78 @@
                 </table>
             </div>
 
-            <?php if ($pager): ?>
-            <div class="card-footer bg-white border-top-0 py-3 px-4 d-flex justify-content-end">
-                <?= $pager->links('default', 'bootstrap') ?>
+            <!-- Skeleton Loader (Selalu dirender, JS yang mengatur hide/show) -->
+            <div id="skeleton-loader" class="d-none p-4 text-center">
+                <div class="spinner-border text-primary mb-2" role="status">
+                    <span class="visually-hidden">Memuat...</span>
+                </div>
+                <div class="text-muted small">Memuat data pengguna berikutnya...</div>
             </div>
-            <?php endif; ?>
         </div>
     </div>
 </div>
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const selectAllCheckbox = document.getElementById('selectAll');
-    const userCheckboxes = document.querySelectorAll('.user-checkbox');
     const batchEditBtn = document.getElementById('batchEditBtn');
     const batchEditModalEl = document.getElementById('batchEditModal');
+    let batchEditModal = null;
     
-    if (!batchEditModalEl) return; // Guard clause
-
-    const batchEditModal = new bootstrap.Modal(batchEditModalEl);
+    if (batchEditModalEl) {
+        batchEditModal = new bootstrap.Modal(batchEditModalEl);
+    }
+    
     const batchUserIdsInput = document.getElementById('batchUserIds');
     const batchEditCountSpan = document.getElementById('batchEditCount');
 
-    // Fungsi untuk select/deselect all
-    selectAllCheckbox.addEventListener('change', function() {
-        userCheckboxes.forEach(checkbox => {
-            checkbox.checked = this.checked;
+    // Event Delegation untuk Checkbox
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            document.querySelectorAll('.user-checkbox').forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
         });
-    });
+    }
 
     // Fungsi untuk tombol batch edit
-    batchEditBtn.addEventListener('click', function() {
-        const selectedIds = Array.from(userCheckboxes)
-                                 .filter(checkbox => checkbox.checked)
-                                 .map(checkbox => checkbox.value);
+    if (batchEditBtn) {
+        batchEditBtn.addEventListener('click', function() {
+            const selectedIds = Array.from(document.querySelectorAll('.user-checkbox'))
+                                     .filter(checkbox => checkbox.checked)
+                                     .map(checkbox => checkbox.value);
 
-        if (selectedIds.length === 0) {
-            alert('Peringatan: Silakan pilih minimal satu pengguna untuk diedit.');
-            return;
-        }
+            if (selectedIds.length === 0) {
+                alert('Peringatan: Silakan pilih minimal satu pengguna untuk diedit.');
+                return;
+            }
 
-        batchUserIdsInput.value = selectedIds.join(',');
-        batchEditCountSpan.textContent = selectedIds.length;
-        batchEditModal.show();
-    });
+            batchUserIdsInput.value = selectedIds.join(',');
+            batchEditCountSpan.textContent = selectedIds.length;
+            batchEditModal.show();
+        });
+    }
 
-    // --- SCRIPT BARU UNTUK AJAX UNIT KERJA UPDATE ---
-    const unitKerjaSelects = document.querySelectorAll('.unit-kerja-select');
-    
-    unitKerjaSelects.forEach(select => {
-        select.addEventListener('change', function() {
-            const userId = this.dataset.userId;
-            const newUnit = this.value;
-            const statusDiv = this.nextElementSibling; // Div .update-status
+    // --- EVENT DELEGATION UNTUK AJAX UNIT KERJA UPDATE ---
+    $(document).on('change', '.unit-kerja-select', function(e) {
+        const select = this;
+        const userId = select.dataset.userId;
+        const newUnit = select.value;
+        // Gunakan jQuery atau querySelector dari parent karena DOM Select2 menyisipkan elemen di tengah
+        const statusDiv = select.parentElement.querySelector('.update-status');
 
             // Tampilkan indikator loading
             statusDiv.innerHTML = '<i class="bi bi-arrow-repeat"></i> Menyimpan...';
             statusDiv.className = 'update-status small mt-1 text-muted';
 
             const csrfTokenName = '<?= csrf_token() ?>';
-            // Ambil hash terbaru dari salah satu form di halaman
-            const csrfHash = document.querySelector('input[name="' + csrfTokenName + '"]').value;
+            // Ambil hash terbaru dari salah satu form di halaman (batch edit form)
+            const csrfInput = document.querySelector('input[name="' + csrfTokenName + '"]');
+            const csrfHash = csrfInput ? csrfInput.value : '';
 
             const formData = new FormData();
             formData.append('user_id', userId);
@@ -376,7 +405,6 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => response.json())
             .then(data => {
-                // Perbarui nilai CSRF token di semua form untuk request selanjutnya
                 if (data[csrfTokenName]) {
                     document.querySelectorAll('input[name="' + csrfTokenName + '"]').forEach(input => {
                         input.value = data[csrfTokenName];
@@ -390,7 +418,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     statusDiv.innerHTML = '<i class="bi bi-x-circle-fill"></i> Gagal';
                     statusDiv.className = 'update-status small mt-1 text-danger';
                 }
-                setTimeout(() => { statusDiv.innerHTML = ''; }, 3000); // Hilangkan pesan setelah 3 detik
+                setTimeout(() => { statusDiv.innerHTML = ''; }, 3000);
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -398,8 +426,68 @@ document.addEventListener('DOMContentLoaded', function() {
                 statusDiv.className = 'update-status small mt-1 text-danger';
                 setTimeout(() => { statusDiv.innerHTML = ''; }, 3000);
             });
-        });
     });
+
+    // Inisialisasi Select2 untuk dropdown unit kerja
+    if (typeof jQuery !== 'undefined' && $.fn.select2) {
+        $('.unit-kerja-select').select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: '-- Pilih --'
+        });
+
+        // Autofocus kotak pencarian teks ketika dropdown Select2 diklik
+        $(document).on('select2:open', () => {
+            setTimeout(() => {
+                const searchField = document.querySelector('.select2-search__field');
+                if(searchField) searchField.focus();
+            }, 50);
+        });
+    }
+
+    // --- CLIENT-SIDE INFINITE SCROLLING LOGIC ---
+    let isLoading = false;
+    const skeletonLoader = document.getElementById('skeleton-loader');
+
+    // Buat observer
+    const observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && !isLoading) {
+            loadMoreData();
+        }
+    }, { rootMargin: "100px" });
+
+    // Observasi loader jika ada
+    if (skeletonLoader) {
+        observer.observe(skeletonLoader);
+        checkRemainingRows(); // Cek inisial saat halaman dimuat
+    }
+
+    function checkRemainingRows() {
+        const hiddenRows = document.querySelectorAll('tr.user-row-hidden');
+        if (hiddenRows.length === 0) {
+            skeletonLoader.classList.add('d-none');
+        } else {
+            skeletonLoader.classList.remove('d-none');
+        }
+    }
+
+    function loadMoreData() {
+        const hiddenRows = document.querySelectorAll('tr.user-row-hidden');
+        if (hiddenRows.length === 0) return;
+
+        isLoading = true;
+        
+        // Beri sedikit delay simulasi network (500ms) agar skeleton loading terlihat dan terasa mulus
+        setTimeout(() => {
+            const limit = Math.min(10, hiddenRows.length);
+            for (let i = 0; i < limit; i++) {
+                hiddenRows[i].classList.remove('d-none', 'user-row-hidden');
+                hiddenRows[i].classList.add('user-row-visible');
+            }
+            isLoading = false;
+            checkRemainingRows(); // Cek lagi apakah masih ada sisa untuk scroll berikutnya
+        }, 500);
+    }
 });
 </script>
 <?= $this->endSection() ?>

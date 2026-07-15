@@ -52,14 +52,21 @@ class UserController extends BaseController
         }
         
         if (!empty($unit)) {
-            $query = $query->where('users.unit', $unit);
+            if ($unit === 'kosong') {
+                $query = $query->groupStart()
+                               ->where('users.unit', '')
+                               ->orWhere('users.unit IS NULL')
+                               ->groupEnd();
+            } else {
+                $query = $query->where('users.unit', $unit);
+            }
         }
 
         $query = $query->orderBy($sortBy, $sortOrder);
         
-        // Paginate results
-        $data['users'] = $query->paginate($perPage, 'default');
-        $data['pager'] = $this->userModel->pager;
+        // Load all data for client-side infinite scroll
+        $data['users'] = $query->findAll();
+        $data['pager'] = null;
 
         // Ambil pemetaan pimpinan per unit untuk referensi sinkronisasi visual di View
         $pimpinanUnits = $this->userModel->select('unit, nama_lengkap')

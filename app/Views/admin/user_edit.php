@@ -43,7 +43,7 @@
                                 <option value="wadir" <?= $user['role'] == 'wadir' ? 'selected' : '' ?>>Wakil Direktur (Level 2)</option>
                                 <option value="kabag_aak" <?= $user['role'] == 'kabag_aak' ? 'selected' : '' ?>>Kabag AAK (Level 3)</option>
                                 <option value="kabag_kuk" <?= $user['role'] == 'kabag_kuk' ? 'selected' : '' ?>>Kabag KUK (Level 3)</option>
-                                <option value="manajemen" <?= $user['role'] == 'manajemen' ? 'selected' : '' ?>>Kanit / Katim / Manajemen (Level 4)</option>
+                                <option value="manajemen" <?= $user['role'] == 'manajemen' ? 'selected' : '' ?>>Kanit / Katim / Kaprodi (Level 4)</option>
                                 <option value="user" <?= $user['role'] == 'user' ? 'selected' : '' ?>>Staff / Pegawai / Dosen (Level 5)</option>
                                 <option value="admin" <?= $user['role'] == 'admin' ? 'selected' : '' ?>>Administrator (Sistem)</option>
                             </select>
@@ -73,7 +73,7 @@
                         <div class="mb-3">
                             <label class="form-label">Unit Kerja</label>
                             <select name="unit" class="form-select">
-                                <option value="">-- Pilih Unit Kerja --</option>
+                                <option value="">-- Tanpa Unit / Pimpinan Tinggi --</option>
                                 <?php if (!empty($unit_kerja_list)): ?>
                                     <?php foreach ($unit_kerja_list as $unit_kerja): ?>
                                         <option value="<?= esc($unit_kerja['nama_unit']) ?>" <?= ($user['unit'] == $unit_kerja['nama_unit']) ? 'selected' : '' ?>>

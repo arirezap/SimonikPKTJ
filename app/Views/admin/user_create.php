@@ -53,7 +53,7 @@
                                 <option value="kabag_kuk">Kabag KUK</option>
                                 <option value="direktur">Direktur</option>
                                 <option value="wadir">Wakil Direktur</option>
-                                <option value="manajemen">Manajemen (Lainnya)</option>
+                                <option value="manajemen">Manajemen (Kanit/Katim/Kaprodi)</option>
                             </select>
                         </div>
                     </div>
@@ -81,7 +81,7 @@
                         <div class="mb-3">
                             <label class="form-label">Unit Kerja</label>
                             <select name="unit" class="form-select">
-                                <option value="">-- Pilih Unit Kerja --</option>
+                                <option value="">-- Tanpa Unit / Pimpinan Tinggi --</option>
                                 <?php if (!empty($unit_kerja_list)): ?>
                                     <?php foreach ($unit_kerja_list as $unit_kerja): ?>
                                         <option value="<?= esc($unit_kerja['nama_unit']) ?>" <?= (old('unit') == $unit_kerja['nama_unit']) ? 'selected' : '' ?>><?= esc($unit_kerja['nama_unit']) ?></option>
