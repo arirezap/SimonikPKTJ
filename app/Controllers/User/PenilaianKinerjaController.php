@@ -62,20 +62,7 @@ class PenilaianKinerjaController extends BaseController
             $daftarBawahan = $builder->orderBy('nama_lengkap', 'ASC')->findAll();
             $isAtasan = true;
         } else {
-            // Samakan logika dengan TimController: Ambil bawahan berdasarkan atasan_id ATAU unit yang sama
-            $me = $userModel->find($userId);
-            $myUnit = $me['unit'] ?? null;
-            
-            $bawahanQuery = $userModel->where('id !=', $userId);
-            if (!empty($myUnit)) {
-                $bawahanQuery->groupStart()
-                             ->where('atasan_id', $userId)
-                             ->orWhere('unit', $myUnit)
-                             ->groupEnd();
-            } else {
-                $bawahanQuery->where('atasan_id', $userId);
-            }
-            $daftarBawahan = $bawahanQuery->orderBy('nama_lengkap', 'ASC')->findAll();
+            $daftarBawahan = $userModel->getAllBawahan($userId, $role);
             $isAtasan = !empty($daftarBawahan);
         }
 
