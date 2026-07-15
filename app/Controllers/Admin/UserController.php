@@ -61,6 +61,18 @@ class UserController extends BaseController
         $data['users'] = $query->paginate($perPage, 'default');
         $data['pager'] = $this->userModel->pager;
 
+        // Ambil pemetaan pimpinan per unit untuk referensi sinkronisasi visual di View
+        $pimpinanUnits = $this->userModel->select('unit, nama_lengkap')
+                                         ->whereIn('role', ['manajemen', 'kabag_aak', 'kabag_kuk', 'kabag'])
+                                         ->where('unit !=', '')
+                                         ->where('unit IS NOT NULL')
+                                         ->findAll();
+        $unitManagers = [];
+        foreach ($pimpinanUnits as $p) {
+            $unitManagers[$p['unit']] = $p['nama_lengkap'];
+        }
+        $data['unitManagers'] = $unitManagers;
+
         $data['search'] = $search;
         $data['filter_role'] = $role;
         $data['filter_unit'] = $unit;
@@ -157,6 +169,17 @@ class UserController extends BaseController
             return redirect()->to('users')->with('error', 'User tidak ditemukan');
         }
 
+        // Sinkronisasi visual untuk form edit: jika atasan_id = 0 tapi unit punya pimpinan, pre-fill atasan_id
+        if (empty($user['atasan_id']) && !empty($user['unit'])) {
+            $pimpinan = $this->userModel->where('unit', $user['unit'])
+                                        ->whereIn('role', ['manajemen', 'kabag_aak', 'kabag_kuk', 'kabag'])
+                                        ->first();
+            if ($pimpinan) {
+                $user['atasan_id'] = $pimpinan['id'];
+                $user['auto_synced_atasan'] = true;
+            }
+        }
+
         // Kecualikan diri sendiri dari list atasan
         $potentialBosses = $this->userModel->where('id !=', $id)->orderBy('nama_lengkap', 'ASC')->findAll();
         $unitKerjaModel = new UnitKerja();
@@ -193,7 +216,17 @@ class UserController extends BaseController
         ];
 
         $atasan_id = $this->request->getPost('atasan_id');
-        $data['atasan_id'] = !empty($atasan_id) ? $atasan_id : null;
+        $data['atasan_id'] = !empty($atasan_id) ? $atasan_id : 0;
+
+        // Jika atasan tidak dipilih tapi unit ada, cari pimpinannya secara otomatis
+        if (empty($atasan_id) && !empty($data['unit'])) {
+            $pimpinan = $this->userModel->where('unit', $data['unit'])
+                                        ->whereIn('role', ['manajemen', 'kabag_aak', 'kabag_kuk', 'kabag'])
+                                        ->first();
+            if ($pimpinan) {
+                $data['atasan_id'] = $pimpinan['id'];
+            }
+        }
 
         $password = $this->request->getPost('password');
         if (!empty($password)) {
@@ -227,6 +260,16 @@ class UserController extends BaseController
             $updateData['role'] = 'spm';
         }
 
+        // Sinkronisasi Atasan otomatis
+        if (!empty($unit)) {
+            $pimpinan = $this->userModel->where('unit', $unit)
+                                        ->whereIn('role', ['manajemen', 'kabag_aak', 'kabag_kuk', 'kabag'])
+                                        ->first();
+            $updateData['atasan_id'] = $pimpinan ? $pimpinan['id'] : 0;
+        } else {
+            $updateData['atasan_id'] = 0;
+        }
+
         if ($this->userModel->update($userId, $updateData)) {
             // SOLUSI: Sertakan token CSRF yang baru di dalam response
             $response_data = [
@@ -251,6 +294,11 @@ class UserController extends BaseController
             return redirect()->to('users')->with('error', 'Tidak ada pengguna yang dipilih untuk diupdate.');
         }
 
+        $atasan = null;
+        if (!empty($atasanId)) {
+            $atasan = $this->userModel->find($atasanId);
+        }
+
         // Konversi string "1,2,3" menjadi array [1, 2, 3]
         $idArray = explode(',', $userIds);
 
@@ -258,10 +306,13 @@ class UserController extends BaseController
         $dataToUpdate = [];
         foreach ($idArray as $id) {
             if (is_numeric(trim($id))) {
-                $dataToUpdate[] = [
-                    'id' => (int)trim($id),
-                    'atasan_id' => !empty($atasanId) ? (int)$atasanId : null
+                $updateItem = [
+                    'id' => (int)trim($id)
                 ];
+                if (!empty($atasanId)) {
+                    $updateItem['atasan_id'] = (int)$atasanId;
+                }
+                $dataToUpdate[] = $updateItem;
             }
         }
 

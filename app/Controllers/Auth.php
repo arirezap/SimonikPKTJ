@@ -61,6 +61,7 @@ class Auth extends BaseController
                 // Simpan Session Lengkap
                 $ses_data = [
                     'id'           => $data['id'],
+                    'user_id'      => $data['id'], // Kompatibilitas mundur
                     'username'     => $data['username'],
                     'nama'         => $data['nama_lengkap'], 
                     'nip'          => $data['nip'],           

@@ -123,29 +123,7 @@ Dashboard
 </div>
 <?php endif; ?>
 
-<div class="d-flex align-items-center mb-4">
-    <h4 class="mb-0 me-3">Kinerja Personal</h4>
-    <span class="badge bg-secondary fs-6"><?= esc(session()->get('nama_lengkap')) ?></span>
-</div>
 
-<div class="row g-4 mb-4">
-    <div class="col-md-6">
-        <div class="card text-bg-primary shadow h-100 border-0">
-            <div class="card-body p-4 text-center">
-                <h2 class="display-6 fw-bold mb-0"><?= esc($totalIndikator) ?></h2>
-                <p class="card-text fs-5">Total Indikator Kinerja</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card text-bg-success shadow h-100 border-0">
-            <div class="card-body p-4 text-center">
-                <h2 class="display-6 fw-bold mb-0"><?= round($rataRataCapaian, 2) ?>%</h2>
-                <p class="card-text fs-5">Rata-rata Capaian</p>
-            </div>
-        </div>
-    </div>
-</div>
 
 <?= $this->endSection() ?>
 

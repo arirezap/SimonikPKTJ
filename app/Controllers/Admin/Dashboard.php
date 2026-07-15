@@ -44,15 +44,26 @@ class Dashboard extends BaseController
         $tahun = $this->request->getGet('tahun') ?? date('Y');
         $bulan = $this->request->getGet('bulan') ?? 'all'; 
 
+        $user_id = session()->get('id') ?? session()->get('user_id');
+        $role = session()->get('role');
+        $canSeeAll = in_array($role, ['admin', 'direktur', 'wadir']);
+
         // ----------------------------------------------------------------
         // 1. DATA UNTUK SUMMARY CARDS & AGREGASI INDIKATOR
         // ----------------------------------------------------------------
-        $allRencana = $this->rencanaModel
+        $rencanaQuery = $this->rencanaModel
             ->select('rencana_kinerja.*')
             ->join('users', 'users.id = rencana_kinerja.user_id')
             ->where('users.role !=', 'admin') 
-            ->where('rencana_kinerja.tahun_anggaran', $tahun)
-            ->findAll();
+            ->where('rencana_kinerja.tahun_anggaran', $tahun);
+            
+        if (!$canSeeAll) {
+            $rencanaQuery->groupStart()
+                         ->where('users.id', $user_id)
+                         ->orWhere('users.atasan_id', $user_id)
+                         ->groupEnd();
+        }
+        $allRencana = $rencanaQuery->findAll();
 
         $totalPersen = 0;
         $countRencana = 0;
@@ -97,7 +108,14 @@ class Dashboard extends BaseController
         // ----------------------------------------------------------------
         // 2. DATA UNTUK GRAFIK PERBANDINGAN USER (TIM/UNIT)
         // ----------------------------------------------------------------
-        $users = $this->userModel->where('role !=', 'admin')->findAll();
+        $userQuery = $this->userModel->where('role !=', 'admin');
+        if (!$canSeeAll) {
+            $userQuery->groupStart()
+                      ->where('id', $user_id)
+                      ->orWhere('atasan_id', $user_id)
+                      ->groupEnd();
+        }
+        $users = $userQuery->findAll();
         $chartUserLabels = [];
         $chartUserData = [];
         $kinerja_per_user = [];
@@ -187,9 +205,18 @@ class Dashboard extends BaseController
             $bulanAngka = (int)$bulan;
         }
         
-        // Ambil semua bawahan (semua user jika admin)
-        $user_id = session()->get('user_id');
-        $daftarSemuaUser = $this->userModel->where('id !=', $user_id)->orderBy('nama_lengkap', 'ASC')->findAll();
+        if ($canSeeAll) {
+            $daftarSemuaUser = $this->userModel->where('role !=', 'admin')
+                                               ->where('id !=', $user_id)
+                                               ->orderBy('nama_lengkap', 'ASC')
+                                               ->findAll();
+        } else {
+            $daftarSemuaUser = $this->userModel->getAllBawahan($user_id, $role);
+            $me = $this->userModel->find($user_id);
+            if ($me) {
+                array_unshift($daftarSemuaUser, $me); // Tambahkan dirinya sendiri ke awal
+            }
+        }
 
         $rekapDashboard = [];
         $globalTepatWaktu = 0;

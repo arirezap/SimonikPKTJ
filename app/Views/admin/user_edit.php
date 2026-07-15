@@ -39,13 +39,13 @@
                         <div class="mb-3">
                             <label class="form-label">Role Aplikasi</label>
                             <select name="role" class="form-select">
-                                <option value="user" <?= $user['role'] == 'user' ? 'selected' : '' ?>>User (Pegawai/Dosen)</option>
-                                <option value="admin" <?= $user['role'] == 'admin' ? 'selected' : '' ?>>Administrator</option>
-                                <option value="kabag_aak" <?= $user['role'] == 'kabag_aak' ? 'selected' : '' ?>>Kabag AAK</option>
-                                <option value="kabag_kuk" <?= $user['role'] == 'kabag_kuk' ? 'selected' : '' ?>>Kabag KUK</option>
-                                <option value="direktur" <?= $user['role'] == 'direktur' ? 'selected' : '' ?>>Direktur</option>
-                                <option value="wadir" <?= $user['role'] == 'wadir' ? 'selected' : '' ?>>Wakil Direktur</option>
-                                <option value="manajemen" <?= $user['role'] == 'manajemen' ? 'selected' : '' ?>>Manajemen (Lainnya)</option>
+                                <option value="direktur" <?= $user['role'] == 'direktur' ? 'selected' : '' ?>>Direktur (Level 1)</option>
+                                <option value="wadir" <?= $user['role'] == 'wadir' ? 'selected' : '' ?>>Wakil Direktur (Level 2)</option>
+                                <option value="kabag_aak" <?= $user['role'] == 'kabag_aak' ? 'selected' : '' ?>>Kabag AAK (Level 3)</option>
+                                <option value="kabag_kuk" <?= $user['role'] == 'kabag_kuk' ? 'selected' : '' ?>>Kabag KUK (Level 3)</option>
+                                <option value="manajemen" <?= $user['role'] == 'manajemen' ? 'selected' : '' ?>>Kanit / Katim / Manajemen (Level 4)</option>
+                                <option value="user" <?= $user['role'] == 'user' ? 'selected' : '' ?>>Staff / Pegawai / Dosen (Level 5)</option>
+                                <option value="admin" <?= $user['role'] == 'admin' ? 'selected' : '' ?>>Administrator (Sistem)</option>
                             </select>
                         </div>
                     </div>

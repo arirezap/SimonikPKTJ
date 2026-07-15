@@ -3,11 +3,10 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Waktu pembuatan: 19 Jun 2026 pada 07.31
+-- Waktu pembuatan: 14 Jul 2026 pada 10.14
 -- Versi server: 8.4.3
--- Versi PHP: 8.3.26
+-- Versi PHP: 8.2.32
 
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
 
@@ -72,6 +71,38 @@ CREATE TABLE `jadwal_diklat` (
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `laporan_harian`
+--
+
+CREATE TABLE `laporan_harian` (
+  `id` int UNSIGNED NOT NULL,
+  `user_id` int UNSIGNED NOT NULL,
+  `tanggal` date DEFAULT NULL,
+  `bulan` int NOT NULL,
+  `tahun` int NOT NULL,
+  `sasaran_program` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `indikator_kinerja` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `target_bulanan` decimal(10,2) DEFAULT NULL,
+  `satuan` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data untuk tabel `laporan_harian`
+--
+
+INSERT INTO `laporan_harian` (`id`, `user_id`, `tanggal`, `bulan`, `tahun`, `sasaran_program`, `indikator_kinerja`, `target_bulanan`, `satuan`, `created_at`, `updated_at`) VALUES
+(1, 146, NULL, 6, 2026, 'test 1', 'test 1', 1.00, 'kegiatan', '2026-06-24 02:59:54', '2026-06-24 02:59:54'),
+(2, 146, NULL, 6, 2026, 'test 2', 'test 2', 2.00, 'dokumentasi', '2026-06-24 02:59:54', '2026-06-24 02:59:54'),
+(3, 146, NULL, 6, 2026, 'test 3', 'test 3', 3.00, 'dokumentasi', '2026-06-24 02:59:54', '2026-06-24 02:59:54'),
+(4, 146, NULL, 7, 2026, 'Melakukan deteksi dan atau memperbaiki kerusakan sistem operasi komputer', 'Tersusunnya laporan deteksi dan atau memperbaiki kerusakan sistem operasi komputer', 1.00, 'laporan', '2026-07-01 01:34:47', '2026-07-06 02:45:04'),
+(5, 146, NULL, 7, 2026, 'Melakukan instalasi dan atau meningkatkan (upgrade) sistem operasi komputer/perangkat lunak/sistem jaringan komputer', 'Tersusunnya laporan instalasi dan atau meningkatkan (upgrade) sistem operasi komputer/perangkat lunak/sistem jaringan komputer', 1.00, 'laporan', '2026-07-01 01:34:47', '2026-07-06 02:45:04'),
+(6, 146, NULL, 7, 2026, 'Membuat dokumentasi pengelolaan komputer', 'Tersusunnya laporan dokumentasi pengelolaan komputer', 1.00, 'laporan', '2026-07-01 01:40:58', '2026-07-06 02:45:04');
 
 -- --------------------------------------------------------
 
@@ -1208,6 +1239,38 @@ INSERT INTO `led_submissions` (`id`, `user_id`, `prodi`, `tahun`, `led_criteria_
 -- --------------------------------------------------------
 
 --
+-- Struktur dari tabel `log_kegiatan_harian`
+--
+
+CREATE TABLE `log_kegiatan_harian` (
+  `id` int UNSIGNED NOT NULL,
+  `user_id` int UNSIGNED NOT NULL,
+  `target_id` int UNSIGNED NOT NULL,
+  `tanggal_kegiatan` date NOT NULL,
+  `deskripsi_kegiatan` text COLLATE utf8mb4_general_ci NOT NULL,
+  `jumlah_capaian` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `link_bukti` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  `waktu_penyelesaian` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `kualitas_hasil` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `disiplin` int DEFAULT NULL,
+  `kerjasama` int DEFAULT NULL,
+  `nilai_harian` decimal(10,2) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data untuk tabel `log_kegiatan_harian`
+--
+
+INSERT INTO `log_kegiatan_harian` (`id`, `user_id`, `target_id`, `tanggal_kegiatan`, `deskripsi_kegiatan`, `jumlah_capaian`, `link_bukti`, `created_at`, `updated_at`, `waktu_penyelesaian`, `kualitas_hasil`, `disiplin`, `kerjasama`, `nilai_harian`) VALUES
+(7, 146, 4, '2026-07-01', 'monitoring 1', 2.00, 'https://drive.google.com/drive/folders/1pHhTf0ZA78L37460IXLIj_4hlHc21-wS?usp=sharing', '2026-07-01 04:22:29', '2026-07-07 06:46:52', 'Tepat waktu', 'Baik', 96, 50, 73.00),
+(8, 146, 4, '2026-07-06', 'Membuat laporan kondisi komputer Lab. CBT', 1.00, 'https://drive.google.com/drive/folders/1pHhTf0ZA78L37460IXLIj_4hlHc21-wS?usp=sharing', '2026-07-06 02:53:54', '2026-07-07 06:46:52', 'Tepat waktu', 'Cukup', 86, 76, 81.00),
+(9, 146, 6, '2026-07-13', 'laporan', 1.00, 'https://drive.google.com/drive/u/0/', '2026-07-13 15:19:17', '2026-07-13 15:19:17', NULL, NULL, NULL, NULL, NULL);
+
+-- --------------------------------------------------------
+
+--
 -- Struktur dari tabel `master_indikator`
 --
 
@@ -1282,7 +1345,12 @@ INSERT INTO `migrations` (`id`, `version`, `class`, `group`, `namespace`, `time`
 (39, '2026-02-08-081237', 'App\\Database\\Migrations\\AddFieldsToSkpTargets', 'default', 'App', 1770538591, 22),
 (40, '2026-02-08-085653', 'App\\Database\\Migrations\\CreateMasterIndikator', 'default', 'App', 1770541030, 23),
 (42, '2026-04-10-030246', 'App\\Database\\Migrations\\CreateUnitKerjaTable', 'default', 'App', 1775793092, 24),
-(43, '2026-04-10-035010', 'App\\Database\\Migrations\\AddParentUnitToUnitKerja', 'default', 'App', 1775793141, 25);
+(43, '2026-04-10-035010', 'App\\Database\\Migrations\\AddParentUnitToUnitKerja', 'default', 'App', 1775793141, 25),
+(44, '2026-06-24-021818', 'App\\Database\\Migrations\\LaporanHarian', 'default', 'App', 1782267668, 26),
+(45, '2026-06-24-024318', 'App\\Database\\Migrations\\AddTanggalToLaporanHarian', 'default', 'App', 1782269017, 27),
+(46, '2026-06-24-025652', 'App\\Database\\Migrations\\LogKegiatanHarian', 'default', 'App', 1782269840, 28),
+(47, '2026-06-24-030337', 'App\\Database\\Migrations\\AddPenilaianToLogKegiatan', 'default', 'App', 1782270246, 29),
+(48, '2026-06-24-034857', 'App\\Database\\Migrations\\Settings', 'default', 'App', 1782273075, 30);
 
 -- --------------------------------------------------------
 
@@ -1445,6 +1513,29 @@ INSERT INTO `satuan` (`id`, `nama_satuan`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Struktur dari tabel `settings`
+--
+
+CREATE TABLE `settings` (
+  `setting_key` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `setting_name` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `setting_value` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `description` text COLLATE utf8mb4_general_ci,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data untuk tabel `settings`
+--
+
+INSERT INTO `settings` (`setting_key`, `setting_name`, `setting_value`, `description`, `created_at`, `updated_at`) VALUES
+('batas_input_log', 'Batas Pelaporan Harian', '0', 'Jumlah hari maksimal (setelah tanggal kegiatan) untuk boleh mengisi laporan harian.', '2026-06-24 03:51:15', '2026-06-24 03:57:28'),
+('batas_input_target', 'Batas Pengisian Target Bulanan', '10', 'Angka (tanggal) maksimal di bulan tersebut untuk mengisi target bulan berjalan.', '2026-06-24 03:51:15', '2026-06-24 03:57:28');
+
+-- --------------------------------------------------------
+
+--
 -- Struktur dari tabel `skp_headers`
 --
 
@@ -1549,7 +1640,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `password`, `nama_lengkap`, `email`, `role`, `atasan_id`, `foto`, `nip`, `jabatan`, `unit`, `pangkat`) VALUES
-(1, 'admin', '$2y$10$UkLmczVlKdYiRFLjnVqyHenXPX026.PvzPzlb8iN1Uy8oKpx7ODsG', 'Administrator Utama', 'admin@ecc.com', 'admin', NULL, 'default.png', '', '', '', ''),
+(1, 'admin', '$2y$10$UkLmczVlKdYiRFLjnVqyHenXPX026.PvzPzlb8iN1Uy8oKpx7ODsG', 'Administrator Utama', 'admin@simonik.com', 'admin', NULL, 'default.png', '', '', '', ''),
 (8, 'diklatpktj', '$2y$10$DMeeWEKxZD5Z9w.r4Ed1Pez0w1Qia.x2q0f7IOAX8st4Xt3.tV.W.', 'Pokja Diklat', 'diklat@pktj.ac.id', 'user', 12, 'default.png', '', '', '', ''),
 (9, 'keuanganpktj', '$2y$10$iJegL2gtWXf36zF.qKnLBuqLhojF8S/5l9SnzzcLH6W3pixOGAFVu', 'Keuangan PKTJ', 'keuangan@pktj.ac.id', 'kuk', NULL, 'default.png', NULL, NULL, NULL, NULL),
 (13, 'kukpktj', '$2y$10$0B2mb/Vfm2QWNwXp/2Q6jOPqxi0rkGaNdsV6TROVYApC6/p6gDtoq', 'Kabag KUK', 'kukpktj@pktj.ac.id', 'kabag_kuk', 50, 'default.png', '', '', '', ''),
@@ -1585,7 +1676,7 @@ INSERT INTO `users` (`id`, `username`, `password`, `nama_lengkap`, `email`, `rol
 (47, '196603261986031007', 'ff9f3cf535e4790640392e49e9a3b3ca', 'AGUS BUDI PURWANTORO', '196603261986031007@pktj.ac.id', 'user', 0, NULL, '196603261986031007', '', '', ''),
 (48, '197006041996031002', '71eb14122bdb11c5023aab21eb4b7a76', 'MOHAMAD HERMAWAN', '197006041996031002@pktj.ac.id', 'user', 0, NULL, '197006041996031002', '', '', ''),
 (49, '197005191993011001', 'c03be0d9e481bbf9a4621a1fb0244d35', 'HANENDYO PUTRO', '197005191993011001@pktj.ac.id', 'user', 0, NULL, '197005191993011001', '', '', ''),
-(50, '197307011996021002', 'e6aa1c30351a38622b00030e87a1b460', 'BAMBANG ISTIYANTO', '197307011996021002@pktj.ac.id', 'manajemen', NULL, '1776056545_e5aa8872b3b475849e96.png', '197307011996021002', 'Direktur', '', ''),
+(50, '197307011996021002', 'e6aa1c30351a38622b00030e87a1b460', 'BAMBANG ISTIYANTO', '197307011996021002@pktj.ac.id', 'direktur', NULL, '1776056545_e5aa8872b3b475849e96.png', '197307011996021002', 'Direktur', '', ''),
 (51, '197311092005022001', '43029d75ee00afbb970fe0aef7c863a2', 'NOVITASARI TRI NUGRAH ENI', '197311092005022001@pktj.ac.id', 'user', 0, NULL, '197311092005022001', '', '', ''),
 (52, '197302052005021001', '2b19c53d1db36f134485c1e8c1764dce', 'CORSINUS TRISNO SUSANTO', '197302052005021001@pktj.ac.id', 'user', 173, NULL, '197302052005021001', '', '', ''),
 (53, '197411292006041001', '5564f5aa6e28fed743f4b077e5382907', 'R.ARIEF NOVIANTO', '197411292006041001@pktj.ac.id', 'user', 173, NULL, '197411292006041001', '', '', ''),
@@ -1613,7 +1704,7 @@ INSERT INTO `users` (`id`, `username`, `password`, `nama_lengkap`, `email`, `rol
 (75, '198006022009121001', 'e175684d7c272a7d2ad06e7a41595afd', 'ETHYS PRANOTO', '198006022009121001@pktj.ac.id', 'user', 173, NULL, '198006022009121001', '', '', ''),
 (76, '198503112008121004', '6132edfff8b10a0a228f36f3a5b32076', 'FAHRIZAL ADHIKRISNA', '198503112008121004@pktj.ac.id', 'user', 0, NULL, '198503112008121004', '', '', ''),
 (77, '198805282019021002', '791a84bc82095f6b11c38882116a0d89', 'JOKO SISWANTO', '198805282019021002@pktj.ac.id', 'user', 57, NULL, '198805282019021002', '', 'Satuan Penjaminan Mutu', ''),
-(78, '198908222019021001', 'a1188516719869b8cd9a6b5fcb721242', 'MOKHAMMAD RIFQI TSANI', '198908222019021001@pktj.ac.id', 'manajemen', 173, NULL, '198908222019021001', '', '', ''),
+(78, '198908222019021001', 'a1188516719869b8cd9a6b5fcb721242', 'MOKHAMMAD RIFQI TSANI', '198908222019021001@pktj.ac.id', 'manajemen', 173, NULL, '198908222019021001', '', 'Unit Teknik Informatika', ''),
 (79, '199301042019021002', '2c3bada0cd26f95e2dbef5abc87989ed', 'MUHAMMAD IMAN NUR HAKIM', '199301042019021002@pktj.ac.id', 'user', 173, NULL, '199301042019021002', '', '', ''),
 (80, '199210092019021002', '5ac119e07726701a59ca47ef5c3913b8', 'MOCH. AZIZ KURNIAWAN', '199210092019021002@pktj.ac.id', 'user', 0, NULL, '199210092019021002', '', '', ''),
 (81, '198309252008121001', '242fc07bdf10cabc0a7907342b8bf851', 'AHMAD BASUKI', '198309252008121001@pktj.ac.id', 'user', 0, NULL, '198309252008121001', '', '', ''),
@@ -1681,7 +1772,7 @@ INSERT INTO `users` (`id`, `username`, `password`, `nama_lengkap`, `email`, `rol
 (143, '199010232023211024', '7ffccfd9bb46816c0e970df96ba84525', 'IBNU AFAN', '199010232023211024@pktj.ac.id', 'user', 0, NULL, '199010232023211024', '', 'Satuan Penjaminan Mutu', ''),
 (144, '199206152023212050', '833755d06845759cdb403ac1d7317730', 'UMUL MU\'MININ', '199206152023212050@pktj.ac.id', 'user', 0, NULL, '199206152023212050', '', '', ''),
 (145, '199505312023212038', '3dc5858d604c25e294519b8af75749df', 'FARAH MEIGHINA', '199505312023212038@pktj.ac.id', 'user', 0, NULL, '199505312023212038', '', '', ''),
-(146, '199806112023211004', '708f2626a4234918e1a748d41c16e815', 'ARI REZA PRAKASA', 'ari@pktj.ac.id', 'user', 173, '1775787299_6d2401313512eaf5f6f8.png', '199806112023211004', 'Pranata Komputer Ahli Pertama', 'Unit Teknik Informatika', 'IX'),
+(146, '199806112023211004', '708f2626a4234918e1a748d41c16e815', 'ARI REZA PRAKASA', 'ari@pktj.ac.id', 'user', NULL, '1775787299_6d2401313512eaf5f6f8.png', '199806112023211004', 'Pranata Komputer Ahli Pertama', '', 'IX'),
 (147, '199006082024212019', 'd3a381acf8fddaebceae3e69cb11ff16', 'DYAH AYU LARASATI', '199006082024212019@pktj.ac.id', 'user', 0, NULL, '199006082024212019', '', '', ''),
 (148, '199201142024212015', '642a0b9587cb2824d0def9382048ce35', 'LURA SATIVA', '199201142024212015@pktj.ac.id', 'user', 0, NULL, '199201142024212015', '', '', ''),
 (149, '199309152024212017', '4deae42d70f30ab44e898585a1e340b0', 'FRISCA LEVI INDRIYANA', '199309152024212017@pktj.ac.id', 'user', 0, NULL, '199309152024212017', '', '', ''),
@@ -1727,6 +1818,12 @@ ALTER TABLE `jadwal_diklat`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indeks untuk tabel `laporan_harian`
+--
+ALTER TABLE `laporan_harian`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indeks untuk tabel `led_criteria`
 --
 ALTER TABLE `led_criteria`
@@ -1749,6 +1846,12 @@ ALTER TABLE `led_standar`
 -- Indeks untuk tabel `led_submissions`
 --
 ALTER TABLE `led_submissions`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indeks untuk tabel `log_kegiatan_harian`
+--
+ALTER TABLE `log_kegiatan_harian`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -1788,6 +1891,12 @@ ALTER TABLE `sasaran`
 --
 ALTER TABLE `satuan`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indeks untuk tabel `settings`
+--
+ALTER TABLE `settings`
+  ADD PRIMARY KEY (`setting_key`);
 
 --
 -- Indeks untuk tabel `skp_headers`
@@ -1832,6 +1941,12 @@ ALTER TABLE `jadwal_diklat`
   MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT untuk tabel `laporan_harian`
+--
+ALTER TABLE `laporan_harian`
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
 -- AUTO_INCREMENT untuk tabel `led_criteria`
 --
 ALTER TABLE `led_criteria`
@@ -1856,6 +1971,12 @@ ALTER TABLE `led_submissions`
   MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=601;
 
 --
+-- AUTO_INCREMENT untuk tabel `log_kegiatan_harian`
+--
+ALTER TABLE `log_kegiatan_harian`
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
 -- AUTO_INCREMENT untuk tabel `master_indikator`
 --
 ALTER TABLE `master_indikator`
@@ -1865,7 +1986,7 @@ ALTER TABLE `master_indikator`
 -- AUTO_INCREMENT untuk tabel `migrations`
 --
 ALTER TABLE `migrations`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
 
 --
 -- AUTO_INCREMENT untuk tabel `remunerasi`

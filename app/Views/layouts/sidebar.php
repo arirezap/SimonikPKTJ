@@ -149,6 +149,14 @@ $isDirektur = ($role === 'direktur');
                 <li class="nav-item"><a href="<?= site_url('monitoring') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/monitoring')) ? 'active' : '' ?>"><i class="bi bi-kanban-fill"></i><span>Monitoring Kinerja</span></a></li>
             <?php endif; ?>
 
+            <?php if ($isManajemenLevel || $isKabagKuk): ?>
+                <li class="nav-item">
+                    <a class="nav-link <?= (str_starts_with($current_uri, 'user/tim') || $current_uri == 'tim') ? 'active' : '' ?>" href="<?= site_url('tim') ?>">
+                        <i class="bi bi-people-fill"></i><span>Kelola Tim</span>
+                    </a>
+                </li>
+            <?php endif; ?>
+
             <?php if (false && $isAdmin): // Disembunyikan sementara ?>
                 <li class="nav-item">
 

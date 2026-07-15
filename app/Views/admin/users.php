@@ -236,7 +236,21 @@
                                 </select>
                                 <div class="update-status small mt-1"></div>
                             </td>
-                            <td><span class="badge bg-secondary"><?= esc($user['role']) ?></span></td>
+                            <td>
+                                <?php 
+                                    $roleLabels = [
+                                        'direktur' => 'Direktur (Level 1)',
+                                        'wadir' => 'Wakil Direktur (Level 2)',
+                                        'kabag_aak' => 'Kabag AAK (Level 3)',
+                                        'kabag_kuk' => 'Kabag KUK (Level 3)',
+                                        'manajemen' => 'Kanit/Katim (Level 4)',
+                                        'user' => 'Staff (Level 5)',
+                                        'admin' => 'Administrator'
+                                    ];
+                                    $roleText = $roleLabels[$user['role']] ?? $user['role'];
+                                ?>
+                                <span class="badge bg-secondary"><?= esc($roleText) ?></span>
+                            </td>
                             <td>
                                 <?php if (!empty($user['unit_kabag'])):
                                     $unit_kabag = esc($user['unit_kabag']);
@@ -251,8 +265,20 @@
                             </td>
                             
                             <td>
-                                <?php if($user['nama_atasan'] != '-'): ?>
-                                    <span class="badge bg-success"><i class="bi bi-person-check-fill"></i> <?= esc($user['nama_atasan']) ?></span>
+                                <?php 
+                                    $atasan_display = $user['nama_atasan'] ?? null;
+                                    $is_auto_synced = false;
+                                    // Jika atasan belum diset, cek pimpinan unitnya
+                                    if ((empty($atasan_display) || $atasan_display === '-') && !empty($user['unit']) && isset($unitManagers[$user['unit']])) {
+                                        $atasan_display = $unitManagers[$user['unit']];
+                                        $is_auto_synced = true;
+                                    }
+                                ?>
+                                <?php if(!empty($atasan_display) && $atasan_display !== '-'): ?>
+                                    <span class="badge <?= $is_auto_synced ? 'bg-info text-dark' : 'bg-success' ?>" <?= $is_auto_synced ? 'title="Disinkronisasi otomatis dari Unit Kerja"' : '' ?>>
+                                        <i class="bi bi-person-check-fill"></i> <?= esc($atasan_display) ?>
+                                        <?= $is_auto_synced ? ' <i class="bi bi-arrow-repeat"></i>' : '' ?>
+                                    </span>
                                 <?php else: ?>
                                     <span class="text-muted font-italic" style="font-size: 0.85em;">Tidak diset / Puncak Pimpinan</span>
                                 <?php endif; ?>

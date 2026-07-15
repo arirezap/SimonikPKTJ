@@ -31,7 +31,7 @@ class PenilaianKinerjaController extends BaseController
         $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
         $role = session()->get('role');
-        $isSuper = in_array($role, ['admin', 'direktur', 'wadir', 'manajemen']);
+        $isSuper = in_array($role, ['admin', 'direktur', 'wadir']);
 
         // Ambil daftar unit kerja untuk filter (Hanya untuk Super)
         $daftarUnit = [];
@@ -51,7 +51,7 @@ class PenilaianKinerjaController extends BaseController
             $daftarBawahan = $builder->orderBy('nama_lengkap', 'ASC')->findAll();
             $isAtasan = true;
         } else {
-            $daftarBawahan = $userModel->getBawahan($userId);
+            $daftarBawahan = $userModel->getAllBawahan($userId, $role);
             $isAtasan = !empty($daftarBawahan);
         }
 

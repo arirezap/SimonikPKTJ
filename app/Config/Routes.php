@@ -160,6 +160,12 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     // Di dalam $routes->group('user' ...
     $routes->post('skp/target/store', 'User\Skp::storeTarget');
     $routes->match(['get', 'post'], 'skp/delete/(:num)', 'User\Skp::delete/$1');
+    // --- Kelola Tim ---
+    $routes->get('tim', 'User\TimController::index');
+    $routes->post('tim/add', 'User\TimController::addBawahan');
+    $routes->post('tim/remove', 'User\TimController::removeBawahan');
+    $routes->post('tim/update_unit', 'User\TimController::updateUnit');
+
     // --- Laporan Kinerja Harian ---
     $routes->match(['get', 'post'], 'laporan-harian', 'User\LaporanHarianController::index');
     $routes->post('laporan-harian/store', 'User\LaporanHarianController::store');

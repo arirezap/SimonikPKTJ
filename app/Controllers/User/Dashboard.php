@@ -15,7 +15,7 @@ class Dashboard extends BaseController
     {
         $rencanaModel = new RencanaKinerjaModel();
         $userModel = new UserModel();
-        $user_id = session()->get('user_id');
+        $user_id = session()->get('id') ?? session()->get('user_id');
 
         $tahun_terpilih = $this->request->getGet('tahun') ?? date('Y');
 
@@ -121,13 +121,8 @@ class Dashboard extends BaseController
         $logModel = new \App\Models\LogKegiatanHarian();
         $bulanTerpilih = date('n');
 
-        if ($isSuper) {
-            $daftarBawahan = $userModel->where('id !=', $user_id)->orderBy('nama_lengkap', 'ASC')->findAll();
-            $isAtasan = true;
-        } else {
-            $daftarBawahan = $userModel->getBawahan($user_id);
-            $isAtasan = !empty($daftarBawahan);
-        }
+        $daftarBawahan = $userModel->getAllBawahan($user_id, $role);
+        $isAtasan = !empty($daftarBawahan);
 
         $rekapDashboard = [];
         if ($isAtasan) {
