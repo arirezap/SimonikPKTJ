@@ -24,8 +24,7 @@
 </head>
 
 <body>
-    <!-- Overlay untuk Sidebar di Mobile -->
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <!-- Bootstrap Offcanvas menangani backdrop secara otomatis -->
 
     <div class="main-wrapper">
         <?= $this->include('layouts/sidebar') ?>
@@ -35,7 +34,7 @@
             <header class="navbar navbar-expand header-promax mb-4 px-3 px-md-4 py-2">
                 <div class="container-fluid px-0">
                     <div class="d-flex align-items-center">
-                        <button class="btn btn-link text-primary d-lg-none me-2 p-0 text-decoration-none" id="mobileMenuToggle">
+                        <button class="btn btn-link text-primary d-lg-none me-2 p-0 text-decoration-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas" aria-controls="sidebarOffcanvas">
                             <i class="bi bi-list fs-1 text-primary"></i>
                         </button>
                         <div class="d-flex flex-column">
@@ -166,21 +165,7 @@
             });
         }
 
-        // Event Listener Tombol Toggle (Mobile)
-        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
-        const sidebar = document.querySelector('.sidebar');
-        const sidebarOverlay = document.getElementById('sidebarOverlay');
 
-        if (mobileMenuToggle && sidebarOverlay) {
-            mobileMenuToggle.addEventListener('click', function() {
-                sidebar.classList.add('mobile-show');
-                sidebarOverlay.classList.add('show');
-            });
-            sidebarOverlay.addEventListener('click', function() {
-                sidebar.classList.remove('mobile-show');
-                sidebarOverlay.classList.remove('show');
-            });
-        }
     });
 </script>
     <?= $this->renderSection('scripts') ?>

@@ -29,14 +29,22 @@ $isDirektur = ($role === 'direktur');
 ?>
 
 
-<div class="sidebar">
-    <i class="bi bi-list sidebar-toggle" id="sidebarToggle"></i>
+<div class="sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarOffcanvasLabel">
+    <i class="bi bi-list sidebar-toggle d-none d-lg-block" id="sidebarToggle"></i>
 
-    <div class="sidebar-header">
+    <div class="sidebar-header d-none d-lg-block">
         <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ">
     </div>
+    
+    <!-- Header Sidebar Mobile (Offcanvas) -->
+    <div class="offcanvas-header d-lg-none border-bottom px-4 py-3">
+        <h5 class="offcanvas-title" id="sidebarOffcanvasLabel">
+            <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ" style="height: 45px;">
+        </h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" data-bs-target="#sidebarOffcanvas" aria-label="Close"></button>
+    </div>
 
-    <div class="sidebar-menu">
+    <div class="sidebar-menu offcanvas-body p-0 d-block">
         <ul class="nav flex-column">
 
             <li class="nav-item">

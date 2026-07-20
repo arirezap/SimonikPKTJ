@@ -124,3 +124,10 @@ _modules/*
 
 /results/
 /phpunit*.xml
+
+#-------------------------
+# Database Dumps
+#-------------------------
+*.sql
+*.sqlite
+*.db
