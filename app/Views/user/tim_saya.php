@@ -7,7 +7,7 @@
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2">Kelola Tim Saya</h1>
         <div class="btn-toolbar mb-2 mb-md-0">
-            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addBawahanModal">
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addStafModal">
                 <i class="bi bi-person-plus-fill"></i> Tambah Anggota Tim
             </button>
         </div>
@@ -78,12 +78,12 @@
     </div>
 </div>
 
-<!-- Modal Tambah Bawahan -->
-<div class="modal fade" id="addBawahanModal" tabindex="-1" aria-labelledby="addBawahanModalLabel" aria-hidden="true">
+<!-- Modal Tambah Staf -->
+<div class="modal fade" id="addStafModal" tabindex="-1" aria-labelledby="addStafModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="addBawahanModalLabel">Tambah Anggota Tim</h5>
+                <h5 class="modal-title" id="addStafModalLabel">Tambah Anggota Tim</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="<?= site_url('tim/add') ?>" method="post">
@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Inisialisasi Select2 jika tersedia
     if (typeof jQuery !== 'undefined' && $.fn.select2) {
         $('.select2').select2({
-            dropdownParent: $('#addBawahanModal')
+            dropdownParent: $('#addStafModal')
         });
     }
 

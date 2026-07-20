@@ -84,7 +84,7 @@ Dashboard
 <div class="card shadow-sm border-0 rounded-4 mb-5">
     <div class="card-body p-4">
         <?php if (empty($chartPegawaiUnitLabels)): ?>
-            <div class="alert alert-info border-0 shadow-sm"><i class="bi bi-info-circle me-2"></i> Belum ada data rekap kinerja bawahan untuk bulan ini.</div>
+            <div class="alert alert-info border-0 shadow-sm"><i class="bi bi-info-circle me-2"></i> Belum ada data rekap kinerja staf untuk bulan ini.</div>
         <?php else: ?>
             <div class="performance-chart-container" style="height: 400px;">
                 <canvas id="unitPerformanceChart"></canvas>

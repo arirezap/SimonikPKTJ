@@ -106,7 +106,7 @@ Rekap & Penilaian Kinerja
             <?php if ($is_atasan): ?>
             <li class="nav-item" role="presentation">
                 <button class="nav-link <?= !empty($bawahan_id_terpilih) ? 'active' : '' ?> fw-bold text-success" id="bawahan-tab" data-bs-toggle="tab" data-bs-target="#bawahan" type="button" role="tab" aria-controls="bawahan" aria-selected="<?= !empty($bawahan_id_terpilih) ? 'true' : 'false' ?>">
-                    <i class="bi bi-people-fill me-1"></i> Penilaian Bawahan
+                    <i class="bi bi-people-fill me-1"></i> Penilaian Staf
                 </button>
             </li>
             <?php endif; ?>
@@ -259,7 +259,7 @@ Rekap & Penilaian Kinerja
             <!-- TAB: PENILAIAN BAWAHAN (KHUSUS ATASAN) -->
             <div class="tab-pane fade <?= !empty($bawahan_id_terpilih) ? 'show active' : '' ?>" id="bawahan" role="tabpanel" aria-labelledby="bawahan-tab">
                 
-                <form method="POST" action="<?= site_url('penilaian-kinerja') ?>" class="mb-4 p-3 bg-light rounded border" id="formPilihBawahan">
+                <form method="POST" action="<?= site_url('penilaian-kinerja') ?>" class="mb-4 p-3 bg-light rounded border" id="formPilihStaf">
                     <?= csrf_field() ?>
                     <input type="hidden" name="bulan" value="<?= esc($bulan_terpilih) ?>">
                     <input type="hidden" name="tahun" value="<?= esc($tahun_terpilih) ?>">
@@ -267,9 +267,9 @@ Rekap & Penilaian Kinerja
                     
                     <div class="row align-items-end">
                         <div class="col-md-6">
-                            <label class="form-label fw-bold text-success mb-1" style="font-size: 0.9rem;">Pilih Bawahan yang Akan Dinilai</label>
-                            <select name="bawahan_id" id="selectBawahan" class="form-select border-success" onchange="this.form.submit()">
-                                <option value="">-- Pilih Bawahan --</option>
+                            <label class="form-label fw-bold text-success mb-1" style="font-size: 0.9rem;">Pilih Staf yang Akan Dinilai</label>
+                            <select name="bawahan_id" id="selectStaf" class="form-select border-success" onchange="this.form.submit()">
+                                <option value="">-- Pilih Staf --</option>
                                 <?php foreach ($daftar_bawahan as $b): ?>
                                     <option value="<?= $b['id'] ?>" <?= ($b['id'] == $bawahan_id_terpilih) ? 'selected' : '' ?>>
                                         <?= esc($b['nama_lengkap']) ?>
@@ -308,7 +308,7 @@ Rekap & Penilaian Kinerja
                         ?>
                         <div class="alert alert-light border-<?= $warnaScoreBwh === 'warning text-dark' ? 'warning' : $warnaScoreBwh ?> border-start border-4 shadow-sm mb-4 mt-3 d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="fw-bold mb-1 text-dark">Ringkasan Kinerja Bawahan Bulan Ini</h6>
+                                <h6 class="fw-bold mb-1 text-dark">Ringkasan Kinerja Staf Bulan Ini</h6>
                                 <small class="text-muted">Dari <?= count($rekap_data_bawahan) ?> aktivitas yang dilaporkan, <?= $jmlDinilaiBwh ?> telah dievaluasi.</small>
                             </div>
                             <div class="text-end">
@@ -421,17 +421,17 @@ Rekap & Penilaian Kinerja
             </div>
 
                             <div class="mt-4 text-end">
-                                <button type="submit" class="btn btn-success px-4"><i class="bi bi-save me-2"></i> Simpan Penilaian Bawahan</button>
+                                <button type="submit" class="btn btn-success px-4"><i class="bi bi-save me-2"></i> Simpan Penilaian Staf</button>
                             </div>
                         </form>
                     <?php endif; ?>
                 <?php else: ?>
                     <div class="alert alert-secondary mt-3">
-                        <i class="bi bi-arrow-up-circle me-2"></i> Silakan pilih bawahan pada dropdown di atas untuk memulai penilaian.
+                        <i class="bi bi-arrow-up-circle me-2"></i> Silakan pilih staf pada dropdown di atas untuk memulai penilaian.
                     </div>
                 <?php endif; ?>
 
-            </div> <!-- End Tab Bawahan -->
+            </div> <!-- End Tab Staf -->
             <?php endif; ?>
 
             
@@ -572,13 +572,13 @@ Rekap & Penilaian Kinerja
 
     $(document).ready(function() {
         // Inisialisasi Select2
-        if ($('#selectBawahan').length) {
-            $('#selectBawahan').select2({ 
+        if ($('#selectStaf').length) {
+            $('#selectStaf').select2({ 
                 width: '100%', 
                 placeholder: "Cari Nama...",
                 allowClear: false // Matikan clear kecil karena sudah ada tombol besar
             });
-            $('#selectBawahan').on('select2:select', function (e) { $(this).closest('form').submit(); });
+            $('#selectStaf').on('select2:select', function (e) { $(this).closest('form').submit(); });
         }
         
         // Klik pada Kartu Pegawai
@@ -731,8 +731,8 @@ Rekap & Penilaian Kinerja
             if ($('#selectUnit').length) {
                 $('#selectUnit').val('');
             }
-            if ($('#selectBawahan').length) {
-                $('#selectBawahan').val(''); // Kosongkan nilai tanpa mengubah DOM optionnya
+            if ($('#selectStaf').length) {
+                $('#selectStaf').val(''); // Kosongkan nilai tanpa mengubah DOM optionnya
             }
             $('#filterForm').submit();
         };
