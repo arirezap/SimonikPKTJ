@@ -34,18 +34,16 @@ class LogKegiatanController extends BaseController
         // Ambil log kegiatan harian yang sudah diinput pada tanggal tersebut
         $rekapData = $logModel->getLogWithTarget($userId, $tanggalTerpilih);
 
-        // Logika Batas Waktu
-        $settingModel = new \App\Models\SettingModel();
-        $batasLog = (int) $settingModel->getValue('batas_input_log', 3);
-
-        $isPastDeadline = false;
-        $tanggalTerpilihObj = new \DateTime($tanggalTerpilih);
-        $todayObj = new \DateTime(date('Y-m-d'));
-        $diff = $todayObj->diff($tanggalTerpilihObj)->days;
+        $isPastDeadline = false; // Fitur kunci tanggal dihapus
         
-        // Jika hari ini sudah melewati tanggal terpilih + batas toleransi hari
-        if ($todayObj > $tanggalTerpilihObj && $diff > $batasLog) {
-            $isPastDeadline = true;
+        $isLocked = false;
+        if (!empty($rekapData)) {
+            foreach ($rekapData as $row) {
+                if (isset($row['status']) && $row['status'] === 'terkirim') {
+                    $isLocked = true;
+                    break;
+                }
+            }
         }
 
         $data = [
@@ -53,8 +51,7 @@ class LogKegiatanController extends BaseController
             'tanggal_terpilih' => $tanggalTerpilih,
             'daftar_target' => $daftarTarget,
             'rekap_data' => $rekapData,
-            'batas_log' => $batasLog,
-            'is_past_deadline' => $isPastDeadline
+            'is_locked' => $isLocked
         ];
 
         return view('user/log_kegiatan/index', $data);
@@ -73,14 +70,46 @@ class LogKegiatanController extends BaseController
         ];
 
         if (!$this->validate($rules)) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Gagal menyimpan. Pastikan semua form terisi dengan benar (URL Bukti Pekerjaan harus valid).',
+                    'csrf_hash' => csrf_hash()
+                ]);
+            }
             return redirect()->back()->withInput()->with('error', 'Gagal menyimpan. Pastikan semua form terisi dengan benar (URL Bukti Pekerjaan harus valid).');
         }
 
         $logModel = new LogKegiatanHarian();
         $tanggal = $this->request->getPost('tanggal');
 
-        $settingModel = new \App\Models\SettingModel();
-        $batasLog = (int) $settingModel->getValue('batas_input_log', 3);
+        // Pengecekan keamanan: Apakah tanggal sudah dikunci?
+        $existingData = $logModel->getLogWithTarget($userId, $tanggal);
+        foreach ($existingData as $row) {
+            if (isset($row['status']) && $row['status'] === 'terkirim') {
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON(['success' => false, 'message' => 'Laporan hari ini telah dikunci.', 'csrf_hash' => csrf_hash()]);
+                }
+                return redirect()->back()->with('error', 'Laporan hari ini telah dikunci dan tidak dapat diedit.');
+            }
+        }
+
+        // Tentukan status berdasarkan jenis submit
+        $status = $this->request->isAJAX() ? 'draft' : 'terkirim';
+
+        // Khusus untuk submit "Simpan & Kirim" yang mungkin tidak mengirim data baru, tapi hanya mengupdate status yang sudah ada (draft -> terkirim)
+        if (!$this->request->isAJAX() && empty($this->request->getPost('target_id'))) {
+            if (!empty($existingData)) {
+                $logModel->where('user_id', $userId)
+                         ->where('tanggal_kegiatan', $tanggal)
+                         ->set(['status' => 'terkirim'])
+                         ->update();
+                return redirect()->to('/log-kegiatan')->with('success', 'Kegiatan harian berhasil dikirim.');
+            } else {
+                return redirect()->back()->with('error', 'Tidak ada data untuk dikirim.');
+            }
+        }
+
         $tanggalTerpilihObj = new \DateTime($tanggal);
         $todayObj = new \DateTime(date('Y-m-d'));
         
@@ -88,10 +117,8 @@ class LogKegiatanController extends BaseController
             return redirect()->back()->with('error', 'Gagal menyimpan. Anda tidak dapat melaporkan kegiatan untuk tanggal di masa depan.');
         }
 
-        $diff = $todayObj->diff($tanggalTerpilihObj)->days;
-        if ($todayObj > $tanggalTerpilihObj && $diff > $batasLog) {
-            return redirect()->back()->with('error', 'Gagal menyimpan. Batas waktu pelaporan harian untuk tanggal ini sudah ditutup.');
-        }
+        // Fitur batas pelaporan masa lalu dihapus atas permintaan user
+
 
         $log_ids = $this->request->getPost('log_id');
         $target_id_arr = $this->request->getPost('target_id');
@@ -113,26 +140,48 @@ class LogKegiatanController extends BaseController
                     'deskripsi_kegiatan' => $deskripsi_kegiatan_arr[$index] ?? '',
                     'jumlah_capaian'     => $jumlah_capaian_arr[$index] ?? 0,
                     'link_bukti'         => !empty($link_bukti_arr[$index]) ? $link_bukti_arr[$index] : null,
+                    'status'             => $status
                 ];
 
                 if (!empty($log_ids[$index])) {
                     $rowData['id'] = $log_ids[$index];
                     $dataToUpdate[] = $rowData;
                 } else {
-                    $dataToInsert[] = $rowData;
+                    $dataToInsert[$index] = $rowData;
                 }
             }
         }
 
+        $insertedIds = [];
         if (!empty($dataToUpdate)) {
             $logModel->updateBatch($dataToUpdate, 'id');
         }
         if (!empty($dataToInsert)) {
-            $logModel->insertBatch($dataToInsert);
+            foreach ($dataToInsert as $origIndex => $insertRow) {
+                $logModel->insert($insertRow);
+                $insertedIds[$origIndex] = $logModel->getInsertID();
+            }
+        }
+
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Kegiatan harian berhasil disimpan sementara.',
+                'new_ids' => $insertedIds,
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        // Jika submit normal (Simpan & Kirim), pastikan semua data pada tanggal ini (termasuk yang tidak ikut dalam loop POST karena sudah terkirim) diubah jadi terkirim.
+        if (!$this->request->isAJAX()) {
+            $logModel->where('user_id', $userId)
+                     ->where('tanggal_kegiatan', $tanggal)
+                     ->set(['status' => 'terkirim'])
+                     ->update();
         }
 
         return redirect()->to('/log-kegiatan')
-                         ->with('success', 'Kegiatan harian berhasil disimpan.');
+                         ->with('success', 'Kegiatan harian berhasil dikirim.');
     }
     
     public function hapus()

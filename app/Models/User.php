@@ -25,7 +25,8 @@ class User extends Model
         'nip',
         'jabatan',
         'unit',
-        'pangkat'
+        'pangkat',
+        'no_hp'
     ];
 
     // Dates

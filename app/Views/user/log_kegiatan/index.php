@@ -13,6 +13,9 @@ Lapor Kegiatan Harian
         color: #333;
         vertical-align: middle;
     }
+    .table td, .table th {
+        border-color: #eaeaea;
+    }
     .table {
         font-size: 0.85rem;
     }
@@ -46,22 +49,25 @@ Lapor Kegiatan Harian
     <div class="card-body">
         
         <!-- Filter Tanggal -->
-        <form method="POST" action="<?= site_url('log-kegiatan') ?>" class="mb-4 p-3 bg-light rounded border">
+        <form method="POST" action="<?= site_url('log-kegiatan') ?>" class="mb-3 px-1">
             <?= csrf_field() ?>
             <div class="row align-items-center">
-                <div class="col-md-4">
-                    <label class="form-label fw-bold text-primary">Pilih Tanggal Kegiatan</label>
-                    <input type="date" name="tanggal" class="form-control border-primary" value="<?= esc($tanggal_terpilih) ?>" max="<?= date('Y-m-d') ?>" onchange="this.form.submit()">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-dark small mb-2">Pilih Tanggal Kegiatan</label>
+                    <div class="input-group shadow-sm">
+                        <span class="input-group-text bg-primary text-white border-primary"><i class="bi bi-calendar3"></i></span>
+                        <input type="date" name="tanggal" class="form-control border-primary fw-bold text-primary" value="<?= esc($tanggal_terpilih) ?>" max="<?= date('Y-m-d') ?>" onchange="this.form.submit()">
+                    </div>
                 </div>
-                <div class="col-md-8 text-muted mt-3 mt-md-0 pt-md-4">
+                <div class="col-md-9 text-muted mt-2 mt-md-0 pt-md-4 small">
                     <i class="bi bi-info-circle me-1"></i> Jika pilihan target (RHK) kosong, silakan buat <strong>Target Kinerja Bulanan</strong> terlebih dahulu untuk bulan ini.
                 </div>
             </div>
         </form>
 
-        <?php if ($is_past_deadline): ?>
+        <?php if ($is_locked): ?>
             <div class="alert alert-warning mb-4">
-                <i class="bi bi-lock-fill me-2"></i> <strong>Akses Terkunci!</strong> Batas pelaporan harian (<?= esc($batas_log) ?> hari) telah terlewat. Anda tidak dapat menambahkan laporan baru.
+                <i class="bi bi-lock-fill me-2"></i> <strong>Akses Terkunci!</strong> Laporan hari ini telah dikirim dan tidak dapat diubah lagi.
             </div>
         <?php endif; ?>
 
@@ -86,43 +92,74 @@ Lapor Kegiatan Harian
                         <?php if (!empty($rekap_data)): ?>
                             <?php foreach ($rekap_data as $row): ?>
                                 <tr>
-                                    <!-- Logika: Baris yang sudah ada di DB otomatis read-only dan tidak dikirim via form -->
                                     <td class="nomor-baris text-center fw-bold"><?= $rowIndex++ ?></td>
-                                    <td>
-                                        <?php 
-                                        $targetName = '-';
-                                        foreach($daftar_target as $target) {
-                                            if ($target['id'] == $row['target_id']) {
-                                                $targetName = esc($target['indikator_kinerja']) . ' (' . intval($target['target_bulanan']) . ' ' . esc($target['satuan']) . ')';
-                                                break;
+                                    <?php if ($is_locked || (isset($row['status']) && $row['status'] === 'terkirim')): ?>
+                                        <!-- Read-only View -->
+                                        <td>
+                                            <?php 
+                                            $targetName = '-';
+                                            foreach($daftar_target as $target) {
+                                                if ($target['id'] == $row['target_id']) {
+                                                    $targetName = esc($target['indikator_kinerja']) . ' (' . str_replace('.', ',', (float)$target['target_bulanan']) . ' ' . esc($target['satuan']) . ')';
+                                                    break;
+                                                }
                                             }
-                                        }
-                                        // Fake the hidden input so updateDropdownOptions still counts it
-                                        ?>
-                                        <input type="hidden" class="target-select-hidden" value="<?= esc($row['target_id']) ?>">
-                                        <div class="p-2 border rounded bg-light"><?= $targetName ?></div>
-                                    </td>
-                                    <td>
-                                        <div class="p-2 border rounded bg-light"><?= nl2br(esc($row['deskripsi_kegiatan'])) ?></div>
-                                    </td>
-                                    <td>
-                                        <div class="p-2 border rounded bg-light text-center fw-bold"><?= intval($row['jumlah_capaian']) ?> <?= esc($row['satuan']) ?></div>
-                                    </td>
-                                    <td>
-                                        <?php if (!empty($row['link_bukti'])): ?>
-                                            <div class="p-2 border rounded bg-light text-center"><a href="<?= esc($row['link_bukti']) ?>" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-link-45deg"></i> Buka Link</a></div>
-                                        <?php else: ?>
-                                            <div class="p-2 border rounded bg-light text-center text-muted">-</div>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="text-center text-success">
-                                        <i class="bi bi-check-circle-fill" title="Sudah Tersimpan"></i>
-                                    </td>
+                                            ?>
+                                            <input type="hidden" class="target-select-hidden" value="<?= esc($row['target_id']) ?>">
+                                            <div class="p-2 border rounded bg-light text-muted"><?= $targetName ?></div>
+                                        </td>
+                                        <td>
+                                            <div class="p-2 border rounded bg-light text-muted"><?= nl2br(esc($row['deskripsi_kegiatan'])) ?></div>
+                                        </td>
+                                        <td>
+                                            <div class="p-2 border rounded bg-light text-center fw-bold text-muted"><?= str_replace('.', ',', (float)$row['jumlah_capaian']) ?> <?= esc($row['satuan']) ?></div>
+                                        </td>
+                                        <td>
+                                            <?php if (!empty($row['link_bukti'])): ?>
+                                                <div class="p-2 border rounded bg-light text-center"><a href="<?= esc($row['link_bukti']) ?>" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-link-45deg"></i> Buka Link</a></div>
+                                            <?php else: ?>
+                                                <div class="p-2 border rounded bg-light text-center text-muted">-</div>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="text-center text-success">
+                                            <i class="bi bi-lock-fill text-warning" title="Terkunci"></i>
+                                        </td>
+                                    <?php else: ?>
+                                        <!-- Editable Draft View -->
+                                        <input type="hidden" name="log_id[]" value="<?= $row['id'] ?>">
+                                        <td>
+                                            <select name="target_id[]" class="form-select" required>
+                                                <option value="">-- Pilih Target / RHK --</option>
+                                                <?php foreach($daftar_target as $target): ?>
+                                                    <?php 
+                                                    $labelTarget = esc($target['indikator_kinerja']) . ' (' . str_replace('.', ',', (float)$target['target_bulanan']) . ' ' . esc($target['satuan']) . ')'; 
+                                                    $selected = ($target['id'] == $row['target_id']) ? 'selected' : '';
+                                                    ?>
+                                                    <option value="<?= esc($target['id']) ?>" <?= $selected ?>><?= $labelTarget ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <textarea name="deskripsi_kegiatan[]" class="form-control" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..." required><?= esc($row['deskripsi_kegiatan']) ?></textarea>
+                                        </td>
+                                        <td>
+                                            <div class="input-group">
+                                                <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control text-center" placeholder="Angka" value="<?= (float)$row['jumlah_capaian'] ?>" required>
+                                                <span class="input-group-text"><?= esc($row['satuan'] ?? '-') ?></span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <input type="url" name="link_bukti[]" class="form-control" placeholder="https://..." value="<?= esc($row['link_bukti']) ?>" required>
+                                        </td>
+                                        <td class="text-center">
+                                            <button type="button" class="btn btn-outline-danger btn-sm hapus-baris" data-id="<?= $row['id'] ?>" title="Hapus baris"><i class="bi bi-trash"></i></button>
+                                        </td>
+                                    <?php endif; ?>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
 
-                        <?php if (!$is_past_deadline): ?>
+                        <?php if (!$is_locked): ?>
                             <!-- Baris Input Baru -->
                             <tr class="input-row">
                                 <input type="hidden" name="log_id[]" value="">
@@ -131,7 +168,7 @@ Lapor Kegiatan Harian
                                     <select name="target_id[]" class="form-select" required>
                                         <option value="">-- Pilih Target / RHK --</option>
                                         <?php foreach($daftar_target as $target): ?>
-                                            <?php $labelTarget = esc($target['indikator_kinerja']) . ' (' . intval($target['target_bulanan']) . ' ' . esc($target['satuan']) . ')'; ?>
+                                            <?php $labelTarget = esc($target['indikator_kinerja']) . ' (' . str_replace('.', ',', (float)$target['target_bulanan']) . ' ' . esc($target['satuan']) . ')'; ?>
                                             <option value="<?= esc($target['id']) ?>"><?= $labelTarget ?></option>
                                         <?php endforeach; ?>
                                     </select>
@@ -141,7 +178,7 @@ Lapor Kegiatan Harian
                                 </td>
                                 <td>
                                     <div class="input-group">
-                                        <input type="number" step="1" name="jumlah_capaian[]" class="form-control text-center" placeholder="Angka" required>
+                                        <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control text-center" placeholder="Angka" required>
                                         <span class="input-group-text">-</span>
                                     </div>
                                 </td>
@@ -154,17 +191,20 @@ Lapor Kegiatan Harian
                             </tr>
                         <?php endif; ?>
                         
-                        <?php if (empty($rekap_data) && $is_past_deadline): ?>
-                            <tr><td colspan="5" class="text-center text-muted">Tidak ada laporan pada tanggal ini.</td></tr>
+                        <?php if (empty($rekap_data)): ?>
+                            <tr><td colspan="6" class="text-center text-muted">Tidak ada laporan pada tanggal ini.</td></tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
             </div>
 
-            <?php if (!$is_past_deadline): ?>
+            <?php if (!$is_locked): ?>
             <div class="d-flex justify-content-between align-items-center mt-4">
-                <button type="button" id="tambahBaris" class="btn btn-success"><i class="bi bi-plus-circle me-2"></i> Tambah Kegiatan Lain</button>
-                <button type="submit" class="btn btn-primary px-4"><i class="bi bi-save me-2"></i> Simpan Laporan Harian</button>
+                <button type="button" id="tambahBaris" class="btn btn-success rounded-pill shadow-sm px-4 py-2 fw-bold"><i class="bi bi-plus-circle me-2"></i> Tambah Kegiatan Lain</button>
+                <div class="d-flex gap-2">
+                    <button type="button" id="btnSimpanSementara" class="btn btn-outline-primary rounded-pill shadow-sm px-4 py-2 fw-bold"><i class="bi bi-cloud-arrow-up me-2"></i> Simpan Sementara</button>
+                    <button type="submit" class="btn btn-primary rounded-pill shadow-sm px-4 py-2 fw-bold"><i class="bi bi-send me-2"></i> Simpan & Kirim</button>
+                </div>
             </div>
             <?php endif; ?>
         </form>
@@ -258,23 +298,70 @@ Lapor Kegiatan Harian
         
         // Auto update satuan text based on selected target
         tabelLog.on('change', 'select[name="target_id[]"]', function() {
-            const selectedText = $(this).find("option:selected").text();
-            // Ekstrak satuan dari teks "Nama Target (Target Bulanan SATUAN)"
-            const match = selectedText.match(/\((.*?)\)$/);
-            if(match && match[1]) {
-                const parts = match[1].split(' ');
-                if(parts.length > 1) {
-                    parts.shift(); // Buang angka targetnya
-                    $(this).closest('tr').find('.input-group-text').text(parts.join(' '));
-                }
-            } else {
-                $(this).closest('tr').find('.input-group-text').text('-');
-            }
-            updateDropdownOptions(); // Panggil fungsi ini saat pilihan berubah
+            let selectedText = $(this).find('option:selected').text();
+            let matches = selectedText.match(/\d+ (.+)\)$/);
+            let satuan = matches ? matches[1] : '-';
+            $(this).closest('tr').find('.input-group-text').text(satuan);
+            updateDropdownOptions(); // Panggil saat pilihan berubah
         });
 
-        // Inisialisasi awal saat load
+        // Initialize disable options on load
         updateDropdownOptions();
+
+        // Fungsi Simpan Sementara (AJAX)
+        $('#btnSimpanSementara').on('click', function() {
+            let btn = $(this);
+            let originalText = btn.html();
+            
+            let isValid = true;
+            $('#formLog input[required], #formLog textarea[required], #formLog select[required]').each(function() {
+                if ($(this).val().trim() === '') {
+                    isValid = false;
+                }
+            });
+
+            if (!isValid) {
+                alert('Harap isi semua kolom wajib sebelum menyimpan sementara.');
+                return;
+            }
+
+            btn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menyimpan...').prop('disabled', true);
+            
+            $.ajax({
+                url: '<?= site_url('log-kegiatan/store') ?>',
+                type: 'POST',
+                data: $('#formLog').serialize(),
+                dataType: 'json',
+                success: function(response) {
+                    if (response.csrf_hash) {
+                        $('input[name="<?= csrf_token() ?>"]').val(response.csrf_hash);
+                    }
+
+                    if (response.success) {
+                        btn.html('<i class="bi bi-check-lg me-2"></i> Tersimpan').removeClass('btn-outline-primary').addClass('btn-outline-success');
+                        
+                        if (response.new_ids) {
+                            for (let index in response.new_ids) {
+                                $('#formLog input[name="log_id[]"]').eq(index).val(response.new_ids[index]);
+                            }
+                        }
+                        
+                        setTimeout(() => {
+                            btn.html(originalText).removeClass('btn-outline-success').addClass('btn-outline-primary').prop('disabled', false);
+                        }, 2500);
+                    } else {
+                        alert('Gagal menyimpan: ' + (response.message || 'Error tidak diketahui'));
+                        btn.html(originalText).prop('disabled', false);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error(error);
+                    alert('Terjadi kesalahan jaringan atau server. Silakan coba lagi.');
+                    btn.html(originalText).prop('disabled', false);
+                }
+            });
+        });
+
     });
 </script>
 <?= $this->endSection() ?>

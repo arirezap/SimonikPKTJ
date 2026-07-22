@@ -18,12 +18,8 @@ class LogKegiatanHarian extends Model
         'tanggal_kegiatan',
         'deskripsi_kegiatan',
         'jumlah_capaian',
-        'waktu_penyelesaian',
-        'kualitas_hasil',
-        'disiplin',
-        'kerjasama',
-        'nilai_harian',
-        'link_bukti'
+        'link_bukti',
+        'status'
     ];
 
     // Dates

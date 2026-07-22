@@ -13,80 +13,65 @@
 
     <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=' . filemtime(FCPATH . 'assets/css/style.css')) ?>">
 </head>
-<body class="login-page d-flex flex-column align-items-center justify-content-center min-vh-100 py-4">
+<body class="login-page fit-ambient-bg m-0 p-0 d-flex justify-content-center align-items-center" style="min-height: 100vh;">
 
-    <div class="container px-3 px-md-4">
-        <div class="row justify-content-center">
-            <div class="col-12 col-xl-10">
-                <div class="card login-card mx-auto">
-                    <div class="row g-0 h-100">
-                        <!-- Panel Kiri: Branding (Disembunyikan di layar kecil) -->
-                        <div class="col-md-5 col-lg-5 d-none d-md-flex flex-column justify-content-center align-items-center login-brand p-5 text-center">
-                            <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ" class="mb-4" style="width: 130px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));">
-                            <h3 class="fw-bold mb-2" style="letter-spacing: 1px;">ECC</h3>
-                            <h6 class="mb-0 text-white-50 text-uppercase" style="font-size: 0.85rem; letter-spacing: 0.5px;">Evidence Command Center</h6>
-                        </div>
+    <div class="container px-3">
+        <div class="fit-card bg-white mx-auto d-flex flex-column flex-lg-row overflow-hidden" style="max-width: 800px; width: 100%; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.08);">
+            
+            <!-- Left Panel: Illustration -->
+            <div class="fit-left-panel d-none d-lg-flex flex-column justify-content-center align-items-center bg-light p-3" style="width: 50%;">
+                <img src="<?= base_url('assets/login_illustration_new.jpg') ?>" alt="Ilustrasi PKTJ" class="img-fluid fit-img" style="mix-blend-mode: multiply; max-height: 320px; object-fit: contain;">
+            </div>
 
-                        <!-- Panel Kanan: Form Login -->
-                        <div class="col-md-7 col-lg-7 p-4 p-sm-5 bg-white">
-                            <div class="d-md-none text-center mb-4">
-                                <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ" style="width: 90px;">
-                                <h5 class="fw-bold mt-3 mb-1 text-primary">ECC</h5>
-                                <p class="text-muted small mb-0">Evidence Command Center</p>
-                            </div>
+            <!-- Right Panel: Login Form -->
+            <div class="fit-right-panel p-4 d-flex flex-column justify-content-center" style="width: 100%; flex: 1;">
+                <div class="text-start mb-3">
+                    <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ" class="mb-2" style="height: 45px;">
+                    <h2 class="fw-bold text-dark mb-1" style="letter-spacing: -0.02em; font-size: 1.4rem;">Login</h2>
+                    <p class="text-muted mb-0" style="font-size: 0.8rem;">Evidence Command Center</p>
+                </div>
 
-                            <div class="mb-4 pb-3 border-bottom text-center text-md-start">
-                                <h3 class="fw-bold text-dark mb-2" style="letter-spacing: -0.5px;">Selamat Datang</h3>
-                                <p class="text-muted mb-0">Silakan masuk ke akun Anda untuk melanjutkan.</p>
-                            </div>
+                <form action="<?= base_url('login') ?>" method="POST" autocomplete="off" id="loginForm">
+                    <?= csrf_field() ?>
 
-                            <form action="<?= base_url('login') ?>" method="POST" autocomplete="off" id="loginForm">
-                                <?= csrf_field() ?>
+                    <div class="mb-2">
+                        <label for="username" class="form-label fit-label">Nama Pengguna</label>
+                        <input type="text" name="username" id="username" class="form-control fit-input" placeholder="Masukkan username..." value="<?= old('username') ?>" required autofocus>
+                    </div>
 
-                                <div class="mb-3">
-                                    <label for="username" class="form-label small fw-bold text-secondary text-uppercase" style="letter-spacing: 0.5px;">Nama Pengguna</label>
-                                    <div class="input-group-icon">
-                                        <i class="bi bi-person-fill form-icon"></i>
-                                        <input type="text" name="username" id="username" class="form-control" placeholder="Ketik username Anda..." value="<?= old('username') ?>" required autofocus>
-                                    </div>
-                                </div>
-
-                                <div class="mb-4">
-                                    <label for="password" class="form-label small fw-bold text-secondary text-uppercase" style="letter-spacing: 0.5px;">Kata Sandi</label>
-                                    <div class="input-group-icon">
-                                        <i class="bi bi-lock-fill form-icon"></i>
-                                        <input type="password" name="password" id="password" class="form-control" placeholder="Ketik kata sandi Anda..." required>
-                                        <button type="button" id="togglePassword" class="password-toggle-btn" tabindex="-1" title="Tampilkan/Sembunyikan Password">
-                                            <i class="bi bi-eye-slash"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="1" id="rememberMe" name="remember">
-                                        <label class="form-check-label text-muted small" for="rememberMe" style="cursor: pointer;">
-                                            Ingat sesi saya
-                                        </label>
-                                    </div>
-                                    <a href="#" class="text-decoration-none small fw-medium text-primary" onclick="alert('Silakan hubungi Administrator untuk mereset password Anda.'); return false;">Lupa Password?</a>
-                                </div>
-
-                                <div class="d-grid">
-                                    <button type="submit" class="btn btn-primary btn-login d-flex justify-content-center align-items-center gap-2" id="loginBtn">
-                                        <i class="bi bi-box-arrow-in-right"></i> Masuk
-                                    </button>
-                                </div>
-                            </form>
+                    <div class="mb-3">
+                        <label for="password" class="form-label fit-label">Kata Sandi</label>
+                        <div class="position-relative">
+                            <input type="password" name="password" id="password" class="form-control fit-input pe-5" placeholder="Masukkan kata sandi..." required>
+                            <button type="button" id="togglePassword" class="btn btn-link text-muted position-absolute top-50 end-0 translate-middle-y text-decoration-none pe-3" tabindex="-1">
+                                <i class="bi bi-eye-slash" style="font-size: 0.9rem;"></i>
+                            </button>
                         </div>
                     </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="form-check m-0 p-0 d-flex align-items-center gap-2">
+                            <input class="form-check-input fit-checkbox m-0" type="checkbox" value="1" id="rememberMe" name="remember" style="margin-left: 0 !important;">
+                            <label class="form-check-label text-muted user-select-none" for="rememberMe" style="cursor: pointer; font-size: 0.75rem; line-height: 1;">
+                                Ingat sesi
+                            </label>
+                        </div>
+                        <a href="#" class="text-decoration-none fw-medium fit-link" onclick="forgotPassword(); return false;" style="font-size: 0.75rem;">Lupa Password?</a>
+                    </div>
+
+                    <div class="d-grid mb-2">
+                        <button type="submit" class="btn fit-btn-primary fw-bold" id="loginBtn">
+                            Masuk
+                        </button>
+                    </div>
+                </form>
+
+                <div class="text-center mt-2">
+                    <p class="text-muted mb-0" style="font-size: 0.65rem;">&copy; <?= date("Y"); ?> PKTJ Tegal. Hak Cipta Dilindungi.</p>
                 </div>
             </div>
+            
         </div>
-    </div>
-    
-    <div class="login-footer">
-        &copy; <?= date("Y"); ?> Politeknik Keselamatan Transportasi Jalan. Hak Cipta Dilindungi.
     </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -110,10 +95,21 @@
         const loginForm = document.getElementById('loginForm');
         loginForm.addEventListener('submit', function() {
             const btn = document.getElementById('loginBtn');
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Memproses...';
+            btn.innerHTML = '<span class="fit-spinner"></span> <span style="letter-spacing: 0.05em; font-weight: 500;">Memproses...</span>';
+            btn.style.opacity = '0.85';
             btn.disabled = true;
         });
     });
+
+    function forgotPassword() {
+        Swal.fire({
+            icon: 'info',
+            title: 'Lupa Password?',
+            text: 'Silakan hubungi Administrator untuk mereset password Anda.',
+            confirmButtonColor: '#1e3a8a',
+            confirmButtonText: 'Mengerti'
+        });
+    }
 
     // Tampilkan Popup SweetAlert Jika Ada Error
     <?php if (session()->getFlashdata('error')): ?>
@@ -121,7 +117,7 @@
         icon: 'error',
         title: 'Login Gagal!',
         text: '<?= esc(session()->getFlashdata('error')) ?>',
-        confirmButtonColor: '#0d6efd'
+        confirmButtonColor: '#1e3a8a'
     });
     <?php endif; ?>
 
@@ -131,7 +127,7 @@
         icon: 'success',
         title: 'Berhasil!',
         text: '<?= esc(session()->getFlashdata('success')) ?>',
-        confirmButtonColor: '#0d6efd'
+        confirmButtonColor: '#1e3a8a'
     });
     <?php endif; ?>
 </script>

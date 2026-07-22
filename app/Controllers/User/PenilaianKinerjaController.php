@@ -10,7 +10,8 @@ class PenilaianKinerjaController extends BaseController
 {
     public function index()
     {
-        $logModel = new LogKegiatanHarian();
+        $logModel = new \App\Models\LogKegiatanHarian();
+        $laporanModel = new \App\Models\LaporanHarian();
         $userModel = new User();
 
         $userId = session()->get('id') ?? session()->get('user_id');
@@ -26,12 +27,18 @@ class PenilaianKinerjaController extends BaseController
             }
         }
         
-        // Gunakan session agar URL tetap bersih
+        // Gunakan PRG pattern agar terhindar dari form resubmission dan error 403
         if ($this->request->getMethod() === 'POST' || $this->request->getMethod() === 'post') {
             if ($this->request->getPost('bulan')) session()->set('penilaian_bulan', $this->request->getPost('bulan'));
             if ($this->request->getPost('tahun')) session()->set('penilaian_tahun', $this->request->getPost('tahun'));
             if (isset($_POST['bawahan_id'])) session()->set('penilaian_bawahan_id', $this->request->getPost('bawahan_id'));
             if (isset($_POST['unit_kerja'])) session()->set('penilaian_unit_kerja', $this->request->getPost('unit_kerja'));
+            
+            if ($this->request->getPost('active_tab') === 'individu') {
+                session()->remove('penilaian_bawahan_id');
+            }
+            
+            return redirect()->to(site_url('penilaian-kinerja'));
         }
 
         $bulanTerpilih = session()->get('penilaian_bulan') ?? date('n');
@@ -62,7 +69,7 @@ class PenilaianKinerjaController extends BaseController
             $daftarBawahan = $builder->orderBy('nama_lengkap', 'ASC')->findAll();
             $isAtasan = true;
         } else {
-            $daftarBawahan = $userModel->getAllBawahan($userId, $role);
+            $daftarBawahan = $userModel->getBawahan($userId);
             $isAtasan = !empty($daftarBawahan);
         }
 
@@ -88,12 +95,15 @@ class PenilaianKinerjaController extends BaseController
         }
 
         // Ambil rekap data sebulan penuh untuk diri sendiri (selalu ada)
-        $rekapDataSendiri = $logModel->getLogByMonth($userId, $bulanTerpilih, $tahunTerpilih);
+        $rekapDataSendiri = $laporanModel->getTargetWithRealization($userId, $bulanTerpilih, $tahunTerpilih);
+        $logHarianSendiri = $logModel->getLogByMonth($userId, $bulanTerpilih, $tahunTerpilih);
         
         // Ambil rekap data bawahan terpilih (jika ada)
         $rekapDataBawahan = [];
+        $logHarianBawahan = [];
         if ($isPenilai) {
-            $rekapDataBawahan = $logModel->getLogByMonth($bawahanIdTerpilih, $bulanTerpilih, $tahunTerpilih);
+            $rekapDataBawahan = $laporanModel->getTargetWithRealization($bawahanIdTerpilih, $bulanTerpilih, $tahunTerpilih);
+            $logHarianBawahan = $logModel->getLogByMonth($bawahanIdTerpilih, $bulanTerpilih, $tahunTerpilih);
         }
 
         $data = [
@@ -106,7 +116,9 @@ class PenilaianKinerjaController extends BaseController
             'is_atasan' => $isAtasan,
             'is_penilai' => $isPenilai,
             'rekap_data_sendiri' => $rekapDataSendiri,
+            'log_harian_sendiri' => $logHarianSendiri,
             'rekap_data_bawahan' => $rekapDataBawahan,
+            'log_harian_bawahan' => $logHarianBawahan,
             'rekap_dashboard' => $rekapDashboard,
             'is_super' => $isSuper,
             'daftar_unit' => $daftarUnit,
@@ -119,32 +131,20 @@ class PenilaianKinerjaController extends BaseController
     public function store()
     {
         // Hanya yang mensubmit form penilaian (Atasan) yang sampai ke sini
-        $logModel = new LogKegiatanHarian();
+        $laporanModel = new \App\Models\LaporanHarian();
 
-        $log_ids = $this->request->getPost('log_id');
-        $waktu_penyelesaian_arr = $this->request->getPost('waktu_penyelesaian');
-        $kualitas_hasil_arr = $this->request->getPost('kualitas_hasil');
-        $disiplin_arr = $this->request->getPost('disiplin');
-        $kerjasama_arr = $this->request->getPost('kerjasama');
-        $nilai_harian_arr = $this->request->getPost('nilai_harian'); // Diisi via JS di frontend
-
-        $bulan = $this->request->getPost('bulan');
-        $tahun = $this->request->getPost('tahun');
-        $bawahan_id = $this->request->getPost('bawahan_id');
+        $laporan_ids = $this->request->getPost('laporan_id');
+        $nilai_capaian_arr = $this->request->getPost('nilai_capaian');
 
         $dataToUpdate = [];
 
-        if ($log_ids) {
-            foreach ($log_ids as $index => $idLog) {
-                if (empty($idLog)) continue;
+        if ($laporan_ids) {
+            foreach ($laporan_ids as $index => $idLaporan) {
+                if (empty($idLaporan)) continue;
 
                 $rowUpdate = [
-                    'id' => $idLog,
-                    'waktu_penyelesaian' => $waktu_penyelesaian_arr[$index] ?? null,
-                    'kualitas_hasil' => $kualitas_hasil_arr[$index] ?? null,
-                    'disiplin' => $disiplin_arr[$index] ?? null,
-                    'kerjasama' => $kerjasama_arr[$index] ?? null,
-                    'nilai_harian' => $nilai_harian_arr[$index] ?? null,
+                    'id' => $idLaporan,
+                    'nilai_capaian' => $nilai_capaian_arr[$index] ?? null,
                 ];
 
                 $dataToUpdate[] = $rowUpdate;
@@ -152,7 +152,7 @@ class PenilaianKinerjaController extends BaseController
         }
 
         if (!empty($dataToUpdate)) {
-            $logModel->updateBatch($dataToUpdate, 'id');
+            $laporanModel->updateBatch($dataToUpdate, 'id');
         }
 
         return redirect()->to('/penilaian-kinerja')
@@ -169,7 +169,7 @@ class PenilaianKinerjaController extends BaseController
 
         if (!$userId || !$bulan || !$tahun) return $this->response->setJSON(['error' => 'Missing parameters']);
 
-        $logModel = new \App\Models\LogKegiatanHarian();
+        $laporanModel = new \App\Models\LaporanHarian();
         $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
         $trendBulan = [];
@@ -180,13 +180,13 @@ class PenilaianKinerjaController extends BaseController
             $y = (int)date('Y', $timestamp);
             $namaBulan = $bulanIndo[$m - 1] . ' ' . substr($y, 2, 2);
             
-            $logsBulan = $logModel->getLogByMonth($userId, $m, $y);
+            $targetsBulan = $laporanModel->getTargetWithRealization($userId, $m, $y);
             $jmlDinilai = 0;
             $totalNilai = 0;
-            foreach ($logsBulan as $l) {
-                if (!empty($l['nilai_harian'])) {
+            foreach ($targetsBulan as $t) {
+                if (!empty($t['nilai_capaian'])) {
                     $jmlDinilai++;
-                    $totalNilai += (float)$l['nilai_harian'];
+                    $totalNilai += (float)$t['nilai_capaian'];
                 }
             }
             $rata = $jmlDinilai > 0 ? round($totalNilai / $jmlDinilai, 2) : 0;
@@ -194,36 +194,21 @@ class PenilaianKinerjaController extends BaseController
             $trendNilai[] = $rata;
         }
 
-        $rekapData = $logModel->getLogByMonth($userId, $bulan, $tahun);
+        $rekapData = $laporanModel->getTargetWithRealization($userId, $bulan, $tahun);
         
-        $tepat = 0; $lambat = 0;
-        $sumDisiplin = 0; $sumKerjasama = 0;
-        $dinilaiCount = 0;
-        
-        $targets = [];
         $totalRealisasi = 0;
+        $totalTarget = 0;
 
         foreach ($rekapData as $row) {
-            if (!empty($row['nilai_harian'])) {
-                $dinilaiCount++;
-                $sumDisiplin += (float)$row['disiplin'];
-                $sumKerjasama += (float)$row['kerjasama'];
-                if ($row['waktu_penyelesaian'] === 'Tepat waktu') $tepat++;
-                else if ($row['waktu_penyelesaian'] === 'Terlambat') $lambat++;
-            }
-            $targets[$row['target_id']] = (int)$row['target_bulanan'];
-            $totalRealisasi += (int)$row['jumlah_capaian'];
+            $totalTarget += (float)$row['target_bulanan'];
+            $totalRealisasi += (float)$row['total_realisasi'];
         }
-        
-        $totalTarget = array_sum($targets);
-        $avgDisiplin = $dinilaiCount > 0 ? round($sumDisiplin / $dinilaiCount, 1) : 0;
-        $avgKerjasama = $dinilaiCount > 0 ? round($sumKerjasama / $dinilaiCount, 1) : 0;
 
         return $this->response->setJSON([
             'trend_labels' => $trendBulan,
             'trend_data' => $trendNilai,
-            'kualitas' => ['tepat' => $tepat, 'lambat' => $lambat],
-            'sikap' => ['disiplin' => $avgDisiplin, 'kerjasama' => $avgKerjasama],
+            'kualitas' => ['tepat' => 0, 'lambat' => 0],
+            'sikap' => ['disiplin' => 0, 'kerjasama' => 0],
             'produktivitas' => ['realisasi' => $totalRealisasi, 'sisa' => max(0, $totalTarget - $totalRealisasi)]
         ]);
     }

@@ -5,7 +5,7 @@
     --primary-color: #1e3a8a; /* Navy Blue */
     --accent-color: #f59e0b;  /* Yellow */
     --danger-color: #ef4444;
-    --light-gray: #f8fafc;
+    --light-gray: #f1f5f9; /* Slate 100 for better contrast */
     --text-dark: #0f172a;
     --text-gray: #64748b;
     
@@ -55,11 +55,17 @@ body {
     top: 0;
     padding: 1.25rem 1rem;
     background: #ffffff;
-    border-right: 1px solid #e2e8f0;
-    box-shadow: none;
+    border-right: 1px solid rgba(0,0,0,0.05); /* Solid separator instead of just shadow */
     z-index: 100;
     overflow-y: auto;
     overflow-x: hidden;
+}
+
+/* Header Promax (Top Bar) Styling */
+.header-promax {
+    background-color: #ffffff;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    margin-bottom: 0 !important; /* Remove margin so it sticks to the top */
 }
 
 /* Logika Toggle Baru (Mode Mini) */
@@ -140,15 +146,31 @@ body {
 
 /* ---------------------------------------------------------
    LOGIKA FLY-OUT MENU (FIX JEMBATAN TRANSPARAN)
+   Hanya berlaku di Desktop (>= 992px)
    --------------------------------------------------------- */
+@media (min-width: 992px) {
+    /* PENTING: Izinkan elemen keluar dari kotak sidebar agar tidak menggeser layout (scroll/shift) */
+    .sidebar {
+        overflow: visible !important;
+    }
+    
+    .sidebar-menu {
+        overflow: visible !important;
+    }
 
-/* Reset Nav Item agar bisa jadi jangkar */
-.sidebar-toggled .sidebar .nav-item {
-    position: relative;
-}
+    /* Putar icon chevron ke kanan untuk desktop flyout */
+    .sidebar .sidebar-toggle-icon {
+        transform: rotate(-90deg);
+        transition: transform 0.2s;
+    }
 
-/* Ubah perilaku .collapse (submenu) saat mode Toggled */
-.sidebar-toggled .sidebar .collapse {
+    /* Reset Nav Item agar bisa jadi jangkar */
+    .sidebar .nav-item {
+        position: relative;
+    }
+
+    /* Ubah perilaku .collapse (submenu) agar SELALU fly-out */
+    .sidebar .collapse {
     display: none; /* Sembunyikan default */
     position: absolute;
     left: 100%; /* Muncul di sebelah kanan induknya */
@@ -165,7 +187,7 @@ body {
 }
 
 /* SOLUSI UTAMA: JEMBATAN TRANSPARAN (INVISIBLE BRIDGE) */
-.sidebar-toggled .sidebar .collapse::before {
+.sidebar .collapse::before {
     content: "";
     position: absolute;
     top: 0;
@@ -177,7 +199,7 @@ body {
 }
 
 /* Tampilkan submenu saat .nav-item di-HOVER */
-.sidebar-toggled .sidebar .nav-item:hover > .collapse {
+.sidebar .nav-item:hover > .collapse {
     display: block !important; /* Paksa tampil */
     height: auto !important; /* Reset tinggi animasi collapse */
     visibility: visible !important;
@@ -191,7 +213,7 @@ body {
 }
 
 /* Styling Link di dalam Fly-out Submenu */
-.sidebar-toggled .sidebar .collapse .nav-link {
+.sidebar .collapse .nav-link {
     justify-content: flex-start; /* Rata kiri kembali */
     padding: 8px 15px;
     color: #495057;
@@ -200,20 +222,21 @@ body {
 }
 
 /* Tampilkan kembali teks di dalam submenu */
-.sidebar-toggled .sidebar .collapse .nav-link span {
+.sidebar .collapse .nav-link span {
     display: inline-block !important;
     font-size: 0.85rem;
     white-space: normal;
 }
 
-.sidebar-toggled .sidebar .collapse .nav-link:hover {
-    background-color: #f8f9fa;
-    color: var(--primary-color);
-    font-weight: 500;
-}
+    .sidebar .collapse .nav-link:hover {
+        background-color: #f8f9fa;
+        color: var(--primary-color);
+        font-weight: 500;
+    }
 
-.sidebar-toggled .sidebar .collapse .nav-link.sub-link {
-    padding-left: 15px !important;
+    .sidebar .collapse .nav-link.sub-link {
+        padding-left: 15px !important;
+    }
 }
 
 
@@ -347,21 +370,30 @@ body.login-page {
 .sidebar-header img {
     max-width: 55px;
     height: auto;
-    transition: all 0.3s ease-in-out;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sidebar-logo {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sidebar-logo:hover {
+    transform: scale(1.05);
+    filter: drop-shadow(0 4px 6px rgba(30, 58, 138, 0.2));
 }
 
 .sidebar .nav-link {
-    color: #000000;
-    padding: 0.5rem 1rem; 
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 6px;
+    color: var(--text-gray);
+    padding: 0.45rem 0.8rem; 
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    border-radius: 8px;
     margin-bottom: 2px;
     display: flex;
     align-items: center;
     font-weight: 500;
     white-space: normal; 
-    font-size: 0.8rem; 
-    border-left: 3px solid transparent;
+    font-size: 0.83rem; 
+    border-left: none;
 }
 
 .sidebar .nav-link span {
@@ -373,29 +405,77 @@ body.login-page {
     font-size: 1rem;
     margin-right: 10px;
     width: 20px; 
-    color: #000000;
-    transition: transform 0.2s ease;
+    color: var(--text-gray);
+    transition: transform 0.2s ease, color 0.2s ease;
 }
 
 .sidebar .nav-link:hover {
-    background: #f1f5f9;
-    color: #000000;
-    border-left: 3px solid #cbd5e1;
+    background: #f8fafc;
+    color: var(--text-dark);
+    transform: translateX(4px);
 }
 
 .sidebar .nav-link:hover i {
-    transform: scale(1.05);
+    color: var(--primary-color);
 }
 
 .sidebar .nav-link.active {
-    background: #eff6ff;
-    color: #000000;
+    background: rgba(30, 58, 138, 0.08);
+    color: var(--primary-color);
     font-weight: 700;
-    border-left: 3px solid #1e3a8a;
-    border-radius: 0 6px 6px 0;
+    border-left: none;
+    border-radius: 8px;
 }
 .sidebar .nav-link.active i {
-    color: #000000;
+    color: var(--accent-color);
+}
+
+/* Sidebar Category Headers */
+.sidebar-category {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 1rem 1rem 0.5rem 1rem;
+    margin-top: 0.5rem;
+}
+.sidebar-toggled .sidebar-category {
+    display: none;
+}
+
+/* ===================================================================
+   TOPBAR STYLING (SOLID WHITE)
+   =================================================================== */
+.header-promax {
+    background: #ffffff !important;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+    position: sticky;
+    top: 0;
+    z-index: 99;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.header-hidden {
+    transform: translateY(-100%);
+}
+
+.profile-avatar {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.profile-avatar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(30, 58, 138, 0.2) !important;
+}
+
+/* Profile Icon Hover */
+.profile-icon-wrapper {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.profile-icon-wrapper:hover {
+    transform: scale(1.05);
+    background-color: rgba(30, 58, 138, 0.15) !important;
 }
 
 .sidebar .sub-link {
@@ -649,4 +729,358 @@ body.login-page {
     opacity: 0.5;
     cursor: not-allowed;
     pointer-events: none;
+}
+
+/* ===================================================================
+   UI UX PRO MAX LOGIN PAGE
+   =================================================================== */
+.login-form-promax .form-control {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.login-form-promax .form-control:focus {
+    background-color: #ffffff !important;
+    box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1) !important;
+    border-color: var(--primary-color) !important;
+    transform: translateY(-1px);
+}
+
+.login-form-promax .input-group-icon i {
+    transition: color 0.3s ease;
+}
+
+.login-form-promax .form-control:focus + i,
+.login-form-promax .form-control:focus ~ i {
+    color: var(--primary-color) !important;
+}
+
+.login-form-promax .btn-primary {
+    position: relative;
+    overflow: hidden;
+}
+
+.login-form-promax .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(30, 58, 138, 0.2);
+    background-color: #172d6e !important;
+}
+
+.bento-card {
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.bento-card:hover {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.bento-illustration {
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.bento-cell-left:hover .bento-illustration {
+    transform: scale(1.03) translateY(-5px);
+}
+
+/* ===================================================================
+   MINIMAL SEAMLESS LOGIN STYLE (UI-STYLING 2026)
+   =================================================================== */
+.seamless-ambient-bg {
+    background-color: #fafafa !important;
+}
+
+.seamless-card {
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03), 0 2px 4px -2px rgba(0,0,0,0.03);
+    transition: box-shadow 0.3s ease;
+}
+
+.seamless-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05);
+}
+
+.seamless-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #334155;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.seamless-input {
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    padding: 0.65rem 1rem !important;
+    font-size: 0.925rem !important;
+    color: #0f172a !important;
+    background-color: #ffffff !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02) !important;
+    transition: all 0.2s ease !important;
+}
+
+.seamless-input:focus {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15), 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+    outline: none !important;
+}
+
+.seamless-checkbox {
+    width: 1rem;
+    height: 1rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.seamless-checkbox:checked {
+    background-color: #2563eb;
+    border-color: #2563eb;
+}
+
+.seamless-link {
+    color: #2563eb;
+    transition: opacity 0.2s ease;
+}
+
+.seamless-link:hover {
+    opacity: 0.8;
+    text-decoration: underline !important;
+}
+
+.seamless-btn-primary {
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+    font-weight: 500 !important;
+    font-size: 0.925rem !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: 8px !important;
+    border: none !important;
+    width: 100%;
+    transition: background-color 0.2s ease, transform 0.1s ease !important;
+}
+
+.seamless-btn-primary:hover {
+    background-color: #1e293b !important;
+}
+
+.seamless-btn-primary:active {
+    transform: scale(0.98);
+}
+
+/* ===================================================================
+   LINEAR / VERCEL ULTRA-CLEAN LOGIN STYLE (2026 TREND)
+   =================================================================== */
+.linear-ambient-bg {
+    background: radial-gradient(circle at 50% 0%, #ffffff 0%, #f8fafc 40%, #edf2f7 100%) !important;
+}
+
+.linear-card {
+    border-radius: 24px !important;
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+    overflow: hidden;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.linear-card:hover {
+    box-shadow: 0 25px 55px -10px rgba(15, 23, 42, 0.12) !important;
+}
+
+.linear-hero-canvas {
+    background: linear-gradient(135deg, #f8fafc 0%, #edf4ff 100%);
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+.linear-illustration {
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.5s ease;
+    filter: drop-shadow(0 16px 24px rgba(30, 58, 138, 0.08));
+}
+
+.linear-hero-canvas:hover .linear-illustration {
+    transform: scale(1.025) translateY(-3px);
+    filter: drop-shadow(0 20px 30px rgba(30, 58, 138, 0.12));
+}
+
+.linear-input {
+    background-color: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    font-size: 0.9rem !important;
+    padding-top: 0.65rem !important;
+    padding-bottom: 0.65rem !important;
+    color: #0f172a !important;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.linear-input:focus {
+    background-color: #ffffff !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.12) !important;
+    outline: none !important;
+}
+
+.linear-input-icon {
+    color: #94a3b8;
+    transition: color 0.25s ease;
+    font-size: 1.1rem;
+    pointer-events: none;
+}
+
+.linear-input-group:focus-within .linear-input-icon {
+    color: var(--primary-color) !important;
+}
+
+.linear-checkbox {
+    border-radius: 4px;
+    border-color: #cbd5e1;
+    cursor: pointer;
+}
+
+.linear-checkbox:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.linear-btn-primary {
+    background-color: var(--primary-color) !important;
+    color: #ffffff !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    font-size: 0.925rem !important;
+    padding: 0.65rem 1.25rem !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(30, 58, 138, 0.2) !important;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.linear-btn-primary:hover {
+    background-color: #172d6e !important;
+    transform: translateY(-1.5px);
+    box-shadow: 0 8px 20px rgba(30, 58, 138, 0.3) !important;
+}
+
+.linear-btn-primary:active {
+    transform: translateY(0);
+}
+
+.linear-link {
+    color: var(--primary-color);
+    transition: opacity 0.2s ease;
+}
+
+.linear-link:hover {
+    opacity: 0.85;
+    text-decoration: underline !important;
+}
+
+/* ===================================================================
+/* ===================================================================
+   MODERN SIMPLE FIT LOGIN STYLE (UI-STYLING PRO MAX)
+   =================================================================== */
+.fit-ambient-bg {
+    background-color: #f1f5f9 !important; /* Off-white / light gray */
+}
+
+.fit-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.fit-card:hover {
+    box-shadow: 0 25px 50px rgba(0,0,0,0.12) !important;
+}
+
+.fit-left-panel {
+    border-right: 1px solid rgba(0,0,0,0.05);
+}
+
+.fit-img {
+    transition: transform 0.5s ease;
+}
+
+.fit-card:hover .fit-img {
+    transform: scale(1.02);
+}
+
+.fit-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.fit-input {
+    background-color: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    padding: 0.65rem 0.85rem !important;
+    font-size: 0.9rem !important;
+    color: #0f172a !important;
+    transition: all 0.2s ease !important;
+}
+
+.fit-input:focus {
+    background-color: #ffffff !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1) !important;
+    outline: none !important;
+}
+
+.fit-checkbox {
+    width: 1.1rem;
+    height: 1.1rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.fit-checkbox:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.fit-link {
+    color: var(--primary-color);
+    transition: opacity 0.2s ease;
+}
+
+.fit-link:hover {
+    opacity: 0.8;
+    text-decoration: underline !important;
+}
+
+.fit-btn-primary {
+    background-color: var(--primary-color) !important;
+    color: #ffffff !important;
+    font-size: 0.95rem !important;
+    padding: 0.65rem 1.5rem !important;
+    border-radius: 8px !important;
+    border: none !important;
+    width: 100%;
+    transition: all 0.2s ease !important;
+}
+
+.fit-btn-primary:hover {
+    background-color: #172d6e !important;
+    transform: translateY(-1.5px);
+    box-shadow: 0 6px 15px rgba(30, 58, 138, 0.2) !important;
+}
+
+.fit-btn-primary:active {
+    transform: translateY(0);
+}
+
+.fit-spinner {
+    display: inline-block;
+    width: 1.1rem;
+    height: 1.1rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #ffffff;
+    animation: fit-spin 0.8s linear infinite;
+    vertical-align: text-bottom;
+    margin-right: 0.4rem;
+}
+
+@keyframes fit-spin {
+    to { transform: rotate(360deg); }
 }

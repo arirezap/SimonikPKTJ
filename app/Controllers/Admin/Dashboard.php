@@ -41,12 +41,30 @@ class Dashboard extends BaseController
 
     public function index()
     {
-        $tahun = $this->request->getGet('tahun') ?? date('Y');
-        $bulan = $this->request->getGet('bulan') ?? 'all'; 
+        $ajax_type = $this->request->getGet('ajax_type');
+        $tahun_ecc = $this->request->getGet('tahun_ecc') ?? date('Y');
+        $tahun_kinerja = $this->request->getGet('tahun_kinerja') ?? date('Y');
+        $bulan_kinerja = $this->request->getGet('bulan_kinerja') ?? 'all';
 
         $user_id = session()->get('id') ?? session()->get('user_id');
         $role = session()->get('role');
         $canSeeAll = in_array($role, ['admin', 'direktur', 'wadir']);
+
+        // --- 1. PROSES DATA ECC ---
+        $eccData = null;
+        if (!$this->request->isAJAX() || $ajax_type === 'ecc') {
+            $eccData = $this->getDashboardEccData($tahun_ecc);
+            if ($this->request->isAJAX() && $ajax_type === 'ecc') {
+                return $this->response->setJSON([
+                    'prodiData' => $eccData['prodiData'],
+                    'tahun' => $tahun_ecc
+                ]);
+            }
+        }
+
+        // --- 2. PROSES DATA KINERJA ---
+        if (!$this->request->isAJAX() || $ajax_type === 'kinerja') {
+
 
         // ----------------------------------------------------------------
         // 1. DATA UNTUK SUMMARY CARDS & AGREGASI INDIKATOR
@@ -55,7 +73,7 @@ class Dashboard extends BaseController
             ->select('rencana_kinerja.*')
             ->join('users', 'users.id = rencana_kinerja.user_id')
             ->where('users.role !=', 'admin') 
-            ->where('rencana_kinerja.tahun_anggaran', $tahun);
+            ->where('rencana_kinerja.tahun_anggaran', $tahun_kinerja);
             
         if (!$canSeeAll) {
             $rencanaQuery->groupStart()
@@ -75,10 +93,10 @@ class Dashboard extends BaseController
             $realisasi_bulanan = $this->parseRealisasi($row['realisasi_bulanan'] ?? []);
 
             $realisasi = 0;
-            if ($bulan === 'all') {
+            if ($bulan_kinerja === 'all') {
                 $realisasi = array_sum(array_map('floatval', $realisasi_bulanan));
             } else {
-                $idx = (int)$bulan - 1;
+                $idx = (int)$bulan_kinerja - 1;
                 $realisasi = isset($realisasi_bulanan[$idx]) ? (float)$realisasi_bulanan[$idx] : 0;
             }
 
@@ -137,10 +155,10 @@ class Dashboard extends BaseController
                 $rb = $this->parseRealisasi($r['realisasi_bulanan'] ?? []);
                 
                 $real = 0;
-                if ($bulan === 'all') {
+                if ($bulan_kinerja === 'all') {
                     $real = array_sum(array_map('floatval', $rb));
                 } else {
-                    $idx = (int)$bulan - 1;
+                    $idx = (int)$bulan_kinerja - 1;
                     $real = isset($rb[$idx]) ? (float)$rb[$idx] : 0;
                 }
 
@@ -187,22 +205,16 @@ class Dashboard extends BaseController
         }
 
         // ----------------------------------------------------------------
-        // 4. DATA ECC (MENGGUNAKAN TRAIT AGAR SAMA DENGAN USER)
+        // DATA ECC DIPINDAH KE ATAS
         // ----------------------------------------------------------------
-        // Ini menggantikan kode manual yang panjang sebelumnya
-        $eccData = $this->getDashboardEccData($tahun);
-        $prodiData = $eccData['prodiData']; // Hasilnya sudah format standar (label, data, ids)
-
-        // Ambil daftar tahun dari trait agar konsisten dengan dashboard lain
-        $daftar_tahun = $eccData['daftar_tahun'];
 
         // ----------------------------------------------------------------
         // 5. DATA KINERJA HARIAN PEGAWAI PER UNIT (KHUSUS DIREKTUR/WADIR DLL)
         // ----------------------------------------------------------------
         $logModel = new \App\Models\LogKegiatanHarian();
         $bulanAngka = date('n'); // Gunakan bulan berjalan atau sesuai filter bulan
-        if ($bulan !== 'all') {
-            $bulanAngka = (int)$bulan;
+        if ($bulan_kinerja !== 'all') {
+            $bulanAngka = (int)$bulan_kinerja;
         }
         
         if ($canSeeAll) {
@@ -219,31 +231,22 @@ class Dashboard extends BaseController
         }
 
         $rekapDashboard = [];
-        $globalTepatWaktu = 0;
-        $globalTerlambat = 0;
-        $globalTotalDisiplin = 0;
-        $globalTotalKerjasama = 0;
         $globalTotalDinilai = 0;
         
+        $laporanModel = new \App\Models\LaporanHarian();
+
         foreach ($daftarSemuaUser as $bawahan) {
-            $logs = $logModel->getLogByMonth($bawahan['id'], $bulanAngka, $tahun);
-            $total_laporan = count($logs);
+            $targets = $laporanModel->getTargetWithRealization($bawahan['id'], $bulanAngka, $tahun_kinerja);
+            $total_laporan = count($targets);
             
             $dinilai = 0;
             $total_nilai = 0;
 
-            foreach ($logs as $l) {
-                if (!empty($l['nilai_harian'])) {
+            foreach ($targets as $l) {
+                if ($l['nilai_capaian'] !== null && trim($l['nilai_capaian']) !== '') {
                     $dinilai++;
-                    $total_nilai += (float)$l['nilai_harian'];
-                    $globalTotalDisiplin += (float)($l['disiplin'] ?? 0);
-                    $globalTotalKerjasama += (float)($l['kerjasama'] ?? 0);
+                    $total_nilai += (float)$l['nilai_capaian'];
                     $globalTotalDinilai++;
-                }
-                if (($l['waktu_penyelesaian'] ?? '') === 'Tepat waktu') {
-                    $globalTepatWaktu++;
-                } elseif (($l['waktu_penyelesaian'] ?? '') === 'Terlambat') {
-                    $globalTerlambat++;
                 }
             }
             
@@ -261,17 +264,52 @@ class Dashboard extends BaseController
         // 6. TREN KINERJA BULANAN & LEADERBOARD (PRO MAX UI)
         // ----------------------------------------------------------------
         $db = \Config\Database::connect();
-        $builder = $db->table('log_kegiatan_harian');
-        $builder->select('MONTH(tanggal_kegiatan) as bulan, AVG(nilai_harian) as avg_nilai');
-        $builder->where('YEAR(tanggal_kegiatan)', $tahun);
-        $builder->where('nilai_harian IS NOT NULL');
-        $builder->where('nilai_harian >', 0);
-        $builder->groupBy('MONTH(tanggal_kegiatan)');
-        $trendQuery = $builder->get()->getResultArray();
+        $allTargets = $db->table('laporan_harian')
+            ->select('bulan, nilai_capaian')
+            ->where('tahun', $tahun_kinerja)
+            ->where("nilai_capaian IS NOT NULL AND nilai_capaian != ''")
+            ->get()->getResultArray();
+            
+        $trendBulananData = array_fill(0, 12, 0); 
+        $monthCounts = array_fill(0, 12, 0);
+        $monthSums = array_fill(0, 12, 0);
         
-        $trendBulananData = array_fill(0, 12, 0); // Default 0 (index 0=Jan, 11=Des)
-        foreach ($trendQuery as $tq) {
-            $trendBulananData[(int)$tq['bulan'] - 1] = round($tq['avg_nilai'], 2);
+        foreach ($allTargets as $t) {
+            $b = (int)$t['bulan'] - 1;
+            if ($b >= 0 && $b < 12) {
+                $monthCounts[$b]++;
+                $monthSums[$b] += (float)$t['nilai_capaian'];
+            }
+        }
+        
+        for ($i = 0; $i < 12; $i++) {
+            if ($monthCounts[$i] > 0) {
+                $trendBulananData[$i] = round($monthSums[$i] / $monthCounts[$i], 2);
+            }
+        }
+
+        // Analitik Partisipasi & Sebaran
+        $sebaranKinerja = ['sangat_baik' => 0, 'baik' => 0, 'butuh_perbaikan' => 0, 'kurang' => 0, 'sangat_kurang' => 0];
+        $partisipasiAktif = 0;
+        $totalPegawai = count($rekapDashboard);
+
+        foreach ($rekapDashboard as $r) {
+            if ($r['rata_rata'] > 0) {
+                $partisipasiAktif++;
+            }
+            
+            $rr = $r['rata_rata'];
+            if ($rr > 100) {
+                $sebaranKinerja['sangat_baik']++;
+            } else if ($rr > 90) {
+                $sebaranKinerja['baik']++;
+            } else if ($rr > 75) {
+                $sebaranKinerja['butuh_perbaikan']++;
+            } else if ($rr > 25) {
+                $sebaranKinerja['kurang']++;
+            } else {
+                $sebaranKinerja['sangat_kurang']++;
+            }
         }
 
         // Sort for Leaderboard
@@ -281,84 +319,243 @@ class Dashboard extends BaseController
         });
         
         $top5 = array_slice($leaderboardData, 0, 5);
-        $bottom5 = array_slice(array_reverse($leaderboardData), 0, 5); // Reverse to get worst, but then slice
+        $bottom5 = array_slice(array_reverse($leaderboardData), 0, 5); // Lowest first
 
         $unitStats = [];
         $chartPegawaiUnitLabels = [];
         $chartPegawaiUnitData = [];
         
-        if (!empty($rekapDashboard)) {
-            foreach ($rekapDashboard as $rekap) {
-                $unitName = trim($rekap['bawahan']['unit'] ?? '');
-                if (empty($unitName)) {
-                    $unitName = 'Tanpa Unit';
-                }
-                
-                if (!isset($unitStats[$unitName])) {
-                    $unitStats[$unitName] = ['total_rata' => 0, 'count' => 0, 'anggota' => []];
-                }
-                $unitStats[$unitName]['total_rata'] += $rekap['rata_rata'];
-                $unitStats[$unitName]['count']++;
-                $unitStats[$unitName]['anggota'][] = [
-                    'nama' => $rekap['bawahan']['nama_lengkap'],
-                    'jabatan' => $rekap['bawahan']['jabatan'] ?? '-',
-                    'rata_rata' => $rekap['rata_rata'],
-                    'dinilai' => $rekap['dinilai'],
-                    'total_laporan' => $rekap['total_laporan']
-                ];
+        // Optimize: Calculate unitStats for ALL users globally (not just subordinates)
+        $query = $db->table('laporan_harian')
+            ->select('users.unit, users.nama_lengkap, users.jabatan, laporan_harian.nilai_capaian, laporan_harian.user_id')
+            ->join('users', 'users.id = laporan_harian.user_id')
+            ->where('laporan_harian.tahun', $tahun_kinerja)
+            ->where("laporan_harian.nilai_capaian IS NOT NULL AND laporan_harian.nilai_capaian != ''");
+            
+        if ($bulan_kinerja !== 'all') {
+            $query->where('laporan_harian.bulan', $bulanAngka);
+        }
+        $allTargetsUnit = $query->get()->getResultArray();
+
+        $targetQuery = $db->table('laporan_harian')
+            ->select('user_id, COUNT(id) as total_laporan')
+            ->where('tahun', $tahun_kinerja);
+        if ($bulan_kinerja !== 'all') {
+            $targetQuery->where('bulan', $bulanAngka);
+        }
+        $targetCounts = $targetQuery->groupBy('user_id')->get()->getResultArray();
+        
+        $userTotalLaporan = [];
+        foreach ($targetCounts as $tc) {
+            $userTotalLaporan[$tc['user_id']] = (int)$tc['total_laporan'];
+        }
+
+        $allUsersForUnit = $this->userModel->where('role !=', 'admin')->findAll();
+        $userPerformance = [];
+        foreach ($allUsersForUnit as $u) {
+            $userPerformance[$u['id']] = [
+                'nama' => $u['nama_lengkap'],
+                'jabatan' => $u['jabatan'] ?? '-',
+                'unit' => trim($u['unit'] ?? '') ?: 'Tanpa Unit',
+                'dinilai' => 0,
+                'total_nilai' => 0,
+                'rata_rata' => 0,
+                'total_laporan' => $userTotalLaporan[$u['id']] ?? 0
+            ];
+        }
+
+        foreach ($allTargetsUnit as $t) {
+            $uid = $t['user_id'];
+            if (isset($userPerformance[$uid])) {
+                $userPerformance[$uid]['dinilai']++;
+                $userPerformance[$uid]['total_nilai'] += (float)$t['nilai_capaian'];
             }
-            
-            // Sort by average score descending
-            uasort($unitStats, function($a, $b) {
-                $avgA = $a['count'] > 0 ? $a['total_rata'] / $a['count'] : 0;
-                $avgB = $b['count'] > 0 ? $b['total_rata'] / $b['count'] : 0;
-                return $avgB <=> $avgA;
-            });
-            
-            foreach ($unitStats as $unitName => $stat) {
-                $chartPegawaiUnitLabels[] = $unitName;
-                $chartPegawaiUnitData[] = round($stat['total_rata'] / $stat['count'], 2);
+        }
+
+        foreach ($userPerformance as $uid => $up) {
+            $up['rata_rata'] = $up['dinilai'] > 0 ? round($up['total_nilai'] / $up['dinilai'], 2) : 0;
+            $uName = $up['unit'];
+            if (!isset($unitStats[$uName])) {
+                $unitStats[$uName] = ['total_rata' => 0, 'count' => 0, 'anggota' => []];
+            }
+            $unitStats[$uName]['total_rata'] += $up['rata_rata'];
+            $unitStats[$uName]['count']++;
+            $unitStats[$uName]['anggota'][] = $up;
+        }
+
+        uasort($unitStats, function($a, $b) {
+            $avgA = $a['count'] > 0 ? $a['total_rata'] / $a['count'] : 0;
+            $avgB = $b['count'] > 0 ? $b['total_rata'] / $b['count'] : 0;
+            return $avgB <=> $avgA;
+        });
+
+        foreach ($unitStats as $unitName => $stat) {
+            $chartPegawaiUnitLabels[] = $unitName;
+            $chartPegawaiUnitData[] = round($stat['total_rata'] / $stat['count'], 2);
+        }
+
+            if ($this->request->isAJAX() && $ajax_type === 'kinerja') {
+                return $this->response->setJSON([
+                    'totalIndikator' => $totalIndikator,
+                    'rataRataCapaianGlobal' => $rataRataCapaianGlobal,
+                    'chartLabels' => $chartUserLabels,
+                    'chartData' => $chartUserData,
+                    'chartIndikatorLabels' => $chartIndikatorLabels,
+                    'chartIndikatorPersen' => $chartIndikatorPersen,
+                    'chartIndikatorMeta' => $chartIndikatorMeta,
+                    'kinerja_per_user' => $kinerja_per_user,
+                    'globalTotalDinilai' => $globalTotalDinilai,
+                    'top5' => $top5,
+                    'bottom5' => $bottom5,
+                    'trendBulananData' => $trendBulananData,
+                    'sebaranKinerja' => $sebaranKinerja,
+                    'partisipasiAktif' => $partisipasiAktif,
+                    'totalPegawai' => $totalPegawai,
+                    'isSuper' => $canSeeAll, // pass isSuper
+                    'chartPegawaiUnitLabels' => $chartPegawaiUnitLabels,
+                    'chartPegawaiUnitData' => $chartPegawaiUnitData,
+                    'unitStats' => $unitStats,
+                    'tahun_kinerja' => $tahun_kinerja,
+                    'bulan_kinerja' => $bulan_kinerja
+                ]);
             }
         }
 
         $data = [
             'page_title' => 'Dashboard Admin',
-            'tahun_terpilih' => $tahun,
-            'bulan_terpilih' => $bulan,
-            'daftar_tahun' => $daftar_tahun, // Gunakan daftar tahun dari trait
+            'tahun_ecc' => $tahun_ecc,
+            'tahun_kinerja' => $tahun_kinerja,
+            'bulan_kinerja' => $bulan_kinerja,
+            'daftar_tahun' => $this->getDashboardEccData(date('Y'))['daftar_tahun'],
             
-            'totalIndikator' => $totalIndikator,
-            'rataRataCapaianGlobal' => $rataRataCapaianGlobal,
+            'totalIndikator' => $totalIndikator ?? 0,
+            'rataRataCapaianGlobal' => $rataRataCapaianGlobal ?? 0,
             
-            'chartLabels' => $chartUserLabels,
-            'chartData' => $chartUserData,
+            'chartLabels' => $chartUserLabels ?? [],
+            'chartData' => $chartUserData ?? [],
             
-            'chartIndikatorLabels' => $chartIndikatorLabels,
-            'chartIndikatorPersen' => $chartIndikatorPersen,
-            'chartIndikatorMeta' => $chartIndikatorMeta,
+            'chartIndikatorLabels' => $chartIndikatorLabels ?? [],
+            'chartIndikatorPersen' => $chartIndikatorPersen ?? [],
+            'chartIndikatorMeta' => $chartIndikatorMeta ?? [],
 
-            'kinerja_per_user' => $kinerja_per_user,
+            'kinerja_per_user' => $kinerja_per_user ?? [],
             
-            // Data Radar Chart dari Trait
-            'prodiData' => $prodiData,
+            'prodiData' => $eccData['prodiData'] ?? [],
 
-            // Data Advanced Analytics (Pro Max)
-            'globalTepatWaktu' => $globalTepatWaktu,
-            'globalTerlambat' => $globalTerlambat,
-            'globalTotalDinilai' => $globalTotalDinilai,
-            'avgGlobalDisiplin' => $globalTotalDinilai > 0 ? round($globalTotalDisiplin / $globalTotalDinilai, 2) : 0,
-            'avgGlobalKerjasama' => $globalTotalDinilai > 0 ? round($globalTotalKerjasama / $globalTotalDinilai, 2) : 0,
-            'trendBulananData' => $trendBulananData,
-            'top5' => $top5,
-            'bottom5' => $bottom5,
+            'globalTotalDinilai' => $globalTotalDinilai ?? 0,
+            
+            'top5' => $top5 ?? [],
+            'bottom5' => $bottom5 ?? [],
+            'trendBulananData' => $trendBulananData ?? [],
+            'sebaranKinerja' => $sebaranKinerja ?? ['sangat_baik' => 0, 'baik' => 0, 'cukup' => 0, 'kurang' => 0],
+            'partisipasiAktif' => $partisipasiAktif ?? 0,
+            'totalPegawai' => $totalPegawai ?? 0,
+            'isSuper' => $canSeeAll ?? false,
 
-            // Data Grafik Kinerja Pegawai Per Unit
-            'chartPegawaiUnitLabels' => $chartPegawaiUnitLabels,
-            'chartPegawaiUnitData' => $chartPegawaiUnitData,
-            'unitStats' => $unitStats,
+            'chartPegawaiUnitLabels' => $chartPegawaiUnitLabels ?? [],
+            'chartPegawaiUnitData' => $chartPegawaiUnitData ?? [],
+            'unitStats' => $unitStats ?? [],
             
         ];
 
         return view('admin/dashboard', $data);
+    }
+
+    public function apiDetailChart()
+    {
+        $mode = $this->request->getGet('mode');
+        $tahun = $this->request->getGet('tahun') ?: date('Y');
+        $bulan = $this->request->getGet('bulan') ?: date('n');
+
+        $user_id = session()->get('id');
+        $role = session()->get('role');
+        $canSeeAll = in_array($role, ['direktur', 'admin']);
+        
+        $db = \Config\Database::connect();
+        
+        if ($mode === 'sebaran') {
+            $kategori = $this->request->getGet('kategori'); // Sangat Baik, Baik, Cukup, Kurang
+            
+            if ($canSeeAll) {
+                $users = $this->userModel->where('role !=', 'admin')->where('id !=', $user_id)->orderBy('nama_lengkap', 'ASC')->findAll();
+            } else {
+                $users = $this->userModel->getAllBawahan($user_id, $role);
+                $me = $this->userModel->find($user_id);
+                if ($me) array_unshift($users, $me);
+            }
+
+            $laporanModel = new \App\Models\LaporanHarian();
+            $result = [];
+
+            foreach ($users as $u) {
+                $targets = $laporanModel->getTargetWithRealization($u['id'], $bulan, $tahun);
+                $dinilai = 0; $total_nilai = 0;
+                foreach ($targets as $l) {
+                    if ($l['nilai_capaian'] !== null && trim($l['nilai_capaian']) !== '') {
+                        $dinilai++; $total_nilai += (float)$l['nilai_capaian'];
+                    }
+                }
+                $rata_rata = $dinilai > 0 ? round($total_nilai / $dinilai, 2) : 0;
+
+                $match = false;
+                if ($kategori === 'Sangat Baik' && $rata_rata > 100) $match = true;
+                else if ($kategori === 'Baik' && $rata_rata > 90 && $rata_rata <= 100) $match = true;
+                else if ($kategori === 'Butuh Perbaikan' && $rata_rata > 75 && $rata_rata <= 90) $match = true;
+                else if ($kategori === 'Kurang' && $rata_rata > 25 && $rata_rata <= 75) $match = true;
+                else if ($kategori === 'Sangat Kurang' && $rata_rata <= 25) $match = true;
+
+                if ($match) {
+                    $result[] = [
+                        'nama' => $u['nama_lengkap'],
+                        'jabatan' => $u['jabatan'] ?? '-',
+                        'unit' => $u['unit'] ?? '-',
+                        'rata_rata' => $rata_rata
+                    ];
+                }
+            }
+            
+            return $this->response->setJSON(['status' => 'success', 'data' => $result]);
+            
+        } else if ($mode === 'tren') {
+            // Trend is global
+            $allTargetsUnit = $db->table('laporan_harian')
+                ->select('users.unit, users.nama_lengkap, users.jabatan, laporan_harian.nilai_capaian, laporan_harian.user_id')
+                ->join('users', 'users.id = laporan_harian.user_id')
+                ->where('laporan_harian.tahun', $tahun)
+                ->where('laporan_harian.bulan', $bulan)
+                ->where("laporan_harian.nilai_capaian IS NOT NULL AND laporan_harian.nilai_capaian != ''")
+                ->get()->getResultArray();
+
+            $userPerformance = [];
+            foreach ($allTargetsUnit as $t) {
+                $uid = $t['user_id'];
+                if (!isset($userPerformance[$uid])) {
+                    $userPerformance[$uid] = [
+                        'nama' => $t['nama_lengkap'],
+                        'jabatan' => $t['jabatan'] ?? '-',
+                        'unit' => $t['unit'] ?? '-',
+                        'dinilai' => 0,
+                        'total_nilai' => 0
+                    ];
+                }
+                $userPerformance[$uid]['dinilai']++;
+                $userPerformance[$uid]['total_nilai'] += (float)$t['nilai_capaian'];
+            }
+
+            $result = [];
+            foreach ($userPerformance as $up) {
+                $up['rata_rata'] = $up['dinilai'] > 0 ? round($up['total_nilai'] / $up['dinilai'], 2) : 0;
+                $result[] = $up;
+            }
+            
+            // Sort by rata_rata descending
+            usort($result, function($a, $b) {
+                return $b['rata_rata'] <=> $a['rata_rata'];
+            });
+
+            return $this->response->setJSON(['status' => 'success', 'data' => $result]);
+        }
+
+        return $this->response->setJSON(['status' => 'error', 'message' => 'Invalid mode']);
     }
 }

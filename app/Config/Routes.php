@@ -45,6 +45,7 @@ $routes->post('profile/update', 'Profile::update');
 // Admin Routes (Group)
 $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('dashboard', 'DashboardController::index');
+    $routes->get('dashboard/api-detail-chart', 'Admin\Dashboard::apiDetailChart');
     $routes->get('monitoring', 'Admin\MonitoringController::index');
     $routes->get('monitoring/exportExcel/(:num)/(:num)', 'Admin\MonitoringController::exportExcel/$1/$2');
     $routes->get('monitoring/exportPdf/(:num)/(:num)', 'Admin\MonitoringController::exportPdf/$1/$2');
@@ -170,6 +171,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->match(['get', 'post'], 'laporan-harian', 'User\LaporanHarianController::index');
     $routes->post('laporan-harian/store', 'User\LaporanHarianController::store');
     $routes->post('laporan-harian/hapus', 'User\LaporanHarianController::hapus');
+    $routes->post('laporan-harian/approve-all', 'User\LaporanHarianController::approveAll');
 
     // --- Log Kegiatan Harian ---
     $routes->match(['get', 'post'], 'log-kegiatan', 'User\LogKegiatanController::index');

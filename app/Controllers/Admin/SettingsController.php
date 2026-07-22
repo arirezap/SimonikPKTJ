@@ -11,9 +11,14 @@ class SettingsController extends BaseController
     {
         $settingModel = new SettingModel();
         
+        $settingsRaw = $settingModel->findAll();
+        $settings = array_filter($settingsRaw, function($s) {
+            return $s['setting_key'] !== 'batas_input_log';
+        });
+
         $data = [
             'title' => 'Pengaturan Sistem',
-            'settings' => $settingModel->findAll()
+            'settings' => $settings
         ];
         
         return view('admin/settings/index', $data);

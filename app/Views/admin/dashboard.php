@@ -4,155 +4,311 @@
 
 <?= $this->section('styles') ?>
 <style>
-    /* Tab Navigasi */
-    .nav-tabs .nav-link { border-bottom-width: 0; color: #6c757d; }
-    .nav-tabs .nav-link.active { background-color: #fff; border-color: #dee2e6 #dee2e6 #fff; color: #0d6efd; font-weight: bold; }
-    
-    /* Card Container */
-    .tab-content, .chart-card-wrapper {
-        background-color: #ffffff; border: 1px solid #dee2e6; border-top: 0;
-        border-radius: 0 0.375rem 0.375rem 0.375rem; box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05); padding: 2rem;
+    /* BENTO GRID STYLES (Based on ui-ux-pro-max guidelines) */
+    .bento-card {
+        background-color: #ffffff;
+        border-radius: 1.25rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        border: 1px solid #f1f5f9;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        height: 100%;
+        overflow: hidden;
+    }
+    .bento-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+    }
+    .bento-header {
+        padding: 1.25rem 1.5rem 0.5rem;
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 1.1rem;
+    }
+    .bento-body {
+        padding: 1.5rem;
     }
     
-    /* Ukuran Chart */
-    .radar-chart-container { position: relative; height: 500px; width: 100%; }
-    .chart-container { position: relative; height: 500px; width: 100%; }
-    .performance-chart-container { position: relative; min-height: 600px; width: 100%; }
+    /* Typography & Colors for Dashboards */
+    .text-primary-bento { color: #1e40af; }
+    .bg-primary-bento { background-color: #1e40af; }
+    .bg-light-bento { background-color: #f8fafc; }
+    
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        line-height: 1.2;
+        color: #0f172a;
+    }
+    .stat-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    /* ECC Tab Style Adjustment for Bento */
+    .ecc-tabs {
+        background-color: #f1f5f9;
+        padding: 0.4rem;
+        border-radius: 0.75rem;
+        display: inline-flex;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+        border: 1px solid #e2e8f0;
+    }
+    .ecc-tabs .nav-link { 
+        border: none; 
+        color: #64748b; 
+        font-weight: 600;
+        padding: 0.6rem 1.75rem;
+        border-radius: 0.5rem;
+        margin-right: 0.25rem;
+        transition: all 0.2s ease;
+    }
+    .ecc-tabs .nav-link:hover { 
+        background-color: #e2e8f0; 
+        color: #0f172a;
+    }
+    .ecc-tabs .nav-link.active { 
+        background-color: #1e40af; 
+        color: #ffffff; 
+        box-shadow: 0 4px 10px rgba(30, 64, 175, 0.3);
+        transform: translateY(-1px);
+    }
+    
+    .filter-select {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+        border: 1px solid #cbd5e1 !important;
+        background-color: #ffffff !important;
+        transition: all 0.2s ease;
+    }
+    .filter-select:hover {
+        border-color: #94a3b8 !important;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+    }
+    
+    .radar-chart-container { position: relative; height: 450px; width: 100%; }
+    .chart-container { position: relative; height: 280px; width: 100%; }
+    .performance-chart-container { position: relative; min-height: 400px; width: 100%; }
+    
+    /* Custom Scrollbar for tables */
+    .table-responsive::-webkit-scrollbar { width: 6px; height: 6px; }
+    .table-responsive::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+    .table-responsive::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .table-responsive::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 </style>
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0">Dashboard</h4>
-</div>
-
-<div class="card mb-5 shadow-sm">
-    <div class="card-body">
-        <form method="GET" action="<?= site_url('dashboard') ?>" class="row g-3 align-items-end">
-            <div class="col-md-5">
-                <label for="tahun" class="form-label fw-bold">Pilih Tahun</label>
-                <select class="form-select" id="tahun" name="tahun">
-                    <?php foreach ($daftar_tahun as $tahun_item): ?>
-                        <option value="<?= $tahun_item; ?>" <?= ($tahun_terpilih == $tahun_item) ? 'selected' : ''; ?>><?= esc($tahun_item); ?></option>
+<!-- 1. ECC DASHBOARD (TOP SECTION AS REQUESTED) -->
+<div class="row g-4 mb-5">
+    <div class="col-12">
+        <div class="bento-card border-primary border-top border-4">
+            <div class="bento-header d-flex flex-column flex-md-row justify-content-between align-items-md-center border-bottom pb-3 mb-2 gap-3">
+                <div class="d-flex align-items-center">
+                    <div class="bg-primary-bento text-white rounded p-2 me-3 shadow-sm d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <i class="bi bi-shield-check fs-5"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-0 fw-bold text-dark">Evidence Command Center (ECC)</h5>
+                        <small class="text-muted">Monitoring Pemenuhan Standar Mutu</small>
+                    </div>
+                </div>
+                
+                <!-- Filter Tahun ECC -->
+                <form id="formEcc" class="m-0 d-flex gap-2">
+                    <select name="tahun_ecc" id="tahun_ecc" class="form-select filter-select fw-bold text-primary-bento" style="width: auto; cursor:pointer;" onchange="updateEccData()">
+                        <?php foreach ($daftar_tahun as $tahun_item): ?>
+                            <option value="<?= esc($tahun_item) ?>" <?= ($tahun_ecc == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </form>
+            </div>
+            
+            <div class="bento-body pt-2">
+                <ul class="nav nav-pills ecc-tabs mb-4" id="prodiTab" role="tablist">
+                    <?php foreach($prodiData as $prodi): ?>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="tab-<?= esc($prodi['id_prodi']) ?>" data-bs-toggle="tab" data-bs-target="#content-<?= esc($prodi['id_prodi']) ?>" type="button" role="tab"><?= esc($prodi['nama_prodi']) ?></button>
+                        </li>
                     <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="col-md-5">
-                <label for="bulan" class="form-label fw-bold">Pilih Bulan (untuk Kinerja Global)</label>
-                <select class="form-select" id="bulan" name="bulan">
-                    <option value="all" <?= ($bulan_terpilih === 'all' || !$bulan_terpilih) ? 'selected' : '' ?>>Semua Bulan (Tahunan)</option>
-                    <?php for ($i = 1; $i <= 12; $i++): ?>
-                        <option value="<?= $i; ?>" <?= ($bulan_terpilih == $i) ? 'selected' : ''; ?>><?= bulan_indo($i) ?></option>
-                    <?php endfor; ?>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Filter</button>
-            </div>
-        </form>
-    </div>
-</div>
+                </ul>
 
-<!-- ECC Dashboard (Paling Atas) -->
-<h5 class="mb-3 fw-bold text-dark mt-4"><i class="bi bi-shield-check text-success me-2"></i> Dashboard ECC (Evidence Command Center)</h5>
-
-<ul class="nav nav-tabs" id="prodiTab" role="tablist">
-    <?php foreach($prodiData as $prodi): ?>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tab-<?= esc($prodi['id_prodi']) ?>" data-bs-toggle="tab" data-bs-target="#content-<?= esc($prodi['id_prodi']) ?>" type="button" role="tab"><?= esc($prodi['nama_prodi']) ?></button>
-        </li>
-    <?php endforeach; ?>
-</ul>
-
-<div class="tab-content mb-5" id="prodiTabContent">
-    <?php foreach($prodiData as $prodi): ?>
-        <div class="tab-pane fade" id="content-<?= esc($prodi['id_prodi']) ?>" role="tabpanel">
-            <div class="row justify-content-center">
-                <div class="col-md-10">
-                    <h6 class="text-center mb-4">Rangkuman Skor LED: <span class="text-primary"><?= esc($prodi['nama_prodi']) ?></span> (Tahun <?= esc($tahun_terpilih) ?>)</h6>
-                    
-                    <?php if (empty($prodi['chart_labels'])): ?>
-                        <div class="alert alert-info text-center">Belum ada data Kategori LED untuk tahun ini.</div>
-                    <?php else: ?>
-                        <div class="radar-chart-container"><canvas id="radarChart-<?= esc($prodi['id_prodi']) ?>"></canvas></div>
-                        <p class="text-center text-muted small mt-3"><i class="bi bi-info-circle me-1"></i> Klik pada nama standar (label) di grafik untuk melihat detail.</p>
-                    <?php endif; ?>
+                <div class="tab-content border-0 p-0 shadow-none bg-transparent" id="prodiTabContent">
+                    <?php foreach($prodiData as $prodi): ?>
+                        <div class="tab-pane fade" id="content-<?= esc($prodi['id_prodi']) ?>" role="tabpanel">
+                            <div class="row justify-content-center">
+                                <div class="col-md-9">
+                                    <div class="text-center mb-3">
+                                        <span class="badge bg-light text-dark border px-3 py-2 rounded-pill shadow-sm">
+                                            Rangkuman Skor LED: <strong class="text-primary-bento"><?= esc($prodi['nama_prodi']) ?></strong>
+                                        </span>
+                                    </div>
+                                    <?php if (empty($prodi['chart_labels'])): ?>
+                                        <div class="alert alert-light text-center border">Belum ada data Kategori LED untuk tahun ini.</div>
+                                    <?php else: ?>
+                                        <div class="radar-chart-container"><canvas id="radarChart-<?= esc($prodi['id_prodi']) ?>"></canvas></div>
+                                        <p class="text-center text-muted small mt-2"><i class="bi bi-info-circle me-1"></i> Klik pada nama standar (label) di grafik untuk melihat detail.</p>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
-    <?php endforeach; ?>
+    </div>
 </div>
 
-<hr class="my-5 text-muted">
-
-<h5 class="mb-3 mt-4 fw-bold text-dark"><i class="bi bi-activity text-primary me-2"></i> Command Center: Analitik Instansi</h5>
-
-<!-- Baris 1: Summary Cards -->
+<!-- 2. ANALISIS KINERJA UNIT -->
+<div class="d-flex justify-content-between align-items-center mb-4 mt-5">
+    <div>
+        <h4 class="mb-0 fw-bold text-dark">Analitik Kinerja Unit</h4>
+        <p class="text-muted mb-0 small">Ringkasan performa seluruh unit berdasarkan laporan harian yang dinilai</p>
+    </div>
+    <form id="formKinerja" class="m-0 d-flex gap-2">
+        <select class="form-select filter-select fw-bold text-primary-bento" id="bulan_kinerja" name="bulan_kinerja" style="width: auto; cursor:pointer;" onchange="updateKinerjaData()">
+            <option value="all" <?= ($bulan_kinerja === 'all' || !$bulan_kinerja) ? 'selected' : '' ?>>Semua Bulan</option>
+            <?php for ($i = 1; $i <= 12; $i++): ?>
+                <option value="<?= $i; ?>" <?= ($bulan_kinerja == $i) ? 'selected' : ''; ?>><?= bulan_indo($i) ?></option>
+            <?php endfor; ?>
+        </select>
+        <select name="tahun_kinerja" id="tahun_kinerja" class="form-select filter-select fw-bold text-primary-bento" style="width: auto; cursor:pointer;" onchange="updateKinerjaData()">
+            <?php foreach ($daftar_tahun as $tahun_item): ?>
+                <option value="<?= esc($tahun_item) ?>" <?= ($tahun_kinerja == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
+            <?php endforeach; ?>
+        </select>
+    </form>
+</div>
 <div class="row g-4 mb-4">
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm rounded-4 h-100" style="background: linear-gradient(135deg, #0d6efd 0%, #0043a8 100%); color: white;">
-            <div class="card-body p-4 d-flex flex-column justify-content-center">
-                <div class="text-white-50 fw-bold mb-1 text-uppercase small">Rata-Rata Kinerja Bulanan</div>
-                <h2 class="display-5 fw-bold mb-0">
+    <!-- Kolom Kiri: Stack 2 Cards -->
+    <div class="col-md-5 d-flex flex-column gap-4">
+        <!-- Rata-rata Kinerja -->
+        <div class="bento-card bg-primary-bento text-white flex-fill">
+            <div class="bento-body p-4 d-flex flex-column justify-content-center h-100">
+                <div class="stat-label text-white-50 mb-1">Rata-Rata Kinerja Bulanan</div>
+                <div class="stat-value text-white mb-2" id="valRataRataKinerja">
                     <?php 
                         $rataRataValue = 0;
                         if (!empty($unitStats)) {
-                            $totalAll = array_sum(array_column($unitStats, 'total_rata'));
-                            $countAll = array_sum(array_column($unitStats, 'count'));
-                            $rataRataValue = $countAll > 0 ? round($totalAll / $countAll, 2) : 0;
+                            $totalAktif = 0;
+                            $countAktif = 0;
+                            foreach ($unitStats as $unit) {
+                                if (isset($unit['anggota'])) {
+                                    foreach ($unit['anggota'] as $anggota) {
+                                        if ($anggota['rata_rata'] > 0) {
+                                            $totalAktif += $anggota['rata_rata'];
+                                            $countAktif++;
+                                        }
+                                    }
+                                }
+                            }
+                            $rataRataValue = $countAktif > 0 ? round($totalAktif / $countAktif, 2) : 0;
                         }
                         echo esc($rataRataValue);
                     ?>
-                </h2>
-                <div class="mt-2 text-white-50 small"><i class="bi bi-graph-up-arrow"></i> Skor Agregat Seluruh Pegawai</div>
+                </div>
+                <div class="text-white-50 small"><i class="bi bi-graph-up-arrow me-1"></i> Skor Agregat Seluruh Pegawai</div>
             </div>
         </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
-            <div class="card-body p-4 d-flex flex-column justify-content-center">
-                <div class="text-muted fw-bold mb-1 text-uppercase small">Total Laporan Dinilai</div>
-                <h2 class="display-5 fw-bold text-dark mb-0"><?= esc($globalTotalDinilai) ?></h2>
-                <div class="mt-2 text-success small"><i class="bi bi-check-circle-fill"></i> Laporan telah diperiksa atasan</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
-            <div class="card-body p-4 d-flex flex-column justify-content-center">
-                <div class="text-muted fw-bold mb-1 text-uppercase small">Ketepatan Waktu Penyelesaian</div>
-                <h2 class="display-5 fw-bold text-dark mb-0">
+        
+        <!-- Partisipasi Pegawai Aktif -->
+        <div class="bento-card flex-fill">
+            <div class="bento-body p-4 d-flex flex-column justify-content-center h-100">
+                <div class="stat-label mb-1">Tingkat Partisipasi Aktif</div>
+                <div class="stat-value text-dark mb-2" id="valPartisipasi">
                     <?php 
-                        $totWaktu = $globalTepatWaktu + $globalTerlambat;
-                        echo $totWaktu > 0 ? round(($globalTepatWaktu / $totWaktu) * 100, 1) : 0;
-                    ?>%
-                </h2>
-                <div class="mt-2 text-muted small"><i class="bi bi-clock-history"></i> Tepat Waktu: <?= $globalTepatWaktu ?> | Terlambat: <?= $globalTerlambat ?></div>
+                        $pctPart = ($totalPegawai > 0) ? round(($partisipasiAktif / $totalPegawai) * 100, 1) : 0;
+                        echo $pctPart;
+                    ?><span class="fs-4">%</span>
+                </div>
+                <div class="text-primary small fw-bold"><i class="bi bi-people-fill me-1"></i> <span id="valPartisipasiCount"><?= esc($partisipasiAktif) ?></span> dari <span id="valTotalPegawai"><?= esc($totalPegawai) ?></span> Pegawai Aktif</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Kolom Kanan: Top 5 Unit -->
+    <div class="col-md-7">
+        <div class="bento-card h-100 d-flex flex-column">
+            <div class="bento-header d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                <div><i class="bi bi-building-up text-primary me-2"></i>Top 5 Unit Kerja</div>
+                <a href="#unitPerformanceChart" class="btn btn-sm btn-light rounded-pill fs-7 px-3 text-primary fw-bold" style="text-decoration: none;">Selengkapnya <i class="bi bi-arrow-down-short"></i></a>
+            </div>
+            <div class="bento-body p-0 flex-fill d-flex flex-column justify-content-center">
+                <div class="table-responsive">
+                    <table class="table table-borderless table-hover align-middle mb-0">
+                        <tbody id="tbodyTop5Unit">
+                            <?php 
+                                $unitRanking = [];
+                                if (!empty($unitStats)) {
+                                    foreach ($unitStats as $unitName => $unitData) {
+                                        $totalAktif = 0;
+                                        $countAktif = 0;
+                                        if (isset($unitData['anggota'])) {
+                                            foreach ($unitData['anggota'] as $anggota) {
+                                                if ($anggota['rata_rata'] > 0) {
+                                                    $totalAktif += $anggota['rata_rata'];
+                                                    $countAktif++;
+                                                }
+                                            }
+                                        }
+                                        $avg = $countAktif > 0 ? round($totalAktif / $countAktif, 2) : 0;
+                                        $unitRanking[] = ['nama' => $unitName, 'rata' => $avg];
+                                    }
+                                    usort($unitRanking, function($a, $b) {
+                                        return $b['rata'] <=> $a['rata'];
+                                    });
+                                }
+                                $top5Unit = array_slice($unitRanking, 0, 5);
+                            ?>
+                            <?php if(empty($top5Unit)): ?>
+                                <tr><td class="text-center text-muted py-4">Belum ada data</td></tr>
+                            <?php else: ?>
+                                <?php foreach($top5Unit as $i => $u): ?>
+                                <tr style="height: 48px;">
+                                    <td style="width: 50px;" class="text-center align-middle py-2 border-bottom border-light">
+                                        <?php if($i == 0): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-warning text-dark p-0 shadow-sm" style="width:24px;height:24px;font-size:11px;">1</div>
+                                        <?php elseif($i == 1): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-secondary text-white p-0 shadow-sm" style="width:24px;height:24px;font-size:11px;">2</div>
+                                        <?php elseif($i == 2): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle text-white p-0 shadow-sm" style="background-color: #cd7f32; width:24px;height:24px;font-size:11px;">3</div>
+                                        <?php else: ?><div class="d-flex justify-content-center align-items-center mx-auto fw-bold text-muted" style="width:24px;height:24px;font-size:13px;"><?= $i+1 ?></div><?php endif; ?>
+                                    </td>
+                                    <td class="py-2 border-bottom border-light" style="max-width: 0; width: 100%;">
+                                        <div class="fw-bold text-dark fs-6 text-truncate" title="<?= esc($u['nama']) ?>"><?= esc($u['nama']) ?></div>
+                                    </td>
+                                    <td class="text-end pe-4 py-2 border-bottom border-light">
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 shadow-sm border border-success"><?= $u['rata'] > 0 ? $u['rata'] . '%' : '-' ?></span>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Baris 2: Doughnut & Line Chart -->
-<div class="row g-4 mb-4">
-    <!-- Ketepatan Waktu (Doughnut) -->
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm rounded-4 h-100">
-            <div class="card-body p-4">
-                <h6 class="fw-bold mb-4 text-dark">Rasio Ketepatan Waktu</h6>
-                <div style="height: 280px; position: relative;">
-                    <canvas id="punctualityChart"></canvas>
+<div class="row g-4 mb-5">
+    <!-- Sebaran Kinerja Doughnut Chart -->
+    <div class="col-12 col-md-4 col-lg-4">
+        <div class="bento-card">
+            <div class="bento-header">Sebaran Predikat Kinerja</div>
+            <div class="bento-body pt-0">
+                <div class="chart-container">
+                    <canvas id="sebaranChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
-    <!-- Line Chart Tren Tahunan -->
-    <div class="col-md-8">
-        <div class="card border-0 shadow-sm rounded-4 h-100">
-            <div class="card-body p-4">
-                <h6 class="fw-bold mb-4 text-dark">Tren Kinerja Bulanan Organisasi (Tahun <?= esc($tahun_terpilih) ?>)</h6>
-                <div style="height: 280px; position: relative;">
+    
+    <!-- Trend Line Chart -->
+    <div class="col-12 col-md-8 col-lg-8">
+        <div class="bento-card">
+            <div class="bento-header">Tren Kinerja Bulanan Organisasi</div>
+            <div class="bento-body pt-0">
+                <div class="chart-container">
                     <canvas id="trendChart"></canvas>
                 </div>
             </div>
@@ -162,33 +318,33 @@
 
 
 
-<!-- Baris 4: Leaderboard & Needs Attention -->
+<!-- 3. LEADERBOARD -->
 <div class="row g-4 mb-5">
-    <!-- Top 5 Performers -->
+    <!-- Top 5 -->
     <div class="col-md-6">
-        <div class="card border-0 shadow-sm rounded-4 h-100">
-            <div class="card-body p-4">
-                <h6 class="fw-bold mb-3 text-dark"><i class="bi bi-trophy-fill text-warning me-2"></i>Top 5 Pegawai Berkinerja Terbaik</h6>
+        <div class="bento-card h-100">
+            <div class="bento-header text-dark border-bottom pb-3 mb-2"><i class="bi bi-trophy-fill text-warning me-2"></i>Top 5 Pegawai Berkinerja Terbaik</div>
+            <div class="bento-body p-0">
                 <div class="table-responsive">
                     <table class="table table-borderless table-hover align-middle mb-0">
-                        <tbody>
+                        <tbody id="tbodyTop5">
                             <?php if(empty($top5)): ?>
-                                <tr><td class="text-center text-muted">Belum ada data</td></tr>
+                                <tr><td class="text-center text-muted py-4">Belum ada data</td></tr>
                             <?php else: ?>
                                 <?php foreach($top5 as $i => $t): ?>
-                                <tr>
-                                    <td style="width: 40px;" class="text-center">
-                                        <?php if($i == 0): ?><span class="badge rounded-circle bg-warning text-dark p-2 fs-6">1</span>
-                                        <?php elseif($i == 1): ?><span class="badge rounded-circle bg-secondary text-white p-2 fs-6">2</span>
-                                        <?php elseif($i == 2): ?><span class="badge rounded-circle p-2 fs-6 text-white" style="background-color: #cd7f32;">3</span>
-                                        <?php else: ?><span class="fw-bold text-muted"><?= $i+1 ?></span><?php endif; ?>
+                                <tr style="height: 72px;">
+                                    <td style="width: 60px;" class="text-center align-middle py-3 border-bottom border-light">
+                                        <?php if($i == 0): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-warning text-dark p-0 fs-6 shadow-sm" style="width:30px;height:30px;">1</div>
+                                        <?php elseif($i == 1): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-secondary text-white p-0 fs-6 shadow-sm" style="width:30px;height:30px;">2</div>
+                                        <?php elseif($i == 2): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle text-white p-0 fs-6 shadow-sm" style="background-color: #cd7f32; width:30px;height:30px;">3</div>
+                                        <?php else: ?><div class="d-flex justify-content-center align-items-center mx-auto fw-bold text-muted fs-5" style="width:30px;height:30px;"><?= $i+1 ?></div><?php endif; ?>
                                     </td>
-                                    <td>
+                                    <td class="py-3 border-bottom border-light">
                                         <div class="fw-bold text-dark"><?= esc($t['bawahan']['nama_lengkap']) ?></div>
-                                        <div class="small text-muted"><?= esc($t['bawahan']['jabatan'] ?? '-') ?></div>
+                                        <div class="small text-muted"><?= esc(trim($t['bawahan']['jabatan'] ?? '') ?: '-') ?></div>
                                     </td>
-                                    <td class="text-end">
-                                        <span class="badge bg-success bg-opacity-10 text-success fs-6 border border-success"><?= esc($t['rata_rata']) ?></span>
+                                    <td class="text-end pe-4 py-3 border-bottom border-light">
+                                        <span class="badge bg-success bg-opacity-10 text-success fs-6 rounded-pill px-3 py-2 shadow-sm border border-success"><?= esc($t['rata_rata']) ?></span>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -199,29 +355,29 @@
             </div>
         </div>
     </div>
-    <!-- Needs Attention -->
+    
+    <!-- Bottom 5 -->
     <div class="col-md-6">
-        <div class="card border-0 shadow-sm rounded-4 h-100">
-            <div class="card-body p-4">
-                <h6 class="fw-bold mb-3 text-dark"><i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Perlu Perhatian Khusus (Terbawah)</h6>
+        <div class="bento-card h-100">
+            <div class="bento-header text-dark border-bottom pb-3 mb-2"><i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Perlu Perhatian Khusus</div>
+            <div class="bento-body p-0">
                 <div class="table-responsive">
                     <table class="table table-borderless table-hover align-middle mb-0">
-                        <tbody>
+                        <tbody id="tbodyBottom5">
                             <?php if(empty($bottom5)): ?>
-                                <tr><td class="text-center text-muted">Belum ada data</td></tr>
+                                <tr><td class="text-center text-muted py-4">Belum ada data</td></tr>
                             <?php else: ?>
                                 <?php foreach($bottom5 as $i => $b): ?>
-                                <tr>
-                                    <td style="width: 40px;" class="text-center">
-                                        <span class="fw-bold text-danger"><?= $i+1 ?></span>
+                                <tr style="height: 72px;">
+                                    <td style="width: 60px;" class="text-center align-middle py-3 border-bottom border-light">
+                                        <div class="d-flex justify-content-center align-items-center mx-auto fw-bold text-danger fs-5" style="width:30px;height:30px;"><?= $i+1 ?></div>
                                     </td>
-                                    <td>
+                                    <td class="py-3 border-bottom border-light">
                                         <div class="fw-bold text-dark"><?= esc($b['bawahan']['nama_lengkap']) ?></div>
-                                        <div class="small text-muted"><?= esc($b['bawahan']['jabatan'] ?? '-') ?></div>
+                                        <div class="small text-muted"><?= esc(trim($b['bawahan']['jabatan'] ?? '') ?: '-') ?></div>
                                     </td>
-                                    <td class="text-end">
-                                        <?php $color = $b['rata_rata'] < 60 ? 'danger' : 'warning'; ?>
-                                        <span class="badge bg-<?= $color ?> bg-opacity-10 text-<?= $color ?> fs-6 border border-<?= $color ?>"><?= esc($b['rata_rata']) ?></span>
+                                    <td class="text-end pe-4 py-3 border-bottom border-light">
+                                        <span class="badge bg-danger bg-opacity-10 text-danger fs-6 rounded-pill px-3 py-2 shadow-sm border border-danger"><?= esc($b['rata_rata']) ?></span>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -234,45 +390,47 @@
     </div>
 </div>
 
-
-
-<div class="d-flex align-items-center mb-4 mt-5">
-    <h4 class="mb-0 me-3">Kinerja Seluruh Pegawai (Per Unit Kerja)</h4>
-    <span class="badge bg-primary bg-opacity-10 text-primary fs-6">Direktur / Wadir</span>
+<!-- 4. GRAFIK KINERJA UNIT -->
+<div class="d-flex align-items-center mb-3">
+    <h5 class="fw-bold text-secondary mb-0"><i class="bi bi-building me-2"></i> Grafik Kinerja Unit</h5>
 </div>
 
-<div class="card shadow-sm border-0 rounded-4 mb-5">
-    <div class="card-body p-4">
-        <?php if (empty($chartPegawaiUnitLabels)): ?>
-            <div class="alert alert-info border-0 shadow-sm"><i class="bi bi-info-circle me-2"></i> Belum ada data rekap kinerja staf untuk bulan ini.</div>
-        <?php else: ?>
-            <div class="performance-chart-container" style="height: 400px; position: relative; width: 100%;">
-                <canvas id="unitPerformanceChart"></canvas>
+<div class="row g-4 mb-5">
+    <div class="col-12">
+        <div class="bento-card border-top border-4 border-info">
+            <div class="bento-body p-4">
+                <?php if (empty($chartPegawaiUnitLabels)): ?>
+                    <div class="alert alert-light border text-center text-muted mb-0 shadow-sm"><i class="bi bi-info-circle me-2"></i> Belum ada data rekap kinerja staf.</div>
+                <?php else: ?>
+                    <div class="performance-chart-container">
+                        <canvas id="unitPerformanceChart"></canvas>
+                    </div>
+                    <p class="text-center text-muted small mt-3 mb-0"><i class="bi bi-info-circle me-1"></i> Klik pada grafik batang untuk melihat detail anggota unit kerja.</p>
+                <?php endif; ?>
             </div>
-            <p class="text-center text-muted small mt-3"><i class="bi bi-info-circle me-1"></i> Klik pada grafik batang untuk melihat detail anggota unit kerja.</p>
-        <?php endif; ?>
+        </div>
     </div>
 </div>
 
 <!-- Modal Detail Unit -->
-<div class="modal fade" id="unitDetailModal" tabindex="-1" aria-labelledby="unitDetailModalLabel" aria-hidden="true">
+<div class="modal fade" id="unitDetailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content rounded-4 border-0 shadow">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
             <div class="modal-header border-bottom-0 pb-0">
-                <h5 class="modal-title fw-bold" id="unitDetailModalLabel">Detail Pegawai: <span id="modalUnitName" class="text-primary"></span></h5>
+                <h5 class="modal-title fw-bold" id="unitDetailModalLabel">Detail Pegawai: <span id="modalUnitName" class="text-primary-bento"></span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body pt-3 pb-4">
                 <div class="table-responsive">
                     <table class="table table-hover table-borderless align-middle mb-0">
-                        <thead class="table-light">
+                        <thead class="bg-light text-muted small text-uppercase">
                             <tr>
-                                <th class="text-secondary small fw-bold text-uppercase rounded-start">Nama Pegawai</th>
-                                <th class="text-secondary small fw-bold text-uppercase text-center">Laporan Dinilai</th>
-                                <th class="text-secondary small fw-bold text-uppercase text-center rounded-end">Rata-rata Nilai</th>
+                                <th class="ps-3 rounded-start">Nama Pegawai</th>
+                                <th class="text-center">Target Dinilai</th>
+                                <th class="text-center rounded-end">Rata-rata Nilai</th>
                             </tr>
                         </thead>
-                        <tbody id="unitDetailTbody">
+                        <tbody id="unitDetailTbody" class="border-top-0">
                             <!-- Injected via JS -->
                         </tbody>
                     </table>
@@ -289,6 +447,178 @@
 
 <script>
 window.pageCharts = window.pageCharts || {};
+window.adminUnitStatsCache = {};
+window.adminUnitLabelsCache = [];
+
+async function updateEccData() {
+    const tahunEcc = document.getElementById('tahun_ecc').value;
+    try {
+        const response = await fetch(`<?= site_url('dashboard') ?>?ajax_type=ecc&tahun_ecc=${tahunEcc}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const data = await response.json();
+        if(data && data.prodiData) {
+            for (const [id, prodi] of Object.entries(data.prodiData)) {
+                const canvasId = 'radarChart-' + id;
+                if(window.pageCharts[canvasId]) {
+                    const chart = window.pageCharts[canvasId];
+                    chart.data.labels = prodi.chart_labels.map(label => {
+                        if (label.length <= 25) return label;
+                        const words = label.split(' ');
+                        const lines = [];
+                        let currentLine = words[0];
+                        for (let i = 1; i < words.length; i++) {
+                            if (currentLine.length + 1 + words[i].length <= 25) { currentLine += ' ' + words[i]; } 
+                            else { lines.push(currentLine); currentLine = words[i]; }
+                        }
+                        lines.push(currentLine);
+                        return lines;
+                    });
+                    chart.data.labelIds = prodi.chart_label_ids;
+                    chart.data.tahun = tahunEcc;
+                    chart.data.datasets[0].data = prodi.chart_data;
+                    chart.update();
+                }
+            }
+        }
+    } catch(err) { console.error("Gagal mengambil data ECC:", err); }
+}
+
+async function updateKinerjaData() {
+    const tahunKinerja = document.getElementById('tahun_kinerja').value;
+    const bulanKinerja = document.getElementById('bulan_kinerja').value;
+    try {
+        const response = await fetch(`<?= site_url('dashboard') ?>?ajax_type=kinerja&tahun_kinerja=${tahunKinerja}&bulan_kinerja=${bulanKinerja}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const data = await response.json();
+        if(data) {
+            // Analitik Instansi (Card Top)
+            const unitStats = data.unitStats || {};            // Update Summary Cards
+            let rataRataValue = 0;
+            let unitRanking = [];
+            
+            if (data.unitStats && Object.keys(data.unitStats).length > 0) {
+                let globalTotalAktif = 0;
+                let globalCountAktif = 0;
+                
+                for (let unit in data.unitStats) {
+                    let totalAktif = 0;
+                    let countAktif = 0;
+                    let anggota = data.unitStats[unit].anggota || [];
+                    anggota.forEach(a => {
+                        if (a.rata_rata > 0) {
+                            totalAktif += a.rata_rata;
+                            countAktif++;
+                            globalTotalAktif += a.rata_rata;
+                            globalCountAktif++;
+                        }
+                    });
+                    
+                    let unitAvg = countAktif > 0 ? (totalAktif / countAktif).toFixed(2) : 0;
+                    unitRanking.push({nama: unit, rata: parseFloat(unitAvg)});
+                }
+                rataRataValue = globalCountAktif > 0 ? (globalTotalAktif / globalCountAktif).toFixed(2) : 0;
+                unitRanking.sort((a, b) => b.rata - a.rata);
+            }
+            
+            document.getElementById('valRataRataKinerja').innerText = rataRataValue;
+            
+            let htmlUnit = '';
+            let top5Unit = unitRanking.slice(0, 5);
+            if(top5Unit.length === 0) {
+                htmlUnit = '<tr><td class="text-center text-muted py-4">Belum ada data</td></tr>';
+            } else {
+                top5Unit.forEach((u, i) => {
+                    let badgeNum = '';
+                    if(i === 0) badgeNum = '<div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-warning text-dark p-0 shadow-sm" style="width:24px;height:24px;font-size:11px;">1</div>';
+                    else if(i === 1) badgeNum = '<div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-secondary text-white p-0 shadow-sm" style="width:24px;height:24px;font-size:11px;">2</div>';
+                    else if(i === 2) badgeNum = '<div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle text-white p-0 shadow-sm" style="background-color: #cd7f32; width:24px;height:24px;font-size:11px;">3</div>';
+                    else badgeNum = '<div class="d-flex justify-content-center align-items-center mx-auto fw-bold text-muted" style="width:24px;height:24px;font-size:13px;">'+(i+1)+'</div>';
+                    
+                    let rataStr = u.rata > 0 ? u.rata + '%' : '-';
+                    
+                    htmlUnit += `
+                    <tr style="height: 48px;">
+                        <td style="width: 50px;" class="text-center align-middle py-2 border-bottom border-light">${badgeNum}</td>
+                        <td class="py-2 border-bottom border-light" style="max-width: 0; width: 100%;">
+                            <div class="fw-bold text-dark fs-6 text-truncate" title="${u.nama}">${u.nama}</div>
+                        </td>
+                        <td class="text-end pe-4 py-2 border-bottom border-light">
+                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 shadow-sm border border-success">${rataStr}</span>
+                        </td>
+                    </tr>`;
+                });
+            }
+            document.getElementById('tbodyTop5Unit').innerHTML = htmlUnit;
+            
+            const partisipasi = data.partisipasiAktif || 0;
+            const total = data.totalPegawai || 0;
+            const pctPart = total > 0 ? ((partisipasi / total) * 100).toFixed(1) : 0;
+            document.getElementById('valPartisipasi').innerHTML = pctPart + '<span class="fs-4">%</span>';
+            document.getElementById('valPartisipasiCount').innerText = partisipasi;
+            document.getElementById('valTotalPegawai').innerText = total;
+
+            // Sebaran Doughnut Chart
+            if(window.pageCharts['sebaranChart'] && data.sebaranKinerja) {
+                window.pageCharts['sebaranChart'].data.datasets[0].data = [
+                    data.sebaranKinerja.sangat_baik || 0,
+                    data.sebaranKinerja.baik || 0,
+                    data.sebaranKinerja.cukup || 0,
+                    data.sebaranKinerja.kurang || 0
+                ];
+                window.pageCharts['sebaranChart'].update();
+            }
+
+            // Trend Chart
+            if(window.pageCharts['trendChart']) {
+                window.pageCharts['trendChart'].data.datasets[0].data = data.trendBulananData || [];
+                window.pageCharts['trendChart'].update();
+            }
+
+            // Top 5 / Bottom 5 Tables
+            const renderTable = (arr, isTop) => {
+                if(!arr || arr.length === 0) return '<tr><td class="text-center text-muted py-4">Belum ada data</td></tr>';
+                let html = '';
+                arr.forEach((item, i) => {
+                    let badge = '';
+                    if(isTop) {
+                        if(i === 0) badge = `<span class="badge rounded-circle bg-warning text-dark p-2 fs-6 shadow-sm" style="width:30px;height:30px;">1</span>`;
+                        else if(i === 1) badge = `<span class="badge rounded-circle bg-secondary text-white p-2 fs-6 shadow-sm" style="width:30px;height:30px;">2</span>`;
+                        else if(i === 2) badge = `<span class="badge rounded-circle text-white p-2 fs-6 shadow-sm" style="background-color: #cd7f32; width:30px;height:30px;">3</span>`;
+                        else badge = `<span class="fw-bold text-muted fs-5">${i+1}</span>`;
+                    } else {
+                        badge = `<span class="fw-bold text-danger fs-5">${i+1}</span>`;
+                    }
+                    const scoreClass = isTop ? 'bg-success text-success border-success' : 'bg-danger text-danger border-danger';
+                    html += `
+                    <tr>
+                        <td style="width: 50px;" class="text-center ps-4 py-3 border-bottom border-light">${badge}</td>
+                        <td class="py-3 border-bottom border-light">
+                            <div class="fw-bold text-dark">${item.bawahan.nama_lengkap}</div>
+                            <div class="small text-muted">${item.bawahan.jabatan || '-'}</div>
+                        </td>
+                        <td class="text-end pe-4 py-3 border-bottom border-light">
+                            <span class="badge ${scoreClass} bg-opacity-10 fs-6 rounded-pill px-3 py-2 shadow-sm border">${item.rata_rata}</span>
+                        </td>
+                    </tr>`;
+                });
+                return html;
+            };
+            document.getElementById('tbodyTop5').innerHTML = renderTable(data.top5, true);
+            document.getElementById('tbodyBottom5').innerHTML = renderTable(data.bottom5, false);
+
+            // Unit Chart
+            if(window.pageCharts['unitChart']) {
+                window.adminUnitLabelsCache = data.chartPegawaiUnitLabels || [];
+                window.adminUnitStatsCache = data.unitStats || {};
+                window.pageCharts['unitChart'].data.labels = window.adminUnitLabelsCache;
+                window.pageCharts['unitChart'].data.datasets[0].data = data.chartPegawaiUnitData || [];
+                window.pageCharts['unitChart'].update();
+            }
+        }
+    } catch(err) { console.error("Gagal mengambil data Kinerja:", err); }
+}
 
 document.addEventListener('DOMContentLoaded', function () {
     // Cleanup chart lama
@@ -296,11 +626,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (window.pageCharts[key]) { window.pageCharts[key].destroy(); delete window.pageCharts[key]; }
     }
 
-    // --- SCRIPT BARU UNTUK MENGINGAT TAB AKTIF ---
+    // --- SCRIPT UNTUK MENGINGAT TAB AKTIF ECC ---
     const prodiTabs = document.querySelectorAll('#prodiTab button[data-bs-toggle="tab"]');
     const activeTabKey = 'activeProdiTab';
 
-    // 1. Saat tab diklik, simpan ID targetnya
     prodiTabs.forEach(tab => {
         tab.addEventListener('shown.bs.tab', function (event) {
             const targetId = event.target.getAttribute('data-bs-target');
@@ -310,29 +639,20 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // 2. Saat halaman dimuat, aktifkan tab yang tersimpan atau tab pertama
     const savedTabId = sessionStorage.getItem(activeTabKey);
     let tabToActivate = null;
-
     if (savedTabId) {
-        // Cari tombol yang menargetkan konten yang tersimpan
         tabToActivate = document.querySelector(`button[data-bs-target="${savedTabId}"]`);
     }
-
-    // Jika tab yang tersimpan tidak ditemukan, atau tidak ada yang tersimpan, aktifkan yang pertama
     if (!tabToActivate) {
         tabToActivate = document.querySelector('#prodiTab button[data-bs-toggle="tab"]');
     }
-
-    // Tampilkan tab yang sudah ditentukan
     if (tabToActivate) {
         const tab = new bootstrap.Tab(tabToActivate);
         tab.show();
     }
 
-    // --- 1. HELPER FUNCTIONS (SAMA DENGAN USER) ---
-    
-    // Fungsi Split Label (Word Wrap)
+    // --- Helper: Word Wrap ---
     function splitLabel(label, maxLength = 25) {
         if (label.length <= maxLength) return label;
         const words = label.split(' ');
@@ -350,32 +670,22 @@ document.addEventListener('DOMContentLoaded', function () {
         return lines;
     }
 
-    // Fungsi Format Angka
-    const formatLongLabel = (val, ctx) => {
-        const label = ctx.chart.data.labels[val];
-        return (label.length > 40) ? label.substring(0, 40) + '...' : label;
-    };
-
-    // Fungsi Deteksi Klik Radar (SAMA PERSIS DENGAN USER)
+    // --- EVENT KLIK LABEL ECC ---
     function getClickedLabel(clickEvent, chart) {
         if (!chart || !chart.scales || !chart.scales.r) return null;
         const r = chart.scales.r;
         const pointLabelItems = r._pointLabelItems; 
         if (!pointLabelItems || pointLabelItems.length === 0) return null;
-        
         const canvasPosition = Chart.helpers.getRelativePosition(clickEvent, chart);
         const x = canvasPosition.x;
         const y = canvasPosition.y;
-        
         let closestLabelIndex = -1;
         let minDistance = Infinity;
-
         for (let i = 0; i < pointLabelItems.length; i++) {
             const item = pointLabelItems[i];
             const distance = Math.sqrt(Math.pow(x - item.x, 2) + Math.pow(y - item.y, 2));
             if (distance < minDistance) { minDistance = distance; closestLabelIndex = i; }
         }
-
         if (closestLabelIndex > -1) {
             try {
                 const item = pointLabelItems[closestLabelIndex];
@@ -386,9 +696,9 @@ document.addEventListener('DOMContentLoaded', function () {
         return null;
     }
 
-    // --- 2. INIT RADAR CHART (LOGIKA SAMA DENGAN USER) ---
-    const prodiData = <?= json_encode($prodiData) ?>;
-    const selectedTahun = '<?= esc($tahun_terpilih) ?>';
+    // --- INIT RADAR CHART ECC ---
+    const prodiData = <?= json_encode($prodiData ?? []) ?>;
+    const selectedTahun = '<?= esc($tahun_ecc) ?>';
 
     for (const [id, data] of Object.entries(prodiData)) {
         const canvasId = 'radarChart-' + id;
@@ -405,8 +715,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     tahun: selectedTahun,
                     datasets: [{
                         label: 'Skor ' + data.nama_prodi, data: data.chart_data, fill: true,
-                        backgroundColor: 'rgba(13, 110, 253, 0.2)', borderColor: 'rgba(13, 110, 253, 1)',
-                        pointBackgroundColor: 'rgba(13, 110, 253, 1)', pointBorderColor: '#fff'
+                        backgroundColor: 'rgba(30, 64, 175, 0.15)', borderColor: 'rgba(30, 64, 175, 1)',
+                        pointBackgroundColor: 'rgba(30, 64, 175, 1)', pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff', pointHoverBorderColor: 'rgba(30, 64, 175, 1)',
+                        borderWidth: 2
                     }]
                 },
                 options: {
@@ -415,38 +727,29 @@ document.addEventListener('DOMContentLoaded', function () {
                     layout: { padding: 20 },
                     scales: {
                         r: {
-                            angleLines: { display: true },
+                            angleLines: { display: true, color: 'rgba(0, 0, 0, 0.05)' },
                             min: 0, max: 100,
-                            grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
                             pointLabels: { 
-                                display: true, color: '#0d6efd', font: { size: 11, weight: 'bold' }, 
+                                display: true, color: '#475569', font: { size: 11, weight: '600', family: 'system-ui' }, 
                                 backdropPadding: 4, padding: 15
                             },
-                            ticks: { 
-                                display: false, 
-                                stepSize: 33.3333 // SKALA 3 GARIS
-                            }
+                            ticks: { display: false, stepSize: 33.3333 }
                         }
                     },
-                    plugins: { legend: { position: 'top' } },
-                    
-                    // EVENT HANDLERS (KLIK LABEL)
+                    plugins: { legend: { display: false } },
                     onHover: (event, activeElements, chart) => {
                          const index = getClickedLabel(event, chart);
                          event.native.target.style.cursor = (index !== null) ? 'pointer' : 'default';
                     },
                     onClick: (e, elements, chart) => {
-                        // Deteksi klik pada Label (bukan dot)
                         const idx = getClickedLabel(e, chart);
                         if (idx !== null) {
                             if (chart.config.data.labelIds && chart.config.data.labelIds[idx]) {
                                 const labelId = chart.config.data.labelIds[idx];
-                                // SOLUSI: Ubah nama prodi menjadi lowercase agar sesuai dengan aturan router
                                 const prodi = chart.config.data.prodi.toLowerCase();
                                 const tahun = chart.config.data.tahun;
-                                
                                 document.body.style.cursor = 'wait'; 
-                                // PERBAIKAN: Sesuaikan URL ke 'ecc/detailStandar' dan gunakan variabel prodi yang sudah di-lowercase
                                 window.location.href = `<?= site_url('ecc/detailStandar') ?>/${labelId}/${prodi}/${tahun}?from=admin`;
                             }
                         }
@@ -456,29 +759,29 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // --- INIT CHART UNIT ---
     <?php if (!empty($chartPegawaiUnitLabels)): ?>
     const ctxUnit = document.getElementById('unitPerformanceChart');
     if (ctxUnit) {
-        const unitStats = <?= json_encode($unitStats ?? []) ?>;
-        const unitLabels = <?= json_encode($chartPegawaiUnitLabels) ?>;
-        const unitData = <?= json_encode($chartPegawaiUnitData) ?>;
+        window.adminUnitStatsCache = <?= json_encode($unitStats ?? []) ?>;
+        window.adminUnitLabelsCache = <?= json_encode($chartPegawaiUnitLabels ?? []) ?>;
+        const unitData = <?= json_encode($chartPegawaiUnitData ?? []) ?>;
         
-        // Adjust height based on number of labels so it's not squished (dikecilkan ~50% sesuai request)
-        const dynamicHeight = Math.max(200, unitLabels.length * 25);
+        const dynamicHeight = Math.max(200, window.adminUnitLabelsCache.length * 40);
         ctxUnit.parentElement.style.height = dynamicHeight + 'px';
         
-        const unitChart = new Chart(ctxUnit, {
+        window.pageCharts['unitChart'] = new Chart(ctxUnit, {
             type: 'bar',
             data: {
-                labels: unitLabels,
+                labels: window.adminUnitLabelsCache,
                 datasets: [{
                     label: 'Rata-Rata Kinerja',
                     data: unitData,
-                    backgroundColor: 'rgba(13, 110, 253, 0.8)',
-                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(30, 64, 175, 0.85)',
+                    borderColor: '#1e40af',
                     borderWidth: 1,
-                    borderRadius: 4,
-                    maxBarThickness: 30
+                    borderRadius: 6,
+                    hoverBackgroundColor: '#1e40af'
                 }]
             },
             options: {
@@ -488,31 +791,26 @@ document.addEventListener('DOMContentLoaded', function () {
                 plugins: {
                     legend: { display: false },
                     tooltip: {
+                        backgroundColor: '#1e293b',
+                        padding: 12,
                         callbacks: {
-                            label: function(context) {
-                                return 'Rata-Rata: ' + context.parsed.x;
-                            }
+                            label: function(context) { return 'Rata-Rata: ' + context.parsed.x + '%'; }
                         }
                     }
                 },
                 scales: {
                     x: {
-                        beginAtZero: true,
-                        max: 100,
-                        grid: { borderDash: [2, 4], color: '#e9ecef' }
+                        beginAtZero: true, max: 100, grid: { borderDash: [2, 4], color: '#f1f5f9' }
                     },
                     y: {
-                        grid: { display: false },
-                        ticks: {
-                            font: { size: 11 }
-                        }
+                        grid: { display: false }, ticks: { font: { size: 11, family: 'system-ui' } }
                     }
                 },
                 onClick: (e, elements) => {
                     if (elements.length > 0) {
                         const idx = elements[0].index;
-                        const selectedUnit = unitLabels[idx];
-                        const details = unitStats[selectedUnit].anggota;
+                        const selectedUnit = window.adminUnitLabelsCache[idx];
+                        const details = window.adminUnitStatsCache[selectedUnit]?.anggota;
                         
                         document.getElementById('modalUnitName').innerText = selectedUnit;
                         
@@ -522,22 +820,25 @@ document.addEventListener('DOMContentLoaded', function () {
                                 let badgeClass = 'bg-success';
                                 if(item.rata_rata < 60) badgeClass = 'bg-danger';
                                 else if(item.rata_rata < 75) badgeClass = 'bg-warning text-dark';
+                                else if(item.rata_rata == 0 && item.dinilai == 0) badgeClass = 'bg-secondary';
                                 
                                 tbody += `
                                     <tr>
-                                        <td>
+                                        <td class="ps-3 py-3 border-bottom border-light">
                                             <div class="fw-bold text-dark">${item.nama}</div>
-                                            <div class="small text-muted">${item.jabatan}</div>
+                                            <div class="small text-muted">${item.jabatan || '-'}</div>
                                         </td>
-                                        <td class="text-center">${item.dinilai} / ${item.total_laporan}</td>
-                                        <td class="text-center">
-                                            <span class="badge ${badgeClass} fs-6">${item.rata_rata}</span>
+                                        <td class="text-center py-3 border-bottom border-light">
+                                            <span class="badge bg-light text-dark border shadow-sm">${item.dinilai} / ${item.total_laporan}</span>
+                                        </td>
+                                        <td class="text-center py-3 border-bottom border-light pe-3">
+                                            <span class="badge ${badgeClass} fs-6 rounded-pill px-3 shadow-sm">${item.rata_rata}</span>
                                         </td>
                                     </tr>
                                 `;
                             });
                         } else {
-                            tbody = `<tr><td colspan="3" class="text-center text-muted">Data kosong</td></tr>`;
+                            tbody = `<tr><td colspan="3" class="text-center text-muted py-4">Data kosong</td></tr>`;
                         }
                         document.getElementById('unitDetailTbody').innerHTML = tbody;
                         
@@ -554,16 +855,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- PRO MAX ANALYTICS CHARTS ---
     
-    // 1. Punctuality Doughnut Chart
-    const ctxPunctuality = document.getElementById('punctualityChart');
-    if (ctxPunctuality) {
-        new Chart(ctxPunctuality, {
+    // 1. Sebaran Predikat Kinerja (Doughnut Chart)
+    const ctxSebaran = document.getElementById('sebaranChart');
+    if (ctxSebaran) {
+        window.pageCharts['sebaranChart'] = new Chart(ctxSebaran, {
             type: 'doughnut',
             data: {
-                labels: ['Tepat Waktu', 'Terlambat'],
+                labels: ['Sangat Baik (>100%)', 'Baik (>90-100%)', 'Butuh Perbaikan (>75-90%)', 'Kurang (>25-75%)', 'Sangat Kurang (≤25%)'],
                 datasets: [{
-                    data: [<?= $globalTepatWaktu ?>, <?= $globalTerlambat ?>],
-                    backgroundColor: ['#198754', '#dc3545'],
+                    data: [
+                        <?= esc($sebaranKinerja['sangat_baik']) ?>, 
+                        <?= esc($sebaranKinerja['baik']) ?>, 
+                        <?= esc($sebaranKinerja['butuh_perbaikan']) ?>, 
+                        <?= esc($sebaranKinerja['kurang']) ?>,
+                        <?= esc($sebaranKinerja['sangat_kurang']) ?>
+                    ],
+                    backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444'], // green, blue, purple, yellow, red
                     borderWidth: 0,
                     hoverOffset: 4
                 }]
@@ -573,7 +880,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 maintainAspectRatio: false,
                 cutout: '75%',
                 plugins: {
-                    legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } }
+                    legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: { family: 'system-ui' } } }
+                },
+                onClick: function(evt, activeElements, chart) {
+                    if (activeElements.length > 0) {
+                        const index = activeElements[0].index;
+                        const fullLabel = chart.data.labels[index];
+                        let realLabel = '';
+                        if (fullLabel.includes('Sangat Baik')) realLabel = 'Sangat Baik';
+                        else if (fullLabel.includes('Sangat Kurang')) realLabel = 'Sangat Kurang';
+                        else if (fullLabel.includes('Butuh Perbaikan')) realLabel = 'Butuh Perbaikan';
+                        else if (fullLabel.includes('Baik')) realLabel = 'Baik';
+                        else if (fullLabel.includes('Kurang')) realLabel = 'Kurang';
+                        
+                        fetchChartDetail('sebaran', realLabel);
+                    }
                 }
             }
         });
@@ -582,38 +903,137 @@ document.addEventListener('DOMContentLoaded', function () {
     // 4. Monthly Trend Line Chart
     const ctxTrend = document.getElementById('trendChart');
     if (ctxTrend) {
-        const trendData = <?= json_encode($trendBulananData) ?>;
-        new Chart(ctxTrend, {
+        window.pageCharts['trendChart'] = new Chart(ctxTrend, {
             type: 'line',
             data: {
                 labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
                 datasets: [{
-                    label: 'Rata-rata Nilai Instansi',
-                    data: trendData,
-                    borderColor: '#0d6efd',
-                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    label: 'Rata-Rata Kinerja',
+                    data: <?= json_encode($trendBulananData) ?>,
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
                     borderWidth: 3,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#0d6efd',
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#4f46e5',
+                    pointBorderColor: '#fff',
                     pointBorderWidth: 2,
                     pointRadius: 4,
-                    pointHoverRadius: 6,
-                    fill: true,
-                    tension: 0.4 // Smooth curve
+                    pointHoverRadius: 6
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: {
+                    legend: { display: false }
+                },
                 scales: {
-                    y: { min: 0, max: 100, grid: { borderDash: [4, 4] } },
-                    x: { grid: { display: false } }
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { borderDash: [5, 5], color: '#f3f4f6', drawBorder: false }
+                    },
+                    x: {
+                        grid: { display: false, drawBorder: false }
+                    }
+                },
+                onClick: function(evt, activeElements, chart) {
+                    if (activeElements.length > 0) {
+                        const index = activeElements[0].index;
+                        const bulanIdx = index + 1; // 1-12
+                        const bulanNames = chart.data.labels;
+                        fetchChartDetail('tren', bulanNames[index], bulanIdx);
+                    }
                 }
             }
         });
     }
 
 });
+    // --- CHART DETAIL MODAL LOGIC ---
+    function fetchChartDetail(mode, label, bulanVal = null) {
+        const tahun = document.getElementById('tahun_kinerja').value;
+        let bulan = document.getElementById('bulan_kinerja').value;
+        if (mode === 'tren' && bulanVal) {
+            bulan = bulanVal;
+        }
+
+        let title = '';
+        let url = '<?= site_url('dashboard/api-detail-chart') ?>?mode=' + mode + '&tahun=' + tahun + '&bulan=' + (bulan === 'all' ? new Date().getMonth()+1 : bulan);
+        
+        if (mode === 'sebaran') {
+            title = 'Pegawai Predikat ' + label;
+            url += '&kategori=' + encodeURIComponent(label);
+        } else if (mode === 'tren') {
+            title = 'Detail Kinerja - ' + label + ' ' + tahun;
+        }
+
+        document.getElementById('detailChartTitle').innerText = title;
+        document.getElementById('detailChartBody').innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <div class="mt-2 text-muted small">Memuat data...</div>
+            </div>`;
+            
+        const modal = new bootstrap.Modal(document.getElementById('detailChartModal'));
+        modal.show();
+
+        fetch(url)
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    if (res.data.length === 0) {
+                        document.getElementById('detailChartBody').innerHTML = `<div class="alert alert-info py-2">Tidak ada data pegawai.</div>`;
+                        return;
+                    }
+                    
+                    let html = `<div class="table-responsive"><table class="table table-hover align-middle border">
+                                <thead class="table-light"><tr><th class="ps-3">Nama Pegawai</th><th class="text-center">Nilai Rata-rata</th></tr></thead><tbody>`;
+                    
+                    res.data.forEach(p => {
+                        let badgeColor = 'secondary';
+                        if (p.rata_rata >= 90) badgeColor = 'success';
+                        else if (p.rata_rata >= 75) badgeColor = 'primary';
+                        else if (p.rata_rata >= 60) badgeColor = 'warning text-dark';
+                        else if (p.rata_rata > 0) badgeColor = 'danger';
+
+                        html += `<tr>
+                                    <td class="ps-3">
+                                        <div class="fw-bold text-dark">${p.nama}</div>
+                                        <div class="text-muted small">${p.jabatan} • ${p.unit}</div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-${badgeColor} rounded-pill px-3 py-2" style="font-size:0.85rem">${p.rata_rata}</span>
+                                    </td>
+                                 </tr>`;
+                    });
+                    
+                    html += `</tbody></table></div>`;
+                    document.getElementById('detailChartBody').innerHTML = html;
+                } else {
+                    document.getElementById('detailChartBody').innerHTML = `<div class="alert alert-danger py-2">Terjadi kesalahan pemuatan data.</div>`;
+                }
+            })
+            .catch(err => {
+                document.getElementById('detailChartBody').innerHTML = `<div class="alert alert-danger py-2">Gagal menghubungi server.</div>`;
+            });
+    }
 </script>
+
+<!-- Modal Detail Chart -->
+<div class="modal fade" id="detailChartModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-header border-bottom-0 bg-light rounded-top-4 pb-2">
+        <h5 class="modal-title fw-bold text-dark" id="detailChartTitle">Detail Kinerja</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="min-width: 44px; min-height: 44px;"></button>
+      </div>
+      <div class="modal-body pt-2" id="detailChartBody">
+        <!-- Content loaded via AJAX -->
+      </div>
+    </div>
+  </div>
+</div>
+
 <?= $this->endSection() ?>
