@@ -1,4 +1,4 @@
-# 🚀 Simonik PKTJ (Sistem Monitoring Kinerja)
+# 🚀 Simonik (Sistem Monitoring Kinerja)
 
 <div align="center">
   <p><strong>Aplikasi berbasis web modern untuk memonitor, mengevaluasi, dan merekapitulasi kinerja institusi.</strong></p>
@@ -7,38 +7,27 @@
 ---
 
 ## 📌 Deskripsi Proyek
-**Simonik PKTJ** adalah platform terintegrasi yang dirancang khusus untuk mengelola rekam jejak kinerja pegawai di lingkungan **Politeknik Keselamatan Transportasi Jalan (PKTJ)**. Sistem ini memfasilitasi alur kerja birokrasi berjenjang secara digital (dari Staf hingga Direktur) dan dilengkapi dengan ekosistem **Evidence Command Center (ECC)** untuk otomasi pemenuhan dokumen akreditasi institusi.
+**Simonik** adalah platform terintegrasi yang dirancang untuk mengelola rekam jejak dan evaluasi kinerja pegawai. Sistem ini memfasilitasi alur kerja birokrasi secara digital dan dilengkapi dengan ekosistem pelaporan yang dinamis. 
 
-Dibangun dengan filosofi desain **UI/UX Pro Max (Bento Grid)**, sistem ini memastikan adopsi pengguna yang tinggi melalui antarmuka yang intuitif, bersih, dan memanjakan mata.
+Dibangun dengan fokus pada kecepatan dan kenyamanan pengguna, sistem ini memastikan adopsi yang tinggi melalui antarmuka yang intuitif dan bersih.
 
 ---
 
 ## ✨ Fitur Utama
 
-### 1. 🔐 Arsitektur Multi-Role Pivot
-Berbeda dengan sistem tradisional, Simonik menggunakan arsitektur peran ganda (*Multi-role Pivot Table*). Seorang pengguna memiliki **Peran Struktural** (Staf, Manajemen, dll.) yang menentukan alur *approval* hierarkisnya, namun di saat bersamaan bisa disematkan **Peran Fungsional** (Kepegawaian, SPM) tanpa saling tindih (konflik hak akses).
-
-### 2. 📊 Sistem Penilaian Kinerja Berjenjang
-Pencatatan Rencana Hasil Kerja (RHK) bulanan dan log harian terhubung langsung ke atasan. Sistem mengunci RHK yang sudah berstatus 'Terkirim' agar tidak dapat dimanipulasi, memaksa interaksi validasi *real-time* dari pimpinan unit.
-
-### 3. 🏢 ECC (Evidence Command Center) Cerdas
-* Fitur Laporan Evaluasi Diri (LED) yang langsung memfilter tugas dan indikator berdasarkan asal Unit Kerja pengguna (misal: Subbagian AAK atau KUK).
-* Menyediakan hak akses eksklusif fitur **Simulasi Penilaian Institusi** yang hanya dapat disentuh oleh **Satuan Penjaminan Mutu (SPM)**.
-
-### 4. 💼 Dashboard Rekap Kepegawaian (12-Month Matrix)
-Ruang kontrol khusus bagi divisi SDM (Kepegawaian) untuk melacak tren fluktuasi nilai rata-rata tiap pegawai selama 1 tahun penuh. Dilengkapi fitur **Export Excel** presisi yang mengunci *formatting* NIP agar tidak berubah menjadi angka matematis (notasi ilmiah) pada Microsoft Excel.
-
-### 5. 🎨 UI/UX Pro Max & Kinerja Ekstrem
-Mengadopsi tata letak modern **Bento Grid**, sistem dibekali dengan **Skeleton Loading** dinamis pada setiap transisi *filter* data (menghilangkan layar putih *loading* jadul), serta umpan balik visual interaktif dengan *SweetAlert2*.
+- **🔐 Arsitektur Multi-Role Pivot:** Memungkinkan sistem untuk menangani berbagai jenis peran pengguna secara dinamis dan berlapis tanpa konflik hak akses.
+- **📊 Penilaian Kinerja Berjenjang:** Alur validasi dan *approval* otomatis dari atasan secara hierarkis untuk memastikan transparansi dan integritas data.
+- **🏢 Manajemen Bukti (Evidence Management):** Modul pengumpulan dokumen dan target kinerja yang tersinkronisasi antar-divisi.
+- **💼 Modul Pelaporan & Rekapitulasi:** Dasbor khusus untuk melacak tren fluktuasi kinerja dengan dukungan ekspor data (Excel/CSV) yang akurat.
+- **🎨 UI/UX Modern:** Mengadopsi tata letak responsif, sistem dibekali dengan interaksi dinamis untuk pengalaman penggunaan yang mulus (*seamless*).
 
 ---
 
-## 🛠️ Tech Stack & Ekosistem
+## 🛠️ Tech Stack
 - **Framework Core:** CodeIgniter 4 (PHP 8.1+)
-- **Database:** MySQL (Relational & Pivot mapping)
-- **Frontend / UI:** HTML5, Vanilla CSS 3 (Bento Styles), Bootstrap 5.3
+- **Database:** MySQL
+- **Frontend / UI:** HTML5, CSS 3, Bootstrap 5.3
 - **Javascript:** jQuery, SweetAlert2
-- **Arsitektur Development:** Dibantu dan direkayasa bersama AI (Google DeepMind - Antigravity Agent)
 
 ---
 
@@ -50,16 +39,7 @@ Mengadopsi tata letak modern **Bento Grid**, sistem dibekali dengan **Skeleton L
    ```
 
 2. **Atur Environment Variables:**
-   Salin `env` menjadi `.env` lalu sesuaikan kredensial server dan database Anda.
-   ```env
-   CI_ENVIRONMENT = development
-   app.baseURL = 'http://simonikpktj.test/'
-   
-   database.default.hostname = localhost
-   database.default.database = simonik_db
-   database.default.username = root
-   database.default.password = 
-   ```
+   Salin *file* `env` menjadi `.env` lalu sesuaikan kredensial koneksi server dan database Anda. Pastikan `CI_ENVIRONMENT` diset ke `development` atau `production` sesuai kebutuhan.
 
 3. **Install Dependensi:**
    ```bash
@@ -67,29 +47,17 @@ Mengadopsi tata letak modern **Bento Grid**, sistem dibekali dengan **Skeleton L
    ```
 
 4. **Migrasi Database:**
-   Pastikan tabel terbentuk sempurna dengan menjalankan skrip *migration*.
+   Jalankan perintah berikut untuk membangun struktur tabel pada database Anda:
    ```bash
    php spark migrate
    ```
 
 5. **Jalankan Aplikasi:**
-   Buka lewat *virtual host* di browser Anda atau gunakan server bawaan CI4:
+   Buka melalui *virtual host* di *local environment* Anda atau gunakan server bawaan CI4:
    ```bash
    php spark serve
    ```
 
 ---
 
-## 🔒 Matriks Hak Akses (Role Access Matrix)
-
-Sistem dirancang tertutup dengan hierarki ketat:
-* **`admin`**: Dewa (God-mode). Mengatur pengguna, master data RHK institusi, dan unit kerja.
-* **`direktur` / `wadir`**: *Top management view*. Menyetujui dan menilai kinerja manajer/kabag di bawahnya.
-* **`manajemen`**: Pimpinan unit (Kanit/Kabag). Mengelola staf di divisinya.
-* **`user`**: Pegawai reguler/Staf (hanya bisa melaporkan aktivitas).
-* **`kepegawaian`**: Akses sisipan untuk memantau nilai gaji/remunerasi lintas divisi.
-* **`spm`**: Akses sisipan untuk mengeksekusi penilaian final akreditasi kampus.
-
----
-
-> **Dikelola dengan ❤️ untuk Politeknik Keselamatan Transportasi Jalan (PKTJ)**
+> **Dikelola secara internal sebagai solusi platform produktivitas dan monitoring kinerja.**
