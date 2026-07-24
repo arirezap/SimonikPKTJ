@@ -1,68 +1,95 @@
-# CodeIgniter 4 Application Starter
+# 🚀 Simonik PKTJ (Sistem Monitoring Kinerja)
 
-## What is CodeIgniter?
+<div align="center">
+  <p><strong>Aplikasi berbasis web modern untuk memonitor, mengevaluasi, dan merekapitulasi kinerja institusi.</strong></p>
+</div>
 
-CodeIgniter is a PHP full-stack web framework that is light, fast, flexible and secure.
-More information can be found at the [official site](https://codeigniter.com).
+---
 
-This repository holds a composer-installable app starter.
-It has been built from the
-[development repository](https://github.com/codeigniter4/CodeIgniter4).
+## 📌 Deskripsi Proyek
+**Simonik PKTJ** adalah platform terintegrasi yang dirancang khusus untuk mengelola rekam jejak kinerja pegawai di lingkungan **Politeknik Keselamatan Transportasi Jalan (PKTJ)**. Sistem ini memfasilitasi alur kerja birokrasi berjenjang secara digital (dari Staf hingga Direktur) dan dilengkapi dengan ekosistem **Evidence Command Center (ECC)** untuk otomasi pemenuhan dokumen akreditasi institusi.
 
-More information about the plans for version 4 can be found in [CodeIgniter 4](https://forum.codeigniter.com/forumdisplay.php?fid=28) on the forums.
+Dibangun dengan filosofi desain **UI/UX Pro Max (Bento Grid)**, sistem ini memastikan adopsi pengguna yang tinggi melalui antarmuka yang intuitif, bersih, dan memanjakan mata.
 
-You can read the [user guide](https://codeigniter.com/user_guide/)
-corresponding to the latest version of the framework.
+---
 
-## Installation & updates
+## ✨ Fitur Utama
 
-`composer create-project codeigniter4/appstarter` then `composer update` whenever
-there is a new release of the framework.
+### 1. 🔐 Arsitektur Multi-Role Pivot
+Berbeda dengan sistem tradisional, Simonik menggunakan arsitektur peran ganda (*Multi-role Pivot Table*). Seorang pengguna memiliki **Peran Struktural** (Staf, Manajemen, dll.) yang menentukan alur *approval* hierarkisnya, namun di saat bersamaan bisa disematkan **Peran Fungsional** (Kepegawaian, SPM) tanpa saling tindih (konflik hak akses).
 
-When updating, check the release notes to see if there are any changes you might need to apply
-to your `app` folder. The affected files can be copied or merged from
-`vendor/codeigniter4/framework/app`.
+### 2. 📊 Sistem Penilaian Kinerja Berjenjang
+Pencatatan Rencana Hasil Kerja (RHK) bulanan dan log harian terhubung langsung ke atasan. Sistem mengunci RHK yang sudah berstatus 'Terkirim' agar tidak dapat dimanipulasi, memaksa interaksi validasi *real-time* dari pimpinan unit.
 
-## Setup
+### 3. 🏢 ECC (Evidence Command Center) Cerdas
+* Fitur Laporan Evaluasi Diri (LED) yang langsung memfilter tugas dan indikator berdasarkan asal Unit Kerja pengguna (misal: Subbagian AAK atau KUK).
+* Menyediakan hak akses eksklusif fitur **Simulasi Penilaian Institusi** yang hanya dapat disentuh oleh **Satuan Penjaminan Mutu (SPM)**.
 
-Copy `env` to `.env` and tailor for your app, specifically the baseURL
-and any database settings.
+### 4. 💼 Dashboard Rekap Kepegawaian (12-Month Matrix)
+Ruang kontrol khusus bagi divisi SDM (Kepegawaian) untuk melacak tren fluktuasi nilai rata-rata tiap pegawai selama 1 tahun penuh. Dilengkapi fitur **Export Excel** presisi yang mengunci *formatting* NIP agar tidak berubah menjadi angka matematis (notasi ilmiah) pada Microsoft Excel.
 
-## Important Change with index.php
+### 5. 🎨 UI/UX Pro Max & Kinerja Ekstrem
+Mengadopsi tata letak modern **Bento Grid**, sistem dibekali dengan **Skeleton Loading** dinamis pada setiap transisi *filter* data (menghilangkan layar putih *loading* jadul), serta umpan balik visual interaktif dengan *SweetAlert2*.
 
-`index.php` is no longer in the root of the project! It has been moved inside the *public* folder,
-for better security and separation of components.
+---
 
-This means that you should configure your web server to "point" to your project's *public* folder, and
-not to the project root. A better practice would be to configure a virtual host to point there. A poor practice would be to point your web server to the project root and expect to enter *public/...*, as the rest of your logic and the
-framework are exposed.
+## 🛠️ Tech Stack & Ekosistem
+- **Framework Core:** CodeIgniter 4 (PHP 8.1+)
+- **Database:** MySQL (Relational & Pivot mapping)
+- **Frontend / UI:** HTML5, Vanilla CSS 3 (Bento Styles), Bootstrap 5.3
+- **Javascript:** jQuery, SweetAlert2
+- **Arsitektur Development:** Dibantu dan direkayasa bersama AI (Google DeepMind - Antigravity Agent)
 
-**Please** read the user guide for a better explanation of how CI4 works!
+---
 
-## Repository Management
+## ⚙️ Panduan Instalasi (Development)
 
-We use GitHub issues, in our main repository, to track **BUGS** and to track approved **DEVELOPMENT** work packages.
-We use our [forum](http://forum.codeigniter.com) to provide SUPPORT and to discuss
-FEATURE REQUESTS.
+1. **Clone repositori ini:**
+   ```bash
+   git clone https://github.com/arirezap/SimonikPKTJ.git
+   ```
 
-This repository is a "distribution" one, built by our release preparation script.
-Problems with it can be raised on our forum, or as issues in the main repository.
+2. **Atur Environment Variables:**
+   Salin `env` menjadi `.env` lalu sesuaikan kredensial server dan database Anda.
+   ```env
+   CI_ENVIRONMENT = development
+   app.baseURL = 'http://simonikpktj.test/'
+   
+   database.default.hostname = localhost
+   database.default.database = simonik_db
+   database.default.username = root
+   database.default.password = 
+   ```
 
-## Server Requirements
+3. **Install Dependensi:**
+   ```bash
+   composer install
+   ```
 
-PHP version 8.1 or higher is required, with the following extensions installed:
+4. **Migrasi Database:**
+   Pastikan tabel terbentuk sempurna dengan menjalankan skrip *migration*.
+   ```bash
+   php spark migrate
+   ```
 
-- [intl](http://php.net/manual/en/intl.requirements.php)
-- [mbstring](http://php.net/manual/en/mbstring.installation.php)
+5. **Jalankan Aplikasi:**
+   Buka lewat *virtual host* di browser Anda atau gunakan server bawaan CI4:
+   ```bash
+   php spark serve
+   ```
 
-> [!WARNING]
-> - The end of life date for PHP 7.4 was November 28, 2022.
-> - The end of life date for PHP 8.0 was November 26, 2023.
-> - If you are still using PHP 7.4 or 8.0, you should upgrade immediately.
-> - The end of life date for PHP 8.1 will be December 31, 2025.
+---
 
-Additionally, make sure that the following extensions are enabled in your PHP:
+## 🔒 Matriks Hak Akses (Role Access Matrix)
 
-- json (enabled by default - don't turn it off)
-- [mysqlnd](http://php.net/manual/en/mysqlnd.install.php) if you plan to use MySQL
-- [libcurl](http://php.net/manual/en/curl.requirements.php) if you plan to use the HTTP\CURLRequest library
+Sistem dirancang tertutup dengan hierarki ketat:
+* **`admin`**: Dewa (God-mode). Mengatur pengguna, master data RHK institusi, dan unit kerja.
+* **`direktur` / `wadir`**: *Top management view*. Menyetujui dan menilai kinerja manajer/kabag di bawahnya.
+* **`manajemen`**: Pimpinan unit (Kanit/Kabag). Mengelola staf di divisinya.
+* **`user`**: Pegawai reguler/Staf (hanya bisa melaporkan aktivitas).
+* **`kepegawaian`**: Akses sisipan untuk memantau nilai gaji/remunerasi lintas divisi.
+* **`spm`**: Akses sisipan untuk mengeksekusi penilaian final akreditasi kampus.
+
+---
+
+> **Dikelola dengan ❤️ untuk Politeknik Keselamatan Transportasi Jalan (PKTJ)**
