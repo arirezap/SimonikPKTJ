@@ -93,7 +93,7 @@ Dashboard
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
     }
     
-    .radar-chart-container { position: relative; height: 450px; width: 100%; }
+    .radar-chart-container { position: relative; height: 420px; width: 100%; }
     .line-chart-container { position: relative; height: 300px; width: 100%; }
     .performance-chart-container { position: relative; height: 350px; width: 100%; }
     
@@ -109,22 +109,22 @@ Dashboard
 
 <!-- 1. ECC DASHBOARD (TOP SECTION AS REQUESTED) -->
 <div class="row g-4 mb-5">
-    <div class="col-12">
-        <div class="bento-card border-primary border-top border-4">
-            <div class="bento-header d-flex justify-content-between align-items-center border-bottom pb-3 mb-2">
+    <div class="col-lg-8 d-flex flex-column">
+        <div class="bento-card border-primary border-top border-4 flex-fill">
+            <div class="bento-header d-flex flex-column flex-md-row justify-content-between align-items-md-center border-bottom pb-2 mb-2 gap-2">
                 <div class="d-flex align-items-center">
-                    <div class="bg-primary-bento text-white rounded p-2 me-3 shadow-sm d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                        <i class="bi bi-shield-check fs-5"></i>
+                    <div class="bg-primary-bento text-white rounded p-1 me-2 shadow-sm d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                        <i class="bi bi-shield-check fs-6"></i>
                     </div>
                     <div>
-                        <h5 class="mb-0 fw-bold text-dark">Evidence Command Center (ECC)</h5>
-                        <small class="text-muted">Monitoring Pemenuhan Standar Mutu</small>
+                        <div class="mb-0 fw-bold text-dark fs-6">Evidence Command Center (ECC)</div>
+                        <div class="text-muted" style="font-size: 0.75rem;">Monitoring Pemenuhan Standar Mutu</div>
                     </div>
                 </div>
                 
                 <!-- Filter Tahun ECC -->
-                <form id="formEcc" class="m-0">
-                    <select name="tahun_ecc" id="tahun_ecc" class="form-select filter-select fw-bold text-primary-bento" style="width: auto; cursor:pointer;" onchange="updateEccData()">
+                <form id="formEcc" class="m-0 d-flex gap-2">
+                    <select name="tahun_ecc" id="tahun_ecc" class="form-select form-select-sm filter-select fw-bold text-primary-bento" style="width: auto; cursor:pointer;" onchange="updateEccData()">
                         <?php foreach ($daftar_tahun as $tahun_item): ?>
                             <option value="<?= esc($tahun_item) ?>" <?= ($tahun_ecc == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
                         <?php endforeach; ?>
@@ -136,7 +136,7 @@ Dashboard
                 <ul class="nav nav-pills ecc-tabs mb-4" id="prodiTab" role="tablist">
                     <?php foreach($prodiData as $prodi): ?>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="tab-<?= esc($prodi['id_prodi']) ?>" data-bs-toggle="tab" data-bs-target="#content-<?= esc($prodi['id_prodi']) ?>" type="button" role="tab"><?= esc($prodi['nama_prodi']) ?></button>
+                            <button class="nav-link py-1 px-3" style="font-size: 0.85rem;" id="tab-<?= esc($prodi['id_prodi']) ?>" data-bs-toggle="tab" data-bs-target="#content-<?= esc($prodi['id_prodi']) ?>" type="button" role="tab"><?= esc($prodi['nama_prodi']) ?></button>
                         </li>
                     <?php endforeach; ?>
                 </ul>
@@ -145,9 +145,9 @@ Dashboard
                     <?php foreach($prodiData as $prodi): ?>
                         <div class="tab-pane fade" id="content-<?= esc($prodi['id_prodi']) ?>" role="tabpanel">
                             <div class="row justify-content-center">
-                                <div class="col-md-9">
+                                <div class="col-12 px-0 px-md-3">
                                     <div class="text-center mb-3">
-                                        <span class="badge bg-light text-dark border px-3 py-2 rounded-pill shadow-sm">
+                                        <span class="badge bg-light text-dark border px-2 py-1 rounded-pill shadow-sm" style="font-size: 0.75rem;">
                                             Rangkuman Skor LED: <strong class="text-primary-bento"><?= esc($prodi['nama_prodi']) ?></strong>
                                         </span>
                                     </div>
@@ -165,25 +165,11 @@ Dashboard
             </div>
         </div>
     </div>
-</div>
-
-<!-- 2. ANALISIS KINERJA PRIBADI -->
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h5 class="fw-bold text-secondary mb-0"><i class="bi bi-person-workspace me-2"></i> Kinerja Pribadi</h5>
-    <form id="formKinerja" class="m-0 d-flex gap-2">
-        <select name="tahun_kinerja" id="tahun_kinerja" class="form-select filter-select fw-bold text-primary-bento" style="width: auto; cursor:pointer;" onchange="updateKinerjaData()">
-            <?php foreach ($daftar_tahun as $tahun_item): ?>
-                <option value="<?= esc($tahun_item) ?>" <?= ($tahun_kinerja == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
-            <?php endforeach; ?>
-        </select>
-    </form>
-</div>
-<div class="row g-4 mb-5">
-    <!-- Quick Stats -->
-    <div class="col-md-4 col-lg-3 d-flex flex-column gap-4">
+    
+    <div class="col-lg-4 d-flex flex-column gap-4">
         <!-- Rata-rata Capaian -->
-        <div class="bento-card bg-primary-bento text-white" style="height: auto;">
-            <div class="bento-body d-flex flex-column justify-content-center align-items-center text-center py-4">
+        <div class="bento-card bg-primary-bento text-white flex-fill shadow-sm" style="min-height: 150px;">
+            <div class="bento-body d-flex flex-column justify-content-center align-items-center text-center py-4 h-100">
                 <div class="stat-label text-white-50 mb-2">Nilai Rata-Rata Kinerja</div>
                 <div class="stat-value text-white mb-2" id="valRataRataCapaian"><?= round($rataRataCapaian, 1) ?><span class="fs-4">%</span></div>
                 <div class="progress w-75 bg-white bg-opacity-25 mt-2 rounded-pill" style="height: 6px;">
@@ -193,8 +179,8 @@ Dashboard
         </div>
         
         <!-- Total Indikator -->
-        <div class="bento-card" style="height: auto;">
-            <div class="bento-body d-flex align-items-center">
+        <div class="bento-card flex-fill shadow-sm border-top border-4 border-primary" style="min-height: 150px;">
+            <div class="bento-body d-flex align-items-center justify-content-center h-100">
                 <div class="bg-light rounded-circle p-3 me-3 text-primary-bento">
                     <i class="bi bi-list-check fs-3"></i>
                 </div>
@@ -205,9 +191,23 @@ Dashboard
             </div>
         </div>
     </div>
+</div>
+
+<!-- 2. ANALISIS KINERJA PRIBADI -->
+<div class="d-flex justify-content-between align-items-center mb-3 mt-3">
+    <h5 class="fw-bold text-secondary mb-0"><i class="bi bi-person-workspace me-2"></i> Kinerja Pribadi</h5>
+    <form id="formKinerja" class="m-0 d-flex gap-2">
+        <select name="tahun_kinerja" id="tahun_kinerja" class="form-select filter-select fw-bold text-primary-bento" style="width: auto; cursor:pointer;" onchange="updateKinerjaData()">
+            <?php foreach ($daftar_tahun as $tahun_item): ?>
+                <option value="<?= esc($tahun_item) ?>" <?= ($tahun_kinerja == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
+            <?php endforeach; ?>
+        </select>
+    </form>
+</div>
+<div class="row g-4 mb-5">
 
     <!-- Tren Kumulatif Chart -->
-    <div class="col-md-8 col-lg-9">
+    <div class="col-12">
         <div class="bento-card">
             <div class="bento-header">
                 Tren Nilai Rata-Rata Kinerja Bulanan
@@ -221,11 +221,11 @@ Dashboard
     </div>
 </div>
 
-<!-- 3. ANALISIS KINERJA BAWAHAN / REKAN SATU UNIT -->
+<!-- 3. ANALISIS KINERJA STAF / REKAN SATU UNIT -->
 <?php if (((isset($isAtasan) && $isAtasan) || (isset($isUnitPeers) && $isUnitPeers)) && !empty($rekapDashboard)): ?>
 <h5 class="fw-bold text-secondary mb-3" id="tabelRekapTitle">
     <?php if (isset($isAtasan) && $isAtasan): ?>
-        <i class="bi bi-people-fill me-2"></i> Monitoring Kinerja Staf Bawahan
+        <i class="bi bi-people-fill me-2"></i> Monitoring Kinerja Staf Staf
     <?php else: ?>
         <i class="bi bi-diagram-3-fill me-2"></i> Kinerja Rekan 1 Unit Kerja
     <?php endif; ?>
@@ -244,7 +244,7 @@ Dashboard
                                 <th class="text-center py-3 border-0 rounded-top-end">Rata-rata Nilai</th>
                             </tr>
                         </thead>
-                        <tbody class="border-top-0" id="tbodyKinerjaBawahan">
+                        <tbody class="border-top-0" id="tbodyKinerjaStaf">
                             <?php foreach ($rekapDashboard as $rekap): ?>
                                 <?php 
                                     $rata = $rekap['rata_rata'];
@@ -257,16 +257,16 @@ Dashboard
                                     <td class="ps-4 py-3 border-bottom-0 border-bottom border-light">
                                         <div class="d-flex align-items-center">
                                             <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3 fw-bold shadow-sm" style="width: 42px; height: 42px;">
-                                                <?= strtoupper(substr(trim($rekap['bawahan']['nama_lengkap']), 0, 1)) ?>
+                                                <?= strtoupper(substr(trim($rekap['staf']['nama_lengkap']), 0, 1)) ?>
                                             </div>
                                             <div>
-                                                <div class="fw-bold text-dark"><?= esc($rekap['bawahan']['nama_lengkap']) ?></div>
-                                                <small class="text-muted"><?= esc($rekap['bawahan']['nip']) ?></small>
+                                                <div class="fw-bold text-dark"><?= esc($rekap['staf']['nama_lengkap']) ?></div>
+                                                <small class="text-muted"><?= esc($rekap['staf']['nip']) ?></small>
                                             </div>
                                         </div>
                                     </td>
                                     <td class="text-center py-3 text-muted border-bottom-0 border-bottom border-light">
-                                        <?= esc($rekap['bawahan']['jabatan'] ?: '-') ?>
+                                        <?= esc($rekap['staf']['jabatan'] ?: '-') ?>
                                     </td>
                                     <td class="text-center py-3 border-bottom-0 border-bottom border-light">
                                         <span class="badge bg-light text-dark border px-2 py-1 shadow-sm">
@@ -407,7 +407,7 @@ async function updateKinerjaData() {
                 chart.update();
             }
 
-            // 3. Update Tabel Bawahan / Rekan 1 Unit
+            // 3. Update Tabel Staf / Rekan 1 Unit
             const isAtasan = data.isAtasan;
             const isUnitPeers = data.isUnitPeers;
             const rekapDashboard = data.rekapDashboard || [];
@@ -419,12 +419,12 @@ async function updateKinerjaData() {
                     tabelContainer.style.display = 'flex';
                     tabelTitle.style.display = 'block';
                     if (isAtasan) {
-                        tabelTitle.innerHTML = '<i class="bi bi-people-fill me-2"></i> Monitoring Kinerja Staf Bawahan';
+                        tabelTitle.innerHTML = '<i class="bi bi-people-fill me-2"></i> Monitoring Kinerja Staf Staf';
                     } else {
                         tabelTitle.innerHTML = '<i class="bi bi-diagram-3-fill me-2"></i> Kinerja Rekan 1 Unit Kerja';
                     }
                     
-                    let htmlBawahan = '';
+                    let htmlStaf = '';
                     rekapDashboard.forEach(rekap => {
                         let rata = rekap.rata_rata;
                         let warnaBadge = 'bg-success';
@@ -432,17 +432,17 @@ async function updateKinerjaData() {
                         else if (rata < 75) warnaBadge = 'bg-warning text-dark';
                         else if (rata == 0 && rekap.dinilai == 0) warnaBadge = 'bg-secondary';
                         
-                        let avatar = rekap.bawahan.avatar ? `/uploads/avatars/${rekap.bawahan.avatar}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(rekap.bawahan.nama_lengkap)}&background=random`;
-                        let jabatan = rekap.bawahan.jabatan || '-';
+                        let avatar = rekap.staf.avatar ? `/uploads/avatars/${rekap.staf.avatar}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(rekap.staf.nama_lengkap)}&background=random`;
+                        let jabatan = rekap.staf.jabatan || '-';
                         
-                        htmlBawahan += `
+                        htmlStaf += `
                         <tr>
                             <td class="ps-4 py-3 border-bottom border-light">
                                 <div class="d-flex align-items-center">
                                     <img src="${avatar}" alt="Avatar" class="rounded-circle shadow-sm me-3" width="40" height="40" style="object-fit: cover;">
                                     <div>
-                                        <div class="fw-bold text-dark text-truncate" style="max-width:200px;">${rekap.bawahan.nama_lengkap}</div>
-                                        <div class="small text-muted">${rekap.bawahan.nip || ''}</div>
+                                        <div class="fw-bold text-dark text-truncate" style="max-width:200px;">${rekap.staf.nama_lengkap}</div>
+                                        <div class="small text-muted">${rekap.staf.nip || ''}</div>
                                     </div>
                                 </div>
                             </td>
@@ -457,7 +457,7 @@ async function updateKinerjaData() {
                             </td>
                         </tr>`;
                     });
-                    document.getElementById('tbodyKinerjaBawahan').innerHTML = htmlBawahan;
+                    document.getElementById('tbodyKinerjaStaf').innerHTML = htmlStaf;
                 } else {
                     tabelContainer.style.display = 'none';
                     tabelTitle.style.display = 'none';
@@ -510,7 +510,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // --- Helper: Word Wrap ---
-    function splitLabel(label, maxLength = 25) {
+    function splitLabel(label, maxLength = 16) {
         if (label.length <= maxLength) return label;
         const words = label.split(' ');
         const lines = [];
@@ -566,7 +566,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const existing = Chart.getChart(ctx);
             if (existing) existing.destroy();
 
-            const wrappedLabels = data.chart_labels.map(label => splitLabel(label, 25));
+            const wrappedLabels = data.chart_labels.map(label => splitLabel(label, 16));
 
             window.userDashboardCharts[canvasId] = new Chart(ctx, {
                 type: 'radar',
@@ -586,18 +586,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 options: {
                     responsive: true, 
                     maintainAspectRatio: false,
-                    layout: { padding: 20 },
+                    layout: { padding: 10 },
                     scales: { 
                         r: { 
-                            angleLines: { display: true, color: 'rgba(0, 0, 0, 0.05)' },
+                            angleLines: { display: true, color: 'rgba(0, 0, 0, 0.2)', lineWidth: 1.5 },
                             min: 0, max: 100,
-                            grid: { color: 'rgba(0, 0, 0, 0.05)' }, 
+                            grid: { color: 'rgba(0, 0, 0, 0.2)', lineWidth: 1.5 }, 
                             pointLabels: { 
                                 display: true, 
-                                color: '#475569', 
-                                font: { size: 11, weight: '600', family: 'system-ui' }, 
-                                backdropPadding: 4,
-                                padding: 15, 
+                                color: '#334155', 
+                                font: { size: 12, weight: '700', family: 'system-ui', lineHeight: 1.2 }, 
+                                backdropPadding: 2,
+                                padding: 8, 
                             }, 
                             ticks: { display: false, stepSize: 33.3333 } 
                         } 

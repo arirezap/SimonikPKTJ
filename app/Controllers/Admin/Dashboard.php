@@ -48,7 +48,7 @@ class Dashboard extends BaseController
 
         $user_id = session()->get('id') ?? session()->get('user_id');
         $role = session()->get('role');
-        $canSeeAll = in_array($role, ['admin', 'direktur', 'wadir']);
+        $canSeeAll = hasAnyRole(['admin', 'direktur', 'wadir']);
 
         // --- 1. PROSES DATA ECC ---
         $eccData = null;
@@ -223,7 +223,7 @@ class Dashboard extends BaseController
                                                ->orderBy('nama_lengkap', 'ASC')
                                                ->findAll();
         } else {
-            $daftarSemuaUser = $this->userModel->getAllBawahan($user_id, $role);
+            $daftarSemuaUser = $this->userModel->getAllStaf($user_id, $role);
             $me = $this->userModel->find($user_id);
             if ($me) {
                 array_unshift($daftarSemuaUser, $me); // Tambahkan dirinya sendiri ke awal
@@ -235,8 +235,8 @@ class Dashboard extends BaseController
         
         $laporanModel = new \App\Models\LaporanHarian();
 
-        foreach ($daftarSemuaUser as $bawahan) {
-            $targets = $laporanModel->getTargetWithRealization($bawahan['id'], $bulanAngka, $tahun_kinerja);
+        foreach ($daftarSemuaUser as $staf) {
+            $targets = $laporanModel->getTargetWithRealization($staf['id'], $bulanAngka, $tahun_kinerja);
             $total_laporan = count($targets);
             
             $dinilai = 0;
@@ -253,7 +253,7 @@ class Dashboard extends BaseController
             $rata_rata = $dinilai > 0 ? round($total_nilai / $dinilai, 2) : 0;
             
             $rekapDashboard[] = [
-                'bawahan' => $bawahan,
+                'staf' => $staf,
                 'total_laporan' => $total_laporan,
                 'dinilai' => $dinilai,
                 'rata_rata' => $rata_rata,
@@ -469,7 +469,7 @@ class Dashboard extends BaseController
 
         $user_id = session()->get('id');
         $role = session()->get('role');
-        $canSeeAll = in_array($role, ['direktur', 'admin']);
+        $canSeeAll = hasAnyRole(['direktur', 'admin']);
         
         $db = \Config\Database::connect();
         
@@ -479,7 +479,7 @@ class Dashboard extends BaseController
             if ($canSeeAll) {
                 $users = $this->userModel->where('role !=', 'admin')->where('id !=', $user_id)->orderBy('nama_lengkap', 'ASC')->findAll();
             } else {
-                $users = $this->userModel->getAllBawahan($user_id, $role);
+                $users = $this->userModel->getAllStaf($user_id, $role);
                 $me = $this->userModel->find($user_id);
                 if ($me) array_unshift($users, $me);
             }

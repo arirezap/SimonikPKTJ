@@ -45,7 +45,7 @@
                             <input type="password" name="password" class="form-control" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Role Aplikasi</label>
+                            <label class="form-label">Role Aplikasi (Primer)</label>
                             <select name="role" class="form-select">
                                 <option value="user">User (Pegawai/Dosen)</option>
                                 <option value="admin">Administrator</option>
@@ -55,6 +55,28 @@
                                 <option value="wadir">Wakil Direktur</option>
                                 <option value="manajemen">Manajemen (Kanit/Katim/Kaprodi)</option>
                             </select>
+                        </div>
+                        <div class="mb-3 p-3 bg-light border rounded">
+                            <label class="form-label fw-bold text-primary">Role Tambahan (Sekunder)</label>
+                            <div class="form-text mb-2">Pilih peran tambahan jika pegawai memiliki tugas rangkap.</div>
+                            
+                            <?php 
+                                // Opsi role sekunder yang tersedia
+                                $availableSecondary = [
+                                    'kepegawaian' => 'Kepegawaian (Melihat rekap seluruh nilai)',
+                                    'spm' => 'SPM (Satuan Penjaminan Mutu)'
+                                ];
+                                $oldSecondary = old('secondary_roles') ?? [];
+                            ?>
+                            
+                            <?php foreach ($availableSecondary as $val => $label): ?>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="secondary_roles[]" value="<?= esc($val) ?>" id="role_<?= esc($val) ?>" <?= (in_array($val, $oldSecondary)) ? 'checked' : '' ?>>
+                                    <label class="form-check-label" for="role_<?= esc($val) ?>">
+                                        <?= esc($label) ?>
+                                    </label>
+                                </div>
+                            <?php endforeach; ?>
                         </div>
                     </div>
 

@@ -8,6 +8,7 @@ Rekap & Penilaian Kinerja
 
 <?= $this->section('styles') ?>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
 <style>
     .table th {
         background-color: #f8f9fa !important;
@@ -69,7 +70,7 @@ Rekap & Penilaian Kinerja
         <!-- Filter Bar -->
         <form method="POST" action="<?= site_url('penilaian-kinerja') ?>" class="mb-3 p-2 bg-light rounded border" id="filterForm">
             <?= csrf_field() ?>
-            <input type="hidden" name="active_tab" id="active_tab_input" value="<?= empty($bawahan_id_terpilih) ? 'individu' : 'bawahan' ?>">
+            <input type="hidden" name="active_tab" id="active_tab_input" value="<?= empty($staf_id_terpilih) ? 'individu' : 'staf' ?>">
             <div class="row g-2 align-items-end">
                 <div class="col-md-3">
                     <label class="form-label fw-bold text-primary mb-1" style="font-size: 0.85rem;">Bulan</label>
@@ -101,13 +102,13 @@ Rekap & Penilaian Kinerja
 
         <ul class="nav nav-tabs mb-3" id="penilaianTabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link <?= empty($bawahan_id_terpilih) ? 'active' : '' ?> fw-bold text-primary py-2" id="individu-tab" data-bs-toggle="tab" data-bs-target="#individu" type="button" role="tab" aria-controls="individu" aria-selected="<?= empty($bawahan_id_terpilih) ? 'true' : 'false' ?>">
+                <button class="nav-link <?= empty($staf_id_terpilih) ? 'active' : '' ?> fw-bold text-primary py-2" id="individu-tab" data-bs-toggle="tab" data-bs-target="#individu" type="button" role="tab" aria-controls="individu" aria-selected="<?= empty($staf_id_terpilih) ? 'true' : 'false' ?>">
                     <i class="bi bi-person-lines-fill me-1"></i> Target Bulanan Saya
                 </button>
             </li>
             <?php if ($is_atasan): ?>
             <li class="nav-item" role="presentation">
-                <button class="nav-link <?= !empty($bawahan_id_terpilih) ? 'active' : '' ?> fw-bold text-success py-2" id="bawahan-tab" data-bs-toggle="tab" data-bs-target="#bawahan" type="button" role="tab" aria-controls="bawahan" aria-selected="<?= !empty($bawahan_id_terpilih) ? 'true' : 'false' ?>">
+                <button class="nav-link <?= !empty($staf_id_terpilih) ? 'active' : '' ?> fw-bold text-success py-2" id="staf-tab" data-bs-toggle="tab" data-bs-target="#staf" type="button" role="tab" aria-controls="staf" aria-selected="<?= !empty($staf_id_terpilih) ? 'true' : 'false' ?>">
                     <i class="bi bi-people-fill me-1"></i> Penilaian Staf
                 </button>
             </li>
@@ -116,7 +117,7 @@ Rekap & Penilaian Kinerja
 
         <div class="tab-content" id="penilaianTabsContent">
             <!-- TAB: TARGET INDIVIDU -->
-            <div class="tab-pane fade <?= empty($bawahan_id_terpilih) ? 'show active' : '' ?>" id="individu" role="tabpanel" aria-labelledby="individu-tab">
+            <div class="tab-pane fade <?= empty($staf_id_terpilih) ? 'show active' : '' ?>" id="individu" role="tabpanel" aria-labelledby="individu-tab">
                 <?php if (empty($rekap_data_sendiri)): ?>
                     <div class="alert alert-info py-2">
                         <i class="bi bi-info-circle me-2"></i> Anda belum memiliki Target Kinerja Bulanan (RHK) pada bulan ini.
@@ -142,21 +143,12 @@ Rekap & Penilaian Kinerja
                             $warnaScore = 'warning text-dark';
                         }
                     ?>
-                    <div class="alert alert-light border-<?= $warnaScore === 'warning text-dark' ? 'warning' : $warnaScore ?> border-start border-4 shadow-sm mb-3 d-flex justify-content-between align-items-center py-2">
-                        <div>
-                            <h6 class="fw-bold mb-0 text-dark">Ringkasan Kinerja Bulan Ini</h6>
-                            <small class="text-muted">Rata-rata nilai capaian dari seluruh Target Kinerja Bulanan.</small>
-                        </div>
-                        <div class="text-end">
-                            <span class="d-block small fw-bold text-<?= $warnaScore ?> mb-0">TOTAL KINERJA</span>
-                            <span class="fs-4 fw-bold text-<?= $warnaScore ?>"><?= str_replace('.', ',', round($rataRataIndividu, 2)) ?></span>
-                        </div>
-                    </div>
+
 
                     <!-- PENILAIAN RHK DI ATAS -->
                     <h6 class="fw-bold mb-2 text-primary"><i class="bi bi-bullseye me-2"></i> Target Kinerja Bulanan (RHK)</h6>
-                    <div class="table-responsive mb-4">
-                        <table class="table table-bordered table-hover border-bottom">
+                    <div class="table-responsive mb-4 bg-white border rounded shadow-sm">
+                        <table class="table table-bordered table-hover align-middle mb-0">
                             <thead>
                                 <tr>
                                     <th style="width: 40px;">No</th>
@@ -189,13 +181,26 @@ Rekap & Penilaian Kinerja
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
+                            <tfoot class="table-light fw-bold" style="border-top: 2px solid #dee2e6;">
+                                <tr>
+                                    <td colspan="5" class="text-end pe-3 align-middle text-muted fw-normal" style="font-size: 0.85rem;">Rata-rata Penilaian Kinerja:</td>
+                                    <td class="align-middle p-2">
+                                        <div class="d-flex justify-content-between align-items-center bg-white border border-<?= $warnaScore === 'warning text-dark' ? 'warning' : $warnaScore ?> rounded px-3 py-2 shadow-sm">
+                                            <div class="d-flex flex-column">
+                                                <span class="small fw-bold text-muted mb-0" style="font-size: 0.7rem; line-height: 1;">NILAI KINERJA</span>
+                                            </div>
+                                            <span class="fs-4 fw-bold text-<?= $warnaScore ?> mb-0 lh-1"><?= str_replace('.', ',', round($rataRataIndividu, 2)) ?></span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
 
                     <!-- LAPORAN HARIAN SCROLLABLE DI BAWAH -->
                     <h6 class="fw-bold mb-2 text-secondary"><i class="bi bi-list-task me-2"></i> Bukti Laporan Harian</h6>
-                    <div class="scrollable-table mb-2">
-                        <table class="table table-bordered table-hover border-bottom-0">
+                    <div class="scrollable-table mb-2 bg-white border rounded shadow-sm">
+                        <table class="table table-bordered table-hover align-middle mb-0">
                             <thead>
                                 <tr>
                                     <th style="width: 40px;">No</th>
@@ -225,7 +230,7 @@ Rekap & Penilaian Kinerja
                                             <td class="text-center fw-bold"><?= (float)$log['jumlah_capaian'] ?> <small><?= esc($log['satuan']) ?></small></td>
                                             <td class="text-center">
                                                 <?php if (!empty($log['link_bukti'])): ?>
-                                                    <a href="<?= esc($log['link_bukti']) ?>" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2" title="Lihat Bukti Pekerjaan"><i class="bi bi-link-45deg"></i> Buka</a>
+                                                    <a href="<?= esc($log['link_bukti']) ?>" target="_blank" class="btn btn-light btn-sm text-primary rounded-circle shadow-sm border border-light" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; background-color: #f8f9fa;" title="Lihat Bukti Pekerjaan"><i class="bi bi-link-45deg fs-5"></i></a>
                                                 <?php else: ?>
                                                     <span class="text-muted">-</span>
                                                 <?php endif; ?>
@@ -240,8 +245,8 @@ Rekap & Penilaian Kinerja
             </div> <!-- End Tab Individu -->
 
             <?php if ($is_atasan): ?>
-            <!-- TAB: PENILAIAN BAWAHAN (KHUSUS ATASAN) -->
-            <div class="tab-pane fade <?= !empty($bawahan_id_terpilih) ? 'show active' : '' ?>" id="bawahan" role="tabpanel" aria-labelledby="bawahan-tab">
+            <!-- TAB: PENILAIAN STAF (KHUSUS ATASAN) -->
+            <div class="tab-pane fade <?= !empty($staf_id_terpilih) ? 'show active' : '' ?>" id="staf" role="tabpanel" aria-labelledby="staf-tab">
                 
                 <form method="POST" action="<?= site_url('penilaian-kinerja') ?>" class="mb-3 p-2 bg-light rounded border" id="formPilihStaf">
                     <?= csrf_field() ?>
@@ -252,10 +257,10 @@ Rekap & Penilaian Kinerja
                     <div class="row align-items-end">
                         <div class="col-md-6">
                             <label class="form-label fw-bold text-success mb-1" style="font-size: 0.85rem;">Pilih Staf yang Akan Dinilai</label>
-                            <select name="bawahan_id" id="selectStaf" class="form-select border-success form-select-sm" onchange="this.form.submit()">
+                            <select name="staf_id" id="selectStaf" class="form-select border-success form-select-sm" onchange="this.form.submit()">
                                 <option value="">-- Pilih Staf --</option>
-                                <?php foreach ($daftar_bawahan as $b): ?>
-                                    <option value="<?= $b['id'] ?>" <?= ($b['id'] == $bawahan_id_terpilih) ? 'selected' : '' ?>>
+                                <?php foreach ($daftar_staf as $b): ?>
+                                    <option value="<?= $b['id'] ?>" <?= ($b['id'] == $staf_id_terpilih) ? 'selected' : '' ?>>
                                         <?= esc($b['nama_lengkap']) ?>
                                     </option>
                                 <?php endforeach; ?>
@@ -264,8 +269,8 @@ Rekap & Penilaian Kinerja
                     </div>
                 </form>
 
-                <?php if (!empty($bawahan_id_terpilih)): ?>
-                    <?php if (empty($rekap_data_bawahan)): ?>
+                <?php if (!empty($staf_id_terpilih)): ?>
+                    <?php if (empty($rekap_data_staf)): ?>
                         <div class="alert alert-info py-2 mt-2">
                             <i class="bi bi-info-circle me-2"></i> Pegawai ini belum memiliki Target Kinerja (RHK) pada bulan tersebut.
                         </div>
@@ -273,24 +278,23 @@ Rekap & Penilaian Kinerja
                         <?php
                             $jmlDinilaiBwh = 0;
                             $totalNilaiBwh = 0;
-                            foreach ($rekap_data_bawahan as $rd) {
+                            foreach ($rekap_data_staf as $rd) {
                                 if (!empty($rd['nilai_capaian'])) {
                                     $jmlDinilaiBwh++;
                                     $totalNilaiBwh += (float)$rd['nilai_capaian'];
                                 }
                             }
                             $rataRataBwh = $jmlDinilaiBwh > 0 ? (float)($totalNilaiBwh / $jmlDinilaiBwh) : 0;
+                            
+                            $warnaScoreBwh = 'success';
+                            if ($jmlDinilaiBwh == 0) {
+                                $warnaScoreBwh = 'secondary';
+                            } elseif ($rataRataBwh < 60) {
+                                $warnaScoreBwh = 'danger';
+                            } elseif ($rataRataBwh < 75) {
+                                $warnaScoreBwh = 'warning text-dark';
+                            }
                         ?>
-                        <div class="alert alert-light border-success border-start border-4 shadow-sm mb-3 mt-2 d-flex justify-content-between align-items-center py-2">
-                            <div>
-                                <h6 class="fw-bold mb-0 text-dark">Ringkasan Kinerja Staf Bulan Ini</h6>
-                                <small class="text-muted">Rata-rata dihitung otomatis dari nilai capaian yang Anda inputkan.</small>
-                            </div>
-                            <div class="text-end">
-                                <span class="d-block small fw-bold text-success mb-0">TOTAL KINERJA</span>
-                                <span class="fs-4 fw-bold text-success" id="totalKinerjaStafText"><?= str_replace('.', ',', round($rataRataBwh, 2)) ?></span>
-                            </div>
-                        </div>
 
                         <!-- PENILAIAN RHK DI ATAS -->
                         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -309,13 +313,13 @@ Rekap & Penilaian Kinerja
 
                         <form action="<?= site_url('penilaian-kinerja/store') ?>" method="POST" id="formPenilaian">
                             <?= csrf_field() ?>
-                            <input type="hidden" name="bawahan_id" value="<?= esc($bawahan_id_terpilih) ?>">
+                            <input type="hidden" name="staf_id" value="<?= esc($staf_id_terpilih) ?>">
                             <input type="hidden" name="bulan" value="<?= esc($bulan_terpilih) ?>">
                             <input type="hidden" name="tahun" value="<?= esc($tahun_terpilih) ?>">
                             <input type="hidden" name="unit_kerja" value="<?= esc($unit_kerja_terpilih) ?>">
 
-                            <div class="table-responsive mb-2">
-                                <table class="table table-bordered table-hover border-bottom" id="tablePenilaianStaf">
+                            <div class="table-responsive mb-4 bg-white border rounded shadow-sm">
+                                <table class="table table-bordered table-hover align-middle mb-0" id="tablePenilaianStaf">
                                     <thead>
                                         <tr>
                                             <th style="width: 40px;">No</th>
@@ -327,7 +331,7 @@ Rekap & Penilaian Kinerja
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php foreach ($rekap_data_bawahan as $index => $row): ?>
+                                        <?php foreach ($rekap_data_staf as $index => $row): ?>
                                             <?php 
                                                 $target = (float)$row['target_bulanan'];
                                                 $realisasi = (float)$row['total_realisasi'];
@@ -373,18 +377,33 @@ Rekap & Penilaian Kinerja
                                             </tr>
                                         <?php endforeach; ?>
                                     </tbody>
+                                    <tfoot class="table-light fw-bold" style="border-top: 2px solid #dee2e6;">
+                                        <tr>
+                                            <td colspan="5" class="text-end pe-3 align-middle text-muted fw-normal" style="font-size: 0.85rem;">Rata-rata Penilaian Kinerja:</td>
+                                            <td class="align-middle p-2">
+                                                <div id="totalKinerjaStafWrapper" class="d-flex justify-content-between align-items-center bg-white border border-<?= $warnaScoreBwh === 'warning text-dark' ? 'warning' : $warnaScoreBwh ?> rounded px-3 py-2 shadow-sm">
+                                                    <div class="d-flex flex-column">
+                                                        <span class="small fw-bold text-muted mb-0" style="font-size: 0.7rem; line-height: 1;">NILAI KINERJA</span>
+                                                    </div>
+                                                    <span class="fs-4 fw-bold text-<?= $warnaScoreBwh ?> mb-0 lh-1" id="totalKinerjaStafText"><?= str_replace('.', ',', round($rataRataBwh, 2)) ?></span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tfoot>
                                 </table>
                             </div>
 
-                            <div class="text-end mb-4">
-                                <button type="submit" class="btn btn-success btn-sm px-4 fw-bold shadow-sm"><i class="bi bi-save me-2"></i> Simpan Penilaian Staf</button>
+                            <div class="d-flex justify-content-end mb-4 gap-2">
+                                <button type="reset" class="btn btn-outline-secondary btn-sm px-3 fw-bold shadow-sm"><i class="bi bi-arrow-counterclockwise me-1"></i> Kosongkan</button>
+                                <button type="submit" name="action" value="draft" class="btn btn-outline-primary btn-sm px-3 fw-bold shadow-sm"><i class="bi bi-journal-bookmark me-1"></i> Simpan Sementara</button>
+                                <button type="submit" name="action" value="submit" class="btn btn-success btn-sm px-4 fw-bold shadow-sm"><i class="bi bi-save me-2"></i> Simpan Penilaian Staf</button>
                             </div>
                         </form>
 
                         <!-- LAPORAN HARIAN SCROLLABLE DI BAWAH -->
                         <h6 class="fw-bold mb-2 text-secondary"><i class="bi bi-list-task me-2"></i> Bukti Laporan Harian Staf</h6>
-                        <div class="scrollable-table mb-2">
-                            <table class="table table-bordered table-hover border-bottom-0">
+                        <div class="scrollable-table mb-4 bg-white border rounded shadow-sm">
+                            <table class="table table-bordered table-hover align-middle mb-0">
                                 <thead>
                                     <tr>
                                         <th style="width: 40px;">No</th>
@@ -396,10 +415,10 @@ Rekap & Penilaian Kinerja
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php if(empty($log_harian_bawahan)): ?>
+                                    <?php if(empty($log_harian_staf)): ?>
                                         <tr><td colspan="6" class="text-center text-muted">Belum ada laporan harian.</td></tr>
                                     <?php else: ?>
-                                        <?php foreach ($log_harian_bawahan as $index => $log): ?>
+                                        <?php foreach ($log_harian_staf as $index => $log): ?>
                                             <tr>
                                                 <td class="text-center"><?= $index + 1 ?></td>
                                                 <td class="text-center">
@@ -414,7 +433,7 @@ Rekap & Penilaian Kinerja
                                                 <td class="text-center fw-bold"><?= (float)$log['jumlah_capaian'] ?> <small><?= esc($log['satuan']) ?></small></td>
                                                 <td class="text-center">
                                                     <?php if (!empty($log['link_bukti'])): ?>
-                                                        <a href="<?= esc($log['link_bukti']) ?>" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2" title="Lihat Bukti Pekerjaan"><i class="bi bi-link-45deg"></i> Buka</a>
+                                                        <a href="<?= esc($log['link_bukti']) ?>" target="_blank" class="btn btn-light btn-sm text-primary rounded-circle shadow-sm border border-light" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; background-color: #f8f9fa;" title="Lihat Bukti Pekerjaan"><i class="bi bi-link-45deg fs-5"></i></a>
                                                     <?php else: ?>
                                                         <span class="text-muted">-</span>
                                                     <?php endif; ?>
@@ -447,6 +466,7 @@ Rekap & Penilaian Kinerja
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     const bulanTerpilih = <?= esc($bulan_terpilih) ?>;
     const tahunTerpilih = <?= esc($tahun_terpilih) ?>;
@@ -529,6 +549,23 @@ Rekap & Penilaian Kinerja
             });
             let avg = count > 0 ? (Math.round((total / count) * 100) / 100) : 0;
             $('#totalKinerjaStafText').text(avg.toString().replace('.', ','));
+            
+            // Dynamic UI Color for footer
+            let newColor = 'success';
+            if (count === 0) newColor = 'secondary';
+            else if (avg < 60) newColor = 'danger';
+            else if (avg < 75) newColor = 'warning';
+
+            let textEl = $('#totalKinerjaStafText');
+            let wrapper = $('#totalKinerjaStafWrapper');
+            
+            // Hapus kelas warna lama
+            textEl.removeClass('text-success text-secondary text-danger text-warning');
+            wrapper.removeClass('border-success border-secondary border-danger border-warning');
+            
+            // Tambahkan kelas warna baru
+            textEl.addClass('text-' + newColor);
+            wrapper.addClass('border-' + newColor);
         });
         
         // Trigger initialization for existing data
@@ -545,12 +582,65 @@ Rekap & Penilaian Kinerja
             }
         });
 
-        // Track tab aktif di hidden input
-        $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
-            var target = $(e.target).attr("aria-controls"); // e.g. "individu" or "bawahan"
-            $('#active_tab_input').val(target);
+        // Handle Kosongkan form
+        $('#formPenilaian button[type="reset"]').on('click', function(e) {
+            e.preventDefault(); 
+            
+            Swal.fire({
+                title: 'Kosongkan Isian?',
+                text: "Seluruh isian penilaian di layar ini akan dihapus.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="bi bi-trash3 me-1"></i> Ya, Hapus',
+                cancelButtonText: 'Batal',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $('.input-nilai-capaian').removeClass('is-invalid').removeAttr('title');
+                    $('.invalid-feedback').hide();
+                    $('#formPenilaian button[type="submit"]').prop('disabled', false);
+                    
+                    $('.predikat-select').val('').trigger('change');
+                    
+                    if ($('#totalKinerjaStafText').length) {
+                        $('#totalKinerjaStafText').text('0');
+                    }
+                    
+                    Swal.fire({
+                        title: 'Berhasil!',
+                        text: 'Form berhasil dikosongkan.',
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+            });
         });
 
+        // Track tab aktif di hidden input & sinkronisasi URL hash
+        $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+            var target = $(e.target).attr("aria-controls"); // e.g. "individu" atau "staf"
+            $('#active_tab_input').val(target);
+            
+            // Update URL tanpa reload
+            if (history.pushState) {
+                history.pushState(null, null, '#' + target);
+            } else {
+                location.hash = '#' + target;
+            }
+        });
+
+        // Buka tab sesuai hash di URL saat halaman direfresh/dimuat
+        if (window.location.hash) {
+            var targetTab = document.querySelector('button[aria-controls="' + window.location.hash.substring(1) + '"]');
+            if (targetTab) {
+                var tab = new bootstrap.Tab(targetTab);
+                tab.show();
+                $('#active_tab_input').val(window.location.hash.substring(1));
+            }
+        }
     });
 </script>
 <?= $this->endSection() ?>

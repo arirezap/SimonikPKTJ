@@ -52,10 +52,19 @@ class Auth extends BaseController
             }
 
             if ($verify_pass) {
-                // Otomatis jadikan role 'spm' jika unit kerjanya adalah Satuan Penjaminan Mutu
                 $role_aplikasi = $data['role'];
-                if (strtolower(trim($data['unit'] ?? '')) === 'satuan penjaminan mutu') {
-                    $role_aplikasi = 'spm';
+
+                // Load semua role dari tabel pivot user_roles
+                $db = \Config\Database::connect();
+                $userRoles = $db->table('user_roles')
+                                ->where('user_id', $data['id'])
+                                ->get()
+                                ->getResultArray();
+                $allRoles = array_column($userRoles, 'role_name');
+                
+                // Pastikan role primer selalu ada di daftar
+                if (!in_array(strtolower($role_aplikasi), $allRoles)) {
+                    $allRoles[] = strtolower($role_aplikasi);
                 }
 
                 // Simpan Session Lengkap
@@ -65,7 +74,8 @@ class Auth extends BaseController
                     'username'     => $data['username'],
                     'nama'         => $data['nama_lengkap'], 
                     'nip'          => $data['nip'],           
-                    'role'         => $role_aplikasi,          
+                    'role'         => $role_aplikasi,   // Role primer (backward compatible)
+                    'all_roles'    => $allRoles,        // Semua role (multi-role)
                     'unit'         => $data['unit'] ?? '-', 
                     'jabatan'      => $data['jabatan'] ?? '-',
                     'pangkat'      => $data['pangkat'] ?? '-',
@@ -87,7 +97,15 @@ class Auth extends BaseController
                 // -------------------------
 
                 // Redirect Sesuai Role
-                if (in_array($role_aplikasi, ['admin', 'direktur', 'wadir', 'manajemen']) || str_contains($role_aplikasi, 'kabag')) {
+                $isKabag = false;
+                foreach ($allRoles as $r) {
+                    if (str_contains($r, 'kabag')) {
+                        $isKabag = true;
+                        break;
+                    }
+                }
+
+                if (hasAnyRole(['admin', 'direktur', 'wadir', 'manajemen']) || $isKabag) {
                     return redirect()->to('/dashboard');
                 } else {
                     // Direktur & Pegawai masuk sini

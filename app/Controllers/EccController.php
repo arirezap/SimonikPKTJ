@@ -160,14 +160,14 @@ class EccController extends BaseController
                     'led_criteria_id' => $kriteria_id,
                 ];
 
-                if (in_array($role, ['admin', 'manajemen', 'direktur', 'wadir', 'spm'])) { // Wadir / Admin / SPM
+                if (hasAnyRole(['admin', 'manajemen', 'direktur', 'wadir', 'spm'])) { // Wadir / Admin / SPM
                     if(isset($statuses[$kriteria_id])) {
                         $data['status'] = $statuses[$kriteria_id];
                     }
                     if(isset($catatan_wadir[$kriteria_id])) {
                         $data['catatan_wadir'] = $catatan_wadir[$kriteria_id];
                     }
-                } elseif (in_array($role, ['kabag_aak', 'kabag_kuk'])) { // Kabag
+                } elseif (hasAnyRole(['kabag_aak', 'kabag_kuk'])) { // Kabag
                     if(isset($kabag_approvals[$kriteria_id])) {
                         $data['kabag_approved'] = $kabag_approvals[$kriteria_id];
                     }
@@ -218,7 +218,7 @@ class EccController extends BaseController
         $role = strtolower(session()->get('role')); // Normalisasi role ke huruf kecil
         $allowed_roles = ['admin', 'manajemen', 'direktur', 'kabag_aak', 'kabag_kuk', 'spm'];
 
-        if (!in_array($role, $allowed_roles)) {
+        if (!hasAnyRole($allowed_roles)) {
             return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk menghapus data ini.');
         }
 
@@ -240,6 +240,10 @@ class EccController extends BaseController
 
     public function simulasi()
     {
+        if (!hasAnyRole(['spm', 'admin'])) {
+            return redirect()->to('dashboard')->with('error', 'Anda tidak memiliki akses ke Simulasi Penilaian LED.');
+        }
+
         $criteriaModel = new LedCriteria();
         $scoreModel = new LedScore();
         $submissionModel = new LedSubmission();
@@ -289,6 +293,10 @@ class EccController extends BaseController
 
     public function storeSimulasi()
     {
+        if (!hasAnyRole(['spm', 'admin'])) {
+            return redirect()->to('dashboard')->with('error', 'Anda tidak memiliki akses ke Simulasi Penilaian LED.');
+        }
+
         $db = \Config\Database::connect();
         $scoreModel = new LedScore();
         

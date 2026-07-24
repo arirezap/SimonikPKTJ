@@ -163,8 +163,8 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->match(['get', 'post'], 'skp/delete/(:num)', 'User\Skp::delete/$1');
     // --- Kelola Tim ---
     $routes->get('tim', 'User\TimController::index');
-    $routes->post('tim/add', 'User\TimController::addBawahan');
-    $routes->post('tim/remove', 'User\TimController::removeBawahan');
+    $routes->post('tim/add', 'User\TimController::addStaf');
+    $routes->post('tim/remove', 'User\TimController::removeStaf');
     $routes->post('tim/update_unit', 'User\TimController::updateUnit');
 
     // --- Laporan Kinerja Harian ---
@@ -195,6 +195,12 @@ $routes->group('ecc', ['filter' => 'auth'], function ($routes) {
     $routes->post('simulasi/store', 'EccController::storeSimulasi');
     $routes->get('detailStandar/(:num)/(:any)/(:any)', 'EccController::detailStandar/$1/$2/$3');
     $routes->get('lkps', 'EccController::lkps');
+});
+
+// Kepegawaian Routes (Multi-Role: kepegawaian, admin)
+$routes->group('kepegawaian', ['filter' => 'auth'], function ($routes) {
+    $routes->get('/', 'Kepegawaian\DashboardKepegawaian::index');
+    $routes->get('export-excel', 'Kepegawaian\DashboardKepegawaian::exportExcel');
 });
 
 /*

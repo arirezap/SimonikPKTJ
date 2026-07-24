@@ -11,7 +11,7 @@ class DashboardController extends BaseController
         $role = session()->get('role');
         $adminRoles = ['admin', 'direktur', 'wadir', 'manajemen', 'kabag_aak', 'kabag_kuk'];
         
-        if (in_array($role, $adminRoles)) {
+        if (hasAnyRole($adminRoles)) {
             $adminDashboard = new \App\Controllers\Admin\Dashboard();
             $adminDashboard->initController($this->request, $this->response, $this->logger);
             return $adminDashboard->index();

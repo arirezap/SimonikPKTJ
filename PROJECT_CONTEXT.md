@@ -49,7 +49,7 @@ Aplikasi ini memiliki 3 modul yang saling berkesinambungan untuk menilai kinerja
    - *Controller*: `PenilaianKinerjaController`.
    - *Fungsi*: Mengagregasi data dari `log_kegiatan_harian`. 
    - Bagi **Staf**, modul ini berfungsi untuk melihat rekapitulasi progres mereka.
-   - Bagi **Atasan**, modul ini memunculkan antarmuka (form) untuk menilai kinerja bawahan/staf yang tergabung di timnya. Skor penilaian (Kualitas, Disiplin, Kerjasama) disimpan kembali ke dalam baris data di tabel `log_kegiatan_harian`.
+   - Bagi **Atasan**, modul ini memunculkan antarmuka (form) untuk menilai kinerja staf/staf yang tergabung di timnya. Skor penilaian (Kualitas, Disiplin, Kerjasama) disimpan kembali ke dalam baris data di tabel `log_kegiatan_harian`.
 
 
 ## 6. Coding Standards & Agent Instructions

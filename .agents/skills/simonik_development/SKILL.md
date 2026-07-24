@@ -44,7 +44,7 @@ Panduan ini berisi pedoman lengkap arsitektur sistem, peta modul, basis data, da
 
 ### B. Modul Penilaian & Dashboard Analisis
 - **Penilaian Kinerja (`User\PenilaianKinerjaController`):**
-  - Atasan memberikan penilaian harian terhadap input kegiatan harian bawahannya berdasarkan indikator **Disiplin** dan **Kerjasama** yang otomatis dihitung nilai rata-rata hariannya.
+  - Atasan memberikan penilaian harian terhadap input kegiatan harian stafnya berdasarkan indikator **Disiplin** dan **Kerjasama** yang otomatis dihitung nilai rata-rata hariannya.
   - **Tab Analisis Kinerja (Individu):** Grafik tren 6 bulan terakhir, kualitas/ketepatan waktu, dan produktivitas pegawai bersangkutan.
   - **Tab Analisis Keseluruhan (Agregat/Eksekutif):** Menampilkan perbandingan performa antar unit kerja, tingkat kedisiplinan per unit, status penilaian unit (Dinilai vs Belum Dinilai), serta menampilkan daftar Top 5 Performers.
   - Data analitik dimuat secara dinamis via AJAX lewat rute API `penilaian-kinerja/api-chart`.
@@ -61,8 +61,8 @@ Panduan ini berisi pedoman lengkap arsitektur sistem, peta modul, basis data, da
 
 ## 4. Logika Wewenang & Otorisasi Pengguna (Roles)
 Aplikasi membagi wewenang berdasarkan peran jabatan:
-1. **Pegawai Biasa (Bawahan):** Hanya dapat menginput Rencana, Realisasi, Laporan Harian, SKP, serta melihat visualisasi grafik performa pribadinya sendiri di Tab *Analisis Kinerja*.
-2. **Atasan Menengah (Kabag/Kepala Unit):** Memiliki wewenang untuk melihat, menilai, dan memantau rekap data bawahan yang berada *di dalam unit kerjanya saja*.
+1. **Pegawai Biasa (Staf):** Hanya dapat menginput Rencana, Realisasi, Laporan Harian, SKP, serta melihat visualisasi grafik performa pribadinya sendiri di Tab *Analisis Kinerja*.
+2. **Atasan Menengah (Kabag/Kepala Unit):** Memiliki wewenang untuk melihat, menilai, dan memantau rekap data staf yang berada *di dalam unit kerjanya saja*.
 3. **Direksi (Direktur/Wakil Direktur) & Superadmin:** Memiliki otoritas penuh untuk memantau performa *seluruh unit kerja* dan *seluruh pegawai* di kampus Politeknik, serta mengakses tab agregat eksekutif.
 
 ---

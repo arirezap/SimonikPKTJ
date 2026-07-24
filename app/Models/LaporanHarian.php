@@ -33,12 +33,15 @@ class LaporanHarian extends Model
 
     public function getTargetWithRealization($userId, $bulan, $tahun)
     {
-        return $this->select('laporan_harian.*, IFNULL(SUM(log_kegiatan_harian.jumlah_capaian), 0) as total_realisasi')
+        $builder = $this->select('laporan_harian.*, IFNULL(SUM(log_kegiatan_harian.jumlah_capaian), 0) as total_realisasi')
                     ->join('log_kegiatan_harian', "log_kegiatan_harian.target_id = laporan_harian.id AND log_kegiatan_harian.status = 'terkirim'", 'left')
                     ->where('laporan_harian.user_id', $userId)
-                    ->where('laporan_harian.bulan', $bulan)
-                    ->where('laporan_harian.tahun', $tahun)
-                    ->groupBy('laporan_harian.id')
-                    ->findAll();
+                    ->where('laporan_harian.tahun', $tahun);
+
+        if ($bulan !== 'all' && $bulan !== '') {
+            $builder->where('laporan_harian.bulan', $bulan);
+        }
+
+        return $builder->groupBy('laporan_harian.id')->findAll();
     }
 }

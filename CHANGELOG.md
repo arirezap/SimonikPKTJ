@@ -29,3 +29,32 @@ Dokumen ini berisi riwayat fitur, perbaikan (*bug fixes*), dan peningkatan antar
 - **Perbaikan Kinerja Bulanan (Laporan Harian):**
   - *Bug Tab Melompat:* Memperbaiki *bug* di mana saat *user* mengganti filter bulan di tab "Target Kinerja Saya", UI malah melompat ke tab "Persetujuan Target Staf". Diselesaikan dengan menyisipkan input tersembunyi `source_tab` untuk melacak asal form.
   - *Bug Form Resubmission (403 Security Exception):* Memperbaiki error keamanan bawaan browser/CodeIgniter (CSRF Token) saat pengguna me-*refresh* (F5) halaman Target Kinerja. Diatasi dengan merombak kode pada `LaporanHarianController::index` menjadi pola keamanan **PRG (Post-Redirect-Get)**. Kini me-refresh halaman usai *filter* bulan/tahun 100% aman dan tidak melempar galat.
+
+## 4. Pengembangan Evidence Command Center (ECC) & Kinerja
+- **Dashboard Admin (Top 5 Leaderboard):**
+  - Standardisasi tinggi *header* dan *row* di ketiga kartu *Bento* agar sejajar sempurna secara horizontal.
+  - Menerapkan fitur paksa potong teks (`text-truncate`) dipadukan dengan HTML native *tooltip* (`title="..."`) untuk nama pegawai yang terlalu panjang agar tidak merusak layout ke bawah.
+- **Penilaian Kinerja (Tab Staf / Atasan):**
+  - **Penyelarasan UI/UX:** Memindahkan ringkasan total nilai ke dalam *footer* tabel (sebelah kanan bawah) agar *flow* membacanya lebih natural.
+  - **Koreksi Data:** Menghapus label *sum* yang menyesatkan pada kolom Realisasi/Selisih karena perbedaan satuan ukur antar pegawai.
+  - **Fitur Baru (Action Buttons):** Menambahkan tombol **Kosongkan** (reset paksa) dan **Simpan Sementara** (draft).
+  - **Konfirmasi Modern:** Mengganti *popup browser default* (yang memblokir *thread*) dengan dialog konfirmasi berbasis **SweetAlert2** untuk UX yang jauh lebih halus.
+- **Target Bulanan Saya (Tab Individu):**
+  - Desain ulang menyeluruh menggunakan prinsip *UI/UX Pro Max* (Bento Grid, modern, hierarki tegas).
+  - Mengintegrasikan blok "NILAI KINERJA" raksasa ke dalam *footer* tabel RHK untuk menyeragamkan desain dengan tab Staf.
+  - Menyempurnakan tombol *link* laporan harian menjadi ikon bundar yang ramping.
+  
+## 5. Perombakan Arsitektur Multi-Role (Tabel Pivot)
+- **Tabel `user_roles`:** Mengganti arsitektur akses dari *single-role* menjadi *multi-role* menggunakan tabel pivot. Semua pengguna kini memiliki **1 Role Primer** (Jabatan Struktural) dan bisa memiliki banyak **Role Sekunder** (Peran Fungsional seperti Kepegawaian, SPM, dll).
+- **Pembuatan `role_helper.php`:** Menyediakan fungsi global `hasRole()`, `hasAnyRole()`, dan `getUserRoles()` untuk menangani pengecekan keamanan di seluruh *controller* dan *view*.
+- **Migrasi Database:** Melakukan migrasi dan otomatisasi data lama (khususnya untuk akun yang terjebak pada role primer `spm`, diubah menjadi `user`/`manajemen` dengan *role* tambahan `spm`).
+- **Kelola Pengguna (Admin):** Menambahkan opsi centang (checkbox) pada formulir *Tambah/Edit Pengguna* agar Admin dapat memberikan hak akses khusus seperti `Kepegawaian` dan `SPM` tanpa mengorbankan role struktural mereka.
+
+## 6. Modul Baru: Rekap Kepegawaian & ECC Multi-Role
+- **Modul Rekap Kepegawaian:**
+  - Membuat *controller* dan *view* baru yang khusus menampilkan tabel seluruh pengguna dari berbagai unit kerja.
+  - Fitur ini khusus untuk tim SDM (role sekunder `kepegawaian`) guna keperluan evaluasi remunerasi/gaji.
+  - Menambahkan fitur tombol **Export Excel (.csv)** yang kompatibel secara universal.
+- **Penyelarasan Hak Akses ECC (Evidence Command Center):**
+  - **Menu ECC > LED:** Kini dibuka bebas (terlihat) untuk **seluruh pegawai**. Filter di sisi server telah diperbaiki agar sistem cerdas melacak hierarki (hingga 2 level ke atas) untuk mengetahui *parent unit* (AAK/KUK) dan hanya memunculkan tugas LED sesuai bagian mereka.
+  - **Menu ECC > Simulasi Penilaian:** Dikunci secara eksklusif hanya untuk pengguna yang memiliki *role* sekunder `spm` atau `admin`. Proteksi ganda diterapkan pada *Sidebar UI* maupun level *Controller*.

@@ -90,6 +90,7 @@ class Autoload extends AutoloadConfig
      */
     public array $helpers = [
         'url', // Helper url biasanya sudah ada
-        'tanggal' // <-- TAMBAHKAN BARIS INI
+        'tanggal', // <-- TAMBAHKAN BARIS INI
+        'role', // Multi-Role Helper (hasRole, hasAnyRole, getUserRoles)
     ];
 }

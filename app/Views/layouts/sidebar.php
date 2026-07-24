@@ -21,11 +21,12 @@ $isAkademikActive = str_starts_with($current_uri, 'akademik');
 $isMasterDataActive = str_starts_with($current_uri, 'master-data');
 $isEccActive = str_starts_with($current_uri, 'ecc');
 
-// Definisi Peran Helper
-$isAdmin = ($role === 'admin');
-$isManajemenLevel = in_array($role, ['manajemen', 'kabag_aak']); // Gabungkan manajemen dan kabag_aak
-$isKabagKuk = ($role === 'kabag_kuk');
-$isDirektur = ($role === 'direktur'); 
+// Definisi Peran Helper (menggunakan multi-role helper)
+$isAdmin = hasRole('admin');
+$isManajemenLevel = hasAnyRole(['manajemen', 'kabag_aak']);
+$isKabagKuk = hasRole('kabag_kuk');
+$isDirektur = hasRole('direktur');
+$isKepegawaian = hasRole('kepegawaian');
 ?>
 
 
@@ -63,7 +64,7 @@ $isDirektur = ($role === 'direktur');
                     <ul class="nav flex-column ps-4">
                         <li class="nav-item"><a href="<?= site_url('ecc/led') ?>" class="nav-link sub-link <?= ($segment2 == 'led') ? 'active' : '' ?>"><span>LED</span></a></li>
 
-                        <?php if ($role === 'spm' || $role === 'admin'): ?>
+                        <?php if (hasAnyRole(['spm', 'admin'])): ?>
                             <li class="nav-item"><a href="<?= site_url('ecc/simulasi') ?>" class="nav-link sub-link <?= ($segment2 == 'simulasi') ? 'active' : '' ?>"><span>Simulasi Penilaian</span></a></li>
                         <?php endif; ?>
                     </ul>
@@ -73,7 +74,7 @@ $isDirektur = ($role === 'direktur');
             <?php
             // Menu Kinerja (Termasuk Direktur)
             // Disembunyikan untuk manajemen & kabag karena data dummy
-            if (in_array($role, ['admin', 'direktur', 'aak', 'kuk', 'spm'])):
+            if (hasAnyRole(['admin', 'direktur', 'aak', 'kuk', 'spm'])):
             ?>
                 <?php if (!$isAdmin): // Sembunyikan menu Kinerja untuk Admin ?>
                     <li class="nav-item">
@@ -94,7 +95,7 @@ $isDirektur = ($role === 'direktur');
                                 <li class="nav-item"><a href="<?= site_url('realisasi/input') ?>" class="nav-link sub-link <?= ($current_uri == 'realisasi/input') ? 'active' : '' ?>"><span>Input Realisasi</span></a></li>
                                 <li class="nav-item"><a href="<?= site_url('kinerja/update') ?>" class="nav-link sub-link <?= (str_starts_with($current_uri, 'kinerja/update') || str_starts_with($current_uri, 'alokasi/bulanan')) ? 'active' : '' ?>"><span>Kelola Target & Realisasi</span></a></li>
 
-                                <?php if (in_array($role, ['admin', 'kabag_kuk', 'kuk'])): ?>
+                                <?php if (hasAnyRole(['admin', 'kabag_kuk', 'kuk'])): ?>
                                     <li class="menu-divider"></li>
                                     <li class="nav-item"><a href="<?= site_url('keuangan/input') ?>" class="nav-link sub-link <?= ($current_uri == 'keuangan/input') ? 'active' : '' ?>"><span>Input Progres Keuangan</span></a></li>
                                 <?php endif; ?>
@@ -169,7 +170,7 @@ $isDirektur = ($role === 'direktur');
 
             <?php endif; ?>
 
-            <?php if (in_array($role, ['admin', 'manajemen', 'kabag_aak', 'kabag_kuk'])): ?>
+            <?php if (hasAnyRole(['admin', 'manajemen', 'kabag_aak', 'kabag_kuk'])): ?>
                 <li class="nav-item">
                     <a class="nav-link <?= $isMasterDataActive ? 'active' : 'collapsed' ?>" href="#masterDataSubmenu" role="button" data-bs-toggle="collapse">
                         <i class="bi bi-database-fill-gear"></i><span>Master Data</span>
@@ -193,6 +194,14 @@ $isDirektur = ($role === 'direktur');
                 <li class="nav-item"><a href="<?= site_url('users') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/users')) ? 'active' : '' ?>"><i class="bi bi-people-fill"></i><span>Kelola Pengguna</span></a></li>
                 <li class="nav-item"><a href="<?= site_url('settings') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/settings')) ? 'active' : '' ?>"><i class="bi bi-gear-fill"></i><span>Pengaturan Sistem</span></a></li>
             <?php endif; ?> 
+
+            <?php if ($isKepegawaian || $isAdmin): ?>
+                <li class="nav-item">
+                    <a class="nav-link <?= str_starts_with($current_uri, 'kepegawaian') ? 'active' : '' ?>" href="<?= site_url('kepegawaian') ?>">
+                        <i class="bi bi-clipboard2-data-fill"></i><span>Rekap Kepegawaian</span>
+                    </a>
+                </li>
+            <?php endif; ?>
 
         </ul>
     </div>

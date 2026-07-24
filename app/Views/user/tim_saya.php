@@ -35,12 +35,12 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <?php if (empty($bawahan)): ?>
+                        <?php if (empty($staf)): ?>
                         <tr>
                             <td colspan="5" class="text-center py-5 text-muted">Belum ada anggota tim. Klik 'Tambah Anggota Tim' untuk mulai.</td>
                         </tr>
                         <?php else: ?>
-                            <?php $i = 1; foreach ($bawahan as $b): ?>
+                            <?php $i = 1; foreach ($staf as $b): ?>
                             <tr>
                                 <td class="px-4"><?= $i++ ?></td>
                                 <td>
@@ -62,7 +62,7 @@
                                 <td class="text-center">
                                     <form action="<?= site_url('tim/remove') ?>" method="POST" class="d-inline">
                                         <?= csrf_field() ?>
-                                        <input type="hidden" name="bawahan_id" value="<?= $b['id'] ?>">
+                                        <input type="hidden" name="staf_id" value="<?= $b['id'] ?>">
                                         <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Keluarkan pegawai ini dari tim Anda?')" title="Hapus dari Tim">
                                             <i class="bi bi-person-x-fill"></i> Hapus
                                         </button>
@@ -90,8 +90,8 @@
                 <?= csrf_field() ?>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="bawahan_id" class="form-label fw-bold">Pilih Pegawai</label>
-                        <select name="bawahan_id" id="bawahan_id" class="form-select select2" required style="width: 100%;">
+                        <label for="staf_id" class="form-label fw-bold">Pilih Pegawai</label>
+                        <select name="staf_id" id="staf_id" class="form-select select2" required style="width: 100%;">
                             <option value="">-- Pilih Pegawai --</option>
                             <?php foreach ($semua_pegawai as $p): ?>
                                 <?php if($p['atasan_id'] == session()->get('id')) continue; ?>

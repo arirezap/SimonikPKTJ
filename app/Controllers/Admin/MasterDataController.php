@@ -578,38 +578,51 @@ class MasterDataController extends BaseController
 
         // 4. Determine the user's "Unit Kabag" (aak/kuk) for filtering
         $userUnitKabag = null;
-        // Priority 1: Direct role assignment
-        if (in_array($currentRole, ['aak', 'kabag_aak'])) {
-            $userUnitKabag = 'aak';
-        } elseif (in_array($currentRole, ['kuk', 'kabag_kuk'])) {
-            $userUnitKabag = 'kuk';
-        }
-        // Priority 2: For 'user' role, determine from superior's role
-        elseif ($currentRole === 'user' && !empty($currentUser['atasan_id'])) {
-            $atasan = $db->table('users')->where('id', $currentUser['atasan_id'])->get()->getRowArray();
-            if ($atasan) {
-                // PERBAIKAN: Gunakan strtolower() untuk membuat pengecekan role tidak case-sensitive
-                $atasanRole = strtolower($atasan['role']);
-                if (in_array($atasanRole, ['aak', 'kabag_aak'])) {
-                    $userUnitKabag = 'aak';
-                } elseif (in_array($atasanRole, ['kuk', 'kabag_kuk'])) {
-                    $userUnitKabag = 'kuk';
-                }
-            }
-        }
-        // Priority 3: Fallback for other roles (or 'user' without a valid superior) - look up from their assigned unit
-        elseif (!empty($currentUser['unit'])) {
+
+        // Coba cari dari unit kerja pengguna terlebih dahulu (paling akurat)
+        if (!empty($currentUser['unit'])) {
             $unitName = trim($currentUser['unit']);
             $unitKerja = $unitKerjaModel->where('nama_unit', $unitName)->first();
-            if ($unitKerja) {
-                $userUnitKabag = $unitKerja['parent_unit'];
+            if ($unitKerja && !empty($unitKerja['parent_unit'])) {
+                $userUnitKabag = strtolower(trim($unitKerja['parent_unit']));
+            }
+        }
+
+        // Jika tidak ketemu dari unit, cek dari role langsung
+        if (empty($userUnitKabag)) {
+            if (in_array($currentRole, ['aak', 'kabag_aak'])) {
+                $userUnitKabag = 'aak';
+            } elseif (in_array($currentRole, ['kuk', 'kabag_kuk'])) {
+                $userUnitKabag = 'kuk';
+            }
+        }
+
+        // Jika masih tidak ketemu, telusuri atasan (hingga 2 level ke atas)
+        if (empty($userUnitKabag) && !empty($currentUser['atasan_id'])) {
+            $atasan = $db->table('users')->where('id', $currentUser['atasan_id'])->get()->getRowArray();
+            if ($atasan) {
+                if (in_array(strtolower($atasan['role']), ['aak', 'kabag_aak'])) {
+                    $userUnitKabag = 'aak';
+                } elseif (in_array(strtolower($atasan['role']), ['kuk', 'kabag_kuk'])) {
+                    $userUnitKabag = 'kuk';
+                } elseif (!empty($atasan['atasan_id'])) {
+                    // Level 2 (misal dari Kanit -> Kabag)
+                    $atasan2 = $db->table('users')->where('id', $atasan['atasan_id'])->get()->getRowArray();
+                    if ($atasan2) {
+                        if (in_array(strtolower($atasan2['role']), ['aak', 'kabag_aak'])) {
+                            $userUnitKabag = 'aak';
+                        } elseif (in_array(strtolower($atasan2['role']), ['kuk', 'kabag_kuk'])) {
+                            $userUnitKabag = 'kuk';
+                        }
+                    }
+                }
             }
         }
 
         // 5. Filter criteria based on role
         $unfilteredRoles = ['admin', 'spm', 'direktur', 'wadir', 'manajemen']; // Roles that see everything
 
-        if (in_array($currentRole, $unfilteredRoles)) {
+        if (hasAnyRole($unfilteredRoles)) {
             // For super-viewer roles, show all criteria
             $filtered_criteria = $all_criteria;
         } else {

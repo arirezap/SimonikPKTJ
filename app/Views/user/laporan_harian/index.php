@@ -290,7 +290,7 @@ Target Kinerja Bulanan
                         
                         <div class="mb-3">
                             <h5 class="fw-bold mb-1 text-dark"><i class="bi bi-list-check text-success me-2"></i>Target Kinerja Staf</h5>
-                            <small class="text-muted">Periksa dan setujui target bawahan Anda di bawah ini.</small>
+                            <small class="text-muted">Periksa dan setujui target staf Anda di bawah ini.</small>
                         </div>
 
                         <?php

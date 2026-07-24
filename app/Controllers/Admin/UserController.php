@@ -140,9 +140,6 @@ class UserController extends BaseController
 
         $unit = $this->request->getPost('unit');
         $role = $this->request->getPost('role');
-        if (strtolower(trim($unit ?? '')) === 'satuan penjaminan mutu') {
-            $role = 'spm';
-        }
 
         $data = [
             'nama_lengkap' => $this->request->getPost('nama_lengkap'),
@@ -162,7 +159,32 @@ class UserController extends BaseController
             $data['atasan_id'] = $atasan_id;
         }
 
-        $this->userModel->insert($data);
+        $insertID = $this->userModel->insert($data);
+
+        // Insert Multi-Roles (Pivot Table)
+        $db = \Config\Database::connect();
+        
+        // 1. Insert role primer (wajib ada)
+        $db->table('user_roles')->insert([
+            'user_id' => $insertID,
+            'role_name' => strtolower($role),
+            'created_at' => date('Y-m-d H:i:s')
+        ]);
+        
+        // 2. Insert role sekunder yang dicentang
+        $secondaryRoles = $this->request->getPost('secondary_roles');
+        if (!empty($secondaryRoles) && is_array($secondaryRoles)) {
+            foreach ($secondaryRoles as $secRole) {
+                // Jangan masukkan lagi jika sama dengan role primer
+                if (strtolower($secRole) !== strtolower($role)) {
+                    $db->table('user_roles')->insert([
+                        'user_id' => $insertID,
+                        'role_name' => strtolower($secRole),
+                        'created_at' => date('Y-m-d H:i:s')
+                    ]);
+                }
+            }
+        }
 
         return redirect()->to('users')->with('success', 'User baru berhasil ditambahkan.');
     }
@@ -191,9 +213,15 @@ class UserController extends BaseController
         $potentialBosses = $this->userModel->where('id !=', $id)->orderBy('nama_lengkap', 'ASC')->findAll();
         $unitKerjaModel = new UnitKerja();
 
+        // Fetch secondary roles from pivot table
+        $db = \Config\Database::connect();
+        $userRoles = $db->table('user_roles')->where('user_id', $id)->get()->getResultArray();
+        $secondaryRoles = array_column($userRoles, 'role_name');
+
         $data = [
             'title' => 'Edit Pengguna & Atasan',
             'user'  => $user,
+            'secondary_roles' => $secondaryRoles,
             'potential_bosses' => $potentialBosses,
             'unit_kerja_list' => $unitKerjaModel->orderBy('nama_unit', 'ASC')->findAll()
         ];
@@ -207,9 +235,6 @@ class UserController extends BaseController
 
         $unit = $this->request->getPost('unit');
         $role = $this->request->getPost('role');
-        if (strtolower(trim($unit ?? '')) === 'satuan penjaminan mutu') {
-            $role = 'spm';
-        }
         
         $data = [
             'nama_lengkap' => $this->request->getPost('nama_lengkap'),
@@ -241,6 +266,34 @@ class UserController extends BaseController
         }
 
         $this->userModel->update($id, $data);
+
+        // Update Multi-Roles (Pivot Table)
+        $db = \Config\Database::connect();
+        
+        // 1. Hapus role sekunder yang lama
+        $db->table('user_roles')->where('user_id', $id)->delete();
+        
+        // 2. Insert role primer (wajib ada)
+        $db->table('user_roles')->insert([
+            'user_id' => $id,
+            'role_name' => strtolower($role),
+            'created_at' => date('Y-m-d H:i:s')
+        ]);
+        
+        // 3. Insert role sekunder yang dicentang
+        $secondaryRoles = $this->request->getPost('secondary_roles');
+        if (!empty($secondaryRoles) && is_array($secondaryRoles)) {
+            foreach ($secondaryRoles as $secRole) {
+                // Jangan masukkan lagi jika sama dengan role primer
+                if (strtolower($secRole) !== strtolower($role)) {
+                    $db->table('user_roles')->insert([
+                        'user_id' => $id,
+                        'role_name' => strtolower($secRole),
+                        'created_at' => date('Y-m-d H:i:s')
+                    ]);
+                }
+            }
+        }
 
         return redirect()->to('users')->with('success', 'Data pengguna berhasil diperbarui.');
     }

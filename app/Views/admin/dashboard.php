@@ -87,9 +87,9 @@
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
     }
     
-    .radar-chart-container { position: relative; height: 450px; width: 100%; }
-    .chart-container { position: relative; height: 280px; width: 100%; }
-    .performance-chart-container { position: relative; min-height: 400px; width: 100%; }
+    .radar-chart-container { position: relative; height: 420px; width: 100%; }
+    .chart-container { position: relative; height: 320px; width: 100%; }
+    .performance-chart-container { position: relative; min-height: 350px; width: 100%; }
     
     /* Custom Scrollbar for tables */
     .table-responsive::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -103,22 +103,22 @@
 
 <!-- 1. ECC DASHBOARD (TOP SECTION AS REQUESTED) -->
 <div class="row g-4 mb-5">
-    <div class="col-12">
-        <div class="bento-card border-primary border-top border-4">
-            <div class="bento-header d-flex flex-column flex-md-row justify-content-between align-items-md-center border-bottom pb-3 mb-2 gap-3">
+    <div class="col-lg-8 d-flex flex-column">
+        <div class="bento-card border-primary border-top border-4 flex-fill">
+            <div class="bento-header d-flex flex-column flex-md-row justify-content-between align-items-md-center border-bottom pb-2 mb-2 gap-2">
                 <div class="d-flex align-items-center">
-                    <div class="bg-primary-bento text-white rounded p-2 me-3 shadow-sm d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                        <i class="bi bi-shield-check fs-5"></i>
+                    <div class="bg-primary-bento text-white rounded p-1 me-2 shadow-sm d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                        <i class="bi bi-shield-check fs-6"></i>
                     </div>
                     <div>
-                        <h5 class="mb-0 fw-bold text-dark">Evidence Command Center (ECC)</h5>
-                        <small class="text-muted">Monitoring Pemenuhan Standar Mutu</small>
+                        <div class="mb-0 fw-bold text-dark fs-6">Evidence Command Center (ECC)</div>
+                        <div class="text-muted" style="font-size: 0.75rem;">Monitoring Pemenuhan Standar Mutu</div>
                     </div>
                 </div>
                 
                 <!-- Filter Tahun ECC -->
                 <form id="formEcc" class="m-0 d-flex gap-2">
-                    <select name="tahun_ecc" id="tahun_ecc" class="form-select filter-select fw-bold text-primary-bento" style="width: auto; cursor:pointer;" onchange="updateEccData()">
+                    <select name="tahun_ecc" id="tahun_ecc" class="form-select form-select-sm filter-select fw-bold text-primary-bento" style="width: auto; cursor:pointer;" onchange="updateEccData()">
                         <?php foreach ($daftar_tahun as $tahun_item): ?>
                             <option value="<?= esc($tahun_item) ?>" <?= ($tahun_ecc == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
                         <?php endforeach; ?>
@@ -130,7 +130,7 @@
                 <ul class="nav nav-pills ecc-tabs mb-4" id="prodiTab" role="tablist">
                     <?php foreach($prodiData as $prodi): ?>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="tab-<?= esc($prodi['id_prodi']) ?>" data-bs-toggle="tab" data-bs-target="#content-<?= esc($prodi['id_prodi']) ?>" type="button" role="tab"><?= esc($prodi['nama_prodi']) ?></button>
+                            <button class="nav-link py-1 px-3" style="font-size: 0.85rem;" id="tab-<?= esc($prodi['id_prodi']) ?>" data-bs-toggle="tab" data-bs-target="#content-<?= esc($prodi['id_prodi']) ?>" type="button" role="tab"><?= esc($prodi['nama_prodi']) ?></button>
                         </li>
                     <?php endforeach; ?>
                 </ul>
@@ -139,9 +139,9 @@
                     <?php foreach($prodiData as $prodi): ?>
                         <div class="tab-pane fade" id="content-<?= esc($prodi['id_prodi']) ?>" role="tabpanel">
                             <div class="row justify-content-center">
-                                <div class="col-md-9">
+                                <div class="col-12 px-0 px-md-3">
                                     <div class="text-center mb-3">
-                                        <span class="badge bg-light text-dark border px-3 py-2 rounded-pill shadow-sm">
+                                        <span class="badge bg-light text-dark border px-2 py-1 rounded-pill shadow-sm" style="font-size: 0.75rem;">
                                             Rangkuman Skor LED: <strong class="text-primary-bento"><?= esc($prodi['nama_prodi']) ?></strong>
                                         </span>
                                     </div>
@@ -159,33 +159,10 @@
             </div>
         </div>
     </div>
-</div>
-
-<!-- 2. ANALISIS KINERJA UNIT -->
-<div class="d-flex justify-content-between align-items-center mb-4 mt-5">
-    <div>
-        <h4 class="mb-0 fw-bold text-dark">Analitik Kinerja Unit</h4>
-        <p class="text-muted mb-0 small">Ringkasan performa seluruh unit berdasarkan laporan harian yang dinilai</p>
-    </div>
-    <form id="formKinerja" class="m-0 d-flex gap-2">
-        <select class="form-select filter-select fw-bold text-primary-bento" id="bulan_kinerja" name="bulan_kinerja" style="width: auto; cursor:pointer;" onchange="updateKinerjaData()">
-            <option value="all" <?= ($bulan_kinerja === 'all' || !$bulan_kinerja) ? 'selected' : '' ?>>Semua Bulan</option>
-            <?php for ($i = 1; $i <= 12; $i++): ?>
-                <option value="<?= $i; ?>" <?= ($bulan_kinerja == $i) ? 'selected' : ''; ?>><?= bulan_indo($i) ?></option>
-            <?php endfor; ?>
-        </select>
-        <select name="tahun_kinerja" id="tahun_kinerja" class="form-select filter-select fw-bold text-primary-bento" style="width: auto; cursor:pointer;" onchange="updateKinerjaData()">
-            <?php foreach ($daftar_tahun as $tahun_item): ?>
-                <option value="<?= esc($tahun_item) ?>" <?= ($tahun_kinerja == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
-            <?php endforeach; ?>
-        </select>
-    </form>
-</div>
-<div class="row g-4 mb-4">
-    <!-- Kolom Kiri: Stack 2 Cards -->
-    <div class="col-md-5 d-flex flex-column gap-4">
+    
+    <div class="col-lg-4 d-flex flex-column gap-4">
         <!-- Rata-rata Kinerja -->
-        <div class="bento-card bg-primary-bento text-white flex-fill">
+        <div class="bento-card bg-primary-bento text-white flex-fill shadow-sm" style="min-height:150px;">
             <div class="bento-body p-4 d-flex flex-column justify-content-center h-100">
                 <div class="stat-label text-white-50 mb-1">Rata-Rata Kinerja Bulanan</div>
                 <div class="stat-value text-white mb-2" id="valRataRataKinerja">
@@ -214,7 +191,7 @@
         </div>
         
         <!-- Partisipasi Pegawai Aktif -->
-        <div class="bento-card flex-fill">
+        <div class="bento-card flex-fill shadow-sm border-top border-4 border-primary" style="min-height:150px;">
             <div class="bento-body p-4 d-flex flex-column justify-content-center h-100">
                 <div class="stat-label mb-1">Tingkat Partisipasi Aktif</div>
                 <div class="stat-value text-dark mb-2" id="valPartisipasi">
@@ -227,13 +204,64 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- 2. ANALISIS KINERJA UNIT -->
+<div class="d-flex justify-content-between align-items-center mb-4 mt-3">
+    <div>
+        <h4 class="mb-0 fw-bold text-dark">Analitik Kinerja Unit</h4>
+        <p class="text-muted mb-0 small">Ringkasan performa seluruh unit berdasarkan laporan harian yang dinilai</p>
+    </div>
+    <form id="formKinerja" class="m-0 d-flex gap-2">
+        <select class="form-select filter-select fw-bold text-primary-bento" id="bulan_kinerja" name="bulan_kinerja" style="width: auto; cursor:pointer;" onchange="updateKinerjaData()">
+            <option value="all" <?= ($bulan_kinerja === 'all' || !$bulan_kinerja) ? 'selected' : '' ?>>Semua Bulan</option>
+            <?php for ($i = 1; $i <= 12; $i++): ?>
+                <option value="<?= $i; ?>" <?= ($bulan_kinerja == $i) ? 'selected' : ''; ?>><?= bulan_indo($i) ?></option>
+            <?php endfor; ?>
+        </select>
+        <select name="tahun_kinerja" id="tahun_kinerja" class="form-select filter-select fw-bold text-primary-bento" style="width: auto; cursor:pointer;" onchange="updateKinerjaData()">
+            <?php foreach ($daftar_tahun as $tahun_item): ?>
+                <option value="<?= esc($tahun_item) ?>" <?= ($tahun_kinerja == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
+            <?php endforeach; ?>
+        </select>
+    </form>
+</div>
+
+<!-- Row Sebaran & Tren Kinerja -->
+<div class="row g-4 mb-5">
+    <!-- Sebaran Kinerja Doughnut Chart -->
+    <div class="col-lg-4">
+        <div class="bento-card h-100">
+            <div class="bento-header">Sebaran Predikat Kinerja</div>
+            <div class="bento-body pt-0">
+                <div class="chart-container">
+                    <canvas id="sebaranChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
     
-    <!-- Kolom Kanan: Top 5 Unit -->
-    <div class="col-md-7">
+    <!-- Trend Line Chart -->
+    <div class="col-lg-8">
+        <div class="bento-card h-100">
+            <div class="bento-header">Tren Kinerja Bulanan Organisasi</div>
+            <div class="bento-body pt-0">
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 3. LEADERBOARD UNIT & PEGAWAI -->
+<div class="row g-4 mb-5">
+    <!-- Kolom Kiri: Top 5 Unit -->
+    <div class="col-lg-4">
         <div class="bento-card h-100 d-flex flex-column">
-            <div class="bento-header d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
-                <div><i class="bi bi-building-up text-primary me-2"></i>Top 5 Unit Kerja</div>
-                <a href="#unitPerformanceChart" class="btn btn-sm btn-light rounded-pill fs-7 px-3 text-primary fw-bold" style="text-decoration: none;">Selengkapnya <i class="bi bi-arrow-down-short"></i></a>
+            <div class="bento-header d-flex justify-content-between align-items-center border-bottom pb-2 mb-2" style="height: 42px;">
+                <div style="font-size: 0.85rem;" class="fw-bold"><i class="bi bi-building-up text-primary me-2"></i>Top 5 Unit Kerja</div>
+                <a href="#unitPerformanceChart" class="btn btn-light rounded-pill px-2 py-0 text-primary fw-bold d-flex align-items-center" style="text-decoration: none; font-size: 0.7rem; height: 24px;">Selengkapnya <i class="bi bi-arrow-down-short fs-6"></i></a>
             </div>
             <div class="bento-body p-0 flex-fill d-flex flex-column justify-content-center">
                 <div class="table-responsive">
@@ -266,7 +294,7 @@
                                 <tr><td class="text-center text-muted py-4">Belum ada data</td></tr>
                             <?php else: ?>
                                 <?php foreach($top5Unit as $i => $u): ?>
-                                <tr style="height: 48px;">
+                                <tr style="height: 56px;">
                                     <td style="width: 50px;" class="text-center align-middle py-2 border-bottom border-light">
                                         <?php if($i == 0): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-warning text-dark p-0 shadow-sm" style="width:24px;height:24px;font-size:11px;">1</div>
                                         <?php elseif($i == 1): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-secondary text-white p-0 shadow-sm" style="width:24px;height:24px;font-size:11px;">2</div>
@@ -274,7 +302,7 @@
                                         <?php else: ?><div class="d-flex justify-content-center align-items-center mx-auto fw-bold text-muted" style="width:24px;height:24px;font-size:13px;"><?= $i+1 ?></div><?php endif; ?>
                                     </td>
                                     <td class="py-2 border-bottom border-light" style="max-width: 0; width: 100%;">
-                                        <div class="fw-bold text-dark fs-6 text-truncate" title="<?= esc($u['nama']) ?>"><?= esc($u['nama']) ?></div>
+                                        <div class="fw-bold text-dark text-truncate" style="font-size: 0.85rem;" title="<?= esc($u['nama']) ?>"><?= esc($u['nama']) ?></div>
                                     </td>
                                     <td class="text-end pe-4 py-2 border-bottom border-light">
                                         <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 shadow-sm border border-success"><?= $u['rata'] > 0 ? $u['rata'] . '%' : '-' ?></span>
@@ -288,42 +316,10 @@
             </div>
         </div>
     </div>
-</div>
-
-<div class="row g-4 mb-5">
-    <!-- Sebaran Kinerja Doughnut Chart -->
-    <div class="col-12 col-md-4 col-lg-4">
-        <div class="bento-card">
-            <div class="bento-header">Sebaran Predikat Kinerja</div>
-            <div class="bento-body pt-0">
-                <div class="chart-container">
-                    <canvas id="sebaranChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Trend Line Chart -->
-    <div class="col-12 col-md-8 col-lg-8">
-        <div class="bento-card">
-            <div class="bento-header">Tren Kinerja Bulanan Organisasi</div>
-            <div class="bento-body pt-0">
-                <div class="chart-container">
-                    <canvas id="trendChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-
-<!-- 3. LEADERBOARD -->
-<div class="row g-4 mb-5">
     <!-- Top 5 -->
-    <div class="col-md-6">
+    <div class="col-lg-4">
         <div class="bento-card h-100">
-            <div class="bento-header text-dark border-bottom pb-3 mb-2"><i class="bi bi-trophy-fill text-warning me-2"></i>Top 5 Pegawai Berkinerja Terbaik</div>
+            <div class="bento-header d-flex align-items-center text-dark border-bottom pb-2 mb-2 fw-bold" style="font-size: 0.85rem; height: 42px;"><i class="bi bi-trophy-fill text-warning me-2"></i>Top 5 Pegawai Berkinerja Terbaik</div>
             <div class="bento-body p-0">
                 <div class="table-responsive">
                     <table class="table table-borderless table-hover align-middle mb-0">
@@ -332,19 +328,19 @@
                                 <tr><td class="text-center text-muted py-4">Belum ada data</td></tr>
                             <?php else: ?>
                                 <?php foreach($top5 as $i => $t): ?>
-                                <tr style="height: 72px;">
-                                    <td style="width: 60px;" class="text-center align-middle py-3 border-bottom border-light">
-                                        <?php if($i == 0): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-warning text-dark p-0 fs-6 shadow-sm" style="width:30px;height:30px;">1</div>
-                                        <?php elseif($i == 1): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-secondary text-white p-0 fs-6 shadow-sm" style="width:30px;height:30px;">2</div>
-                                        <?php elseif($i == 2): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle text-white p-0 fs-6 shadow-sm" style="background-color: #cd7f32; width:30px;height:30px;">3</div>
-                                        <?php else: ?><div class="d-flex justify-content-center align-items-center mx-auto fw-bold text-muted fs-5" style="width:30px;height:30px;"><?= $i+1 ?></div><?php endif; ?>
+                                <tr style="height: 56px;">
+                                    <td style="width: 50px;" class="text-center align-middle py-2 border-bottom border-light">
+                                        <?php if($i == 0): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-warning text-dark p-0 shadow-sm" style="width:24px;height:24px;font-size:11px;">1</div>
+                                        <?php elseif($i == 1): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-secondary text-white p-0 shadow-sm" style="width:24px;height:24px;font-size:11px;">2</div>
+                                        <?php elseif($i == 2): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle text-white p-0 shadow-sm" style="background-color: #cd7f32; width:24px;height:24px;font-size:11px;">3</div>
+                                        <?php else: ?><div class="d-flex justify-content-center align-items-center mx-auto fw-bold text-muted" style="width:24px;height:24px;font-size:13px;"><?= $i+1 ?></div><?php endif; ?>
                                     </td>
-                                    <td class="py-3 border-bottom border-light">
-                                        <div class="fw-bold text-dark"><?= esc($t['bawahan']['nama_lengkap']) ?></div>
-                                        <div class="small text-muted"><?= esc(trim($t['bawahan']['jabatan'] ?? '') ?: '-') ?></div>
+                                    <td class="py-2 border-bottom border-light" style="max-width: 0; width: 100%;">
+                                        <div class="fw-bold text-dark text-truncate" style="font-size: 0.85rem;" title="<?= esc($t['staf']['nama_lengkap']) ?>"><?= esc($t['staf']['nama_lengkap']) ?></div>
+                                        <div class="text-muted text-truncate" style="font-size: 0.75rem;" title="<?= esc(trim($t['staf']['jabatan'] ?? '') ?: '-') ?>"><?= esc(trim($t['staf']['jabatan'] ?? '') ?: '-') ?></div>
                                     </td>
-                                    <td class="text-end pe-4 py-3 border-bottom border-light">
-                                        <span class="badge bg-success bg-opacity-10 text-success fs-6 rounded-pill px-3 py-2 shadow-sm border border-success"><?= esc($t['rata_rata']) ?></span>
+                                    <td class="text-end pe-3 py-2 border-bottom border-light">
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 shadow-sm border border-success" style="font-size: 0.8rem;"><?= esc($t['rata_rata']) ?></span>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -357,9 +353,9 @@
     </div>
     
     <!-- Bottom 5 -->
-    <div class="col-md-6">
+    <div class="col-lg-4">
         <div class="bento-card h-100">
-            <div class="bento-header text-dark border-bottom pb-3 mb-2"><i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Perlu Perhatian Khusus</div>
+            <div class="bento-header d-flex align-items-center text-dark border-bottom pb-2 mb-2 fw-bold" style="font-size: 0.85rem; height: 42px;"><i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Perlu Perhatian Khusus</div>
             <div class="bento-body p-0">
                 <div class="table-responsive">
                     <table class="table table-borderless table-hover align-middle mb-0">
@@ -368,16 +364,16 @@
                                 <tr><td class="text-center text-muted py-4">Belum ada data</td></tr>
                             <?php else: ?>
                                 <?php foreach($bottom5 as $i => $b): ?>
-                                <tr style="height: 72px;">
-                                    <td style="width: 60px;" class="text-center align-middle py-3 border-bottom border-light">
-                                        <div class="d-flex justify-content-center align-items-center mx-auto fw-bold text-danger fs-5" style="width:30px;height:30px;"><?= $i+1 ?></div>
+                                <tr style="height: 56px;">
+                                    <td style="width: 50px;" class="text-center align-middle py-2 border-bottom border-light">
+                                        <div class="d-flex justify-content-center align-items-center mx-auto fw-bold text-danger" style="width:24px;height:24px;font-size:13px;"><?= $i+1 ?></div>
                                     </td>
-                                    <td class="py-3 border-bottom border-light">
-                                        <div class="fw-bold text-dark"><?= esc($b['bawahan']['nama_lengkap']) ?></div>
-                                        <div class="small text-muted"><?= esc(trim($b['bawahan']['jabatan'] ?? '') ?: '-') ?></div>
+                                    <td class="py-2 border-bottom border-light" style="max-width: 0; width: 100%;">
+                                        <div class="fw-bold text-dark text-truncate" style="font-size: 0.85rem;" title="<?= esc($b['staf']['nama_lengkap']) ?>"><?= esc($b['staf']['nama_lengkap']) ?></div>
+                                        <div class="text-muted text-truncate" style="font-size: 0.75rem;" title="<?= esc(trim($b['staf']['jabatan'] ?? '') ?: '-') ?>"><?= esc(trim($b['staf']['jabatan'] ?? '') ?: '-') ?></div>
                                     </td>
-                                    <td class="text-end pe-4 py-3 border-bottom border-light">
-                                        <span class="badge bg-danger bg-opacity-10 text-danger fs-6 rounded-pill px-3 py-2 shadow-sm border border-danger"><?= esc($b['rata_rata']) ?></span>
+                                    <td class="text-end pe-3 py-2 border-bottom border-light">
+                                        <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2 py-1 shadow-sm border border-danger" style="font-size: 0.8rem;"><?= esc($b['rata_rata']) ?></span>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -463,12 +459,12 @@ async function updateEccData() {
                 if(window.pageCharts[canvasId]) {
                     const chart = window.pageCharts[canvasId];
                     chart.data.labels = prodi.chart_labels.map(label => {
-                        if (label.length <= 25) return label;
+                        if (label.length <= 16) return label;
                         const words = label.split(' ');
                         const lines = [];
                         let currentLine = words[0];
                         for (let i = 1; i < words.length; i++) {
-                            if (currentLine.length + 1 + words[i].length <= 25) { currentLine += ' ' + words[i]; } 
+                            if (currentLine.length + 1 + words[i].length <= 16) { currentLine += ' ' + words[i]; } 
                             else { lines.push(currentLine); currentLine = words[i]; }
                         }
                         lines.push(currentLine);
@@ -539,10 +535,10 @@ async function updateKinerjaData() {
                     let rataStr = u.rata > 0 ? u.rata + '%' : '-';
                     
                     htmlUnit += `
-                    <tr style="height: 48px;">
+                    <tr style="height: 56px;">
                         <td style="width: 50px;" class="text-center align-middle py-2 border-bottom border-light">${badgeNum}</td>
                         <td class="py-2 border-bottom border-light" style="max-width: 0; width: 100%;">
-                            <div class="fw-bold text-dark fs-6 text-truncate" title="${u.nama}">${u.nama}</div>
+                            <div class="fw-bold text-dark text-truncate" style="font-size: 0.85rem;" title="${u.nama}">${u.nama}</div>
                         </td>
                         <td class="text-end pe-4 py-2 border-bottom border-light">
                             <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 shadow-sm border border-success">${rataStr}</span>
@@ -583,23 +579,23 @@ async function updateKinerjaData() {
                 arr.forEach((item, i) => {
                     let badge = '';
                     if(isTop) {
-                        if(i === 0) badge = `<span class="badge rounded-circle bg-warning text-dark p-2 fs-6 shadow-sm" style="width:30px;height:30px;">1</span>`;
-                        else if(i === 1) badge = `<span class="badge rounded-circle bg-secondary text-white p-2 fs-6 shadow-sm" style="width:30px;height:30px;">2</span>`;
-                        else if(i === 2) badge = `<span class="badge rounded-circle text-white p-2 fs-6 shadow-sm" style="background-color: #cd7f32; width:30px;height:30px;">3</span>`;
-                        else badge = `<span class="fw-bold text-muted fs-5">${i+1}</span>`;
+                        if(i === 0) badge = `<div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-warning text-dark p-0 shadow-sm" style="width:24px;height:24px;font-size:11px;">1</div>`;
+                        else if(i === 1) badge = `<div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-secondary text-white p-0 shadow-sm" style="width:24px;height:24px;font-size:11px;">2</div>`;
+                        else if(i === 2) badge = `<div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle text-white p-0 shadow-sm" style="background-color: #cd7f32; width:24px;height:24px;font-size:11px;">3</div>`;
+                        else badge = `<div class="d-flex justify-content-center align-items-center mx-auto fw-bold text-muted" style="width:24px;height:24px;font-size:13px;">${i+1}</div>`;
                     } else {
-                        badge = `<span class="fw-bold text-danger fs-5">${i+1}</span>`;
+                        badge = `<div class="d-flex justify-content-center align-items-center mx-auto fw-bold text-danger" style="width:24px;height:24px;font-size:13px;">${i+1}</div>`;
                     }
                     const scoreClass = isTop ? 'bg-success text-success border-success' : 'bg-danger text-danger border-danger';
                     html += `
-                    <tr>
-                        <td style="width: 50px;" class="text-center ps-4 py-3 border-bottom border-light">${badge}</td>
-                        <td class="py-3 border-bottom border-light">
-                            <div class="fw-bold text-dark">${item.bawahan.nama_lengkap}</div>
-                            <div class="small text-muted">${item.bawahan.jabatan || '-'}</div>
+                    <tr style="height: 56px;">
+                        <td style="width: 50px;" class="text-center align-middle py-2 border-bottom border-light">${badge}</td>
+                        <td class="py-2 border-bottom border-light" style="max-width: 0; width: 100%;">
+                            <div class="fw-bold text-dark text-truncate" style="font-size: 0.85rem;" title="${item.staf.nama_lengkap}">${item.staf.nama_lengkap}</div>
+                            <div class="text-muted text-truncate" style="font-size: 0.75rem;" title="${item.staf.jabatan || '-'}">${item.staf.jabatan || '-'}</div>
                         </td>
-                        <td class="text-end pe-4 py-3 border-bottom border-light">
-                            <span class="badge ${scoreClass} bg-opacity-10 fs-6 rounded-pill px-3 py-2 shadow-sm border">${item.rata_rata}</span>
+                        <td class="text-end pe-3 py-2 border-bottom border-light">
+                            <span class="badge ${scoreClass} bg-opacity-10 rounded-pill px-2 py-1 shadow-sm border" style="font-size: 0.8rem;">${item.rata_rata}</span>
                         </td>
                     </tr>`;
                 });
@@ -653,7 +649,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // --- Helper: Word Wrap ---
-    function splitLabel(label, maxLength = 25) {
+    function splitLabel(label, maxLength = 16) {
         if (label.length <= maxLength) return label;
         const words = label.split(' ');
         const lines = [];
@@ -704,7 +700,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const canvasId = 'radarChart-' + id;
         const ctx = document.getElementById(canvasId);
         if (ctx) {
-            const wrappedLabels = data.chart_labels.map(label => splitLabel(label, 25));
+            const wrappedLabels = data.chart_labels.map(label => splitLabel(label, 16));
 
             window.pageCharts[canvasId] = new Chart(ctx, {
                 type: 'radar',
@@ -724,15 +720,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 options: {
                     responsive: true, 
                     maintainAspectRatio: false,
-                    layout: { padding: 20 },
+                    layout: { padding: 10 },
                     scales: {
                         r: {
-                            angleLines: { display: true, color: 'rgba(0, 0, 0, 0.05)' },
+                            angleLines: { display: true, color: 'rgba(0, 0, 0, 0.2)', lineWidth: 1.5 },
                             min: 0, max: 100,
-                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                            grid: { color: 'rgba(0, 0, 0, 0.2)', lineWidth: 1.5 },
                             pointLabels: { 
-                                display: true, color: '#475569', font: { size: 11, weight: '600', family: 'system-ui' }, 
-                                backdropPadding: 4, padding: 15
+                                display: true, color: '#334155', font: { size: 12, weight: '700', family: 'system-ui', lineHeight: 1.2 }, 
+                                backdropPadding: 2, padding: 8
                             },
                             ticks: { display: false, stepSize: 33.3333 }
                         }

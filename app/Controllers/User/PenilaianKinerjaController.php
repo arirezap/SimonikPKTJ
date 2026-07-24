@@ -31,25 +31,28 @@ class PenilaianKinerjaController extends BaseController
         if ($this->request->getMethod() === 'POST' || $this->request->getMethod() === 'post') {
             if ($this->request->getPost('bulan')) session()->set('penilaian_bulan', $this->request->getPost('bulan'));
             if ($this->request->getPost('tahun')) session()->set('penilaian_tahun', $this->request->getPost('tahun'));
-            if (isset($_POST['bawahan_id'])) session()->set('penilaian_bawahan_id', $this->request->getPost('bawahan_id'));
+            if (isset($_POST['staf_id'])) session()->set('penilaian_staf_id', $this->request->getPost('staf_id'));
             if (isset($_POST['unit_kerja'])) session()->set('penilaian_unit_kerja', $this->request->getPost('unit_kerja'));
             
-            if ($this->request->getPost('active_tab') === 'individu') {
-                session()->remove('penilaian_bawahan_id');
+            $hash = '';
+            if ($this->request->getPost('active_tab')) {
+                $activeTab = $this->request->getPost('active_tab');
+                $hash = '#' . $activeTab;
+                // Jangan hapus penilaian_staf_id agar jika user kembali ke tab staf, stafnya masih terpilih
             }
             
-            return redirect()->to(site_url('penilaian-kinerja'));
+            return redirect()->to(site_url('penilaian-kinerja') . $hash);
         }
 
         $bulanTerpilih = session()->get('penilaian_bulan') ?? date('n');
         $tahunTerpilih = session()->get('penilaian_tahun') ?? date('Y');
-        $bawahanIdTerpilih = session()->get('penilaian_bawahan_id') ?? '';
+        $stafIdTerpilih = session()->get('penilaian_staf_id') ?? '';
         $unitKerjaTerpilih = session()->get('penilaian_unit_kerja') ?? '';
 
         $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
         $role = session()->get('role');
-        $isSuper = in_array($role, ['admin', 'direktur', 'wadir']);
+        $isSuper = hasAnyRole(['admin', 'direktur', 'wadir']);
 
         // Ambil daftar unit kerja untuk filter (Hanya untuk Super)
         $daftarUnit = [];
@@ -60,17 +63,17 @@ class PenilaianKinerjaController extends BaseController
             }
         }
 
-        // Cek apakah user punya bawahan atau punya akses penuh
+        // Cek apakah user punya staf atau punya akses penuh
         if ($isSuper) {
             $builder = $userModel->where('id !=', $userId);
             if (!empty($unitKerjaTerpilih)) {
                 $builder = $builder->where('unit', $unitKerjaTerpilih);
             }
-            $daftarBawahan = $builder->orderBy('nama_lengkap', 'ASC')->findAll();
+            $daftarStaf = $builder->orderBy('nama_lengkap', 'ASC')->findAll();
             $isAtasan = true;
         } else {
-            $daftarBawahan = $userModel->getBawahan($userId);
-            $isAtasan = !empty($daftarBawahan);
+            $daftarStaf = $userModel->getStaf($userId);
+            $isAtasan = !empty($daftarStaf);
         }
 
         $rekapDashboard = [];
@@ -78,19 +81,19 @@ class PenilaianKinerjaController extends BaseController
         // Tentukan data siapa yang akan ditampilkan
         $isPenilai = false; // Mode form penilaian aktif?
 
-        if ($isAtasan && !empty($bawahanIdTerpilih)) {
-            // Validasi apakah benar bawahannya
-            $isValidBawahan = false;
-            foreach ($daftarBawahan as $bwh) {
-                if ($bwh['id'] == $bawahanIdTerpilih) {
-                    $isValidBawahan = true;
+        if ($isAtasan && !empty($stafIdTerpilih)) {
+            // Validasi apakah benar stafnya
+            $isValidStaf = false;
+            foreach ($daftarStaf as $bwh) {
+                if ($bwh['id'] == $stafIdTerpilih) {
+                    $isValidStaf = true;
                     break;
                 }
             }
-            if ($isValidBawahan) {
+            if ($isValidStaf) {
                 $isPenilai = true; // Atasan bisa menilai
             } else {
-                $bawahanIdTerpilih = ''; // Reset jika ternyata tidak valid (misal pindah unit)
+                $stafIdTerpilih = ''; // Reset jika ternyata tidak valid (misal pindah unit)
             }
         }
 
@@ -98,12 +101,12 @@ class PenilaianKinerjaController extends BaseController
         $rekapDataSendiri = $laporanModel->getTargetWithRealization($userId, $bulanTerpilih, $tahunTerpilih);
         $logHarianSendiri = $logModel->getLogByMonth($userId, $bulanTerpilih, $tahunTerpilih);
         
-        // Ambil rekap data bawahan terpilih (jika ada)
-        $rekapDataBawahan = [];
-        $logHarianBawahan = [];
+        // Ambil rekap data staf terpilih (jika ada)
+        $rekapDataStaf = [];
+        $logHarianStaf = [];
         if ($isPenilai) {
-            $rekapDataBawahan = $laporanModel->getTargetWithRealization($bawahanIdTerpilih, $bulanTerpilih, $tahunTerpilih);
-            $logHarianBawahan = $logModel->getLogByMonth($bawahanIdTerpilih, $bulanTerpilih, $tahunTerpilih);
+            $rekapDataStaf = $laporanModel->getTargetWithRealization($stafIdTerpilih, $bulanTerpilih, $tahunTerpilih);
+            $logHarianStaf = $logModel->getLogByMonth($stafIdTerpilih, $bulanTerpilih, $tahunTerpilih);
         }
 
         $data = [
@@ -111,14 +114,14 @@ class PenilaianKinerjaController extends BaseController
             'bulan_terpilih' => $bulanTerpilih,
             'tahun_terpilih' => $tahunTerpilih,
             'bulan_indo' => $bulanIndo,
-            'daftar_bawahan' => $daftarBawahan,
-            'bawahan_id_terpilih' => $bawahanIdTerpilih,
+            'daftar_staf' => $daftarStaf,
+            'staf_id_terpilih' => $stafIdTerpilih,
             'is_atasan' => $isAtasan,
             'is_penilai' => $isPenilai,
             'rekap_data_sendiri' => $rekapDataSendiri,
             'log_harian_sendiri' => $logHarianSendiri,
-            'rekap_data_bawahan' => $rekapDataBawahan,
-            'log_harian_bawahan' => $logHarianBawahan,
+            'rekap_data_staf' => $rekapDataStaf,
+            'log_harian_staf' => $logHarianStaf,
             'rekap_dashboard' => $rekapDashboard,
             'is_super' => $isSuper,
             'daftar_unit' => $daftarUnit,

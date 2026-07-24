@@ -20,28 +20,20 @@ class AuthFilter implements FilterInterface
 
         // 2. Cek apakah rute ini memerlukan peran tertentu
         if (!empty($arguments)) {
-            $userRole = session()->get('role');
-
             // PERBAIKAN:
             // Pecah string argumen (cth: 'admin,manajemen,aak') menjadi array
             $allowed_roles = [];
             if (is_array($arguments)) {
-                // Jika argumen sudah array (jarang terjadi di rute, tapi untuk keamanan)
                 $allowed_roles = $arguments;
             } else {
-                // Jika argumen adalah string, pecah berdasarkan koma
                 $allowed_roles = explode(',', (string) $arguments);
             }
             
-            // Cek apakah peran pengguna ada di dalam daftar yang diizinkan
-            if (!in_array($userRole, $allowed_roles)) {
-                // Jika tidak diizinkan, kembalikan ke dashboard yang sesuai
-                $currentRole = (string) session()->get('role');
-                if (in_array($currentRole, ['admin', 'direktur', 'wadir', 'manajemen']) || str_contains($currentRole, 'kabag')) {
-                    return redirect()->to('/dashboard');
-                } else {
-                    return redirect()->to('/dashboard');
-                }
+            // Gunakan hasAnyRole() untuk mendukung multi-role (tabel pivot)
+            helper('role');
+            if (!hasAnyRole($allowed_roles)) {
+                // Jika tidak diizinkan, kembalikan ke dashboard
+                return redirect()->to('/dashboard');
             }
         }
     }

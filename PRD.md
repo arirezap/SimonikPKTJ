@@ -1,0 +1,58 @@
+# Product Requirements Document (PRD)
+## Simonik PKTJ (Sistem Monitoring & Kinerja)
+
+**Status:** Active Development
+**Stack:** CodeIgniter 4, MySQL, Bootstrap 5, jQuery
+
+### 1. Ringkasan Eksekutif (Executive Summary)
+Simonik PKTJ adalah sistem informasi internal yang didesain untuk memantau, merekapitulasi, dan menilai kinerja pegawai secara komprehensif. Sistem ini bertindak sebagai **Evidence Command Center (ECC)**, di mana seluruh bukti pekerjaan, pencapaian target, dan rekam jejak aktivitas harian staf bermuara, dievaluasi, dan divisualisasikan dalam bentuk *dashboard* analitik.
+
+### 2. Tujuan Produk (Product Goals)
+- **Sentralisasi Data Kinerja:** Menggantikan pencatatan manual dengan sistem pencatatan harian berbasis *cloud/server* yang disertai tautan bukti (*evidence-based*).
+- **Transparansi & Akuntabilitas:** Memberikan visibilitas langsung antara target yang dibebankan (Target Bulanan / RHK) dengan realisasi aktual yang dikerjakan pegawai.
+- **Evaluasi Objektif:** Memfasilitasi atasan dalam memberikan penilaian yang akurat dengan mengacu langsung pada bukti pekerjaan tanpa perlu *micromanagement*.
+- **Visualisasi Data Eksekutif:** Menyediakan *dashboard* berkinerja tinggi untuk memonitor metrik-metrik inti (Top Unit Kerja, Top Pegawai, dan Pegawai yang butuh perhatian).
+
+### 3. Modul Utama & Fitur (Core Modules & Features)
+
+#### 3.1. Dashboard Eksekutif (Admin/Pimpinan)
+- **Top 5 Unit Kerja:** *Leaderboard* unit kerja dengan rata-rata capaian tertinggi.
+- **Top 5 Pegawai Berkinerja Terbaik:** *Leaderboard* individu yang paling banyak merealisasikan target bulanannya.
+- **Perlu Perhatian Khusus (Bottom 5):** Daftar pegawai dengan nilai capaian terendah sebagai bahan evaluasi dan *coaching* pimpinan.
+- *UI/UX Pattern:* Menggunakan sistem **Bento Grid** untuk menata widget metrik dengan batas tinggi dan lebar yang seragam agar terlihat simetris.
+
+#### 3.2. Modul Laporan Harian (Daily Activity)
+- **Pencatatan Aktivitas:** Pegawai wajib mencatat aktivitas harian, jumlah realisasi, dan menyertakan tautan bukti pendukung (*link Google Drive / Dokumen*).
+- **Pemetaan Indikator:** Setiap aktivitas harian wajib dikaitkan dengan satu Indikator Kinerja / Rencana Hasil Kerja (RHK) utama.
+
+#### 3.3. Modul Penilaian Kinerja (Evidence Command Center)
+Modul ini merupakan *core engine* untuk evaluasi bulanan yang terdiri dari dua sub-sistem (tab):
+- **Tab Target Bulanan Saya (Individu):** 
+  - Tempat pegawai melihat rekapitulasi realisasi bulanannya berdasarkan laporan harian.
+  - Menampilkan metrik Target vs Realisasi beserta Selisih (Gap) dan Nilai Capaian.
+- **Tab Penilaian Staf (Atasan):**
+  - *Dropdown* pencarian cerdas (menggunakan Select2) untuk memilih staf.
+  - Atasan dapat memvalidasi langsung laporan harian staf dengan mengklik *link* bukti.
+  - Atasan memberikan "Predikat" capaian, yang secara otomatis membatasi (min-max) skor penilaian untuk menghindari *human error*.
+  - Dilengkapi fitur perhitungan nilai *real-time* (Javascript) dan perlindungan data tidak disengaja terhapus menggunakan konfirmasi SweetAlert2.
+
+### 4. Pedoman Desain (UI/UX Guidelines)
+Aplikasi ini dikembangkan dengan berpegang teguh pada prinsip **ui-ux-pro-max**:
+- **Pendekatan Bento / Card:** Semua tabel, *form*, dan *widget* dibungkus ke dalam *card* membulat (`rounded`, `shadow-sm`) dengan latar belakang putih.
+- **Tipografi Bersih & Hierarki Tegas:** Penggunaan warna yang bermakna (`text-primary`, `text-success` untuk hal positif, `text-danger` untuk perhatian khusus/peringatan) tanpa menggunakan kotak warna *solid* berukuran raksasa yang menyakiti mata.
+- **Interaksi Mikro & Halus:** Penghindaran *popup browser default* (menggunakan SweetAlert2), penambahan transisi saat memuat *tab*, *smart scroll topbar*, dan tombol aksi berbasis ikon bulat alih-alih tombol teks yang panjang.
+- **Konsistensi Arsitektur Informasi:** Penempatan indikator akhir (seperti "Nilai Kinerja") selalu di posisi pamungkas alur baca, yakni di *footer* kanan bawah tabel.
+
+### 5. Arsitektur Keamanan & Multi-Role
+Sistem menerapkan konsep pemisahan tugas menggunakan arsitektur **Tabel Pivot (Multi-Role)**:
+- **Role Primer (Struktural):** Menentukan posisi jabatan dan hak akses dasar (misal: `user`, `manajemen`, `direktur`, `admin`). Role primer mendasari fungsi pencatatan kinerja dan validasi atasan-bawahan.
+- **Role Sekunder (Fungsional):** Peran tambahan yang bisa disematkan lebih dari satu ke pegawai tanpa menghapus peran strukturalnya.
+  - **Kepegawaian:** Akses *read-only* ke rekapitulasi nilai kinerja semua unit (untuk remunerasi) beserta fitur export Excel.
+  - **SPM (Satuan Penjaminan Mutu):** Akses khusus untuk mengendalikan **Simulasi Penilaian LED** di modul ECC.
+  - *Extensibility:* Sistem siap menampung peran masa depan seperti Auditor atau Reviewer dokumen khusus.
+
+### 6. Rencana Masa Depan (Future Roadmap)
+- [x] Implementasi arsitektur Multi-Role (Tabel Pivot).
+- [x] Modul Kepegawaian (Rekap Nilai) & Export Excel.
+- [ ] Log Aktivitas Sistem (Audit Trail) untuk melacak siapa yang mengubah nilai dan kapan.
+- [ ] Grafik Historis (Chart.js) pada *dashboard* user untuk melihat tren kinerja pribadi selama setahun.

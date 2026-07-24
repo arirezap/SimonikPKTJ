@@ -44,14 +44,14 @@ class User extends Model
         return null;
     }
 
-    // Helper untuk mengambil daftar bawahan langsung
-    public function getBawahan($atasanId)
+    // Helper untuk mengambil daftar staf langsung
+    public function getStaf($atasanId)
     {
         return $this->where('atasan_id', $atasanId)->orderBy('nama_lengkap', 'ASC')->findAll();
     }
 
-    // Helper untuk mengambil semua bawahan secara rekursif (hierarki)
-    public function getAllBawahan($userId, $role = null)
+    // Helper untuk mengambil semua staf secara rekursif (hierarki)
+    public function getAllStaf($userId, $role = null)
     {
         // Admin, direktur, dan wadir melihat semua orang
         if (in_array($role, ['admin', 'direktur', 'wadir'])) {
@@ -61,24 +61,24 @@ class User extends Model
                         ->findAll();
         }
 
-        $allBawahan = [];
+        $allStaf = [];
         $collectedIds = [];
 
-        // Fungsi rekursif untuk mencari bawahan dari bawahan
-        $fetchBawahan = function($id) use (&$fetchBawahan, &$allBawahan, &$collectedIds) {
-            $bawahanList = $this->where('atasan_id', $id)->orderBy('nama_lengkap', 'ASC')->findAll();
-            foreach ($bawahanList as $b) {
+        // Fungsi rekursif untuk mencari staf dari staf
+        $fetchStaf = function($id) use (&$fetchStaf, &$allStaf, &$collectedIds) {
+            $stafList = $this->where('atasan_id', $id)->orderBy('nama_lengkap', 'ASC')->findAll();
+            foreach ($stafList as $b) {
                 if (!in_array($b['id'], $collectedIds)) {
                     $collectedIds[] = $b['id'];
-                    $allBawahan[] = $b;
-                    // Lanjut cari bawahan dari bawahan ini (rekursif)
-                    $fetchBawahan($b['id']);
+                    $allStaf[] = $b;
+                    // Lanjut cari staf dari staf ini (rekursif)
+                    $fetchStaf($b['id']);
                 }
             }
         };
 
-        $fetchBawahan($userId);
+        $fetchStaf($userId);
         
-        return $allBawahan;
+        return $allStaf;
     }
 }

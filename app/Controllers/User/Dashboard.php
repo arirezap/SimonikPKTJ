@@ -73,16 +73,16 @@ class Dashboard extends BaseController
 
 
             $role = session()->get('role');
-            $isSuper = in_array($role, ['admin', 'direktur', 'wadir', 'manajemen']);
+            $isSuper = hasAnyRole(['admin', 'direktur', 'wadir', 'manajemen']);
             $bulanTerpilih = date('n');
-            $daftarBawahan = $userModel->getAllBawahan($user_id, $role);
-            $isAtasan = !empty($daftarBawahan);
+            $daftarStaf = $userModel->getAllStaf($user_id, $role);
+            $isAtasan = !empty($daftarStaf);
             
             $me = $userModel->find($user_id);
             $isUnitPeers = false;
             
             if (!$isAtasan && !empty($me['unit'])) {
-                $daftarBawahan = $userModel->where('unit', $me['unit'])
+                $daftarStaf = $userModel->where('unit', $me['unit'])
                                          ->where('id !=', $user_id)
                                          ->where('role !=', 'admin')
                                          ->findAll();
@@ -92,9 +92,9 @@ class Dashboard extends BaseController
             $laporanModel = new \App\Models\LaporanHarian();
             $rekapDashboard = [];
 
-            if (!empty($daftarBawahan)) {
-                foreach ($daftarBawahan as $bawahan) {
-                    $targets = $laporanModel->getTargetWithRealization($bawahan['id'], $bulanTerpilih, $tahun_kinerja);
+            if (!empty($daftarStaf)) {
+                foreach ($daftarStaf as $staf) {
+                    $targets = $laporanModel->getTargetWithRealization($staf['id'], $bulanTerpilih, $tahun_kinerja);
                     $total_laporan = count($targets);
                     $dinilai = 0;
                     $total_nilai = 0;
@@ -109,7 +109,7 @@ class Dashboard extends BaseController
                     $rata_rata = $dinilai > 0 ? round($total_nilai / $dinilai, 2) : 0;
                     
                     $rekapDashboard[] = [
-                        'bawahan' => $bawahan,
+                        'staf' => $staf,
                         'total_laporan' => $total_laporan,
                         'dinilai' => $dinilai,
                         'rata_rata' => $rata_rata
@@ -123,7 +123,7 @@ class Dashboard extends BaseController
             
             if ($isSuper && !empty($rekapDashboard)) {
                 foreach ($rekapDashboard as $rekap) {
-                    $unitName = trim($rekap['bawahan']['unit'] ?? '');
+                    $unitName = trim($rekap['staf']['unit'] ?? '');
                     if (empty($unitName)) $unitName = 'Tanpa Unit';
                     
                     if (!isset($unitStats[$unitName])) {
@@ -132,8 +132,8 @@ class Dashboard extends BaseController
                     $unitStats[$unitName]['total_rata'] += $rekap['rata_rata'];
                     $unitStats[$unitName]['count']++;
                     $unitStats[$unitName]['anggota'][] = [
-                        'nama' => $rekap['bawahan']['nama_lengkap'],
-                        'jabatan' => $rekap['bawahan']['jabatan'] ?? '-',
+                        'nama' => $rekap['staf']['nama_lengkap'],
+                        'jabatan' => $rekap['staf']['jabatan'] ?? '-',
                         'rata_rata' => $rekap['rata_rata'],
                         'dinilai' => $rekap['dinilai'],
                         'total_laporan' => $rekap['total_laporan']
