@@ -156,6 +156,7 @@ class PenilaianKinerjaController extends BaseController
 
         if (!empty($dataToUpdate)) {
             $laporanModel->updateBatch($dataToUpdate, 'id');
+            log_audit('APPROVE', 'laporan_harian', 'batch_nilai', null, $dataToUpdate);
         }
 
         return redirect()->to('/penilaian-kinerja')

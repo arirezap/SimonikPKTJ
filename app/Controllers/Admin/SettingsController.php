@@ -34,6 +34,7 @@ class SettingsController extends BaseController
             foreach ($settings as $key => $value) {
                 if (trim($value) !== '') {
                     $settingModel->update($key, ['setting_value' => $value]);
+                    log_audit('UPDATE', 'settings', $key, null, ['setting_value' => $value]);
                 }
             }
             return redirect()->back()->with('success', 'Pengaturan sistem berhasil diperbarui.');

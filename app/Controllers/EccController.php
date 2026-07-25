@@ -195,6 +195,8 @@ class EccController extends BaseController
                     ->with('error', 'Terjadi kesalahan pada database saat menyimpan.');
             }
 
+            log_audit('UPDATE', 'led_submissions', 'bulk', null, ['prodi' => $prodi, 'tahun' => $tahun]);
+
             return redirect()->to('ecc/led?prodi=' . $prodi . '&tahun=' . $tahun)
                 ->with('success', 'Data LED berhasil disimpan.');
                 
@@ -232,6 +234,7 @@ class EccController extends BaseController
         ];
 
         if ($submissionModel->update($id, $updateData)) {
+            log_audit('DELETE', 'led_submissions_link', $id, null, $updateData);
             return redirect()->back()->with('success', 'Link dan seluruh riwayat review berhasil dihapus (reset).');
         } else {
             return redirect()->back()->with('error', 'Gagal menghapus link.');
@@ -340,6 +343,8 @@ class EccController extends BaseController
                  return redirect()->to('ecc/simulasi?prodi=' . $prodi . '&tahun=' . $tahun)
                     ->with('error', 'Terjadi kesalahan pada database saat menyimpan.');
             }
+
+            log_audit('SIMULASI', 'led_scores', 'bulk', null, ['prodi' => $prodi, 'tahun' => $tahun]);
 
             return redirect()->to('ecc/simulasi?prodi=' . $prodi . '&tahun=' . $tahun)
                 ->with('success', 'Skor simulasi berhasil disimpan.');

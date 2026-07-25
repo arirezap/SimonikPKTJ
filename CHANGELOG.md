@@ -2,6 +2,24 @@
 
 Dokumen ini berisi riwayat fitur, perbaikan (*bug fixes*), dan peningkatan antarmuka (UI/UX) yang telah diselesaikan pada sesi ini. Dokumen ini sangat berguna sebagai konteks apabila Anda memulai sesi (obrolan) baru dengan AI.
 
+## 1. Fitur Baru: Log Keamanan Aktivitas (Audit Trail)
+- **Pembuatan Infrastruktur Audit:** 
+  - Membuat tabel `audit_logs` dan `AuditLog` model untuk merekam jejak aktivitas (siapa, kapan, aksi apa, entitas, IP Address, *User Agent*, serta nilai *before* dan *after* dalam format JSON).
+  - Mengimplementasikan `audit_helper.php` dengan fungsi global `log_audit()` yang ringan dan tidak memblokir (*non-blocking*).
+- **Titik Perekaman (Tracking Points) Komprehensif:**
+  - **Otentikasi:** Merekam aktivitas `LOGIN` dan `LOGOUT`.
+  - **Kelola Pengguna:** Merekam `CREATE`, `UPDATE` (termasuk *batch update* & hapus foto), dan `DELETE` pada pengguna.
+  - **Profil Diri:** Merekam `UPDATE` ketika pegawai memperbarui kata sandi atau profil mereka sendiri.
+  - **Penilaian Kinerja:** Merekam *approval* (pemberian nilai / persetujuan log) harian baik satuan maupun *batch*.
+  - **Evidence Command Center (ECC):** Merekam unggah tautan bukti LED (`UPDATE`), hapus/reset tautan (`DELETE`), serta penilaian simulasi akreditasi (`SIMULASI`).
+  - **Master Data:** Merekam perubahan pada Sasaran, Indikator, Satuan, Unit Kerja, Kriteria LED, dan Standar LED.
+  - **Pengaturan Sistem:** Merekam saat pengaturan sistem seperti batas waktu pelaporan diubah.
+- **Antarmuka (UI) Admin - Log Aktivitas Sistem:**
+  - Mengimplementasikan *UI Bento Grid* yang elegan untuk menampilkan daftar log aktivitas.
+  - Filter dinamis berdasarkan `Action` (CREATE, UPDATE, DELETE, dll) dan `Entity` (Modul/Tabel).
+  - Menambahkan *badge* status yang rapi, serta menampilkan *IP Address* dan *User Agent* untuk melacak perangkat yang digunakan.
+
+
 ## 1. Peningkatan UI/UX (Antarmuka Pengguna)
 - **Halaman Login (Bento & Modernisasi):** 
   - Desain ulang halaman login menjadi lebih ringkas dan modern (ala Bento).

@@ -92,5 +92,6 @@ class Autoload extends AutoloadConfig
         'url', // Helper url biasanya sudah ada
         'tanggal', // <-- TAMBAHKAN BARIS INI
         'role', // Multi-Role Helper (hasRole, hasAnyRole, getUserRoles)
+        'audit', // Log Keamanan Aktivitas Helper
     ];
 }

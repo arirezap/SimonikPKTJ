@@ -50,6 +50,9 @@ Aplikasi ini memiliki 3 modul yang saling berkesinambungan untuk menilai kinerja
    - *Fungsi*: Mengagregasi data dari `log_kegiatan_harian`. 
    - Bagi **Staf**, modul ini berfungsi untuk melihat rekapitulasi progres mereka.
    - Bagi **Atasan**, modul ini memunculkan antarmuka (form) untuk menilai kinerja staf/staf yang tergabung di timnya. Skor penilaian (Kualitas, Disiplin, Kerjasama) disimpan kembali ke dalam baris data di tabel `log_kegiatan_harian`.
+4. **Log Keamanan (Audit Trail)** (Background Service):
+   - Menggunakan tabel `audit_logs` dan `app/Helpers/audit_helper.php`.
+   - Merekam seluruh aktivitas `CREATE`, `UPDATE`, `DELETE`, `LOGIN/LOGOUT`, dan `APPROVE` dari seluruh modul secara otomatis dan *non-blocking*. Mampu menangkap data *before-after* dalam bentuk JSON.
 
 
 ## 6. Coding Standards & Agent Instructions

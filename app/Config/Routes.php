@@ -69,6 +69,9 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('users/ajax_update_unit', 'Admin\UserController::ajaxUpdateUnit'); // Rute untuk AJAX update unit kerja
     $routes->post('users/batch_update', 'Admin\UserController::batch_update'); // Rute untuk Batch Edit
 
+    // Log Keamanan Aktivitas
+    $routes->get('admin/audit-logs', 'Admin\AuditLogController::index');
+
     // Master Data Group
     $routes->group('master-data', function ($routes) {
         // Rute untuk Sasaran Program

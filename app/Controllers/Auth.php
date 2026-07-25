@@ -96,6 +96,9 @@ class Auth extends BaseController
                 }
                 // -------------------------
 
+                // Catat Log Audit Login
+                log_audit('LOGIN', 'users', $data['id']);
+
                 // Redirect Sesuai Role
                 $isKabag = false;
                 foreach ($allRoles as $r) {
@@ -124,6 +127,11 @@ class Auth extends BaseController
 
     public function logout()
     {
+        $userId = session()->get('id');
+        if ($userId) {
+            log_audit('LOGOUT', 'users', $userId);
+        }
+
         session()->destroy();
         helper('cookie');
         delete_cookie('remember_me');

@@ -16,6 +16,7 @@ Dibangun dengan fokus pada kecepatan dan kenyamanan pengguna, sistem ini memasti
 ## ✨ Fitur Utama
 
 - **🔐 Arsitektur Multi-Role Pivot:** Memungkinkan sistem untuk menangani berbagai jenis peran pengguna secara dinamis dan berlapis tanpa konflik hak akses.
+- **🛡️ Log Keamanan (Audit Trail):** Perekaman otomatis (*invisible*) terhadap setiap perubahan krusial di dalam sistem (Login, Kelola Pengguna, Penilaian, Master Data) lengkap dengan *IP Address*, *User Agent*, dan riwayat data JSON untuk menjamin integritas.
 - **📊 Penilaian Kinerja Berjenjang:** Alur validasi dan *approval* otomatis dari atasan secara hierarkis untuk memastikan transparansi dan integritas data.
 - **🏢 Manajemen Bukti (Evidence Management):** Modul pengumpulan dokumen dan target kinerja yang tersinkronisasi antar-divisi.
 - **💼 Modul Pelaporan & Rekapitulasi:** Dasbor khusus untuk melacak tren fluktuasi kinerja dengan dukungan ekspor data (Excel/CSV) yang akurat.

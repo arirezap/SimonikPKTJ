@@ -230,6 +230,7 @@ class LaporanHarianController extends BaseController
         if ($id) {
             $laporanModel = new LaporanHarian();
             $laporanModel->update($id, ['status_approval' => 'disetujui']);
+            log_audit('APPROVE', 'laporan_harian', $id, null, ['status_approval' => 'disetujui']);
             return $this->response->setJSON(['success' => true]);
         }
         return $this->response->setJSON(['success' => false]);
@@ -248,6 +249,7 @@ class LaporanHarianController extends BaseController
                          ->where('tahun', $tahun)
                          ->set(['status_approval' => 'disetujui'])
                          ->update();
+            log_audit('APPROVE', 'laporan_harian', 'all', null, ['staf_id' => $staf_id, 'bulan' => $bulan, 'tahun' => $tahun, 'status' => 'disetujui']);
             return redirect()->to('/laporan-harian')->with('success', 'Semua target milik staf berhasil disetujui.');
         }
         return redirect()->back()->with('error', 'Data tidak valid.');

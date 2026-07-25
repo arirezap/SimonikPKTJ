@@ -186,6 +186,8 @@ class UserController extends BaseController
             }
         }
 
+        log_audit('CREATE', 'users', $insertID, null, $data);
+
         return redirect()->to('users')->with('success', 'User baru berhasil ditambahkan.');
     }
     // --- END FITUR BARU ---
@@ -295,6 +297,8 @@ class UserController extends BaseController
             }
         }
 
+        log_audit('UPDATE', 'users', $id, null, $data);
+
         return redirect()->to('users')->with('success', 'Data pengguna berhasil diperbarui.');
     }
 
@@ -331,6 +335,7 @@ class UserController extends BaseController
         }
 
         if ($this->userModel->update($userId, $updateData)) {
+            log_audit('UPDATE', 'users', $userId, null, $updateData);
             // SOLUSI: Sertakan token CSRF yang baru di dalam response
             $response_data = [
                 'success' => true, 
@@ -381,6 +386,7 @@ class UserController extends BaseController
         }
 
         $this->userModel->updateBatch($dataToUpdate, 'id');
+        log_audit('UPDATE', 'users', 'batch', null, $dataToUpdate);
 
         return redirect()->to('users')->with('success', count($dataToUpdate) . ' data pengguna berhasil diperbarui.');
     }
@@ -388,6 +394,7 @@ class UserController extends BaseController
     public function delete($id)
     {
         $this->userModel->delete($id);
+        log_audit('DELETE', 'users', $id);
         return redirect()->to('users')->with('success', 'User berhasil dihapus');
     }
 

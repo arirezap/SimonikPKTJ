@@ -36,6 +36,11 @@ Modul ini merupakan *core engine* untuk evaluasi bulanan yang terdiri dari dua s
   - Atasan memberikan "Predikat" capaian, yang secara otomatis membatasi (min-max) skor penilaian untuk menghindari *human error*.
   - Dilengkapi fitur perhitungan nilai *real-time* (Javascript) dan perlindungan data tidak disengaja terhapus menggunakan konfirmasi SweetAlert2.
 
+#### 3.4. Keamanan & Log (Audit Trail)
+- **CCTV Internal Sistem:** Merekam jejak setiap aktivitas pengguna secara *invisible* (latar belakang) di seluruh titik krusial aplikasi.
+- **Data Tersimpan:** Mencatat aksi (`CREATE`, `UPDATE`, `DELETE`, `LOGIN`, dll), aktor (Pengguna), entitas yang diubah, IP Address, sistem operasi/browser (User Agent), serta merekam status data *sebelum* dan *sesudah* perubahan dalam format JSON.
+- **UI Admin Log Aktivitas:** Dashboard bergaya Bento Grid untuk memudahkan Admin memfilter, mencari, dan meninjau log jika terjadi sengketa penilaian kinerja atau anomali data.
+
 ### 4. Pedoman Desain (UI/UX Guidelines)
 Aplikasi ini dikembangkan dengan berpegang teguh pada prinsip **ui-ux-pro-max**:
 - **Pendekatan Bento / Card:** Semua tabel, *form*, dan *widget* dibungkus ke dalam *card* membulat (`rounded`, `shadow-sm`) dengan latar belakang putih.
@@ -54,5 +59,5 @@ Sistem menerapkan konsep pemisahan tugas menggunakan arsitektur **Tabel Pivot (M
 ### 6. Rencana Masa Depan (Future Roadmap)
 - [x] Implementasi arsitektur Multi-Role (Tabel Pivot).
 - [x] Modul Kepegawaian (Rekap Nilai) & Export Excel.
-- [ ] Log Aktivitas Sistem (Audit Trail) untuk melacak siapa yang mengubah nilai dan kapan.
+- [x] Log Aktivitas Sistem (Audit Trail) untuk melacak siapa yang mengubah nilai dan kapan.
 - [ ] Grafik Historis (Chart.js) pada *dashboard* user untuk melihat tren kinerja pribadi selama setahun.

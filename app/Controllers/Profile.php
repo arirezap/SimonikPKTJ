@@ -97,6 +97,7 @@ class Profile extends BaseController
 
         // 5. Eksekusi Update ke Database
         $this->userModel->update($userId, $data);
+        log_audit('UPDATE', 'users', $userId, null, $data);
 
         // Otomatis jadikan role 'spm' jika unit kerjanya diubah ke Satuan Penjaminan Mutu
         $role_aplikasi = $user['role'];
