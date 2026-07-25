@@ -45,6 +45,10 @@ $routes->post('profile/update', 'Profile::update');
 // Admin Routes (Group)
 $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('dashboard', 'DashboardController::index');
+
+// Notifications
+$routes->get('notifications/fetch', 'NotificationController::fetch');
+$routes->post('notifications/read/(:segment)', 'NotificationController::markAsRead/$1');
     $routes->get('dashboard/api-detail-chart', 'Admin\Dashboard::apiDetailChart');
     $routes->get('monitoring', 'Admin\MonitoringController::index');
     $routes->get('monitoring/exportExcel/(:num)/(:num)', 'Admin\MonitoringController::exportExcel/$1/$2');
@@ -74,6 +78,12 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
 
     // Master Data Group
     $routes->group('master-data', function ($routes) {
+        // Rute Hari Libur
+        $routes->get('holidays', 'Admin\MasterDataController::holidays');
+        $routes->post('holidays/sync', 'Admin\MasterDataController::syncHolidays');
+        $routes->post('holidays/store', 'Admin\MasterDataController::storeHoliday');
+        $routes->get('holidays/delete/(:num)', 'Admin\MasterDataController::deleteHoliday/$1');
+
         // Rute untuk Sasaran Program
         $routes->get('sasaran', 'Admin\MasterDataController::sasaran');
         $routes->post('sasaran/store', 'Admin\MasterDataController::storeSasaran');

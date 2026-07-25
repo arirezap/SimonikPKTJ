@@ -113,7 +113,8 @@ class UserController extends BaseController
     public function create()
     {
         // Ambil list semua user untuk dropdown "Pilih Atasan"
-        $potentialBosses = $this->userModel->orderBy('nama_lengkap', 'ASC')->findAll();
+        $bossRoles = ['direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'kanit', 'katim', 'kapokja'];
+        $potentialBosses = $this->userModel->whereIn('role', $bossRoles)->orderBy('nama_lengkap', 'ASC')->findAll();
         $unitKerjaModel = new UnitKerja();
 
         $data = [
@@ -212,7 +213,8 @@ class UserController extends BaseController
         }
 
         // Kecualikan diri sendiri dari list atasan
-        $potentialBosses = $this->userModel->where('id !=', $id)->orderBy('nama_lengkap', 'ASC')->findAll();
+        $bossRoles = ['direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'kanit', 'katim', 'kapokja'];
+        $potentialBosses = $this->userModel->where('id !=', $id)->whereIn('role', $bossRoles)->orderBy('nama_lengkap', 'ASC')->findAll();
         $unitKerjaModel = new UnitKerja();
 
         // Fetch secondary roles from pivot table

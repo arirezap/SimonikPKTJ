@@ -144,7 +144,25 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label text-muted small fw-bold text-uppercase">Unit Kerja</label>
-                                <input type="text" name="unit" class="form-control" value="<?= esc($user['unit']) ?>">
+                                <select name="unit" class="form-select">
+                                    <option value="">-- Pilih Unit Kerja --</option>
+                                    <?php foreach ($unit_kerja_list as $uk): ?>
+                                        <option value="<?= esc($uk['nama_unit']) ?>" <?= ($user['unit'] == $uk['nama_unit']) ? 'selected' : '' ?>>
+                                            <?= esc($uk['nama_unit']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold text-uppercase">Atasan Langsung</label>
+                                <select name="atasan_id" class="form-select select2">
+                                    <option value="">-- Pilih Atasan Langsung --</option>
+                                    <?php foreach ($potential_bosses as $boss): ?>
+                                        <option value="<?= $boss['id'] ?>" <?= ($user['atasan_id'] == $boss['id']) ? 'selected' : '' ?>>
+                                            <?= esc($boss['nama_lengkap']) ?> - <?= esc($boss['jabatan']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label text-muted small fw-bold text-uppercase">Pangkat / Golongan</label>
@@ -201,6 +219,15 @@ document.addEventListener('DOMContentLoaded', function() {
             hapusFotoFlag.value = "1";
         }
     });
+
+    // Inisialisasi Select2 jika tersedia
+    if (typeof jQuery !== 'undefined' && $.fn.select2) {
+        $('.select2').select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: '-- Pilih Atasan Langsung --'
+        });
+    }
 });
 </script>
 <?= $this->endSection() ?>

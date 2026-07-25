@@ -220,6 +220,20 @@ class LaporanHarianController extends BaseController
             ]);
         }
 
+        // Send notification to boss if staff is submitting
+        if (!$isEditingStaf) {
+            $user = clone (new \App\Models\User())->find($targetUserId);
+            if ($user && !empty($user['atasan_id'])) {
+                helper('notification');
+                send_notification(
+                    $user['atasan_id'], 
+                    'Persetujuan Target Bulanan', 
+                    $user['nama_lengkap'] . ' mengirimkan Target Bulanan untuk diperiksa.',
+                    site_url('penilaian-staf')
+                );
+            }
+        }
+
         return redirect()->to('/laporan-harian')
                          ->with('success', 'Target Bulanan berhasil disimpan.');
     }
@@ -249,7 +263,16 @@ class LaporanHarianController extends BaseController
                          ->where('tahun', $tahun)
                          ->set(['status_approval' => 'disetujui'])
                          ->update();
-            log_audit('APPROVE', 'laporan_harian', 'all', null, ['staf_id' => $staf_id, 'bulan' => $bulan, 'tahun' => $tahun, 'status' => 'disetujui']);
+            log_audit('APPROVE_ALL', 'laporan_harian', $staf_id, null, ['bulan' => $bulan, 'tahun' => $tahun]);
+            
+            helper('notification');
+            send_notification(
+                $staf_id,
+                'Target Disetujui',
+                "Target Bulanan (Bulan: $bulan, Tahun: $tahun) telah disetujui oleh atasan.",
+                site_url('laporan-harian')
+            );
+
             return redirect()->to('/laporan-harian')->with('success', 'Semua target milik staf berhasil disetujui.');
         }
         return redirect()->back()->with('error', 'Data tidak valid.');

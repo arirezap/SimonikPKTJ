@@ -185,6 +185,7 @@ $isKepegawaian = hasRole('kepegawaian');
                             <li class="menu-divider"></li>
                             <li class="nav-item"><a href="<?= site_url('master-data/led') ?>" class="nav-link sub-link <?= ($current_uri == 'master-data/led') ? 'active' : '' ?>"><span>Kriteria LED</span></a></li>
                             <li class="nav-item"><a href="<?= site_url('master-data/led-standar') ?>" class="nav-link sub-link <?= ($current_uri == 'master-data/led-standar') ? 'active' : '' ?>"><span>Standar LED</span></a></li>
+                            <li class="nav-item"><a href="<?= site_url('master-data/holidays') ?>" class="nav-link sub-link <?= ($current_uri == 'master-data/holidays') ? 'active' : '' ?>"><span>Hari Libur Nasional</span></a></li>
                         </ul>
                     </div>
                 </li>

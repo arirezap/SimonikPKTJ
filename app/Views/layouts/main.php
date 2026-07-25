@@ -76,6 +76,30 @@
                             <i class="bi bi-calendar3 me-1"></i> <?= date('d M Y') ?>
                         </div>
                         
+                        
+                        <!-- NOTIFICATION BELL -->
+                        <div class="dropdown">
+                            <a href="#" class="text-decoration-none position-relative" data-bs-toggle="dropdown" aria-expanded="false" id="notifDropdownToggle">
+                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center transition-all" style="width: 42px; height: 42px;">
+                                    <i class="bi bi-bell-fill text-muted fs-5"></i>
+                                </div>
+                                <span id="notifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" style="font-size: 0.6rem; transform: translate(-30%, 30%) !important;">
+                                    0
+                                </span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 p-0" style="width: 320px; max-height: 400px; overflow-y: auto;">
+                                <div class="p-3 border-bottom bg-light sticky-top">
+                                    <h6 class="m-0 fw-bold text-dark"><i class="bi bi-bell me-2"></i>Notifikasi</h6>
+                                </div>
+                                <div id="notifList" class="list-group list-group-flush">
+                                    <div class="p-4 text-center text-muted small">
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                        <div class="mt-2">Memuat notifikasi...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="dropdown">
                             <a href="#" class="text-decoration-none" data-bs-toggle="dropdown" aria-expanded="false">
                                 <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center shadow-sm profile-avatar transition-all" style="width: 42px; height: 42px; border: 2px solid #ffffff;">
@@ -209,9 +233,91 @@
             });
         }
 
+        // --- NOTIFICATION LOGIC ---
+        function fetchNotifications() {
+            fetch('<?= site_url('notifications/fetch') ?>', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const notifBadge = document.getElementById('notifBadge');
+                const notifList = document.getElementById('notifList');
+                
+                if (data.status === 'success') {
+                    // Update Badge
+                    if (data.count > 0) {
+                        notifBadge.textContent = data.count > 99 ? '99+' : data.count;
+                        notifBadge.classList.remove('d-none');
+                    } else {
+                        notifBadge.classList.add('d-none');
+                    }
+
+                    // Update List
+                    if (data.data.length > 0) {
+                        let html = '';
+                        data.data.forEach(item => {
+                            const isVirtual = item.is_virtual ? 'border-start border-4 border-warning' : 'border-start border-4 border-primary';
+                            const icon = item.is_virtual ? '<i class="bi bi-exclamation-triangle-fill text-warning fs-5"></i>' : '<i class="bi bi-info-circle-fill text-primary fs-5"></i>';
+                            
+                            html += `
+                                <a href="${item.link ? item.link : '#'}" class="list-group-item list-group-item-action p-3 ${isVirtual}" onclick="markNotifRead('${item.id}', event, this, '${item.link}')">
+                                    <div class="d-flex w-100 justify-content-between align-items-start">
+                                        <div class="me-3 mt-1">${icon}</div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1 fw-bold text-dark" style="font-size: 0.85rem;">${item.title}</h6>
+                                            <p class="mb-1 text-muted small" style="font-size: 0.75rem; line-height: 1.4;">${item.message}</p>
+                                        </div>
+                                    </div>
+                                </a>
+                            `;
+                        });
+                        notifList.innerHTML = html;
+                    } else {
+                        notifList.innerHTML = `
+                            <div class="p-4 text-center text-muted">
+                                <i class="bi bi-bell-slash fs-1 text-light"></i>
+                                <div class="mt-2 small">Belum ada notifikasi baru.</div>
+                            </div>
+                        `;
+                    }
+                }
+            })
+            .catch(error => console.error('Error fetching notifications:', error));
+        }
+
+        // Panggil saat pertama kali load
+        fetchNotifications();
+
+        // Bisa diset interval jika ingin real-time lambat (contoh: setiap 5 menit)
+        setInterval(fetchNotifications, 300000); 
     });
+
+    function markNotifRead(id, event, element, link) {
+        // Mencegah navigasi ganda jika link valid
+        event.preventDefault();
+        
+        fetch(`<?= site_url('notifications/read/') ?>${id}`, {
+            method: 'POST',
+            headers: { 
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/x-www-form-urlencoded' 
+            },
+            body: '<?= csrf_token() ?>=<?= csrf_hash() ?>'
+        })
+        .then(() => {
+            if(link && link !== 'null' && link !== '#') {
+                window.location.href = link;
+            } else {
+                element.remove(); // Hapus dari UI jika tidak ada link
+            }
+        })
+        .catch(error => {
+            if(link && link !== 'null' && link !== '#') {
+                window.location.href = link; // Tetap arahkan meskipun error update read
+            }
+        });
+    }
 </script>
     <?= $this->renderSection('scripts') ?>
 </body>
-
 </html>

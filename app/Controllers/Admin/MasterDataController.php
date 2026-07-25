@@ -678,4 +678,86 @@ class MasterDataController extends BaseController
 
         return view('ecc/led_index', $data);
     }
+    
+    // ==========================================================
+    // FUNGSI-FUNGSI UNTUK HARI LIBUR (HOLIDAYS)
+    // ==========================================================
+    
+    public function holidays()
+    {
+        $holidayModel = new \App\Models\HolidayModel();
+        $data = [
+            'page_title' => 'Master Hari Libur',
+            'items'      => $holidayModel->orderBy('holiday_date', 'ASC')->findAll(),
+            'validation' => \Config\Services::validation()
+        ];
+        return view('admin/master/holidays', $data);
+    }
+    
+    public function syncHolidays()
+    {
+        $year = date('Y');
+        
+        // Coba memanggil API libur.deno.dev
+        $client = \Config\Services::curlrequest();
+        try {
+            $response = $client->request('GET', "https://libur.deno.dev/api?year={$year}");
+            if ($response->getStatusCode() === 200) {
+                $holidays = json_decode($response->getBody(), true);
+                
+                if (is_array($holidays)) {
+                    $holidayModel = new \App\Models\HolidayModel();
+                    
+                    $countAdded = 0;
+                    foreach ($holidays as $h) {
+                        $date = $h['date']; // format YYYY-MM-DD
+                        $name = $h['name'];
+                        $isNational = isset($h['is_national_holiday']) && $h['is_national_holiday'] ? 1 : 0;
+                        
+                        // Cek apakah sudah ada (karena cuti bersama juga libur, kita masukkan semua)
+                        if (!$holidayModel->where('holiday_date', $date)->first()) {
+                            $holidayModel->insert([
+                                'holiday_date' => $date,
+                                'holiday_name' => $name,
+                                'is_national'  => $isNational
+                            ]);
+                            $countAdded++;
+                        }
+                    }
+                    
+                    return redirect()->to('master-data/holidays')->with('success', "Sinkronisasi berhasil! $countAdded hari libur & cuti bersama tahun $year ditambahkan.");
+                }
+            }
+        } catch (\Exception $e) {
+            return redirect()->to('master-data/holidays')->with('error', 'Gagal menghubungi API Hari Libur. ' . $e->getMessage());
+        }
+        
+        return redirect()->to('master-data/holidays')->with('error', 'Format respons API tidak sesuai atau API sedang gangguan.');
+    }
+    
+    public function storeHoliday()
+    {
+        $holidayModel = new \App\Models\HolidayModel();
+        $data = [
+            'holiday_date' => $this->request->getPost('holiday_date'),
+            'holiday_name' => $this->request->getPost('holiday_name'),
+            'is_national'  => $this->request->getPost('is_national') ? 1 : 0
+        ];
+
+        if (!$holidayModel->save($data)) {
+            return redirect()->to('master-data/holidays')->withInput()->with('error', 'Gagal menyimpan data.');
+        }
+        log_audit('CREATE', 'master_holidays', $holidayModel->getInsertID(), null, $data);
+        return redirect()->to('master-data/holidays')->with('success', 'Hari libur baru berhasil ditambahkan.');
+    }
+    
+    public function deleteHoliday($id)
+    {
+        $holidayModel = new \App\Models\HolidayModel();
+        if ($holidayModel->delete($id)) {
+            log_audit('DELETE', 'master_holidays', $id);
+            return redirect()->to('master-data/holidays')->with('success', 'Hari libur berhasil dihapus.');
+        }
+        return redirect()->to('master-data/holidays')->with('error', 'Gagal menghapus data.');
+    }
 }

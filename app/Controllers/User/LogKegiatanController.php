@@ -104,6 +104,18 @@ class LogKegiatanController extends BaseController
                          ->where('tanggal_kegiatan', $tanggal)
                          ->set(['status' => 'terkirim'])
                          ->update();
+                         
+                $user = (new \App\Models\User())->find($userId);
+                if ($user && !empty($user['atasan_id'])) {
+                    helper('notification');
+                    send_notification(
+                        $user['atasan_id'], 
+                        'Laporan Harian Baru', 
+                        $user['nama_lengkap'] . " mengirimkan Laporan Harian untuk tanggal $tanggal.",
+                        site_url('penilaian-staf')
+                    );
+                }
+                
                 return redirect()->to('/log-kegiatan')->with('success', 'Kegiatan harian berhasil dikirim.');
             } else {
                 return redirect()->back()->with('error', 'Tidak ada data untuk dikirim.');
@@ -178,6 +190,17 @@ class LogKegiatanController extends BaseController
                      ->where('tanggal_kegiatan', $tanggal)
                      ->set(['status' => 'terkirim'])
                      ->update();
+                     
+            $user = clone (new \App\Models\User())->find($userId);
+            if ($user && !empty($user['atasan_id'])) {
+                helper('notification');
+                send_notification(
+                    $user['atasan_id'], 
+                    'Laporan Harian Baru', 
+                    $user['nama_lengkap'] . " mengirimkan Laporan Harian untuk tanggal $tanggal.",
+                    site_url('penilaian-staf')
+                );
+            }
         }
 
         return redirect()->to('/log-kegiatan')

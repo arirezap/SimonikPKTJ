@@ -25,9 +25,20 @@ class Profile extends BaseController
             return redirect()->to('logout');
         }
 
+        $unitKerjaModel = new \App\Models\UnitKerja();
+        $unit_kerja_list = $unitKerjaModel->orderBy('nama_unit', 'ASC')->findAll();
+        
+        $bossRoles = ['direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'kanit', 'katim', 'kapokja'];
+        $potential_bosses = $this->userModel->where('id !=', $userId)
+                                            ->whereIn('role', $bossRoles)
+                                            ->orderBy('nama_lengkap', 'ASC')
+                                            ->findAll();
+
         $data = [
             'title' => 'Profil Saya',
             'user'  => $user,
+            'unit_kerja_list'  => $unit_kerja_list,
+            'potential_bosses' => $potential_bosses,
             'validation' => \Config\Services::validation()
         ];
 
@@ -61,6 +72,8 @@ class Profile extends BaseController
             'jabatan'      => $this->request->getPost('jabatan'),
             'pangkat'      => $this->request->getPost('pangkat'),
             'unit'         => $this->request->getPost('unit'),
+            'atasan_id'    => $this->request->getPost('atasan_id') ?: null,
+            'no_hp'        => $this->request->getPost('no_hp'),
             'email'        => $this->request->getPost('email'),
             'username'     => $this->request->getPost('username'),
         ];

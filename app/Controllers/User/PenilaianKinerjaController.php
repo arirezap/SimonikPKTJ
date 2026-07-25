@@ -157,6 +157,18 @@ class PenilaianKinerjaController extends BaseController
         if (!empty($dataToUpdate)) {
             $laporanModel->updateBatch($dataToUpdate, 'id');
             log_audit('APPROVE', 'laporan_harian', 'batch_nilai', null, $dataToUpdate);
+            
+            // Dapatkan user_id (staf) dari laporan pertama
+            $firstLaporan = $laporanModel->find($dataToUpdate[0]['id']);
+            if ($firstLaporan) {
+                helper('notification');
+                send_notification(
+                    $firstLaporan['user_id'],
+                    'Penilaian Kinerja',
+                    'Atasan telah memberikan/memperbarui Nilai Capaian pada target bulanan Anda.',
+                    site_url('penilaian-kinerja')
+                );
+            }
         }
 
         return redirect()->to('/penilaian-kinerja')
