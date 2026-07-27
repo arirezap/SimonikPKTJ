@@ -87,9 +87,10 @@
                                     0
                                 </span>
                             </a>
-                            <div class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 p-0" style="width: 320px; max-height: 400px; overflow-y: auto;">
-                                <div class="p-3 border-bottom bg-light sticky-top">
-                                    <h6 class="m-0 fw-bold text-dark"><i class="bi bi-bell me-2"></i>Notifikasi</h6>
+                            <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-3 p-0 rounded-4 overflow-hidden" style="width: 340px; max-height: 400px; overflow-y: auto;">
+                                <div class="p-3 border-bottom bg-white sticky-top d-flex align-items-center justify-content-between">
+                                    <h6 class="m-0 fw-bold text-dark" style="font-size: 0.95rem;">Notifikasi</h6>
+                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-1" style="font-size: 0.7rem;">Baru</span>
                                 </div>
                                 <div id="notifList" class="list-group list-group-flush">
                                     <div class="p-4 text-center text-muted small">
@@ -256,17 +257,22 @@
                     if (data.data.length > 0) {
                         let html = '';
                         data.data.forEach(item => {
-                            const isVirtual = item.is_virtual ? 'border-start border-4 border-warning' : 'border-start border-4 border-primary';
-                            const icon = item.is_virtual ? '<i class="bi bi-exclamation-triangle-fill text-warning fs-5"></i>' : '<i class="bi bi-info-circle-fill text-primary fs-5"></i>';
+                            const isVirtual = item.is_virtual;
+                            const bgClass = isVirtual ? 'bg-warning' : 'bg-primary';
+                            const textClass = isVirtual ? 'text-warning' : 'text-primary';
+                            const icon = isVirtual ? 'bi-exclamation-triangle-fill' : 'bi-bell-fill';
                             
                             html += `
-                                <a href="${item.link ? item.link : '#'}" class="list-group-item list-group-item-action p-3 ${isVirtual}" onclick="markNotifRead('${item.id}', event, this, '${item.link}')">
-                                    <div class="d-flex w-100 justify-content-between align-items-start">
-                                        <div class="me-3 mt-1">${icon}</div>
-                                        <div class="flex-grow-1">
-                                            <h6 class="mb-1 fw-bold text-dark" style="font-size: 0.85rem;">${item.title}</h6>
-                                            <p class="mb-1 text-muted small" style="font-size: 0.75rem; line-height: 1.4;">${item.message}</p>
-                                        </div>
+                                <a href="${item.link ? item.link : '#'}" class="list-group-item list-group-item-action border-0 border-bottom p-3 d-flex gap-3 align-items-start" style="transition: all 0.2s ease;" onclick="markNotifRead('${item.id}', event, this, '${item.link}')" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor=''">
+                                    <div class="d-flex align-items-center justify-content-center rounded-circle ${bgClass} bg-opacity-10 ${textClass} flex-shrink-0" style="width: 40px; height: 40px;">
+                                        <i class="bi ${icon} fs-5"></i>
+                                    </div>
+                                    <div class="flex-grow-1 pe-2">
+                                        <h6 class="mb-1 fw-bold text-dark" style="font-size: 0.9rem;">${item.title}</h6>
+                                        <p class="mb-1 text-secondary" style="font-size: 0.8rem; line-height: 1.4;">${item.message}</p>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <span class="d-inline-block bg-primary rounded-circle" style="width: 8px; height: 8px;"></span>
                                     </div>
                                 </a>
                             `;
@@ -280,9 +286,27 @@
                             </div>
                         `;
                     }
+                } else {
+                    notifList.innerHTML = `
+                        <div class="p-4 text-center text-muted">
+                            <i class="bi bi-exclamation-triangle fs-1 text-warning"></i>
+                            <div class="mt-2 small">Gagal memuat notifikasi.</div>
+                        </div>
+                    `;
                 }
             })
-            .catch(error => console.error('Error fetching notifications:', error));
+            .catch(error => {
+                console.error('Error fetching notifications:', error);
+                const notifList = document.getElementById('notifList');
+                if (notifList) {
+                    notifList.innerHTML = `
+                        <div class="p-4 text-center text-muted">
+                            <i class="bi bi-x-circle fs-1 text-danger"></i>
+                            <div class="mt-2 small">Terjadi kesalahan pada server.</div>
+                        </div>
+                    `;
+                }
+            });
         }
 
         // Panggil saat pertama kali load

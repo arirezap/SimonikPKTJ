@@ -191,7 +191,7 @@ class LogKegiatanController extends BaseController
                      ->set(['status' => 'terkirim'])
                      ->update();
                      
-            $user = clone (new \App\Models\User())->find($userId);
+            $user = (new \App\Models\User())->find($userId);
             if ($user && !empty($user['atasan_id'])) {
                 helper('notification');
                 send_notification(
