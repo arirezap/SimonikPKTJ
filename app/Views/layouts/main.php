@@ -8,9 +8,9 @@
     $pageTitle = $this->renderSection('title');
     $pageTitle = trim($pageTitle);
     if (empty($pageTitle)) {
-        $pageTitle = 'SIMONIK PKTJ';
+        $pageTitle = 'ECC';
     } else {
-        $pageTitle .= ' - SIMONIK PKTJ';
+        $pageTitle .= ' - ECC';
     }
     ?>
     <title><?= $pageTitle ?></title>
