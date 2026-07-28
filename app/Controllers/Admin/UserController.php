@@ -227,7 +227,8 @@ class UserController extends BaseController
             'user'  => $user,
             'secondary_roles' => $secondaryRoles,
             'potential_bosses' => $potentialBosses,
-            'unit_kerja_list' => $unitKerjaModel->orderBy('nama_unit', 'ASC')->findAll()
+            'unit_kerja_list' => $unitKerjaModel->orderBy('nama_unit', 'ASC')->findAll(),
+            'query_string' => $this->request->getServer('QUERY_STRING')
         ];
 
         return view('admin/user_edit', $data);
@@ -301,7 +302,13 @@ class UserController extends BaseController
 
         log_audit('UPDATE', 'users', $id, null, $data);
 
-        return redirect()->to('users')->with('success', 'Data pengguna berhasil diperbarui.');
+        $returnQs = $this->request->getPost('return_qs');
+        $redirectUrl = 'users';
+        if (!empty($returnQs)) {
+            $redirectUrl .= '?' . $returnQs;
+        }
+
+        return redirect()->to($redirectUrl)->with('success', 'Data pengguna berhasil diperbarui.');
     }
 
     public function ajaxUpdateUnit()

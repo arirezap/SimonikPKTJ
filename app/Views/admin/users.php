@@ -305,7 +305,8 @@
                             </td>
 
                             <td class="text-nowrap">
-                                <a href="<?= site_url('users/edit/'.$user['id']) ?>" class="btn btn-warning btn-sm" title="Edit">
+                                <?php $qs = !empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : ''; ?>
+                                <a href="<?= site_url('users/edit/'.$user['id']) . $qs ?>" class="btn btn-warning btn-sm" title="Edit">
                                     <i class="bi bi-pencil-square"></i>
                                 </a>
                                 <a href="<?= site_url('users/delete/'.$user['id']) ?>" class="btn btn-danger btn-sm" onclick="return confirm('Yakin hapus user ini?')" title="Hapus">

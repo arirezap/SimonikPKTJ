@@ -6,7 +6,7 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2">Edit Pengguna & Hierarki</h1>
-        <a href="<?= site_url('users') ?>" class="btn btn-secondary btn-sm">
+        <a href="<?= site_url('users') . (!empty($query_string) ? '?' . $query_string : '') ?>" class="btn btn-secondary btn-sm">
             <i class="bi bi-arrow-left"></i> Kembali
         </a>
     </div>
@@ -19,6 +19,7 @@
             <form action="<?= site_url('users/update') ?>" method="post">
                 <?= csrf_field() ?>
                 
+                <input type="hidden" name="return_qs" value="<?= esc($query_string ?? '') ?>">
                 <input type="hidden" name="id" value="<?= esc($user['id']) ?>">
 
                 <div class="row">
