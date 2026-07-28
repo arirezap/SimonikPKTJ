@@ -381,11 +381,9 @@ class UserController extends BaseController
         foreach ($idArray as $id) {
             if (is_numeric(trim($id))) {
                 $updateItem = [
-                    'id' => (int)trim($id)
+                    'id' => (int)trim($id),
+                    'atasan_id' => !empty($atasanId) ? (int)$atasanId : 0
                 ];
-                if (!empty($atasanId)) {
-                    $updateItem['atasan_id'] = (int)$atasanId;
-                }
                 $dataToUpdate[] = $updateItem;
             }
         }
@@ -397,7 +395,13 @@ class UserController extends BaseController
         $this->userModel->updateBatch($dataToUpdate, 'id');
         log_audit('UPDATE', 'users', 'batch', null, $dataToUpdate);
 
-        return redirect()->to('users')->with('success', count($dataToUpdate) . ' data pengguna berhasil diperbarui.');
+        $returnQs = $this->request->getPost('return_qs');
+        $redirectUrl = 'users';
+        if (!empty($returnQs)) {
+            $redirectUrl .= $returnQs;
+        }
+
+        return redirect()->to($redirectUrl)->with('success', count($dataToUpdate) . ' data pengguna berhasil diperbarui.');
     }
     
     public function delete($id)

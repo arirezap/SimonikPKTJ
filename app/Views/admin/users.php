@@ -120,6 +120,8 @@
             <form action="<?= site_url('users/batch_update') ?>" method="post" autocomplete="off">
                 <?= csrf_field() ?>
                 <input type="hidden" name="user_ids" id="batchUserIds">
+                <?php $qs = !empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : ''; ?>
+                <input type="hidden" name="return_qs" value="<?= esc($qs) ?>">
                 <div class="modal-body">
                     <p>Anda akan mengubah atasan untuk <strong id="batchEditCount">0</strong> pengguna terpilih.</p>
                     <div class="mb-3">
