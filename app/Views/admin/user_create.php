@@ -47,13 +47,13 @@
                         <div class="mb-3">
                             <label class="form-label">Role Aplikasi (Primer)</label>
                             <select name="role" class="form-select">
-                                <option value="user">User (Pegawai/Dosen)</option>
-                                <option value="admin">Administrator</option>
-                                <option value="kabag_aak">Kabag AAK</option>
-                                <option value="kabag_kuk">Kabag KUK</option>
-                                <option value="direktur">Direktur</option>
-                                <option value="wadir">Wakil Direktur</option>
-                                <option value="manajemen">Manajemen (Kanit/Katim/Kaprodi)</option>
+                                <option value="direktur" <?= old('role') == 'direktur' ? 'selected' : '' ?>>Direktur (Level 1)</option>
+                                <option value="wadir" <?= old('role') == 'wadir' ? 'selected' : '' ?>>Wakil Direktur (Level 2)</option>
+                                <option value="kabag_aak" <?= old('role') == 'kabag_aak' ? 'selected' : '' ?>>Kabag AAK (Level 3)</option>
+                                <option value="kabag_kuk" <?= old('role') == 'kabag_kuk' ? 'selected' : '' ?>>Kabag KUK (Level 3)</option>
+                                <option value="manajemen" <?= old('role') == 'manajemen' ? 'selected' : '' ?>>Kanit / Katim / Kaprodi (Level 4)</option>
+                                <option value="user" <?= old('role', 'user') == 'user' ? 'selected' : '' ?>>Staff / Pegawai / Dosen (Level 5)</option>
+                                <option value="admin" <?= old('role') == 'admin' ? 'selected' : '' ?>>Administrator (Sistem)</option>
                             </select>
                         </div>
                         <div class="mb-3 p-3 bg-light border rounded">
