@@ -4,7 +4,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $this->renderSection('title') ?? 'ECC' ?></title>
+    <?php 
+    $pageTitle = $this->renderSection('title');
+    $pageTitle = trim($pageTitle);
+    if (empty($pageTitle)) {
+        $pageTitle = 'SIMONIK PKTJ';
+    } else {
+        $pageTitle .= ' - SIMONIK PKTJ';
+    }
+    ?>
+    <title><?= $pageTitle ?></title>
 
     <link rel="shortcut icon" href="<?= base_url('favicon.ico') ?>">
     <link rel="icon" type="image/png" sizes="32x32" href="<?= base_url('favicon-32x32.png') ?>">
