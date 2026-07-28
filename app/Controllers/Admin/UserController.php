@@ -131,10 +131,33 @@ class UserController extends BaseController
         // Validasi input dasar
         // PERBAIKAN: min_length(4) diubah menjadi min_length[4]
         if (!$this->validate([
-            'username' => 'required|is_unique[users.username]',
-            'email'    => 'required|valid_email',
-            'password' => 'required|min_length[4]', 
-            'nama_lengkap' => 'required'
+            'username' => [
+                'rules'  => 'required|is_unique[users.username]',
+                'errors' => [
+                    'required'  => 'Username (atau NIP) wajib diisi.',
+                    'is_unique' => 'Gagal: Username / NIP tersebut sudah terdaftar di sistem. Silakan gunakan yang lain.'
+                ]
+            ],
+            'email' => [
+                'rules'  => 'required|valid_email',
+                'errors' => [
+                    'required'    => 'Email wajib diisi.',
+                    'valid_email' => 'Format email tidak valid.'
+                ]
+            ],
+            'password' => [
+                'rules'  => 'required|min_length[4]',
+                'errors' => [
+                    'required'   => 'Password wajib diisi.',
+                    'min_length' => 'Password minimal harus terdiri dari 4 karakter.'
+                ]
+            ],
+            'nama_lengkap' => [
+                'rules'  => 'required',
+                'errors' => [
+                    'required' => 'Nama lengkap wajib diisi.'
+                ]
+            ]
         ])) {
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
@@ -237,6 +260,31 @@ class UserController extends BaseController
     public function update()
     {
         $id = $this->request->getPost('id');
+
+        if (!$this->validate([
+            'username' => [
+                'rules'  => "required|is_unique[users.username,id,{$id}]",
+                'errors' => [
+                    'required'  => 'Username (atau NIP) wajib diisi.',
+                    'is_unique' => 'Gagal: Username / NIP tersebut sudah dipakai oleh pengguna lain.'
+                ]
+            ],
+            'email' => [
+                'rules'  => 'required|valid_email',
+                'errors' => [
+                    'required'    => 'Email wajib diisi.',
+                    'valid_email' => 'Format email tidak valid.'
+                ]
+            ],
+            'nama_lengkap' => [
+                'rules'  => 'required',
+                'errors' => [
+                    'required' => 'Nama lengkap wajib diisi.'
+                ]
+            ]
+        ])) {
+            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+        }
 
         $unit = $this->request->getPost('unit');
         $role = $this->request->getPost('role');
