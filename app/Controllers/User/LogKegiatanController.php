@@ -26,18 +26,36 @@ class LogKegiatanController extends BaseController
         $tahunTerpilih = date('Y', strtotime($tanggalTerpilih));
 
         // Ambil daftar target yang sudah dibuat user pada bulan tersebut
-        $daftarTarget = $targetModel->where('user_id', $userId)
-                                    ->where('bulan', $bulanTerpilih)
-                                    ->where('tahun', $tahunTerpilih)
-                                    ->findAll();
+        $allTargets = $targetModel->where('user_id', $userId)
+                                  ->where('bulan', $bulanTerpilih)
+                                  ->where('tahun', $tahunTerpilih)
+                                  ->findAll();
+
+        $userModel = new \App\Models\User();
+        $currentUser = $userModel->find($userId);
+        $hasAtasan = $currentUser && !empty($currentUser['atasan_id']) && $currentUser['role'] !== 'direktur';
+
+        $targetStatus = 'disetujui';
+        if (empty($allTargets)) {
+            $targetStatus = 'belum_ada';
+        } else if ($hasAtasan) {
+            foreach ($allTargets as $t) {
+                if ($t['status_approval'] !== 'disetujui') {
+                    $targetStatus = 'belum_disetujui';
+                    break;
+                }
+            }
+        }
+
+        $daftarTarget = ($targetStatus === 'disetujui') ? $allTargets : [];
 
         // Ambil log kegiatan harian yang sudah diinput pada tanggal tersebut
         $rekapData = $logModel->getLogWithTarget($userId, $tanggalTerpilih);
 
-        $isPastDeadline = false; // Fitur kunci tanggal dihapus
-        
         $isLocked = false;
-        if (!empty($rekapData)) {
+        if ($targetStatus !== 'disetujui') {
+            $isLocked = true;
+        } elseif (!empty($rekapData)) {
             foreach ($rekapData as $row) {
                 if (isset($row['status']) && $row['status'] === 'terkirim') {
                     $isLocked = true;
@@ -51,7 +69,8 @@ class LogKegiatanController extends BaseController
             'tanggal_terpilih' => $tanggalTerpilih,
             'daftar_target' => $daftarTarget,
             'rekap_data' => $rekapData,
-            'is_locked' => $isLocked
+            'is_locked' => $isLocked,
+            'target_status' => $targetStatus
         ];
 
         return view('user/log_kegiatan/index', $data);
@@ -60,6 +79,38 @@ class LogKegiatanController extends BaseController
     public function store()
     {
         $userId = session()->get('id') ?? session()->get('user_id');
+        $tanggal = $this->request->getPost('tanggal');
+        $bulanTerpilih = date('n', strtotime($tanggal));
+        $tahunTerpilih = date('Y', strtotime($tanggal));
+
+        // Cek persetujuan target bulanan
+        $targetModel = new LaporanHarian();
+        $allTargets = $targetModel->where('user_id', $userId)
+                                  ->where('bulan', $bulanTerpilih)
+                                  ->where('tahun', $tahunTerpilih)
+                                  ->findAll();
+
+        $userModel = new \App\Models\User();
+        $currentUser = $userModel->find($userId);
+        $hasAtasan = $currentUser && !empty($currentUser['atasan_id']) && $currentUser['role'] !== 'direktur';
+
+        if (empty($allTargets)) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Anda belum membuat Target Kinerja Bulanan untuk bulan ini.', 'csrf_hash' => csrf_hash()]);
+            }
+            return redirect()->back()->with('error', 'Gagal menyimpan. Anda belum membuat Target Kinerja Bulanan untuk bulan ini.');
+        }
+
+        if ($hasAtasan) {
+            foreach ($allTargets as $t) {
+                if ($t['status_approval'] !== 'disetujui') {
+                    if ($this->request->isAJAX()) {
+                        return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Target Kinerja Bulanan Anda untuk bulan ini belum disetujui oleh atasan langsung.', 'csrf_hash' => csrf_hash()]);
+                    }
+                    return redirect()->back()->with('error', 'Gagal menyimpan. Target Kinerja Bulanan Anda untuk bulan ini belum disetujui oleh atasan langsung.');
+                }
+            }
+        }
 
         $rules = [
             'tanggal'              => 'required',

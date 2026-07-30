@@ -65,8 +65,16 @@ Lapor Kegiatan Harian
             </div>
         </form>
 
-        <?php if ($is_locked): ?>
-            <div class="alert alert-warning mb-4">
+        <?php if (isset($target_status) && $target_status === 'belum_ada'): ?>
+            <div class="alert alert-danger mb-4 shadow-sm">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> <strong>Target Bulanan Belum Ada!</strong> Anda belum membuat Target Kinerja Bulanan untuk bulan ini. Silakan buat dan kirimkan target terlebih dahulu pada menu <strong>Target Kinerja Bulanan</strong> agar dapat mengisi laporan harian.
+            </div>
+        <?php elseif (isset($target_status) && $target_status === 'belum_disetujui'): ?>
+            <div class="alert alert-warning mb-4 shadow-sm">
+                <i class="bi bi-clock-history me-2"></i> <strong>Target Bulanan Belum Disetujui!</strong> Target Kinerja Bulanan Anda untuk bulan ini belum disetujui oleh atasan langsung. Anda baru dapat mengisi Lapor Kegiatan Harian setelah target Anda disetujui.
+            </div>
+        <?php elseif ($is_locked): ?>
+            <div class="alert alert-warning mb-4 shadow-sm">
                 <i class="bi bi-lock-fill me-2"></i> <strong>Akses Terkunci!</strong> Laporan hari ini telah dikirim dan tidak dapat diubah lagi.
             </div>
         <?php endif; ?>
