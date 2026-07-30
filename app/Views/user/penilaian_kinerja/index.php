@@ -134,13 +134,17 @@ Rekap & Penilaian Kinerja
                         }
                         $rataRataIndividu = $jmlDinilai > 0 ? (float)($totalNilai / $jmlDinilai) : 0;
                         
+                        $predikatRataIndividu = '-';
+                        $badgeColorRataIndividu = 'secondary';
                         $warnaScore = 'success';
                         if ($jmlDinilai == 0) {
                             $warnaScore = 'secondary';
-                        } elseif ($rataRataIndividu < 60) {
-                            $warnaScore = 'danger';
-                        } elseif ($rataRataIndividu < 75) {
-                            $warnaScore = 'warning text-dark';
+                        } else {
+                            if ($rataRataIndividu <= 25) { $warnaScore = 'danger'; $predikatRataRataIndividu = 'Sangat Kurang'; $badgeColorRataIndividu = 'danger'; }
+                            elseif ($rataRataIndividu <= 75) { $warnaScore = 'warning text-dark'; $predikatRataRataIndividu = 'Kurang'; $badgeColorRataIndividu = 'warning text-dark'; }
+                            elseif ($rataRataIndividu <= 90) { $warnaScore = 'secondary'; $predikatRataRataIndividu = 'Butuh Perbaikan'; $badgeColorRataIndividu = 'secondary'; }
+                            elseif ($rataRataIndividu <= 100) { $warnaScore = 'primary'; $predikatRataRataIndividu = 'Baik'; $badgeColorRataIndividu = 'primary'; }
+                            else { $warnaScore = 'success'; $predikatRataRataIndividu = 'Sangat Baik'; $badgeColorRataIndividu = 'success'; }
                         }
                     ?>
 
@@ -183,13 +187,14 @@ Rekap & Penilaian Kinerja
                             </tbody>
                             <tfoot class="table-light fw-bold" style="border-top: 2px solid #dee2e6;">
                                 <tr>
-                                    <td colspan="5" class="text-end pe-3 align-middle text-muted fw-normal" style="font-size: 0.85rem;">Rata-rata Penilaian Kinerja:</td>
-                                    <td class="align-middle p-2">
-                                        <div class="d-flex justify-content-between align-items-center bg-white border border-<?= $warnaScore === 'warning text-dark' ? 'warning' : $warnaScore ?> rounded px-3 py-2 shadow-sm">
-                                            <div class="d-flex flex-column">
+                                    <td colspan="4" class="text-end pe-3 align-middle text-muted fw-normal" style="font-size: 0.85rem;">Rata-rata Penilaian Kinerja:</td>
+                                    <td colspan="2" class="align-middle p-2">
+                                        <div class="d-flex justify-content-between align-items-center bg-white border border-2 border-<?= $warnaScore === 'warning text-dark' ? 'warning' : $warnaScore ?> rounded px-3 py-2 shadow-sm">
+                                            <div class="d-flex flex-column align-items-start me-2">
                                                 <span class="small fw-bold text-muted mb-0" style="font-size: 0.7rem; line-height: 1;">NILAI KINERJA</span>
+                                                <span class="badge bg-<?= $badgeColorRataIndividu ?> mt-1" style="font-size: 0.75rem;"><?= $predikatRataIndividu ?></span>
                                             </div>
-                                            <span class="fs-4 fw-bold text-<?= $warnaScore ?> mb-0 lh-1"><?= str_replace('.', ',', round($rataRataIndividu, 2)) ?></span>
+                                            <span class="fs-3 fw-bold text-<?= $warnaScore ?> mb-0 lh-1 ms-2"><?= str_replace('.', ',', round($rataRataIndividu, 2)) ?></span>
                                         </div>
                                     </td>
                                 </tr>
@@ -286,13 +291,17 @@ Rekap & Penilaian Kinerja
                             }
                             $rataRataBwh = $jmlDinilaiBwh > 0 ? (float)($totalNilaiBwh / $jmlDinilaiBwh) : 0;
                             
+                            $predikatRataRataBwh = '-';
+                            $badgeColorRataBwh = 'secondary';
                             $warnaScoreBwh = 'success';
                             if ($jmlDinilaiBwh == 0) {
                                 $warnaScoreBwh = 'secondary';
-                            } elseif ($rataRataBwh < 60) {
-                                $warnaScoreBwh = 'danger';
-                            } elseif ($rataRataBwh < 75) {
-                                $warnaScoreBwh = 'warning text-dark';
+                            } else {
+                                if ($rataRataBwh <= 25) { $warnaScoreBwh = 'danger'; $predikatRataRataBwh = 'Sangat Kurang'; $badgeColorRataBwh = 'danger'; }
+                                elseif ($rataRataBwh <= 75) { $warnaScoreBwh = 'warning text-dark'; $predikatRataRataBwh = 'Kurang'; $badgeColorRataBwh = 'warning text-dark'; }
+                                elseif ($rataRataBwh <= 90) { $warnaScoreBwh = 'secondary'; $predikatRataRataBwh = 'Butuh Perbaikan'; $badgeColorRataBwh = 'secondary'; }
+                                elseif ($rataRataBwh <= 100) { $warnaScoreBwh = 'primary'; $predikatRataRataBwh = 'Baik'; $badgeColorRataBwh = 'primary'; }
+                                else { $warnaScoreBwh = 'success'; $predikatRataRataBwh = 'Sangat Baik'; $badgeColorRataBwh = 'success'; }
                             }
                         ?>
 
@@ -308,7 +317,7 @@ Rekap & Penilaian Kinerja
                             <span class="badge bg-secondary">Butuh Perbaikan</span>: > 75% - 90% &nbsp;|&nbsp;
                             <span class="badge bg-primary">Baik</span>: > 90% - 100% &nbsp;|&nbsp;
                             <span class="badge bg-success">Sangat Baik</span>: > 100% - 150%
-                            <br><i class="text-muted">* Pilih predikat terlebih dahulu, lalu masukkan angka capaian (tanpa simbol %) sesuai batas rentang predikat.</i>
+                            <br><i class="text-muted">* Inputkan angka nilai capaian (0 - 150%). Peringkat/predikat akan dihitung dan diperbarui secara otomatis di bawahnya.</i>
                         </div>
 
                         <form action="<?= site_url('penilaian-kinerja/store') ?>" method="POST" id="formPenilaian">
@@ -322,12 +331,12 @@ Rekap & Penilaian Kinerja
                                 <table class="table table-bordered table-hover align-middle mb-0" id="tablePenilaianStaf">
                                     <thead>
                                         <tr>
-                                            <th style="width: 40px;">No</th>
-                                            <th class="col-target">Indikator Kinerja / RHK</th>
-                                            <th>Target Bulanan</th>
-                                            <th>Total Realisasi</th>
-                                            <th>Selisih (Gap)</th>
-                                            <th class="col-nilai">Input Nilai Capaian</th>
+                                            <th style="width: 40px;" class="text-center">No</th>
+                                            <th class="col-target text-start">Indikator Kinerja / RHK</th>
+                                            <th style="width: 110px;" class="text-center">Target Bulanan</th>
+                                            <th style="width: 110px;" class="text-center">Total Realisasi</th>
+                                            <th style="width: 110px;" class="text-center">Selisih (Gap)</th>
+                                            <th style="width: 115px;" class="text-center">Input Nilai Capaian</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -338,16 +347,16 @@ Rekap & Penilaian Kinerja
                                                 $selisih = $realisasi - $target;
                                                 $warnaSelisih = $selisih >= 0 ? 'text-success' : 'text-danger';
                                                 
-                                                // Tentukan predikat jika sudah ada nilai
                                                 $nilai_capaian = $row['nilai_capaian'];
-                                                $predikat = '';
+                                                $predikatLabel = '-';
+                                                $predikatBadge = 'bg-light text-muted border';
                                                 if ($nilai_capaian !== null && $nilai_capaian !== '') {
                                                     $n = (float)$nilai_capaian;
-                                                    if ($n <= 25) $predikat = 'sangat_kurang';
-                                                    elseif ($n > 25 && $n <= 75) $predikat = 'kurang';
-                                                    elseif ($n > 75 && $n <= 90) $predikat = 'butuh_perbaikan';
-                                                    elseif ($n > 90 && $n <= 100) $predikat = 'baik';
-                                                    elseif ($n > 100) $predikat = 'sangat_baik';
+                                                    if ($n <= 25) { $predikatLabel = 'Sangat Kurang'; $predikatBadge = 'bg-danger'; }
+                                                    elseif ($n <= 75) { $predikatLabel = 'Kurang'; $predikatBadge = 'bg-warning text-dark'; }
+                                                    elseif ($n <= 90) { $predikatLabel = 'Butuh Perbaikan'; $predikatBadge = 'bg-secondary'; }
+                                                    elseif ($n <= 100) { $predikatLabel = 'Baik'; $predikatBadge = 'bg-primary'; }
+                                                    else { $predikatLabel = 'Sangat Baik'; $predikatBadge = 'bg-success'; }
                                                 }
                                             ?>
                                             <tr>
@@ -358,19 +367,14 @@ Rekap & Penilaian Kinerja
                                                 <td class="text-center fw-bold <?= $warnaSelisih ?>">
                                                     <?= $selisih > 0 ? '+' : '' ?><?= $selisih ?> <?= esc($row['satuan']) ?>
                                                 </td>
-                                                <td class="align-middle p-2" style="min-width: 160px;">
+                                                <td class="align-middle p-2 text-center" style="width: 115px;">
                                                     <input type="hidden" name="laporan_id[]" value="<?= esc($row['id']) ?>">
-                                                    <select class="form-select form-select-sm mb-1 predikat-select" required style="font-size: 0.8rem;">
-                                                        <option value="">- Predikat -</option>
-                                                        <option value="sangat_kurang" <?= $predikat == 'sangat_kurang' ? 'selected' : '' ?>>Sangat Kurang</option>
-                                                        <option value="kurang" <?= $predikat == 'kurang' ? 'selected' : '' ?>>Kurang</option>
-                                                        <option value="butuh_perbaikan" <?= $predikat == 'butuh_perbaikan' ? 'selected' : '' ?>>Butuh Perbaikan</option>
-                                                        <option value="baik" <?= $predikat == 'baik' ? 'selected' : '' ?>>Baik</option>
-                                                        <option value="sangat_baik" <?= $predikat == 'sangat_baik' ? 'selected' : '' ?>>Sangat Baik</option>
-                                                    </select>
-                                                    <div class="input-group input-group-sm">
-                                                        <input type="number" name="nilai_capaian[]" class="form-control text-center input-nilai-capaian fw-bold text-primary" style="font-size:0.95rem;" value="<?= $nilai_capaian !== null ? (float)$nilai_capaian : '' ?>" step="0.01" required <?= empty($predikat) ? 'disabled' : '' ?>>
-                                                        <span class="input-group-text bg-light">%</span>
+                                                    <div class="input-group input-group-sm mb-1">
+                                                        <input type="number" name="nilai_capaian[]" class="form-control text-center input-nilai-capaian fw-bold text-primary p-1" style="font-size:0.9rem;" value="<?= $nilai_capaian !== null ? (float)$nilai_capaian : '' ?>" step="0.01" min="0" max="150" placeholder="0 - 150" required>
+                                                        <span class="input-group-text bg-light px-1">%</span>
+                                                    </div>
+                                                    <div class="predikat-badge-container">
+                                                        <span class="badge <?= $predikatBadge ?>" style="font-size:0.7rem;"><?= $predikatLabel ?></span>
                                                     </div>
                                                     <div class="invalid-feedback" style="font-size: 0.7rem;">Nilai tidak sesuai!</div>
                                                 </td>
@@ -379,13 +383,14 @@ Rekap & Penilaian Kinerja
                                     </tbody>
                                     <tfoot class="table-light fw-bold" style="border-top: 2px solid #dee2e6;">
                                         <tr>
-                                            <td colspan="5" class="text-end pe-3 align-middle text-muted fw-normal" style="font-size: 0.85rem;">Rata-rata Penilaian Kinerja:</td>
-                                            <td class="align-middle p-2">
-                                                <div id="totalKinerjaStafWrapper" class="d-flex justify-content-between align-items-center bg-white border border-<?= $warnaScoreBwh === 'warning text-dark' ? 'warning' : $warnaScoreBwh ?> rounded px-3 py-2 shadow-sm">
-                                                    <div class="d-flex flex-column">
+                                            <td colspan="4" class="text-end pe-3 align-middle text-muted fw-normal" style="font-size: 0.85rem;">Rata-rata Penilaian Kinerja:</td>
+                                            <td colspan="2" class="align-middle p-2">
+                                                <div id="totalKinerjaStafWrapper" class="d-flex justify-content-between align-items-center bg-white border border-2 border-<?= $warnaScoreBwh === 'warning text-dark' ? 'warning' : $warnaScoreBwh ?> rounded px-3 py-2 shadow-sm">
+                                                    <div class="d-flex flex-column align-items-start me-2">
                                                         <span class="small fw-bold text-muted mb-0" style="font-size: 0.7rem; line-height: 1;">NILAI KINERJA</span>
+                                                        <span id="totalPredikatStafBadge" class="badge bg-<?= $badgeColorRataBwh ?> mt-1" style="font-size: 0.75rem;"><?= $predikatRataRataBwh ?></span>
                                                     </div>
-                                                    <span class="fs-4 fw-bold text-<?= $warnaScoreBwh ?> mb-0 lh-1" id="totalKinerjaStafText"><?= str_replace('.', ',', round($rataRataBwh, 2)) ?></span>
+                                                    <span class="fs-3 fw-bold text-<?= $warnaScoreBwh ?> mb-0 lh-1 ms-2" id="totalKinerjaStafText"><?= str_replace('.', ',', round($rataRataBwh, 2)) ?></span>
                                                 </div>
                                             </td>
                                         </tr>
@@ -488,56 +493,47 @@ Rekap & Penilaian Kinerja
                 }, 50);
             });
         }
-        
-        // Handle Predikat change
-        $('.predikat-select').on('change', function() {
-            var val = $(this).val();
-            var input = $(this).siblings('.input-group').find('.input-nilai-capaian');
-            
-            if (val === '') {
-                input.prop('disabled', true).val('');
-                input.removeAttr('min max');
-            } else {
-                input.prop('disabled', false);
-                if (val === 'sangat_kurang') { input.attr('min', 0).attr('max', 25); }
-                else if (val === 'kurang') { input.attr('min', 25.01).attr('max', 75); }
-                else if (val === 'butuh_perbaikan') { input.attr('min', 75.01).attr('max', 90); }
-                else if (val === 'baik') { input.attr('min', 90.01).attr('max', 100); }
-                else if (val === 'sangat_baik') { input.attr('min', 100.01).attr('max', 150); }
-                
-                // Trigger validation if there's a value
-                if (input.val() !== '') {
-                    input.trigger('input');
-                }
-            }
-        });
 
-        // Auto-calculate Rata-rata Kinerja Staf & Validate
-        $('.input-nilai-capaian').on('input', function() {
-            var min = parseFloat($(this).attr('min'));
-            var max = parseFloat($(this).attr('max'));
+        function getPredikatInfo(val) {
+            if (isNaN(val) || val === '' || val === null) {
+                return { label: '-', class: 'bg-light text-muted border', textClass: 'secondary' };
+            }
+            if (val <= 25) return { label: 'Sangat Kurang', class: 'bg-danger', textClass: 'danger' };
+            if (val <= 75) return { label: 'Kurang', class: 'bg-warning text-dark', textClass: 'warning' };
+            if (val <= 90) return { label: 'Butuh Perbaikan', class: 'bg-secondary', textClass: 'secondary' };
+            if (val <= 100) return { label: 'Baik', class: 'bg-primary', textClass: 'primary' };
+            return { label: 'Sangat Baik', class: 'bg-success', textClass: 'success' };
+        }
+
+        // Auto-calculate Rata-rata Kinerja Staf & Update Predikat Per-Baris secara Real-time
+        $(document).on('input change keyup', '.input-nilai-capaian', function() {
             var val = parseFloat($(this).val());
+            var badgeContainer = $(this).closest('td').find('.predikat-badge-container');
             var error = $(this).parent().siblings('.invalid-feedback');
             var btnSubmit = $('#formPenilaian button[type="submit"]');
 
-            // Validation
-            if (!isNaN(val) && (val < min || val > max)) {
+            // Update badge predikat per baris
+            if (!isNaN(val)) {
+                let p = getPredikatInfo(val);
+                badgeContainer.html('<span class="badge ' + p.class + '" style="font-size:0.75rem;">' + p.label + '</span>');
+            } else {
+                badgeContainer.html('<span class="badge bg-light text-muted border" style="font-size:0.75rem;">-</span>');
+            }
+
+            // Validasi rentang nilai 0 - 150
+            if (!isNaN(val) && (val < 0 || val > 150)) {
                 $(this).addClass('is-invalid');
-                let hintMsg = 'Batas nilai: ' + min + ' - ' + max;
-                error.text(hintMsg).show();
-                $(this).attr('title', hintMsg);
+                error.show();
                 btnSubmit.prop('disabled', true);
             } else {
                 $(this).removeClass('is-invalid');
-                $(this).removeAttr('title');
                 error.hide();
-                // Check if any other is invalid
                 if ($('.input-nilai-capaian.is-invalid').length === 0) {
                     btnSubmit.prop('disabled', false);
                 }
             }
 
-            // Calculation
+            // Hitung Rata-rata Penilaian Kinerja secara Real-Time
             let total = 0;
             let count = 0;
             $('.input-nilai-capaian').each(function() {
@@ -547,42 +543,27 @@ Rekap & Penilaian Kinerja
                     count++;
                 }
             });
+
             let avg = count > 0 ? (Math.round((total / count) * 100) / 100) : 0;
             $('#totalKinerjaStafText').text(avg.toString().replace('.', ','));
-            
-            // Dynamic UI Color for footer
-            let newColor = 'success';
-            if (count === 0) newColor = 'secondary';
-            else if (avg < 60) newColor = 'danger';
-            else if (avg < 75) newColor = 'warning';
 
+            // Dynamic UI Color & Predikat di Footer secara Real-Time
+            let pRata = getPredikatInfo(count > 0 ? avg : null);
+            
             let textEl = $('#totalKinerjaStafText');
             let wrapper = $('#totalKinerjaStafWrapper');
-            
-            // Hapus kelas warna lama
-            textEl.removeClass('text-success text-secondary text-danger text-warning');
-            wrapper.removeClass('border-success border-secondary border-danger border-warning');
-            
-            // Tambahkan kelas warna baru
-            textEl.addClass('text-' + newColor);
-            wrapper.addClass('border-' + newColor);
-        });
-        
-        // Trigger initialization for existing data
-        $('.predikat-select').each(function() {
-            if($(this).val() !== '') {
-                // Set min/max quietly without erasing value
-                var val = $(this).val();
-                var input = $(this).siblings('.input-group').find('.input-nilai-capaian');
-                if (val === 'sangat_kurang') { input.attr('min', 0).attr('max', 25); }
-                else if (val === 'kurang') { input.attr('min', 25.01).attr('max', 75); }
-                else if (val === 'butuh_perbaikan') { input.attr('min', 75.01).attr('max', 90); }
-                else if (val === 'baik') { input.attr('min', 90.01).attr('max', 100); }
-                else if (val === 'sangat_baik') { input.attr('min', 100.01).attr('max', 150); }
-            }
+            let badgeEl = $('#totalPredikatStafBadge');
+
+            textEl.removeClass('text-success text-secondary text-danger text-warning text-primary');
+            wrapper.removeClass('border-success border-secondary border-danger border-warning border-primary');
+
+            textEl.addClass('text-' + pRata.textClass);
+            wrapper.addClass('border-' + pRata.textClass);
+
+            badgeEl.attr('class', 'badge ' + pRata.class + ' mt-1').text(pRata.label);
         });
 
-        // Handle Kosongkan form
+        // Handle Kosongkan form (Reset)
         $('#formPenilaian button[type="reset"]').on('click', function(e) {
             e.preventDefault(); 
             
@@ -598,14 +579,16 @@ Rekap & Penilaian Kinerja
                 reverseButtons: true
             }).then((result) => {
                 if (result.isConfirmed) {
-                    $('.input-nilai-capaian').removeClass('is-invalid').removeAttr('title');
+                    $('.input-nilai-capaian').val('').removeClass('is-invalid').removeAttr('title');
                     $('.invalid-feedback').hide();
+                    $('.predikat-badge-container').html('<span class="badge bg-light text-muted border" style="font-size:0.75rem;">-</span>');
                     $('#formPenilaian button[type="submit"]').prop('disabled', false);
-                    
-                    $('.predikat-select').val('').trigger('change');
                     
                     if ($('#totalKinerjaStafText').length) {
                         $('#totalKinerjaStafText').text('0');
+                    }
+                    if ($('#totalPredikatStafBadge').length) {
+                        $('#totalPredikatStafBadge').attr('class', 'badge bg-secondary mt-1').text('-');
                     }
                     
                     Swal.fire({
