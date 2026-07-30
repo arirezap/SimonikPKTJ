@@ -198,10 +198,6 @@ Lapor Kegiatan Harian
                                 </td>
                             </tr>
                         <?php endif; ?>
-                        
-                        <?php if (empty($rekap_data)): ?>
-                            <tr><td colspan="6" class="text-center text-muted">Tidak ada laporan pada tanggal ini.</td></tr>
-                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
