@@ -222,7 +222,7 @@ class LaporanHarianController extends BaseController
 
         // Send notification to boss if staff is submitting
         if (!$isEditingStaf) {
-            $user = clone (new \App\Models\User())->find($targetUserId);
+            $user = (new \App\Models\User())->find($targetUserId);
             if ($user && !empty($user['atasan_id'])) {
                 helper('notification');
                 send_notification(
