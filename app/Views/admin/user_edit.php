@@ -130,5 +130,77 @@
             </form>
         </div>
     </div>
+    
+    <!-- DANGER ZONE: Reset Kinerja -->
+    <div class="card shadow mb-4 border-danger">
+        <div class="card-header py-3 bg-danger text-white">
+            <h6 class="m-0 font-weight-bold"><i class="bi bi-exclamation-triangle-fill"></i> Zona Bahaya: Reset Kinerja Bulanan</h6>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning">
+                <strong>Peringatan!</strong> Tindakan ini akan menghapus <b>Target Kinerja Bulanan</b>, <b>Laporan Kegiatan Harian</b>, dan <b>Nilai Rekap Remunerasi</b> pegawai ini pada bulan yang dipilih. Data yang dihapus tidak dapat dikembalikan. (Rencana Kinerja Tahunan tidak akan terhapus).
+            </div>
+            <form action="<?= site_url('users/reset-kinerja') ?>" method="post" id="formResetKinerja">
+                <?= csrf_field() ?>
+                <input type="hidden" name="user_id" value="<?= esc($user['id']) ?>">
+                
+                <div class="row align-items-end">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">Pilih Bulan</label>
+                        <select name="bulan" class="form-select" required>
+                            <option value="">-- Pilih Bulan --</option>
+                            <?php 
+                                $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                foreach($bulanIndo as $idx => $bln): 
+                            ?>
+                                <option value="<?= $idx + 1 ?>"><?= $bln ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label fw-bold">Tahun</label>
+                        <input type="number" name="tahun" class="form-control" value="<?= date('Y') ?>" required>
+                    </div>
+                    <div class="col-md-5 mb-3">
+                        <button type="button" class="btn btn-danger w-100 fw-bold" onclick="confirmResetKinerja()">
+                            <i class="bi bi-trash-fill"></i> Hapus Permanen Data Kinerja
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+function confirmResetKinerja() {
+    const form = document.getElementById('formResetKinerja');
+    const bulanSelect = form.querySelector('[name="bulan"]');
+    const tahunInput = form.querySelector('[name="tahun"]');
+    
+    if(!bulanSelect.value || !tahunInput.value) {
+        Swal.fire('Peringatan', 'Silakan pilih bulan dan tahun terlebih dahulu!', 'warning');
+        return;
+    }
+    
+    const namaBulan = bulanSelect.options[bulanSelect.selectedIndex].text;
+    const tahun = tahunInput.value;
+    
+    Swal.fire({
+        title: 'Apakah Anda yakin?',
+        html: `Data Target Bulanan, Kegiatan Harian, dan Nilai Rekap untuk <b>${namaBulan} ${tahun}</b> akan <b>Dihapus Permanen</b>!`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ya, Hapus Sekarang!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            form.submit();
+        }
+    });
+}
+</script>
 <?= $this->endSection() ?>

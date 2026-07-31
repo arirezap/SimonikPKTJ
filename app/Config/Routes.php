@@ -67,6 +67,7 @@ $routes->post('notifications/read/(:segment)', 'NotificationController::markAsRe
     $routes->get('settings', 'Admin\SettingsController::index');
     $routes->post('settings/store', 'Admin\SettingsController::store');
     $routes->post('users/update', 'Admin\UserController::update');
+    $routes->post('users/reset-kinerja', 'Admin\UserController::resetKinerja');
     $routes->match(['get', 'post'], 'users/delete/(:num)', 'Admin\UserController::delete/$1');
     $routes->get('users/export', 'Admin\UserController::exportExcel'); // Rute untuk Export
     $routes->post('users/import', 'Admin\UserController::importExcel'); // Rute untuk Import

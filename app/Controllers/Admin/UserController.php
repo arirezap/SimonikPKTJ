@@ -581,4 +581,59 @@ class UserController extends BaseController
 
         return redirect()->to('users')->with('error', 'Tidak ada data pengguna baru yang dapat diimpor dari file yang diunggah.');
     }
+
+    /**
+     * Reset Kinerja Bulanan (Target, Log Harian, dan Nilai Rekap)
+     */
+    public function resetKinerja()
+    {
+        // Hanya admin/superadmin
+        if (!hasAnyRole(['admin']) && session()->get('username') !== 'admin') {
+            return redirect()->back()->with('error', 'Unauthorized akses.');
+        }
+
+        $userId = $this->request->getPost('user_id');
+        $bulan = $this->request->getPost('bulan');
+        $tahun = $this->request->getPost('tahun');
+
+        if (!$userId || !$bulan || !$tahun) {
+            return redirect()->back()->with('error', 'Data tidak lengkap untuk melakukan reset.');
+        }
+
+        // Ambil ID target dari laporan_harian (sebagai referensi jika diperlukan)
+        $laporanHarianModel = new \App\Models\LaporanHarian();
+        $targetData = $laporanHarianModel->where('user_id', $userId)
+                                         ->where('bulan', $bulan)
+                                         ->where('tahun', $tahun)
+                                         ->findAll();
+                                         
+        $targetIds = array_column($targetData, 'id');
+
+        $logKegiatanModel = new \App\Models\LogKegiatanHarian();
+        $remunerasiModel = new \App\Models\Remunerasi();
+
+        // 1. Hapus Log Kegiatan Harian berdasarkan user_id, bulan, dan tahun
+        $logKegiatanModel->where('user_id', $userId)
+                         ->where('MONTH(tanggal_kegiatan)', $bulan)
+                         ->where('YEAR(tanggal_kegiatan)', $tahun)
+                         ->delete();
+
+        // 2. Hapus Target Kinerja Bulanan (laporan_harian)
+        if (!empty($targetIds)) {
+            $laporanHarianModel->whereIn('id', $targetIds)->delete();
+        }
+
+        // 3. Hapus Nilai Rekap Remunerasi
+        $remunerasiModel->where('user_id', $userId)
+                        ->where('bulan', $bulan)
+                        ->where('tahun', $tahun)
+                        ->delete();
+
+        // Audit Log
+        if (function_exists('log_audit')) {
+            log_audit('DELETE', 'reset_kinerja', $userId, null, ['bulan' => $bulan, 'tahun' => $tahun]);
+        }
+
+        return redirect()->back()->with('success', "Seluruh Data Kinerja (Target, Log Harian, dan Rekap Nilai) untuk bulan $bulan tahun $tahun berhasil dihapus permanen.");
+    }
 }
