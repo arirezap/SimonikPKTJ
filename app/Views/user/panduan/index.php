@@ -48,12 +48,20 @@ Panduan Penggunaan ECC Laporan Kinerja
 <div class="row">
     <div class="col-lg-10 mx-auto">
         <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header card-header-professional py-3">
-                <i class="bi bi-book-half me-2"></i> Petunjuk Penggunaan ECC Laporan Kinerja
+            <div class="card-header card-header-professional py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="fw-bold text-dark fs-6">
+                    <i class="bi bi-book-half me-2 text-primary"></i> Petunjuk Penggunaan ECC Laporan Kinerja
+                </div>
+                <div>
+                    <a href="<?= base_url('assets/docs/Panduan_Penggunaan_ECC_Laporan_Kinerja.pdf') ?>" class="btn btn-danger btn-sm rounded-pill px-3 fw-bold shadow-sm" download>
+                        <i class="bi bi-file-earmark-pdf-fill me-1"></i> Unduh PDF
+                    </a>
+                </div>
             </div>
             <div class="card-body p-4">
+
                 <p class="text-muted mb-4">
-                    Dokumen ini berisi panduan standar operasional untuk pelaporan dan penilaian kinerja bulanan pada aplikasi ECC Laporan Kinerja. Proses pelaporan kinerja terdiri dari tiga tahapan utama: penyusunan target, pelaporan kegiatan harian, dan proses penilaian oleh atasan.
+                    Dokumen ini berisi panduan penggunaan untuk pelaporan dan penilaian kinerja bulanan pada aplikasi ECC Laporan Kinerja. Proses pelaporan kinerja terdiri dari tiga tahapan utama: penyusunan target, pelaporan kegiatan harian, dan proses penilaian oleh atasan.
                 </p>
 
                 <div class="accordion" id="accordionPanduan">
