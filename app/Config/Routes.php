@@ -197,6 +197,9 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('penilaian-kinerja/store', 'User\PenilaianKinerjaController::store');
     $routes->get('penilaian-kinerja/api-chart', 'User\PenilaianKinerjaController::getChartDataApi');
 
+    // --- Panduan Penggunaan ---
+    $routes->get('panduan', 'User\PanduanController::index');
+
 });
 
 // ECC Routes

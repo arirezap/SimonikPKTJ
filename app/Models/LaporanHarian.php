@@ -22,7 +22,8 @@ class LaporanHarian extends Model
         'target_bulanan',
         'satuan',
         'status_approval',
-        'nilai_capaian'
+        'nilai_capaian',
+        'status_penilaian'
     ];
 
     // Dates

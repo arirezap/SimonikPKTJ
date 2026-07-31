@@ -64,11 +64,15 @@ class LogKegiatanController extends BaseController
             }
         }
 
+        $logTambahanModel = new \App\Models\LogTugasTambahan();
+        $rekapDataTambahan = $logTambahanModel->getLogByDate($userId, $tanggalTerpilih);
+
         $data = [
             'title' => 'Lapor Kegiatan Harian',
             'tanggal_terpilih' => $tanggalTerpilih,
             'daftar_target' => $daftarTarget,
             'rekap_data' => $rekapData,
+            'rekap_data_tambahan' => $rekapDataTambahan,
             'is_locked' => $isLocked,
             'target_status' => $targetStatus
         ];
@@ -226,21 +230,73 @@ class LogKegiatanController extends BaseController
             }
         }
 
+        // --- OLAP SIMULTAN UNTUK TUGAS TAMBAHAN ---
+        $logTambahanModel = new \App\Models\LogTugasTambahan();
+        $log_tambahan_ids = $this->request->getPost('log_tambahan_id');
+        $deskripsi_kegiatan_tambahan_arr = $this->request->getPost('deskripsi_kegiatan_tambahan');
+        $jumlah_capaian_tambahan_arr = $this->request->getPost('jumlah_capaian_tambahan');
+        $satuan_tambahan_arr = $this->request->getPost('satuan_tambahan');
+        $link_bukti_tambahan_arr = $this->request->getPost('link_bukti_tambahan');
+
+        $dataTambahanToUpdate = [];
+        $dataTambahanToInsert = [];
+
+        if ($deskripsi_kegiatan_tambahan_arr) {
+            foreach ($deskripsi_kegiatan_tambahan_arr as $index => $deskripsiTmb) {
+                if (empty($deskripsiTmb)) continue;
+
+                $rowTmbData = [
+                    'user_id'            => $userId,
+                    'tanggal_kegiatan'   => $tanggal,
+                    'deskripsi_kegiatan' => $deskripsiTmb,
+                    'jumlah_capaian'     => !empty($jumlah_capaian_tambahan_arr[$index]) ? (float)$jumlah_capaian_tambahan_arr[$index] : 1.00,
+                    'satuan'             => !empty($satuan_tambahan_arr[$index]) ? $satuan_tambahan_arr[$index] : 'Kegiatan',
+                    'link_bukti'         => !empty($link_bukti_tambahan_arr[$index]) ? $link_bukti_tambahan_arr[$index] : null,
+                    'status'             => $status,
+                    'status_approval'    => 'menunggu_persetujuan'
+                ];
+
+                if (!empty($log_tambahan_ids[$index])) {
+                    $rowTmbData['id'] = $log_tambahan_ids[$index];
+                    $dataTambahanToUpdate[] = $rowTmbData;
+                } else {
+                    $dataTambahanToInsert[$index] = $rowTmbData;
+                }
+            }
+        }
+
+        $insertedTambahanIds = [];
+        if (!empty($dataTambahanToUpdate)) {
+            $logTambahanModel->updateBatch($dataTambahanToUpdate, 'id');
+        }
+        if (!empty($dataTambahanToInsert)) {
+            foreach ($dataTambahanToInsert as $origIndex => $insertRow) {
+                $logTambahanModel->insert($insertRow);
+                $insertedTambahanIds[$origIndex] = $logTambahanModel->getInsertID();
+            }
+        }
+
         if ($this->request->isAJAX()) {
             return $this->response->setJSON([
                 'success' => true,
-                'message' => 'Kegiatan harian berhasil disimpan sementara.',
+                'message' => 'Laporan harian & tugas tambahan berhasil disimpan sementara.',
                 'new_ids' => $insertedIds,
+                'new_tambahan_ids' => $insertedTambahanIds,
                 'csrf_hash' => csrf_hash()
             ]);
         }
 
-        // Jika submit normal (Simpan & Kirim), pastikan semua data pada tanggal ini (termasuk yang tidak ikut dalam loop POST karena sudah terkirim) diubah jadi terkirim.
+        // Jika submit normal (Simpan & Kirim), ubah status semua log tanggal ini menjadi terkirim
         if (!$this->request->isAJAX()) {
             $logModel->where('user_id', $userId)
                      ->where('tanggal_kegiatan', $tanggal)
                      ->set(['status' => 'terkirim'])
                      ->update();
+
+            $logTambahanModel->where('user_id', $userId)
+                             ->where('tanggal_kegiatan', $tanggal)
+                             ->set(['status' => 'terkirim'])
+                             ->update();
                      
             $user = (new \App\Models\User())->find($userId);
             if ($user && !empty($user['atasan_id'])) {
@@ -255,12 +311,105 @@ class LogKegiatanController extends BaseController
         }
 
         return redirect()->to('/log-kegiatan')
-                         ->with('success', 'Kegiatan harian berhasil dikirim.');
+                         ->with('success', 'Laporan harian dan tugas tambahan berhasil dikirim.');
     }
     
     public function hapus()
     {
         // Pegawai tidak diizinkan menghapus log yang sudah tersimpan
         return $this->response->setJSON(['success' => false, 'message' => 'Laporan yang sudah disimpan tidak dapat dihapus.']);
+    }
+
+    public function storeTugasTambahan()
+    {
+        $userId = session()->get('id') ?? session()->get('user_id');
+        
+        $rules = [
+            'tanggal'              => 'required',
+            'deskripsi_kegiatan_tambahan.*' => 'required',
+            'link_bukti_tambahan.*'         => 'required|valid_url',
+        ];
+
+        if (!$this->validate($rules)) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Gagal menyimpan. Pastikan semua form tugas tambahan terisi dengan benar (URL Bukti Pekerjaan harus valid).',
+                    'csrf_hash' => csrf_hash()
+                ]);
+            }
+            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan. Pastikan semua form tugas tambahan terisi dengan benar (URL Bukti Pekerjaan harus valid).');
+        }
+
+        $logTambahanModel = new \App\Models\LogTugasTambahan();
+        $tanggal = $this->request->getPost('tanggal');
+        $status = $this->request->isAJAX() ? 'draft' : 'terkirim';
+
+        $log_ids = $this->request->getPost('log_tambahan_id');
+        $deskripsi_kegiatan_arr = $this->request->getPost('deskripsi_kegiatan_tambahan');
+        $link_bukti_arr = $this->request->getPost('link_bukti_tambahan');
+
+        $dataToUpdate = [];
+        $dataToInsert = [];
+
+        if ($deskripsi_kegiatan_arr) {
+            foreach ($deskripsi_kegiatan_arr as $index => $deskripsi) {
+                if (empty($deskripsi)) continue;
+
+                $rowData = [
+                    'user_id'            => $userId,
+                    'tanggal_kegiatan'   => $tanggal,
+                    'deskripsi_kegiatan' => $deskripsi,
+                    'link_bukti'         => $link_bukti_arr[$index] ?? '',
+                    'status'             => $status,
+                    'status_approval'    => 'menunggu_persetujuan'
+                ];
+
+                if (!empty($log_ids[$index])) {
+                    $rowData['id'] = $log_ids[$index];
+                    $dataToUpdate[] = $rowData;
+                } else {
+                    $dataToInsert[$index] = $rowData;
+                }
+            }
+        }
+
+        $insertedIds = [];
+        if (!empty($dataToUpdate)) {
+            $logTambahanModel->updateBatch($dataToUpdate, 'id');
+        }
+        if (!empty($dataToInsert)) {
+            foreach ($dataToInsert as $origIndex => $insertRow) {
+                $logTambahanModel->insert($insertRow);
+                $insertedIds[$origIndex] = $logTambahanModel->getInsertID();
+            }
+        }
+
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Data tugas tambahan berhasil disimpan sementara.',
+                'new_ids' => $insertedIds,
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        return redirect()->to('/log-kegiatan')->with('success', 'Tugas Tambahan berhasil disimpan dan dikirim.');
+    }
+
+    public function hapusTugasTambahan()
+    {
+        $id = $this->request->getPost('id');
+        if ($id) {
+            $logTambahanModel = new \App\Models\LogTugasTambahan();
+            $userId = session()->get('id') ?? session()->get('user_id');
+            $row = $logTambahanModel->find($id);
+            // Boleh hapus asalkan belum disetujui atasan (jika mau) atau statusnya draft
+            if ($row && $row['user_id'] == $userId) {
+                $logTambahanModel->delete($id);
+                return $this->response->setJSON(['success' => true, 'csrf_hash' => csrf_hash()]);
+            }
+        }
+        return $this->response->setJSON(['success' => false, 'message' => 'Gagal menghapus.', 'csrf_hash' => csrf_hash()]);
     }
 }

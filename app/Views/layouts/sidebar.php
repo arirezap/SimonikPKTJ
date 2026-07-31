@@ -135,6 +135,12 @@ $isKepegawaian = hasRole('kepegawaian');
                 </a>
             </li>
 
+            <li class="nav-item">
+                <a class="nav-link <?= str_starts_with($current_uri, 'panduan') ? 'active' : '' ?>" href="<?= site_url('panduan') ?>">
+                    <i class="bi bi-book-half"></i><span>Panduan Penggunaan</span>
+                </a>
+            </li>
+
             <?php if (false && $isAdmin): // Disembunyikan sementara ?>
                 <li class="nav-item">
                     <a class="nav-link <?= $isAkademikActive ? 'active' : 'collapsed' ?>" href="#akademikSubmenu" role="button" data-bs-toggle="collapse">
