@@ -46,8 +46,8 @@ class LaporanHarianController extends BaseController
                                   ->where('tahun', $tahunTerpilih)
                                   ->findAll();
 
-        // Cek apakah user punya staf/staf
-        $isSuper = hasAnyRole(['admin', 'direktur', 'wadir']);
+        // Cek apakah user punya staf/staf (Hanya Admin yang punya opsi lihat semua)
+        $isSuper = hasAnyRole(['admin']);
         if ($isSuper) {
             $daftarStaf = $userModel->where('id !=', $userId)->orderBy('nama_lengkap', 'ASC')->findAll();
             $isAtasan = true;

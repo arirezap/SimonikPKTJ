@@ -52,9 +52,9 @@ class PenilaianKinerjaController extends BaseController
         $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
         $role = session()->get('role');
-        $isSuper = hasAnyRole(['admin', 'direktur', 'wadir']);
+        $isSuper = hasAnyRole(['admin']);
 
-        // Ambil daftar unit kerja untuk filter (Hanya untuk Super)
+        // Ambil daftar unit kerja untuk filter (Hanya untuk Admin Utama)
         $daftarUnit = [];
         if ($isSuper) {
             $units = $userModel->select('unit')->distinct()->where('unit !=', null)->where('unit !=', '')->orderBy('unit', 'ASC')->findAll();
@@ -63,7 +63,7 @@ class PenilaianKinerjaController extends BaseController
             }
         }
 
-        // Cek apakah user punya staf atau punya akses penuh
+        // Cek apakah user punya staf atau punya akses penuh admin
         if ($isSuper) {
             $builder = $userModel->where('id !=', $userId);
             if (!empty($unitKerjaTerpilih)) {
