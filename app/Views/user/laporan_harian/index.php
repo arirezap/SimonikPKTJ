@@ -176,29 +176,31 @@ Target Kinerja Bulanan
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php if (!empty($rekap_data_sendiri)): ?>
+                                 <?php if (!empty($rekap_data_sendiri)): ?>
                                     <?php foreach ($rekap_data_sendiri as $index => $row): ?>
                                         <?php $isRowLocked = $is_locked || $row['status_approval'] === 'disetujui'; ?>
                                         <tr>
                                             <input type="hidden" name="laporan_id[]" value="<?= esc($row['id']) ?>">
                                             <td class="nomor-baris text-center fw-bold"><?= $index + 1 ?></td>
                                             <td>
-                                                <textarea name="sasaran_program[]" class="form-control" rows="2" required <?= $isRowLocked ? 'readonly' : '' ?>><?= esc($row['sasaran_program']) ?></textarea>
+                                                <textarea name="sasaran_program[]" class="form-control" rows="2" placeholder="Sasaran Program Unit..." <?= $isRowLocked ? 'readonly' : '' ?>><?= esc($row['sasaran_program']) ?></textarea>
                                             </td>
                                             <td>
-                                                <textarea name="indikator_kinerja[]" class="form-control" rows="2" required <?= $isRowLocked ? 'readonly' : '' ?>><?= esc($row['indikator_kinerja']) ?></textarea>
+                                                <textarea name="indikator_kinerja[]" class="form-control" rows="2" placeholder="Indikator / RHK..." <?= $isRowLocked ? 'readonly' : '' ?>><?= esc($row['indikator_kinerja']) ?></textarea>
                                             </td>
                                             <td>
-                                                <input type="number" step="0.01" name="target_bulanan[]" class="form-control text-center" value="<?= (float)$row['target_bulanan'] ?>" required <?= $isRowLocked ? 'readonly' : '' ?>>
+                                                <input type="number" step="0.01" name="target_bulanan[]" class="form-control text-center" placeholder="Target" value="<?= isset($row['target_bulanan']) && $row['target_bulanan'] !== null ? (float)$row['target_bulanan'] : '' ?>" <?= $isRowLocked ? 'readonly' : '' ?>>
                                             </td>
                                             <td>
-                                                <input type="text" name="satuan[]" class="form-control text-center" value="<?= esc($row['satuan']) ?>" required <?= $isRowLocked ? 'readonly' : '' ?>>
+                                                <input type="text" name="satuan[]" class="form-control text-center" placeholder="Satuan" value="<?= esc($row['satuan']) ?>" <?= $isRowLocked ? 'readonly' : '' ?>>
                                             </td>
                                             <td class="text-center">
                                                 <?php if($row['status_approval'] === 'disetujui'): ?>
                                                     <span class="badge bg-success status-badge"><i class="bi bi-check-circle"></i> Disetujui</span>
-                                                <?php else: ?>
+                                                <?php elseif(($row['status'] ?? '') === 'terkirim'): ?>
                                                     <span class="badge bg-warning text-dark status-badge"><i class="bi bi-hourglass-split"></i> Menunggu Persetujuan</span>
+                                                <?php else: ?>
+                                                    <span class="badge bg-secondary status-badge"><i class="bi bi-pencil"></i> Draf (Simpan Sementara)</span>
                                                 <?php endif; ?>
                                             </td>
                                             <td class="text-center">
@@ -213,11 +215,11 @@ Target Kinerja Bulanan
                                     <tr>
                                         <input type="hidden" name="laporan_id[]" value="">
                                         <td class="nomor-baris text-center fw-bold">1</td>
-                                        <td><textarea name="sasaran_program[]" class="form-control" rows="2" required></textarea></td>
-                                        <td><textarea name="indikator_kinerja[]" class="form-control" rows="2" required></textarea></td>
-                                        <td><input type="number" step="0.01" name="target_bulanan[]" class="form-control text-center" required></td>
-                                        <td><input type="text" name="satuan[]" class="form-control text-center" required></td>
-                                        <td class="text-center"><span class="badge bg-secondary status-badge">Baru</span></td>
+                                        <td><textarea name="sasaran_program[]" class="form-control" rows="2" placeholder="Sasaran Program Unit..."></textarea></td>
+                                        <td><textarea name="indikator_kinerja[]" class="form-control" rows="2" placeholder="Indikator / RHK..."></textarea></td>
+                                        <td><input type="number" step="0.01" name="target_bulanan[]" class="form-control text-center" placeholder="Target"></td>
+                                        <td><input type="text" name="satuan[]" class="form-control text-center" placeholder="Satuan"></td>
+                                        <td class="text-center"><span class="badge bg-secondary status-badge"><i class="bi bi-pencil"></i> Baru (Draf)</span></td>
                                         <td class="text-center">
                                             <button type="button" class="btn btn-outline-danger btn-sm hapus-baris" data-id="" title="Hapus"><i class="bi bi-trash"></i></button>
                                         </td>
@@ -470,45 +472,63 @@ Target Kinerja Bulanan
             }
         });
 
+        // Validasi saat submit "Simpan & Kirim" (Form submit biasa)
+        $('.form-target-sendiri').on('submit', function(e) {
+            let isValid = true;
+            let hasAtLeastOne = false;
+
+            $(this).find('.tabel-target tbody tr').each(function() {
+                let sasaran = $(this).find('textarea[name="sasaran_program[]"]').val().trim();
+                let indikator = $(this).find('textarea[name="indikator_kinerja[]"]').val().trim();
+                let target = $(this).find('input[name="target_bulanan[]"]').val().trim();
+                let satuan = $(this).find('input[name="satuan[]"]').val().trim();
+
+                // Jika seluruh kolom di baris ini terisi
+                if (sasaran !== '' || indikator !== '' || target !== '' || satuan !== '') {
+                    hasAtLeastOne = true;
+                    if (sasaran === '' || indikator === '' || target === '' || satuan === '') {
+                        isValid = false;
+                    }
+                }
+            });
+
+            if (!hasAtLeastOne) {
+                e.preventDefault();
+                alert('Silakan isi minimal satu rincian target kinerja sebelum mengirim ke atasan langsung.');
+                return false;
+            }
+
+            if (!isValid) {
+                e.preventDefault();
+                alert('Untuk mengirim target ke atasan langsung, pastikan semua kolom (Sasaran, Indikator, Target, Satuan) pada setiap baris terisi dengan lengkap.');
+                return false;
+            }
+        });
+
         // Fungsi Simpan Sementara (AJAX)
         $('#btnSimpanSementara').on('click', function() {
             let btn = $(this);
             let originalText = btn.html();
-            
-            // Validasi sederhana: pastikan tidak ada yang kosong
-            let isValid = true;
-            $('.form-target-sendiri input[required], .form-target-sendiri textarea[required]').each(function() {
-                if ($(this).val().trim() === '') {
-                    isValid = false;
-                }
-            });
-
-            if (!isValid) {
-                alert('Harap isi semua kolom wajib sebelum menyimpan sementara.');
-                return;
-            }
+            let form = $('.form-target-sendiri');
 
             btn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menyimpan...').prop('disabled', true);
             
             $.ajax({
                 url: '<?= site_url('laporan-harian/store') ?>',
                 type: 'POST',
-                data: $('.form-target-sendiri').serialize(),
+                data: form.serialize() + '&action=draft',
                 dataType: 'json',
                 success: function(response) {
-                    // Perbarui token CSRF di form agar terhindar dari error 403
                     if (response.csrf_hash) {
                         $('input[name="<?= csrf_token() ?>"]').val(response.csrf_hash);
                     }
 
                     if (response.success) {
-                        btn.html('<i class="bi bi-check-lg me-2"></i> Tersimpan').removeClass('btn-outline-primary').addClass('btn-outline-success');
+                        btn.html('<i class="bi bi-check-lg me-2"></i> Tersimpan Draf').removeClass('btn-outline-primary').addClass('btn-outline-success');
                         
-                        // Update hidden laporan_id for newly inserted rows
                         if (response.new_ids) {
                             for (let index in response.new_ids) {
-                                // Find the hidden input at the given index
-                                $('.form-target-sendiri input[name="laporan_id[]"]').eq(index).val(response.new_ids[index]);
+                                form.find('input[name="laporan_id[]"]').eq(index).val(response.new_ids[index]);
                             }
                         }
                         

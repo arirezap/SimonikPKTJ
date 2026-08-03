@@ -116,23 +116,29 @@ class LogKegiatanController extends BaseController
             }
         }
 
-        $rules = [
-            'tanggal'              => 'required',
-            'target_id.*'          => 'required|numeric',
-            'deskripsi_kegiatan.*' => 'required',
-            'jumlah_capaian.*'     => 'required|numeric',
-            'link_bukti.*'         => 'required|valid_url',
-        ];
+        $isDraft = $this->request->isAJAX() || $this->request->getPost('action') === 'draft';
+        $status = $isDraft ? 'draft' : 'terkirim';
 
-        if (!$this->validate($rules)) {
-            if ($this->request->isAJAX()) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'Gagal menyimpan. Pastikan semua form terisi dengan benar (URL Bukti Pekerjaan harus valid).',
-                    'csrf_hash' => csrf_hash()
-                ]);
+        // Lakukan validasi ketat HANYA saat Simpan & Kirim (Bukan Draft)
+        if (!$isDraft) {
+            $rules = [
+                'tanggal'              => 'required',
+                'target_id.*'          => 'required|numeric',
+                'deskripsi_kegiatan.*' => 'required',
+                'jumlah_capaian.*'     => 'required|numeric',
+                'link_bukti.*'         => 'required|valid_url',
+            ];
+
+            if (!$this->validate($rules)) {
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'Gagal mengirim. Pastikan semua form terisi dengan lengkap (URL Bukti Pekerjaan harus valid).',
+                        'csrf_hash' => csrf_hash()
+                    ]);
+                }
+                return redirect()->back()->withInput()->with('error', 'Gagal mengirim. Pastikan semua form terisi dengan lengkap (URL Bukti Pekerjaan harus valid).');
             }
-            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan. Pastikan semua form terisi dengan benar (URL Bukti Pekerjaan harus valid).');
         }
 
         $logModel = new LogKegiatanHarian();
@@ -149,16 +155,19 @@ class LogKegiatanController extends BaseController
             }
         }
 
-        // Tentukan status berdasarkan jenis submit
-        $status = $this->request->isAJAX() ? 'draft' : 'terkirim';
-
         // Khusus untuk submit "Simpan & Kirim" yang mungkin tidak mengirim data baru, tapi hanya mengupdate status yang sudah ada (draft -> terkirim)
-        if (!$this->request->isAJAX() && empty($this->request->getPost('target_id'))) {
+        if (!$isDraft && empty($this->request->getPost('target_id'))) {
             if (!empty($existingData)) {
                 $logModel->where('user_id', $userId)
                          ->where('tanggal_kegiatan', $tanggal)
                          ->set(['status' => 'terkirim'])
                          ->update();
+
+                $logTambahanModel = new \App\Models\LogTugasTambahan();
+                $logTambahanModel->where('user_id', $userId)
+                                 ->where('tanggal_kegiatan', $tanggal)
+                                 ->set(['status' => 'terkirim'])
+                                 ->update();
                          
                 $user = (new \App\Models\User())->find($userId);
                 if ($user && !empty($user['atasan_id'])) {

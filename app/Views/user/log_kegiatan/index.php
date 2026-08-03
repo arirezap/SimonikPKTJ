@@ -190,7 +190,7 @@ Lapor Kegiatan Harian
                                 <input type="hidden" name="log_id[]" value="">
                                 <td class="nomor-baris text-center fw-bold">1</td>
                                 <td>
-                                    <select name="target_id[]" class="form-select" required>
+                                    <select name="target_id[]" class="form-select">
                                         <option value="">-- Pilih Target / RHK --</option>
                                         <?php foreach($daftar_target as $target): ?>
                                             <?php $labelTarget = esc($target['indikator_kinerja']) . ' (' . str_replace('.', ',', (float)$target['target_bulanan']) . ' ' . esc($target['satuan']) . ')'; ?>
@@ -199,16 +199,16 @@ Lapor Kegiatan Harian
                                     </select>
                                 </td>
                                 <td>
-                                    <textarea name="deskripsi_kegiatan[]" class="form-control" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..." required></textarea>
+                                    <textarea name="deskripsi_kegiatan[]" class="form-control" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..."></textarea>
                                 </td>
                                 <td>
                                     <div class="input-group">
-                                        <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control text-center" placeholder="Angka" required>
+                                        <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control text-center" placeholder="Angka">
                                         <span class="input-group-text">-</span>
                                     </div>
                                 </td>
                                 <td>
-                                    <input type="url" name="link_bukti[]" class="form-control" placeholder="https://..." required>
+                                    <input type="url" name="link_bukti[]" class="form-control" placeholder="https://...">
                                 </td>
                                 <td class="text-center">
                                     <button type="button" class="btn btn-outline-danger btn-sm hapus-baris" title="Hapus baris baru"><i class="bi bi-trash"></i></button>
@@ -374,7 +374,7 @@ Lapor Kegiatan Harian
                     <input type="hidden" name="log_id[]" value="">
                     <td class="nomor-baris text-center fw-bold">1</td>
                     <td>
-                        <select name="target_id[]" class="form-select" required>
+                        <select name="target_id[]" class="form-select">
                             <option value="">-- Pilih Target / RHK --</option>
                             <?php foreach($daftar_target as $target): ?>
                                 <?php $labelTarget = esc($target['indikator_kinerja']) . ' (' . str_replace('.', ',', (float)$target['target_bulanan']) . ' ' . esc($target['satuan']) . ')'; ?>
@@ -383,16 +383,16 @@ Lapor Kegiatan Harian
                         </select>
                     </td>
                     <td>
-                        <textarea name="deskripsi_kegiatan[]" class="form-control" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..." required></textarea>
+                        <textarea name="deskripsi_kegiatan[]" class="form-control" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..."></textarea>
                     </td>
                     <td>
                         <div class="input-group">
-                            <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control text-center" placeholder="Angka" required>
+                            <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control text-center" placeholder="Angka">
                             <span class="input-group-text">-</span>
                         </div>
                     </td>
                     <td>
-                        <input type="url" name="link_bukti[]" class="form-control" placeholder="https://..." required>
+                        <input type="url" name="link_bukti[]" class="form-control" placeholder="https://...">
                     </td>
                     <td class="text-center">
                         <button type="button" class="btn btn-outline-danger btn-sm hapus-baris" title="Hapus baris"><i class="bi bi-trash"></i></button>
@@ -534,29 +534,55 @@ Lapor Kegiatan Harian
 
         updateDropdownOptions();
 
+        // Validasi Form saat klik "Simpan & Kirim Laporan Harian" (Form Submit Normal)
+        $('#formLog').on('submit', function(e) {
+            let isValid = true;
+            let hasAtLeastOne = false;
+
+            $('#formLog tr.row-tugas-pokok').each(function() {
+                let targetId = $(this).find('select[name="target_id[]"]').val();
+                let deskripsi = $(this).find('textarea[name="deskripsi_kegiatan[]"]').val();
+                let capaian = $(this).find('input[name="jumlah_capaian[]"]').val();
+                let link = $(this).find('input[name="link_bukti[]"]').val();
+
+                if (targetId) targetId = targetId.trim();
+                if (deskripsi) deskripsi = deskripsi.trim();
+                if (capaian) capaian = capaian.trim();
+                if (link) link = link.trim();
+
+                // Jika salah satu kolom di baris ini terisi
+                if (targetId || deskripsi || capaian || link) {
+                    hasAtLeastOne = true;
+                    if (!targetId || !deskripsi || capaian === '' || !link) {
+                        isValid = false;
+                    }
+                }
+            });
+
+            if (!hasAtLeastOne) {
+                e.preventDefault();
+                Swal.fire('Peringatan', 'Silakan isi minimal satu kegiatan harian pada Tugas Pokok sebelum mengirim ke atasan langsung.', 'warning');
+                return false;
+            }
+
+            if (!isValid) {
+                e.preventDefault();
+                Swal.fire('Peringatan', 'Untuk mengirim laporan harian ke atasan langsung, pastikan Target RHK, Deskripsi Kegiatan, Jumlah Capaian, dan Link Bukti Pekerjaan pada Tugas Pokok terisi dengan lengkap.', 'warning');
+                return false;
+            }
+        });
+
         // Single Unified Submit "Simpan Sementara" (AJAX)
         $('#btnSimpanSementara').on('click', function() {
             let btn = $(this);
             let originalText = btn.html();
             
-            let isValid = true;
-            $('#formLog tr.row-tugas-pokok input[required], #formLog tr.row-tugas-pokok textarea[required], #formLog tr.row-tugas-pokok select[required]').each(function() {
-                if ($(this).val().trim() === '') {
-                    isValid = false;
-                }
-            });
-
-            if (!isValid) {
-                Swal.fire('Peringatan', 'Harap isi semua kolom wajib pada tugas pokok sebelum menyimpan sementara.', 'warning');
-                return;
-            }
-
             btn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menyimpan...').prop('disabled', true);
             
             $.ajax({
                 url: '<?= site_url('log-kegiatan/store') ?>',
                 type: 'POST',
-                data: $('#formLog').serialize(),
+                data: $('#formLog').serialize() + '&action=draft',
                 dataType: 'json',
                 success: function(response) {
                     if (response.csrf_hash) {
@@ -564,7 +590,7 @@ Lapor Kegiatan Harian
                     }
 
                     if (response.success) {
-                        btn.html('<i class="bi bi-check-lg me-2"></i> Tersimpan').removeClass('btn-outline-primary').addClass('btn-outline-success');
+                        btn.html('<i class="bi bi-check-lg me-2"></i> Tersimpan Draf').removeClass('btn-outline-primary').addClass('btn-outline-success');
                         
                         if (response.new_ids) {
                             let i = 0;
@@ -592,7 +618,7 @@ Lapor Kegiatan Harian
                         
                         Swal.fire({
                             icon: 'success',
-                            title: 'Tersimpan',
+                            title: 'Tersimpan Draf',
                             text: response.message || 'Laporan harian & tugas tambahan berhasil disimpan sementara.',
                             timer: 2000,
                             showConfirmButton: false

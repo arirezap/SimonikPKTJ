@@ -39,14 +39,18 @@ class LogKegiatanHarian extends Model
                     ->findAll();
     }
 
-    public function getLogByMonth($userId, $bulan, $tahun)
+    public function getLogByMonth($userId, $bulan, $tahun, $onlySubmitted = false)
     {
-        return $this->select('log_kegiatan_harian.*, laporan_harian.sasaran_program, laporan_harian.indikator_kinerja, laporan_harian.target_bulanan, laporan_harian.satuan')
+        $builder = $this->select('log_kegiatan_harian.*, laporan_harian.sasaran_program, laporan_harian.indikator_kinerja, laporan_harian.target_bulanan, laporan_harian.satuan')
                     ->join('laporan_harian', 'laporan_harian.id = log_kegiatan_harian.target_id')
                     ->where('log_kegiatan_harian.user_id', $userId)
                     ->where('MONTH(log_kegiatan_harian.tanggal_kegiatan)', $bulan)
-                    ->where('YEAR(log_kegiatan_harian.tanggal_kegiatan)', $tahun)
-                    ->orderBy('log_kegiatan_harian.tanggal_kegiatan', 'ASC')
-                    ->findAll();
+                    ->where('YEAR(log_kegiatan_harian.tanggal_kegiatan)', $tahun);
+
+        if ($onlySubmitted) {
+            $builder->where('log_kegiatan_harian.status', 'terkirim');
+        }
+
+        return $builder->orderBy('log_kegiatan_harian.tanggal_kegiatan', 'ASC')->findAll();
     }
 }

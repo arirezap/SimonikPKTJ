@@ -72,6 +72,7 @@ class LaporanHarianController extends BaseController
                 $rekapDataStaf = $laporanModel->where('user_id', $stafIdTerpilih)
                                               ->where('bulan', $bulanTerpilih)
                                               ->where('tahun', $tahunTerpilih)
+                                              ->where('status', 'terkirim')
                                               ->findAll();
             } else {
                 $stafIdTerpilih = ''; 
@@ -118,27 +119,6 @@ class LaporanHarianController extends BaseController
     public function store()
     {
         $userId = session()->get('id') ?? session()->get('user_id');
-
-        $rules = [
-            'bulan'               => 'required|numeric',
-            'tahun'               => 'required|numeric',
-            'sasaran_program.*'   => 'required',
-            'indikator_kinerja.*' => 'required',
-            'target_bulanan.*'    => 'required|numeric',
-            'satuan.*'            => 'required',
-        ];
-
-        if (!$this->validate($rules)) {
-            if ($this->request->isAJAX()) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'Pastikan semua kolom terisi dengan benar (target harus angka).',
-                    'csrf_hash' => csrf_hash()
-                ]);
-            }
-            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan. Pastikan semua kolom terisi dengan benar (target harus angka).');
-        }
-
         $laporanModel = new LaporanHarian();
 
         $bulan = $this->request->getPost('bulan');
@@ -146,6 +126,8 @@ class LaporanHarianController extends BaseController
         
         $isEditingStaf = $this->request->getPost('is_editing_staf') == '1';
         $targetUserId = $isEditingStaf ? $this->request->getPost('staf_id') : $userId;
+        $isDraft = $this->request->isAJAX() || $this->request->getPost('action') === 'draft';
+        $targetStatus = $isDraft ? 'draft' : 'terkirim';
 
         // Validasi Kunci Waktu HANYA jika yang edit adalah staf itu sendiri
         if (!$isEditingStaf) {
@@ -163,6 +145,29 @@ class LaporanHarianController extends BaseController
             }
         }
 
+        // Jika Simpan & Kirim (Bukan Draft), lakukan validasi ketat
+        if (!$isDraft) {
+            $rules = [
+                'bulan'               => 'required|numeric',
+                'tahun'               => 'required|numeric',
+                'sasaran_program.*'   => 'required',
+                'indikator_kinerja.*' => 'required',
+                'target_bulanan.*'    => 'required|numeric',
+                'satuan.*'            => 'required',
+            ];
+
+            if (!$this->validate($rules)) {
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'Gagal mengirim. Pastikan semua kolom target terisi dengan lengkap.',
+                        'csrf_hash' => csrf_hash()
+                    ]);
+                }
+                return redirect()->back()->withInput()->with('error', 'Gagal mengirim. Pastikan semua kolom target terisi dengan lengkap.');
+            }
+        }
+
         $laporan_ids = $this->request->getPost('laporan_id');
         $sasaran_program_arr = $this->request->getPost('sasaran_program');
         $indikator_kinerja_arr = $this->request->getPost('indikator_kinerja');
@@ -172,12 +177,19 @@ class LaporanHarianController extends BaseController
         $dataToUpdate = [];
         $dataToInsert = [];
         
-        // Jika diedit oleh atasan, langsung jadi disetujui
+        // Jika diedit oleh atasan, langsung jadi disetujui & terkirim
         $status_approval = $isEditingStaf ? 'disetujui' : 'menunggu_persetujuan';
 
         if ($sasaran_program_arr) {
             foreach ($sasaran_program_arr as $index => $sasaran) {
-                if (empty($sasaran)) continue;
+                $indikator = $indikator_kinerja_arr[$index] ?? '';
+                $targetVal = $target_bulanan_arr[$index] ?? '';
+                $satuanVal = $satuan_arr[$index] ?? '';
+
+                // Untuk draft, jika seluruh baris kosong, abaikan
+                if ($isDraft && empty($sasaran) && empty($indikator) && empty($targetVal) && empty($satuanVal)) {
+                    continue;
+                }
 
                 $rowData = [
                     'user_id'           => $targetUserId,
@@ -185,17 +197,18 @@ class LaporanHarianController extends BaseController
                     'bulan'             => $bulan,
                     'tahun'             => $tahun,
                     'sasaran_program'   => $sasaran,
-                    'indikator_kinerja' => $indikator_kinerja_arr[$index] ?? '',
-                    'target_bulanan'    => $target_bulanan_arr[$index] ?? 0,
-                    'satuan'            => $satuan_arr[$index] ?? '',
-                    'status_approval'   => $status_approval
+                    'indikator_kinerja' => $indikator,
+                    'target_bulanan'    => is_numeric($targetVal) ? (float)$targetVal : null,
+                    'satuan'            => $satuanVal,
+                    'status_approval'   => $status_approval,
+                    'status'            => $targetStatus
                 ];
 
                 if (!empty($laporan_ids[$index])) {
                     $rowData['id'] = $laporan_ids[$index];
                     $dataToUpdate[] = $rowData;
                 } else {
-                    $dataToInsert[$index] = $rowData; // Keep index for mapping
+                    $dataToInsert[$index] = $rowData;
                 }
             }
         }
@@ -211,6 +224,15 @@ class LaporanHarianController extends BaseController
             }
         }
 
+        // Jika Simpan & Kirim, update semua target bulan ini yang sebelumnya draf menjadi terkirim
+        if (!$isDraft) {
+            $laporanModel->where('user_id', $targetUserId)
+                         ->where('bulan', $bulan)
+                         ->where('tahun', $tahun)
+                         ->set(['status' => 'terkirim'])
+                         ->update();
+        }
+
         if ($this->request->isAJAX()) {
             return $this->response->setJSON([
                 'success' => true,
@@ -221,7 +243,7 @@ class LaporanHarianController extends BaseController
         }
 
         // Send notification to boss if staff is submitting
-        if (!$isEditingStaf) {
+        if (!$isEditingStaf && !$isDraft) {
             $user = (new \App\Models\User())->find($targetUserId);
             if ($user && !empty($user['atasan_id'])) {
                 helper('notification');
@@ -235,7 +257,7 @@ class LaporanHarianController extends BaseController
         }
 
         return redirect()->to('/laporan-harian')
-                         ->with('success', 'Target Bulanan berhasil disimpan.');
+                         ->with('success', $isDraft ? 'Target Bulanan berhasil disimpan sementara.' : 'Target Bulanan berhasil dikirim ke atasan langsung.');
     }
     
     public function approve()

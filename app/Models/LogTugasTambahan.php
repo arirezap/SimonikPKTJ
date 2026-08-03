@@ -39,12 +39,16 @@ class LogTugasTambahan extends Model
                     ->findAll();
     }
 
-    public function getLogByMonth($userId, $bulan, $tahun)
+    public function getLogByMonth($userId, $bulan, $tahun, $onlySubmitted = false)
     {
-        return $this->where('user_id', $userId)
-                    ->where('MONTH(tanggal_kegiatan)', $bulan)
-                    ->where('YEAR(tanggal_kegiatan)', $tahun)
-                    ->orderBy('tanggal_kegiatan', 'ASC')
-                    ->findAll();
+        $builder = $this->where('user_id', $userId)
+                        ->where('MONTH(tanggal_kegiatan)', $bulan)
+                        ->where('YEAR(tanggal_kegiatan)', $tahun);
+
+        if ($onlySubmitted) {
+            $builder->where('status', 'terkirim');
+        }
+
+        return $builder->orderBy('tanggal_kegiatan', 'ASC')->findAll();
     }
 }

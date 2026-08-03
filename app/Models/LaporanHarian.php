@@ -23,7 +23,8 @@ class LaporanHarian extends Model
         'satuan',
         'status_approval',
         'nilai_capaian',
-        'status_penilaian'
+        'status_penilaian',
+        'status'
     ];
 
     // Dates
@@ -32,12 +33,16 @@ class LaporanHarian extends Model
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
-    public function getTargetWithRealization($userId, $bulan, $tahun)
+    public function getTargetWithRealization($userId, $bulan, $tahun, $onlySubmitted = false)
     {
         $builder = $this->select('laporan_harian.*, IFNULL(SUM(log_kegiatan_harian.jumlah_capaian), 0) as total_realisasi')
                     ->join('log_kegiatan_harian', "log_kegiatan_harian.target_id = laporan_harian.id AND log_kegiatan_harian.status = 'terkirim'", 'left')
                     ->where('laporan_harian.user_id', $userId)
                     ->where('laporan_harian.tahun', $tahun);
+
+        if ($onlySubmitted) {
+            $builder->where('laporan_harian.status', 'terkirim');
+        }
 
         if ($bulan !== 'all' && $bulan !== '') {
             $builder->where('laporan_harian.bulan', $bulan);
