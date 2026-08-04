@@ -220,9 +220,13 @@ class PenilaianKinerjaController extends BaseController
         if ($statusPenilaian === 'terbit' && (!empty($dataToUpdate) || !empty($dataTambahanToUpdate))) {
             log_audit('APPROVE', 'laporan_harian/log_tugas_tambahan', 'batch_nilai', null, [$dataToUpdate, $dataTambahanToUpdate]);
             
-            $firstLaporan = $laporanModel->find($dataToUpdate[0]['id'] ?? ($dataTambahanToUpdate[0]['id'] ?? 0));
-            $targetUserId = $firstLaporan['user_id'] ?? session()->get('penilaian_staf_id');
-            if ($firstLaporan && $targetUserId != $userId) {
+            $targetUserId = session()->get('penilaian_staf_id');
+            if (!$targetUserId && !empty($dataToUpdate)) {
+                $firstLaporan = $laporanModel->find($dataToUpdate[0]['id']);
+                $targetUserId = $firstLaporan['user_id'] ?? null;
+            }
+
+            if (!empty($targetUserId) && $targetUserId != $userId) {
                 helper('notification');
                 send_notification(
                     $targetUserId,
@@ -236,7 +240,7 @@ class PenilaianKinerjaController extends BaseController
             $pesan = 'Penilaian kinerja berhasil disimpan sementara (Draf). Penilaian belum dipublikasikan ke staf.';
         }
 
-        return redirect()->to('/penilaian-kinerja')
+        return redirect()->to(site_url('penilaian-kinerja') . '#tab-penilaian-atasan')
                          ->with('success', $pesan);
     }
 
