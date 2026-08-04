@@ -418,50 +418,65 @@ Target Kinerja Bulanan
             });
         }
 
+        // Fungsi Reset Baris ke Kosong
+        function resetRowToEmpty(row) {
+            row.find('input[name="laporan_id[]"]').val('');
+            row.find('input[type="number"]').val('');
+            row.find('input[type="text"]').val('');
+            row.find('textarea').val('');
+            row.find('.status-badge').removeClass('bg-success bg-warning text-dark').addClass('bg-secondary').text('Draf');
+            row.find('.hapus-baris').attr('data-id', '');
+        }
+
         // Fungsi Hapus Baris
         $(document).on('click', '.hapus-baris', function() {
             const tabel = $(this).closest('tbody');
-            if (tabel.find('tr').length > 1) {
-                const idLaporan = $(this).attr('data-id');
-                const row = $(this).closest('tr');
+            const row = $(this).closest('tr');
+            // Ambil ID dari input hidden laporan_id[] ATAU dari data-id tombol
+            let idLaporan = row.find('input[name="laporan_id[]"]').val() || $(this).attr('data-id');
 
-                if (idLaporan) {
-                    if (confirm('Apakah Anda yakin ingin menghapus target ini?')) {
-                        let csrfTokenName = '<?= csrf_token() ?>';
-                        let csrfHash = $('input[name="' + csrfTokenName + '"]').val() || '<?= csrf_hash() ?>';
-                        
-                        let postData = { id: idLaporan };
-                        postData[csrfTokenName] = csrfHash;
+            if (idLaporan && idLaporan.trim() !== '') {
+                if (confirm('Apakah Anda yakin ingin menghapus target ini?')) {
+                    let csrfTokenName = '<?= csrf_token() ?>';
+                    let csrfHash = $('input[name="' + csrfTokenName + '"]').val() || '<?= csrf_hash() ?>';
+                    
+                    let postData = { id: idLaporan };
+                    postData[csrfTokenName] = csrfHash;
 
-                        $.ajax({
-                            url: '<?= site_url('laporan-harian/hapus') ?>',
-                            type: 'POST',
-                            data: postData,
-                            dataType: 'json',
-                            success: function(response) {
-                                if (response.csrf_hash) {
-                                    $('input[name="' + csrfTokenName + '"]').val(response.csrf_hash);
-                                    $('input[name="csrf_test_name"]').val(response.csrf_hash);
-                                }
-                                if (response.success) {
+                    $.ajax({
+                        url: '<?= site_url('laporan-harian/hapus') ?>',
+                        type: 'POST',
+                        data: postData,
+                        dataType: 'json',
+                        success: function(response) {
+                            if (response.csrf_hash) {
+                                $('input[name="' + csrfTokenName + '"]').val(response.csrf_hash);
+                                $('input[name="csrf_test_name"]').val(response.csrf_hash);
+                            }
+                            if (response.success) {
+                                if (tabel.find('tr').length > 1) {
                                     row.remove();
                                     updateRowNumbers(tabel);
                                 } else {
-                                    alert(response.message || 'Gagal menghapus data.');
+                                    resetRowToEmpty(row);
                                 }
-                            },
-                            error: function(xhr, status, error) {
-                                console.error('Hapus Error:', xhr.responseText);
-                                alert('Terjadi kesalahan saat menghapus data. Silakan refresh halaman dan coba lagi.');
+                            } else {
+                                alert(response.message || 'Gagal menghapus data.');
                             }
-                        });
-                    }
-                } else {
-                    row.remove();
-                    updateRowNumbers(tabel);
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Hapus Error:', xhr.responseText);
+                            alert('Terjadi kesalahan saat menghapus data. Silakan refresh halaman dan coba lagi.');
+                        }
+                    });
                 }
             } else {
-                alert('Tabel minimal harus memiliki satu baris isian.');
+                if (tabel.find('tr').length > 1) {
+                    row.remove();
+                    updateRowNumbers(tabel);
+                } else {
+                    resetRowToEmpty(row);
+                }
             }
         });
         // Fungsi Edit Staf Target
@@ -550,7 +565,11 @@ Target Kinerja Bulanan
                         
                         if (response.new_ids) {
                             for (let index in response.new_ids) {
-                                form.find('input[name="laporan_id[]"]').eq(index).val(response.new_ids[index]);
+                                let row = form.find('.tabel-target tbody tr').eq(index);
+                                if (row.length) {
+                                    row.find('input[name="laporan_id[]"]').val(response.new_ids[index]);
+                                    row.find('.hapus-baris').attr('data-id', response.new_ids[index]);
+                                }
                             }
                         }
                         
