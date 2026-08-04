@@ -267,11 +267,13 @@
                                         'kabag_kuk' => 'Kabag KUK (Level 3)',
                                         'manajemen' => 'Kanit/Katim (Level 4)',
                                         'user' => 'Staff (Level 5)',
+                                        'tugas_belajar' => 'Tugas Belajar (Level 5)',
                                         'admin' => 'Administrator'
                                     ];
                                     $roleText = $roleLabels[$user['role']] ?? $user['role'];
+                                    $badgeClass = ($user['role'] === 'tugas_belajar') ? 'bg-primary bg-opacity-75' : 'bg-secondary';
                                 ?>
-                                <span class="badge bg-secondary"><?= esc($roleText) ?></span>
+                                <span class="badge <?= $badgeClass ?>"><?= esc($roleText) ?></span>
                             </td>
                             <td>
                                 <?php if (!empty($user['unit_kabag'])):

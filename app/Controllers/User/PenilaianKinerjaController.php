@@ -73,6 +73,23 @@ class PenilaianKinerjaController extends BaseController
             $isAtasan = true;
         } else {
             $daftarStaf = $userModel->getStaf($userId);
+            // Jika user punya role kepegawaian, sertakan seluruh pegawai Tugas Belajar
+            if (hasRole('kepegawaian')) {
+                $db = \Config\Database::connect();
+                $tubelIds = array_column($db->table('user_roles')->select('user_id')->where('role_name', 'tugas_belajar')->get()->getResultArray(), 'user_id');
+                $builder = $userModel->where('role', 'tugas_belajar');
+                if (!empty($tubelIds)) {
+                    $builder->orWhereIn('id', $tubelIds);
+                }
+                $tubelUsers = $builder->where('id !=', $userId)->findAll();
+
+                $existingIds = array_column($daftarStaf, 'id');
+                foreach ($tubelUsers as $tb) {
+                    if (!in_array($tb['id'], $existingIds)) {
+                        $daftarStaf[] = $tb;
+                    }
+                }
+            }
             $isAtasan = !empty($daftarStaf);
         }
 

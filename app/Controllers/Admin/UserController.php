@@ -112,8 +112,8 @@ class UserController extends BaseController
     // --- FITUR BARU: CREATE ---
     public function create()
     {
-        // Ambil list semua user untuk dropdown "Pilih Atasan"
-        $bossRoles = ['direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'kanit', 'katim', 'kapokja'];
+        // Ambil list semua user untuk dropdown "Pilih Atasan" (Termasuk Katim & Staf Kepegawaian)
+        $bossRoles = ['direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'kanit', 'katim', 'kapokja', 'kepegawaian'];
         $potentialBosses = $this->userModel->whereIn('role', $bossRoles)->orderBy('nama_lengkap', 'ASC')->findAll();
         $unitKerjaModel = new UnitKerja();
 
@@ -224,19 +224,11 @@ class UserController extends BaseController
             return redirect()->to('users')->with('error', 'User tidak ditemukan');
         }
 
-        // Sinkronisasi visual untuk form edit: jika atasan_id = 0 tapi unit punya pimpinan, pre-fill atasan_id
-        if (empty($user['atasan_id']) && !empty($user['unit'])) {
-            $pimpinan = $this->userModel->where('unit', $user['unit'])
-                                        ->whereIn('role', ['manajemen', 'kabag_aak', 'kabag_kuk', 'kabag'])
-                                        ->first();
-            if ($pimpinan) {
-                $user['atasan_id'] = $pimpinan['id'];
-                $user['auto_synced_atasan'] = true;
-            }
-        }
+        // Ambil data atasan jika ada (menggunakan atasan_id yang tersimpan di DB)
+        $user['auto_synced_atasan'] = false;
 
-        // Kecualikan diri sendiri dari list atasan
-        $bossRoles = ['direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'kanit', 'katim', 'kapokja'];
+        // Kecualikan diri sendiri dari list atasan (termasuk Katim/Staf Kepegawaian)
+        $bossRoles = ['direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'kanit', 'katim', 'kapokja', 'kepegawaian'];
         $potentialBosses = $this->userModel->where('id !=', $id)->whereIn('role', $bossRoles)->orderBy('nama_lengkap', 'ASC')->findAll();
         $unitKerjaModel = new UnitKerja();
 
