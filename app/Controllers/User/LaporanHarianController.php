@@ -198,7 +198,7 @@ class LaporanHarianController extends BaseController
                     'tahun'             => $tahun,
                     'sasaran_program'   => $sasaran,
                     'indikator_kinerja' => $indikator,
-                    'target_bulanan'    => is_numeric($targetVal) ? (float)$targetVal : null,
+                    'target_bulanan'    => is_numeric($targetVal) ? (float)$targetVal : 0.00,
                     'satuan'            => $satuanVal,
                     'status_approval'   => $status_approval,
                     'status'            => $targetStatus

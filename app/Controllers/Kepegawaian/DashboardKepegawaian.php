@@ -69,6 +69,8 @@ class DashboardKepegawaian extends BaseController
                         $rataRataPerBulan[$i] = $dinilaiPerBulan[$i] > 0 ? round($nilaiPerBulan[$i] / $dinilaiPerBulan[$i], 2) : 0;
                     }
                 }
+                $validMonths = array_filter($rataRataPerBulan, fn($v) => $v !== null);
+                $rataRata = count($validMonths) > 0 ? round(array_sum($validMonths) / count($validMonths), 2) : 0;
             } else {
                 foreach ($rekapData as $rd) {
                     if (!empty($rd['nilai_capaian'])) {
@@ -76,9 +78,8 @@ class DashboardKepegawaian extends BaseController
                         $totalNilai += (float)$rd['nilai_capaian'];
                     }
                 }
+                $rataRata = $jmlDinilai > 0 ? round($totalNilai / $jmlDinilai, 2) : 0;
             }
-
-            $rataRata = $jmlDinilai > 0 ? round($totalNilai / $jmlDinilai, 2) : 0;
 
             $rekapKinerja[] = [
                 'pegawai'             => $pegawai,
@@ -94,15 +95,32 @@ class DashboardKepegawaian extends BaseController
             return $b['rata_rata'] <=> $a['rata_rata'];
         });
 
+        // Hitung statistik instansi
+        $sudahDinilai = 0;
+        $belumDinilai = 0;
+        $sumRataInstansi = 0;
+        foreach ($rekapKinerja as $r) {
+            if ($r['rhk_dinilai'] > 0) {
+                $sudahDinilai++;
+                $sumRataInstansi += $r['rata_rata'];
+            } else {
+                $belumDinilai++;
+            }
+        }
+        $rataRataInstansi = $sudahDinilai > 0 ? round($sumRataInstansi / $sudahDinilai, 2) : 0;
+
         $data = [
-            'title'           => 'Rekap Kinerja Kepegawaian',
-            'rekap_kinerja'   => $rekapKinerja,
-            'bulan_terpilih'  => $bulanTerpilih,
-            'tahun_terpilih'  => $tahunTerpilih,
-            'nama_bulan'      => $namaBulan,
-            'bulan_indo'      => $bulanIndo,
-            'daftar_unit'     => $daftarUnit,
-            'unit_filter'     => $unitFilter,
+            'title'              => 'Rekap Kinerja Kepegawaian',
+            'rekap_kinerja'      => $rekapKinerja,
+            'bulan_terpilih'     => $bulanTerpilih,
+            'tahun_terpilih'     => $tahunTerpilih,
+            'nama_bulan'         => $namaBulan,
+            'bulan_indo'         => $bulanIndo,
+            'daftar_unit'        => $daftarUnit,
+            'unit_filter'        => $unitFilter,
+            'sudah_dinilai'      => $sudahDinilai,
+            'belum_dinilai'      => $belumDinilai,
+            'rata_rata_instansi' => $rataRataInstansi
         ];
 
         return view('kepegawaian/rekap_kinerja', $data);
@@ -168,6 +186,8 @@ class DashboardKepegawaian extends BaseController
                         $rataRataPerBulan[$i] = $dinilaiPerBulan[$i] > 0 ? round($nilaiPerBulan[$i] / $dinilaiPerBulan[$i], 2) : 0;
                     }
                 }
+                $validMonths = array_filter($rataRataPerBulan, fn($v) => $v !== null);
+                $rataRata = count($validMonths) > 0 ? round(array_sum($validMonths) / count($validMonths), 2) : 0;
             } else {
                 foreach ($rekapData as $rd) {
                     if (!empty($rd['nilai_capaian'])) {
@@ -175,9 +195,8 @@ class DashboardKepegawaian extends BaseController
                         $totalNilai += (float)$rd['nilai_capaian'];
                     }
                 }
+                $rataRata = $jmlDinilai > 0 ? round($totalNilai / $jmlDinilai, 2) : 0;
             }
-
-            $rataRata = $jmlDinilai > 0 ? round($totalNilai / $jmlDinilai, 2) : 0;
 
             $rows[] = [
                 'nama'                => $pegawai['nama_lengkap'],

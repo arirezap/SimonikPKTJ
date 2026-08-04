@@ -521,6 +521,7 @@ Target Kinerja Bulanan
                 success: function(response) {
                     if (response.csrf_hash) {
                         $('input[name="<?= csrf_token() ?>"]').val(response.csrf_hash);
+                        $('input[name="csrf_test_name"]').val(response.csrf_hash);
                     }
 
                     if (response.success) {

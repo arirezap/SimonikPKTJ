@@ -332,25 +332,9 @@ Lapor Kegiatan Harian
         }
 
         function updateDropdownOptions() {
-            let selectedValues = [];
-            tabelLog.find('select[name="target_id[]"], .target-select-hidden').each(function() {
-                if ($(this).val() !== '') {
-                    selectedValues.push($(this).val());
-                }
-            });
-
+            // Mengizinkan 1 RHK dipilih untuk lebih dari 1 baris kegiatan harian dalam 1 hari
             tabelLog.find('select[name="target_id[]"]').each(function() {
-                let currentVal = $(this).val();
-                $(this).find('option').each(function() {
-                    let optionVal = $(this).val();
-                    if (optionVal !== '') {
-                        if (selectedValues.includes(optionVal) && optionVal !== currentVal) {
-                            $(this).prop('disabled', true).hide();
-                        } else {
-                            $(this).prop('disabled', false).show();
-                        }
-                    }
-                });
+                $(this).find('option').prop('disabled', false).show();
             });
         }
 
@@ -537,7 +521,8 @@ Lapor Kegiatan Harian
         // Validasi Form saat klik "Simpan & Kirim Laporan Harian" (Form Submit Normal)
         $('#formLog').on('submit', function(e) {
             let isValid = true;
-            let hasAtLeastOne = false;
+            let hasPokok = false;
+            let hasTambahan = false;
 
             $('#formLog tr.row-tugas-pokok').each(function() {
                 let targetId = $(this).find('select[name="target_id[]"]').val();
@@ -552,22 +537,37 @@ Lapor Kegiatan Harian
 
                 // Jika salah satu kolom di baris ini terisi
                 if (targetId || deskripsi || capaian || link) {
-                    hasAtLeastOne = true;
+                    hasPokok = true;
                     if (!targetId || !deskripsi || capaian === '' || !link) {
                         isValid = false;
                     }
                 }
             });
 
-            if (!hasAtLeastOne) {
+            $('#formLog tr.row-tugas-tambahan').each(function() {
+                let deskripsiTmb = $(this).find('textarea[name="deskripsi_kegiatan_tambahan[]"]').val();
+                let linkTmb = $(this).find('input[name="link_bukti_tambahan[]"]').val();
+
+                if (deskripsiTmb) deskripsiTmb = deskripsiTmb.trim();
+                if (linkTmb) linkTmb = linkTmb.trim();
+
+                if (deskripsiTmb || linkTmb) {
+                    hasTambahan = true;
+                    if (!deskripsiTmb || !linkTmb) {
+                        isValid = false;
+                    }
+                }
+            });
+
+            if (!hasPokok && !hasTambahan) {
                 e.preventDefault();
-                Swal.fire('Peringatan', 'Silakan isi minimal satu kegiatan harian pada Tugas Pokok sebelum mengirim ke atasan langsung.', 'warning');
+                Swal.fire('Peringatan', 'Silakan isi minimal satu kegiatan pada Tugas Pokok atau Tugas Tambahan sebelum mengirim ke atasan langsung.', 'warning');
                 return false;
             }
 
             if (!isValid) {
                 e.preventDefault();
-                Swal.fire('Peringatan', 'Untuk mengirim laporan harian ke atasan langsung, pastikan Target RHK, Deskripsi Kegiatan, Jumlah Capaian, dan Link Bukti Pekerjaan pada Tugas Pokok terisi dengan lengkap.', 'warning');
+                Swal.fire('Peringatan', 'Untuk mengirim laporan harian ke atasan langsung, pastikan seluruh kolom pada baris kegiatan yang diisi (Target RHK, Deskripsi Kegiatan, Jumlah Capaian, dan Link Bukti) terisi dengan lengkap.', 'warning');
                 return false;
             }
         });
@@ -587,6 +587,7 @@ Lapor Kegiatan Harian
                 success: function(response) {
                     if (response.csrf_hash) {
                         $('input[name="<?= csrf_token() ?>"]').val(response.csrf_hash);
+                        $('input[name="csrf_test_name"]').val(response.csrf_hash);
                     }
 
                     if (response.success) {

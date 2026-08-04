@@ -155,6 +155,16 @@ class LogKegiatanController extends BaseController
             }
         }
 
+        $existingTambahanData = (new \App\Models\LogTugasTambahan())->getLogByDate($userId, $tanggal);
+        foreach ($existingTambahanData as $row) {
+            if (isset($row['status']) && $row['status'] === 'terkirim') {
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON(['success' => false, 'message' => 'Laporan hari ini telah dikunci.', 'csrf_hash' => csrf_hash()]);
+                }
+                return redirect()->back()->with('error', 'Laporan hari ini telah dikunci dan tidak dapat diedit.');
+            }
+        }
+
         // Khusus untuk submit "Simpan & Kirim" yang mungkin tidak mengirim data baru, tapi hanya mengupdate status yang sudah ada (draft -> terkirim)
         if (!$isDraft && empty($this->request->getPost('target_id'))) {
             if (!empty($existingData)) {
@@ -325,8 +335,20 @@ class LogKegiatanController extends BaseController
     
     public function hapus()
     {
-        // Pegawai tidak diizinkan menghapus log yang sudah tersimpan
-        return $this->response->setJSON(['success' => false, 'message' => 'Laporan yang sudah disimpan tidak dapat dihapus.']);
+        $id = $this->request->getPost('id');
+        if ($id) {
+            $logModel = new LogKegiatanHarian();
+            $userId = session()->get('id') ?? session()->get('user_id');
+            $row = $logModel->find($id);
+            if ($row && $row['user_id'] == $userId) {
+                if (isset($row['status']) && $row['status'] === 'terkirim') {
+                    return $this->response->setJSON(['success' => false, 'message' => 'Laporan yang telah terkirim/dikunci tidak dapat dihapus.', 'csrf_hash' => csrf_hash()]);
+                }
+                $logModel->delete($id);
+                return $this->response->setJSON(['success' => true, 'csrf_hash' => csrf_hash()]);
+            }
+        }
+        return $this->response->setJSON(['success' => false, 'message' => 'Gagal menghapus data.', 'csrf_hash' => csrf_hash()]);
     }
 
     public function storeTugasTambahan()
