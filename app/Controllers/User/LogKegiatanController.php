@@ -53,9 +53,10 @@ class LogKegiatanController extends BaseController
         $rekapData = $logModel->getLogWithTarget($userId, $tanggalTerpilih);
 
         $isLocked = false;
-        if ($targetStatus !== 'disetujui') {
+        $isDirektur = ($currentUser && $currentUser['role'] === 'direktur');
+        if ($targetStatus !== 'disetujui' && !$isDirektur) {
             $isLocked = true;
-        } elseif (!empty($rekapData)) {
+        } elseif (!empty($rekapData) && !$isDirektur) {
             foreach ($rekapData as $row) {
                 if (isset($row['status']) && $row['status'] === 'terkirim') {
                     $isLocked = true;
@@ -145,23 +146,28 @@ class LogKegiatanController extends BaseController
         $tanggal = $this->request->getPost('tanggal');
 
         // Pengecekan keamanan: Apakah tanggal sudah dikunci?
+        $isDirektur = ($currentUser && $currentUser['role'] === 'direktur');
         $existingData = $logModel->getLogWithTarget($userId, $tanggal);
-        foreach ($existingData as $row) {
-            if (isset($row['status']) && $row['status'] === 'terkirim') {
-                if ($this->request->isAJAX()) {
-                    return $this->response->setJSON(['success' => false, 'message' => 'Laporan hari ini telah dikunci.', 'csrf_hash' => csrf_hash()]);
+        if (!$isDirektur) {
+            foreach ($existingData as $row) {
+                if (isset($row['status']) && $row['status'] === 'terkirim') {
+                    if ($this->request->isAJAX()) {
+                        return $this->response->setJSON(['success' => false, 'message' => 'Laporan hari ini telah dikunci.', 'csrf_hash' => csrf_hash()]);
+                    }
+                    return redirect()->back()->with('error', 'Laporan hari ini telah dikunci dan tidak dapat diedit.');
                 }
-                return redirect()->back()->with('error', 'Laporan hari ini telah dikunci dan tidak dapat diedit.');
             }
         }
 
         $existingTambahanData = (new \App\Models\LogTugasTambahan())->getLogByDate($userId, $tanggal);
-        foreach ($existingTambahanData as $row) {
-            if (isset($row['status']) && $row['status'] === 'terkirim') {
-                if ($this->request->isAJAX()) {
-                    return $this->response->setJSON(['success' => false, 'message' => 'Laporan hari ini telah dikunci.', 'csrf_hash' => csrf_hash()]);
+        if (!$isDirektur) {
+            foreach ($existingTambahanData as $row) {
+                if (isset($row['status']) && $row['status'] === 'terkirim') {
+                    if ($this->request->isAJAX()) {
+                        return $this->response->setJSON(['success' => false, 'message' => 'Laporan hari ini telah dikunci.', 'csrf_hash' => csrf_hash()]);
+                    }
+                    return redirect()->back()->with('error', 'Laporan hari ini telah dikunci dan tidak dapat diedit.');
                 }
-                return redirect()->back()->with('error', 'Laporan hari ini telah dikunci dan tidak dapat diedit.');
             }
         }
 
@@ -340,8 +346,10 @@ class LogKegiatanController extends BaseController
             $logModel = new LogKegiatanHarian();
             $userId = session()->get('id') ?? session()->get('user_id');
             $row = $logModel->find($id);
+            $currentUser = (new \App\Models\User())->find($userId);
+            $isDirektur = ($currentUser && $currentUser['role'] === 'direktur');
             if ($row && $row['user_id'] == $userId) {
-                if (isset($row['status']) && $row['status'] === 'terkirim') {
+                if (!$isDirektur && isset($row['status']) && $row['status'] === 'terkirim') {
                     return $this->response->setJSON(['success' => false, 'message' => 'Laporan yang telah terkirim/dikunci tidak dapat dihapus.', 'csrf_hash' => csrf_hash()]);
                 }
                 $logModel->delete($id);

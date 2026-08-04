@@ -73,8 +73,8 @@ $isKepegawaian = hasRole('kepegawaian');
 
             <?php
             // Menu Kinerja (Termasuk Direktur)
-            // Disembunyikan untuk manajemen & kabag karena data dummy
-            if (hasAnyRole(['admin', 'direktur', 'aak', 'kuk', 'spm'])):
+            // Disembunyikan untuk manajemen & kabag karena data dummy, serta disembunyikan untuk Direktur
+            if (hasAnyRole(['admin', 'aak', 'kuk', 'spm'])):
             ?>
                 <?php if (!$isAdmin): // Sembunyikan menu Kinerja untuk Admin ?>
                     <li class="nav-item">
@@ -86,11 +86,13 @@ $isKepegawaian = hasRole('kepegawaian');
                             <ul class="nav flex-column ps-4">
                                 <li class="nav-item"><a href="<?= site_url('rencana/input') ?>" class="nav-link sub-link <?= ($current_uri == 'rencana/input') ? 'active' : '' ?>"><span>Input Rencana Kerja</span></a></li>
 
+                                <?php if (!hasRole('direktur')): ?>
                                 <li class="nav-item">
                                     <a class="nav-link sub-link <?= str_starts_with($current_uri, 'skp') ? 'active' : '' ?>" href="<?= site_url('skp') ?>">
                                         <span>Sasaran Kinerja (SKP)</span>
                                     </a>
                                 </li>
+                                <?php endif; ?>
                                 
                                 <li class="nav-item"><a href="<?= site_url('realisasi/input') ?>" class="nav-link sub-link <?= ($current_uri == 'realisasi/input') ? 'active' : '' ?>"><span>Input Realisasi</span></a></li>
                                 <li class="nav-item"><a href="<?= site_url('kinerja/update') ?>" class="nav-link sub-link <?= (str_starts_with($current_uri, 'kinerja/update') || str_starts_with($current_uri, 'alokasi/bulanan')) ? 'active' : '' ?>"><span>Kelola Target & Realisasi</span></a></li>

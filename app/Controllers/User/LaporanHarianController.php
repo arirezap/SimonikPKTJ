@@ -177,8 +177,9 @@ class LaporanHarianController extends BaseController
         $dataToUpdate = [];
         $dataToInsert = [];
         
-        // Jika diedit oleh atasan, langsung jadi disetujui & terkirim
-        $status_approval = $isEditingStaf ? 'disetujui' : 'menunggu_persetujuan';
+        // Jika diedit oleh atasan atau pemilik akun adalah Direktur, langsung disetujui
+        $isDirektur = (session()->get('role') === 'direktur');
+        $status_approval = ($isEditingStaf || $isDirektur) ? 'disetujui' : 'menunggu_persetujuan';
 
         if ($sasaran_program_arr) {
             foreach ($sasaran_program_arr as $index => $sasaran) {
@@ -226,10 +227,14 @@ class LaporanHarianController extends BaseController
 
         // Jika Simpan & Kirim, update semua target bulan ini yang sebelumnya draf menjadi terkirim
         if (!$isDraft) {
+            $updateData = ['status' => 'terkirim'];
+            if ($isDirektur) {
+                $updateData['status_approval'] = 'disetujui';
+            }
             $laporanModel->where('user_id', $targetUserId)
                          ->where('bulan', $bulan)
                          ->where('tahun', $tahun)
-                         ->set(['status' => 'terkirim'])
+                         ->set($updateData)
                          ->update();
         }
 
@@ -307,22 +312,25 @@ class LaporanHarianController extends BaseController
             $laporanModel = new LaporanHarian();
             $laporan = $laporanModel->find($id);
             if ($laporan) {
-                // Jangan izinkan hapus jika sudah disetujui
-                if ($laporan['status_approval'] == 'disetujui') {
-                    return $this->response->setJSON(['success' => false, 'message' => 'Terkunci. Target sudah disetujui oleh atasan.']);
-                }
-                
-                $settingModel = new \App\Models\SettingModel();
-                $batasTarget = (int) $settingModel->getValue('batas_input_target', 5);
-                $currentMonth = (int) date('n');
-                $currentYear = (int) date('Y');
-                $currentDay = (int) date('j');
-                $tahun = (int) $laporan['tahun'];
-                $bulan = (int) $laporan['bulan'];
+                $isDirektur = (session()->get('role') === 'direktur');
+                if (!$isDirektur) {
+                    // Jangan izinkan hapus jika sudah disetujui
+                    if ($laporan['status_approval'] == 'disetujui') {
+                        return $this->response->setJSON(['success' => false, 'message' => 'Terkunci. Target sudah disetujui oleh atasan.']);
+                    }
+                    
+                    $settingModel = new \App\Models\SettingModel();
+                    $batasTarget = (int) $settingModel->getValue('batas_input_target', 5);
+                    $currentMonth = (int) date('n');
+                    $currentYear = (int) date('Y');
+                    $currentDay = (int) date('j');
+                    $tahun = (int) $laporan['tahun'];
+                    $bulan = (int) $laporan['bulan'];
 
-                if (($tahun == $currentYear && $bulan == $currentMonth && $currentDay > $batasTarget) || 
-                    ($tahun < $currentYear) || ($tahun == $currentYear && $bulan < $currentMonth)) {
-                    return $this->response->setJSON(['success' => false, 'message' => 'Terkunci. Batas waktu terlewat.']);
+                    if (($tahun == $currentYear && $bulan == $currentMonth && $currentDay > $batasTarget) || 
+                        ($tahun < $currentYear) || ($tahun == $currentYear && $bulan < $currentMonth)) {
+                        return $this->response->setJSON(['success' => false, 'message' => 'Terkunci. Batas waktu terlewat.']);
+                    }
                 }
 
                 $laporanModel->delete($id);

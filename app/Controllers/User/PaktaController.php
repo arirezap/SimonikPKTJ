@@ -22,8 +22,7 @@ class PaktaController extends BaseController
         }
 
         // 2. Ambil Data Direktur dari Database (Dinamis)
-        // Mencari user yang jabatannya mengandung kata 'Direktur'
-        $direktur = $userModel->where('jabatan', 'Direktur')->first();
+        $direktur = $userModel->where('role', 'direktur')->orWhere('jabatan', 'Direktur')->first();
 
         // Fallback: Jika data Direktur belum ada di database, gunakan dummy agar tidak error
         if (!$direktur) {

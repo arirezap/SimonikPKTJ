@@ -177,8 +177,9 @@ Target Kinerja Bulanan
                             </thead>
                             <tbody>
                                  <?php if (!empty($rekap_data_sendiri)): ?>
+                                    <?php $isDirektur = (session()->get('role') === 'direktur'); ?>
                                     <?php foreach ($rekap_data_sendiri as $index => $row): ?>
-                                        <?php $isRowLocked = $is_locked || $row['status_approval'] === 'disetujui'; ?>
+                                        <?php $isRowLocked = !$isDirektur && ($is_locked || $row['status_approval'] === 'disetujui'); ?>
                                         <tr>
                                             <input type="hidden" name="laporan_id[]" value="<?= esc($row['id']) ?>">
                                             <td class="nomor-baris text-center fw-bold"><?= $index + 1 ?></td>
@@ -210,7 +211,7 @@ Target Kinerja Bulanan
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
-                                <?php elseif (!$is_locked): ?>
+                                <?php elseif (!$is_locked || (session()->get('role') === 'direktur')): ?>
                                     <!-- Baris Kosong Default -->
                                     <tr>
                                         <input type="hidden" name="laporan_id[]" value="">
@@ -231,7 +232,7 @@ Target Kinerja Bulanan
                         </table>
                     </div>
 
-                    <?php if (!$is_locked && !$allApproved): ?>
+                    <?php if ((session()->get('role') === 'direktur') || (!$is_locked && !$allApproved)): ?>
                     <div class="d-flex justify-content-between align-items-center mt-4">
                         <button type="button" class="btn btn-success btn-tambah-baris rounded-pill shadow-sm px-4 py-2 fw-bold"><i class="bi bi-plus-circle me-2"></i> Tambah Baris Kosong</button>
                         <div class="d-flex gap-2">

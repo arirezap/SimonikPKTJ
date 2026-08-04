@@ -183,6 +183,11 @@ Rekap & Penilaian Kinerja
                         </h6>
                     </div>
                     
+                    <?php if (session()->get('role') === 'direktur'): ?>
+                    <form method="POST" action="<?= site_url('penilaian-kinerja/store') ?>">
+                        <?= csrf_field() ?>
+                    <?php endif; ?>
+
                     <div class="table-responsive mb-4 bg-white border rounded-3 shadow-sm">
                         <table class="table table-bordered table-hover align-middle mb-0">
                             <thead>
@@ -192,7 +197,7 @@ Rekap & Penilaian Kinerja
                                     <th style="width: 140px;">Target Bulanan</th>
                                     <th style="width: 140px;">Total Realisasi</th>
                                     <th style="width: 140px;">Selisih (Gap)</th>
-                                    <th class="col-nilai">Nilai Capaian</th>
+                                    <th class="col-nilai" style="width: 160px;">Nilai Capaian</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -217,8 +222,16 @@ Rekap & Penilaian Kinerja
                                                 <span class="badge bg-light text-dark border px-2 py-1">0 <?= esc($row['satuan']) ?></span>
                                             <?php endif; ?>
                                         </td>
-                                        <td class="text-center align-middle readonly-text fw-bold fs-6 text-primary">
-                                            <?= $isTerbit ? str_replace('.', ',', (float)$row['nilai_capaian']) . '%' : '<span class="text-muted fw-normal" title="Belum diterbitkan atasan">-</span>' ?>
+                                        <td class="text-center align-middle fw-bold fs-6 text-primary">
+                                            <?php if (session()->get('role') === 'direktur'): ?>
+                                                <input type="hidden" name="laporan_id[]" value="<?= esc($row['id']) ?>">
+                                                <div class="input-group input-group-sm">
+                                                    <input type="number" step="0.01" min="0" max="100" name="nilai_capaian[]" class="form-control text-center text-primary fw-bold" value="<?= isset($row['nilai_capaian']) && $row['nilai_capaian'] !== null ? (float)$row['nilai_capaian'] : '' ?>" placeholder="0 - 100">
+                                                    <span class="input-group-text">%</span>
+                                                </div>
+                                            <?php else: ?>
+                                                <?= $isTerbit ? str_replace('.', ',', (float)$row['nilai_capaian']) . '%' : '<span class="text-muted fw-normal" title="Belum diterbitkan atasan">-</span>' ?>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -277,14 +290,34 @@ Rekap & Penilaian Kinerja
                             <tfoot class="table-light fw-bold" style="border-top: 2px solid #dee2e6;">
                                 <tr>
                                     <td colspan="4" class="text-end pe-3 align-middle text-muted fw-normal">Nilai Tugas Tambahan Bulan <?= $bulan_indo[$bulan_terpilih - 1] ?> (Akumulasi):</td>
-                                    <td class="text-center align-middle readonly-text fw-bold fs-6 text-success p-2">
-                                        <?= $scoreTambahanIndividu !== null ? str_replace('.', ',', $scoreTambahanIndividu) . '%' : '<span class="text-muted fw-normal">-</span>' ?>
+                                    <td class="text-center align-middle fw-bold fs-6 text-success p-2">
+                                        <?php if (session()->get('role') === 'direktur'): ?>
+                                            <input type="hidden" name="log_tambahan_id[]" value="<?= esc($tugas_tambahan_sendiri[0]['id']) ?>">
+                                            <div class="input-group input-group-sm justify-content-center" style="max-width: 130px; margin: 0 auto;">
+                                                <input type="number" step="0.01" min="0" max="100" name="nilai_tugas_tambahan_gabungan" class="form-control text-center text-success fw-bold" value="<?= $scoreTambahanIndividu !== null ? (float)$scoreTambahanIndividu : '' ?>" placeholder="0 - 100">
+                                                <span class="input-group-text">%</span>
+                                            </div>
+                                        <?php else: ?>
+                                            <?= $scoreTambahanIndividu !== null ? str_replace('.', ',', $scoreTambahanIndividu) . '%' : '<span class="text-muted fw-normal">-</span>' ?>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             </tfoot>
                             <?php endif; ?>
                         </table>
                     </div>
+
+                    <?php if (session()->get('role') === 'direktur'): ?>
+                    <div class="d-flex justify-content-end mb-4 gap-2">
+                        <button type="submit" name="action" value="draft" class="btn btn-outline-primary rounded-pill px-4 fw-bold">
+                            <i class="bi bi-pencil me-1"></i> Simpan Draf Penilaian
+                        </button>
+                        <button type="submit" name="action" value="submit" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm">
+                            <i class="bi bi-send me-1"></i> Simpan & Terbitkan Penilaian Direktur
+                        </button>
+                    </div>
+                    </form>
+                    <?php endif; ?>
 
                     <!-- RINGKASAN SKOR EXECUTIVE DI PALING BAWAH EVALUASI -->
                     <div class="card bg-white border border-2 border-<?= $warnaScore === 'warning text-dark' ? 'warning' : $warnaScore ?> rounded-3 p-3 shadow-sm mb-4">

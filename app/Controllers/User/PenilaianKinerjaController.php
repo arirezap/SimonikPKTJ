@@ -204,10 +204,11 @@ class PenilaianKinerjaController extends BaseController
             log_audit('APPROVE', 'laporan_harian/log_tugas_tambahan', 'batch_nilai', null, [$dataToUpdate, $dataTambahanToUpdate]);
             
             $firstLaporan = $laporanModel->find($dataToUpdate[0]['id'] ?? ($dataTambahanToUpdate[0]['id'] ?? 0));
-            if ($firstLaporan) {
+            $targetUserId = $firstLaporan['user_id'] ?? session()->get('penilaian_staf_id');
+            if ($firstLaporan && $targetUserId != $userId) {
                 helper('notification');
                 send_notification(
-                    $firstLaporan['user_id'] ?? session()->get('penilaian_staf_id'),
+                    $targetUserId,
                     'Penilaian Kinerja Diterbitkan',
                     'Atasan telah menerbitkan Nilai Kinerja Bulanan Anda.',
                     site_url('penilaian-kinerja')
