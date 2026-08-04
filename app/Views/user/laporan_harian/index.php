@@ -33,6 +33,10 @@ Target Kinerja Bulanan
     }
     .btn {
         transition: all 0.3s ease;
+        min-height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
     .btn:hover {
         transform: translateY(-2px);
@@ -73,6 +77,49 @@ Target Kinerja Bulanan
         color: #0d6efd;
         box-shadow: 0 2px 6px rgba(0,0,0,0.08);
         font-weight: 700;
+    }
+
+    /* Mobile UI/UX Pro Max Enhancements */
+    @media (max-width: 767.98px) {
+        .segmented-control {
+            display: flex !important;
+            width: 100% !important;
+            border-radius: 16px !important;
+            padding: 4px !important;
+            gap: 4px;
+        }
+        .segmented-control .nav-item {
+            flex: 1 !important;
+        }
+        .segmented-control .nav-link {
+            width: 100% !important;
+            padding: 10px 8px !important;
+            font-size: 0.8rem !important;
+            border-radius: 12px !important;
+            white-space: nowrap;
+            justify-content: center;
+        }
+        .btn-action-container {
+            flex-direction: column !important;
+            gap: 12px !important;
+        }
+        .btn-action-container .btn,
+        .btn-group-mobile {
+            width: 100% !important;
+            display: flex !important;
+            justify-content: center !important;
+        }
+        .btn-group-mobile {
+            flex-direction: column !important;
+            gap: 10px !important;
+        }
+        .table-responsive {
+            border-radius: 12px;
+            border: 1px solid #e0e0e0;
+        }
+        .form-control, .form-select {
+            font-size: 16px !important; /* Mencegah auto-zoom browser iOS */
+        }
     }
 </style>
 <?= $this->endSection() ?>
@@ -233,9 +280,9 @@ Target Kinerja Bulanan
                     </div>
 
                     <?php if ((session()->get('role') === 'direktur') || (!$is_locked && !$allApproved)): ?>
-                    <div class="d-flex justify-content-between align-items-center mt-4">
+                    <div class="d-flex justify-content-between align-items-center mt-4 btn-action-container">
                         <button type="button" class="btn btn-success btn-tambah-baris rounded-pill shadow-sm px-4 py-2 fw-bold"><i class="bi bi-plus-circle me-2"></i> Tambah Baris Kosong</button>
-                        <div class="d-flex gap-2">
+                        <div class="d-flex gap-2 btn-group-mobile">
                             <button type="button" id="btnSimpanSementara" class="btn btn-outline-primary rounded-pill shadow-sm px-4 py-2 fw-bold"><i class="bi bi-cloud-arrow-up me-2"></i> Simpan Sementara</button>
                             <button type="submit" class="btn btn-primary rounded-pill shadow-sm px-4 py-2 fw-bold"><i class="bi bi-send me-2"></i> Simpan & Kirim</button>
                         </div>
@@ -359,7 +406,7 @@ Target Kinerja Bulanan
                             </div>
                             
                             <?php if (!$allApprovedStaf): ?>
-                            <div class="d-flex justify-content-end gap-3 mt-4">
+                            <div class="d-flex justify-content-end gap-3 mt-4 btn-action-container">
                                 <button type="submit" id="btnApproveAll" formaction="<?= site_url('laporan-harian/approve-all') ?>" class="btn btn-success rounded-pill shadow-sm px-4 py-2 fw-bold">
                                     <i class="bi bi-check-all me-2"></i> Setujui Semua Target
                                 </button>

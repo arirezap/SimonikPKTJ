@@ -96,12 +96,12 @@
                                     0
                                 </span>
                             </a>
-                            <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-3 p-0 rounded-4 overflow-hidden" style="width: 340px; max-height: 400px; overflow-y: auto;">
-                                <div class="p-3 border-bottom bg-white sticky-top d-flex align-items-center justify-content-between">
-                                    <h6 class="m-0 fw-bold text-dark" style="font-size: 0.95rem;">Notifikasi</h6>
+                            <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2 p-0 rounded-4 overflow-hidden" style="width: 340px; max-width: 92vw;">
+                                <div class="p-3 border-bottom bg-white d-flex align-items-center justify-content-between">
+                                    <h6 class="m-0 fw-bold text-dark" style="font-size: 0.95rem;"><i class="bi bi-bell me-1 text-primary"></i> Notifikasi</h6>
                                     <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-1" style="font-size: 0.7rem;">Baru</span>
                                 </div>
-                                <div id="notifList" class="list-group list-group-flush">
+                                <div id="notifList" class="list-group list-group-flush" style="max-height: 360px; overflow-y: auto; -webkit-overflow-scrolling: touch;">
                                     <div class="p-4 text-center text-muted small">
                                         <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
                                         <div class="mt-2">Memuat notifikasi...</div>

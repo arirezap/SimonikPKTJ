@@ -56,6 +56,68 @@ Rekap & Penilaian Kinerja
     .card-body {
         padding: 1.25rem;
     }
+    .btn {
+        transition: all 0.3s ease;
+        min-height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Mobile UI/UX Pro Max Enhancements */
+    @media (max-width: 767.98px) {
+        .nav-tabs {
+            display: flex !important;
+            width: 100% !important;
+            background-color: #f1f3f5;
+            border-radius: 16px !important;
+            padding: 4px !important;
+            gap: 4px;
+            border-bottom: none !important;
+        }
+        .nav-tabs .nav-item {
+            flex: 1 !important;
+        }
+        .nav-tabs .nav-link {
+            width: 100% !important;
+            padding: 10px 8px !important;
+            font-size: 0.8rem !important;
+            border-radius: 12px !important;
+            white-space: nowrap;
+            text-align: center;
+            border: none !important;
+        }
+        .nav-tabs .nav-link.active {
+            background-color: #ffffff !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08) !important;
+        }
+        .btn-action-container {
+            flex-direction: column !important;
+            gap: 12px !important;
+            width: 100% !important;
+        }
+        .btn-action-container .btn {
+            width: 100% !important;
+            display: flex !important;
+            justify-content: center !important;
+        }
+        .score-banner-wrapper {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+            gap: 12px !important;
+        }
+        .score-banner-wrapper .d-flex {
+            justify-content: center !important;
+        }
+        .table-responsive {
+            border-radius: 12px;
+            border: 1px solid #e0e0e0;
+        }
+        .form-control, .form-select {
+            font-size: 16px !important; /* Mencegah auto-zoom browser iOS */
+        }
+    }
 </style>
 <?= $this->endSection() ?>
 
@@ -308,7 +370,7 @@ Rekap & Penilaian Kinerja
                     </div>
 
                     <?php if (session()->get('role') === 'direktur'): ?>
-                    <div class="d-flex justify-content-end mb-4 gap-2">
+                    <div class="d-flex justify-content-end mb-4 gap-2 btn-action-container">
                         <button type="submit" name="action" value="draft" class="btn btn-outline-primary rounded-pill px-4 fw-bold">
                             <i class="bi bi-pencil me-1"></i> Simpan Draf Penilaian
                         </button>
@@ -321,7 +383,7 @@ Rekap & Penilaian Kinerja
 
                     <!-- RINGKASAN SKOR EXECUTIVE DI PALING BAWAH EVALUASI -->
                     <div class="card bg-white border border-2 border-<?= $warnaScore === 'warning text-dark' ? 'warning' : $warnaScore ?> rounded-3 p-3 shadow-sm mb-4">
-                        <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex justify-content-between align-items-center score-banner-wrapper">
                             <div>
                                 <h6 class="fw-bold text-dark mb-1"><i class="bi bi-award-fill text-primary me-2"></i> RATA-RATA PENILAIAN KINERJA BULANAN</h6>
                                 <small class="text-muted">Dihitung dari Rata-rata Nilai Target RHK (<?= count($rekap_data_sendiri) ?> Indikator) <?= $scoreTambahanIndividu !== null ? '+ 1 Nilai Tugas Tambahan' : '' ?></small>
@@ -613,7 +675,7 @@ Rekap & Penilaian Kinerja
 
                             <!-- RINGKASAN EXECUTIVE SKOR AKHIR DI PALING BAWAH PENILAIAN -->
                             <div class="card bg-white border border-2 border-<?= $warnaScoreBwh === 'warning text-dark' ? 'warning' : $warnaScoreBwh ?> rounded-3 p-3 shadow-sm mb-4" id="cardKinerjaStafSummary">
-                                <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex justify-content-between align-items-center score-banner-wrapper">
                                     <div>
                                         <h6 class="fw-bold text-dark mb-1"><i class="bi bi-award-fill text-success me-2"></i> RATA-RATA PENILAIAN KINERJA BULANAN STAF</h6>
                                         <small class="text-muted" id="subtextHitungKinerja">Dihitung dari Rata-rata Nilai Target RHK (<?= count($rekap_data_staf) ?> Indikator) <?= !empty($tugas_tambahan_staf) ? '+ 1 Nilai Tugas Tambahan' : '' ?></small>
@@ -626,7 +688,7 @@ Rekap & Penilaian Kinerja
                             </div>
 
                             <!-- ACTION TOOLBAR AT BOTTOM OF STAF FORM -->
-                            <div class="d-flex justify-content-end mb-4 gap-2">
+                            <div class="d-flex justify-content-end mb-4 gap-2 btn-action-container">
                                 <button type="reset" class="btn btn-outline-secondary rounded-pill px-3 py-2 fw-bold shadow-sm"><i class="bi bi-arrow-counterclockwise me-1"></i> Kosongkan</button>
                                 <button type="submit" name="action" value="draft" class="btn btn-outline-primary rounded-pill px-4 py-2 fw-bold shadow-sm"><i class="bi bi-journal-bookmark me-1"></i> Simpan Sementara</button>
                                 <button type="submit" name="action" value="submit" class="btn btn-success rounded-pill px-4 py-2 fw-bold shadow-sm"><i class="bi bi-check-circle-fill me-2"></i> Simpan Penilaian Staf</button>

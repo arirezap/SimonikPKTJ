@@ -26,6 +26,46 @@ Lapor Kegiatan Harian
     .col-deskripsi { min-width: 300px; }
     .col-capaian { min-width: 170px; }
     .col-bukti { min-width: 180px; }
+    .btn {
+        transition: all 0.3s ease;
+        min-height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+    }
+
+    /* Mobile UI/UX Pro Max Enhancements */
+    @media (max-width: 767.98px) {
+        .btn-action-container {
+            flex-direction: column !important;
+            gap: 12px !important;
+            width: 100% !important;
+        }
+        .btn-action-container .btn {
+            width: 100% !important;
+            display: flex !important;
+            justify-content: center !important;
+        }
+        .header-section-wrapper {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 8px !important;
+        }
+        .header-section-wrapper .btn {
+            width: 100% !important;
+        }
+        .table-responsive {
+            border-radius: 12px;
+            border: 1px solid #e0e0e0;
+        }
+        .form-control, .form-select {
+            font-size: 16px !important; /* Mencegah auto-zoom browser iOS */
+        }
+    }
 </style>
 <?= $this->endSection() ?>
 
@@ -101,7 +141,7 @@ Lapor Kegiatan Harian
                         <!-- ==================== BAGIAN A: TUGAS POKOK (RHK) ==================== -->
                         <tr class="table-primary text-primary fw-bold" id="rowHeaderPokok">
                             <td colspan="6" class="py-2.5 px-3 bg-primary-subtle text-primary border-primary">
-                                <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex justify-content-between align-items-center header-section-wrapper">
                                     <span class="fs-6"><i class="bi bi-list-task me-2"></i> A. TUGAS POKOK (Rencana Hasil Kerja Utama)</span>
                                     <?php if (!$is_locked): ?>
                                         <button type="button" id="tambahBaris" class="btn btn-sm btn-primary rounded-pill px-3 py-1 shadow-sm">
@@ -220,7 +260,7 @@ Lapor Kegiatan Harian
                         <!-- ==================== BAGIAN B: SEPARATOR TUGAS TAMBAHAN ==================== -->
                         <tr class="table-light text-dark fw-bold" id="rowHeaderTambahan">
                             <td colspan="6" class="py-2.5 px-3 bg-light border-top border-bottom border-secondary-subtle">
-                                <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex justify-content-between align-items-center header-section-wrapper">
                                     <div>
                                         <i class="bi bi-journal-plus me-2 text-primary"></i> 
                                         <span class="text-dark fs-6">B. TUGAS TAMBAHAN</span>
@@ -300,7 +340,7 @@ Lapor Kegiatan Harian
 
             <!-- SINGLE UNIFIED BUTTON TOOLBAR AT BOTTOM -->
             <?php if (!$is_locked): ?>
-            <div class="d-flex justify-content-end align-items-center mt-4 gap-2">
+            <div class="d-flex justify-content-end align-items-center mt-4 gap-2 btn-action-container">
                 <button type="button" id="btnSimpanSementara" class="btn btn-outline-primary rounded-pill shadow-sm px-4 py-2 fw-bold">
                     <i class="bi bi-cloud-arrow-up me-2"></i> Simpan Sementara
                 </button>
