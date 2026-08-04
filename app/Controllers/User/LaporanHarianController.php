@@ -96,22 +96,10 @@ class LaporanHarianController extends BaseController
             }
         }
 
-        // Logika Kunci Waktu
+        // Logika Kunci Waktu (Di-bypass agar seluruh pengguna tetap bisa mengisi target meski bulannya sudah lewat)
         $settingModel = new \App\Models\SettingModel();
         $batasTarget = (int) $settingModel->getValue('batas_input_target', 5);
         $isLocked = false;
-        
-        $currentMonth = (int) date('n');
-        $currentYear = (int) date('Y');
-        $currentDay = (int) date('j');
-
-        if ($tahunTerpilih == $currentYear && $bulanTerpilih == $currentMonth) {
-            if ($currentDay > $batasTarget) {
-                $isLocked = true;
-            }
-        } elseif (($tahunTerpilih < $currentYear) || ($tahunTerpilih == $currentYear && $bulanTerpilih < $currentMonth)) {
-            $isLocked = true; // Bulan sebelumnya otomatis terkunci
-        }
 
         $data = [
             'title' => 'Target Kinerja Bulanan',
@@ -146,21 +134,7 @@ class LaporanHarianController extends BaseController
         $isDraft = $this->request->isAJAX() || $this->request->getPost('action') === 'draft';
         $targetStatus = $isDraft ? 'draft' : 'terkirim';
 
-        // Validasi Kunci Waktu HANYA jika yang edit adalah staf itu sendiri
-        if (!$isEditingStaf) {
-            $settingModel = new \App\Models\SettingModel();
-            $batasTarget = (int) $settingModel->getValue('batas_input_target', 5);
-            $currentMonth = (int) date('n');
-            $currentYear = (int) date('Y');
-            $currentDay = (int) date('j');
-            if ($tahun == $currentYear && $bulan == $currentMonth && $currentDay > $batasTarget) {
-                if ($this->request->isAJAX()) return $this->response->setJSON(['success' => false, 'message' => 'Batas waktu pengisian ditutup.', 'csrf_hash' => csrf_hash()]);
-                return redirect()->back()->with('error', 'Gagal menyimpan. Batas waktu pengisian target bulan ini sudah ditutup.');
-            } elseif (($tahun < $currentYear) || ($tahun == $currentYear && $bulan < $currentMonth)) {
-                if ($this->request->isAJAX()) return $this->response->setJSON(['success' => false, 'message' => 'Target untuk bulan sebelumnya tidak dapat diubah.', 'csrf_hash' => csrf_hash()]);
-                return redirect()->back()->with('error', 'Gagal menyimpan. Target untuk bulan sebelumnya tidak dapat diubah.');
-            }
-        }
+        // Validasi Kunci Waktu di-bypass agar seluruh pengguna bisa mengisi target meski bulan terlewat
 
         // Jika Simpan & Kirim (Bukan Draft), lakukan validasi ketat
         if (!$isDraft) {
@@ -336,23 +310,6 @@ class LaporanHarianController extends BaseController
                         return $this->response->setJSON([
                             'success' => false, 
                             'message' => 'Terkunci. Target sudah disetujui oleh atasan.',
-                            'csrf_hash' => csrf_hash()
-                        ]);
-                    }
-                    
-                    $settingModel = new \App\Models\SettingModel();
-                    $batasTarget = (int) $settingModel->getValue('batas_input_target', 5);
-                    $currentMonth = (int) date('n');
-                    $currentYear = (int) date('Y');
-                    $currentDay = (int) date('j');
-                    $tahun = (int) $laporan['tahun'];
-                    $bulan = (int) $laporan['bulan'];
-
-                    if (($tahun == $currentYear && $bulan == $currentMonth && $currentDay > $batasTarget) || 
-                        ($tahun < $currentYear) || ($tahun == $currentYear && $bulan < $currentMonth)) {
-                        return $this->response->setJSON([
-                            'success' => false, 
-                            'message' => 'Terkunci. Batas waktu pengisian/pengubahan target telah terlewat.',
                             'csrf_hash' => csrf_hash()
                         ]);
                     }
