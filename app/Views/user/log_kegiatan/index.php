@@ -432,14 +432,26 @@ Lapor Kegiatan Harian
         // Hapus Baris Tugas Pokok
         tabelLog.on('click', '.hapus-baris', function() {
             const pokokRows = tabelLog.find('tr.row-tugas-pokok');
-            if (pokokRows.length > 1) {
-                const idLog = $(this).attr('data-id');
-                const row = $(this).closest('tr');
+            const idLog = $(this).attr('data-id');
+            const row = $(this).closest('tr');
 
-                if(idLog) {
-                    if(confirm('Apakah Anda yakin ingin menghapus catatan kegiatan ini?')) {
+            // Cek apakah baris ini kosong (tidak ada target/deskripsi terisi)
+            const targetVal = row.find('select[name="target_id[]"]').val();
+            const deskripsiVal = row.find('textarea[name="deskripsi_kegiatan[]"]').val();
+            const isRowEmpty = !targetVal && (!deskripsiVal || !deskripsiVal.trim());
+
+            // Cek apakah ada Tugas Tambahan sebagai alternatif
+            const tambahanRows = tabelLog.find('tr.row-tugas-tambahan');
+            const hasTambahan = tambahanRows.length > 0;
+
+            // Izinkan hapus jika: ada >1 baris Pokok, ATAU baris terakhir kosong, ATAU sudah ada Tugas Tambahan
+            const canDelete = pokokRows.length > 1 || isRowEmpty || hasTambahan;
+
+            if (canDelete) {
+                if (idLog) {
+                    if (confirm('Apakah Anda yakin ingin menghapus catatan kegiatan ini?')) {
                         $.post('<?= site_url('log-kegiatan/hapus') ?>', { id: idLog, <?= csrf_token() ?>: '<?= csrf_hash() ?>' }, function(response) {
-                            if(response.success) {
+                            if (response.success) {
                                 row.remove();
                                 updateRowNumbers();
                                 updateDropdownOptions();
@@ -454,7 +466,7 @@ Lapor Kegiatan Harian
                     updateDropdownOptions();
                 }
             } else {
-                alert('Minimal harus mengisi satu kegiatan harian utama.');
+                alert('Minimal harus mengisi satu kegiatan harian utama atau satu Tugas Tambahan sebelum menghapus baris ini.');
             }
         });
 

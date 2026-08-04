@@ -162,7 +162,9 @@ class LogKegiatanController extends BaseController
             return redirect()->back()->withInput()->with('error', 'Gagal menyimpan. Silakan isi minimal 1 Kegiatan Utama (Tugas Pokok) ATAU 1 Tugas Tambahan hari ini.');
         }
 
-        // Pengecekan keamanan: Apakah tanggal sudah dikunci?
+        // Pengecekan keamanan: Apakah TUGAS POKOK sudah dikunci?
+        // Jika Tugas Pokok sudah terkirim → blokir seluruh form.
+        // Jika hanya Tugas Tambahan yang sudah terkirim → izinkan penambahan Tugas Pokok, Tambahan yang sudah terkirim akan di-skip saat proses.
         $isDirektur = ($currentUser && $currentUser['role'] === 'direktur');
         if (!$isDirektur) {
             foreach ($existingData as $row) {
@@ -173,13 +175,13 @@ class LogKegiatanController extends BaseController
                     return redirect()->back()->with('error', 'Laporan hari ini telah dikunci dan tidak dapat diedit.');
                 }
             }
-            foreach ($existingTambahanData as $row) {
-                if (isset($row['status']) && $row['status'] === 'terkirim') {
-                    if ($this->request->isAJAX()) {
-                        return $this->response->setJSON(['success' => false, 'message' => 'Laporan hari ini telah dikunci.', 'csrf_hash' => csrf_hash()]);
-                    }
-                    return redirect()->back()->with('error', 'Laporan hari ini telah dikunci dan tidak dapat diedit.');
-                }
+        }
+
+        // Buat lookup status Tambahan yang sudah terkirim (agar tidak di-overwrite)
+        $lockedTambahanIds = [];
+        foreach ($existingTambahanData as $row) {
+            if (isset($row['status']) && $row['status'] === 'terkirim') {
+                $lockedTambahanIds[] = $row['id'];
             }
         }
 
@@ -281,6 +283,13 @@ class LogKegiatanController extends BaseController
             foreach ($deskripsi_kegiatan_tambahan_arr as $index => $deskripsiTmb) {
                 if (empty($deskripsiTmb)) continue;
 
+                $existingTambahanId = !empty($log_tambahan_ids[$index]) ? $log_tambahan_ids[$index] : null;
+
+                // Skip Tambahan yang sudah terkirim — tidak boleh diubah
+                if ($existingTambahanId && in_array($existingTambahanId, $lockedTambahanIds)) {
+                    continue;
+                }
+
                 $rowTmbData = [
                     'user_id'            => $userId,
                     'tanggal_kegiatan'   => $tanggal,
@@ -292,8 +301,8 @@ class LogKegiatanController extends BaseController
                     'status_approval'    => 'menunggu_persetujuan'
                 ];
 
-                if (!empty($log_tambahan_ids[$index])) {
-                    $rowTmbData['id'] = $log_tambahan_ids[$index];
+                if ($existingTambahanId) {
+                    $rowTmbData['id'] = $existingTambahanId;
                     $dataTambahanToUpdate[] = $rowTmbData;
                 } else {
                     $dataTambahanToInsert[$index] = $rowTmbData;
