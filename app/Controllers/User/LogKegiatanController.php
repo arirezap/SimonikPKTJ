@@ -243,7 +243,7 @@ class LogKegiatanController extends BaseController
                     'target_id'          => $targetId,
                     'tanggal_kegiatan'   => $tanggal,
                     'deskripsi_kegiatan' => $deskripsi_kegiatan_arr[$index] ?? '',
-                    'jumlah_capaian'     => $jumlah_capaian_arr[$index] ?? 0,
+                    'jumlah_capaian'     => (isset($jumlah_capaian_arr[$index]) && $jumlah_capaian_arr[$index] !== '') ? (float)$jumlah_capaian_arr[$index] : 0,
                     'link_bukti'         => !empty($link_bukti_arr[$index]) ? $link_bukti_arr[$index] : null,
                     'status'             => $status
                 ];
@@ -294,7 +294,7 @@ class LogKegiatanController extends BaseController
                     'user_id'            => $userId,
                     'tanggal_kegiatan'   => $tanggal,
                     'deskripsi_kegiatan' => $deskripsiTmb,
-                    'jumlah_capaian'     => !empty($jumlah_capaian_tambahan_arr[$index]) ? (float)$jumlah_capaian_tambahan_arr[$index] : 1.00,
+                    'jumlah_capaian'     => (isset($jumlah_capaian_tambahan_arr[$index]) && $jumlah_capaian_tambahan_arr[$index] !== '') ? (float)$jumlah_capaian_tambahan_arr[$index] : 0.00,
                     'satuan'             => !empty($satuan_tambahan_arr[$index]) ? $satuan_tambahan_arr[$index] : 'Kegiatan',
                     'link_bukti'         => !empty($link_bukti_tambahan_arr[$index]) ? $link_bukti_tambahan_arr[$index] : null,
                     'status'             => $status,

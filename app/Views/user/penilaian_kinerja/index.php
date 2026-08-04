@@ -334,9 +334,9 @@ Rekap & Penilaian Kinerja
                                                     echo $tgl . ' ' . substr($bln, 0, 3);
                                                 ?>
                                             </td>
-                                            <td class="text-center fw-semibold text-dark">
-                                                <?= !empty($tmb['jumlah_capaian']) ? str_replace('.', ',', (float)$tmb['jumlah_capaian']) : '-' ?> <?= esc($tmb['satuan'] ?? '') ?>
-                                            </td>
+                                             <td class="text-center fw-semibold text-dark">
+                                                 <?= (isset($tmb['jumlah_capaian']) && $tmb['jumlah_capaian'] !== null && $tmb['jumlah_capaian'] !== '') ? str_replace('.', ',', (float)$tmb['jumlah_capaian']) : '-' ?> <?= esc($tmb['satuan'] ?? '') ?>
+                                             </td>
                                             <td class="text-center">
                                                 <?php if (!empty($tmb['link_bukti'])): ?>
                                                     <a href="<?= esc($tmb['link_bukti']) ?>" target="_blank" class="btn btn-light btn-sm text-primary rounded-circle shadow-sm border" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;" title="Lihat Bukti Pekerjaan"><i class="bi bi-link-45deg fs-5"></i></a>
@@ -593,7 +593,7 @@ Rekap & Penilaian Kinerja
                                                 <td class="align-middle p-2 text-center" style="width: 135px;">
                                                     <input type="hidden" name="laporan_id[]" value="<?= esc($row['id']) ?>">
                                                     <div class="input-group input-group-sm mb-1">
-                                                        <input type="number" name="nilai_capaian[]" class="form-control text-center input-nilai-capaian fw-bold text-primary p-1" style="font-size:0.9rem;" value="<?= $nilai_capaian !== null ? (float)$nilai_capaian : '' ?>" step="0.01" min="0" max="150" placeholder="0 - 150" required>
+                                                        <input type="number" name="nilai_capaian[]" class="form-control text-center input-nilai-capaian fw-bold text-primary p-1" style="font-size:0.9rem;" value="<?= $nilai_capaian !== null ? (float)$nilai_capaian : '' ?>" step="0.01" min="0" max="150" placeholder="0 - 150">
                                                         <span class="input-group-text bg-light px-1">%</span>
                                                     </div>
                                                     <div class="predikat-badge-container">
@@ -641,9 +641,9 @@ Rekap & Penilaian Kinerja
                                                             echo $tgl . ' ' . substr($bln, 0, 3);
                                                         ?>
                                                     </td>
-                                                    <td class="text-center fw-semibold text-dark">
-                                                        <?= !empty($tmb['jumlah_capaian']) ? str_replace('.', ',', (float)$tmb['jumlah_capaian']) : '-' ?> <?= esc($tmb['satuan'] ?? '') ?>
-                                                    </td>
+                                                     <td class="text-center fw-semibold text-dark">
+                                                         <?= (isset($tmb['jumlah_capaian']) && $tmb['jumlah_capaian'] !== null && $tmb['jumlah_capaian'] !== '') ? str_replace('.', ',', (float)$tmb['jumlah_capaian']) : '-' ?> <?= esc($tmb['satuan'] ?? '') ?>
+                                                     </td>
                                                     <td class="text-center">
                                                         <?php if (!empty($tmb['link_bukti'])): ?>
                                                             <a href="<?= esc($tmb['link_bukti']) ?>" target="_blank" class="btn btn-light btn-sm text-primary rounded-circle shadow-sm border" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;" title="Lihat Bukti Pekerjaan"><i class="bi bi-link-45deg fs-5"></i></a>

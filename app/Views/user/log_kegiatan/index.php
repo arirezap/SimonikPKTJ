@@ -293,7 +293,7 @@ Lapor Kegiatan Harian
                                         </td>
                                         <td>
                                             <div class="p-2 border rounded bg-light text-center fw-bold text-muted">
-                                                <?= !empty($rowTmb['jumlah_capaian']) ? str_replace('.', ',', (float)$rowTmb['jumlah_capaian']) : '-' ?> <?= esc($rowTmb['satuan'] ?? '') ?>
+                                                <?= (isset($rowTmb['jumlah_capaian']) && $rowTmb['jumlah_capaian'] !== null && $rowTmb['jumlah_capaian'] !== '') ? str_replace('.', ',', (float)$rowTmb['jumlah_capaian']) : '-' ?> <?= esc($rowTmb['satuan'] ?? '') ?>
                                             </div>
                                         </td>
                                         <td>
