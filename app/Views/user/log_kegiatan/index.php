@@ -193,7 +193,7 @@ Lapor Kegiatan Harian
                                         <!-- Editable Draft View -->
                                         <input type="hidden" name="log_id[]" value="<?= $row['id'] ?>">
                                         <td>
-                                            <select name="target_id[]" class="form-select" required>
+                                            <select name="target_id[]" class="form-select">
                                                 <option value="">-- Pilih Target / RHK --</option>
                                                 <?php foreach($daftar_target as $target): ?>
                                                     <?php 
@@ -205,16 +205,16 @@ Lapor Kegiatan Harian
                                             </select>
                                         </td>
                                         <td>
-                                            <textarea name="deskripsi_kegiatan[]" class="form-control" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..." required><?= esc($row['deskripsi_kegiatan']) ?></textarea>
+                                            <textarea name="deskripsi_kegiatan[]" class="form-control" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..."><?= esc($row['deskripsi_kegiatan']) ?></textarea>
                                         </td>
                                         <td>
                                             <div class="input-group">
-                                                <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control text-center" placeholder="Angka" value="<?= (float)$row['jumlah_capaian'] ?>" required>
+                                                <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control text-center" placeholder="Angka" value="<?= (float)$row['jumlah_capaian'] ?>">
                                                 <span class="input-group-text"><?= esc($row['satuan'] ?? '-') ?></span>
                                             </div>
                                         </td>
                                         <td>
-                                            <input type="url" name="link_bukti[]" class="form-control" placeholder="https://..." value="<?= esc($row['link_bukti']) ?>" required>
+                                            <input type="url" name="link_bukti[]" class="form-control" placeholder="https://..." value="<?= esc($row['link_bukti']) ?>">
                                         </td>
                                         <td class="text-center">
                                             <button type="button" class="btn btn-outline-danger btn-sm hapus-baris" data-id="<?= $row['id'] ?>" title="Hapus baris"><i class="bi bi-trash"></i></button>

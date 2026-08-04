@@ -120,34 +120,50 @@ class LogKegiatanController extends BaseController
         $isDraft = $this->request->isAJAX() || $this->request->getPost('action') === 'draft';
         $status = $isDraft ? 'draft' : 'terkirim';
 
-        // Lakukan validasi ketat HANYA saat Simpan & Kirim (Bukan Draft)
-        if (!$isDraft) {
-            $rules = [
-                'tanggal'              => 'required',
-                'target_id.*'          => 'required|numeric',
-                'deskripsi_kegiatan.*' => 'required',
-                'jumlah_capaian.*'     => 'required|numeric',
-                'link_bukti.*'         => 'required|valid_url',
-            ];
+        // Validation: Pastikan minimal ada 1 Tugas Pokok ATAU 1 Tugas Tambahan yang terisi
+        $target_id_check = $this->request->getPost('target_id');
+        $deskripsi_pokok_check = $this->request->getPost('deskripsi_kegiatan');
+        $deskripsi_tambahan_check = $this->request->getPost('deskripsi_kegiatan_tambahan');
 
-            if (!$this->validate($rules)) {
-                if ($this->request->isAJAX()) {
-                    return $this->response->setJSON([
-                        'success' => false,
-                        'message' => 'Gagal mengirim. Pastikan semua form terisi dengan lengkap (URL Bukti Pekerjaan harus valid).',
-                        'csrf_hash' => csrf_hash()
-                    ]);
+        $hasPokokInput = false;
+        if (is_array($target_id_check)) {
+            foreach ($target_id_check as $idx => $tId) {
+                if (!empty($tId) && !empty($deskripsi_pokok_check[$idx])) {
+                    $hasPokokInput = true;
+                    break;
                 }
-                return redirect()->back()->withInput()->with('error', 'Gagal mengirim. Pastikan semua form terisi dengan lengkap (URL Bukti Pekerjaan harus valid).');
+            }
+        }
+
+        $hasTambahanInput = false;
+        if (is_array($deskripsi_tambahan_check)) {
+            foreach ($deskripsi_tambahan_check as $tmbDesc) {
+                if (!empty(trim($tmbDesc))) {
+                    $hasTambahanInput = true;
+                    break;
+                }
             }
         }
 
         $logModel = new LogKegiatanHarian();
         $tanggal = $this->request->getPost('tanggal');
+        $existingData = $logModel->getLogWithTarget($userId, $tanggal);
+        $existingTambahanData = (new \App\Models\LogTugasTambahan())->getLogByDate($userId, $tanggal);
+
+        // Jika tidak ada input baru dan tidak ada data draf eksisting, tolak
+        if (!$hasPokokInput && !$hasTambahanInput && empty($existingData) && empty($existingTambahanData)) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Gagal menyimpan. Silakan isi minimal 1 Kegiatan Utama (Tugas Pokok) ATAU 1 Tugas Tambahan hari ini.',
+                    'csrf_hash' => csrf_hash()
+                ]);
+            }
+            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan. Silakan isi minimal 1 Kegiatan Utama (Tugas Pokok) ATAU 1 Tugas Tambahan hari ini.');
+        }
 
         // Pengecekan keamanan: Apakah tanggal sudah dikunci?
         $isDirektur = ($currentUser && $currentUser['role'] === 'direktur');
-        $existingData = $logModel->getLogWithTarget($userId, $tanggal);
         if (!$isDirektur) {
             foreach ($existingData as $row) {
                 if (isset($row['status']) && $row['status'] === 'terkirim') {
@@ -157,10 +173,6 @@ class LogKegiatanController extends BaseController
                     return redirect()->back()->with('error', 'Laporan hari ini telah dikunci dan tidak dapat diedit.');
                 }
             }
-        }
-
-        $existingTambahanData = (new \App\Models\LogTugasTambahan())->getLogByDate($userId, $tanggal);
-        if (!$isDirektur) {
             foreach ($existingTambahanData as $row) {
                 if (isset($row['status']) && $row['status'] === 'terkirim') {
                     if ($this->request->isAJAX()) {
@@ -171,41 +183,40 @@ class LogKegiatanController extends BaseController
             }
         }
 
-        // Khusus untuk submit "Simpan & Kirim" yang mungkin tidak mengirim data baru, tapi hanya mengupdate status yang sudah ada (draft -> terkirim)
-        if (!$isDraft && empty($this->request->getPost('target_id'))) {
-            if (!empty($existingData)) {
-                $logModel->where('user_id', $userId)
-                         ->where('tanggal_kegiatan', $tanggal)
-                         ->set(['status' => 'terkirim'])
-                         ->update();
+        // Untuk submit "Simpan & Kirim" jika tidak ada data baru (hanya mengupdate draf -> terkirim)
+        if (!$isDraft && !$hasPokokInput && !$hasTambahanInput && (!empty($existingData) || !empty($existingTambahanData))) {
+            $logModel->where('user_id', $userId)
+                     ->where('tanggal_kegiatan', $tanggal)
+                     ->set(['status' => 'terkirim'])
+                     ->update();
 
-                $logTambahanModel = new \App\Models\LogTugasTambahan();
-                $logTambahanModel->where('user_id', $userId)
-                                 ->where('tanggal_kegiatan', $tanggal)
-                                 ->set(['status' => 'terkirim'])
-                                 ->update();
-                         
-                $user = (new \App\Models\User())->find($userId);
-                if ($user && !empty($user['atasan_id'])) {
-                    helper('notification');
-                    send_notification(
-                        $user['atasan_id'], 
-                        'Laporan Harian Baru', 
-                        $user['nama_lengkap'] . " mengirimkan Laporan Harian untuk tanggal $tanggal.",
-                        site_url('penilaian-staf')
-                    );
-                }
-                
-                return redirect()->to('/log-kegiatan')->with('success', 'Kegiatan harian berhasil dikirim.');
-            } else {
-                return redirect()->back()->with('error', 'Tidak ada data untuk dikirim.');
+            $logTambahanModel = new \App\Models\LogTugasTambahan();
+            $logTambahanModel->where('user_id', $userId)
+                             ->where('tanggal_kegiatan', $tanggal)
+                             ->set(['status' => 'terkirim'])
+                             ->update();
+                     
+            $user = (new \App\Models\User())->find($userId);
+            if ($user && !empty($user['atasan_id'])) {
+                helper('notification');
+                send_notification(
+                    $user['atasan_id'], 
+                    'Laporan Harian Baru', 
+                    $user['nama_lengkap'] . " mengirimkan Laporan Harian untuk tanggal $tanggal.",
+                    site_url('penilaian-staf')
+                );
             }
+            
+            return redirect()->to('/log-kegiatan')->with('success', 'Kegiatan harian berhasil dikirim.');
         }
 
         $tanggalTerpilihObj = new \DateTime($tanggal);
         $todayObj = new \DateTime(date('Y-m-d'));
         
         if ($tanggalTerpilihObj > $todayObj) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Tidak dapat melaporkan kegiatan untuk tanggal di masa depan.', 'csrf_hash' => csrf_hash()]);
+            }
             return redirect()->back()->with('error', 'Gagal menyimpan. Anda tidak dapat melaporkan kegiatan untuk tanggal di masa depan.');
         }
 
@@ -301,16 +312,6 @@ class LogKegiatanController extends BaseController
             }
         }
 
-        if ($this->request->isAJAX()) {
-            return $this->response->setJSON([
-                'success' => true,
-                'message' => 'Laporan harian & tugas tambahan berhasil disimpan sementara.',
-                'new_ids' => $insertedIds,
-                'new_tambahan_ids' => $insertedTambahanIds,
-                'csrf_hash' => csrf_hash()
-            ]);
-        }
-
         // Jika submit normal (Simpan & Kirim), ubah status semua log tanggal ini menjadi terkirim
         if (!$this->request->isAJAX()) {
             $logModel->where('user_id', $userId)
@@ -333,6 +334,16 @@ class LogKegiatanController extends BaseController
                     site_url('penilaian-staf')
                 );
             }
+        }
+
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Laporan harian & tugas tambahan berhasil disimpan sementara.',
+                'new_ids' => $insertedIds ?? [],
+                'new_tambahan_ids' => $insertedTambahanIds ?? [],
+                'csrf_hash' => csrf_hash()
+            ]);
         }
 
         return redirect()->to('/log-kegiatan')
