@@ -425,14 +425,34 @@ Target Kinerja Bulanan
                 const idLaporan = $(this).attr('data-id');
                 const row = $(this).closest('tr');
 
-                if(idLaporan) {
-                    if(confirm('Apakah Anda yakin ingin menghapus target ini?')) {
-                        $.post('<?= site_url('laporan-harian/hapus') ?>', { id: idLaporan, <?= csrf_token() ?>: '<?= csrf_hash() ?>' }, function(response) {
-                            if(response.success) {
-                                row.remove();
-                                updateRowNumbers(tabel);
-                            } else {
-                                alert(response.message || 'Gagal menghapus data.');
+                if (idLaporan) {
+                    if (confirm('Apakah Anda yakin ingin menghapus target ini?')) {
+                        let csrfTokenName = '<?= csrf_token() ?>';
+                        let csrfHash = $('input[name="' + csrfTokenName + '"]').val() || '<?= csrf_hash() ?>';
+                        
+                        let postData = { id: idLaporan };
+                        postData[csrfTokenName] = csrfHash;
+
+                        $.ajax({
+                            url: '<?= site_url('laporan-harian/hapus') ?>',
+                            type: 'POST',
+                            data: postData,
+                            dataType: 'json',
+                            success: function(response) {
+                                if (response.csrf_hash) {
+                                    $('input[name="' + csrfTokenName + '"]').val(response.csrf_hash);
+                                    $('input[name="csrf_test_name"]').val(response.csrf_hash);
+                                }
+                                if (response.success) {
+                                    row.remove();
+                                    updateRowNumbers(tabel);
+                                } else {
+                                    alert(response.message || 'Gagal menghapus data.');
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                console.error('Hapus Error:', xhr.responseText);
+                                alert('Terjadi kesalahan saat menghapus data. Silakan refresh halaman dan coba lagi.');
                             }
                         });
                     }

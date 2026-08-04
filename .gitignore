@@ -48,6 +48,7 @@ Vagrantfile
 #-------------------------
 # Temporary Files
 #-------------------------
+graphify-out/
 writable/cache/*
 !writable/cache/index.html
 

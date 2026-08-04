@@ -333,7 +333,11 @@ class LaporanHarianController extends BaseController
                 if (!$isDirektur) {
                     // Jangan izinkan hapus jika sudah disetujui
                     if ($laporan['status_approval'] == 'disetujui') {
-                        return $this->response->setJSON(['success' => false, 'message' => 'Terkunci. Target sudah disetujui oleh atasan.']);
+                        return $this->response->setJSON([
+                            'success' => false, 
+                            'message' => 'Terkunci. Target sudah disetujui oleh atasan.',
+                            'csrf_hash' => csrf_hash()
+                        ]);
                     }
                     
                     $settingModel = new \App\Models\SettingModel();
@@ -346,14 +350,26 @@ class LaporanHarianController extends BaseController
 
                     if (($tahun == $currentYear && $bulan == $currentMonth && $currentDay > $batasTarget) || 
                         ($tahun < $currentYear) || ($tahun == $currentYear && $bulan < $currentMonth)) {
-                        return $this->response->setJSON(['success' => false, 'message' => 'Terkunci. Batas waktu terlewat.']);
+                        return $this->response->setJSON([
+                            'success' => false, 
+                            'message' => 'Terkunci. Batas waktu pengisian/pengubahan target telah terlewat.',
+                            'csrf_hash' => csrf_hash()
+                        ]);
                     }
                 }
 
                 $laporanModel->delete($id);
-                return $this->response->setJSON(['success' => true]);
+                log_audit('DELETE', 'laporan_harian', $id, $laporan, null);
+                return $this->response->setJSON([
+                    'success' => true,
+                    'csrf_hash' => csrf_hash()
+                ]);
             }
         }
-        return $this->response->setJSON(['success' => false]);
+        return $this->response->setJSON([
+            'success' => false, 
+            'message' => 'Data target tidak ditemukan.',
+            'csrf_hash' => csrf_hash()
+        ]);
     }
 }

@@ -40,6 +40,8 @@
         "sort-packages": true
     },
     "scripts": {
-        "test": "phpunit"
+        "test": "phpunit",
+        "graphify": "graphify . --code-only",
+        "graphify:cluster": "graphify cluster-only ."
     }
 }
