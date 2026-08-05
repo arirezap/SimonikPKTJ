@@ -284,6 +284,7 @@ class LogKegiatanController extends BaseController
 
         $dataTambahanToUpdate = [];
         $dataTambahanToInsert = [];
+        $allTambahanIds = []; // Semua ID tugas tambahan (existing + baru) untuk sinkronisasi UI
 
         if ($deskripsi_kegiatan_tambahan_arr) {
             foreach ($deskripsi_kegiatan_tambahan_arr as $index => $deskripsiTmb) {
@@ -336,8 +337,8 @@ class LogKegiatanController extends BaseController
 
         $insertedIds = [];
         $insertedTambahanIds = [];
-        $allTambahanIds = []; // Semua ID tugas tambahan (existing + baru) untuk sinkronisasi UI
         
+
         try {
             if (!empty($dataToUpdate)) {
                 $logModel->updateBatch($dataToUpdate, 'id');
