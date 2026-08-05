@@ -128,7 +128,8 @@ class LogKegiatanController extends BaseController
         $hasPokokInput = false;
         if (is_array($target_id_check)) {
             foreach ($target_id_check as $idx => $tId) {
-                if (!empty($tId) && !empty($deskripsi_pokok_check[$idx])) {
+                $capaianCheck = trim((string)(($this->request->getPost('jumlah_capaian') ?? [])[$idx] ?? ''));
+                if (!empty($tId) && (!empty($deskripsi_pokok_check[$idx]) || $capaianCheck !== '')) {
                     $hasPokokInput = true;
                     break;
                 }
@@ -238,12 +239,28 @@ class LogKegiatanController extends BaseController
             foreach ($target_id_arr as $index => $targetId) {
                 if (empty($targetId)) continue;
 
+                $capaianStr = trim((string)($jumlah_capaian_arr[$index] ?? ''));
+                if ($capaianStr === '') {
+                    if ($this->request->isAJAX()) {
+                        return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Pokok tidak boleh kosong. Harap isi angka (minimal 0).', 'csrf_hash' => csrf_hash()]);
+                    }
+                    return redirect()->back()->with('error', 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Pokok tidak boleh kosong. Harap isi angka (minimal 0).');
+                }
+
+                $capaianValNum = str_replace(',', '.', $capaianStr);
+                if (!is_numeric($capaianValNum)) {
+                    if ($this->request->isAJAX()) {
+                        return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Format Jumlah Capaian pada Tugas Pokok tidak valid.', 'csrf_hash' => csrf_hash()]);
+                    }
+                    return redirect()->back()->with('error', 'Gagal menyimpan. Format Jumlah Capaian pada Tugas Pokok tidak valid.');
+                }
+
                 $rowData = [
                     'user_id'            => $userId,
                     'target_id'          => $targetId,
                     'tanggal_kegiatan'   => $tanggal,
                     'deskripsi_kegiatan' => $deskripsi_kegiatan_arr[$index] ?? '',
-                    'jumlah_capaian'     => (isset($jumlah_capaian_arr[$index]) && $jumlah_capaian_arr[$index] !== '') ? (float)$jumlah_capaian_arr[$index] : 0,
+                    'jumlah_capaian'     => (float)$capaianValNum,
                     'link_bukti'         => !empty($link_bukti_arr[$index]) ? $link_bukti_arr[$index] : null,
                     'status'             => $status
                 ];
@@ -254,17 +271,6 @@ class LogKegiatanController extends BaseController
                 } else {
                     $dataToInsert[$index] = $rowData;
                 }
-            }
-        }
-
-        $insertedIds = [];
-        if (!empty($dataToUpdate)) {
-            $logModel->updateBatch($dataToUpdate, 'id');
-        }
-        if (!empty($dataToInsert)) {
-            foreach ($dataToInsert as $origIndex => $insertRow) {
-                $logModel->insert($insertRow);
-                $insertedIds[$origIndex] = $logModel->getInsertID();
             }
         }
 
@@ -289,12 +295,28 @@ class LogKegiatanController extends BaseController
                 if ($existingTambahanId && in_array($existingTambahanId, $lockedTambahanIds)) {
                     continue;
                 }
+                
+                $capaianStrTmb = trim((string)($jumlah_capaian_tambahan_arr[$index] ?? ''));
+                if ($capaianStrTmb === '') {
+                    if ($this->request->isAJAX()) {
+                        return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Tambahan tidak boleh kosong. Harap isi angka (minimal 0).', 'csrf_hash' => csrf_hash()]);
+                    }
+                    return redirect()->back()->with('error', 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Tambahan tidak boleh kosong. Harap isi angka (minimal 0).');
+                }
+
+                $capaianValNumTmb = str_replace(',', '.', $capaianStrTmb);
+                if (!is_numeric($capaianValNumTmb)) {
+                    if ($this->request->isAJAX()) {
+                        return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Format Jumlah Capaian pada Tugas Tambahan tidak valid.', 'csrf_hash' => csrf_hash()]);
+                    }
+                    return redirect()->back()->with('error', 'Gagal menyimpan. Format Jumlah Capaian pada Tugas Tambahan tidak valid.');
+                }
 
                 $rowTmbData = [
                     'user_id'            => $userId,
                     'tanggal_kegiatan'   => $tanggal,
                     'deskripsi_kegiatan' => $deskripsiTmb,
-                    'jumlah_capaian'     => (isset($jumlah_capaian_tambahan_arr[$index]) && $jumlah_capaian_tambahan_arr[$index] !== '') ? (float)$jumlah_capaian_tambahan_arr[$index] : 0.00,
+                    'jumlah_capaian'     => (float)$capaianValNumTmb,
                     'satuan'             => !empty($satuan_tambahan_arr[$index]) ? $satuan_tambahan_arr[$index] : 'Kegiatan',
                     'link_bukti'         => !empty($link_bukti_tambahan_arr[$index]) ? $link_bukti_tambahan_arr[$index] : null,
                     'status'             => $status,
@@ -310,15 +332,34 @@ class LogKegiatanController extends BaseController
             }
         }
 
+        $insertedIds = [];
         $insertedTambahanIds = [];
-        if (!empty($dataTambahanToUpdate)) {
-            $logTambahanModel->updateBatch($dataTambahanToUpdate, 'id');
-        }
-        if (!empty($dataTambahanToInsert)) {
-            foreach ($dataTambahanToInsert as $origIndex => $insertRow) {
-                $logTambahanModel->insert($insertRow);
-                $insertedTambahanIds[$origIndex] = $logTambahanModel->getInsertID();
+        
+        try {
+            if (!empty($dataToUpdate)) {
+                $logModel->updateBatch($dataToUpdate, 'id');
             }
+            if (!empty($dataToInsert)) {
+                foreach ($dataToInsert as $origIndex => $insertRow) {
+                    $logModel->insert($insertRow);
+                    $insertedIds[$origIndex] = $logModel->getInsertID();
+                }
+            }
+
+            if (!empty($dataTambahanToUpdate)) {
+                $logTambahanModel->updateBatch($dataTambahanToUpdate, 'id');
+            }
+            if (!empty($dataTambahanToInsert)) {
+                foreach ($dataTambahanToInsert as $origIndex => $insertRow) {
+                    $logTambahanModel->insert($insertRow);
+                    $insertedTambahanIds[$origIndex] = $logTambahanModel->getInsertID();
+                }
+            }
+        } catch (\Exception $e) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Gagal terhubung ke database. Coba lagi atau hubungi admin.', 'csrf_hash' => csrf_hash()]);
+            }
+            return redirect()->back()->with('error', 'Gagal menyimpan data ke database.');
         }
 
         // Jika submit normal (Simpan & Kirim), ubah status semua log tanggal ini menjadi terkirim
@@ -408,6 +449,8 @@ class LogKegiatanController extends BaseController
         $deskripsi_kegiatan_arr = $this->request->getPost('deskripsi_kegiatan_tambahan');
         $link_bukti_arr = $this->request->getPost('link_bukti_tambahan');
 
+        $jumlah_capaian_tambahan_arr = $this->request->getPost('jumlah_capaian_tambahan');
+
         $dataToUpdate = [];
         $dataToInsert = [];
 
@@ -415,10 +458,27 @@ class LogKegiatanController extends BaseController
             foreach ($deskripsi_kegiatan_arr as $index => $deskripsi) {
                 if (empty($deskripsi)) continue;
 
+                $capaianStrTmb = trim((string)($jumlah_capaian_tambahan_arr[$index] ?? ''));
+                if ($capaianStrTmb === '') {
+                    if ($this->request->isAJAX()) {
+                        return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Tambahan tidak boleh kosong. Harap isi angka (minimal 0).', 'csrf_hash' => csrf_hash()]);
+                    }
+                    return redirect()->back()->with('error', 'Gagal menyimpan. Kolom Jumlah Capaian tidak boleh kosong. Harap isi angka (minimal 0).');
+                }
+
+                $capaianValNumTmb = str_replace(',', '.', $capaianStrTmb);
+                if (!is_numeric($capaianValNumTmb)) {
+                    if ($this->request->isAJAX()) {
+                        return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Format Jumlah Capaian pada Tugas Tambahan tidak valid.', 'csrf_hash' => csrf_hash()]);
+                    }
+                    return redirect()->back()->with('error', 'Gagal menyimpan. Format Jumlah Capaian tidak valid.');
+                }
+
                 $rowData = [
                     'user_id'            => $userId,
                     'tanggal_kegiatan'   => $tanggal,
                     'deskripsi_kegiatan' => $deskripsi,
+                    'jumlah_capaian'     => (float)$capaianValNumTmb,
                     'link_bukti'         => $link_bukti_arr[$index] ?? '',
                     'status'             => $status,
                     'status_approval'    => 'menunggu_persetujuan'
@@ -434,14 +494,21 @@ class LogKegiatanController extends BaseController
         }
 
         $insertedIds = [];
-        if (!empty($dataToUpdate)) {
-            $logTambahanModel->updateBatch($dataToUpdate, 'id');
-        }
-        if (!empty($dataToInsert)) {
-            foreach ($dataToInsert as $origIndex => $insertRow) {
-                $logTambahanModel->insert($insertRow);
-                $insertedIds[$origIndex] = $logTambahanModel->getInsertID();
+        try {
+            if (!empty($dataToUpdate)) {
+                $logTambahanModel->updateBatch($dataToUpdate, 'id');
             }
+            if (!empty($dataToInsert)) {
+                foreach ($dataToInsert as $origIndex => $insertRow) {
+                    $logTambahanModel->insert($insertRow);
+                    $insertedIds[$origIndex] = $logTambahanModel->getInsertID();
+                }
+            }
+        } catch (\Exception $e) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Gagal terhubung ke database. Coba lagi atau hubungi admin.', 'csrf_hash' => csrf_hash()]);
+            }
+            return redirect()->back()->with('error', 'Gagal menyimpan data ke database.');
         }
 
         if ($this->request->isAJAX()) {

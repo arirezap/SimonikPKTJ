@@ -136,29 +136,7 @@ class LaporanHarianController extends BaseController
 
         // Validasi Kunci Waktu di-bypass agar seluruh pengguna bisa mengisi target meski bulan terlewat
 
-        // Jika Simpan & Kirim (Bukan Draft), lakukan validasi ketat
-        if (!$isDraft) {
-            $rules = [
-                'bulan'               => 'required|numeric',
-                'tahun'               => 'required|numeric',
-                'sasaran_program.*'   => 'required',
-                'indikator_kinerja.*' => 'required',
-                'target_bulanan.*'    => 'required|numeric',
-                'satuan.*'            => 'required',
-            ];
-
-            if (!$this->validate($rules)) {
-                if ($this->request->isAJAX()) {
-                    return $this->response->setJSON([
-                        'success' => false,
-                        'message' => 'Gagal mengirim. Pastikan semua kolom target terisi dengan lengkap.',
-                        'csrf_hash' => csrf_hash()
-                    ]);
-                }
-                return redirect()->back()->withInput()->with('error', 'Gagal mengirim. Pastikan semua kolom target terisi dengan lengkap.');
-            }
-        }
-
+        // Ambil data dari form
         $laporan_ids = $this->request->getPost('laporan_id');
         $sasaran_program_arr = $this->request->getPost('sasaran_program');
         $indikator_kinerja_arr = $this->request->getPost('indikator_kinerja');
@@ -167,6 +145,8 @@ class LaporanHarianController extends BaseController
 
         $dataToUpdate = [];
         $dataToInsert = [];
+        $hasValidRow = false;
+        $hasError = false;
         
         // Jika diedit oleh atasan atau pemilik akun adalah Direktur, langsung disetujui
         $isDirektur = (session()->get('role') === 'direktur');
@@ -177,21 +157,45 @@ class LaporanHarianController extends BaseController
                 $indikator = $indikator_kinerja_arr[$index] ?? '';
                 $targetVal = $target_bulanan_arr[$index] ?? '';
                 $satuanVal = $satuan_arr[$index] ?? '';
+                
+                $sasaranStr = trim((string)$sasaran);
+                $indikatorStr = trim((string)$indikator);
+                $targetStr = trim((string)$targetVal);
+                $satuanStr = trim((string)$satuanVal);
 
-                // Untuk draft, jika seluruh baris kosong, abaikan
-                if ($isDraft && empty($sasaran) && empty($indikator) && empty($targetVal) && empty($satuanVal)) {
-                    continue;
+                // Abaikan baris yang benar-benar kosong
+                if ($sasaranStr === '' && $indikatorStr === '' && $targetStr === '' && $satuanStr === '') {
+                    continue; 
                 }
+
+                // Jika Simpan & Kirim, pastikan tidak ada sel yang kosong dalam baris yang terisi
+                if (!$isDraft) {
+                    if ($sasaranStr === '' || $indikatorStr === '' || $targetStr === '' || $satuanStr === '') {
+                        $hasError = true;
+                        break;
+                    }
+                }
+
+                // Konversi koma ke titik untuk desimal
+                $targetValNum = str_replace(',', '.', $targetStr);
+                
+                // Pastikan target adalah angka yang valid (jika sudah diisi)
+                if ($targetStr !== '' && !is_numeric($targetValNum)) {
+                    $hasError = true;
+                    break;
+                }
+
+                $hasValidRow = true;
 
                 $rowData = [
                     'user_id'           => $targetUserId,
                     'tanggal'           => null,
                     'bulan'             => $bulan,
                     'tahun'             => $tahun,
-                    'sasaran_program'   => $sasaran,
-                    'indikator_kinerja' => $indikator,
-                    'target_bulanan'    => is_numeric($targetVal) ? (float)$targetVal : 0.00,
-                    'satuan'            => $satuanVal,
+                    'sasaran_program'   => $sasaranStr,
+                    'indikator_kinerja' => $indikatorStr,
+                    'target_bulanan'    => is_numeric($targetValNum) ? (float)$targetValNum : 0.00,
+                    'satuan'            => $satuanStr,
                     'status_approval'   => $status_approval,
                     'status'            => $targetStatus
                 ];
@@ -205,15 +209,40 @@ class LaporanHarianController extends BaseController
             }
         }
 
-        $insertedIds = [];
-        if (!empty($dataToUpdate)) {
-            $laporanModel->updateBatch($dataToUpdate, 'id');
-        }
-        if (!empty($dataToInsert)) {
-            foreach ($dataToInsert as $origIndex => $insertRow) {
-                $laporanModel->insert($insertRow);
-                $insertedIds[$origIndex] = $laporanModel->getInsertID();
+        // Jika Simpan & Kirim, harus ada minimal 1 baris yang valid
+        // Jika draf, boleh disimpan dalam keadaan kosong sama sekali (hasValidRow = false) tapi tidak boleh ada error format
+        if ((!$isDraft && !$hasValidRow) || $hasError) {
+            $msg = $hasError ? 'Gagal menyimpan. Pastikan angka target menggunakan format yang benar dan seluruh sel dalam baris terisi (jika Simpan & Kirim).' : 'Gagal menyimpan. Minimal harus ada 1 target.';
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => $msg,
+                    'csrf_hash' => csrf_hash()
+                ]);
             }
+            return redirect()->back()->withInput()->with('error', $msg);
+        }
+
+        $insertedIds = [];
+        try {
+            if (!empty($dataToUpdate)) {
+                $laporanModel->updateBatch($dataToUpdate, 'id');
+            }
+            if (!empty($dataToInsert)) {
+                foreach ($dataToInsert as $origIndex => $insertRow) {
+                    $laporanModel->insert($insertRow);
+                    $insertedIds[$origIndex] = $laporanModel->getInsertID();
+                }
+            }
+        } catch (\Exception $e) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Gagal terhubung ke database. Coba lagi atau hubungi admin.',
+                    'csrf_hash' => csrf_hash()
+                ]);
+            }
+            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan data ke database.');
         }
 
         // Jika Simpan & Kirim, update semua target bulan ini yang sebelumnya draf menjadi terkirim
