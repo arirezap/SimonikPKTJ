@@ -326,14 +326,17 @@ class LogKegiatanController extends BaseController
                 if ($existingTambahanId) {
                     $rowTmbData['id'] = $existingTambahanId;
                     $dataTambahanToUpdate[] = $rowTmbData;
+                    $allTambahanIds[$index] = $existingTambahanId; // Catat ID existing
                 } else {
                     $dataTambahanToInsert[$index] = $rowTmbData;
+                    // ID baru akan diisi setelah insert
                 }
             }
         }
 
         $insertedIds = [];
         $insertedTambahanIds = [];
+        $allTambahanIds = []; // Semua ID tugas tambahan (existing + baru) untuk sinkronisasi UI
         
         try {
             if (!empty($dataToUpdate)) {
@@ -352,7 +355,9 @@ class LogKegiatanController extends BaseController
             if (!empty($dataTambahanToInsert)) {
                 foreach ($dataTambahanToInsert as $origIndex => $insertRow) {
                     $logTambahanModel->insert($insertRow);
-                    $insertedTambahanIds[$origIndex] = $logTambahanModel->getInsertID();
+                    $newId = $logTambahanModel->getInsertID();
+                    $insertedTambahanIds[$origIndex] = $newId;
+                    $allTambahanIds[$origIndex] = $newId; // Catat ID baru
                 }
             }
         } catch (\Exception $e) {
@@ -391,7 +396,7 @@ class LogKegiatanController extends BaseController
                 'success' => true,
                 'message' => 'Laporan harian & tugas tambahan berhasil disimpan sementara.',
                 'new_ids' => $insertedIds ?? [],
-                'new_tambahan_ids' => $insertedTambahanIds ?? [],
+                'new_tambahan_ids' => $allTambahanIds ?? [], // Kirim semua ID (existing + baru)
                 'csrf_hash' => csrf_hash()
             ]);
         }

@@ -530,16 +530,22 @@ Lapor Kegiatan Harian
                     confirmButtonText: 'Ya, Hapus!'
                 }).then((result) => {
                     if (result.isConfirmed) {
+                        // Selalu ambil CSRF token terbaru dari form
+                        const csrfToken = $('input[name="<?= csrf_token() ?>"]').val() || $('input[name="csrf_test_name"]').val();
                         $.ajax({
                             url: '<?= site_url("log-kegiatan/hapusTugasTambahan") ?>',
                             type: 'POST',
                             data: {
                                 id: logId,
-                                csrf_test_name: $('input[name="csrf_test_name"]').val()
+                                '<?= csrf_token() ?>': csrfToken
                             },
                             success: function(response) {
+                                // Perbarui CSRF token setelah setiap request
+                                if (response.csrf_hash) {
+                                    $('input[name="<?= csrf_token() ?>"]').val(response.csrf_hash);
+                                    $('input[name="csrf_test_name"]').val(response.csrf_hash);
+                                }
                                 if(response.success) {
-                                    if (response.csrf_hash) $('input[name="csrf_test_name"]').val(response.csrf_hash);
                                     tr.remove();
                                     updateRowNumbers();
                                     Swal.fire('Terhapus!', 'Data tugas tambahan berhasil dihapus.', 'success');
@@ -661,7 +667,8 @@ Lapor Kegiatan Harian
                             tabelLog.find('tr.row-tugas-tambahan').each(function() {
                                 let inputHidden = $(this).find('input[name="log_tambahan_id[]"]');
                                 let btnHapus = $(this).find('.hapus-baris-tmb');
-                                if (!inputHidden.val() && response.new_tambahan_ids[j]) {
+                                if (response.new_tambahan_ids[j]) {
+                                    // Selalu perbarui ID di hidden input dan tombol hapus
                                     inputHidden.val(response.new_tambahan_ids[j]);
                                     btnHapus.attr('data-id', response.new_tambahan_ids[j]);
                                 }
