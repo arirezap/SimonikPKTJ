@@ -185,12 +185,15 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->match(['get', 'post'], 'laporan-harian', 'User\LaporanHarianController::index');
     $routes->post('laporan-harian/store', 'User\LaporanHarianController::store');
     $routes->post('laporan-harian/hapus', 'User\LaporanHarianController::hapus');
+    $routes->post('laporan-harian/approve', 'User\LaporanHarianController::approve');
     $routes->post('laporan-harian/approve-all', 'User\LaporanHarianController::approveAll');
 
     // --- Log Kegiatan Harian ---
     $routes->match(['get', 'post'], 'log-kegiatan', 'User\LogKegiatanController::index');
     $routes->post('log-kegiatan/store', 'User\LogKegiatanController::store');
     $routes->post('log-kegiatan/hapus', 'User\LogKegiatanController::hapus');
+    $routes->post('log-kegiatan/storeTugasTambahan', 'User\LogKegiatanController::storeTugasTambahan');
+    $routes->post('log-kegiatan/hapusTugasTambahan', 'User\LogKegiatanController::hapusTugasTambahan');
 
     // --- Rekap & Penilaian Kinerja ---
     $routes->match(['get', 'post'], 'penilaian-kinerja', 'User\PenilaianKinerjaController::index');
