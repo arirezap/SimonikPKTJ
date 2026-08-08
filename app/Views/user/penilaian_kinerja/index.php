@@ -700,6 +700,9 @@ Rekap & Penilaian Kinerja
                             <h6 class="fw-bold text-secondary section-header-title mb-0">
                                 <i class="bi bi-calendar-check me-2 text-success"></i> C. Bukti & Activity Log Laporan Harian Staf
                             </h6>
+                            <?php if (hasRole('admin') && !empty($staf_id_terpilih)): ?>
+                            <small class="text-muted"><i class="bi bi-info-circle me-1"></i> Klik <i class="bi bi-unlock text-danger"></i> untuk membuka kunci per tanggal.</small>
+                            <?php endif; ?>
                         </div>
 
                         <div class="scrollable-table mb-4 bg-white shadow-sm">
@@ -712,13 +715,22 @@ Rekap & Penilaian Kinerja
                                         <th class="col-target text-start">Indikator Kinerja / RHK</th>
                                         <th style="width: 110px;">Realisasi</th>
                                         <th style="width: 80px;">Bukti</th>
+                                        <?php if (hasRole('admin')): ?>
+                                        <th style="width: 55px;">Aksi</th>
+                                        <?php endif; ?>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php if(empty($log_harian_staf)): ?>
-                                        <tr><td colspan="6" class="text-center text-muted py-3">Belum ada laporan harian dari staf ini.</td></tr>
+                                        <tr><td colspan="<?= hasRole('admin') ? 7 : 6 ?>" class="text-center text-muted py-3">Belum ada laporan harian dari staf ini.</td></tr>
                                     <?php else: ?>
-                                        <?php foreach ($log_harian_staf as $index => $log): ?>
+                                        <?php 
+                                            $prevTanggal = null;
+                                            foreach ($log_harian_staf as $index => $log): 
+                                                $isTerkirim = isset($log['status']) && $log['status'] === 'terkirim';
+                                                $showUnlock = ($prevTanggal !== $log['tanggal_kegiatan']);
+                                                $prevTanggal = $log['tanggal_kegiatan'];
+                                        ?>
                                             <tr>
                                                 <td class="text-center fw-bold text-muted"><?= $index + 1 ?></td>
                                                 <td class="text-center text-muted">
@@ -738,6 +750,24 @@ Rekap & Penilaian Kinerja
                                                         <span class="text-muted">-</span>
                                                     <?php endif; ?>
                                                 </td>
+                                                <?php if (hasRole('admin')): ?>
+                                                <td class="text-center">
+                                                    <?php if ($isTerkirim && $showUnlock): ?>
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-outline-danger rounded-circle p-0 btn-buka-kunci-penilaian"
+                                                        style="width:32px;height:32px;"
+                                                        data-tanggal="<?= esc($log['tanggal_kegiatan']) ?>"
+                                                        data-staf-id="<?= esc($staf_id_terpilih) ?>"
+                                                        title="Buka kunci laporan <?= esc(date('d M Y', strtotime($log['tanggal_kegiatan']))) ?>">
+                                                        <i class="bi bi-unlock-fill"></i>
+                                                    </button>
+                                                    <?php elseif ($isTerkirim): ?>
+                                                        <span class="badge bg-success" style="font-size:0.65rem;">terkirim</span>
+                                                    <?php else: ?>
+                                                        <span class="text-muted">-</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <?php endif; ?>
                                             </tr>
                                         <?php endforeach; ?>
                                     <?php endif; ?>
@@ -916,6 +946,58 @@ Rekap & Penilaian Kinerja
                 $('#active_tab_input').val(window.location.hash.substring(1));
             }
         }
+        // =============================================
+        // [SUPERADMIN] Buka Kunci Laporan dari Penilaian Kinerja
+        // =============================================
+        $(document).on('click', '.btn-buka-kunci-penilaian', function() {
+            const tanggal   = $(this).data('tanggal');
+            const stafId    = $(this).data('staf-id');
+            const csrfName  = '<?= csrf_token() ?>';
+            const csrfToken = $('input[name="' + csrfName + '"]').first().val();
+
+            Swal.fire({
+                title: 'Buka Kunci Laporan?',
+                html: `Laporan staf tanggal <strong>${tanggal}</strong> akan dibuka kuncinya.<br>Staf akan dapat merevisi dan mengirim ulang laporan.<br><br><span class='text-danger fw-bold'>Setelah revisi dikirim, laporan akan terkunci kembali otomatis.</span>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="bi bi-unlock-fill me-1"></i> Ya, Buka Kunci!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '<?= site_url('log-kegiatan/buka-kunci') ?>',
+                        type: 'POST',
+                        data: {
+                            target_user_id: stafId,
+                            tanggal: tanggal,
+                            [csrfName]: csrfToken
+                        },
+                        success: function(response) {
+                            if (response.csrf_hash) {
+                                $('input[name="' + csrfName + '"]').val(response.csrf_hash);
+                            }
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil!',
+                                    text: response.message,
+                                    timer: 2500,
+                                    showConfirmButton: false
+                                }).then(() => { location.reload(); });
+                            } else {
+                                Swal.fire('Gagal!', response.message || 'Terjadi kesalahan.', 'error');
+                            }
+                        },
+                        error: function() {
+                            Swal.fire('Error', 'Terjadi kesalahan jaringan atau server.', 'error');
+                        }
+                    });
+                }
+            });
+        });
+
     });
 </script>
 <?= $this->endSection() ?>

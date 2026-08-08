@@ -194,6 +194,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('log-kegiatan/hapus', 'User\LogKegiatanController::hapus');
     $routes->post('log-kegiatan/storeTugasTambahan', 'User\LogKegiatanController::storeTugasTambahan');
     $routes->post('log-kegiatan/hapusTugasTambahan', 'User\LogKegiatanController::hapusTugasTambahan');
+    $routes->post('log-kegiatan/buka-kunci', 'User\LogKegiatanController::bukaKunci'); // [SUPERADMIN] Buka kunci laporan
 
     // --- Rekap & Penilaian Kinerja ---
     $routes->match(['get', 'post'], 'penilaian-kinerja', 'User\PenilaianKinerjaController::index');

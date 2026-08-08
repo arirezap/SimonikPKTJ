@@ -115,8 +115,19 @@ Lapor Kegiatan Harian
                 <i class="bi bi-clock-history me-2"></i> <strong>Target Bulanan Belum Disetujui!</strong> Target Kinerja Bulanan Anda untuk bulan ini belum disetujui oleh atasan langsung. Anda baru dapat mengisi Lapor Kegiatan Harian & Tugas Tambahan setelah target Anda disetujui.
             </div>
         <?php elseif ($is_locked): ?>
-            <div class="alert alert-warning mb-4 shadow-sm">
-                <i class="bi bi-lock-fill me-2"></i> <strong>Akses Terkunci!</strong> Laporan kegiatan harian dan tugas tambahan hari ini telah dikirim dan tidak dapat diubah lagi.
+            <div class="alert alert-warning mb-4 shadow-sm d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div>
+                    <i class="bi bi-lock-fill me-2"></i> <strong>Akses Terkunci!</strong> Laporan kegiatan harian dan tugas tambahan hari ini telah dikirim dan tidak dapat diubah lagi.
+                </div>
+                <?php if (hasRole('admin')): ?>
+                <button type="button" id="btnBukaKunci"
+                    class="btn btn-sm btn-danger rounded-pill px-3 fw-semibold shadow-sm"
+                    data-tanggal="<?= esc($tanggal_terpilih) ?>"
+                    data-user-id="<?= esc(session()->get('id') ?? session()->get('user_id')) ?>"
+                    title="Buka kunci laporan agar staf dapat merevisi">
+                    <i class="bi bi-unlock-fill me-1"></i> Buka Kunci (Admin)
+                </button>
+                <?php endif; ?>
             </div>
         <?php endif; ?>
 
@@ -696,6 +707,58 @@ Lapor Kegiatan Harian
                     console.error(error);
                     Swal.fire('Error', 'Terjadi kesalahan jaringan atau server. Silakan coba lagi.', 'error');
                     btn.html(originalText).prop('disabled', false);
+                }
+            });
+        });
+
+        // =============================================
+        // [SUPERADMIN] Buka Kunci Laporan Harian
+        // =============================================
+        $('#btnBukaKunci').on('click', function() {
+            const tanggal    = $(this).data('tanggal');
+            const targetUser = $(this).data('user-id');
+            const csrfToken  = $('input[name="<?= csrf_token() ?>"]').val() || $('input[name="csrf_test_name"]').val();
+
+            Swal.fire({
+                title: 'Buka Kunci Laporan?',
+                html: `Laporan tanggal <strong>${tanggal}</strong> akan dibuka kuncinya.<br>Staf akan dapat merevisi dan mengirim ulang laporan.<br><br><span class='text-danger fw-bold'>Setelah revisi dikirim, laporan akan terkunci kembali otomatis.</span>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="bi bi-unlock-fill me-1"></i> Ya, Buka Kunci!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '<?= site_url('log-kegiatan/buka-kunci') ?>',
+                        type: 'POST',
+                        data: {
+                            target_user_id: targetUser,
+                            tanggal: tanggal,
+                            '<?= csrf_token() ?>': csrfToken
+                        },
+                        success: function(response) {
+                            if (response.csrf_hash) {
+                                $('input[name="<?= csrf_token() ?>"]').val(response.csrf_hash);
+                                $('input[name="csrf_test_name"]').val(response.csrf_hash);
+                            }
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil!',
+                                    text: response.message,
+                                    timer: 2500,
+                                    showConfirmButton: false
+                                }).then(() => { location.reload(); });
+                            } else {
+                                Swal.fire('Gagal!', response.message || 'Terjadi kesalahan.', 'error');
+                            }
+                        },
+                        error: function() {
+                            Swal.fire('Error', 'Terjadi kesalahan jaringan atau server.', 'error');
+                        }
+                    });
                 }
             });
         });

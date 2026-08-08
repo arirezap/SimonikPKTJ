@@ -544,4 +544,108 @@ class LogKegiatanController extends BaseController
         }
         return $this->response->setJSON(['success' => false, 'message' => 'Gagal menghapus.', 'csrf_hash' => csrf_hash()]);
     }
+
+    /**
+     * [SUPERADMIN ONLY] Membuka kunci laporan harian staf yang sudah berstatus 'terkirim'
+     * agar staf dapat merevisi laporannya. Setelah staf menyimpan ulang dengan
+     * "Simpan & Kirim", laporan akan terkunci kembali otomatis ke status 'terkirim'.
+     */
+    public function bukaKunci()
+    {
+        // Hanya Superadmin yang boleh mengakses fitur ini
+        if (!hasRole('admin')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Akses ditolak. Fitur ini hanya untuk Superadmin.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        $targetUserId = $this->request->getPost('target_user_id');
+        $tanggal      = $this->request->getPost('tanggal');
+
+        if (!$targetUserId || !$tanggal) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Parameter tidak lengkap.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        $logModel        = new LogKegiatanHarian();
+        $logTambahanModel = new \App\Models\LogTugasTambahan();
+        $userModel       = new \App\Models\User();
+
+        // Verifikasi staf yang akan dibuka kuncinya
+        $targetUser = $userModel->find($targetUserId);
+        if (!$targetUser) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Staf tidak ditemukan.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        // Ambil data lama untuk audit trail
+        $existingData = $logModel->where('user_id', $targetUserId)
+                                 ->where('tanggal_kegiatan', $tanggal)
+                                 ->findAll();
+
+        if (empty($existingData)) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Tidak ada laporan untuk tanggal dan staf tersebut.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        try {
+            // Ubah status log_kegiatan_harian kembali menjadi 'draft'
+            $logModel->where('user_id', $targetUserId)
+                     ->where('tanggal_kegiatan', $tanggal)
+                     ->where('status', 'terkirim')
+                     ->set(['status' => 'draft'])
+                     ->update();
+
+            // Ubah status log_tugas_tambahan kembali menjadi 'draft'
+            $logTambahanModel->where('user_id', $targetUserId)
+                             ->where('tanggal_kegiatan', $tanggal)
+                             ->where('status', 'terkirim')
+                             ->set(['status' => 'draft'])
+                             ->update();
+
+            // Catat ke Audit Log
+            log_audit(
+                'UNLOCK_LAPORAN',
+                'log_kegiatan_harian',
+                $targetUserId,
+                null,
+                ['tanggal' => $tanggal, 'staf' => $targetUser['nama_lengkap'], 'dibuka_oleh' => session()->get('nama_lengkap')]
+            );
+
+            // Kirim notifikasi ke staf bersangkutan
+            if (function_exists('send_notification')) {
+                $tanggalFormatted = date('d M Y', strtotime($tanggal));
+                send_notification(
+                    $targetUserId,
+                    'Laporan Dibuka Kembali untuk Revisi',
+                    "Laporan harian Anda untuk tanggal {$tanggalFormatted} telah dibuka kuncinya oleh Superadmin. Silakan lakukan revisi dan kirim ulang laporan Anda.",
+                    site_url('log-kegiatan')
+                );
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => "Laporan {$targetUser['nama_lengkap']} tanggal " . date('d M Y', strtotime($tanggal)) . " berhasil dibuka kuncinya.",
+                'csrf_hash' => csrf_hash()
+            ]);
+
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Gagal membuka kunci. Terjadi kesalahan database.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+    }
 }
