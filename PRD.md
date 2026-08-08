@@ -21,9 +21,10 @@ Simonik PKTJ adalah sistem informasi internal yang didesain untuk memantau, mere
 - **Perlu Perhatian Khusus (Bottom 5):** Daftar pegawai dengan nilai capaian terendah sebagai bahan evaluasi dan *coaching* pimpinan.
 - *UI/UX Pattern:* Menggunakan sistem **Bento Grid** untuk menata widget metrik dengan batas tinggi dan lebar yang seragam agar terlihat simetris.
 
-#### 3.2. Modul Laporan Harian (Daily Activity)
-- **Pencatatan Aktivitas:** Pegawai wajib mencatat aktivitas harian, jumlah realisasi, dan menyertakan tautan bukti pendukung (*link Google Drive / Dokumen*).
+##### 3.2. Modul Laporan Harian & Log Kegiatan (Daily Activity)
+- **Pencatatan Aktivitas:** Pegawai wajib mencatat aktivitas harian, jumlah realisasi (`jumlah_capaian` minimal `0`), dan menyertakan tautan bukti pendukung (*link Google Drive / Dokumen*). Dukungan pecahan desimal menggunakan koma (`,`) dikonversi secara otomatis.
 - **Pemetaan Indikator:** Setiap aktivitas harian wajib dikaitkan dengan satu Indikator Kinerja / Rencana Hasil Kerja (RHK) utama.
+- **Tugas Tambahan & Penanganan Draf:** Mendukung pencatatan dan penghapusan tugas tambahan secara dinamis via AJAX dengan sinkronisasi ID otomatis (`allTambahanIds`) dan token CSRF dinamis.
 
 #### 3.3. Modul Penilaian Kinerja (Evidence Command Center)
 Modul ini merupakan *core engine* untuk evaluasi bulanan yang terdiri dari dua sub-sistem (tab):
@@ -36,10 +37,12 @@ Modul ini merupakan *core engine* untuk evaluasi bulanan yang terdiri dari dua s
   - Atasan memberikan "Predikat" capaian, yang secara otomatis membatasi (min-max) skor penilaian untuk menghindari *human error*.
   - Dilengkapi fitur perhitungan nilai *real-time* (Javascript) dan perlindungan data tidak disengaja terhapus menggunakan konfirmasi SweetAlert2.
 
-#### 3.4. Keamanan & Log (Audit Trail)
-- **CCTV Internal Sistem:** Merekam jejak setiap aktivitas pengguna secara *invisible* (latar belakang) di seluruh titik krusial aplikasi.
+#### 3.4. Keamanan, Log & Deployment Safety
+- **CCTV Internal Sistem (Audit Trail):** Merekam jejak setiap aktivitas pengguna secara *invisible* (latar belakang) di seluruh titik krusial aplikasi.
 - **Data Tersimpan:** Mencatat aksi (`CREATE`, `UPDATE`, `DELETE`, `LOGIN`, dll), aktor (Pengguna), entitas yang diubah, IP Address, sistem operasi/browser (User Agent), serta merekam status data *sebelum* dan *sesudah* perubahan dalam format JSON.
-- **UI Admin Log Aktivitas:** Dashboard bergaya Bento Grid untuk memudahkan Admin memfilter, mencari, dan meninjau log jika terjadi sengketa penilaian kinerja atau anomali data.
+- **Resiliensi Database:** Menggunakan blok `try...catch` di setiap operasi penyimpanan massal untuk mencegah Error 500 dan menjaga aplikasi tetap responsif.
+- **Pendaftaran Rute Eksplisit:** Seluruh endpoint AJAX terdaftar pada `Routes.php` dalam grup filter otentikasi.
+- **Mekanisme Cache-Control:** Dilengkapi HTTP Cache-Control header di layout utama agar pengguna langsung mendapatkan update terbaru pasca deployment.
 
 ### 4. Pedoman Desain (UI/UX Guidelines)
 Aplikasi ini dikembangkan dengan berpegang teguh pada prinsip **ui-ux-pro-max**:
@@ -60,4 +63,7 @@ Sistem menerapkan konsep pemisahan tugas menggunakan arsitektur **Tabel Pivot (M
 - [x] Implementasi arsitektur Multi-Role (Tabel Pivot).
 - [x] Modul Kepegawaian (Rekap Nilai) & Export Excel.
 - [x] Log Aktivitas Sistem (Audit Trail) untuk melacak siapa yang mengubah nilai dan kapan.
+- [x] Refactoring & Optimalisasi Modul Laporan Kinerja & Log Kegiatan Harian.
+- [x] Pendaftaran Rute AJAX Lengkap & Perlindungan Database Try-Catch.
+- [x] Mekanisme Anti-Cache Otomatis (Cache-Control Header).
 - [ ] Grafik Historis (Chart.js) pada *dashboard* user untuk melihat tren kinerja pribadi selama setahun.

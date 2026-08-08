@@ -586,18 +586,24 @@ class LogKegiatanController extends BaseController
             ]);
         }
 
-        // Ambil data lama untuk audit trail
-        $existingData = $logModel->where('user_id', $targetUserId)
-                                 ->where('tanggal_kegiatan', $tanggal)
-                                 ->findAll();
+        // Ambil data lama untuk pengecekan & audit trail (baik tugas pokok maupun tugas tambahan)
+        $existingData     = $logModel->where('user_id', $targetUserId)
+                                     ->where('tanggal_kegiatan', $tanggal)
+                                     ->findAll();
+        $existingTambahan = $logTambahanModel->where('user_id', $targetUserId)
+                                             ->where('tanggal_kegiatan', $tanggal)
+                                             ->findAll();
 
-        if (empty($existingData)) {
+        if (empty($existingData) && empty($existingTambahan)) {
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Tidak ada laporan untuk tanggal dan staf tersebut.',
+                'message' => 'Tidak ada laporan (tugas pokok maupun tugas tambahan) untuk tanggal dan staf tersebut.',
                 'csrf_hash' => csrf_hash()
             ]);
         }
+
+        $db = \Config\Database::connect();
+        $db->transStart();
 
         try {
             // Ubah status log_kegiatan_harian kembali menjadi 'draft'
@@ -613,6 +619,16 @@ class LogKegiatanController extends BaseController
                              ->where('status', 'terkirim')
                              ->set(['status' => 'draft'])
                              ->update();
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Gagal membuka kunci. Terjadi kesalahan saat memperbarui database.',
+                    'csrf_hash' => csrf_hash()
+                ]);
+            }
 
             // Catat ke Audit Log
             log_audit(
@@ -641,9 +657,10 @@ class LogKegiatanController extends BaseController
             ]);
 
         } catch (\Exception $e) {
+            $db->transRollback();
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Gagal membuka kunci. Terjadi kesalahan database.',
+                'message' => 'Gagal membuka kunci: ' . $e->getMessage(),
                 'csrf_hash' => csrf_hash()
             ]);
         }

@@ -76,3 +76,21 @@ Dokumen ini berisi riwayat fitur, perbaikan (*bug fixes*), dan peningkatan antar
 - **Penyelarasan Hak Akses ECC (Evidence Command Center):**
   - **Menu ECC > LED:** Kini dibuka bebas (terlihat) untuk **seluruh pegawai**. Filter di sisi server telah diperbaiki agar sistem cerdas melacak hierarki (hingga 2 level ke atas) untuk mengetahui *parent unit* (AAK/KUK) dan hanya memunculkan tugas LED sesuai bagian mereka.
   - **Menu ECC > Simulasi Penilaian:** Dikunci secara eksklusif hanya untuk pengguna yang memiliki *role* sekunder `spm` atau `admin`. Proteksi ganda diterapkan pada *Sidebar UI* maupun level *Controller*.
+
+## 7. Refactoring & Perbaikan Stabilitas Live cPanel (Sesi Terbaru)
+- **Refactoring Target Kinerja Bulanan (`LaporanHarianController.php`):**
+  - Penyatuan *looping* validasi dan *data preparation* menjadi satu iterasi tunggal untuk efisiensi komputasi.
+  - Penanganan desimal fleksibel: Otomatis mengonversi tanda koma (`,`) menjadi titik (`.`) sehingga aman untuk tipe data `DECIMAL` MySQL.
+  - Pengabaian baris kosong secara cerdas pada opsi "Simpan Sementara" mau pun "Simpan & Kirim".
+  - Penambahan proteksi `try...catch` di sekitar operasi `updateBatch` dan `insert` untuk mencegah *Error 500 (White Screen)* jika database mengalami gangguan sementara.
+- **Penguatan Validasi & Perbaikan Bug Log Kegiatan Harian (`LogKegiatanController.php`):**
+  - **Validasi Capaian Wajib:** Menolak formulir jika kolom `jumlah_capaian` kosong, dan mewajibkan angka (minimal `0`) dengan pesan peringatan yang informatif.
+  - **Perbaikan Method `storeTugasTambahan()`:** Menyelaraskan pengolahan `jumlah_capaian`, sanitasi desimal koma, serta proteksi `try...catch` pada endpoint khusus tugas tambahan.
+  - **Perbaikan Bug Hapus Draf Tugas Tambahan:**
+    - Memperbaiki pengembalian `$allTambahanIds` pada respons AJAX `store()` agar mencakup seluruh ID (baik draf eksisting maupun baris baru yang baru saja tersimpan).
+    - Memperbaiki *handler* `hapus-baris-tmb` di JavaScript agar menggunakan nama token CSRF dinamis (`<?= csrf_token() ?>`) dan memperbarui token di DOM secara *real-time* setelah setiap *request*.
+- **Pendaftaran Rute Eksplisit (`Routes.php`):**
+  - Mendaftarkan rute-rute AJAX yang sebelumnya belum terdaftar di grup `auth` (`log-kegiatan/storeTugasTambahan`, `log-kegiatan/hapusTugasTambahan`, dan `laporan-harian/approve`) untuk mencegah kegagalan HTTP `404/405` di server *live cPanel*.
+- **Mekanisme Anti-Cache untuk Deployment (`main.php`):**
+  - Menambahkan meta tag HTTP `Cache-Control` (`no-cache, no-store, must-revalidate`), `Pragma`, dan `Expires: 0` pada *layout* utama untuk memaksa *browser* mengunduh tampilan terbaru setelah update tanpa perlu *clear cache* manual.
+

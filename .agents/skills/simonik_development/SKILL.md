@@ -23,7 +23,7 @@ Panduan ini berisi pedoman lengkap arsitektur sistem, peta modul, basis data, da
 ## 2. Struktur Proyek & Konvensi MVC
 - **Controllers (`app/Controllers/`):**
   - Gunakan penamaan file PascalCase.
-  - Pisahkan area admin di subfolder `app/Controllers/Admin/` (misal: `UserController.php`, `MasterDataController.php`) dan area pengguna di `app/Controllers/User/` (misal: `PenilaianKinerjaController.php`, `LogKegiatanController.php`).
+  - Pisahkan area admin di subfolder `app/Controllers/Admin/` (misal: `UserController.php`, `MasterDataController.php`) dan area pengguna di `app/Controllers/User/` (misal: `PenilaianKinerjaController.php`, `LogKegiatanController.php`, `LaporanHarianController.php`).
 - **Models (`app/Models/`):**
   - Pastikan setiap model mendefinisikan `$table`, `$primaryKey`, dan `$allowedFields` agar query builder CI4 berjalan optimal dan aman.
 - **Views (`app/Views/`):**
@@ -31,15 +31,15 @@ Panduan ini berisi pedoman lengkap arsitektur sistem, peta modul, basis data, da
   - Gunakan pemetaan template layout (`$this->extend()`, `$this->section()`).
   - Selalu bersihkan output menggunakan `esc()` untuk mencegah kerentanan XSS.
 - **Routing (`app/Config/Routes.php`):**
-  - Semua route terdaftar di dalam grup filter otentikasi `auth` (seperti `$routes->group('', ['filter' => 'auth'], ...)`).
-  - Jangan mengandalkan auto-routing bawaan untuk modul-modul penting.
+  - Semua route **WAJIB** terdaftar secara eksplisit di dalam grup filter otentikasi `auth` (seperti `$routes->group('', ['filter' => 'auth'], ...)`).
+  - Sertakan rute POST untuk semua endpoint AJAX (misal: `log-kegiatan/storeTugasTambahan`, `log-kegiatan/hapusTugasTambahan`, `laporan-harian/approve`). Jangan pernah mengandalkan auto-routing di cPanel.
 
 ---
 
 ## 3. Peta Modul Utama Aplikasi
 ### A. Modul Kinerja Pegawai & Log Kegiatan
-- **Rencana Kinerja (`app/Models/RencanaKinerja.php` & `User\InputRencana`):** Digunakan untuk merumuskan indikator target kerja individu.
-- **Laporan Harian & Log Kegiatan (`app/Models/LogKegiatanHarian.php` & `User\LogKegiatanController`):** Tempat pegawai mencatat aktivitas harian mereka secara real-time.
+- **Target Kinerja Bulanan (`app/Models/LaporanHarian.php` & `User\LaporanHarianController`):** Tempat staf menetapkan target bulanan. Menggunakan *single loop* validasi, sanitasi desimal koma (`str_replace(',', '.', ...)`), serta *try-catch DB error handling*.
+- **Laporan Harian & Log Kegiatan (`app/Models/LogKegiatanHarian.php`, `LogTugasTambahan` & `User\LogKegiatanController`):** Tempat pegawai mencatat aktivitas harian (Tugas Pokok & Tugas Tambahan). Mewajibkan `jumlah_capaian` diisi angka (minimal `0`). Fitur hapus draf tugas tambahan menggunakan sinkronisasi ID otomatis (`allTambahanIds`) dan token CSRF dinamis.
 - **SKP & Target Kerja (`app/Models/SkpModel.php` & `User\Skp`):** Pengelolaan Sasaran Kerja Pegawai tahunan/semesteran.
 
 ### B. Modul Penilaian & Dashboard Analisis
@@ -78,7 +78,11 @@ Aplikasi membagi wewenang berdasarkan peran jabatan:
 ---
 
 ## 6. Aturan Penulisan Kode & Keamanan
-- **CSRF Protection:** Semua elemen `<form>` wajib menyertakan token CSRF (`<?= csrf_field() ?>`). Request POST AJAX wajib mengirimkan token CSRF di header atau datanya.
+- **CSRF Protection:** Semua elemen `<form>` wajib menyertakan token CSRF (`<?= csrf_field() ?>`). Request POST AJAX wajib mengirimkan token CSRF (`<?= csrf_token() ?>`) dan menangkap `csrf_hash` dari respons JSON untuk memperbarui DOM.
+- **Database Operation Try-Catch Safety:** Semua operasi penyimpanan massal (`insert`, `updateBatch`, `delete`) di Controller wajib dibungkus dalam blok `try...catch (\Exception $e)` untuk menangkap kegagalan database secara elegan tanpa melempar Error 500 (*white screen*).
+- **Sanitasi Desimal (Bahasa Indonesia):** Nilai desimal wajib dikonversi menggunakan `str_replace(',', '.', trim((string)$val))` sebelum dimasukkan ke kolom `DECIMAL(10,2)` basis data.
+- **Explicit Route Registration:** Dilarang menggunakan endpoint AJAX tanpa mendaftarkannya secara eksplisit di `app/Config/Routes.php`.
+- **Cache-Control & Deployment:** Pastikan layout utama (`main.php`) mempertahankan meta tag HTTP `Cache-Control` (`no-cache, no-store, must-revalidate`) serta `?v=filemtime(...)` pada file CSS/JS agar pengguna tidak perlu *clear cache* manual setelah deployment.
 - **XSS Prevention:** Hindari pencetakan data mentah database langsung ke View. Selalu gunakan `esc($var)` untuk menjaga sanitasi output HTML.
 - **Error Handling & API JSON:** Endpoint AJAX/API harus selalu mengembalikan format JSON yang valid (`return $this->response->setJSON(...)`) beserta status code HTTP yang sesuai jika terjadi error.
 - **Refactoring & Modifikasi:** Sebelum mengubah alur data, selalu periksa parameter filter yang terkirim dari form pencarian (`bulan`, `tahun`, `unit_kerja`, `user_id`) agar data yang ditampilkan selalu sinkron dengan filter terpilih.

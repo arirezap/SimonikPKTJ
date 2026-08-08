@@ -42,9 +42,11 @@ Aplikasi ini memiliki 3 modul yang saling berkesinambungan untuk menilai kinerja
 1. **Target Kinerja Bulanan** (Hulu): 
    - *Tabel*: `laporan_harian`. *Controller*: `LaporanHarianController`.
    - *Fungsi*: Staf menetapkan target bulanan (Sasaran Program, Indikator Kinerja, Target Kuantitas) untuk bulan dan tahun tertentu. Data ini menjadi *parent* untuk kegiatan harian.
+   - *Refactoring & Validasi*: Menggunakan *single loop* untuk validasi dan penyiapan data, konversi otomatis koma (`,`) ke titik (`.`) untuk angka desimal, dan pengabaian baris kosong secara cerdas.
 2. **Lapor Kegiatan Harian** (Eksekusi): 
-   - *Tabel*: `log_kegiatan_harian`. *Controller*: `LogKegiatanController`.
+   - *Tabel*: `log_kegiatan_harian` & `log_tugas_tambahan`. *Controller*: `LogKegiatanController`.
    - *Fungsi*: Staf mencatat aktivitas harian mereka secara spesifik. Setiap *log* wajib ditautkan ke target bulanan melalui `target_id` (berelasi dengan `laporan_harian.id`). Tabel ini juga mencatat `jumlah_capaian` harian.
+   - *Aturan Ketat*: Kolom `jumlah_capaian` wajib diisi angka (minimal `0`). Fitur hapus tugas tambahan disinkronkan via AJAX dengan penanganan CSRF token dinamis dan pelacakan ID (`$allTambahanIds`).
 3. **Rekap & Penilaian Kinerja** (Hilir/Evaluasi):
    - *Controller*: `PenilaianKinerjaController`.
    - *Fungsi*: Mengagregasi data dari `log_kegiatan_harian`. 
@@ -56,8 +58,11 @@ Aplikasi ini memiliki 3 modul yang saling berkesinambungan untuk menilai kinerja
 
 
 ## 6. Coding Standards & Agent Instructions
-- **Routing**: Perhatikan `app/Config/Routes.php` dan penggunaan `AuthFilter` untuk menjaga keamanan *endpoint* berdasarkan peran (*role*).
-- **Controller Logic & Form Handling**: Usahakan logika perhitungan berat diselesaikan di Controller atau menggunakan *Query Builder* di Model (bukan di dalam View). **WAJIB** menerapkan pola **PRG (Post-Redirect-Get)** pada setiap form filter atau form *submission* untuk menghindari peringatan *Confirm Form Resubmission* dan *403 CSRF Security Exception* bawaan CodeIgniter.
-- **Database & Model**: Jika ada penambahan kolom pada tabel (misalnya kolom `no_hp` pada `users`), pastikan kolom tersebut juga didaftarkan pada `$allowedFields` di Model terkait (contoh: `app/Models/User.php`) agar data dapat tersimpan.
+- **Routing & Filter**: Seluruh *endpoint* AJAX dan form submission **WAJIB** terdaftar secara eksplisit di `app/Config/Routes.php` dalam grup filter otentikasi `auth`. Jangan pernah berasumsi auto-routing berjalan di server *live cPanel*.
+- **Controller Logic & Form Handling**: Usahakan logika perhitungan berat diselesaikan di Controller atau menggunakan *Query Builder* di Model. **WAJIB** menerapkan pola **PRG (Post-Redirect-Get)** pada setiap form filter atau form *submission* non-AJAX. Untuk request AJAX, selalu kembalikan respons JSON lengkap dengan `csrf_hash`.
+- **Database & Try-Catch Safety**: Semua eksekusi `insert()`, `update()`, dan `updateBatch()` pada *controller* wajib dibungkus dalam blok `try...catch (\Exception $e)` untuk mencegah munculnya halaman Error 500 (*white screen*) di server *live*.
+- **Handling Desimal & Sanitasi**: Nilai angka bertipe desimal harus selalu melalui sanitasi `str_replace(',', '.', trim((string)$val))` sebelum dimasukkan ke basis data agar mendukung input berbasis bahasa Indonesia (koma).
+- **Cache Control Deployment**: Halaman utama dilengkapi dengan meta tag HTTP `Cache-Control` (`no-cache, no-store, must-revalidate`) serta cache-busting `?v=filemtime(...)` pada file CSS/JS untuk memastikan pengguna mendapatkan versi aplikasi terbaru tanpa perlu *clear cache* manual.
+- **Database & Model**: Jika ada penambahan kolom pada tabel, pastikan kolom tersebut juga didaftarkan pada `$allowedFields` di Model terkait agar data dapat tersimpan.
 - **File Modifications**: Dilarang menghapus komentar/kode lama yang tidak terkait langsung dengan perbaikan. Prioritaskan perbaikan *bug* secara spesifik.
 - **Chart.js**: Jika data label sumbu X terlalu panjang, gunakan format `indexAxis: 'y'` (Horizontal Bar Chart) agar rapi, dan gunakan tinggi wadah (*container*) yang dinamis.
