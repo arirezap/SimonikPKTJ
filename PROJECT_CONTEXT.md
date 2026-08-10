@@ -54,15 +54,20 @@ Aplikasi ini memiliki 3 modul yang saling berkesinambungan untuk menilai kinerja
    - Bagi **Atasan**, modul ini memunculkan antarmuka (form) untuk menilai kinerja staf/staf yang tergabung di timnya. Skor penilaian (Kualitas, Disiplin, Kerjasama) disimpan kembali ke dalam baris data di tabel `log_kegiatan_harian`.
 4. **Log Keamanan (Audit Trail)** (Background Service):
    - Menggunakan tabel `audit_logs` dan `app/Helpers/audit_helper.php`.
-   - Merekam seluruh aktivitas `CREATE`, `UPDATE`, `DELETE`, `LOGIN/LOGOUT`, dan `APPROVE` dari seluruh modul secara otomatis dan *non-blocking*. Mampu menangkap data *before-after* dalam bentuk JSON.
-
+   - Merekam seluruh aktivitas `CREATE`, `UPDATE`, `DELETE`, `LOGIN/LOGOUT`, `APPROVE`, `UNLOCK_LAPORAN`, dan `CANCEL_APPROVE_TARGET` dari seluruh modul secara otomatis dan *non-blocking*. Mampu menangkap data *before-after* dalam bentuk JSON.
+5. **Fitur Pengendalian Superadmin (Unlock & Cancel Approval)**:
+   - **Buka Kunci Laporan Harian Staf (`log-kegiatan/buka-kunci`)**: Superadmin (`hasRole('admin')`) dapat membuka kunci laporan harian & tugas tambahan staf yang sudah berstatus `terkirim` pada tanggal tertentu agar staf dapat merevisi laporannya. Status di-reset ke `draft`, mencatat audit log `UNLOCK_LAPORAN`, dan mengirim notifikasi *in-app*. Saat staf menyimpan ulang ("Simpan & Kirim"), laporan terkunci kembali secara otomatis.
+   - **Pembatalan Persetujuan Target Bulanan (`laporan-harian/batal-approve`)**: Superadmin dapat membatalkan persetujuan Target Bulanan yang sudah disetujui (`status_approval = 'disetujui'`). Status di-reset ke `draft` (`status_approval = 'menunggu_persetujuan'`), mencatat audit log `CANCEL_APPROVE_TARGET`, dan mengirim notifikasi *in-app*. Riwayat laporan harian sebelumnya **TETAP UTUH & AMAN**, dan otomatis terhubung kembali begitu target disetujui ulang oleh atasan.
+   - **Diferensiasi Status Badges & Banner Revisi**: Status badge `Disetujui` (hijau), `Menunggu Persetujuan` (kuning - hanya saat `status === 'terkirim'`), dan `Draf (Perlu Revisi)` (kuning perbaikan - saat `status === 'draft'`) ditampilkan secara akurat lengkap dengan alert banner petunjuk revisi pada halaman staf.
 
 ## 6. Coding Standards & Agent Instructions
 - **Routing & Filter**: Seluruh *endpoint* AJAX dan form submission **WAJIB** terdaftar secara eksplisit di `app/Config/Routes.php` dalam grup filter otentikasi `auth`. Jangan pernah berasumsi auto-routing berjalan di server *live cPanel*.
 - **Controller Logic & Form Handling**: Usahakan logika perhitungan berat diselesaikan di Controller atau menggunakan *Query Builder* di Model. **WAJIB** menerapkan pola **PRG (Post-Redirect-Get)** pada setiap form filter atau form *submission* non-AJAX. Untuk request AJAX, selalu kembalikan respons JSON lengkap dengan `csrf_hash`.
-- **Database & Try-Catch Safety**: Semua eksekusi `insert()`, `update()`, dan `updateBatch()` pada *controller* wajib dibungkus dalam blok `try...catch (\Exception $e)` untuk mencegah munculnya halaman Error 500 (*white screen*) di server *live*.
+- **Database & Try-Catch Safety**: Semua eksekusi `insert()`, `update()`, `delete()`, dan `updateBatch()` pada *controller* wajib dibungkus dalam blok `try...catch (\Exception $e)` dan Database Transaction (`$db->transStart()` & `$db->transComplete()`) untuk mencegah kesalahan data sementara di server *live*.
 - **Handling Desimal & Sanitasi**: Nilai angka bertipe desimal harus selalu melalui sanitasi `str_replace(',', '.', trim((string)$val))` sebelum dimasukkan ke basis data agar mendukung input berbasis bahasa Indonesia (koma).
 - **Cache Control Deployment**: Halaman utama dilengkapi dengan meta tag HTTP `Cache-Control` (`no-cache, no-store, must-revalidate`) serta cache-busting `?v=filemtime(...)` pada file CSS/JS untuk memastikan pengguna mendapatkan versi aplikasi terbaru tanpa perlu *clear cache* manual.
 - **Database & Model**: Jika ada penambahan kolom pada tabel, pastikan kolom tersebut juga didaftarkan pada `$allowedFields` di Model terkait agar data dapat tersimpan.
-- **File Modifications**: Dilarang menghapus komentar/kode lama yang tidak terkait langsung dengan perbaikan. Prioritaskan perbaikan *bug* secara spesifik.
+- **File Modifications**: Dilarang menghapus komentar/kode lama yang tidak terkait langsung me-perbaikan. Prioritaskan perbaikan *bug* secara spesifik.
 - **Chart.js**: Jika data label sumbu X terlalu panjang, gunakan format `indexAxis: 'y'` (Horizontal Bar Chart) agar rapi, dan gunakan tinggi wadah (*container*) yang dinamis.
+- **JavaScript UI & Fallback**: Setiap tombol aksi berbasis AJAX yang memanfaatkan SweetAlert2 **WAJIB** mengecek `typeof Swal !== 'undefined'` dan menyediakan fallback dialog `confirm()` agar tetap dapat mengeksekusi aksi AJAX jika library belum selesai dimuat atau terhalang koneksi CDN.
+

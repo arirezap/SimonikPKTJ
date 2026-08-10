@@ -53,9 +53,10 @@ Panduan ini berisi pedoman lengkap arsitektur sistem, peta modul, basis data, da
 - **Kriteria LED (`app/Models/LedCriteria.php` & `Admin\MasterDataController::led`):** Pengelolaan kriteria Evaluasi Diri.
 - **ECC & Simulasi (`app/Controllers/EccController`):** Modul simulasi Evaluasi Capaian Kinerja (LKPS dan Standar LED) untuk keperluan akreditasi kampus politeknik.
 
-### D. Modul Administrasi & Master Data
-- **Kelola Pengguna (`Admin\UserController`):** Mendukung pencarian, export/import via Excel, batch edit unit, dan update data unit kerja secara AJAX.
-- **Master Data (`Admin\MasterDataController`):** Manajemen Sasaran, Indikator Kinerja, Satuan, Unit Kerja, Standar LED, dan Kriteria LED.
+### E. Modul Pengendalian Superadmin (Unlock & Cancel Approval)
+- **Buka Kunci Laporan Harian Staf (`POST log-kegiatan/buka-kunci`):** Superadmin (`hasRole('admin')`) dapat membuka kunci laporan harian & tugas tambahan staf yang berstatus `terkirim` pada tanggal tertentu. Mengubah status ke `draft`, mencatat audit log `UNLOCK_LAPORAN`, dan mengirim notifikasi *in-app*. Terkunci otomatis saat staf menyimpan ulang.
+- **Pembatalan Persetujuan Target Bulanan (`POST laporan-harian/batal-approve`):** Superadmin dapat membatalkan persetujuan Target Bulanan yang sudah disetujui (`status_approval = 'disetujui'`). Mengubah status ke `draft` (`status_approval = 'menunggu_persetujuan'`), dibungkus transaksi DB (`$db->transStart()` & `$db->transComplete()`), mencatat audit log `CANCEL_APPROVE_TARGET`, dan mengirim notifikasi *in-app*. Seluruh laporan harian terdahulu TETAP UTUH & AMAN.
+- **Diferensiasi Badge Status:** Status `Disetujui` (hijau), `Menunggu Persetujuan` (kuning - saat `status === 'terkirim'`), dan `Draf (Perlu Revisi)` (kuning perbaikan - saat `status === 'draft'`) ditampilkan secara akurat di tabel pegawai & atasan.
 
 ---
 
@@ -63,7 +64,7 @@ Panduan ini berisi pedoman lengkap arsitektur sistem, peta modul, basis data, da
 Aplikasi membagi wewenang berdasarkan peran jabatan:
 1. **Pegawai Biasa (Staf):** Hanya dapat menginput Rencana, Realisasi, Laporan Harian, SKP, serta melihat visualisasi grafik performa pribadinya sendiri di Tab *Analisis Kinerja*.
 2. **Atasan Menengah (Kabag/Kepala Unit):** Memiliki wewenang untuk melihat, menilai, dan memantau rekap data staf yang berada *di dalam unit kerjanya saja*.
-3. **Direksi (Direktur/Wakil Direktur) & Superadmin:** Memiliki otoritas penuh untuk memantau performa *seluruh unit kerja* dan *seluruh pegawai* di kampus Politeknik, serta mengakses tab agregat eksekutif.
+3. **Direksi (Direktur/Wakil Direktur) & Superadmin:** Memiliki otoritas penuh untuk memantau performa *seluruh unit kerja* dan *seluruh pegawai* di kampus Politeknik, serta mengakses tab agregat eksekutif. Superadmin memiliki tombol khusus untuk **Buka Kunci Laporan Harian** dan **Batalkan Persetujuan Target Bulanan** untuk tujuan perbaikan/revisi staf.
 
 ---
 
@@ -79,10 +80,12 @@ Aplikasi membagi wewenang berdasarkan peran jabatan:
 
 ## 6. Aturan Penulisan Kode & Keamanan
 - **CSRF Protection:** Semua elemen `<form>` wajib menyertakan token CSRF (`<?= csrf_field() ?>`). Request POST AJAX wajib mengirimkan token CSRF (`<?= csrf_token() ?>`) dan menangkap `csrf_hash` dari respons JSON untuk memperbarui DOM.
-- **Database Operation Try-Catch Safety:** Semua operasi penyimpanan massal (`insert`, `updateBatch`, `delete`) di Controller wajib dibungkus dalam blok `try...catch (\Exception $e)` untuk menangkap kegagalan database secara elegan tanpa melempar Error 500 (*white screen*).
+- **Database Operation Try-Catch & Transaction Safety:** Semua operasi penyimpanan massal (`insert`, `updateBatch`, `delete`) di Controller wajib dibungkus dalam blok `try...catch (\Exception $e)` dan Database Transaction (`$db->transStart()` & `$db->transComplete()`) untuk menangkap kegagalan database secara elegan tanpa melempar Error 500 (*white screen*).
 - **Sanitasi Desimal (Bahasa Indonesia):** Nilai desimal wajib dikonversi menggunakan `str_replace(',', '.', trim((string)$val))` sebelum dimasukkan ke kolom `DECIMAL(10,2)` basis data.
 - **Explicit Route Registration:** Dilarang menggunakan endpoint AJAX tanpa mendaftarkannya secara eksplisit di `app/Config/Routes.php`.
 - **Cache-Control & Deployment:** Pastikan layout utama (`main.php`) mempertahankan meta tag HTTP `Cache-Control` (`no-cache, no-store, must-revalidate`) serta `?v=filemtime(...)` pada file CSS/JS agar pengguna tidak perlu *clear cache* manual setelah deployment.
+- **SweetAlert2 & JS Fallback Safety:** Setiap tombol aksi berbasis AJAX yang memanfaatkan SweetAlert2 **WAJIB** memuat script CSS/JS SweetAlert2 di View, mengecek `typeof Swal !== 'undefined'`, serta menyediakan *native fallback confirmation* (`confirm()`) agar aksi tombol tetap 100% berfungsi jika library CDN mengalami kendala jaringan.
 - **XSS Prevention:** Hindari pencetakan data mentah database langsung ke View. Selalu gunakan `esc($var)` untuk menjaga sanitasi output HTML.
 - **Error Handling & API JSON:** Endpoint AJAX/API harus selalu mengembalikan format JSON yang valid (`return $this->response->setJSON(...)`) beserta status code HTTP yang sesuai jika terjadi error.
 - **Refactoring & Modifikasi:** Sebelum mengubah alur data, selalu periksa parameter filter yang terkirim dari form pencarian (`bulan`, `tahun`, `unit_kerja`, `user_id`) agar data yang ditampilkan selalu sinkron dengan filter terpilih.
+

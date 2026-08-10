@@ -211,7 +211,7 @@ Lapor Kegiatan Harian
                                                     $labelTarget = esc($target['indikator_kinerja']) . ' (' . str_replace('.', ',', (float)$target['target_bulanan']) . ' ' . esc($target['satuan']) . ')'; 
                                                     $selected = ($target['id'] == $row['target_id']) ? 'selected' : '';
                                                     ?>
-                                                    <option value="<?= esc($target['id']) ?>" <?= $selected ?>><?= $labelTarget ?></option>
+                                                    <option value="<?= esc($target['id']) ?>" data-satuan="<?= esc($target['satuan']) ?>" <?= $selected ?>><?= $labelTarget ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </td>
@@ -245,7 +245,7 @@ Lapor Kegiatan Harian
                                         <option value="">-- Pilih Target / RHK --</option>
                                         <?php foreach($daftar_target as $target): ?>
                                             <?php $labelTarget = esc($target['indikator_kinerja']) . ' (' . str_replace('.', ',', (float)$target['target_bulanan']) . ' ' . esc($target['satuan']) . ')'; ?>
-                                            <option value="<?= esc($target['id']) ?>"><?= $labelTarget ?></option>
+                                            <option value="<?= esc($target['id']) ?>" data-satuan="<?= esc($target['satuan']) ?>"><?= $labelTarget ?></option>
                                         <?php endforeach; ?>
                                     </select>
                                 </td>
@@ -413,7 +413,7 @@ Lapor Kegiatan Harian
                             <option value="">-- Pilih Target / RHK --</option>
                             <?php foreach($daftar_target as $target): ?>
                                 <?php $labelTarget = esc($target['indikator_kinerja']) . ' (' . str_replace('.', ',', (float)$target['target_bulanan']) . ' ' . esc($target['satuan']) . ')'; ?>
-                                <option value="<?= esc($target['id']) ?>"><?= $labelTarget ?></option>
+                                <option value="<?= esc($target['id']) ?>" data-satuan="<?= esc($target['satuan']) ?>"><?= $labelTarget ?></option>
                             <?php endforeach; ?>
                         </select>
                     </td>
@@ -578,10 +578,14 @@ Lapor Kegiatan Harian
 
         // Auto update satuan text based on selected target
         tabelLog.on('change', 'select[name="target_id[]"]', function() {
-            let selectedText = $(this).find('option:selected').text();
-            let matches = selectedText.match(/\d+ (.+)\)$/);
-            let satuan = matches ? matches[1] : '-';
-            $(this).closest('tr').find('.input-group-text').text(satuan);
+            let selectedOption = $(this).find('option:selected');
+            let satuan = selectedOption.data('satuan') || selectedOption.attr('data-satuan');
+            if (!satuan) {
+                let selectedText = selectedOption.text();
+                let matches = selectedText.match(/\((\d+(?:[\.,]\d+)?)\s+(.+)\)$/);
+                satuan = matches ? matches[2] : '-';
+            }
+            $(this).closest('tr').find('.input-group-text').text(satuan || '-');
             updateDropdownOptions();
         });
 

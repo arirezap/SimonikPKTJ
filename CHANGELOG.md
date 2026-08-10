@@ -94,3 +94,19 @@ Dokumen ini berisi riwayat fitur, perbaikan (*bug fixes*), dan peningkatan antar
 - **Mekanisme Anti-Cache untuk Deployment (`main.php`):**
   - Menambahkan meta tag HTTP `Cache-Control` (`no-cache, no-store, must-revalidate`), `Pragma`, dan `Expires: 0` pada *layout* utama untuk memaksa *browser* mengunduh tampilan terbaru setelah update tanpa perlu *clear cache* manual.
 
+## 8. Fitur Pengendalian Superadmin: Buka Kunci Laporan Harian & Batal Persetujuan Target
+- **Superadmin Buka Kunci Laporan Harian Staf (`log-kegiatan/buka-kunci`):**
+  - Menambahkan method `bukaKunci()` di `LogKegiatanController.php` yang memungkinkan Superadmin (`hasRole('admin')`) membuka kunci laporan harian & tugas tambahan staf yang berstatus `terkirim` pada tanggal tertentu.
+  - Reset status dari `terkirim` menjadi `draft`, mencatat audit log `UNLOCK_LAPORAN`, dan mengirim notifikasi *in-app* ke staf. Laporan terkunci kembali secara otomatis saat staf menyimpan ulang dengan "Simpan & Kirim".
+  - Menambahkan tombol "Buka Kunci (Admin)" pada alert banner `log_kegiatan/index.php` dan kolom Aksi tabel Activity Log Staf pada `penilaian_kinerja/index.php`.
+- **Superadmin Pembatalan Persetujuan Target Kerja Bulanan (`laporan-harian/batal-approve`):**
+  - Menambahkan method `cancelApprove()` di `LaporanHarianController.php` untuk membatalkan persetujuan Target Bulanan yang sudah disetujui (`status_approval = 'disetujui'`).
+  - Reset status menjadi `draft` (`status_approval = 'menunggu_persetujuan'`), dibungkus dalam transaksi database (`$db->transStart()` & `$db->transComplete()`), mencatat audit log `CANCEL_APPROVE_TARGET`, dan mengirim notifikasi *in-app* ke pegawai.
+  - Seluruh riwayat laporan harian sebelumnya **TETAP UTUH & AMAN** dan otomatis terhubung kembali begitu target disetujui ulang oleh atasan.
+  - Menambahkan tombol "Batalkan Persetujuan (Admin)" di `laporan_harian/index.php` (Tab Target Saya & Target Staf) dan `penilaian_kinerja/index.php` (Header Section A).
+- **Penyempurnaan Tampilan Badge Status & Banner Revisi:**
+  - Status badge `Disetujui` (hijau), `Menunggu Persetujuan` (kuning - hanya saat `status === 'terkirim'`), dan `Draf (Perlu Revisi)` (kuning perbaikan - saat `status === 'draft'`) disajikan secara akurat.
+  - Menambahkan alert banner petunjuk revisi pada halaman target pegawai untuk membimbing proses perbaikan dan pengajuan kembali ke atasan.
+  - Menambahkan include CDN SweetAlert2 CSS & JS serta *fallback confirmation dialog* (`confirm()`) di JavaScript untuk menjamin kestabilan tombol aksi dalam kondisi jaringan apapun.
+
+
