@@ -714,36 +714,35 @@ Lapor Kegiatan Harian
         // =============================================
         // [SUPERADMIN] Buka Kunci Laporan Harian
         // =============================================
-        $('#btnBukaKunci').on('click', function() {
+        $(document).on('click', '#btnBukaKunci', function(e) {
+            e.preventDefault();
             const tanggal    = $(this).data('tanggal');
             const targetUser = $(this).data('user-id');
-            const csrfToken  = $('input[name="<?= csrf_token() ?>"]').val() || $('input[name="csrf_test_name"]').val();
+            const csrfName   = '<?= csrf_token() ?>';
+            const csrfToken  = $('input[name="' + csrfName + '"]').first().val() || $('input[name="csrf_test_name"]').val();
 
-            Swal.fire({
-                title: 'Buka Kunci Laporan?',
-                html: `Laporan tanggal <strong>${tanggal}</strong> akan dibuka kuncinya.<br>Staf akan dapat merevisi dan mengirim ulang laporan.<br><br><span class='text-danger fw-bold'>Setelah revisi dikirim, laporan akan terkunci kembali otomatis.</span>`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc3545',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: '<i class="bi bi-unlock-fill me-1"></i> Ya, Buka Kunci!',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        url: '<?= site_url('log-kegiatan/buka-kunci') ?>',
-                        type: 'POST',
-                        data: {
-                            target_user_id: targetUser,
-                            tanggal: tanggal,
-                            '<?= csrf_token() ?>': csrfToken
-                        },
-                        success: function(response) {
-                            if (response.csrf_hash) {
-                                $('input[name="<?= csrf_token() ?>"]').val(response.csrf_hash);
-                                $('input[name="csrf_test_name"]').val(response.csrf_hash);
-                            }
-                            if (response.success) {
+            if (!tanggal || !targetUser) {
+                alert('Parameter tanggal atau user ID tidak valid.');
+                return;
+            }
+
+            function executeBukaKunci() {
+                $.ajax({
+                    url: '<?= site_url('log-kegiatan/buka-kunci') ?>',
+                    type: 'POST',
+                    data: {
+                        target_user_id: targetUser,
+                        tanggal: tanggal,
+                        [csrfName]: csrfToken
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.csrf_hash) {
+                            $('input[name="' + csrfName + '"]').val(response.csrf_hash);
+                            $('input[name="csrf_test_name"]').val(response.csrf_hash);
+                        }
+                        if (response.success) {
+                            if (typeof Swal !== 'undefined') {
                                 Swal.fire({
                                     icon: 'success',
                                     title: 'Berhasil!',
@@ -752,15 +751,48 @@ Lapor Kegiatan Harian
                                     showConfirmButton: false
                                 }).then(() => { location.reload(); });
                             } else {
-                                Swal.fire('Gagal!', response.message || 'Terjadi kesalahan.', 'error');
+                                alert(response.message);
+                                location.reload();
                             }
-                        },
-                        error: function() {
-                            Swal.fire('Error', 'Terjadi kesalahan jaringan atau server.', 'error');
+                        } else {
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire('Gagal!', response.message || 'Terjadi kesalahan.', 'error');
+                            } else {
+                                alert('Gagal: ' + (response.message || 'Terjadi kesalahan.'));
+                            }
                         }
-                    });
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(xhr.responseText || error);
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire('Error', 'Terjadi kesalahan jaringan atau server.', 'error');
+                        } else {
+                            alert('Terjadi kesalahan jaringan atau server.');
+                        }
+                    }
+                });
+            }
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Buka Kunci Laporan?',
+                    html: `Laporan tanggal <strong>${tanggal}</strong> akan dibuka kuncinya.<br>Staf akan dapat merevisi dan mengirim ulang laporan.<br><br><span class='text-danger fw-bold'>Setelah revisi dikirim, laporan akan terkunci kembali otomatis.</span>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="bi bi-unlock-fill me-1"></i> Ya, Buka Kunci!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        executeBukaKunci();
+                    }
+                });
+            } else {
+                if (confirm(`Buka Kunci Laporan tanggal ${tanggal}?\n\nStaf akan dapat merevisi dan mengirim ulang laporan.`)) {
+                    executeBukaKunci();
                 }
-            });
+            }
         });
 
     });

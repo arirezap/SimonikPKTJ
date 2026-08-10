@@ -958,36 +958,35 @@ Rekap & Penilaian Kinerja
         // =============================================
         // [SUPERADMIN] Buka Kunci Laporan dari Penilaian Kinerja
         // =============================================
-        $(document).on('click', '.btn-buka-kunci-penilaian', function() {
+        $(document).on('click', '.btn-buka-kunci-penilaian', function(e) {
+            e.preventDefault();
             const tanggal   = $(this).data('tanggal');
             const stafId    = $(this).data('staf-id');
             const csrfName  = '<?= csrf_token() ?>';
-            const csrfToken = $('input[name="' + csrfName + '"]').first().val();
+            const csrfToken = $('input[name="' + csrfName + '"]').first().val() || $('input[name="csrf_test_name"]').val();
 
-            Swal.fire({
-                title: 'Buka Kunci Laporan?',
-                html: `Laporan staf tanggal <strong>${tanggal}</strong> akan dibuka kuncinya.<br>Staf akan dapat merevisi dan mengirim ulang laporan.<br><br><span class='text-danger fw-bold'>Setelah revisi dikirim, laporan akan terkunci kembali otomatis.</span>`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc3545',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: '<i class="bi bi-unlock-fill me-1"></i> Ya, Buka Kunci!',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        url: '<?= site_url('log-kegiatan/buka-kunci') ?>',
-                        type: 'POST',
-                        data: {
-                            target_user_id: stafId,
-                            tanggal: tanggal,
-                            [csrfName]: csrfToken
-                        },
-                        success: function(response) {
-                            if (response.csrf_hash) {
-                                $('input[name="' + csrfName + '"]').val(response.csrf_hash);
-                            }
-                            if (response.success) {
+            if (!tanggal || !stafId) {
+                alert('Parameter tanggal atau staf ID tidak valid.');
+                return;
+            }
+
+            function executeBukaKunciStaf() {
+                $.ajax({
+                    url: '<?= site_url('log-kegiatan/buka-kunci') ?>',
+                    type: 'POST',
+                    data: {
+                        target_user_id: stafId,
+                        tanggal: tanggal,
+                        [csrfName]: csrfToken
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.csrf_hash) {
+                            $('input[name="' + csrfName + '"]').val(response.csrf_hash);
+                            $('input[name="csrf_test_name"]').val(response.csrf_hash);
+                        }
+                        if (response.success) {
+                            if (typeof Swal !== 'undefined') {
                                 Swal.fire({
                                     icon: 'success',
                                     title: 'Berhasil!',
@@ -996,53 +995,84 @@ Rekap & Penilaian Kinerja
                                     showConfirmButton: false
                                 }).then(() => { location.reload(); });
                             } else {
-                                Swal.fire('Gagal!', response.message || 'Terjadi kesalahan.', 'error');
+                                alert(response.message);
+                                location.reload();
                             }
-                        },
-                        error: function() {
-                            Swal.fire('Error', 'Terjadi kesalahan jaringan atau server.', 'error');
+                        } else {
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire('Gagal!', response.message || 'Terjadi kesalahan.', 'error');
+                            } else {
+                                alert('Gagal: ' + (response.message || 'Terjadi kesalahan.'));
+                            }
                         }
-                    });
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(xhr.responseText || error);
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire('Error', 'Terjadi kesalahan jaringan atau server.', 'error');
+                        } else {
+                            alert('Terjadi kesalahan jaringan atau server.');
+                        }
+                    }
+                });
+            }
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Buka Kunci Laporan?',
+                    html: `Laporan staf tanggal <strong>${tanggal}</strong> akan dibuka kuncinya.<br>Staf akan dapat merevisi dan mengirim ulang laporan.<br><br><span class='text-danger fw-bold'>Setelah revisi dikirim, laporan akan terkunci kembali otomatis.</span>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="bi bi-unlock-fill me-1"></i> Ya, Buka Kunci!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        executeBukaKunciStaf();
+                    }
+                });
+            } else {
+                if (confirm(`Buka Kunci Laporan staf tanggal ${tanggal}?\n\nStaf akan dapat merevisi dan mengirim ulang laporan.`)) {
+                    executeBukaKunciStaf();
                 }
-            });
+            }
         });
 
         // =============================================
         // [SUPERADMIN] Batalkan Persetujuan Target Bulanan Staf
         // =============================================
-        $(document).on('click', '.btn-batal-approve-target-penilaian', function() {
+        $(document).on('click', '.btn-batal-approve-target-penilaian', function(e) {
+            e.preventDefault();
             const stafId    = $(this).data('staf-id');
             const bulan     = $(this).data('bulan');
             const tahun     = $(this).data('tahun');
             const csrfName  = '<?= csrf_token() ?>';
-            const csrfToken = $('input[name="' + csrfName + '"]').first().val();
+            const csrfToken = $('input[name="' + csrfName + '"]').first().val() || $('input[name="csrf_test_name"]').val();
 
-            Swal.fire({
-                title: 'Batalkan Persetujuan Target?',
-                html: `Persetujuan target bulanan staf akan dibatalkan.<br>Staf akan dapat merevisi dan mengajukan kembali ke atasan.`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc3545',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: '<i class="bi bi-x-circle-fill me-1"></i> Ya, Batalkan!',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        url: '<?= site_url('laporan-harian/batal-approve') ?>',
-                        type: 'POST',
-                        data: {
-                            staf_id: stafId,
-                            bulan: bulan,
-                            tahun: tahun,
-                            [csrfName]: csrfToken
-                        },
-                        dataType: 'json',
-                        success: function(response) {
-                            if (response.csrf_hash) {
-                                $('input[name="' + csrfName + '"]').val(response.csrf_hash);
-                            }
-                            if (response.success) {
+            if (!stafId || !bulan || !tahun) {
+                alert('Parameter staf_id, bulan, atau tahun tidak valid.');
+                return;
+            }
+
+            function executeCancel() {
+                $.ajax({
+                    url: '<?= site_url('laporan-harian/batal-approve') ?>',
+                    type: 'POST',
+                    data: {
+                        staf_id: stafId,
+                        bulan: bulan,
+                        tahun: tahun,
+                        [csrfName]: csrfToken
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.csrf_hash) {
+                            $('input[name="' + csrfName + '"]').val(response.csrf_hash);
+                            $('input[name="csrf_test_name"]').val(response.csrf_hash);
+                        }
+                        if (response.success) {
+                            if (typeof Swal !== 'undefined') {
                                 Swal.fire({
                                     icon: 'success',
                                     title: 'Berhasil!',
@@ -1051,15 +1081,48 @@ Rekap & Penilaian Kinerja
                                     showConfirmButton: false
                                 }).then(() => { location.reload(); });
                             } else {
-                                Swal.fire('Gagal!', response.message || 'Terjadi kesalahan.', 'error');
+                                alert(response.message);
+                                location.reload();
                             }
-                        },
-                        error: function() {
-                            Swal.fire('Error', 'Terjadi kesalahan jaringan atau server.', 'error');
+                        } else {
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire('Gagal!', response.message || 'Terjadi kesalahan.', 'error');
+                            } else {
+                                alert('Gagal: ' + (response.message || 'Terjadi kesalahan.'));
+                            }
                         }
-                    });
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(xhr.responseText || error);
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire('Error', 'Terjadi kesalahan jaringan atau server.', 'error');
+                        } else {
+                            alert('Terjadi kesalahan jaringan atau server.');
+                        }
+                    }
+                });
+            }
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Batalkan Persetujuan Target?',
+                    html: `Persetujuan target bulanan staf akan dibatalkan.<br>Staf akan dapat merevisi dan mengajukan kembali ke atasan.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="bi bi-x-circle-fill me-1"></i> Ya, Batalkan!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        executeCancel();
+                    }
+                });
+            } else {
+                if (confirm('Batalkan Persetujuan Target?\n\nPersetujuan target bulanan staf akan dibatalkan agar staf dapat merevisi.')) {
+                    executeCancel();
                 }
-            });
+            }
         });
 
     });

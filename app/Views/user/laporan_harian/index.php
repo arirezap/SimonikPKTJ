@@ -7,6 +7,7 @@ Target Kinerja Bulanan
 <?= $this->endSection() ?>
 
 <?= $this->section('styles') ?>
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
 <style>
     .table th {
         background-color: #f8f9fa !important;
@@ -478,6 +479,7 @@ Target Kinerja Bulanan
 
 <?= $this->section('scripts') ?>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     $(document).ready(function() {
         
@@ -680,40 +682,37 @@ Target Kinerja Bulanan
         // =============================================
         // [SUPERADMIN] Batalkan Persetujuan Target Bulanan
         // =============================================
-        $(document).on('click', '.btn-batal-approve-target', function() {
+        $(document).on('click', '.btn-batal-approve-target', function(e) {
+            e.preventDefault();
             const stafId    = $(this).data('staf-id');
             const bulan     = $(this).data('bulan');
             const tahun     = $(this).data('tahun');
             const csrfName  = '<?= csrf_token() ?>';
             const csrfToken = $('input[name="' + csrfName + '"]').first().val() || $('input[name="csrf_test_name"]').val();
 
-            Swal.fire({
-                title: 'Batalkan Persetujuan Target?',
-                html: `Persetujuan target bulanan akan dibatalkan dan dikembalikan ke status draf.<br>Pegawai bersangkutan dapat merevisi dan mengajukan kembali ke atasan.`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc3545',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: '<i class="bi bi-x-circle-fill me-1"></i> Ya, Batalkan!',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        url: '<?= site_url('laporan-harian/batal-approve') ?>',
-                        type: 'POST',
-                        data: {
-                            staf_id: stafId,
-                            bulan: bulan,
-                            tahun: tahun,
-                            [csrfName]: csrfToken
-                        },
-                        dataType: 'json',
-                        success: function(response) {
-                            if (response.csrf_hash) {
-                                $('input[name="' + csrfName + '"]').val(response.csrf_hash);
-                                $('input[name="csrf_test_name"]').val(response.csrf_hash);
-                            }
-                            if (response.success) {
+            if (!stafId || !bulan || !tahun) {
+                alert('Parameter staf_id, bulan, atau tahun tidak valid.');
+                return;
+            }
+
+            function executeCancel() {
+                $.ajax({
+                    url: '<?= site_url('laporan-harian/batal-approve') ?>',
+                    type: 'POST',
+                    data: {
+                        staf_id: stafId,
+                        bulan: bulan,
+                        tahun: tahun,
+                        [csrfName]: csrfToken
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.csrf_hash) {
+                            $('input[name="' + csrfName + '"]').val(response.csrf_hash);
+                            $('input[name="csrf_test_name"]').val(response.csrf_hash);
+                        }
+                        if (response.success) {
+                            if (typeof Swal !== 'undefined') {
                                 Swal.fire({
                                     icon: 'success',
                                     title: 'Berhasil!',
@@ -722,15 +721,48 @@ Target Kinerja Bulanan
                                     showConfirmButton: false
                                 }).then(() => { location.reload(); });
                             } else {
-                                Swal.fire('Gagal!', response.message || 'Terjadi kesalahan.', 'error');
+                                alert(response.message);
+                                location.reload();
                             }
-                        },
-                        error: function() {
-                            Swal.fire('Error', 'Terjadi kesalahan jaringan atau server.', 'error');
+                        } else {
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire('Gagal!', response.message || 'Terjadi kesalahan.', 'error');
+                            } else {
+                                alert('Gagal: ' + (response.message || 'Terjadi kesalahan.'));
+                            }
                         }
-                    });
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(xhr.responseText || error);
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire('Error', 'Terjadi kesalahan jaringan atau server.', 'error');
+                        } else {
+                            alert('Terjadi kesalahan jaringan atau server.');
+                        }
+                    }
+                });
+            }
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Batalkan Persetujuan Target?',
+                    html: `Persetujuan target bulanan akan dibatalkan dan dikembalikan ke status draf.<br>Pegawai bersangkutan dapat merevisi dan mengajukan kembali ke atasan.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="bi bi-x-circle-fill me-1"></i> Ya, Batalkan!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        executeCancel();
+                    }
+                });
+            } else {
+                if (confirm('Batalkan Persetujuan Target?\n\nPersetujuan target bulanan akan dibatalkan dan dikembalikan ke status draf agar pegawai dapat merevisi.')) {
+                    executeCancel();
                 }
-            });
+            }
         });
 
     });
