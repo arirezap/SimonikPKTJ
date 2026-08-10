@@ -358,4 +358,133 @@ class LaporanHarianController extends BaseController
             'csrf_hash' => csrf_hash()
         ]);
     }
+
+    /**
+     * [SUPERADMIN ONLY] Membatalkan persetujuan Target Bulanan pegawai
+     * agar pegawai dapat merevisi target dan mengajukannya kembali ke atasan langsung.
+     */
+    public function cancelApprove()
+    {
+        if (!hasRole('admin')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Akses ditolak. Fitur ini hanya untuk Superadmin.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        $stafId = $this->request->getPost('staf_id') ?? $this->request->getPost('target_user_id');
+        $bulan  = $this->request->getPost('bulan');
+        $tahun  = $this->request->getPost('tahun');
+
+        if (!$stafId || !$bulan || !$tahun) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Parameter tidak lengkap (staf_id, bulan, dan tahun diperlukan).',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        $laporanModel = new LaporanHarian();
+        $userModel    = new User();
+
+        $targetUser = $userModel->find($stafId);
+        if (!$targetUser) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Staf tidak ditemukan.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        $existingTargets = $laporanModel->where('user_id', $stafId)
+                                        ->where('bulan', $bulan)
+                                        ->where('tahun', $tahun)
+                                        ->findAll();
+
+        if (empty($existingTargets)) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Tidak ada target bulanan untuk staf tersebut pada periode ini.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        $hasApproved = false;
+        foreach ($existingTargets as $t) {
+            if ($t['status_approval'] === 'disetujui') {
+                $hasApproved = true;
+                break;
+            }
+        }
+
+        if (!$hasApproved) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Target bulanan pada periode ini belum berstatus disetujui.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        try {
+            // Revert status_approval ke 'menunggu_persetujuan' dan status ke 'draft' agar form dapat diedit kembali oleh staf
+            $laporanModel->where('user_id', $stafId)
+                         ->where('bulan', $bulan)
+                         ->where('tahun', $tahun)
+                         ->set([
+                             'status_approval' => 'menunggu_persetujuan',
+                             'status'          => 'draft'
+                         ])
+                         ->update();
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Gagal membatalkan persetujuan target. Terjadi kesalahan database.',
+                    'csrf_hash' => csrf_hash()
+                ]);
+            }
+
+            // Audit log
+            log_audit('CANCEL_APPROVE_TARGET', 'laporan_harian', $stafId, null, [
+                'bulan'        => $bulan,
+                'tahun'        => $tahun,
+                'staf'         => $targetUser['nama_lengkap'],
+                'dibatal_oleh' => session()->get('nama_lengkap')
+            ]);
+
+            // Kirim notifikasi ke staf
+            if (function_exists('send_notification')) {
+                $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                $namaBulan = $bulanIndo[(int)$bulan - 1] ?? $bulan;
+
+                send_notification(
+                    $stafId,
+                    'Persetujuan Target Dibatalkan',
+                    "Persetujuan Target Bulanan ({$namaBulan} {$tahun}) Anda telah dibatalkan oleh Superadmin. Silakan lakukan revisi dan ajukan kembali ke atasan langsung.",
+                    site_url('laporan-harian')
+                );
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => "Persetujuan Target Bulanan {$targetUser['nama_lengkap']} berhasil dibatalkan. Target kini berstatus draf.",
+                'csrf_hash' => csrf_hash()
+            ]);
+
+        } catch (\Exception $e) {
+            $db->transRollback();
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Gagal membatalkan persetujuan: ' . $e->getMessage(),
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+    }
 }
+

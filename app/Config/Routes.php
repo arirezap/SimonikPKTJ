@@ -187,6 +187,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('laporan-harian/hapus', 'User\LaporanHarianController::hapus');
     $routes->post('laporan-harian/approve', 'User\LaporanHarianController::approve');
     $routes->post('laporan-harian/approve-all', 'User\LaporanHarianController::approveAll');
+    $routes->post('laporan-harian/batal-approve', 'User\LaporanHarianController::cancelApprove'); // [SUPERADMIN] Batalkan persetujuan target
 
     // --- Log Kegiatan Harian ---
     $routes->match(['get', 'post'], 'log-kegiatan', 'User\LogKegiatanController::index');

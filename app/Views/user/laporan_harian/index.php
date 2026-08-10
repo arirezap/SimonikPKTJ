@@ -199,15 +199,32 @@ Target Kinerja Bulanan
 
                     <?php
                         $allApproved = !empty($rekap_data_sendiri);
+                        $hasDraft = false;
+                        $hasTerkirim = false;
                         if (!empty($rekap_data_sendiri)) {
                             foreach ($rekap_data_sendiri as $row) {
                                 if ($row['status_approval'] !== 'disetujui') {
                                     $allApproved = false;
-                                    break;
+                                }
+                                if (($row['status'] ?? '') === 'draft') {
+                                    $hasDraft = true;
+                                }
+                                if (($row['status'] ?? '') === 'terkirim') {
+                                    $hasTerkirim = true;
                                 }
                             }
                         }
                     ?>
+
+                    <?php if ($hasDraft && !$allApproved): ?>
+                        <div class="alert alert-warning mb-3 shadow-sm border border-warning-subtle">
+                            <i class="bi bi-pencil-square me-2 text-dark"></i> <strong>Target Perlu Ditingkatkan / Direvisi!</strong> Target Kinerja Bulanan Anda saat ini berstatus <strong>Draf (Perlu Revisi)</strong>. Silakan perbaiki rincian target pada tabel di bawah, lalu klik <strong>"Simpan & Kirim"</strong> untuk mengajukan kembali ke atasan langsung.
+                        </div>
+                    <?php elseif ($hasTerkirim && !$allApproved): ?>
+                        <div class="alert alert-info mb-3 shadow-sm border border-info-subtle">
+                            <i class="bi bi-hourglass-split me-2 text-primary"></i> <strong>Menunggu Persetujuan Atasan!</strong> Target Kinerja Bulanan Anda telah dikirim dan saat ini sedang menunggu persetujuan dari atasan langsung.
+                        </div>
+                    <?php endif; ?>
 
                     <div class="table-responsive mb-3">
                         <table class="table table-bordered align-middle table-hover tabel-target">
@@ -244,11 +261,11 @@ Target Kinerja Bulanan
                                             </td>
                                             <td class="text-center">
                                                 <?php if($row['status_approval'] === 'disetujui'): ?>
-                                                    <span class="badge bg-success status-badge"><i class="bi bi-check-circle"></i> Disetujui</span>
+                                                    <span class="badge bg-success status-badge"><i class="bi bi-check-circle me-1"></i> Disetujui</span>
                                                 <?php elseif(($row['status'] ?? '') === 'terkirim'): ?>
-                                                    <span class="badge bg-warning text-dark status-badge"><i class="bi bi-hourglass-split"></i> Menunggu Persetujuan</span>
+                                                    <span class="badge bg-warning text-dark status-badge"><i class="bi bi-hourglass-split me-1"></i> Menunggu Persetujuan</span>
                                                 <?php else: ?>
-                                                    <span class="badge bg-secondary status-badge"><i class="bi bi-pencil"></i> Draf (Simpan Sementara)</span>
+                                                    <span class="badge bg-warning text-dark status-badge border border-warning" style="background-color: #fff3cd !important;"><i class="bi bi-pencil-square me-1"></i> Draf (Perlu Revisi)</span>
                                                 <?php endif; ?>
                                             </td>
                                             <td class="text-center">
@@ -288,8 +305,19 @@ Target Kinerja Bulanan
                         </div>
                     </div>
                     <?php elseif ($allApproved): ?>
-                    <div class="alert alert-success mt-4 mb-0">
-                        <i class="bi bi-check-circle-fill me-2"></i> Semua target kinerja Anda untuk bulan ini telah <strong>disetujui</strong>. Data telah dikunci.
+                    <div class="alert alert-success mt-4 mb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <i class="bi bi-check-circle-fill me-2"></i> Semua target kinerja Anda untuk bulan ini telah <strong>disetujui</strong>. Data telah dikunci.
+                        </div>
+                        <?php if (hasRole('admin')): ?>
+                        <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold shadow-sm btn-batal-approve-target"
+                            data-staf-id="<?= esc(session()->get('id') ?? session()->get('user_id')) ?>"
+                            data-bulan="<?= esc($bulan_terpilih) ?>"
+                            data-tahun="<?= esc($tahun_terpilih) ?>"
+                            title="Batalkan persetujuan target bulan ini">
+                            <i class="bi bi-x-circle-fill me-1"></i> Batalkan Persetujuan (Admin)
+                        </button>
+                        <?php endif; ?>
                     </div>
                     <?php endif; ?>
                 </form>
@@ -394,9 +422,11 @@ Target Kinerja Bulanan
                                                 </td>
                                                 <td class="text-center">
                                                     <?php if($row['status_approval'] === 'disetujui'): ?>
-                                                        <span class="badge bg-success status-badge"><i class="bi bi-check-circle"></i> Disetujui</span>
+                                                        <span class="badge bg-success status-badge"><i class="bi bi-check-circle me-1"></i> Disetujui</span>
+                                                    <?php elseif(($row['status'] ?? '') === 'terkirim'): ?>
+                                                        <span class="badge bg-warning text-dark status-badge"><i class="bi bi-hourglass-split me-1"></i> Menunggu Persetujuan</span>
                                                     <?php else: ?>
-                                                        <span class="badge bg-warning text-dark status-badge"><i class="bi bi-hourglass-split"></i> Menunggu Persetujuan</span>
+                                                        <span class="badge bg-secondary status-badge"><i class="bi bi-pencil me-1"></i> Draf (Belum Diajukan)</span>
                                                     <?php endif; ?>
                                                 </td>
                                             </tr>
@@ -415,8 +445,19 @@ Target Kinerja Bulanan
                                 </button>
                             </div>
                             <?php else: ?>
-                            <div class="alert alert-success mt-4 mb-0">
-                                <i class="bi bi-check-circle-fill me-2"></i> Target kinerja bulan ini untuk staf bersangkutan telah <strong>disetujui</strong>.
+                            <div class="alert alert-success mt-4 mb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div>
+                                    <i class="bi bi-check-circle-fill me-2"></i> Target kinerja bulan ini untuk staf bersangkutan telah <strong>disetujui</strong>.
+                                </div>
+                                <?php if (hasRole('admin')): ?>
+                                <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold shadow-sm btn-batal-approve-target"
+                                    data-staf-id="<?= esc($staf_id_terpilih) ?>"
+                                    data-bulan="<?= esc($bulan_terpilih) ?>"
+                                    data-tahun="<?= esc($tahun_terpilih) ?>"
+                                    title="Batalkan persetujuan target bulanan staf">
+                                    <i class="bi bi-x-circle-fill me-1"></i> Batalkan Persetujuan (Admin)
+                                </button>
+                                <?php endif; ?>
                             </div>
                             <?php endif; ?>
                         </form>
@@ -636,6 +677,63 @@ Target Kinerja Bulanan
             });
         });
 
+        // =============================================
+        // [SUPERADMIN] Batalkan Persetujuan Target Bulanan
+        // =============================================
+        $(document).on('click', '.btn-batal-approve-target', function() {
+            const stafId    = $(this).data('staf-id');
+            const bulan     = $(this).data('bulan');
+            const tahun     = $(this).data('tahun');
+            const csrfName  = '<?= csrf_token() ?>';
+            const csrfToken = $('input[name="' + csrfName + '"]').first().val() || $('input[name="csrf_test_name"]').val();
+
+            Swal.fire({
+                title: 'Batalkan Persetujuan Target?',
+                html: `Persetujuan target bulanan akan dibatalkan dan dikembalikan ke status draf.<br>Pegawai bersangkutan dapat merevisi dan mengajukan kembali ke atasan.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="bi bi-x-circle-fill me-1"></i> Ya, Batalkan!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '<?= site_url('laporan-harian/batal-approve') ?>',
+                        type: 'POST',
+                        data: {
+                            staf_id: stafId,
+                            bulan: bulan,
+                            tahun: tahun,
+                            [csrfName]: csrfToken
+                        },
+                        dataType: 'json',
+                        success: function(response) {
+                            if (response.csrf_hash) {
+                                $('input[name="' + csrfName + '"]').val(response.csrf_hash);
+                                $('input[name="csrf_test_name"]').val(response.csrf_hash);
+                            }
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil!',
+                                    text: response.message,
+                                    timer: 2500,
+                                    showConfirmButton: false
+                                }).then(() => { location.reload(); });
+                            } else {
+                                Swal.fire('Gagal!', response.message || 'Terjadi kesalahan.', 'error');
+                            }
+                        },
+                        error: function() {
+                            Swal.fire('Error', 'Terjadi kesalahan jaringan atau server.', 'error');
+                        }
+                    });
+                }
+            });
+        });
+
     });
 </script>
 <?= $this->endSection() ?>
+

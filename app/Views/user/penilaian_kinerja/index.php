@@ -543,6 +543,15 @@ Rekap & Penilaian Kinerja
                                 <h6 class="fw-bold text-success section-header-title mb-0">
                                     <i class="bi bi-list-task me-2"></i> A. Penilaian Target Kinerja Bulanan (RHK)
                                 </h6>
+                                <?php if (hasRole('admin') && !empty($staf_id_terpilih)): ?>
+                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold shadow-sm btn-batal-approve-target-penilaian"
+                                    data-staf-id="<?= esc($staf_id_terpilih) ?>"
+                                    data-bulan="<?= esc($bulan_terpilih) ?>"
+                                    data-tahun="<?= esc($tahun_terpilih) ?>"
+                                    title="Batalkan persetujuan target bulanan staf agar staf dapat merevisi target">
+                                    <i class="bi bi-x-circle-fill me-1"></i> Batalkan Target (Admin)
+                                </button>
+                                <?php endif; ?>
                             </div>
 
                             <div class="table-responsive mb-4 bg-white border rounded-3 shadow-sm">
@@ -998,6 +1007,62 @@ Rekap & Penilaian Kinerja
             });
         });
 
+        // =============================================
+        // [SUPERADMIN] Batalkan Persetujuan Target Bulanan Staf
+        // =============================================
+        $(document).on('click', '.btn-batal-approve-target-penilaian', function() {
+            const stafId    = $(this).data('staf-id');
+            const bulan     = $(this).data('bulan');
+            const tahun     = $(this).data('tahun');
+            const csrfName  = '<?= csrf_token() ?>';
+            const csrfToken = $('input[name="' + csrfName + '"]').first().val();
+
+            Swal.fire({
+                title: 'Batalkan Persetujuan Target?',
+                html: `Persetujuan target bulanan staf akan dibatalkan.<br>Staf akan dapat merevisi dan mengajukan kembali ke atasan.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="bi bi-x-circle-fill me-1"></i> Ya, Batalkan!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '<?= site_url('laporan-harian/batal-approve') ?>',
+                        type: 'POST',
+                        data: {
+                            staf_id: stafId,
+                            bulan: bulan,
+                            tahun: tahun,
+                            [csrfName]: csrfToken
+                        },
+                        dataType: 'json',
+                        success: function(response) {
+                            if (response.csrf_hash) {
+                                $('input[name="' + csrfName + '"]').val(response.csrf_hash);
+                            }
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil!',
+                                    text: response.message,
+                                    timer: 2500,
+                                    showConfirmButton: false
+                                }).then(() => { location.reload(); });
+                            } else {
+                                Swal.fire('Gagal!', response.message || 'Terjadi kesalahan.', 'error');
+                            }
+                        },
+                        error: function() {
+                            Swal.fire('Error', 'Terjadi kesalahan jaringan atau server.', 'error');
+                        }
+                    });
+                }
+            });
+        });
+
     });
 </script>
 <?= $this->endSection() ?>
+
