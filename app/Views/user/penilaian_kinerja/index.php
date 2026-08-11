@@ -65,6 +65,16 @@ Rekap & Penilaian Kinerja
     }
 
     /* Mobile UI/UX Pro Max Enhancements */
+    .text-nowrap-cell {
+        white-space: nowrap !important;
+    }
+    .scrollable-table, .table-responsive {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 12px;
+        border: 1px solid #e0e0e0;
+    }
+
     @media (max-width: 767.98px) {
         .nav-tabs {
             display: flex !important;
@@ -110,12 +120,17 @@ Rekap & Penilaian Kinerja
         .score-banner-wrapper .d-flex {
             justify-content: center !important;
         }
-        .table-responsive {
-            border-radius: 12px;
-            border: 1px solid #e0e0e0;
-        }
         .form-control, .form-select {
             font-size: 16px !important; /* Mencegah auto-zoom browser iOS */
+        }
+        .mobile-alert-flex {
+            flex-direction: column !important;
+            align-items: stretch !important;
+        }
+        .mobile-alert-flex .btn {
+            width: 100% !important;
+            margin-top: 8px !important;
+            margin-left: 0 !important;
         }
     }
 </style>
@@ -239,7 +254,7 @@ Rekap & Penilaian Kinerja
                     </div>
 
                     <!-- BAGIAN A: TARGET KINERJA BULANAN (RHK) -->
-                    <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-2">
                         <h6 class="fw-bold text-primary section-header-title mb-0">
                             <i class="bi bi-list-task me-2"></i> A. Target Kinerja Bulanan (RHK)
                         </h6>
@@ -302,7 +317,7 @@ Rekap & Penilaian Kinerja
                     </div>
 
                     <!-- BAGIAN B: TUGAS TAMBAHAN (OPSIONAL) -->
-                    <div class="d-flex justify-content-between align-items-center mb-2 mt-4">
+                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-2 mt-4">
                         <h6 class="fw-bold text-secondary section-header-title mb-0">
                             <i class="bi bi-journal-plus me-2 text-primary"></i> B. Tugas Tambahan Bulan <?= $bulan_indo[$bulan_terpilih - 1] ?>
                         </h6>
@@ -396,7 +411,7 @@ Rekap & Penilaian Kinerja
                     </div>
 
                     <!-- BAGIAN C: BUKTI & LOG LAPORAN HARIAN -->
-                    <div class="d-flex justify-content-between align-items-center mb-2 mt-4">
+                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-2 mt-4">
                         <h6 class="fw-bold text-secondary section-header-title mb-0">
                             <i class="bi bi-calendar-check me-2 text-primary"></i> C. Bukti & Activity Log Laporan Harian
                         </h6>
@@ -425,12 +440,14 @@ Rekap & Penilaian Kinerja
                     ?>
 
                     <?php if ($hasAnyDraftSendiri): ?>
-                        <div class="alert alert-warning py-2 border-warning shadow-sm mb-3 d-flex align-items-center justify-content-between">
-                            <div>
-                                <i class="bi bi-exclamation-triangle-fill me-2 text-warning fs-5"></i>
-                                <strong>Perhatian:</strong> Anda memiliki laporan harian yang <strong>masih berupa Draf (Belum Dikirim)</strong> pada bulan ini. Laporan draf tidak dihitung dalam realisasi kinerja sampai Anda mengirimkannya.
+                        <div class="alert alert-warning py-2.5 px-3 border-warning shadow-sm mb-3 d-flex flex-column flex-md-row align-items-stretch align-items-md-center justify-content-between gap-2 mobile-alert-flex">
+                            <div class="d-flex align-items-start">
+                                <i class="bi bi-exclamation-triangle-fill me-2 text-warning fs-5 flex-shrink-0 mt-0.5"></i>
+                                <div>
+                                    <strong>Perhatian:</strong> Anda memiliki laporan harian yang <strong>masih berupa Draf (Belum Dikirim)</strong> pada bulan ini. Laporan draf tidak dihitung dalam realisasi kinerja sampai Anda mengirimkannya.
+                                </div>
                             </div>
-                            <a href="<?= site_url('log-kegiatan') ?>" class="btn btn-sm btn-warning text-dark fw-bold ms-3 flex-shrink-0">
+                            <a href="<?= site_url('log-kegiatan') ?>" class="btn btn-sm btn-warning text-dark fw-bold ms-md-3 flex-shrink-0">
                                 <i class="bi bi-send-fill me-1"></i> Buka & Kirim Laporan
                             </a>
                         </div>
@@ -443,7 +460,6 @@ Rekap & Penilaian Kinerja
                                     <th style="width: 45px;" class="text-center">No</th>
                                     <th style="width: 100px;" class="text-center">Tanggal</th>
                                     <th style="width: 105px;" class="text-center">Jenis</th>
-                                    <th style="width: 130px;" class="text-center">Status</th>
                                     <th>Aktivitas Harian</th>
                                     <th class="col-target text-start">Indikator Kinerja / RHK</th>
                                     <th style="width: 110px;" class="text-center">Realisasi</th>
@@ -452,7 +468,7 @@ Rekap & Penilaian Kinerja
                             </thead>
                             <tbody>
                                 <?php if(empty($groupedSendiriByDate)): ?>
-                                    <tr><td colspan="8" class="text-center text-muted py-3">Belum ada laporan harian pada bulan ini.</td></tr>
+                                    <tr><td colspan="7" class="text-center text-muted py-3">Belum ada laporan harian pada bulan ini.</td></tr>
                                 <?php else: ?>
                                     <?php 
                                         $noRow = 1;
@@ -483,14 +499,6 @@ Rekap & Penilaian Kinerja
                                                     <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">Tambahan</span>
                                                 <?php else: ?>
                                                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">Utama</span>
-                                                <?php endif; ?>
-                                            </td>
-                                            
-                                            <td class="text-center">
-                                                <?php if (isset($it['status']) && $it['status'] === 'draft'): ?>
-                                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1" style="font-size:0.75rem;"><i class="bi bi-pencil me-1"></i> Draf (Belum Dikirim)</span>
-                                                <?php else: ?>
-                                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size:0.75rem;"><i class="bi bi-check-circle me-1"></i> Terkirim</span>
                                                 <?php endif; ?>
                                             </td>
                                             
@@ -600,13 +608,19 @@ Rekap & Penilaian Kinerja
 
                         <!-- GUIDANCE & RULES BANNER -->
                         <div class="alert alert-light border border-info-subtle shadow-sm py-2.5 px-3 small mb-4">
-                            <strong><i class="bi bi-journal-check text-success me-1"></i> Panduan Predikat Penilaian Capaian:</strong><br>
-                            <span class="badge bg-danger">Sangat Kurang</span>: &le; 25% &nbsp;|&nbsp;
-                            <span class="badge bg-warning text-dark">Kurang</span>: > 25% - 75% &nbsp;|&nbsp;
-                            <span class="badge bg-secondary">Butuh Perbaikan</span>: > 75% - 90% &nbsp;|&nbsp;
-                            <span class="badge bg-primary">Baik</span>: > 90% - 100% &nbsp;|&nbsp;
-                            <span class="badge bg-success">Sangat Baik</span>: > 100% - 150%
-                            <br><i class="text-muted">* Cermati selisih realisasi vs target serta seluruh tugas tambahan di bawah sebelum memberikan nilai capaian.</i>
+                            <strong><i class="bi bi-journal-check text-success me-1"></i> Panduan Predikat Penilaian Capaian:</strong>
+                            <div class="d-flex flex-wrap gap-1 align-items-center my-1.5">
+                                <span class="badge bg-danger">Sangat Kurang</span> <span class="text-muted small">&le; 25%</span>
+                                <span class="text-muted small px-1">|</span>
+                                <span class="badge bg-warning text-dark">Kurang</span> <span class="text-muted small">> 25% - 75%</span>
+                                <span class="text-muted small px-1">|</span>
+                                <span class="badge bg-secondary">Butuh Perbaikan</span> <span class="text-muted small">> 75% - 90%</span>
+                                <span class="text-muted small px-1">|</span>
+                                <span class="badge bg-primary">Baik</span> <span class="text-muted small">> 90% - 100%</span>
+                                <span class="text-muted small px-1">|</span>
+                                <span class="badge bg-success">Sangat Baik</span> <span class="text-muted small">> 100% - 150%</span>
+                            </div>
+                            <i class="text-muted">* Cermati selisih realisasi vs target serta seluruh tugas tambahan di bawah sebelum memberikan nilai capaian.</i>
                         </div>
 
                         <form action="<?= site_url('penilaian-kinerja/store') ?>" method="POST" id="formPenilaian">
@@ -617,7 +631,7 @@ Rekap & Penilaian Kinerja
                             <input type="hidden" name="unit_kerja" value="<?= esc($unit_kerja_terpilih) ?>">
 
                             <!-- BAGIAN A STAF: TARGET KINERJA BULANAN (RHK) -->
-                            <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-2">
                                 <h6 class="fw-bold text-success section-header-title mb-0">
                                     <i class="bi bi-list-task me-2"></i> A. Penilaian Target Kinerja Bulanan (RHK)
                                 </h6>
@@ -695,7 +709,7 @@ Rekap & Penilaian Kinerja
                             </div>
 
                             <!-- BAGIAN B STAF: TUGAS TAMBAHAN -->
-                            <div class="d-flex justify-content-between align-items-center mb-2 mt-4">
+                            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-2 mt-4">
                                 <h6 class="fw-bold text-secondary section-header-title mb-0">
                                     <i class="bi bi-journal-plus me-2 text-success"></i> B. Penilaian Tugas Tambahan Bulan <?= $bulan_indo[$bulan_terpilih - 1] ?>
                                 </h6>
@@ -783,7 +797,7 @@ Rekap & Penilaian Kinerja
                         </form>
 
                         <!-- BAGIAN C STAF: BUKTI LAPORAN HARIAN STAF -->
-                        <div class="d-flex justify-content-between align-items-center mb-2 mt-4">
+                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-2 mt-4">
                             <h6 class="fw-bold text-secondary section-header-title mb-0">
                                 <i class="bi bi-calendar-check me-2 text-success"></i> C. Bukti & Activity Log Laporan Harian Staf
                             </h6>

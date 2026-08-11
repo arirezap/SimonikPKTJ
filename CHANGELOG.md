@@ -119,7 +119,9 @@ Dokumen ini berisi riwayat fitur, perbaikan (*bug fixes*), dan peningkatan antar
 - **Fitur Tombol Izin Revisi (Atasan Langsung & Superadmin):**
   - Mengubah label dan tampilan tombol dari "Buka Kunci" (merah) menjadi tombol **"Revisi"** (`<button class="btn btn-outline-warning"><i class="bi bi-pencil-square"></i> Revisi</button>`).
   - Otorisasi backend pada `LogKegiatanController::bukaKunci()` diperbarui sehingga izin revisi laporan harian dapat diberikan oleh **Atasan Langsung** (untuk staf di bawah pembinaannya) maupun **Superadmin** (untuk seluruh pengguna).
-- **Penanda Status Draf (Belum Dikirim) pada Tab Rekap Saya:**
-  - Menambahkan kolom **Status** dan badge penanda `<span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"><i class="bi bi-pencil me-1"></i> Draf (Belum Dikirim)</span>` pada Bagian C Tab Rekap Saya (Pegawai).
-  - Menambahkan penanda `<span class="badge bg-warning-subtle"><i class="bi bi-pencil-fill"></i> Draf</span>` tepat di bawah tanggal pelaporan, serta alert banner peringatan di atas tabel jika pegawai memiliki laporan draf yang belum dikirim ke atasan.
+- **Penyempurnaan Responsivitas Mobile UI/UX (`penilaian_kinerja/index.php`):**
+  - Mengubah layout Alert Banner Peringatan Draf menggunakan `.mobile-alert-flex` (`flex-column flex-md-row gap-2`) sehingga teks dan tombol `[Buka & Kirim Laporan]` tidak lagi tertekan/melebar secara vertikal di layar smartphone.
+  - Memperbarui panduan predikat penilaian dan header Seksi A, B, C dengan dukungan *flex wrapping* responsif (`flex-column flex-sm-row gap-2`).
+  - Menambahkan styling `.scrollable-table, .table-responsive` dengan *smooth horizontal touch scrolling* (`-webkit-overflow-scrolling: touch`) dan `.text-nowrap-cell` agar cell tanggal dan badge status tidak terpecah per huruf di layar kecil.
+
 

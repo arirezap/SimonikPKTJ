@@ -200,6 +200,16 @@ class PenilaianKinerjaController extends BaseController
         $action = $this->request->getPost('action');
         $statusPenilaian = ($action === 'submit') ? 'terbit' : 'draft';
 
+        $stafPostId = $this->request->getPost('staf_id');
+        $bulanPost  = $this->request->getPost('bulan');
+        $tahunPost  = $this->request->getPost('tahun');
+        $unitPost   = $this->request->getPost('unit_kerja');
+
+        if (!empty($stafPostId)) session()->set('penilaian_staf_id', $stafPostId);
+        if (!empty($bulanPost))  session()->set('penilaian_bulan', $bulanPost);
+        if (!empty($tahunPost))  session()->set('penilaian_tahun', $tahunPost);
+        if (!empty($unitPost))   session()->set('penilaian_unit_kerja', $unitPost);
+
         $laporan_ids = $this->request->getPost('laporan_id');
         $nilai_capaian_arr = $this->request->getPost('nilai_capaian');
 
