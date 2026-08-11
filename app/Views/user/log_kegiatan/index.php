@@ -23,8 +23,62 @@ Lapor Kegiatan Harian
         font-size: 0.85rem;
     }
     .col-target { min-width: 250px; }
-    .col-deskripsi { min-width: 300px; }
-    .col-capaian { min-width: 170px; }
+    .col-deskripsi { min-width: 280px; }
+    .col-capaian {
+        width: 220px !important;
+        min-width: 220px !important;
+        max-width: 220px !important;
+    }
+    .col-capaian .input-group {
+        width: 200px !important;
+        min-width: 200px !important;
+        max-width: 200px !important;
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        margin: 0 auto !important;
+    }
+    .col-capaian .input-group > .form-control:first-child,
+    .col-capaian .input-group > input[type="number"],
+    .col-capaian .input-group > input[name="jumlah_capaian[]"],
+    .col-capaian .input-group > input[name="jumlah_capaian_tambahan[]"] {
+        width: 75px !important;
+        min-width: 75px !important;
+        max-width: 75px !important;
+        flex: 0 0 75px !important;
+        text-align: center !important;
+        padding-left: 4px !important;
+        padding-right: 4px !important;
+    }
+    .col-capaian .input-group > .input-group-text,
+    .col-capaian .input-group > input[name="satuan_tambahan[]"] {
+        width: 125px !important;
+        min-width: 125px !important;
+        max-width: 125px !important;
+        flex: 0 0 125px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        padding-left: 4px !important;
+        padding-right: 4px !important;
+        font-weight: 500 !important;
+        text-align: center !important;
+        justify-content: center !important;
+        display: inline-flex !important;
+        align-items: center !important;
+    }
+    .col-capaian .readonly-capaian-box {
+        width: 200px !important;
+        margin: 0 auto !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-height: 38px !important;
+        font-weight: 600 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
     .col-bukti { min-width: 180px; }
     .btn {
         transition: all 0.3s ease;
@@ -143,7 +197,7 @@ Lapor Kegiatan Harian
                             <th style="width: 50px;">No</th>
                             <th class="col-target">Indikator Kinerja / RHK & Tugas</th>
                             <th class="col-deskripsi">Deskripsi Kegiatan</th>
-                            <th class="col-capaian" style="width: 170px;">Jumlah Capaian / Output</th>
+                            <th class="col-capaian" style="width: 230px;">Jumlah Capaian / Output</th>
                             <th class="col-bukti">Bukti Pekerjaan (Link)</th>
                             <th style="width: 70px;">Aksi</th>
                         </tr>
@@ -187,8 +241,8 @@ Lapor Kegiatan Harian
                                         <td>
                                             <div class="p-2 border rounded bg-light text-muted"><?= nl2br(esc($row['deskripsi_kegiatan'])) ?></div>
                                         </td>
-                                        <td>
-                                            <div class="p-2 border rounded bg-light text-center fw-bold text-muted"><?= str_replace('.', ',', (float)$row['jumlah_capaian']) ?> <?= esc($row['satuan']) ?></div>
+                                        <td class="col-capaian">
+                                            <div class="p-2 border rounded bg-light text-center fw-bold text-muted readonly-capaian-box"><?= str_replace('.', ',', (float)$row['jumlah_capaian']) ?> <?= esc($row['satuan']) ?></div>
                                         </td>
                                         <td>
                                             <?php if (!empty($row['link_bukti'])): ?>
@@ -218,10 +272,10 @@ Lapor Kegiatan Harian
                                         <td>
                                             <textarea name="deskripsi_kegiatan[]" class="form-control" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..."><?= esc($row['deskripsi_kegiatan']) ?></textarea>
                                         </td>
-                                        <td>
-                                            <div class="input-group">
-                                                <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control text-center" placeholder="Angka" value="<?= (float)$row['jumlah_capaian'] ?>">
-                                                <span class="input-group-text"><?= esc($row['satuan'] ?? '-') ?></span>
+                                        <td class="col-capaian">
+                                            <div class="input-group" style="width: 200px; display: flex; flex-wrap: nowrap; margin: 0 auto;">
+                                                <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control text-center" placeholder="Angka" value="<?= (float)$row['jumlah_capaian'] ?>" style="width: 75px; flex: 0 0 75px; min-width: 75px; max-width: 75px;">
+                                                <span class="input-group-text" style="width: 125px; flex: 0 0 125px; min-width: 125px; max-width: 125px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-flex; align-items: center; justify-content: center; padding: 4px;"><?= esc($row['satuan'] ?? '-') ?></span>
                                             </div>
                                         </td>
                                         <td>
@@ -252,10 +306,10 @@ Lapor Kegiatan Harian
                                 <td>
                                     <textarea name="deskripsi_kegiatan[]" class="form-control" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..."></textarea>
                                 </td>
-                                <td>
-                                    <div class="input-group">
-                                        <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control text-center" placeholder="Angka">
-                                        <span class="input-group-text">-</span>
+                                <td class="col-capaian">
+                                    <div class="input-group" style="width: 200px; display: flex; flex-wrap: nowrap; margin: 0 auto;">
+                                        <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control text-center" placeholder="Angka" style="width: 75px; flex: 0 0 75px; min-width: 75px; max-width: 75px;">
+                                        <span class="input-group-text" style="width: 125px; flex: 0 0 125px; min-width: 125px; max-width: 125px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-flex; align-items: center; justify-content: center; padding: 4px;">-</span>
                                     </div>
                                 </td>
                                 <td>
@@ -302,8 +356,8 @@ Lapor Kegiatan Harian
                                         <td>
                                             <div class="p-2 border rounded bg-light text-muted"><?= nl2br(esc($rowTmb['deskripsi_kegiatan'])) ?></div>
                                         </td>
-                                        <td>
-                                            <div class="p-2 border rounded bg-light text-center fw-bold text-muted">
+                                        <td class="col-capaian">
+                                            <div class="p-2 border rounded bg-light text-center fw-bold text-muted readonly-capaian-box">
                                                 <?= (isset($rowTmb['jumlah_capaian']) && $rowTmb['jumlah_capaian'] !== null && $rowTmb['jumlah_capaian'] !== '') ? str_replace('.', ',', (float)$rowTmb['jumlah_capaian']) : '-' ?> <?= esc($rowTmb['satuan'] ?? '') ?>
                                             </div>
                                         </td>
@@ -328,10 +382,10 @@ Lapor Kegiatan Harian
                                         <td>
                                             <textarea name="deskripsi_kegiatan_tambahan[]" class="form-control" rows="2" placeholder="Jelaskan tugas tambahan Anda..."><?= esc($rowTmb['deskripsi_kegiatan']) ?></textarea>
                                         </td>
-                                        <td>
-                                            <div class="input-group">
-                                                <input type="number" step="0.01" name="jumlah_capaian_tambahan[]" class="form-control text-center" placeholder="Angka" value="<?= isset($rowTmb['jumlah_capaian']) ? (float)$rowTmb['jumlah_capaian'] : '' ?>">
-                                                <input type="text" name="satuan_tambahan[]" class="form-control text-center" placeholder="Satuan" value="<?= esc($rowTmb['satuan'] ?? '') ?>" style="max-width: 90px;">
+                                        <td class="col-capaian">
+                                            <div class="input-group" style="width: 200px; display: flex; flex-wrap: nowrap; margin: 0 auto;">
+                                                <input type="number" step="0.01" name="jumlah_capaian_tambahan[]" class="form-control text-center" placeholder="Angka" value="<?= isset($rowTmb['jumlah_capaian']) ? (float)$rowTmb['jumlah_capaian'] : '' ?>" style="width: 75px; flex: 0 0 75px; min-width: 75px; max-width: 75px;">
+                                                <input type="text" name="satuan_tambahan[]" class="form-control text-center" placeholder="Satuan" value="<?= esc($rowTmb['satuan'] ?? '') ?>" style="width: 125px; flex: 0 0 125px; min-width: 125px; max-width: 125px;">
                                             </div>
                                         </td>
                                         <td>
@@ -420,10 +474,10 @@ Lapor Kegiatan Harian
                     <td>
                         <textarea name="deskripsi_kegiatan[]" class="form-control" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..."></textarea>
                     </td>
-                    <td>
-                        <div class="input-group">
-                            <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control text-center" placeholder="Angka">
-                            <span class="input-group-text">-</span>
+                    <td class="col-capaian">
+                        <div class="input-group" style="width: 200px; display: flex; flex-wrap: nowrap; margin: 0 auto;">
+                            <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control text-center" placeholder="Angka" style="width: 75px; flex: 0 0 75px; min-width: 75px; max-width: 75px;">
+                            <span class="input-group-text" style="width: 125px; flex: 0 0 125px; min-width: 125px; max-width: 125px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-flex; align-items: center; justify-content: center; padding: 4px;">-</span>
                         </div>
                     </td>
                     <td>
@@ -507,10 +561,10 @@ Lapor Kegiatan Harian
                     <td>
                         <textarea name="deskripsi_kegiatan_tambahan[]" class="form-control" rows="2" placeholder="Jelaskan tugas tambahan yang Anda kerjakan hari ini..."></textarea>
                     </td>
-                    <td>
-                        <div class="input-group">
-                            <input type="number" step="0.01" name="jumlah_capaian_tambahan[]" class="form-control text-center" placeholder="Angka">
-                            <input type="text" name="satuan_tambahan[]" class="form-control text-center" placeholder="Satuan" style="max-width: 90px;">
+                    <td class="col-capaian">
+                        <div class="input-group" style="width: 200px; display: flex; flex-wrap: nowrap; margin: 0 auto;">
+                            <input type="number" step="0.01" name="jumlah_capaian_tambahan[]" class="form-control text-center" placeholder="Angka" style="width: 75px; flex: 0 0 75px; min-width: 75px; max-width: 75px;">
+                            <input type="text" name="satuan_tambahan[]" class="form-control text-center" placeholder="Satuan" style="width: 125px; flex: 0 0 125px; min-width: 125px; max-width: 125px;">
                         </div>
                     </td>
                     <td>

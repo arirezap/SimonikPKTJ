@@ -122,6 +122,7 @@ Dokumen ini berisi riwayat fitur, perbaikan (*bug fixes*), dan peningkatan antar
 - **Penyempurnaan Responsivitas Mobile UI/UX (`penilaian_kinerja/index.php`):**
   - Mengubah layout Alert Banner Peringatan Draf menggunakan `.mobile-alert-flex` (`flex-column flex-md-row gap-2`) sehingga teks dan tombol `[Buka & Kirim Laporan]` tidak lagi tertekan/melebar secara vertikal di layar smartphone.
   - Memperbarui panduan predikat penilaian dan header Seksi A, B, C dengan dukungan *flex wrapping* responsif (`flex-column flex-sm-row gap-2`).
+- **Perbaikan UI Input Sempit/Tertutup & Pengolahan Capaian (`log_kegiatan/index.php`):**
+  - **Penyebab:** Pada kolom "Jumlah Capaian / Output" (`.col-capaian`), lebar kolom `170px` dan `.input-group-text` ("Draf Laporan") yang panjang menyebabkan elemen `<input type="number">` terhimpit hingga tersisa ~20px (hanya tampak tanda kurung `(`), sehingga pengguna tidak dapat melihat angka yang diketik dan salah menginput angka.
+  - **Solusi:** Melebarkan kolom menjadi `min-width: 220px;`, menambahkan aturan CSS `flex-wrap: nowrap`, serta menetapkan `min-width: 90px` untuk input angka. Angka input kini tampil 100% utuh, jelas, dan mudah diedit tanpa tertutup badge satuan.
   - Menambahkan styling `.scrollable-table, .table-responsive` dengan *smooth horizontal touch scrolling* (`-webkit-overflow-scrolling: touch`) dan `.text-nowrap-cell` agar cell tanggal dan badge status tidak terpecah per huruf di layar kecil.
-
-
