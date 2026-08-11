@@ -405,43 +405,85 @@ Rekap & Penilaian Kinerja
                     <div class="scrollable-table mb-2 bg-white shadow-sm">
                         <table class="table table-bordered table-hover align-middle mb-0">
                             <thead>
-                                <tr>
-                                    <th style="width: 45px;">No</th>
-                                    <th style="width: 100px;">Tanggal</th>
+                                <tr class="table-light">
+                                    <th style="width: 45px;" class="text-center">No</th>
+                                    <th style="width: 95px;" class="text-center">Tanggal</th>
+                                    <th style="width: 105px;" class="text-center">Jenis</th>
                                     <th>Aktivitas Harian</th>
                                     <th class="col-target text-start">Indikator Kinerja / RHK</th>
-                                    <th style="width: 110px;">Realisasi</th>
-                                    <th style="width: 80px;">Bukti</th>
+                                    <th style="width: 110px;" class="text-center">Realisasi</th>
+                                    <th style="width: 70px;" class="text-center">Bukti</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php if(empty($log_harian_sendiri)): ?>
-                                    <tr><td colspan="6" class="text-center text-muted py-3">Belum ada laporan harian pada bulan ini.</td></tr>
+                                <?php 
+                                    $groupedSendiriByDate = [];
+                                    if (!empty($log_harian_sendiri)) {
+                                        foreach ($log_harian_sendiri as $item) {
+                                            $tglKey = $item['tanggal_kegiatan'];
+                                            if (!isset($groupedSendiriByDate[$tglKey])) {
+                                                $groupedSendiriByDate[$tglKey] = [
+                                                    'tanggal' => $tglKey,
+                                                    'items' => []
+                                                ];
+                                            }
+                                            $groupedSendiriByDate[$tglKey]['items'][] = $item;
+                                        }
+                                    }
+                                ?>
+                                <?php if(empty($groupedSendiriByDate)): ?>
+                                    <tr><td colspan="7" class="text-center text-muted py-3">Belum ada laporan harian pada bulan ini.</td></tr>
                                 <?php else: ?>
-                                    <?php foreach ($log_harian_sendiri as $index => $log): ?>
-                                        <tr>
-                                            <td class="text-center fw-bold text-muted"><?= $index + 1 ?></td>
-                                            <td class="text-center text-muted">
-                                                <?php 
-                                                    $tgl = date('j', strtotime($log['tanggal_kegiatan']));
-                                                    $bln = $bulan_indo[date('n', strtotime($log['tanggal_kegiatan'])) - 1];
-                                                    echo $tgl . ' ' . substr($bln, 0, 3);
-                                                ?>
-                                            </td>
-                                            <td><?= nl2br(esc($log['deskripsi_kegiatan'])) ?></td>
-                                            <td><small class="text-muted"><?= esc($log['indikator_kinerja']) ?></small></td>
-                                            <td class="text-center fw-bold text-primary"><?= str_replace('.', ',', (float)$log['jumlah_capaian']) ?> <small><?= esc($log['satuan']) ?></small></td>
+                                    <?php 
+                                        $noRow = 1;
+                                        foreach ($groupedSendiriByDate as $tglKey => $group): 
+                                            $tglFormatted = date('j', strtotime($tglKey)) . ' ' . substr($bulan_indo[date('n', strtotime($tglKey)) - 1], 0, 3);
+                                            $rowSpan = count($group['items']);
+                                            
+                                            foreach ($group['items'] as $itemIdx => $it):
+                                                $isTambahan = !empty($it['is_tambahan']);
+                                                $rowClass = $isTambahan ? 'table-warning-subtle' : '';
+                                    ?>
+                                        <tr class="align-middle <?= $rowClass ?>">
+                                            <?php if ($itemIdx === 0): ?>
+                                                <td class="text-center fw-bold text-muted align-middle bg-white" rowspan="<?= $rowSpan ?>"><?= $noRow++ ?></td>
+                                                <td class="text-center text-dark fw-semibold align-middle bg-white" rowspan="<?= $rowSpan ?>"><?= $tglFormatted ?></td>
+                                            <?php endif; ?>
+                                            
                                             <td class="text-center">
-                                                <?php if (!empty($log['link_bukti'])): ?>
-                                                    <a href="<?= esc($log['link_bukti']) ?>" target="_blank" class="btn btn-light btn-sm text-primary rounded-circle shadow-sm border" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;" title="Lihat Bukti Pekerjaan"><i class="bi bi-link-45deg fs-5"></i></a>
+                                                <?php if ($isTambahan): ?>
+                                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">Tambahan</span>
                                                 <?php else: ?>
-                                                    <span class="text-muted">-</span>
+                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">Utama</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            
+                                            <td><?= nl2br(esc($it['deskripsi_kegiatan'])) ?></td>
+                                            
+                                            <td>
+                                                <?php if ($isTambahan): ?>
+                                                    <small class="text-muted">Tugas Tambahan</small>
+                                                <?php else: ?>
+                                                    <small class="text-muted"><?= esc($it['indikator_kinerja']) ?></small>
+                                                <?php endif; ?>
+                                            </td>
+                                            
+                                            <td class="text-center fw-bold text-primary">
+                                                <?= str_replace('.', ',', (float)$it['jumlah_capaian']) ?> <small class="fw-normal text-muted"><?= esc($it['satuan']) ?></small>
+                                            </td>
+                                            
+                                            <td class="text-center">
+                                                <?php if (!empty($it['link_bukti'])): ?>
+                                                    <a href="<?= esc($it['link_bukti']) ?>" target="_blank" class="btn btn-light btn-sm text-primary rounded-circle shadow-sm border" style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;" title="Lihat Bukti Pekerjaan"><i class="bi bi-link-45deg fs-6"></i></a>
+                                                <?php else: ?>
+                                                    <span class="text-muted" style="font-size: 0.8rem;">-</span>
                                                 <?php endif; ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
-                                <?php endif; ?>
-                            </tbody>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
                         </table>
                     </div>
                 <?php endif; ?>
@@ -709,78 +751,120 @@ Rekap & Penilaian Kinerja
                             <h6 class="fw-bold text-secondary section-header-title mb-0">
                                 <i class="bi bi-calendar-check me-2 text-success"></i> C. Bukti & Activity Log Laporan Harian Staf
                             </h6>
-                            <?php if (hasRole('admin') && !empty($staf_id_terpilih)): ?>
-                            <small class="text-muted"><i class="bi bi-info-circle me-1"></i> Klik <i class="bi bi-unlock text-danger"></i> untuk membuka kunci per tanggal.</small>
+                            <?php if ((hasRole('admin') || $is_atasan || $is_penilai) && !empty($staf_id_terpilih)): ?>
+                            <small class="text-muted"><i class="bi bi-info-circle me-1"></i> Klik <span class="badge bg-warning-subtle text-dark border me-1"><i class="bi bi-pencil-square"></i> Revisi</span> untuk mengizinkan staf memperbarui laporan pada tanggal tersebut.</small>
                             <?php endif; ?>
                         </div>
 
                         <div class="scrollable-table mb-4 bg-white shadow-sm">
                             <table class="table table-bordered table-hover align-middle mb-0">
                                 <thead>
-                                    <tr>
-                                        <th style="width: 45px;">No</th>
-                                        <th style="width: 100px;">Tanggal</th>
+                                    <tr class="table-light">
+                                        <th style="width: 45px;" class="text-center">No</th>
+                                        <th style="width: 95px;" class="text-center">Tanggal</th>
+                                        <th style="width: 105px;" class="text-center">Jenis</th>
                                         <th>Aktivitas Harian</th>
                                         <th class="col-target text-start">Indikator Kinerja / RHK</th>
-                                        <th style="width: 110px;">Realisasi</th>
-                                        <th style="width: 80px;">Bukti</th>
-                                        <?php if (hasRole('admin')): ?>
-                                        <th style="width: 55px;">Aksi</th>
+                                        <th style="width: 110px;" class="text-center">Realisasi</th>
+                                        <th style="width: 70px;" class="text-center">Bukti</th>
+                                        <?php if (hasRole('admin') || $is_atasan || $is_penilai): ?>
+                                        <th style="width: 75px;" class="text-center">Aksi</th>
                                         <?php endif; ?>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php if(empty($log_harian_staf)): ?>
-                                        <tr><td colspan="<?= hasRole('admin') ? 7 : 6 ?>" class="text-center text-muted py-3">Belum ada laporan harian dari staf ini.</td></tr>
+                                    <?php 
+                                        $groupedLogsByDate = [];
+                                        if (!empty($log_harian_staf)) {
+                                            foreach ($log_harian_staf as $item) {
+                                                $tglKey = $item['tanggal_kegiatan'];
+                                                if (!isset($groupedLogsByDate[$tglKey])) {
+                                                    $groupedLogsByDate[$tglKey] = [
+                                                        'tanggal' => $tglKey,
+                                                        'items' => [],
+                                                        'has_terkirim' => false
+                                                    ];
+                                                }
+                                                $groupedLogsByDate[$tglKey]['items'][] = $item;
+                                                if (isset($item['status']) && $item['status'] === 'terkirim') {
+                                                    $groupedLogsByDate[$tglKey]['has_terkirim'] = true;
+                                                }
+                                            }
+                                        }
+                                    ?>
+                                    <?php if(empty($groupedLogsByDate)): ?>
+                                        <tr><td colspan="<?= (hasRole('admin') || $is_atasan || $is_penilai) ? 8 : 7 ?>" class="text-center text-muted py-3">Belum ada laporan harian dari staf ini.</td></tr>
                                     <?php else: ?>
                                         <?php 
-                                            $prevTanggal = null;
-                                            foreach ($log_harian_staf as $index => $log): 
-                                                $isTerkirim = isset($log['status']) && $log['status'] === 'terkirim';
-                                                $showUnlock = ($prevTanggal !== $log['tanggal_kegiatan']);
-                                                $prevTanggal = $log['tanggal_kegiatan'];
+                                            $noRow = 1;
+                                            foreach ($groupedLogsByDate as $tglKey => $group): 
+                                                $tglFormatted = date('j', strtotime($tglKey)) . ' ' . substr($bulan_indo[date('n', strtotime($tglKey)) - 1], 0, 3);
+                                                $rowSpan = count($group['items']);
+                                                $hasTerkirim = $group['has_terkirim'];
+                                                
+                                                foreach ($group['items'] as $itemIdx => $it):
+                                                    $isTambahan = !empty($it['is_tambahan']);
+                                                    $rowClass = $isTambahan ? 'table-warning-subtle' : '';
                                         ?>
-                                            <tr>
-                                                <td class="text-center fw-bold text-muted"><?= $index + 1 ?></td>
-                                                <td class="text-center text-muted">
-                                                    <?php 
-                                                        $tgl = date('j', strtotime($log['tanggal_kegiatan']));
-                                                        $bln = $bulan_indo[date('n', strtotime($log['tanggal_kegiatan'])) - 1];
-                                                        echo $tgl . ' ' . substr($bln, 0, 3);
-                                                    ?>
-                                                </td>
-                                                <td><?= nl2br(esc($log['deskripsi_kegiatan'])) ?></td>
-                                                <td><small class="text-muted"><?= esc($log['indikator_kinerja']) ?></small></td>
-                                                <td class="text-center fw-bold text-primary"><?= str_replace('.', ',', (float)$log['jumlah_capaian']) ?> <small><?= esc($log['satuan']) ?></small></td>
+                                            <tr class="align-middle <?= $rowClass ?>">
+                                                <?php if ($itemIdx === 0): ?>
+                                                    <td class="text-center fw-bold text-muted align-middle bg-white" rowspan="<?= $rowSpan ?>"><?= $noRow++ ?></td>
+                                                    <td class="text-center text-dark fw-semibold align-middle bg-white" rowspan="<?= $rowSpan ?>"><?= $tglFormatted ?></td>
+                                                <?php endif; ?>
+                                                
                                                 <td class="text-center">
-                                                    <?php if (!empty($log['link_bukti'])): ?>
-                                                        <a href="<?= esc($log['link_bukti']) ?>" target="_blank" class="btn btn-light btn-sm text-primary rounded-circle shadow-sm border" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;" title="Lihat Bukti Pekerjaan"><i class="bi bi-link-45deg fs-5"></i></a>
+                                                    <?php if ($isTambahan): ?>
+                                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">Tambahan</span>
                                                     <?php else: ?>
-                                                        <span class="text-muted">-</span>
+                                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">Utama</span>
                                                     <?php endif; ?>
                                                 </td>
-                                                <?php if (hasRole('admin')): ?>
-                                                <td class="text-center">
-                                                    <?php if ($isTerkirim && $showUnlock): ?>
-                                                    <button type="button"
-                                                        class="btn btn-sm btn-outline-danger rounded-circle p-0 btn-buka-kunci-penilaian"
-                                                        style="width:32px;height:32px;"
-                                                        data-tanggal="<?= esc($log['tanggal_kegiatan']) ?>"
-                                                        data-staf-id="<?= esc($staf_id_terpilih) ?>"
-                                                        title="Buka kunci laporan <?= esc(date('d M Y', strtotime($log['tanggal_kegiatan']))) ?>">
-                                                        <i class="bi bi-unlock-fill"></i>
-                                                    </button>
-                                                    <?php elseif ($isTerkirim): ?>
-                                                        <span class="badge bg-success" style="font-size:0.65rem;">terkirim</span>
+                                                
+                                                <td><?= nl2br(esc($it['deskripsi_kegiatan'])) ?></td>
+                                                
+                                                <td>
+                                                    <?php if ($isTambahan): ?>
+                                                        <small class="text-muted">Tugas Tambahan</small>
                                                     <?php else: ?>
-                                                        <span class="text-muted">-</span>
+                                                        <small class="text-muted"><?= esc($it['indikator_kinerja']) ?></small>
                                                     <?php endif; ?>
                                                 </td>
+                                                
+                                                <td class="text-center fw-bold text-primary">
+                                                    <?= str_replace('.', ',', (float)$it['jumlah_capaian']) ?> <small class="fw-normal text-muted"><?= esc($it['satuan']) ?></small>
+                                                </td>
+                                                
+                                                <td class="text-center">
+                                                    <?php if (!empty($it['link_bukti'])): ?>
+                                                        <a href="<?= esc($it['link_bukti']) ?>" target="_blank" class="btn btn-light btn-sm text-primary rounded-circle shadow-sm border" style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;" title="Lihat Bukti Pekerjaan"><i class="bi bi-link-45deg fs-6"></i></a>
+                                                    <?php else: ?>
+                                                        <span class="text-muted" style="font-size: 0.8rem;">-</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                
+                                                <?php if ((hasRole('admin') || $is_atasan || $is_penilai) && $itemIdx === 0): ?>
+                                                    <td class="text-center align-middle bg-white" rowspan="<?= $rowSpan ?>">
+                                                        <?php if ($hasTerkirim): ?>
+                                                        <button type="button"
+                                                            class="btn btn-sm btn-outline-warning text-dark border-warning-subtle fw-semibold px-2 py-1 btn-buka-kunci-penilaian shadow-sm"
+                                                            style="font-size:0.75rem;"
+                                                            data-tanggal="<?= esc($tglKey) ?>"
+                                                            data-staf-id="<?= esc($staf_id_terpilih) ?>"
+                                                            title="Izinkan revisi laporan harian tanggal <?= esc(date('d M Y', strtotime($tglKey))) ?>">
+                                                            <i class="bi bi-pencil-square me-1"></i> Revisi
+                                                        </button>
+                                                        <?php else: ?>
+                                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size:0.65rem;">
+                                                                <i class="bi bi-pencil me-1"></i> Mode Revisi
+                                                            </span>
+                                                        <?php endif; ?>
+                                                    </td>
                                                 <?php endif; ?>
                                             </tr>
                                         <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </tbody>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
                             </table>
                         </div>
                     <?php endif; ?>
@@ -1019,13 +1103,13 @@ Rekap & Penilaian Kinerja
 
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
-                    title: 'Buka Kunci Laporan?',
-                    html: `Laporan staf tanggal <strong>${tanggal}</strong> akan dibuka kuncinya.<br>Staf akan dapat merevisi dan mengirim ulang laporan.<br><br><span class='text-danger fw-bold'>Setelah revisi dikirim, laporan akan terkunci kembali otomatis.</span>`,
-                    icon: 'warning',
+                    title: 'Izinkan Revisi Laporan?',
+                    html: `Laporan harian staf tanggal <strong>${tanggal}</strong> akan dibuka untuk direvisi.<br>Staf dapat memperbarui dan mengirim kembali laporan tersebut.<br><br><span class='text-dark fw-semibold'>Setelah dikirim ulang, laporan akan terkunci kembali otomatis.</span>`,
+                    icon: 'question',
                     showCancelButton: true,
-                    confirmButtonColor: '#dc3545',
+                    confirmButtonColor: '#ffc107',
                     cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="bi bi-unlock-fill me-1"></i> Ya, Buka Kunci!',
+                    confirmButtonText: '<i class="bi bi-pencil-square me-1"></i> Ya, Izinkan Revisi!',
                     cancelButtonText: 'Batal'
                 }).then((result) => {
                     if (result.isConfirmed) {
@@ -1033,7 +1117,7 @@ Rekap & Penilaian Kinerja
                     }
                 });
             } else {
-                if (confirm(`Buka Kunci Laporan staf tanggal ${tanggal}?\n\nStaf akan dapat merevisi dan mengirim ulang laporan.`)) {
+                if (confirm(`Izinkan Revisi Laporan harian staf tanggal ${tanggal}?\n\nStaf dapat memperbarui dan mengirim kembali laporan tersebut.`)) {
                     executeBukaKunciStaf();
                 }
             }

@@ -107,6 +107,15 @@ Dokumen ini berisi riwayat fitur, perbaikan (*bug fixes*), dan peningkatan antar
 - **Penyempurnaan Tampilan Badge Status & Banner Revisi:**
   - Status badge `Disetujui` (hijau), `Menunggu Persetujuan` (kuning - hanya saat `status === 'terkirim'`), dan `Draf (Perlu Revisi)` (kuning perbaikan - saat `status === 'draft'`) disajikan secara akurat.
   - Menambahkan alert banner petunjuk revisi pada halaman target pegawai untuk membimbing proses perbaikan dan pengajuan kembali ke atasan.
-  - Menambahkan include CDN SweetAlert2 CSS & JS serta *fallback confirmation dialog* (`confirm()`) di JavaScript untuk menjamin kestabilan tombol aksi dalam kondisi jaringan apapun.
+  
+
+## 9. Perbaikan Penyebab Terkunci Tugas Tambahan & Penggabungan Activity Log (`PenilaianKinerjaController.php` & `LogKegiatanController.php`)
+- **Penyebab Terkunci Tanpa Tombol Buka Kunci (Konflik Data Staf):**
+  - **Akar Masalah:** Ketika pegawai hanya melaporkan Tugas Tambahan pada tanggal tertentu (tanpa Tugas Pokok), status `log_tugas_tambahan` menjadi `terkirim`. Saat pegawai membuka `log-kegiatan`, sistem mengenali laporan hari itu terkunci. Namun pada halaman **Penilaian Kinerja** (`penilaian-kinerja`), tabel Activity Log Staf (Bagian C) sebelumnya hanya menampilkan data dari `log_kegiatan_harian` (Tugas Pokok), sehingga baris tanggal tersebut **tidak muncul di tabel Admin** dan tombol Buka Kunci (`btn-buka-kunci-penilaian`) tidak kelihatan.
+  - **Solusi:** 
+    - Menggabungkan data `log_kegiatan_harian` dan `log_tugas_tambahan` ke dalam variabel `$logHarianStaf` pada `PenilaianKinerjaController.php` dan mengurutkannya secara kronologis berdasarkan `tanggal_kegiatan`.
+    - Menambahkan *badge* penanda `<span class="badge bg-light text-primary border"><i class="bi bi-journal-plus"></i> Tugas Tambahan</span>` pada Bagian C `penilaian_kinerja/index.php`.
+    - Mengakomodasi pembukaan kunci pada tanggal yang hanya berisi Tugas Tambahan, sehingga Superadmin dapat melihat tanggal tersebut dan mengeklik tombol **Buka Kunci** dengan mudah.
+
 
 

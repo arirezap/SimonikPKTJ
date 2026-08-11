@@ -118,8 +118,27 @@ class PenilaianKinerjaController extends BaseController
 
         // Ambil rekap data sebulan penuh untuk diri sendiri (selalu ada)
         $rekapDataSendiri = $laporanModel->getTargetWithRealization($userId, $bulanTerpilih, $tahunTerpilih);
-        $logHarianSendiri = $logModel->getLogByMonth($userId, $bulanTerpilih, $tahunTerpilih);
+        $rawLogSendiri = $logModel->getLogByMonth($userId, $bulanTerpilih, $tahunTerpilih);
         $tugasTambahanSendiri = $logTambahanModel->getLogByMonth($userId, $bulanTerpilih, $tahunTerpilih);
+        
+        // Gabungkan Tugas Pokok dan Tugas Tambahan Diri Sendiri untuk Tabel Bagian C
+        $combinedSendiri = [];
+        foreach ($rawLogSendiri as $l) {
+            $l['is_tambahan'] = false;
+            $combinedSendiri[] = $l;
+        }
+        foreach ($tugasTambahanSendiri as $tmb) {
+            $tmb['is_tambahan'] = true;
+            $tmb['indikator_kinerja'] = 'Tugas Tambahan';
+            $combinedSendiri[] = $tmb;
+        }
+        usort($combinedSendiri, function($a, $b) {
+            if ($a['tanggal_kegiatan'] !== $b['tanggal_kegiatan']) {
+                return strtotime($a['tanggal_kegiatan']) <=> strtotime($b['tanggal_kegiatan']);
+            }
+            return ($a['is_tambahan'] ? 1 : 0) <=> ($b['is_tambahan'] ? 1 : 0);
+        });
+        $logHarianSendiri = $combinedSendiri;
         
         // Ambil rekap data staf terpilih (jika ada)
         $rekapDataStaf = [];
@@ -127,8 +146,27 @@ class PenilaianKinerjaController extends BaseController
         $tugasTambahanStaf = [];
         if ($isPenilai) {
             $rekapDataStaf = $laporanModel->getTargetWithRealization($stafIdTerpilih, $bulanTerpilih, $tahunTerpilih, true);
-            $logHarianStaf = $logModel->getLogByMonth($stafIdTerpilih, $bulanTerpilih, $tahunTerpilih, true);
+            $rawLogHarian = $logModel->getLogByMonth($stafIdTerpilih, $bulanTerpilih, $tahunTerpilih, true);
             $tugasTambahanStaf = $logTambahanModel->getLogByMonth($stafIdTerpilih, $bulanTerpilih, $tahunTerpilih, true);
+
+            // Gabungkan Tugas Pokok dan Tugas Tambahan untukTabel Bukti & Activity Log Staf (Bagian C)
+            $combinedLogs = [];
+            foreach ($rawLogHarian as $l) {
+                $l['is_tambahan'] = false;
+                $combinedLogs[] = $l;
+            }
+            foreach ($tugasTambahanStaf as $tmb) {
+                $tmb['is_tambahan'] = true;
+                $tmb['indikator_kinerja'] = 'Tugas Tambahan';
+                $combinedLogs[] = $tmb;
+            }
+            usort($combinedLogs, function($a, $b) {
+                if ($a['tanggal_kegiatan'] !== $b['tanggal_kegiatan']) {
+                    return strtotime($a['tanggal_kegiatan']) <=> strtotime($b['tanggal_kegiatan']);
+                }
+                return ($a['is_tambahan'] ? 1 : 0) <=> ($b['is_tambahan'] ? 1 : 0);
+            });
+            $logHarianStaf = $combinedLogs;
         }
 
         $data = [

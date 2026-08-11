@@ -567,15 +567,6 @@ class LogKegiatanController extends BaseController
      */
     public function bukaKunci()
     {
-        // Hanya Superadmin yang boleh mengakses fitur ini
-        if (!hasRole('admin')) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Akses ditolak. Fitur ini hanya untuk Superadmin.',
-                'csrf_hash' => csrf_hash()
-            ]);
-        }
-
         $targetUserId = $this->request->getPost('target_user_id');
         $tanggal      = $this->request->getPost('tanggal');
 
@@ -587,16 +578,26 @@ class LogKegiatanController extends BaseController
             ]);
         }
 
+        $currentUserId = session()->get('id') ?? session()->get('user_id');
         $logModel        = new LogKegiatanHarian();
         $logTambahanModel = new \App\Models\LogTugasTambahan();
         $userModel       = new \App\Models\User();
-
         // Verifikasi staf yang akan dibuka kuncinya
         $targetUser = $userModel->find($targetUserId);
         if (!$targetUser) {
             return $this->response->setJSON([
                 'success' => false,
                 'message' => 'Staf tidak ditemukan.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        // Otorisasi: Superadmin BISA untuk semua pengguna. Atasan Langsung BISA untuk staf di bawahnya.
+        $isAtasanLangsung = !empty($targetUser['atasan_id']) && ($targetUser['atasan_id'] == $currentUserId);
+        if (!hasRole('admin') && !$isAtasanLangsung) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Akses ditolak. Fitur izin revisi laporan ini hanya dapat dilakukan oleh Superadmin atau Atasan Langsung dari staf bersangkutan.',
                 'csrf_hash' => csrf_hash()
             ]);
         }
@@ -616,6 +617,7 @@ class LogKegiatanController extends BaseController
                 'csrf_hash' => csrf_hash()
             ]);
         }
+
 
         $db = \Config\Database::connect();
         $db->transStart();
@@ -638,34 +640,38 @@ class LogKegiatanController extends BaseController
             if ($db->transStatus() === false) {
                 return $this->response->setJSON([
                     'success' => false,
-                    'message' => 'Gagal membuka kunci. Terjadi kesalahan saat memperbarui database.',
+                    'message' => 'Gagal memberikan izin revisi. Terjadi kesalahan saat memperbarui database.',
                     'csrf_hash' => csrf_hash()
                 ]);
             }
 
+            $stafNama = $targetUser['nama'] ?? $targetUser['nama_lengkap'] ?? 'Staf';
+
             // Catat ke Audit Log
-            log_audit(
-                'UNLOCK_LAPORAN',
-                'log_kegiatan_harian',
-                $targetUserId,
-                null,
-                ['tanggal' => $tanggal, 'staf' => $targetUser['nama_lengkap'], 'dibuka_oleh' => session()->get('nama_lengkap')]
-            );
+            if (function_exists('log_audit')) {
+                log_audit(
+                    'REVISI_LAPORAN',
+                    'log_kegiatan_harian',
+                    $targetUserId,
+                    null,
+                    ['tanggal' => $tanggal, 'staf' => $stafNama, 'dibuka_oleh' => session()->get('nama') ?? session()->get('nama_lengkap')]
+                );
+            }
 
             // Kirim notifikasi ke staf bersangkutan
             if (function_exists('send_notification')) {
                 $tanggalFormatted = date('d M Y', strtotime($tanggal));
                 send_notification(
                     $targetUserId,
-                    'Laporan Dibuka Kembali untuk Revisi',
-                    "Laporan harian Anda untuk tanggal {$tanggalFormatted} telah dibuka kuncinya oleh Superadmin. Silakan lakukan revisi dan kirim ulang laporan Anda.",
+                    'Laporan Dibuka untuk Revisi',
+                    "Laporan harian Anda untuk tanggal {$tanggalFormatted} telah dibuka kembali untuk direvisi. Silakan perbarui dan kirim ulang laporan Anda.",
                     site_url('log-kegiatan')
                 );
             }
 
             return $this->response->setJSON([
                 'success' => true,
-                'message' => "Laporan {$targetUser['nama_lengkap']} tanggal " . date('d M Y', strtotime($tanggal)) . " berhasil dibuka kuncinya.",
+                'message' => "Izin revisi laporan {$stafNama} tanggal " . date('d M Y', strtotime($tanggal)) . " berhasil diberikan.",
                 'csrf_hash' => csrf_hash()
             ]);
 
@@ -673,7 +679,7 @@ class LogKegiatanController extends BaseController
             $db->transRollback();
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Gagal membuka kunci: ' . $e->getMessage(),
+                'message' => 'Gagal memberikan izin revisi: ' . $e->getMessage(),
                 'csrf_hash' => csrf_hash()
             ]);
         }
