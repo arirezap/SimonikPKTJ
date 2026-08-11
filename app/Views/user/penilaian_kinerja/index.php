@@ -402,13 +402,48 @@ Rekap & Penilaian Kinerja
                         </h6>
                     </div>
                     
+                    <?php 
+                        $groupedSendiriByDate = [];
+                        $hasAnyDraftSendiri = false;
+                        if (!empty($log_harian_sendiri)) {
+                            foreach ($log_harian_sendiri as $item) {
+                                $tglKey = $item['tanggal_kegiatan'];
+                                if (!isset($groupedSendiriByDate[$tglKey])) {
+                                    $groupedSendiriByDate[$tglKey] = [
+                                        'tanggal' => $tglKey,
+                                        'items' => [],
+                                        'has_draft' => false
+                                    ];
+                                }
+                                $groupedSendiriByDate[$tglKey]['items'][] = $item;
+                                if (isset($item['status']) && $item['status'] === 'draft') {
+                                    $groupedSendiriByDate[$tglKey]['has_draft'] = true;
+                                    $hasAnyDraftSendiri = true;
+                                }
+                            }
+                        }
+                    ?>
+
+                    <?php if ($hasAnyDraftSendiri): ?>
+                        <div class="alert alert-warning py-2 border-warning shadow-sm mb-3 d-flex align-items-center justify-content-between">
+                            <div>
+                                <i class="bi bi-exclamation-triangle-fill me-2 text-warning fs-5"></i>
+                                <strong>Perhatian:</strong> Anda memiliki laporan harian yang <strong>masih berupa Draf (Belum Dikirim)</strong> pada bulan ini. Laporan draf tidak dihitung dalam realisasi kinerja sampai Anda mengirimkannya.
+                            </div>
+                            <a href="<?= site_url('log-kegiatan') ?>" class="btn btn-sm btn-warning text-dark fw-bold ms-3 flex-shrink-0">
+                                <i class="bi bi-send-fill me-1"></i> Buka & Kirim Laporan
+                            </a>
+                        </div>
+                    <?php endif; ?>
+
                     <div class="scrollable-table mb-2 bg-white shadow-sm">
                         <table class="table table-bordered table-hover align-middle mb-0">
                             <thead>
                                 <tr class="table-light">
                                     <th style="width: 45px;" class="text-center">No</th>
-                                    <th style="width: 95px;" class="text-center">Tanggal</th>
+                                    <th style="width: 100px;" class="text-center">Tanggal</th>
                                     <th style="width: 105px;" class="text-center">Jenis</th>
+                                    <th style="width: 130px;" class="text-center">Status</th>
                                     <th>Aktivitas Harian</th>
                                     <th class="col-target text-start">Indikator Kinerja / RHK</th>
                                     <th style="width: 110px;" class="text-center">Realisasi</th>
@@ -416,29 +451,15 @@ Rekap & Penilaian Kinerja
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php 
-                                    $groupedSendiriByDate = [];
-                                    if (!empty($log_harian_sendiri)) {
-                                        foreach ($log_harian_sendiri as $item) {
-                                            $tglKey = $item['tanggal_kegiatan'];
-                                            if (!isset($groupedSendiriByDate[$tglKey])) {
-                                                $groupedSendiriByDate[$tglKey] = [
-                                                    'tanggal' => $tglKey,
-                                                    'items' => []
-                                                ];
-                                            }
-                                            $groupedSendiriByDate[$tglKey]['items'][] = $item;
-                                        }
-                                    }
-                                ?>
                                 <?php if(empty($groupedSendiriByDate)): ?>
-                                    <tr><td colspan="7" class="text-center text-muted py-3">Belum ada laporan harian pada bulan ini.</td></tr>
+                                    <tr><td colspan="8" class="text-center text-muted py-3">Belum ada laporan harian pada bulan ini.</td></tr>
                                 <?php else: ?>
                                     <?php 
                                         $noRow = 1;
                                         foreach ($groupedSendiriByDate as $tglKey => $group): 
                                             $tglFormatted = date('j', strtotime($tglKey)) . ' ' . substr($bulan_indo[date('n', strtotime($tglKey)) - 1], 0, 3);
                                             $rowSpan = count($group['items']);
+                                            $hasDraft = $group['has_draft'];
                                             
                                             foreach ($group['items'] as $itemIdx => $it):
                                                 $isTambahan = !empty($it['is_tambahan']);
@@ -447,7 +468,14 @@ Rekap & Penilaian Kinerja
                                         <tr class="align-middle <?= $rowClass ?>">
                                             <?php if ($itemIdx === 0): ?>
                                                 <td class="text-center fw-bold text-muted align-middle bg-white" rowspan="<?= $rowSpan ?>"><?= $noRow++ ?></td>
-                                                <td class="text-center text-dark fw-semibold align-middle bg-white" rowspan="<?= $rowSpan ?>"><?= $tglFormatted ?></td>
+                                                <td class="text-center text-dark fw-semibold align-middle bg-white" rowspan="<?= $rowSpan ?>">
+                                                    <?= $tglFormatted ?>
+                                                    <?php if ($hasDraft): ?>
+                                                        <br><span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle mt-1" style="font-size:0.65rem;" title="Laporan pada tanggal ini masih draf (belum dikirim)"><i class="bi bi-pencil-fill me-1"></i> Draf</span>
+                                                    <?php else: ?>
+                                                        <br><span class="badge bg-success-subtle text-success border border-success-subtle mt-1" style="font-size:0.65rem;"><i class="bi bi-check-circle-fill me-1"></i> Terkirim</span>
+                                                    <?php endif; ?>
+                                                </td>
                                             <?php endif; ?>
                                             
                                             <td class="text-center">
@@ -455,6 +483,14 @@ Rekap & Penilaian Kinerja
                                                     <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">Tambahan</span>
                                                 <?php else: ?>
                                                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">Utama</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            
+                                            <td class="text-center">
+                                                <?php if (isset($it['status']) && $it['status'] === 'draft'): ?>
+                                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1" style="font-size:0.75rem;"><i class="bi bi-pencil me-1"></i> Draf (Belum Dikirim)</span>
+                                                <?php else: ?>
+                                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size:0.75rem;"><i class="bi bi-check-circle me-1"></i> Terkirim</span>
                                                 <?php endif; ?>
                                             </td>
                                             

@@ -109,13 +109,17 @@ Dokumen ini berisi riwayat fitur, perbaikan (*bug fixes*), dan peningkatan antar
   - Menambahkan alert banner petunjuk revisi pada halaman target pegawai untuk membimbing proses perbaikan dan pengajuan kembali ke atasan.
   
 
-## 9. Perbaikan Penyebab Terkunci Tugas Tambahan & Penggabungan Activity Log (`PenilaianKinerjaController.php` & `LogKegiatanController.php`)
-- **Penyebab Terkunci Tanpa Tombol Buka Kunci (Konflik Data Staf):**
-  - **Akar Masalah:** Ketika pegawai hanya melaporkan Tugas Tambahan pada tanggal tertentu (tanpa Tugas Pokok), status `log_tugas_tambahan` menjadi `terkirim`. Saat pegawai membuka `log-kegiatan`, sistem mengenali laporan hari itu terkunci. Namun pada halaman **Penilaian Kinerja** (`penilaian-kinerja`), tabel Activity Log Staf (Bagian C) sebelumnya hanya menampilkan data dari `log_kegiatan_harian` (Tugas Pokok), sehingga baris tanggal tersebut **tidak muncul di tabel Admin** dan tombol Buka Kunci (`btn-buka-kunci-penilaian`) tidak kelihatan.
-  - **Solusi:** 
-    - Menggabungkan data `log_kegiatan_harian` dan `log_tugas_tambahan` ke dalam variabel `$logHarianStaf` pada `PenilaianKinerjaController.php` dan mengurutkannya secara kronologis berdasarkan `tanggal_kegiatan`.
-    - Menambahkan *badge* penanda `<span class="badge bg-light text-primary border"><i class="bi bi-journal-plus"></i> Tugas Tambahan</span>` pada Bagian C `penilaian_kinerja/index.php`.
-    - Mengakomodasi pembukaan kunci pada tanggal yang hanya berisi Tugas Tambahan, sehingga Superadmin dapat melihat tanggal tersebut dan mengeklik tombol **Buka Kunci** dengan mudah.
-
-
+## 10. Transformasi Tabel Activity Log ke Matriks Rowspan Presisi & Tombol Izin Revisi (`penilaian_kinerja/index.php` & `LogKegiatanController.php`)
+- **Tabel Matriks Rowspan (1 Tanggal = 1 Blok Visual):**
+  - Mengubah tata letak Bagian C (Bukti & Activity Log Laporan Harian) pada **Tab Rekap Saya (Pegawai)** dan **Tab Penilaian Staf (Atasan/Admin)** menggunakan `rowspan` HTML pada kolom `No`, `Tanggal`, dan `Aksi`.
+  - Menyajikan setiap kegiatan harian dalam 1 baris horizontal sejajar: `Jenis` (Badge `Utama` vs `Tambahan`) ➡️ `Aktivitas Harian` ➡️ `Indikator RHK` ➡️ `Realisasi` ➡️ `Link Bukti`.
+- **Pemisahan Presisi Tugas Pokok vs Tugas Tambahan:**
+  - Logika pengurutan (`usort`) di `PenilaianKinerjaController.php` diperbarui agar untuk setiap tanggal, **Tugas Pokok (`Utama`) selalu muncul lebih dulu di atas**, disusul oleh **Tugas Tambahan (`Tambahan`) di bawahnya**.
+  - Badge tugas tambahan disederhanakan tanpa ikon bintang (`<span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Tambahan</span>`), dan teks indikator diperbarui dari `(Tugas di luar RHK utama)` menjadi **`Tugas Tambahan`**.
+- **Fitur Tombol Izin Revisi (Atasan Langsung & Superadmin):**
+  - Mengubah label dan tampilan tombol dari "Buka Kunci" (merah) menjadi tombol **"Revisi"** (`<button class="btn btn-outline-warning"><i class="bi bi-pencil-square"></i> Revisi</button>`).
+  - Otorisasi backend pada `LogKegiatanController::bukaKunci()` diperbarui sehingga izin revisi laporan harian dapat diberikan oleh **Atasan Langsung** (untuk staf di bawah pembinaannya) maupun **Superadmin** (untuk seluruh pengguna).
+- **Penanda Status Draf (Belum Dikirim) pada Tab Rekap Saya:**
+  - Menambahkan kolom **Status** dan badge penanda `<span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"><i class="bi bi-pencil me-1"></i> Draf (Belum Dikirim)</span>` pada Bagian C Tab Rekap Saya (Pegawai).
+  - Menambahkan penanda `<span class="badge bg-warning-subtle"><i class="bi bi-pencil-fill"></i> Draf</span>` tepat di bawah tanggal pelaporan, serta alert banner peringatan di atas tabel jika pegawai memiliki laporan draf yang belum dikirim ke atasan.
 
