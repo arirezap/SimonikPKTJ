@@ -49,24 +49,33 @@ class LogKegiatanController extends BaseController
 
         $daftarTarget = ($targetStatus === 'disetujui') ? $allTargets : [];
 
-        // Ambil log kegiatan harian yang sudah diinput pada tanggal tersebut
+        // Ambil log kegiatan harian & tugas tambahan yang sudah diinput pada tanggal tersebut
         $rekapData = $logModel->getLogWithTarget($userId, $tanggalTerpilih);
+        $logTambahanModel = new \App\Models\LogTugasTambahan();
+        $rekapDataTambahan = $logTambahanModel->getLogByDate($userId, $tanggalTerpilih);
 
         $isLocked = false;
         $isDirektur = ($currentUser && $currentUser['role'] === 'direktur');
         if ($targetStatus !== 'disetujui' && !$isDirektur) {
             $isLocked = true;
-        } elseif (!empty($rekapData) && !$isDirektur) {
-            foreach ($rekapData as $row) {
-                if (isset($row['status']) && $row['status'] === 'terkirim') {
-                    $isLocked = true;
-                    break;
+        } elseif (!$isDirektur) {
+            if (!empty($rekapData)) {
+                foreach ($rekapData as $row) {
+                    if (isset($row['status']) && $row['status'] === 'terkirim') {
+                        $isLocked = true;
+                        break;
+                    }
+                }
+            }
+            if (!$isLocked && !empty($rekapDataTambahan)) {
+                foreach ($rekapDataTambahan as $rowTmb) {
+                    if (isset($rowTmb['status']) && $rowTmb['status'] === 'terkirim') {
+                        $isLocked = true;
+                        break;
+                    }
                 }
             }
         }
-
-        $logTambahanModel = new \App\Models\LogTugasTambahan();
-        $rekapDataTambahan = $logTambahanModel->getLogByDate($userId, $tanggalTerpilih);
 
         $data = [
             'title' => 'Lapor Kegiatan Harian',
@@ -163,13 +172,19 @@ class LogKegiatanController extends BaseController
             return redirect()->back()->withInput()->with('error', 'Gagal menyimpan. Silakan isi minimal 1 Kegiatan Utama (Tugas Pokok) ATAU 1 Tugas Tambahan hari ini.');
         }
 
-        // Pengecekan keamanan: Apakah TUGAS POKOK sudah dikunci?
-        // Jika Tugas Pokok sudah terkirim → blokir seluruh form.
-        // Jika hanya Tugas Tambahan yang sudah terkirim → izinkan penambahan Tugas Pokok, Tambahan yang sudah terkirim akan di-skip saat proses.
+        // Pengecekan keamanan: Apakah laporan hari ini telah dikunci?
         $isDirektur = ($currentUser && $currentUser['role'] === 'direktur');
         if (!$isDirektur) {
             foreach ($existingData as $row) {
                 if (isset($row['status']) && $row['status'] === 'terkirim') {
+                    if ($this->request->isAJAX()) {
+                        return $this->response->setJSON(['success' => false, 'message' => 'Laporan hari ini telah dikunci.', 'csrf_hash' => csrf_hash()]);
+                    }
+                    return redirect()->back()->with('error', 'Laporan hari ini telah dikunci dan tidak dapat diedit.');
+                }
+            }
+            foreach ($existingTambahanData as $rowTmb) {
+                if (isset($rowTmb['status']) && $rowTmb['status'] === 'terkirim') {
                     if ($this->request->isAJAX()) {
                         return $this->response->setJSON(['success' => false, 'message' => 'Laporan hari ini telah dikunci.', 'csrf_hash' => csrf_hash()]);
                     }
@@ -609,15 +624,13 @@ class LogKegiatanController extends BaseController
             // Ubah status log_kegiatan_harian kembali menjadi 'draft'
             $logModel->where('user_id', $targetUserId)
                      ->where('tanggal_kegiatan', $tanggal)
-                     ->where('status', 'terkirim')
-                     ->set(['status' => 'draft'])
+                     ->set(['status' => 'draft', 'status_approval' => 'menunggu_persetujuan'])
                      ->update();
 
             // Ubah status log_tugas_tambahan kembali menjadi 'draft'
             $logTambahanModel->where('user_id', $targetUserId)
                              ->where('tanggal_kegiatan', $tanggal)
-                             ->where('status', 'terkirim')
-                             ->set(['status' => 'draft'])
+                             ->set(['status' => 'draft', 'status_approval' => 'menunggu_persetujuan'])
                              ->update();
 
             $db->transComplete();
