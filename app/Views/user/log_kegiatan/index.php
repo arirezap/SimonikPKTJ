@@ -260,13 +260,15 @@ Lapor Kegiatan Harian
                                         <td>
                                             <select name="target_id[]" class="form-select">
                                                 <option value="">-- Pilih Target / RHK --</option>
-                                                <?php foreach($daftar_target as $target): ?>
-                                                    <?php 
-                                                    $labelTarget = esc($target['indikator_kinerja']) . ' (' . str_replace('.', ',', (float)$target['target_bulanan']) . ' ' . esc($target['satuan']) . ')'; 
-                                                    $selected = ($target['id'] == $row['target_id']) ? 'selected' : '';
-                                                    ?>
-                                                    <option value="<?= esc($target['id']) ?>" data-satuan="<?= esc($target['satuan']) ?>" <?= $selected ?>><?= $labelTarget ?></option>
-                                                <?php endforeach; ?>
+                                                 <?php foreach($daftar_target as $target): ?>
+                                                     <?php 
+                                                     $cleanIndikator = str_replace('`', '', esc($target['indikator_kinerja']));
+                                                     $cleanSatuan = str_replace('`', '', esc($target['satuan']));
+                                                     $labelTarget = $cleanIndikator . ' (' . str_replace('.', ',', (float)$target['target_bulanan']) . ' ' . $cleanSatuan . ')'; 
+                                                     $selected = ($target['id'] == $row['target_id']) ? 'selected' : '';
+                                                     ?>
+                                                     <option value="<?= esc($target['id']) ?>" data-satuan="<?= $cleanSatuan ?>" <?= $selected ?>><?= $labelTarget ?></option>
+                                                 <?php endforeach; ?>
                                             </select>
                                         </td>
                                         <td>
@@ -298,9 +300,13 @@ Lapor Kegiatan Harian
                                     <select name="target_id[]" class="form-select">
                                         <option value="">-- Pilih Target / RHK --</option>
                                         <?php foreach($daftar_target as $target): ?>
-                                            <?php $labelTarget = esc($target['indikator_kinerja']) . ' (' . str_replace('.', ',', (float)$target['target_bulanan']) . ' ' . esc($target['satuan']) . ')'; ?>
-                                            <option value="<?= esc($target['id']) ?>" data-satuan="<?= esc($target['satuan']) ?>"><?= $labelTarget ?></option>
-                                        <?php endforeach; ?>
+                                             <?php 
+                                             $cleanIndikator = str_replace('`', '', esc($target['indikator_kinerja']));
+                                             $cleanSatuan = str_replace('`', '', esc($target['satuan']));
+                                             $labelTarget = $cleanIndikator . ' (' . str_replace('.', ',', (float)$target['target_bulanan']) . ' ' . $cleanSatuan . ')'; 
+                                             ?>
+                                             <option value="<?= esc($target['id']) ?>" data-satuan="<?= $cleanSatuan ?>"><?= $labelTarget ?></option>
+                                         <?php endforeach; ?>
                                     </select>
                                 </td>
                                 <td>
@@ -466,8 +472,12 @@ Lapor Kegiatan Harian
                         <select name="target_id[]" class="form-select">
                             <option value="">-- Pilih Target / RHK --</option>
                             <?php foreach($daftar_target as $target): ?>
-                                <?php $labelTarget = esc($target['indikator_kinerja']) . ' (' . str_replace('.', ',', (float)$target['target_bulanan']) . ' ' . esc($target['satuan']) . ')'; ?>
-                                <option value="<?= esc($target['id']) ?>" data-satuan="<?= esc($target['satuan']) ?>"><?= $labelTarget ?></option>
+                                <?php 
+                                $cleanIndikator = str_replace('`', '', esc($target['indikator_kinerja']));
+                                $cleanSatuan = str_replace('`', '', esc($target['satuan']));
+                                $labelTarget = $cleanIndikator . ' (' . str_replace('.', ',', (float)$target['target_bulanan']) . ' ' . $cleanSatuan . ')'; 
+                                ?>
+                                <option value="<?= esc($target['id']) ?>" data-satuan="<?= $cleanSatuan ?>"><?= $labelTarget ?></option>
                             <?php endforeach; ?>
                         </select>
                     </td>
