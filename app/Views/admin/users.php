@@ -235,8 +235,19 @@
                             </td>
                             <td><?= $i++ ?></td>
                             <td>
-                                <strong><?= esc($user['nama_lengkap']) ?></strong><br>
-                                <small class="text-muted"><?= esc($user['nip'] ?? '-') ?></small>
+                                <div class="d-flex align-items-center">
+                                    <?php 
+                                    $adminFotoPath = !empty($user['foto']) ? 'assets/uploads/profile/' . $user['foto'] : '';
+                                    $hasAdminPhoto = (!empty($adminFotoPath) && file_exists(FCPATH . $adminFotoPath));
+                                    ?>
+                                    <?php if ($hasAdminPhoto): ?>
+                                        <img src="<?= base_url($adminFotoPath) ?>" class="rounded-circle me-2 border shadow-sm" style="width: 32px; height: 32px; object-fit: cover; flex-shrink: 0;" alt="<?= esc($user['nama_lengkap']) ?>">
+                                    <?php endif; ?>
+                                    <div>
+                                        <strong><?= esc($user['nama_lengkap']) ?></strong><br>
+                                        <small class="text-muted"><?= esc($user['nip'] ?? '-') ?></small>
+                                    </div>
+                                </div>
                             </td>
                             <td><?= esc($user['jabatan'] ?? '-') ?></td>
                             <td>

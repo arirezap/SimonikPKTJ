@@ -432,7 +432,8 @@ async function updateKinerjaData() {
                         else if (rata < 75) warnaBadge = 'bg-warning text-dark';
                         else if (rata == 0 && rekap.dinilai == 0) warnaBadge = 'bg-secondary';
                         
-                        let avatar = rekap.staf.avatar ? `/uploads/avatars/${rekap.staf.avatar}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(rekap.staf.nama_lengkap)}&background=random`;
+                        let fotoVal = rekap.staf.foto || rekap.staf.avatar;
+                        let avatar = fotoVal ? `<?= base_url('assets/uploads/profile/') ?>${fotoVal}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(rekap.staf.nama_lengkap)}&background=random`;
                         let jabatan = rekap.staf.jabatan || '-';
                         
                         htmlStaf += `

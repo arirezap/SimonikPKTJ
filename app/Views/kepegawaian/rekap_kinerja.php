@@ -320,8 +320,12 @@ th.sortable.desc .sort-icon {
                                     <td class="ps-4 py-3">
                                         <div class="d-flex align-items-center">
                                             <div class="flex-shrink-0">
-                                                <?php if (!empty($item['pegawai']['foto'])): ?>
-                                                    <img src="<?= base_url('uploads/avatars/' . $item['pegawai']['foto']) ?>" class="rounded-circle border border-2 border-white shadow-sm" style="width: 45px; height: 45px; object-fit: cover;">
+                                                <?php 
+                                                $fotoPath = !empty($item['pegawai']['foto']) ? 'assets/uploads/profile/' . $item['pegawai']['foto'] : '';
+                                                $hasPhoto = (!empty($fotoPath) && file_exists(FCPATH . $fotoPath));
+                                                ?>
+                                                <?php if ($hasPhoto): ?>
+                                                    <img src="<?= base_url($fotoPath) ?>" class="rounded-circle border border-2 border-white shadow-sm" style="width: 45px; height: 45px; object-fit: cover;">
                                                 <?php else: ?>
                                                     <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 45px; height: 45px; font-size: 1.1rem; border: 2px solid #fff;">
                                                         <?= strtoupper(substr(trim($item['pegawai']['nama_lengkap']), 0, 1)) ?>
@@ -419,8 +423,12 @@ th.sortable.desc .sort-icon {
                                 <div class="card-body p-3">
                                     <div class="d-flex align-items-center justify-content-between mb-3">
                                         <div class="d-flex align-items-center">
-                                            <?php if (!empty($item['pegawai']['foto'])): ?>
-                                                <img src="<?= base_url('uploads/avatars/' . $item['pegawai']['foto']) ?>" class="rounded-circle border me-2.5" style="width: 40px; height: 40px; object-fit: cover;">
+                                            <?php 
+                                            $fotoPathMob = !empty($item['pegawai']['foto']) ? 'assets/uploads/profile/' . $item['pegawai']['foto'] : '';
+                                            $hasPhotoMob = (!empty($fotoPathMob) && file_exists(FCPATH . $fotoPathMob));
+                                            ?>
+                                            <?php if ($hasPhotoMob): ?>
+                                                <img src="<?= base_url($fotoPathMob) ?>" class="rounded-circle border me-2.5" style="width: 40px; height: 40px; object-fit: cover;">
                                             <?php else: ?>
                                                 <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold me-2.5" style="width: 40px; height: 40px; font-size: 1rem;">
                                                     <?= strtoupper(substr(trim($item['pegawai']['nama_lengkap']), 0, 1)) ?>
