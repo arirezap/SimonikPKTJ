@@ -54,6 +54,11 @@ abstract class BaseController extends Controller
         // Preload any models, libraries, etc, here.
         $this->session = service('session');
 
+        // Auto Cache-Control HTTP Headers: Paksa browser selalu mengambil HTML/JS versi terbaru dari server tanpa Ctrl+F5
+        $this->response->setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+        $this->response->setHeader('Pragma', 'no-cache');
+        $this->response->setHeader('Expires', '0');
+
         // TAMBAHKAN BARIS INI UNTUK MENGATUR BAHASA KE INDONESIA
         setlocale(LC_TIME, 'id_ID.utf8', 'id_ID', 'Indonesian');
 

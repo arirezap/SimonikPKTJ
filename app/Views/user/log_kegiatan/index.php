@@ -657,54 +657,113 @@ Lapor Kegiatan Harian
 
         // Validasi Form saat klik "Simpan & Kirim Laporan Harian" (Form Submit Normal)
         $('#formLog').on('submit', function(e) {
+            // Bersihkan semua hint highlight merah sebelumnya
+            $('#formLog .is-invalid').removeClass('is-invalid');
+
             let isValid = true;
             let hasPokok = false;
             let hasTambahan = false;
+            let errorHints = [];
 
-            $('#formLog tr.row-tugas-pokok').each(function() {
-                let targetId = $(this).find('select[name="target_id[]"]').val();
-                let deskripsi = $(this).find('textarea[name="deskripsi_kegiatan[]"]').val();
-                let capaian = $(this).find('input[name="jumlah_capaian[]"]').val();
-                let link = $(this).find('input[name="link_bukti[]"]').val();
+            // Validasi Tugas Pokok
+            $('#formLog tr.row-tugas-pokok').each(function(idx) {
+                let rowNum = idx + 1;
+                let targetElem = $(this).find('select[name="target_id[]"]');
+                let deskripsiElem = $(this).find('textarea[name="deskripsi_kegiatan[]"]');
+                let capaianElem = $(this).find('input[name="jumlah_capaian[]"]');
+                let linkElem = $(this).find('input[name="link_bukti[]"]');
 
-                if (targetId) targetId = targetId.trim();
-                if (deskripsi) deskripsi = deskripsi.trim();
-                if (capaian) capaian = capaian.trim();
-                if (link) link = link.trim();
+                let targetId = targetElem.val() ? targetElem.val().trim() : '';
+                let deskripsi = deskripsiElem.val() ? deskripsiElem.val().trim() : '';
+                let capaian = capaianElem.val() ? capaianElem.val().trim() : '';
+                let link = linkElem.val() ? linkElem.val().trim() : '';
 
                 // Jika salah satu kolom di baris ini terisi
-                if (targetId || deskripsi || capaian || link) {
+                if (targetId || deskripsi || capaian !== '' || link) {
                     hasPokok = true;
-                    if (!targetId || !deskripsi || capaian === '' || !link) {
+                    let missingCols = [];
+
+                    if (!targetId) {
+                        targetElem.addClass('is-invalid');
+                        missingCols.push('Target RHK');
+                    }
+                    if (!deskripsi) {
+                        deskripsiElem.addClass('is-invalid');
+                        missingCols.push('Deskripsi Kegiatan');
+                    }
+                    if (capaian === '') {
+                        capaianElem.addClass('is-invalid');
+                        missingCols.push('Jumlah Capaian');
+                    }
+                    if (!link || link === 'https://...') {
+                        linkElem.addClass('is-invalid');
+                        missingCols.push('Link Bukti Pekerjaan');
+                    }
+
+                    if (missingCols.length > 0) {
                         isValid = false;
+                        errorHints.push(`<b>Tugas Pokok Baris ke-${rowNum}</b>: Kolom <i>${missingCols.join(', ')}</i> belum terisi.`);
                     }
                 }
             });
 
-            $('#formLog tr.row-tugas-tambahan').each(function() {
-                let deskripsiTmb = $(this).find('textarea[name="deskripsi_kegiatan_tambahan[]"]').val();
-                let linkTmb = $(this).find('input[name="link_bukti_tambahan[]"]').val();
+            // Validasi Tugas Tambahan
+            $('#formLog tr.row-tugas-tambahan').each(function(idx) {
+                let rowNum = idx + 1;
+                let deskripsiElem = $(this).find('textarea[name="deskripsi_kegiatan_tambahan[]"]');
+                let capaianElem = $(this).find('input[name="jumlah_capaian_tambahan[]"]');
+                let linkElem = $(this).find('input[name="link_bukti_tambahan[]"]');
 
-                if (deskripsiTmb) deskripsiTmb = deskripsiTmb.trim();
-                if (linkTmb) linkTmb = linkTmb.trim();
+                let deskripsiTmb = deskripsiElem.val() ? deskripsiElem.val().trim() : '';
+                let capaianTmb = capaianElem.val() ? capaianElem.val().trim() : '';
+                let linkTmb = linkElem.val() ? linkElem.val().trim() : '';
 
-                if (deskripsiTmb || linkTmb) {
+                if (deskripsiTmb || capaianTmb !== '' || linkTmb) {
                     hasTambahan = true;
-                    if (!deskripsiTmb || !linkTmb) {
+                    let missingCols = [];
+
+                    if (!deskripsiTmb) {
+                        deskripsiElem.addClass('is-invalid');
+                        missingCols.push('Deskripsi Kegiatan');
+                    }
+                    if (capaianTmb === '') {
+                        capaianElem.addClass('is-invalid');
+                        missingCols.push('Jumlah Capaian');
+                    }
+                    if (!linkTmb || linkTmb === 'https://...') {
+                        linkElem.addClass('is-invalid');
+                        missingCols.push('Link Bukti Pekerjaan');
+                    }
+
+                    if (missingCols.length > 0) {
                         isValid = false;
+                        errorHints.push(`<b>Tugas Tambahan Baris ke-${rowNum}</b>: Kolom <i>${missingCols.join(', ')}</i> belum terisi.`);
                     }
                 }
             });
 
             if (!hasPokok && !hasTambahan) {
                 e.preventDefault();
-                Swal.fire('Peringatan', 'Silakan isi minimal satu kegiatan pada Tugas Pokok atau Tugas Tambahan sebelum mengirim ke atasan langsung.', 'warning');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Laporan Masih Kosong',
+                    text: 'Silakan isi minimal satu kegiatan pada Tugas Pokok atau Tugas Tambahan sebelum mengirim ke atasan langsung.'
+                });
                 return false;
             }
 
             if (!isValid) {
                 e.preventDefault();
-                Swal.fire('Peringatan', 'Untuk mengirim laporan harian ke atasan langsung, pastikan seluruh kolom pada baris kegiatan yang diisi (Target RHK, Deskripsi Kegiatan, Jumlah Capaian, dan Link Bukti) terisi dengan lengkap.', 'warning');
+                let hintHtml = `<div class="text-start small mt-2"><p class="mb-2 text-danger fw-bold">Beberapa kolom belum lengkap sebelum pengiriman:</p><ul class="ps-3 mb-0">` +
+                               errorHints.map(h => `<li class="mb-1">${h}</li>`).join('') +
+                               `</ul><p class="mt-2 text-muted mb-0" style="font-size:0.8rem;">💡 <i>Tips: Jika belum selesai diisi, Anda dapat menekan tombol <b>Simpan Sementara</b> terlebih dahulu.</i></p></div>`;
+                
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Data Belum Lengkap',
+                    html: hintHtml,
+                    confirmButtonText: 'Saya Mengerti'
+                });
                 return false;
             }
         });
@@ -731,27 +790,24 @@ Lapor Kegiatan Harian
                         btn.html('<i class="bi bi-check-lg me-2"></i> Tersimpan Draf').removeClass('btn-outline-primary').addClass('btn-outline-success');
                         
                         if (response.new_ids) {
-                            let i = 0;
-                            tabelLog.find('tr.row-tugas-pokok').each(function() {
+                            tabelLog.find('tr.row-tugas-pokok').each(function(idx) {
                                 let inputHidden = $(this).find('input[name="log_id[]"]');
-                                if (!inputHidden.val() && response.new_ids[i]) {
-                                    inputHidden.val(response.new_ids[i]);
+                                let btnHapus = $(this).find('.hapus-baris');
+                                if (response.new_ids[idx]) {
+                                    inputHidden.val(response.new_ids[idx]);
+                                    btnHapus.attr('data-id', response.new_ids[idx]);
                                 }
-                                i++;
                             });
                         }
 
                         if (response.new_tambahan_ids) {
-                            let j = 0;
-                            tabelLog.find('tr.row-tugas-tambahan').each(function() {
+                            tabelLog.find('tr.row-tugas-tambahan').each(function(jdx) {
                                 let inputHidden = $(this).find('input[name="log_tambahan_id[]"]');
                                 let btnHapus = $(this).find('.hapus-baris-tmb');
-                                if (response.new_tambahan_ids[j]) {
-                                    // Selalu perbarui ID di hidden input dan tombol hapus
-                                    inputHidden.val(response.new_tambahan_ids[j]);
-                                    btnHapus.attr('data-id', response.new_tambahan_ids[j]);
+                                if (response.new_tambahan_ids[jdx]) {
+                                    inputHidden.val(response.new_tambahan_ids[jdx]);
+                                    btnHapus.attr('data-id', response.new_tambahan_ids[jdx]);
                                 }
-                                j++;
                             });
                         }
                         

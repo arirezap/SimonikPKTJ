@@ -20,6 +20,10 @@ class UserController extends BaseController
 
     public function index()
     {
+        if (!hasAnyRole(['admin', 'kepegawaian'])) {
+            return redirect()->to(site_url('daftar-pegawai'));
+        }
+
         $data = [
             'title' => 'Kelola Pengguna',
         ];

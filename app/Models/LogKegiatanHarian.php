@@ -41,11 +41,14 @@ class LogKegiatanHarian extends Model
 
     public function getLogByMonth($userId, $bulan, $tahun, $onlySubmitted = false)
     {
+        $startDate = sprintf('%04d-%02d-01', (int)$tahun, (int)$bulan);
+        $endDate   = date('Y-m-t', strtotime($startDate));
+
         $builder = $this->select('log_kegiatan_harian.*, laporan_harian.sasaran_program, laporan_harian.indikator_kinerja, laporan_harian.target_bulanan, laporan_harian.satuan')
                     ->join('laporan_harian', 'laporan_harian.id = log_kegiatan_harian.target_id', 'left')
                     ->where('log_kegiatan_harian.user_id', $userId)
-                    ->where('MONTH(log_kegiatan_harian.tanggal_kegiatan)', $bulan)
-                    ->where('YEAR(log_kegiatan_harian.tanggal_kegiatan)', $tahun);
+                    ->where('log_kegiatan_harian.tanggal_kegiatan >=', $startDate)
+                    ->where('log_kegiatan_harian.tanggal_kegiatan <=', $endDate);
 
         if ($onlySubmitted) {
             $builder->where('log_kegiatan_harian.status', 'terkirim');

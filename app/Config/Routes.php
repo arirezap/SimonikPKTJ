@@ -57,8 +57,9 @@ $routes->post('notifications/read/(:segment)', 'NotificationController::markAsRe
     $routes->get('remunerasi', 'Admin\RemunerasiController::index');
     $routes->post('remunerasi/store', 'Admin\RemunerasiController::store');
     
-    // --- Rute untuk Kelola Pengguna (Users) ---
+    // --- Rute untuk Kelola Pengguna (Users) & Daftar Pegawai ---
     $routes->get('users', 'Admin\UserController::index');
+    $routes->get('daftar-pegawai', 'User\DaftarPegawaiController::index');
     $routes->get('users/create', 'Admin\UserController::create');
     $routes->post('users/store', 'Admin\UserController::store');
     $routes->get('users/edit/(:num)', 'Admin\UserController::edit/$1');
@@ -199,6 +200,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
 
     // --- Rekap & Penilaian Kinerja ---
     $routes->match(['get', 'post'], 'penilaian-kinerja', 'User\PenilaianKinerjaController::index');
+    $routes->match(['get', 'post'], 'penilaian-staf', 'User\PenilaianKinerjaController::index');
     $routes->post('penilaian-kinerja/store', 'User\PenilaianKinerjaController::store');
     $routes->get('penilaian-kinerja/api-chart', 'User\PenilaianKinerjaController::getChartDataApi');
 

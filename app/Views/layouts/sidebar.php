@@ -199,8 +199,13 @@ $isKepegawaian = hasRole('kepegawaian');
                 </li>
             <?php endif; ?>
 
+            <?php if (hasAnyRole(['admin', 'kepegawaian'])): ?>
+                <li class="nav-item"><a href="<?= site_url('users') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/users') || $current_uri == 'users') ? 'active' : '' ?>"><i class="bi bi-people-fill"></i><span>Kelola Pengguna</span></a></li>
+            <?php else: ?>
+                <li class="nav-item"><a href="<?= site_url('daftar-pegawai') ?>" class="nav-link <?= ($current_uri == 'daftar-pegawai') ? 'active' : '' ?>"><i class="bi bi-person-lines-fill"></i><span>Daftar Pegawai</span></a></li>
+            <?php endif; ?>
+
             <?php if ($isAdmin): ?>
-                <li class="nav-item"><a href="<?= site_url('users') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/users')) ? 'active' : '' ?>"><i class="bi bi-people-fill"></i><span>Kelola Pengguna</span></a></li>
                 <li class="nav-item"><a href="<?= site_url('admin/audit-logs') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/audit-logs')) ? 'active' : '' ?>"><i class="bi bi-shield-check"></i><span>Log Aktivitas Sistem</span></a></li>
                 <li class="nav-item"><a href="<?= site_url('settings') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/settings')) ? 'active' : '' ?>"><i class="bi bi-gear-fill"></i><span>Pengaturan Sistem</span></a></li>
             <?php endif; ?> 

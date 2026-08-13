@@ -224,6 +224,9 @@ class LaporanHarianController extends BaseController
         }
 
         $insertedIds = [];
+        $db = \Config\Database::connect();
+        $db->transStart();
+
         try {
             if (!empty($dataToUpdate)) {
                 $laporanModel->updateBatch($dataToUpdate, 'id');
@@ -234,7 +237,10 @@ class LaporanHarianController extends BaseController
                     $insertedIds[$origIndex] = $laporanModel->getInsertID();
                 }
             }
-        } catch (\Exception $e) {
+
+            $db->transComplete();
+        } catch (\Throwable $e) {
+            try { @$db->transRollback(); } catch (\Throwable $t) {}
             if ($this->request->isAJAX()) {
                 return $this->response->setJSON([
                     'success' => false,

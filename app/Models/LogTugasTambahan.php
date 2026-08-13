@@ -41,9 +41,12 @@ class LogTugasTambahan extends Model
 
     public function getLogByMonth($userId, $bulan, $tahun, $onlySubmitted = false)
     {
+        $startDate = sprintf('%04d-%02d-01', (int)$tahun, (int)$bulan);
+        $endDate   = date('Y-m-t', strtotime($startDate));
+
         $builder = $this->where('user_id', $userId)
-                        ->where('MONTH(tanggal_kegiatan)', $bulan)
-                        ->where('YEAR(tanggal_kegiatan)', $tahun);
+                        ->where('tanggal_kegiatan >=', $startDate)
+                        ->where('tanggal_kegiatan <=', $endDate);
 
         if ($onlySubmitted) {
             $builder->where('status', 'terkirim');
