@@ -219,6 +219,15 @@ class PenilaianKinerjaController extends BaseController
         $tahunPost  = $this->request->getPost('tahun');
         $unitPost   = $this->request->getPost('unit_kerja');
 
+        // Otorisasi: Pastikan penilai adalah Atasan Langsung dari staf atau Superadmin
+        if (!empty($stafPostId) && $stafPostId != $userId) {
+            $stafUser = $userModel->find($stafPostId);
+            $isAtasan = $stafUser && !empty($stafUser['atasan_id']) && ($stafUser['atasan_id'] == $userId);
+            if (!hasAnyRole(['admin', 'direktur']) && !$isAtasan) {
+                return redirect()->back()->with('error', 'Akses ditolak. Anda tidak memiliki izin menilai kinerja staf ini.');
+            }
+        }
+
         if (!empty($stafPostId)) session()->set('penilaian_staf_id', $stafPostId);
         if (!empty($bulanPost))  session()->set('penilaian_bulan', $bulanPost);
         if (!empty($tahunPost))  session()->set('penilaian_tahun', $tahunPost);

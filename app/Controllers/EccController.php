@@ -120,7 +120,12 @@ class EccController extends BaseController
         $db = \Config\Database::connect();
         $submissionModel = new LedSubmission();
         
-        $user_id = session()->get('id');
+        $user_id = session()->get('id') ?? session()->get('user_id');
+        $userModel = new \App\Models\User();
+        if (!is_numeric($user_id) || strlen((string)$user_id) > 10) {
+            $userDb = $userModel->where('username', $user_id)->orWhere('nip', $user_id)->orWhere('id', $user_id)->first();
+            if ($userDb) $user_id = $userDb['id'];
+        }
         $role = session()->get('role');
         
         $tahun = $this->request->getPost('tahun');
@@ -303,7 +308,12 @@ class EccController extends BaseController
         $db = \Config\Database::connect();
         $scoreModel = new LedScore();
         
-        $user_id = session()->get('id');
+        $user_id = session()->get('id') ?? session()->get('user_id');
+        $userModel = new \App\Models\User();
+        if (!is_numeric($user_id) || strlen((string)$user_id) > 10) {
+            $userDb = $userModel->where('username', $user_id)->orWhere('nip', $user_id)->orWhere('id', $user_id)->first();
+            if ($userDb) $user_id = $userDb['id'];
+        }
         $tahun = $this->request->getPost('tahun');
         $prodi = $this->request->getPost('prodi');
         $scores = $this->request->getPost('skor');

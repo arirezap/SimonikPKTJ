@@ -9,131 +9,6 @@ Rekap & Penilaian Kinerja
 <?= $this->section('styles') ?>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-<style>
-    .table th {
-        background-color: #f8f9fa !important;
-        color: #333;
-        vertical-align: middle;
-        text-align: center;
-        font-weight: 600;
-    }
-    .table td {
-        vertical-align: middle;
-    }
-    .table {
-        font-size: 0.85rem;
-        margin-bottom: 0;
-    }
-    .col-target {
-        min-width: 260px;
-    }
-    .col-nilai {
-        min-width: 125px;
-        max-width: 150px;
-    }
-    .form-control-sm, .form-select-sm, .input-group-sm > .input-group-text {
-        font-size: 0.85rem;
-    }
-    .readonly-text {
-        font-weight: 600;
-    }
-    .scrollable-table {
-        max-height: 380px;
-        overflow-y: auto;
-        border: 1px solid #e9ecef;
-        border-radius: 0.5rem;
-    }
-    .scrollable-table thead th {
-        position: sticky;
-        top: 0;
-        z-index: 1;
-        box-shadow: 0 1px 0 #dee2e6;
-    }
-    .section-header-title {
-        font-size: 0.95rem;
-        letter-spacing: 0.3px;
-    }
-    .card-body {
-        padding: 1.25rem;
-    }
-    .btn {
-        transition: all 0.3s ease;
-        min-height: 42px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    /* Mobile UI/UX Pro Max Enhancements */
-    .text-nowrap-cell {
-        white-space: nowrap !important;
-    }
-    .scrollable-table, .table-responsive {
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch;
-        border-radius: 12px;
-        border: 1px solid #e0e0e0;
-    }
-
-    @media (max-width: 767.98px) {
-        .nav-tabs {
-            display: flex !important;
-            width: 100% !important;
-            background-color: #f1f3f5;
-            border-radius: 16px !important;
-            padding: 4px !important;
-            gap: 4px;
-            border-bottom: none !important;
-        }
-        .nav-tabs .nav-item {
-            flex: 1 !important;
-        }
-        .nav-tabs .nav-link {
-            width: 100% !important;
-            padding: 10px 8px !important;
-            font-size: 0.8rem !important;
-            border-radius: 12px !important;
-            white-space: nowrap;
-            text-align: center;
-            border: none !important;
-        }
-        .nav-tabs .nav-link.active {
-            background-color: #ffffff !important;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.08) !important;
-        }
-        .btn-action-container {
-            flex-direction: column !important;
-            gap: 12px !important;
-            width: 100% !important;
-        }
-        .btn-action-container .btn {
-            width: 100% !important;
-            display: flex !important;
-            justify-content: center !important;
-        }
-        .score-banner-wrapper {
-            flex-direction: column !important;
-            align-items: center !important;
-            text-align: center !important;
-            gap: 12px !important;
-        }
-        .score-banner-wrapper .d-flex {
-            justify-content: center !important;
-        }
-        .form-control, .form-select {
-            font-size: 16px !important; /* Mencegah auto-zoom browser iOS */
-        }
-        .mobile-alert-flex {
-            flex-direction: column !important;
-            align-items: stretch !important;
-        }
-        .mobile-alert-flex .btn {
-            width: 100% !important;
-            margin-top: 8px !important;
-            margin-left: 0 !important;
-        }
-    }
-</style>
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
@@ -472,24 +347,30 @@ Rekap & Penilaian Kinerja
                                 <?php else: ?>
                                     <?php 
                                         $noRow = 1;
+                                        $groupIndex = 0;
+                                        $hariIndoArr = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
                                         foreach ($groupedSendiriByDate as $tglKey => $group): 
-                                            $tglFormatted = date('j', strtotime($tglKey)) . ' ' . substr($bulan_indo[date('n', strtotime($tglKey)) - 1], 0, 3);
+                                            $groupIndex++;
+                                            $groupClass = ($groupIndex % 2 === 0) ? 'date-group-even' : 'date-group-odd';
+                                            $hariName = $hariIndoArr[date('w', strtotime($tglKey))];
+                                            $tglFormatted = $hariName . ', ' . date('j', strtotime($tglKey)) . ' ' . substr($bulan_indo[date('n', strtotime($tglKey)) - 1], 0, 3);
                                             $rowSpan = count($group['items']);
                                             $hasDraft = $group['has_draft'];
                                             
                                             foreach ($group['items'] as $itemIdx => $it):
                                                 $isTambahan = !empty($it['is_tambahan']);
-                                                $rowClass = $isTambahan ? 'table-warning-subtle' : '';
                                     ?>
-                                        <tr class="align-middle <?= $rowClass ?>">
+                                        <tr class="align-middle <?= $groupClass ?>">
                                             <?php if ($itemIdx === 0): ?>
-                                                <td class="text-center fw-bold text-muted align-middle bg-white" rowspan="<?= $rowSpan ?>"><?= $noRow++ ?></td>
-                                                <td class="text-center text-dark fw-semibold align-middle bg-white" rowspan="<?= $rowSpan ?>">
-                                                    <?= $tglFormatted ?>
+                                                <td class="text-center fw-bold text-muted align-middle" rowspan="<?= $rowSpan ?>"><?= $noRow++ ?></td>
+                                                <td class="text-center align-middle" rowspan="<?= $rowSpan ?>">
+                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1.5 fw-bold text-wrap mb-1 shadow-sm" style="font-size:0.8rem; line-height: 1.3;">
+                                                        <i class="bi bi-calendar-event me-1"></i> <?= $tglFormatted ?>
+                                                    </span>
                                                     <?php if ($hasDraft): ?>
-                                                        <br><span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle mt-1" style="font-size:0.65rem;" title="Laporan pada tanggal ini masih draf (belum dikirim)"><i class="bi bi-pencil-fill me-1"></i> Draf</span>
+                                                        <br><span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size:0.65rem;" title="Laporan pada tanggal ini masih draf (belum dikirim)"><i class="bi bi-pencil-fill me-1"></i> Draf</span>
                                                     <?php else: ?>
-                                                        <br><span class="badge bg-success-subtle text-success border border-success-subtle mt-1" style="font-size:0.65rem;"><i class="bi bi-check-circle-fill me-1"></i> Terkirim</span>
+                                                        <br><span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:0.65rem;"><i class="bi bi-check-circle-fill me-1"></i> Terkirim</span>
                                                     <?php endif; ?>
                                                 </td>
                                             <?php endif; ?>
@@ -652,10 +533,10 @@ Rekap & Penilaian Kinerja
                                         <tr>
                                             <th style="width: 45px;" class="text-center">No</th>
                                             <th class="col-target text-start">Indikator Kinerja / RHK</th>
-                                            <th style="width: 130px;" class="text-center">Target Bulanan</th>
+                                             <th style="width: 130px;" class="text-center">Target Bulanan</th>
                                             <th style="width: 130px;" class="text-center">Total Realisasi</th>
                                             <th style="width: 130px;" class="text-center">Selisih (Gap)</th>
-                                            <th style="width: 135px;" class="text-center">Input Nilai Capaian</th>
+                                            <th class="col-nilai text-center">Input Nilai Capaian</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -691,14 +572,14 @@ Rekap & Penilaian Kinerja
                                                         <span class="badge bg-light text-dark border px-2 py-1">0 <?= esc($row['satuan']) ?></span>
                                                     <?php endif; ?>
                                                 </td>
-                                                <td class="align-middle p-2 text-center" style="width: 135px;">
+                                                <td class="align-middle p-2 text-center col-nilai">
                                                     <input type="hidden" name="laporan_id[]" value="<?= esc($row['id']) ?>">
-                                                    <div class="input-group input-group-sm mb-1">
-                                                        <input type="number" name="nilai_capaian[]" class="form-control text-center input-nilai-capaian fw-bold text-primary p-1" style="font-size:0.9rem;" value="<?= $nilai_capaian !== null ? (float)$nilai_capaian : '' ?>" step="0.01" min="0" max="150" placeholder="0 - 150">
-                                                        <span class="input-group-text bg-light px-1">%</span>
+                                                    <div class="input-group input-group-sm mb-1 shadow-sm rounded border border-primary-subtle" style="width: 100%; min-width: 145px;">
+                                                        <input type="number" name="nilai_capaian[]" class="form-control text-center input-nilai-capaian fw-bold text-primary px-2" style="font-size:0.95rem; min-width: 90px;" value="<?= $nilai_capaian !== null ? (float)$nilai_capaian : '' ?>" step="0.01" min="0" max="150" placeholder="0 - 150">
+                                                        <span class="input-group-text bg-primary-subtle text-primary fw-bold px-2">%</span>
                                                     </div>
                                                     <div class="predikat-badge-container">
-                                                        <span class="badge <?= $predikatBadge ?>" style="font-size:0.7rem;"><?= $predikatLabel ?></span>
+                                                        <span class="badge <?= $predikatBadge ?>" style="font-size:0.75rem;"><?= $predikatLabel ?></span>
                                                     </div>
                                                     <div class="invalid-feedback" style="font-size: 0.7rem;">Nilai tidak sesuai!</div>
                                                 </td>
@@ -762,10 +643,10 @@ Rekap & Penilaian Kinerja
                                             <td colspan="4" class="text-end pe-3 align-middle text-dark fw-bold" style="font-size: 0.85rem;">
                                                 <i class="bi bi-journal-check text-success me-1"></i> Nilai Tugas Tambahan Bulan <?= $bulan_indo[$bulan_terpilih - 1] ?> (0 - 100%):
                                             </td>
-                                            <td class="p-2 align-middle text-center" style="width: 145px;">
-                                                <div class="input-group input-group-sm">
-                                                    <input type="number" step="0.01" max="100" min="0" name="nilai_tugas_tambahan_gabungan" id="inputNilaiTambahanGabungan" class="form-control text-center fw-bold text-success p-1" style="font-size:0.9rem;" value="<?= $scoreTambahanStaf !== null ? $scoreTambahanStaf : '' ?>" placeholder="0 - 100" <?= !$is_penilai ? 'readonly' : '' ?>>
-                                                    <span class="input-group-text bg-light px-1">%</span>
+                                            <td class="p-2 align-middle text-center col-nilai">
+                                                <div class="input-group input-group-sm shadow-sm rounded border border-success-subtle" style="width: 100%; min-width: 145px;">
+                                                    <input type="number" step="0.01" max="100" min="0" name="nilai_tugas_tambahan_gabungan" id="inputNilaiTambahanGabungan" class="form-control text-center fw-bold text-success px-2" style="font-size:0.95rem; min-width: 90px;" value="<?= $scoreTambahanStaf !== null ? $scoreTambahanStaf : '' ?>" placeholder="0 - 100" <?= !$is_penilai ? 'readonly' : '' ?>>
+                                                    <span class="input-group-text bg-success-subtle text-success fw-bold px-2">%</span>
                                                 </div>
                                             </td>
                                         </tr>
@@ -847,19 +728,27 @@ Rekap & Penilaian Kinerja
                                     <?php else: ?>
                                         <?php 
                                             $noRow = 1;
+                                            $groupIndexStaf = 0;
+                                            $hariIndoArr = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
                                             foreach ($groupedLogsByDate as $tglKey => $group): 
-                                                $tglFormatted = date('j', strtotime($tglKey)) . ' ' . substr($bulan_indo[date('n', strtotime($tglKey)) - 1], 0, 3);
+                                                $groupIndexStaf++;
+                                                $groupClass = ($groupIndexStaf % 2 === 0) ? 'date-group-even' : 'date-group-odd';
+                                                $hariName = $hariIndoArr[date('w', strtotime($tglKey))];
+                                                $tglFormatted = $hariName . ', ' . date('j', strtotime($tglKey)) . ' ' . substr($bulan_indo[date('n', strtotime($tglKey)) - 1], 0, 3);
                                                 $rowSpan = count($group['items']);
                                                 $hasTerkirim = $group['has_terkirim'];
                                                 
                                                 foreach ($group['items'] as $itemIdx => $it):
                                                     $isTambahan = !empty($it['is_tambahan']);
-                                                    $rowClass = $isTambahan ? 'table-warning-subtle' : '';
                                         ?>
-                                            <tr class="align-middle <?= $rowClass ?>">
+                                            <tr class="align-middle <?= $groupClass ?>">
                                                 <?php if ($itemIdx === 0): ?>
-                                                    <td class="text-center fw-bold text-muted align-middle bg-white" rowspan="<?= $rowSpan ?>"><?= $noRow++ ?></td>
-                                                    <td class="text-center text-dark fw-semibold align-middle bg-white" rowspan="<?= $rowSpan ?>"><?= $tglFormatted ?></td>
+                                                    <td class="text-center fw-bold text-muted align-middle" rowspan="<?= $rowSpan ?>"><?= $noRow++ ?></td>
+                                                    <td class="text-center align-middle" rowspan="<?= $rowSpan ?>">
+                                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1.5 fw-bold text-wrap mb-1 shadow-sm" style="font-size:0.8rem; line-height: 1.3;">
+                                                            <i class="bi bi-calendar-event me-1"></i> <?= $tglFormatted ?>
+                                                        </span>
+                                                    </td>
                                                 <?php endif; ?>
                                                 
                                                 <td class="text-center">
@@ -893,7 +782,7 @@ Rekap & Penilaian Kinerja
                                                 </td>
                                                 
                                                 <?php if ((hasRole('admin') || $is_atasan || $is_penilai) && $itemIdx === 0): ?>
-                                                    <td class="text-center align-middle bg-white" rowspan="<?= $rowSpan ?>">
+                                                    <td class="text-center align-middle" rowspan="<?= $rowSpan ?>">
                                                         <?php if ($hasTerkirim): ?>
                                                         <button type="button"
                                                             class="btn btn-sm btn-outline-warning text-dark border-warning-subtle fw-semibold px-2 py-1 btn-buka-kunci-penilaian shadow-sm"

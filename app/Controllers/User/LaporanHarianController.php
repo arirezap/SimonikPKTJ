@@ -131,6 +131,19 @@ class LaporanHarianController extends BaseController
         
         $isEditingStaf = $this->request->getPost('is_editing_staf') == '1';
         $targetUserId = $isEditingStaf ? $this->request->getPost('staf_id') : $userId;
+
+        // Otorisasi: Jika menyunting target milik staf lain, pastikan user adalah Atasan Langsung, Admin, atau Direktur
+        if ($isEditingStaf && $targetUserId != $userId) {
+            $targetUser = (new \App\Models\User())->find($targetUserId);
+            $isAtasan = $targetUser && !empty($targetUser['atasan_id']) && ($targetUser['atasan_id'] == $userId);
+            if (!hasAnyRole(['admin', 'direktur']) && !$isAtasan) {
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON(['success' => false, 'message' => 'Akses ditolak. Anda tidak memiliki izin menyunting target staf ini.', 'csrf_hash' => csrf_hash()]);
+                }
+                return redirect()->back()->with('error', 'Akses ditolak. Anda tidak memiliki izin menyunting target staf ini.');
+            }
+        }
+
         $isDraft = $this->request->isAJAX() || $this->request->getPost('action') === 'draft';
         $targetStatus = $isDraft ? 'draft' : 'terkirim';
 
@@ -294,13 +307,27 @@ class LaporanHarianController extends BaseController
     public function approve()
     {
         $id = $this->request->getPost('id');
+        $currentUserId = session()->get('id') ?? session()->get('user_id');
+
         if ($id) {
             $laporanModel = new LaporanHarian();
-            $laporanModel->update($id, ['status_approval' => 'disetujui']);
-            log_audit('APPROVE', 'laporan_harian', $id, null, ['status_approval' => 'disetujui']);
-            return $this->response->setJSON(['success' => true]);
+            $laporan = $laporanModel->find($id);
+            if ($laporan) {
+                $targetUser = (new \App\Models\User())->find($laporan['user_id']);
+                $isAtasan = $targetUser && !empty($targetUser['atasan_id']) && ($targetUser['atasan_id'] == $currentUserId);
+                if (!hasAnyRole(['admin', 'direktur']) && !$isAtasan) {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'Akses ditolak. Anda tidak memiliki izin menyetujui target ini.',
+                        'csrf_hash' => csrf_hash()
+                    ]);
+                }
+                $laporanModel->update($id, ['status_approval' => 'disetujui']);
+                log_audit('APPROVE', 'laporan_harian', $id, null, ['status_approval' => 'disetujui']);
+                return $this->response->setJSON(['success' => true, 'csrf_hash' => csrf_hash()]);
+            }
         }
-        return $this->response->setJSON(['success' => false]);
+        return $this->response->setJSON(['success' => false, 'message' => 'Data target tidak ditemukan.', 'csrf_hash' => csrf_hash()]);
     }
     
     public function approveAll()
@@ -308,8 +335,16 @@ class LaporanHarianController extends BaseController
         $staf_id = $this->request->getPost('staf_id');
         $bulan = $this->request->getPost('bulan');
         $tahun = $this->request->getPost('tahun');
-        
+        $currentUserId = session()->get('id') ?? session()->get('user_id');
+
         if ($staf_id && $bulan && $tahun) {
+            // Otorisasi: Pastikan penilai adalah Atasan Langsung dari staf atau Superadmin
+            $targetUser = (new \App\Models\User())->find($staf_id);
+            $isAtasan = $targetUser && !empty($targetUser['atasan_id']) && ($targetUser['atasan_id'] == $currentUserId);
+            if (!hasAnyRole(['admin', 'direktur']) && !$isAtasan) {
+                return redirect()->back()->with('error', 'Akses ditolak. Anda tidak memiliki izin menyetujui target staf ini.');
+            }
+
             $laporanModel = new LaporanHarian();
             $laporanModel->where('user_id', $staf_id)
                          ->where('bulan', $bulan)
@@ -334,12 +369,23 @@ class LaporanHarianController extends BaseController
     public function hapus()
     {
         $id = $this->request->getPost('id');
+        $currentUserId = session()->get('id') ?? session()->get('user_id');
+
         if ($id) {
             $laporanModel = new LaporanHarian();
             $laporan = $laporanModel->find($id);
             if ($laporan) {
+                // Otorisasi: Pastikan target milik user bersangkutan atau user adalah Admin / Atasan
+                if ($laporan['user_id'] != $currentUserId && !hasAnyRole(['admin', 'kepegawaian', 'direktur'])) {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'Akses ditolak. Anda tidak memiliki izin menghapus target ini.',
+                        'csrf_hash' => csrf_hash()
+                    ]);
+                }
+
                 $isDirektur = (session()->get('role') === 'direktur');
-                if (!$isDirektur) {
+                if (!$isDirektur && !hasRole('admin')) {
                     // Jangan izinkan hapus jika sudah disetujui
                     if ($laporan['status_approval'] == 'disetujui') {
                         return $this->response->setJSON([

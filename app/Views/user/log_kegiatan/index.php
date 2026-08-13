@@ -524,16 +524,62 @@ Lapor Kegiatan Harian
 
             if (canDelete) {
                 if (idLog) {
-                    if (confirm('Apakah Anda yakin ingin menghapus catatan kegiatan ini?')) {
-                        $.post('<?= site_url('log-kegiatan/hapus') ?>', { id: idLog, <?= csrf_token() ?>: '<?= csrf_hash() ?>' }, function(response) {
-                            if (response.success) {
-                                row.remove();
-                                updateRowNumbers();
-                                updateDropdownOptions();
-                            } else {
-                                alert('Gagal menghapus data.');
+                    const doDeletePokok = function() {
+                        let csrfTokenName = '<?= csrf_token() ?>';
+                        let csrfHash = $('input[name="' + csrfTokenName + '"]').val() || '<?= csrf_hash() ?>';
+                        let postData = { id: idLog };
+                        postData[csrfTokenName] = csrfHash;
+
+                        $.ajax({
+                            url: '<?= site_url('log-kegiatan/hapus') ?>',
+                            type: 'POST',
+                            data: postData,
+                            dataType: 'json',
+                            success: function(response) {
+                                if (response.csrf_hash) {
+                                    $('input[name="' + csrfTokenName + '"]').val(response.csrf_hash);
+                                    $('input[name="csrf_test_name"]').val(response.csrf_hash);
+                                }
+                                if (response.success) {
+                                    row.remove();
+                                    updateRowNumbers();
+                                    updateDropdownOptions();
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Terhapus',
+                                        text: 'Catatan kegiatan harian berhasil dihapus.',
+                                        timer: 1500,
+                                        showConfirmButton: false
+                                    });
+                                } else {
+                                    Swal.fire('Gagal', response.message || 'Gagal menghapus data.', 'error');
+                                }
+                            },
+                            error: function() {
+                                Swal.fire('Error', 'Terjadi kesalahan jaringan atau server.', 'error');
                             }
                         });
+                    };
+
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Hapus Kegiatan Harian?',
+                            text: 'Catatan kegiatan harian ini akan dihapus permanen.',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#dc3545',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: '<i class="bi bi-trash-fill me-1"></i> Ya, Hapus!',
+                            cancelButtonText: 'Batal'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                doDeletePokok();
+                            }
+                        });
+                    } else {
+                        if (confirm('Apakah Anda yakin ingin menghapus catatan kegiatan ini?')) {
+                            doDeletePokok();
+                        }
                     }
                 } else {
                     row.remove();
@@ -541,7 +587,11 @@ Lapor Kegiatan Harian
                     updateDropdownOptions();
                 }
             } else {
-                alert('Minimal harus mengisi satu kegiatan harian utama atau satu Tugas Tambahan sebelum menghapus baris ini.');
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Peringatan', 'Minimal harus mengisi satu kegiatan harian utama atau satu Tugas Tambahan sebelum menghapus baris ini.', 'warning');
+                } else {
+                    alert('Minimal harus mengisi satu kegiatan harian utama atau satu Tugas Tambahan sebelum menghapus baris ini.');
+                }
             }
         });
 

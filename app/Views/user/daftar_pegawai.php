@@ -160,17 +160,7 @@
                                 <td class="text-center fw-bold text-muted" style="font-size: 0.78rem;"><?= $no++ ?></td>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <?php 
-                                        $uFotoPath = !empty($u['foto']) ? 'assets/uploads/profile/' . $u['foto'] : '';
-                                        $hasUPhoto = (!empty($uFotoPath) && file_exists(FCPATH . $uFotoPath));
-                                        ?>
-                                        <?php if ($hasUPhoto): ?>
-                                            <img src="<?= base_url($uFotoPath) ?>" class="rounded-circle me-2 border shadow-sm" style="width: 30px; height: 30px; object-fit: cover; flex-shrink: 0;" alt="<?= esc($u['nama_lengkap']) ?>">
-                                        <?php else: ?>
-                                            <div class="avatar-circle-sm me-2 bg-primary-subtle text-primary fw-bold d-flex align-items-center justify-content-center rounded-circle">
-                                                <?= strtoupper(substr($u['nama_lengkap'] ?? 'P', 0, 2)) ?>
-                                            </div>
-                                        <?php endif; ?>
+                                        <?= render_user_avatar($u, '', 30) ?>
                                         <div>
                                             <span class="fw-bold text-dark d-block" style="font-size: 0.83rem; line-height: 1.25;"><?= esc($u['nama_lengkap']) ?></span>
                                             <small class="text-muted" style="font-size: 0.72rem;"><i class="bi bi-card-text me-1"></i><?= esc($u['nip'] ?: ($u['username'] ?: '-')) ?></small>

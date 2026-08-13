@@ -150,10 +150,10 @@ class UserController extends BaseController
                 ]
             ],
             'password' => [
-                'rules'  => 'required|min_length[4]',
+                'rules'  => 'required|min_length[6]',
                 'errors' => [
                     'required'   => 'Password wajib diisi.',
-                    'min_length' => 'Password minimal harus terdiri dari 4 karakter.'
+                    'min_length' => 'Password minimal harus terdiri dari 6 karakter.'
                 ]
             ],
             'nama_lengkap' => [
@@ -423,9 +423,14 @@ class UserController extends BaseController
         // Siapkan data untuk batch update
         $dataToUpdate = [];
         foreach ($idArray as $id) {
-            if (is_numeric(trim($id))) {
+            $parsedId = (int)trim($id);
+            if (is_numeric(trim($id)) && $parsedId > 0) {
+                // Cegah penugasan atasan ke diri sendiri
+                if (!empty($atasanId) && $parsedId === (int)$atasanId) {
+                    continue;
+                }
                 $updateItem = [
-                    'id' => (int)trim($id),
+                    'id' => $parsedId,
                     'atasan_id' => !empty($atasanId) ? (int)$atasanId : 0
                 ];
                 $dataToUpdate[] = $updateItem;
@@ -456,41 +461,100 @@ class UserController extends BaseController
     }
 
     /**
-     * Menghasilkan file CSV sebagai template atau backup data pengguna.
+     * Menghasilkan file Excel (.xlsx) sebagai template impor data pengguna.
      */
     public function exportExcel()
     {
-        $fileName = 'Template_Import_Pengguna_' . date('Y-m-d') . '.csv';
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Template Import');
 
-        header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename="' . urlencode($fileName) . '"');
-        
-        $output = fopen('php://output', 'w');
-        fputcsv($output, [
-            'username (wajib, unik)',
-            'email (wajib, unik)',
-            'password (wajib, min: 4 karakter)',
-            'nama_lengkap (wajib)',
-            'role (wajib: admin, aak, kuk, spm, dll.)',
-            'nip',
-            'jabatan',
-            'pangkat',
-            'unit',
-            'atasan_id (opsional, ID dari user atasan)'
-        ]);
-        fclose($output);
+        // Column Headers
+        $headers = [
+            'A1' => 'username (wajib, unik)',
+            'B1' => 'email (wajib, unik)',
+            'C1' => 'password (wajib, min: 6 karakter)',
+            'D1' => 'nama_lengkap (wajib)',
+            'E1' => 'role (wajib: admin, direktur, wadir, kabag_aak, kabag_kuk, manajemen, user, dll.)',
+            'F1' => 'nip',
+            'G1' => 'jabatan',
+            'H1' => 'pangkat',
+            'I1' => 'unit',
+            'J1' => 'atasan_id (opsional)'
+        ];
+
+        foreach ($headers as $cell => $text) {
+            $sheet->setCellValue($cell, $text);
+        }
+
+        // Styling Header (Navy Blue Background, White Bold Text)
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 11],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '1E40AF']
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+            ],
+        ];
+        $sheet->getStyle('A1:J1')->applyFromArray($headerStyle);
+        $sheet->getRowDimension(1)->setRowHeight(28);
+
+        // Baris Contoh (Sample Row)
+        $sampleRow = [
+            'A2' => '199806112023211004',
+            'B2' => 'pegawai@pktj.ac.id',
+            'C2' => '123456',
+            'D2' => 'Ahmad Pegawai, S.T.',
+            'E2' => 'user',
+            'F2' => '199806112023211004',
+            'G2' => 'Staf Administrasi',
+            'H2' => 'Penata Muda / III/a',
+            'I2' => 'Unit Bahasa',
+            'J2' => ''
+        ];
+        foreach ($sampleRow as $cell => $val) {
+            $sheet->setCellValue($cell, $val);
+        }
+
+        // Auto-fit Column Widths
+        foreach (range('A', 'J') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $fileName = 'Template_Import_Pengguna_SIMONIK.xlsx';
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $fileName . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save('php://output');
         exit();
     }
 
     /**
-     * Mengimpor data pengguna dari file CSV.
+     * Mengimpor data pengguna dari file Excel (.xlsx, .xls, .csv).
      */
     public function importExcel()
     {
         $file = $this->request->getFile('file_excel');
 
-        if (!$file || !$file->isValid() || $file->getExtension() !== 'csv') {
-            return redirect()->to('users')->with('error', 'File tidak valid. Harap unggah file .csv');
+        if (!$file || !$file->isValid()) {
+            return redirect()->to('users')->with('error', 'File tidak valid. Harap unggah file Excel (.xlsx / .xls) atau CSV.');
+        }
+
+        $ext = strtolower($file->getClientExtension());
+        if (!in_array($ext, ['xlsx', 'xls', 'csv'])) {
+            return redirect()->to('users')->with('error', 'Format file tidak didukung. Harap unggah file .xlsx, .xls, atau .csv');
+        }
+
+        try {
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getTempName());
+            $sheetData = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
+        } catch (\Exception $e) {
+            return redirect()->to('users')->with('error', 'Gagal membaca file Excel: ' . $e->getMessage());
         }
 
         $dataToInsert = [];
@@ -503,60 +567,58 @@ class UserController extends BaseController
         $existingUsernames = array_column($existingUsers, 'username');
         $existingEmails = array_column($existingUsers, 'email');
 
-        if (($handle = fopen($file->getTempName(), 'r')) !== false) {
-            $header = fgetcsv($handle, 1000, ',');
-            $rowIndex = 1;
-            
-            while (($row = fgetcsv($handle, 1000, ',')) !== false) {
-                $rowIndex++;
-                $username     = trim($row[0] ?? '');
-                $email        = trim($row[1] ?? '');
-                $password     = trim($row[2] ?? '');
-                $nama_lengkap = trim($row[3] ?? '');
-                $role         = trim($row[4] ?? '');
-
-                // Validasi dasar: Lewati baris jika data wajib kosong
-                if (empty($username) || empty($email) || empty($password) || empty($nama_lengkap) || empty($role)) {
-                    $skippedCount++;
-                    continue;
-                }
-
-                // Validasi duplikasi
-                if (in_array($username, $existingUsernames)) {
-                    $errors[] = "Baris {$rowIndex}: Username '{$username}' sudah ada di database.";
-                    $skippedCount++;
-                    continue;
-                }
-                if (in_array($email, $existingEmails)) {
-                    $errors[] = "Baris {$rowIndex}: Email '{$email}' sudah ada di database.";
-                    $skippedCount++;
-                    continue;
-                }
-
-                $unit = trim($row[8] ?? '');
-                if (strtolower($unit) === 'satuan penjaminan mutu') {
-                    $role = 'spm';
-                }
-
-                $dataToInsert[] = [
-                    'username'     => $username,
-                    'email'        => $email,
-                    'password'     => md5($password), // Telah menggunakan MD5
-                    // nama_lengkap dengan tanda kutip akan tersimpan dengan aman karena insertBatch CI4 mengemasnya lewat prepared statement
-                    'nama_lengkap' => $nama_lengkap,
-                    'role'         => $role,
-                    'nip'          => trim($row[5] ?? ''),
-                    'jabatan'      => trim($row[6] ?? ''),
-                    'pangkat'      => trim($row[7] ?? ''),
-                    'unit'         => $unit,
-                    'atasan_id'    => !empty(trim($row[9] ?? '')) ? (int)trim($row[9]) : null,
-                ];
-
-                // Tambahkan username & email baru ke daftar pengecekan
-                $existingUsernames[] = $username;
-                $existingEmails[] = $email;
+        $rowIndex = 0;
+        foreach ($sheetData as $row) {
+            $rowIndex++;
+            if ($rowIndex === 1) {
+                continue; // Skip Header Row
             }
-            fclose($handle);
+
+            $username     = trim($row['A'] ?? '');
+            $email        = trim($row['B'] ?? '');
+            $password     = trim($row['C'] ?? '');
+            $nama_lengkap = trim($row['D'] ?? '');
+            $role         = trim($row['E'] ?? '');
+
+            // Validasi dasar: Lewati baris jika data wajib kosong
+            if (empty($username) || empty($email) || empty($password) || empty($nama_lengkap) || empty($role)) {
+                $skippedCount++;
+                continue;
+            }
+
+            // Validasi duplikasi
+            if (in_array($username, $existingUsernames)) {
+                $errors[] = "Baris {$rowIndex}: Username '{$username}' sudah ada di database.";
+                $skippedCount++;
+                continue;
+            }
+            if (in_array($email, $existingEmails)) {
+                $errors[] = "Baris {$rowIndex}: Email '{$email}' sudah ada di database.";
+                $skippedCount++;
+                continue;
+            }
+
+            $unit = trim($row['I'] ?? '');
+            if (strtolower($unit) === 'satuan penjaminan mutu') {
+                $role = 'spm';
+            }
+
+            $dataToInsert[] = [
+                'username'     => $username,
+                'email'        => $email,
+                'password'     => password_hash($password, PASSWORD_DEFAULT),
+                'nama_lengkap' => $nama_lengkap,
+                'role'         => strtolower($role),
+                'nip'          => trim($row['F'] ?? ''),
+                'jabatan'      => trim($row['G'] ?? ''),
+                'pangkat'      => trim($row['H'] ?? ''),
+                'unit'         => $unit,
+                'atasan_id'    => !empty(trim($row['J'] ?? '')) ? (int)trim($row['J']) : null,
+            ];
+
+            // Tambahkan username & email baru ke daftar pengecekan
+            $existingUsernames[] = $username;
+            $existingEmails[] = $email;
         }
 
         if (!empty($dataToInsert)) {
@@ -565,7 +627,7 @@ class UserController extends BaseController
         }
 
         if ($insertedCount > 0) {
-            $message = "Import berhasil: {$insertedCount} pengguna baru berhasil ditambahkan.";
+            $message = "Import berhasil! {$insertedCount} pengguna baru berhasil ditambahkan.";
             if ($skippedCount > 0) {
                 $message .= " {$skippedCount} baris dilewati karena data tidak lengkap atau duplikat.";
             }

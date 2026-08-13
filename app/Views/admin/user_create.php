@@ -52,7 +52,7 @@
                                 <option value="kabag_aak" <?= old('role') == 'kabag_aak' ? 'selected' : '' ?>>Kabag AAK (Level 3)</option>
                                 <option value="kabag_kuk" <?= old('role') == 'kabag_kuk' ? 'selected' : '' ?>>Kabag KUK (Level 3)</option>
                                 <option value="manajemen" <?= old('role') == 'manajemen' ? 'selected' : '' ?>>Kanit / Katim / Kaprodi (Level 4)</option>
-                                <option value="user" <?= old('role', 'user') == 'user' ? 'selected' : '' ?>>Staff / Pegawai / Dosen (Level 5)</option>
+                                <option value="user" <?= old('role', 'user') == 'user' ? 'selected' : '' ?>>Staf / Pegawai / Dosen (Level 5)</option>
                                 <option value="tugas_belajar" <?= old('role') == 'tugas_belajar' ? 'selected' : '' ?>>Tugas Belajar (Level 5 - Kuliah/Studi di Luar)</option>
                                 <option value="admin" <?= old('role') == 'admin' ? 'selected' : '' ?>>Administrator (Sistem)</option>
                             </select>

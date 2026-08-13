@@ -13,8 +13,19 @@ class KontrakController extends BaseController
         helper('tanggal');
 
         $userModel = new User();
-        $userId = session()->get('id'); 
+        $userId = session()->get('id') ?? session()->get('user_id'); 
         
+        // Failsafe: Jika user menggunakan session versi lama (dimana id berisi NIP/Username)
+        if (!is_numeric($userId) || strlen((string)$userId) > 10) {
+            $userDb = $userModel->where('username', $userId)
+                                ->orWhere('nip', $userId)
+                                ->orWhere('id', $userId)
+                                ->first();
+            if ($userDb) {
+                $userId = $userDb['id'];
+            }
+        }
+
         $user = $userModel->find($userId);
 
         if (!$user) {

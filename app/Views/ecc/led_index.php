@@ -3,70 +3,7 @@
 <?= $this->section('page_title') ?>Laporan Evaluasi Diri (LED)<?= $this->endSection() ?>
 <?= $this->section('title') ?><?= esc($page_title ?? '') ?><?= $this->endSection() ?>
 
-<?= $this->section('styles') ?>
-<style>
-    .sticky-footer-bar {
-        position: sticky;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background-color: #ffffff;
-        padding: 1rem 1.5rem;
-        border-top: 1px solid #dee2e6;
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-        display: flex;
-        justify-content: flex-end;
-        z-index: 10;
-    }
-    .kriteria-row {
-        border-bottom: 1px solid #eee;
-    }
-    .kriteria-row:last-child {
-        border-bottom: none;
-    }
-    .review-notes {
-        font-size: 0.85rem;
-    }
-    .review-notes label {
-        color: #555;
-    }
-    .review-notes textarea {
-        background-color: #f8f9fa;
-    }
-    .review-notes textarea[readonly] {
-        background-color: #e9ecef;
-        cursor: not-allowed;
-    }
-    
-    /* Pagination Styles */
-    .page-btn {
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: none;
-        background: transparent;
-        color: #6c757d;
-        transition: all 0.2s;
-        font-size: 0.85rem;
-    }
-    .page-btn.active {
-        background-color: rgba(30, 58, 138, 0.1);
-        color: var(--primary-color);
-        border: 1px solid var(--primary-color);
-        font-weight: bold;
-    }
-    .page-btn:hover:not(.active) {
-        background-color: #f1f5f9;
-        color: #333;
-    }
-    .page-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-</style>
-<?= $this->endSection() ?>
+
 
 <?= $this->section('content') ?>
 <div class="d-flex justify-content-between align-items-center mb-4">

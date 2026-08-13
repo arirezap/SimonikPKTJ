@@ -8,102 +8,7 @@
 Dashboard
 <?= $this->endSection() ?>
 
-<?= $this->section('styles') ?>
-<style>
-    /* BENTO GRID STYLES (Based on ui-ux-pro-max guidelines) */
-    .bento-card {
-        background-color: #ffffff;
-        border-radius: 1.25rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-        border: 1px solid #f1f5f9;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        height: 100%;
-        overflow: hidden;
-    }
-    .bento-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
-    }
-    .bento-header {
-        padding: 1.25rem 1.5rem 0.5rem;
-        font-weight: 600;
-        color: #1e293b;
-        font-size: 1.1rem;
-    }
-    .bento-body {
-        padding: 1.5rem;
-    }
-    
-    /* Typography & Colors for Dashboards */
-    .text-primary-bento { color: #1e40af; }
-    .bg-primary-bento { background-color: #1e40af; }
-    .bg-light-bento { background-color: #f8fafc; }
-    
-    .stat-value {
-        font-size: 2.5rem;
-        font-weight: 700;
-        line-height: 1.2;
-        color: #0f172a;
-    }
-    .stat-label {
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-    
-    /* ECC Tab Style Adjustment for Bento */
-    .ecc-tabs {
-        background-color: #f1f5f9;
-        padding: 0.4rem;
-        border-radius: 0.75rem;
-        display: inline-flex;
-        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
-        border: 1px solid #e2e8f0;
-    }
-    .ecc-tabs .nav-link { 
-        border: none; 
-        color: #64748b; 
-        font-weight: 600;
-        padding: 0.6rem 1.75rem;
-        border-radius: 0.5rem;
-        margin-right: 0.25rem;
-        transition: all 0.2s ease;
-    }
-    .ecc-tabs .nav-link:hover { 
-        background-color: #e2e8f0; 
-        color: #0f172a;
-    }
-    .ecc-tabs .nav-link.active { 
-        background-color: #1e40af; 
-        color: #ffffff; 
-        box-shadow: 0 4px 10px rgba(30, 64, 175, 0.3);
-        transform: translateY(-1px);
-    }
-    
-    .filter-select {
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-        border: 1px solid #cbd5e1 !important;
-        background-color: #ffffff !important;
-        transition: all 0.2s ease;
-    }
-    .filter-select:hover {
-        border-color: #94a3b8 !important;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-    }
-    
-    .radar-chart-container { position: relative; height: 420px; width: 100%; }
-    .line-chart-container { position: relative; height: 300px; width: 100%; }
-    .performance-chart-container { position: relative; height: 350px; width: 100%; }
-    
-    /* Custom Scrollbar for tables */
-    .table-responsive::-webkit-scrollbar { width: 6px; height: 6px; }
-    .table-responsive::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-    .table-responsive::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-    .table-responsive::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-</style>
-<?= $this->endSection() ?>
+
 
 <?= $this->section('content') ?>
 
@@ -419,11 +324,21 @@ async function updateKinerjaData() {
                     tabelContainer.style.display = 'flex';
                     tabelTitle.style.display = 'block';
                     if (isAtasan) {
-                        tabelTitle.innerHTML = '<i class="bi bi-people-fill me-2"></i> Monitoring Kinerja Staf Staf';
+                        tabelTitle.innerHTML = '<i class="bi bi-people-fill me-2"></i> Monitoring Kinerja Staf Saya';
                     } else {
                         tabelTitle.innerHTML = '<i class="bi bi-diagram-3-fill me-2"></i> Kinerja Rekan 1 Unit Kerja';
                     }
                     
+                    function escapeHtml(str) {
+                        if (str === null || str === undefined) return '';
+                        return String(str)
+                            .replace(/&/g, '&amp;')
+                            .replace(/</g, '&lt;')
+                            .replace(/>/g, '&gt;')
+                            .replace(/"/g, '&quot;')
+                            .replace(/'/g, '&#039;');
+                    }
+
                     let htmlStaf = '';
                     rekapDashboard.forEach(rekap => {
                         let rata = rekap.rata_rata;
@@ -440,21 +355,21 @@ async function updateKinerjaData() {
                         <tr>
                             <td class="ps-4 py-3 border-bottom border-light">
                                 <div class="d-flex align-items-center">
-                                    <img src="${avatar}" alt="Avatar" class="rounded-circle shadow-sm me-3" width="40" height="40" style="object-fit: cover;">
+                                    <img src="${avatar}" alt="Avatar" class="rounded-circle shadow-sm me-3" width="40" height="40" style="object-fit: cover;" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(rekap.staf.nama_lengkap)}&background=random';">
                                     <div>
-                                        <div class="fw-bold text-dark text-truncate" style="max-width:200px;">${rekap.staf.nama_lengkap}</div>
-                                        <div class="small text-muted">${rekap.staf.nip || ''}</div>
+                                        <div class="fw-bold text-dark text-truncate" style="max-width:200px;">${escapeHtml(rekap.staf.nama_lengkap)}</div>
+                                        <div class="small text-muted">${escapeHtml(rekap.staf.nip || '')}</div>
                                     </div>
                                 </div>
                             </td>
                             <td class="text-center py-3 border-bottom border-light">
-                                <span class="badge bg-light text-secondary border px-2 py-1 text-wrap" style="max-width:150px;">${jabatan}</span>
+                                <span class="badge bg-light text-secondary border px-2 py-1 text-wrap" style="max-width:150px;">${escapeHtml(jabatan)}</span>
                             </td>
                             <td class="text-center py-3 border-bottom border-light">
-                                <span class="badge bg-light text-secondary border px-2 py-1">${rekap.dinilai} / ${rekap.total_laporan}</span>
+                                <span class="badge bg-light text-secondary border px-2 py-1">${escapeHtml(rekap.dinilai)} / ${escapeHtml(rekap.total_laporan)}</span>
                             </td>
                             <td class="text-center py-3 border-bottom border-light pe-4">
-                                <span class="badge ${warnaBadge} fs-6 rounded-pill px-3 py-2 shadow-sm">${rata}</span>
+                                <span class="badge ${warnaBadge} fs-6 rounded-pill px-3 py-2 shadow-sm">${escapeHtml(rata)}</span>
                             </td>
                         </tr>`;
                     });

@@ -2,102 +2,7 @@
 
 <?= $this->section('title') ?><?= esc($page_title ?? 'Admin Dashboard') ?><?= $this->endSection() ?>
 
-<?= $this->section('styles') ?>
-<style>
-    /* BENTO GRID STYLES (Based on ui-ux-pro-max guidelines) */
-    .bento-card {
-        background-color: #ffffff;
-        border-radius: 1.25rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-        border: 1px solid #f1f5f9;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        height: 100%;
-        overflow: hidden;
-    }
-    .bento-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
-    }
-    .bento-header {
-        padding: 1.25rem 1.5rem 0.5rem;
-        font-weight: 600;
-        color: #1e293b;
-        font-size: 1.1rem;
-    }
-    .bento-body {
-        padding: 1.5rem;
-    }
-    
-    /* Typography & Colors for Dashboards */
-    .text-primary-bento { color: #1e40af; }
-    .bg-primary-bento { background-color: #1e40af; }
-    .bg-light-bento { background-color: #f8fafc; }
-    
-    .stat-value {
-        font-size: 2.5rem;
-        font-weight: 700;
-        line-height: 1.2;
-        color: #0f172a;
-    }
-    .stat-label {
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-    
-    /* ECC Tab Style Adjustment for Bento */
-    .ecc-tabs {
-        background-color: #f1f5f9;
-        padding: 0.4rem;
-        border-radius: 0.75rem;
-        display: inline-flex;
-        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
-        border: 1px solid #e2e8f0;
-    }
-    .ecc-tabs .nav-link { 
-        border: none; 
-        color: #64748b; 
-        font-weight: 600;
-        padding: 0.6rem 1.75rem;
-        border-radius: 0.5rem;
-        margin-right: 0.25rem;
-        transition: all 0.2s ease;
-    }
-    .ecc-tabs .nav-link:hover { 
-        background-color: #e2e8f0; 
-        color: #0f172a;
-    }
-    .ecc-tabs .nav-link.active { 
-        background-color: #1e40af; 
-        color: #ffffff; 
-        box-shadow: 0 4px 10px rgba(30, 64, 175, 0.3);
-        transform: translateY(-1px);
-    }
-    
-    .filter-select {
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-        border: 1px solid #cbd5e1 !important;
-        background-color: #ffffff !important;
-        transition: all 0.2s ease;
-    }
-    .filter-select:hover {
-        border-color: #94a3b8 !important;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-    }
-    
-    .radar-chart-container { position: relative; height: 420px; width: 100%; }
-    .chart-container { position: relative; height: 320px; width: 100%; }
-    .performance-chart-container { position: relative; min-height: 350px; width: 100%; }
-    
-    /* Custom Scrollbar for tables */
-    .table-responsive::-webkit-scrollbar { width: 6px; height: 6px; }
-    .table-responsive::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-    .table-responsive::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-    .table-responsive::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-</style>
-<?= $this->endSection() ?>
+
 
 <?= $this->section('content') ?>
 
@@ -197,7 +102,7 @@
                 <div class="stat-value text-dark mb-2" id="valPartisipasi">
                     <?php 
                         $pctPart = ($totalPegawai > 0) ? round(($partisipasiAktif / $totalPegawai) * 100, 1) : 0;
-                        echo $pctPart;
+                        echo esc($pctPart);
                     ?><span class="fs-4">%</span>
                 </div>
                 <div class="text-primary small fw-bold"><i class="bi bi-people-fill me-1"></i> <span id="valPartisipasiCount"><?= esc($partisipasiAktif) ?></span> dari <span id="valTotalPegawai"><?= esc($totalPegawai) ?></span> Pegawai Aktif</div>
@@ -821,14 +726,14 @@ document.addEventListener('DOMContentLoaded', function () {
                                 tbody += `
                                     <tr>
                                         <td class="ps-3 py-3 border-bottom border-light">
-                                            <div class="fw-bold text-dark">${item.nama}</div>
-                                            <div class="small text-muted">${item.jabatan || '-'}</div>
+                                            <div class="fw-bold text-dark">${escapeHtml(item.nama)}</div>
+                                            <div class="small text-muted">${escapeHtml(item.jabatan || '-')}</div>
                                         </td>
                                         <td class="text-center py-3 border-bottom border-light">
-                                            <span class="badge bg-light text-dark border shadow-sm">${item.dinilai} / ${item.total_laporan}</span>
+                                            <span class="badge bg-light text-dark border shadow-sm">${escapeHtml(item.dinilai)} / ${escapeHtml(item.total_laporan)}</span>
                                         </td>
                                         <td class="text-center py-3 border-bottom border-light pe-3">
-                                            <span class="badge ${badgeClass} fs-6 rounded-pill px-3 shadow-sm">${item.rata_rata}</span>
+                                            <span class="badge ${badgeClass} fs-6 rounded-pill px-3 shadow-sm">${escapeHtml(item.rata_rata)}</span>
                                         </td>
                                     </tr>
                                 `;
@@ -838,7 +743,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
                         document.getElementById('unitDetailTbody').innerHTML = tbody;
                         
-                        new bootstrap.Modal(document.getElementById('unitDetailModal')).show();
+                        const unitModalEl = document.getElementById('unitDetailModal');
+                        const unitModal = bootstrap.Modal.getInstance(unitModalEl) || new bootstrap.Modal(unitModalEl);
+                        unitModal.show();
                     }
                 },
                 onHover: (e, elements) => {
@@ -947,6 +854,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 });
+    // --- HELPER ESCAPE HTML FOR DOM INJECTION ---
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
     // --- CHART DETAIL MODAL LOGIC ---
     function fetchChartDetail(mode, label, bulanVal = null) {
         const tahun = document.getElementById('tahun_kinerja').value;
@@ -972,7 +890,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 <div class="mt-2 text-muted small">Memuat data...</div>
             </div>`;
             
-        const modal = new bootstrap.Modal(document.getElementById('detailChartModal'));
+        const chartModalEl = document.getElementById('detailChartModal');
+        const modal = bootstrap.Modal.getInstance(chartModalEl) || new bootstrap.Modal(chartModalEl);
         modal.show();
 
         fetch(url)
@@ -996,11 +915,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         html += `<tr>
                                     <td class="ps-3">
-                                        <div class="fw-bold text-dark">${p.nama}</div>
-                                        <div class="text-muted small">${p.jabatan} • ${p.unit}</div>
+                                        <div class="fw-bold text-dark">${escapeHtml(p.nama)}</div>
+                                        <div class="text-muted small">${escapeHtml(p.jabatan || '-')} • ${escapeHtml(p.unit || '-')}</div>
                                     </td>
                                     <td class="text-center">
-                                        <span class="badge bg-${badgeColor} rounded-pill px-3 py-2" style="font-size:0.85rem">${p.rata_rata}</span>
+                                        <span class="badge bg-${badgeColor} rounded-pill px-3 py-2" style="font-size:0.85rem">${escapeHtml(p.rata_rata)}</span>
                                     </td>
                                  </tr>`;
                     });

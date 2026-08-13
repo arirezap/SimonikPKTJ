@@ -65,7 +65,12 @@ class Profile extends BaseController
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        // 2. Siapkan Data Update
+        // 2. Ambil data user saat ini untuk verifikasi & proteksi
+        $user = $this->userModel->find($userId);
+        if (!$user) {
+            return redirect()->to('logout');
+        }
+
         $data = [
             'nama_lengkap' => $this->request->getPost('nama_lengkap'),
             'nip'          => $this->request->getPost('nip'),
@@ -75,32 +80,39 @@ class Profile extends BaseController
             'atasan_id'    => $this->request->getPost('atasan_id') ?: null,
             'no_hp'        => $this->request->getPost('no_hp'),
             'email'        => $this->request->getPost('email'),
-            'username'     => $this->request->getPost('username'),
+            'username'     => $user['username'], // Proteksi: Username tidak dapat diubah via POST payload
         ];
 
         // 3. Cek apakah Password diubah
         $password = $this->request->getPost('password');
         if (!empty($password)) {
+            if (strlen($password) < 6) {
+                return redirect()->back()->withInput()->with('errors', ['password' => 'Password minimal harus 6 karakter.']);
+            }
             $data['password'] = password_hash($password, PASSWORD_DEFAULT);
         }
 
         // 4. Handle Upload Foto
-        $user = $this->userModel->find($userId); // Ambil data user saat ini untuk cek foto lama dan role
         $hapusFoto = $this->request->getPost('hapus_foto');
 
         if ($hapusFoto === '1') {
             // Hapus foto lama jika ada dan bukan file default
-            if (!empty($user['foto']) && $user['foto'] !== 'default.png' && file_exists('assets/uploads/profile/' . $user['foto'])) {
-                unlink('assets/uploads/profile/' . $user['foto']);
+            if (!empty($user['foto']) && $user['foto'] !== 'default.png') {
+                $oldFile = 'assets/uploads/profile/' . basename($user['foto']);
+                if (file_exists($oldFile)) {
+                    @unlink($oldFile);
+                }
             }
-            $data['foto'] = null; // Set ke null di DB, akan otomatis pakai default.png
+            $data['foto'] = null; // Set ke null di DB
         } elseif ($fileFoto && $fileFoto->isValid() && !$fileFoto->hasMoved()) {
-            // Jika ada file baru diupload, proses upload
             $namaFoto = $fileFoto->getRandomName();
             
-            // Hapus foto lama jika ada dan bukan file default
-            if (!empty($user['foto']) && $user['foto'] !== 'default.png' && file_exists('assets/uploads/profile/' . $user['foto'])) {
-                unlink('assets/uploads/profile/' . $user['foto']);
+            // Hapus foto lama jika ada
+            if (!empty($user['foto']) && $user['foto'] !== 'default.png') {
+                $oldFile = 'assets/uploads/profile/' . basename($user['foto']);
+                if (file_exists($oldFile)) {
+                    @unlink($oldFile);
+                }
             }
 
             // Pindahkan file baru ke folder

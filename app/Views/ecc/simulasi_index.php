@@ -3,25 +3,7 @@
 <?= $this->section('page_title') ?>Simulasi Penilaian LED<?= $this->endSection() ?>
 <?= $this->section('title') ?><?= esc($page_title ?? '') ?><?= $this->endSection() ?>
 
-<?= $this->section('styles') ?>
-<style>
-    .sticky-footer-bar {
-        position: sticky;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background-color: #ffffff;
-        padding: 1rem 1.5rem; /* Sesuaikan padding */
-        border-top: 1px solid #dee2e6;
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-        display: flex;
-        justify-content: flex-end;
-        z-index: 10;
-    }
-    .kriteria-row { border-bottom: 1px solid #eee; }
-    .kriteria-row:last-child { border-bottom: none; }
-</style>
-<?= $this->endSection() ?>
+
 
 <?= $this->section('content') ?>
 <p class="text-muted">Input nilai/skor (0-100) untuk setiap kriteria. Skor ini akan digunakan untuk menghasilkan diagram laba-laba di Dashboard ECC.</p>

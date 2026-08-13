@@ -72,11 +72,10 @@ $isKepegawaian = hasRole('kepegawaian');
             </li>
 
             <?php
-            // Menu Kinerja (Termasuk Direktur)
-            // Disembunyikan untuk manajemen & kabag karena data dummy, serta disembunyikan untuk Direktur
-            if (hasAnyRole(['admin', 'aak', 'kuk', 'spm'])):
+            // Menu Kinerja disembunyikan untuk seluruh pengguna karena tidak digunakan
+            if (false):
             ?>
-                <?php if (!$isAdmin): // Sembunyikan menu Kinerja untuk Admin ?>
+                <?php if (!$isAdmin): ?>
                     <li class="nav-item">
                         <a class="nav-link <?= $isKinerjaActive ? 'active' : 'collapsed' ?>" href="#kinerjaSubmenu" role="button" data-bs-toggle="collapse">
                             <i class="bi bi-graph-up-arrow"></i><span>Kinerja</span>
@@ -173,12 +172,9 @@ $isKepegawaian = hasRole('kepegawaian');
                 </li>
             <?php endif; ?>
 
-            <?php if (false && $isAdmin): // Disembunyikan sementara ?>
-                <li class="nav-item">
 
-            <?php endif; ?>
 
-            <?php if (hasAnyRole(['admin', 'manajemen', 'kabag_aak', 'kabag_kuk'])): ?>
+            <?php if (hasAnyRole(['admin', 'kepegawaian', 'spm'])): ?>
                 <li class="nav-item">
                     <a class="nav-link <?= $isMasterDataActive ? 'active' : 'collapsed' ?>" href="#masterDataSubmenu" role="button" data-bs-toggle="collapse">
                         <i class="bi bi-database-fill-gear"></i><span>Master Data</span>

@@ -214,7 +214,7 @@ th.sortable.desc .sort-icon {
             <button type="button" class="filter-pill" data-filter="sudah">Sudah Dinilai</button>
             <button type="button" class="filter-pill" data-filter="belum">Belum Dinilai</button>
             <button type="button" class="filter-pill" data-filter="perhatian">Butuh Perhatian (&lt; 75)</button>
-            <button type="button" class="filter-pill" data-filter="baik">Sangat Baik (&ge; 90)</button>
+            <button type="button" class="filter-pill" data-filter="baik">Baik (&ge; 90)</button>
         </div>
 
         <div class="card-body p-0">
@@ -304,7 +304,7 @@ th.sortable.desc .sort-icon {
                                         $statusText = 'Baik';
                                     } else {
                                         $badgeClass = 'bg-success bg-opacity-10 text-success border border-success border-opacity-25';
-                                        $statusText = 'Sangat Baik';
+                                        $statusText = 'Baik';
                                     }
                                 ?>
                                 <tr class="pegawai-row" 
@@ -412,7 +412,7 @@ th.sortable.desc .sort-icon {
                                     $statusText = 'Baik';
                                 } else {
                                     $badgeClass = 'bg-success bg-opacity-10 text-success border border-success border-opacity-25';
-                                    $statusText = 'Sangat Baik';
+                                    $statusText = 'Baik';
                                 }
                             ?>
                             <div class="card border border-light-subtle rounded-3 shadow-sm mobile-pegawai-card"

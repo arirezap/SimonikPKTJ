@@ -20,3 +20,20 @@ function bulan_indo(int $nomorBulan, bool $singkat = false): string
 
     return $daftarBulan[$nomorBulan] ?? '';
 }
+
+if (!function_exists('format_nama_gelar')) {
+    /**
+     * Format nama menjadi huruf kapital dan mempertahankan gelar di belakang koma.
+     *
+     * @param string|null $text
+     * @return string
+     */
+    function format_nama_gelar(?string $text): string
+    {
+        if (empty($text)) return '-';
+        $parts = explode(',', $text, 2);
+        $nama = strtoupper(trim($parts[0]));
+        $gelar = isset($parts[1]) ? ',' . $parts[1] : '';
+        return $nama . $gelar;
+    }
+}

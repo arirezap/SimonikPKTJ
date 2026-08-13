@@ -522,11 +522,10 @@ Target Kinerja Bulanan
         $(document).on('click', '.hapus-baris', function() {
             const tabel = $(this).closest('tbody');
             const row = $(this).closest('tr');
-            // Ambil ID dari input hidden laporan_id[] ATAU dari data-id tombol
             let idLaporan = row.find('input[name="laporan_id[]"]').val() || $(this).attr('data-id');
 
             if (idLaporan && idLaporan.trim() !== '') {
-                if (confirm('Apakah Anda yakin ingin menghapus target ini?')) {
+                const doDelete = function() {
                     let csrfTokenName = '<?= csrf_token() ?>';
                     let csrfHash = $('input[name="' + csrfTokenName + '"]').val() || '<?= csrf_hash() ?>';
                     
@@ -550,15 +549,43 @@ Target Kinerja Bulanan
                                 } else {
                                     resetRowToEmpty(row);
                                 }
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Terhapus',
+                                    text: 'Target RHK berhasil dihapus.',
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
                             } else {
-                                alert(response.message || 'Gagal menghapus data.');
+                                Swal.fire('Gagal', response.message || 'Gagal menghapus data.', 'error');
                             }
                         },
                         error: function(xhr, status, error) {
                             console.error('Hapus Error:', xhr.responseText);
-                            alert('Terjadi kesalahan saat menghapus data. Silakan refresh halaman dan coba lagi.');
+                            Swal.fire('Error', 'Terjadi kesalahan saat menghapus data. Silakan coba lagi.', 'error');
                         }
                     });
+                };
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Hapus Target Bulanan?',
+                        text: 'Data target RHK ini akan dihapus. Kegiatan harian yang telah dilaporkan tetap aman.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#dc3545',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: '<i class="bi bi-trash-fill me-1"></i> Ya, Hapus!',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            doDelete();
+                        }
+                    });
+                } else {
+                    if (confirm('Apakah Anda yakin ingin menghapus target ini?')) {
+                        doDelete();
+                    }
                 }
             } else {
                 if (tabel.find('tr').length > 1) {

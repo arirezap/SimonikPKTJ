@@ -37,21 +37,39 @@ class Auth extends BaseController
         
         $data = $model->where('username', $username)->first();
         
+        // --- PROTEKSI BRUTE FORCE ATTACK (THROTTLING) ---
+        $throttler = \Config\Services::throttler();
+        $ipAddress = $this->request->getIPAddress();
+        if ($throttler->check(md5($ipAddress . '_login'), 10, MINUTE) === false) {
+            $session->setFlashdata('error', 'Terlalu banyak percobaan login yang gagal dari perangkat Anda. Silakan tunggu 1 menit.');
+            return redirect()->to('/login');
+        }
+
         if ($data) {
             $pass = $data['password'];
             $verify_pass = password_verify($password, $pass);
+            $isLegacyPass = false;
             
             // Fallback plain text (jika ada data lama)
             if (!$verify_pass && $pass === $password) {
                 $verify_pass = true; 
+                $isLegacyPass = true;
             }
             
             // Fallback MD5 (untuk data hasil import CSV yang menggunakan md5)
             if (!$verify_pass && $pass === md5($password)) {
                 $verify_pass = true; 
+                $isLegacyPass = true;
             }
 
             if ($verify_pass) {
+                // AUTO PASSWORD HASH UPGRADE (Keamanan: Otomatis perbarui hash lemah ke BCRYPT)
+                if ($isLegacyPass || password_needs_rehash($pass, PASSWORD_DEFAULT)) {
+                    $model->update($data['id'], [
+                        'password' => password_hash($password, PASSWORD_DEFAULT)
+                    ]);
+                }
+
                 $role_aplikasi = $data['role'];
 
                 // Load semua role dari tabel pivot user_roles
@@ -63,7 +81,7 @@ class Auth extends BaseController
                 $allRoles = array_column($userRoles, 'role_name');
                 
                 // Pastikan role primer selalu ada di daftar
-                if (!in_array(strtolower($role_aplikasi), $allRoles)) {
+                if (!in_array(strtolower($role_aplikasi), array_map('strtolower', $allRoles))) {
                     $allRoles[] = strtolower($role_aplikasi);
                 }
 
@@ -84,15 +102,15 @@ class Auth extends BaseController
                 ];
                 $session->set($ses_data);
                 
-                // --- FITUR REMEMBER ME ---
+                // --- FITUR REMEMBER ME (HttpOnly Flag for Security) ---
                 $remember = $this->request->getVar('remember');
                 if ($remember) {
                     helper('cookie');
                     // Buat token: id::md5(id+username+password)
                     $tokenString = $data['id'] . '::' . md5($data['id'] . $data['username'] . $data['password']);
                     $token = base64_encode($tokenString);
-                    // Set cookie untuk 30 hari (2592000 detik)
-                    set_cookie('remember_me', $token, 2592000);
+                    // Set cookie untuk 30 hari (2592000 detik) dengan HttpOnly=true
+                    set_cookie('remember_me', $token, 2592000, '', '/', '', false, true);
                 }
                 // -------------------------
 
@@ -111,7 +129,6 @@ class Auth extends BaseController
                 if (hasAnyRole(['admin', 'direktur', 'wadir', 'manajemen']) || $isKabag) {
                     return redirect()->to('/dashboard');
                 } else {
-                    // Direktur & Pegawai masuk sini
                     return redirect()->to('/dashboard');
                 }
                 

@@ -31,7 +31,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=' . filemtime(FCPATH . 'assets/css/style.css')) ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=1.1.' . filemtime(FCPATH . 'assets/css/style.css')) ?>">
 
     <?= $this->renderSection('styles') ?>
 </head>
@@ -159,7 +159,7 @@
             <!-- Footer Aplikasi -->
             <footer class="footer-promax py-3 mt-auto d-flex justify-content-between px-4 align-items-center">
                 <span class="footer-text">&copy; <?= date('Y') ?> ECC (Evidence Command Center)</span>
-                <span class="version-badge text-muted">v1.0.0</span>
+                <span class="version-badge text-muted">v1.1</span>
             </footer>
 
             <?= $this->renderSection('footer_bar') ?>
@@ -330,27 +330,34 @@
     });
 
     function markNotifRead(id, event, element, link) {
-        // Mencegah navigasi ganda jika link valid
         event.preventDefault();
         
+        const csrfTokenName = '<?= csrf_token() ?>';
+        const csrfHash = document.querySelector('meta[name="X-CSRF-TOKEN"]')?.getAttribute('content') || '<?= csrf_hash() ?>';
+
         fetch(`<?= site_url('notifications/read/') ?>${id}`, {
             method: 'POST',
             headers: { 
                 'X-Requested-With': 'XMLHttpRequest',
                 'Content-Type': 'application/x-www-form-urlencoded' 
             },
-            body: '<?= csrf_token() ?>=<?= csrf_hash() ?>'
+            body: `${csrfTokenName}=${encodeURIComponent(csrfHash)}`
         })
-        .then(() => {
-            if(link && link !== 'null' && link !== '#') {
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.csrf_hash) {
+                const metaCsrf = document.querySelector('meta[name="X-CSRF-TOKEN"]');
+                if (metaCsrf) metaCsrf.setAttribute('content', data.csrf_hash);
+            }
+            if (link && link !== 'null' && link !== '#') {
                 window.location.href = link;
-            } else {
-                element.remove(); // Hapus dari UI jika tidak ada link
+            } else if (element) {
+                element.remove();
             }
         })
         .catch(error => {
-            if(link && link !== 'null' && link !== '#') {
-                window.location.href = link; // Tetap arahkan meskipun error update read
+            if (link && link !== 'null' && link !== '#') {
+                window.location.href = link;
             }
         });
     }
