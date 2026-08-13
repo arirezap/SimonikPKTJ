@@ -196,6 +196,20 @@ class PenilaianKinerjaController extends BaseController
     public function store()
     {
         // Hanya yang mensubmit form penilaian (Atasan) yang sampai ke sini
+        $userModel = new User();
+        $userId = session()->get('id') ?? session()->get('user_id');
+
+        // Failsafe: Jika user menggunakan session versi lama (dimana id berisi NIP/Username)
+        if (!is_numeric($userId) || strlen((string)$userId) > 10) {
+            $userDb = $userModel->where('username', $userId)
+                                ->orWhere('nip', $userId)
+                                ->orWhere('id', $userId)
+                                ->first();
+            if ($userDb) {
+                $userId = $userDb['id'];
+            }
+        }
+
         $laporanModel = new \App\Models\LaporanHarian();
         $action = $this->request->getPost('action');
         $statusPenilaian = ($action === 'submit') ? 'terbit' : 'draft';
@@ -272,6 +286,10 @@ class PenilaianKinerjaController extends BaseController
             if (!$targetUserId && !empty($dataToUpdate)) {
                 $firstLaporan = $laporanModel->find($dataToUpdate[0]['id']);
                 $targetUserId = $firstLaporan['user_id'] ?? null;
+            }
+            if (!$targetUserId && !empty($dataTambahanToUpdate)) {
+                $firstTambahan = $logTambahanModel->find($dataTambahanToUpdate[0]['id']);
+                $targetUserId = $firstTambahan['user_id'] ?? null;
             }
 
             if (!empty($targetUserId) && $targetUserId != $userId) {
