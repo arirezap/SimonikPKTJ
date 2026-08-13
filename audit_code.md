@@ -144,11 +144,31 @@ Setiap modul dan fungsi diuji dan diaudit berdasarkan 7 pilar berikut:
 
 ---
 
+### 11. 🔔 Modul Notifikasi & Master Hari Libur (Holidays)
+- [x] **Controller**: `app/Controllers/NotificationController.php` & `app/Controllers/Admin/MasterDataController.php`
+- [x] **Helper & View**: `app/Helpers/notification_helper.php` & `app/Views/admin/master/holidays.php`
+- **Fokus Audit & Status**:
+  - [x] **Notifikasi Otomatis & Virtual Reminder**: Penanganan notifikasi unread, pengingat harian log kegiatan di hari kerja (`is_working_day()`), dan failsafe user session `id` / `nip`.
+  - [x] **Keamanan CSRF Dynamic Hash**: Pembaruan token CSRF pada respon `markAsRead()` untuk mencegah *403 Mismatch*.
+  - [x] **Sinkronisasi Hari Libur Auto API**: Auto-sync hari libur nasional & cuti bersama via API `libur.deno.dev` yang terhubung dengan aturan pengisian log kegiatan harian.
+
+---
+
+### 12. 🛡️ Modul Log Keamanan Aktivitas (Audit Trail System)
+- [x] **Controller**: `app/Controllers/Admin/AuditLogController.php`
+- [x] **Model & View**: `app/Models/AuditLog.php` & `app/Views/admin/audit_logs/index.php`
+- **Fokus Audit & Status**:
+  - [x] **Pemberian Filter & Pencarian Lengkap**: Penambahan pencarian dinamis (Nama, NIP, IP, Entity ID), filter rentang tanggal (`date_start` & `date_end`), serta filter aksi & entitas.
+  - [x] **Desain UI/UX Bento Box & Icons Standard**: Pembaruan ikon dari FontAwesome ke Bootstrap Icons (`bi bi-...`), penataan tabel responsif, & penyelarasan warna badge sesuai standar SIMONIK.
+  - [x] **Viewer JSON Interactive**: Penyediaan modal dialog *Pretty JSON Viewer* untuk memeriksa perubahan `old_values` & `new_values` secara detail & rapi.
+
+---
+
 ## 📈 Laporan Kemajuan Audit & Target Selanjutnya
 
 ```text
-[████████████████████████████████████████] 100.0% Selesai (10 dari 10 Modul Utama, Layout, & Kepegawaian Ter-audit Penuh)
+[████████████████████████████████████████] 100.0% Selesai (12 dari 12 Modul SIMONIK Ter-audit Penuh)
 ```
 
 ### 🎉 SELURUH AUDIT MODUL KODE SIMONIK TELAH SELESAI (100% COMPLETE)!
- Seluruh 10 modul utama (User & Role Management, Dashboard & Navigation, SKP, Laporan Harian, Log Kegiatan Harian, Penilaian Kinerja, Kontrak Kinerja & Pakta Integritas, ECC Monitoring, Sidebar/Top Bar/Footer Layout, dan Rekap Kepegawaian Remunerasi) telah melewati audit 7-Pilar secara komprehensif, bebas dari syntax error, dan sepenuhnya mematuhi standar Clean Code, Keamanan, & Mobile-Friendly View.
+ Seluruh 12 modul utama (User & Role Management, Dashboard & Navigation, SKP, Laporan Harian, Log Kegiatan Harian, Penilaian Kinerja, Kontrak Kinerja & Pakta Integritas, ECC Monitoring, Sidebar/Top Bar/Footer Layout, Rekap Kepegawaian Remunerasi, Notifikasi Hari Libur, dan Log Keamanan Aktivitas) telah melewati audit 7-Pilar secara komprehensif, bebas dari syntax error, dan sepenuhnya mematuhi standar Clean Code, Keamanan, & Mobile-Friendly View.

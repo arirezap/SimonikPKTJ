@@ -46,7 +46,18 @@ class NotificationController extends BaseController
             }
 
             helper('notification');
-            $userId = session()->get('id');
+            $userId = session()->get('id') ?? session()->get('user_id');
+            
+            // Failsafe: Jika sesi legacy menyimpan NIP / Username di session id
+            if (!is_numeric($userId) || strlen((string)$userId) > 10) {
+                $userModel = new \App\Models\User();
+                $userDb = $userModel->where('username', $userId)
+                                    ->orWhere('nip', $userId)
+                                    ->first();
+                if ($userDb) {
+                    $userId = $userDb['id'];
+                }
+            }
             
             $notifications = get_unread_notifications($userId);
             if (!is_array($notifications)) {
@@ -106,6 +117,9 @@ class NotificationController extends BaseController
             $notifModel->update($id, ['is_read' => 1]);
         }
         
-        return $this->response->setJSON(['status' => 'success']);
+        return $this->response->setJSON([
+            'status' => 'success',
+            'csrf_hash' => csrf_hash()
+        ]);
     }
 }
