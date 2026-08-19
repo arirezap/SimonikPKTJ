@@ -228,6 +228,28 @@ class PenilaianKinerjaController extends BaseController
             }
         }
 
+        // Cek Batas Waktu Penilaian jika Saklar Batas Waktu Penilaian Aktif
+        $settingModel = new \App\Models\SettingModel();
+        $isDeadlineActive = $settingModel->getValue('enable_penilaian_deadline', '0') === '1';
+        if ($isDeadlineActive && !hasAnyRole(['admin', 'direktur']) && !empty($bulanPost) && !empty($tahunPost)) {
+            $batasPenilaian = (int) $settingModel->getValue('batas_penilaian_kinerja', 10);
+            $evalMonthStart = new \DateTime(sprintf('%04d-%02d-01', (int)$bulanPost ? (int)$tahunPost : (int)date('Y'), (int)$bulanPost ?: (int)date('n')));
+            $currentMonthStart = new \DateTime(date('Y-m-01'));
+            
+            // Jika menilai periode lampau (sebelum bulan berjalan)
+            if ($evalMonthStart < $currentMonthStart) {
+                $nextMonthOfEval = clone $evalMonthStart;
+                $nextMonthOfEval->modify('+1 month');
+                $deadlineDay = min(28, max(1, $batasPenilaian));
+                $deadlineDate = new \DateTime($nextMonthOfEval->format('Y-m-') . sprintf('%02d', $deadlineDay) . ' 23:59:59');
+                
+                $now = new \DateTime();
+                if ($now > $deadlineDate) {
+                    return redirect()->back()->with('error', "Gagal: Batas waktu penilaian kinerja untuk periode {$bulanPost}/{$tahunPost} telah berakhir pada tanggal " . $deadlineDate->format('d M Y') . ".");
+                }
+            }
+        }
+
         if (!empty($stafPostId)) session()->set('penilaian_staf_id', $stafPostId);
         if (!empty($bulanPost))  session()->set('penilaian_bulan', $bulanPost);
         if (!empty($tahunPost))  session()->set('penilaian_tahun', $tahunPost);

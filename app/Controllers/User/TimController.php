@@ -19,6 +19,12 @@ class TimController extends BaseController
 
     public function index()
     {
+        helper(['avatar', 'role', 'audit']);
+        
+        if (!hasAnyRole(['manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'kanit', 'katim', 'kapokja', 'admin'])) {
+            return redirect()->to('dashboard')->with('error', 'Anda tidak memiliki hak akses ke modul Kelola Tim.');
+        }
+
         $userId = session()->get('id');
         $me = $this->userModel->find($userId);
         $myUnit = $me['unit'] ?? null;
@@ -80,6 +86,7 @@ class TimController extends BaseController
             'atasan_id' => $myId,
             'unit' => $myUnit
         ]);
+        log_audit('UPDATE', 'users', $stafId, null, ['action' => 'ADD_TO_TEAM', 'atasan_id' => $myId, 'unit' => $myUnit]);
         return redirect()->back()->with('success', 'Pegawai berhasil ditambahkan ke tim Anda.');
     }
 
@@ -100,6 +107,7 @@ class TimController extends BaseController
                 'atasan_id' => 0, 
                 'unit' => ''
             ]);
+            log_audit('UPDATE', 'users', $stafId, null, ['action' => 'REMOVE_FROM_TEAM', 'old_atasan_id' => $myId]);
             return redirect()->back()->with('success', 'Pegawai berhasil dihapus dari tim Anda.');
         }
         
@@ -144,6 +152,7 @@ class TimController extends BaseController
         }
 
         if ($this->userModel->update($userId, $updateData)) {
+            log_audit('UPDATE', 'users', $userId, null, ['action' => 'UPDATE_UNIT_TIM', 'unit' => $unit]);
             return $this->response->setJSON([
                 'success' => true, 
                 'message' => 'Unit kerja berhasil diperbarui.',

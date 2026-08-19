@@ -10,6 +10,8 @@ class DaftarPegawaiController extends BaseController
 {
     public function index()
     {
+        helper(['avatar']);
+        
         $userModel = new User();
         $unitKerjaModel = new UnitKerja();
         $db = \Config\Database::connect();

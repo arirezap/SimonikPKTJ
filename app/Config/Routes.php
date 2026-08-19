@@ -49,6 +49,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
 // Notifications
 $routes->get('notifications/fetch', 'NotificationController::fetch');
 $routes->post('notifications/read/(:segment)', 'NotificationController::markAsRead/$1');
+$routes->post('notifications/read-all', 'NotificationController::markAllAsRead');
     $routes->get('dashboard/api-detail-chart', 'Admin\Dashboard::apiDetailChart');
     $routes->get('monitoring', 'Admin\MonitoringController::index');
     $routes->get('monitoring/exportExcel/(:num)/(:num)', 'Admin\MonitoringController::exportExcel/$1/$2');
@@ -116,7 +117,9 @@ $routes->post('notifications/read/(:segment)', 'NotificationController::markAsRe
         $routes->post('led/update/(:num)', 'Admin\MasterDataController::updateLed/$1');
         $routes->match(['get', 'post'], 'led/delete/(:num)', 'Admin\MasterDataController::deleteLed/$1');
         $routes->post('led/deleteBatch', 'Admin\MasterDataController::deleteLedBatch');
+        $routes->post('led/delete-batch', 'Admin\MasterDataController::deleteLedBatch');
         $routes->post('led/batchUpdate', 'Admin\MasterDataController::batchUpdateLed');
+        $routes->post('led/batch-update', 'Admin\MasterDataController::batchUpdateLed');
         $routes->get('led/export', 'Admin\MasterDataController::exportLed');
         $routes->post('led/import', 'Admin\MasterDataController::importLed');
 

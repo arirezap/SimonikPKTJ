@@ -22,7 +22,10 @@ class Auth extends BaseController
             return redirect()->to('dashboard');
         }
 
-        return view('login');
+        helper('cookie');
+        $savedUsername = get_cookie('saved_username') ?? '';
+
+        return view('login', ['savedUsername' => $savedUsername]);
     }
 
     public function processLogin()
@@ -32,8 +35,8 @@ class Auth extends BaseController
         // PERBAIKAN DISINI: Gunakan User, bukan UserModel
         $model = new User(); 
         
-        $username = $this->request->getVar('username');
-        $password = $this->request->getVar('password');
+        $username = trim((string) $this->request->getVar('username'));
+        $password = (string) $this->request->getVar('password');
         
         $data = $model->where('username', $username)->first();
         
@@ -103,14 +106,18 @@ class Auth extends BaseController
                 $session->set($ses_data);
                 
                 // --- FITUR REMEMBER ME (HttpOnly Flag for Security) ---
+                helper('cookie');
                 $remember = $this->request->getVar('remember');
                 if ($remember) {
-                    helper('cookie');
                     // Buat token: id::md5(id+username+password)
                     $tokenString = $data['id'] . '::' . md5($data['id'] . $data['username'] . $data['password']);
                     $token = base64_encode($tokenString);
                     // Set cookie untuk 30 hari (2592000 detik) dengan HttpOnly=true
                     set_cookie('remember_me', $token, 2592000, '', '/', '', false, true);
+                    // Simpan username agar otomatis terisi di form login
+                    set_cookie('saved_username', $data['username'], 2592000, '', '/', '', false, true);
+                } else {
+                    delete_cookie('saved_username');
                 }
                 // -------------------------
 
@@ -144,7 +151,7 @@ class Auth extends BaseController
 
     public function logout()
     {
-        $userId = session()->get('id');
+        $userId = session()->get('id') ?? session()->get('user_id');
         if ($userId) {
             log_audit('LOGOUT', 'users', $userId);
         }

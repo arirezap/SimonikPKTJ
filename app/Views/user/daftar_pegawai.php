@@ -160,7 +160,7 @@
                                 <td class="text-center fw-bold text-muted" style="font-size: 0.78rem;"><?= $no++ ?></td>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <?= render_user_avatar($u, '', 30) ?>
+                                        <?= render_user_avatar($u, $u['nama_lengkap'] ?? '', 32) ?>
                                         <div>
                                             <span class="fw-bold text-dark d-block" style="font-size: 0.83rem; line-height: 1.25;"><?= esc($u['nama_lengkap']) ?></span>
                                             <small class="text-muted" style="font-size: 0.72rem;"><i class="bi bi-card-text me-1"></i><?= esc($u['nip'] ?: ($u['username'] ?: '-')) ?></small>

@@ -1,7 +1,7 @@
 <?= $this->extend('layouts/main') ?>
 
-<?= $this->section('page_title') ?>Master KRITERIA/ELEMEN/INDIKATOR<?= $this->endSection() ?>
-<?= $this->section('title') ?><?= esc($page_title ?? '') ?><?= $this->endSection() ?>
+<?= $this->section('title') ?><?= esc($page_title ?? 'Master Kriteria LED') ?><?= $this->endSection() ?>
+<?= $this->section('page_title') ?>Master Kriteria LED<?= $this->endSection() ?>
 
 <?= $this->section('styles') ?>
 <style>
@@ -11,99 +11,170 @@
         background-color: #ffffff;
         padding: 1rem 1.5rem;
         border-top: 1px solid #dee2e6;
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
         display: flex;
-        justify-content: flex-end; 
+        justify-content: space-between;
+        flex-wrap: wrap;
         align-items: center;
         gap: 0.5rem;
-        z-index: 1020; 
+        z-index: 1020;
+    }
+    .kriteria-clamped {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .kriteria-text {
+        white-space: pre-line;
+        line-height: 1.55;
+    }
+    .btn-toggle-kriteria {
+        cursor: pointer;
+        user-select: none;
+        transition: color 0.15s ease-in-out;
+    }
+    .btn-toggle-kriteria:hover {
+        text-decoration: underline !important;
     }
 </style>
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
 
-<p class="text-muted mb-4">Kelola daftar Kriteria/Elemen/Indikator yang akan digunakan sebagai checklist pada halaman Input LED.</p>
+<?php if (session()->getFlashdata('success')): ?>
+    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> <?= session()->getFlashdata('success') ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<?php endif; ?>
 
-<div class="card mb-4">
-    <div class="card-body">
-        <form action="<?= site_url('master-data/led') ?>" method="GET" id="filterForm">
-            <div class="row align-items-end">
-                <div class="col-md-6">
-                    <label for="prodi_filter" class="form-label fw-bold">Tampilkan Kriteria untuk Program Studi</label>
-                    <select name="prodi" id="prodi_filter" class="form-select" onchange="this.form.submit()">
-                        <?php $prodiList = config('Ecc')->prodiList; ?>
-                        <?php foreach($prodiList as $prodi): ?>
-                            <option value="<?= $prodi; ?>" <?= ($selectedProdi == $prodi) ? 'selected' : ''; ?>><?= $prodi; ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
+<?php if (session()->getFlashdata('error')): ?>
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> <?= session()->getFlashdata('error') ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<?php endif; ?>
+
+<!-- Top Toolbar Card -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-3">
+        <div class="row g-3 align-items-center justify-content-between">
+            <div class="col-md-5">
+                <form action="<?= site_url('master-data/led') ?>" method="GET" id="filterForm" class="m-0">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light fw-bold text-primary"><i class="bi bi-mortarboard me-1"></i> Prodi</span>
+                        <select name="prodi" id="prodi_filter" class="form-select border-primary fw-bold text-primary" onchange="this.form.submit()">
+                            <?php $prodiList = config('Ecc')->prodiList; ?>
+                            <?php foreach($prodiList as $prodi): ?>
+                                <option value="<?= $prodi; ?>" <?= ($selectedProdi == $prodi) ? 'selected' : ''; ?>><?= $prodi; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </form>
             </div>
-        </form>
+            <div class="col-md-7 d-flex justify-content-md-end align-items-center gap-2">
+                <div class="input-group" style="max-width: 300px;">
+                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" id="searchLed" class="form-control border-start-0 ps-0" placeholder="Cari kriteria / standar...">
+                </div>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill fw-semibold text-nowrap">
+                    <i class="bi bi-list-check me-1"></i> <span id="countLed"><?= count($items) ?></span> Butir
+                </span>
+            </div>
+        </div>
     </div>
 </div>
 
-
-<?php if (session()->getFlashdata('success')): ?>
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <?= session()->getFlashdata('success') ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-<?php endif; ?>
-<?php if (session()->getFlashdata('error')): ?>
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <?= session()->getFlashdata('error') ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-<?php endif; ?>
-
-<div class="card">
-    <div class="card-body">
+<!-- Main Table Card -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-0">
         <form action="" method="POST" id="bulkActionForm">
             <?= csrf_field() ?>
             <input type="hidden" name="prodi_filter" value="<?= esc($selectedProdi) ?>">
             
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
+                <table class="table table-hover align-middle mb-0" id="tabelLed">
                     <thead class="table-light">
                         <tr>
-                            <th style="width: 3%;" class="text-center"><input class="form-check-input" type="checkbox" id="selectAll"></th>
-                            <th style="width: 5%;" class="text-center">No</th>
-                            <th>Nama Kriteria/Elemen/Indikator</th>
-                            <th style="width: 20%;">Standar</th> <th style="width: 15%;">Penanggung Jawab</th>
-                            <th style="width: 10%;" class="text-center">Aksi</th>
+                            <th style="width: 40px;" class="text-center"><input class="form-check-input" type="checkbox" id="selectAll"></th>
+                            <th style="width: 50px;" class="text-center">No</th>
+                            <th>Nama Kriteria / Elemen / Indikator</th>
+                            <th style="width: 220px;">Standar LED</th>
+                            <th style="width: 140px;" class="text-center">Penanggung Jawab</th>
+                            <th style="width: 120px;" class="text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (!empty($items)): $no = 1; foreach ($items as $item): ?>
-                        <tr id="kriteria-<?= $item['id'] ?>">
+                        <tr id="kriteria-<?= $item['id'] ?>" class="led-row">
                             <td class="text-center"><input class="form-check-input row-checkbox" type="checkbox" name="ids[]" value="<?= $item['id'] ?>"></td>
-                            <td class="text-center"><?= $no++ ?></td>
-                            <td><?= nl2br(esc($item['nama_kriteria'])) ?></td>
-                            <td><?= esc($item['nama_standar']) ?></td> <td>
+                            <td class="text-center fw-bold text-muted nomor-led"><?= $no++ ?></td>
+                            <td class="led-nama">
+                                <?php 
+                                    $rawText = $item['nama_kriteria'] ?? '';
+                                    $isLong = mb_strlen($rawText) > 100;
+                                ?>
+                                <div class="kriteria-wrapper">
+                                    <div class="kriteria-text text-dark fw-semibold <?= $isLong ? 'kriteria-clamped' : '' ?>"><?= esc($rawText) ?></div>
+                                    <?php if ($isLong): ?>
+                                        <a href="javascript:void(0)" class="btn-toggle-kriteria text-primary text-decoration-none small fw-semibold d-inline-flex align-items-center mt-1" onclick="toggleKriteria(this)">
+                                            <span>Lihat Selengkapnya</span> <i class="bi bi-chevron-down ms-1"></i>
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+                            <td class="led-standar">
+                                <?php if (!empty($item['nama_standar'])): ?>
+                                    <span class="badge bg-light text-dark border px-2.5 py-1.5 rounded-pill"><i class="bi bi-bookmark-fill text-primary me-1"></i> <?= esc($item['nama_standar']) ?></span>
+                                <?php else: ?>
+                                    <span class="text-muted small italic">- Tanpa Standar -</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="text-center led-role">
                                 <?php
                                     $role = esc($item['role_assignment']);
                                     $badge_class = 'bg-secondary';
-                                    if ($role === 'aak') $badge_class = 'bg-success';
-                                    if ($role === 'kuk') $badge_class = 'bg-info text-dark';
-                                    if ($role === 'all') $badge_class = 'bg-primary';
+                                    if ($role === 'aak') $badge_class = 'bg-success-subtle text-success border border-success-subtle';
+                                    elseif ($role === 'kuk') $badge_class = 'bg-info-subtle text-info-emphasis border border-info-subtle';
+                                    elseif ($role === 'all') $badge_class = 'bg-primary-subtle text-primary border border-primary-subtle';
+                                    else $badge_class = 'bg-secondary-subtle text-secondary border border-secondary-subtle';
                                 ?>
-                                <span class="badge <?= $badge_class ?>"><?= strtoupper($role) ?: 'N/A' ?></span>
+                                <span class="badge <?= $badge_class ?> px-2.5 py-1.5 rounded-pill fw-semibold"><?= strtoupper($role) ?: 'N/A' ?></span>
                             </td>
                             <td class="text-center">
-                                <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editModal-<?= $item['id'] ?>">
-                                    <i class="bi bi-pencil-fill"></i>
-                                </button>
-                                <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete(<?= $item['id'] ?>, '<?= esc($item['nama_kriteria']) ?>')">
-                                    <i class="bi bi-trash"></i>
-                                </button>
+                                <div class="d-flex justify-content-center gap-1">
+                                    <button type="button" class="btn btn-outline-warning btn-sm rounded-circle shadow-sm" 
+                                        style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editModal-<?= $item['id'] ?>"
+                                        title="Edit Kriteria">
+                                        <i class="bi bi-pencil-fill"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm rounded-circle shadow-sm btn-hapus" 
+                                        style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"
+                                        onclick="confirmDelete(<?= $item['id'] ?>, '<?= esc($item['nama_kriteria'], 'js') ?>')"
+                                        title="Hapus Kriteria">
+                                        <i class="bi bi-trash-fill"></i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         <?php endforeach; else: ?>
-                        <tr>
-                            <td colspan="6" class="text-center">Belum ada data Kriteria LED untuk prodi <?= esc($selectedProdi) ?>.</td>
+                        <tr id="emptyRow">
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                Belum ada data Kriteria LED untuk prodi <?= esc($selectedProdi) ?>.
+                            </td>
                         </tr>
                         <?php endif; ?>
+                        <tr id="noSearchResult" style="display: none;">
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                <i class="bi bi-search fs-3 d-block mb-1 text-secondary opacity-50"></i>
+                                Tidak ada kriteria yang cocok dengan pencarian.
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -359,49 +430,48 @@
 <!-- ========================================================== -->
 <!-- FOOTER BAR -->
 <!-- ========================================================== -->
+<!-- ========================================================== -->
+<!-- FOOTER BAR -->
+<!-- ========================================================== -->
 <?= $this->section('footer_bar') ?>
 <div class="sticky-footer-bar">
-    <a href="<?= site_url('master-data/led/export?prodi=' . esc($selectedProdi)) ?>" class="btn btn-dark btn-sm">
-        <i class="bi bi-download me-2"></i> Export Excel
-    </a>
-    <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#importModal">
-        <i class="bi bi-upload me-2"></i> Import Excel
-    </button>
-    <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addModal">
-        <i class="bi bi-plus-circle me-2"></i> Tambah Kriteria Baru
-    </button>
-    
-    <button type="button" class="btn btn-primary btn-sm d-none" id="bulkEditButton" data-bs-toggle="modal" data-bs-target="#batchEditModal">
-        <i class="bi bi-pencil-square me-2"></i> Ubah Data Terpilih
-    </button>
-    <button type="button" class="btn btn-danger btn-sm d-none" id="bulkDeleteButton" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal">
-        <i class="bi bi-trash me-2"></i> Hapus Data Terpilih
-    </button>
+    <div class="d-flex align-items-center gap-2">
+        <a href="<?= site_url('master-data/led/export?prodi=' . esc($selectedProdi)) ?>" class="btn btn-outline-dark btn-sm rounded-pill px-3">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export Excel
+        </a>
+        <button type="button" class="btn btn-outline-info btn-sm rounded-pill px-3 text-info-emphasis" data-bs-toggle="modal" data-bs-target="#importModal">
+            <i class="bi bi-file-earmark-arrow-up me-1"></i> Import Excel
+        </button>
+        <button type="button" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#addModal">
+            <i class="bi bi-plus-circle me-1"></i> Tambah Kriteria
+        </button>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <button type="button" class="btn btn-warning btn-sm rounded-pill px-3 shadow-sm d-none" id="bulkEditButton" data-bs-toggle="modal" data-bs-target="#batchEditModal">
+            <i class="bi bi-pencil-square me-1"></i> Ubah (<span id="bulkEditCount">0</span>) Terpilih
+        </button>
+        <button type="button" class="btn btn-danger btn-sm rounded-pill px-3 shadow-sm d-none" id="bulkDeleteButton">
+            <i class="bi bi-trash-fill me-1"></i> Hapus (<span id="bulkDeleteCount">0</span>) Terpilih
+        </button>
+    </div>
 </div>
 <?= $this->endSection() ?>
 
-
 <?= $this->section('scripts') ?>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    // --- PERBAIKAN: Dapatkan elemen yang bisa di-scroll ---
     const scrollContainer = document.querySelector('.content-wrapper');
 
-    /**
-     * --- FUNGSI SIMPAN SCROLL ---
-     * Menyimpan posisi scroll dari .content-wrapper
-     */
     function saveScrollPosition() {
         if (scrollContainer) {
             sessionStorage.setItem('scrollPos', scrollContainer.scrollTop);
         } else {
-            // Fallback jika .content-wrapper tidak ditemukan
             sessionStorage.setItem('scrollPos', window.scrollY);
         }
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        
-        // --- FUNGSI RESTORE SCROLL ---
+        // Restore scroll position
         if (sessionStorage.getItem('scrollPos')) {
             setTimeout(function() {
                 let scrollPos = parseInt(sessionStorage.getItem('scrollPos'));
@@ -410,14 +480,47 @@
                 } else {
                     window.scrollTo(0, scrollPos);
                 }
-                sessionStorage.removeItem('scrollPos'); // Hapus setelah digunakan
-            }, 100); // Delay 100ms agar DOM sempat render
+                sessionStorage.removeItem('scrollPos');
+            }, 100);
+        }
+
+        // Live Search LED
+        const searchInput = document.getElementById('searchLed');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const query = this.value.toLowerCase().trim();
+                const rows = document.querySelectorAll('.led-row');
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    const nama = row.querySelector('.led-nama').textContent.toLowerCase();
+                    const standar = row.querySelector('.led-standar').textContent.toLowerCase();
+                    const role = row.querySelector('.led-role').textContent.toLowerCase();
+                    if (nama.includes(query) || standar.includes(query) || role.includes(query)) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                const noResult = document.getElementById('noSearchResult');
+                if (noResult) {
+                    noResult.style.display = (visibleCount === 0 && rows.length > 0) ? '' : 'none';
+                }
+
+                const countEl = document.getElementById('countLed');
+                if (countEl) {
+                    countEl.textContent = query ? visibleCount : rows.length;
+                }
+            });
         }
 
         <?php if (session()->getFlashdata('show_modal')): ?>
             const modalId = '<?= session()->getFlashdata('show_modal') ?>';
-            if (document.getElementById(modalId)) {
-                const modal = new bootstrap.Modal(document.getElementById(modalId));
+            const modalEl = document.getElementById(modalId);
+            if (modalEl) {
+                const modal = new bootstrap.Modal(modalEl);
                 modal.show();
             }
         <?php endif; ?>
@@ -427,12 +530,18 @@
         const bulkDeleteButton = document.getElementById('bulkDeleteButton');
         const bulkEditButton = document.getElementById('bulkEditButton'); 
         const bulkActionForm = document.getElementById('bulkActionForm'); 
-        const confirmDeleteButton = document.getElementById('confirmDeleteButton');
+        const bulkEditCount = document.getElementById('bulkEditCount');
+        const bulkDeleteCount = document.getElementById('bulkDeleteCount');
 
         function toggleBulkButtons() {
-            const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
+            const checkedBoxes = Array.from(checkboxes).filter(cb => cb.checked);
+            const count = checkedBoxes.length;
+            const anyChecked = count > 0;
+            
             bulkDeleteButton.classList.toggle('d-none', !anyChecked);
             bulkEditButton.classList.toggle('d-none', !anyChecked);
+            if (bulkEditCount) bulkEditCount.textContent = count;
+            if (bulkDeleteCount) bulkDeleteCount.textContent = count;
         }
 
         if (selectAll) {
@@ -448,16 +557,42 @@
             cb.addEventListener('click', toggleBulkButtons);
         });
 
-        if (confirmDeleteButton) {
-            confirmDeleteButton.addEventListener('click', function() {
-                saveScrollPosition();
-                bulkActionForm.action = "<?= site_url('master-data/led/delete-batch') ?>";
-                bulkActionForm.submit();
+        // Bulk Delete with SweetAlert2 & Fallback
+        if (bulkDeleteButton) {
+            bulkDeleteButton.addEventListener('click', function() {
+                const checkedBoxes = Array.from(checkboxes).filter(cb => cb.checked);
+                if (checkedBoxes.length === 0) return;
+
+                function executeBulkDelete() {
+                    saveScrollPosition();
+                    bulkActionForm.action = "<?= site_url('master-data/led/deleteBatch') ?>";
+                    bulkActionForm.submit();
+                }
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Hapus Kriteria Terpilih?',
+                        html: `Sebanyak <strong>${checkedBoxes.length} butir kriteria</strong> akan dihapus permanen.`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#dc3545',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: '<i class="bi bi-trash-fill me-1"></i> Ya, Hapus Semua!',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            executeBulkDelete();
+                        }
+                    });
+                } else {
+                    if (confirm(`Apakah Anda yakin ingin menghapus ${checkedBoxes.length} butir kriteria yang dipilih?`)) {
+                        executeBulkDelete();
+                    }
+                }
             });
         }
 
         const confirmBulkEditButton = document.getElementById('confirmBulkEditButton');
-        
         if (confirmBulkEditButton) {
             confirmBulkEditButton.addEventListener('click', function() {
                 const standarId = document.getElementById('batch_id_standar').value;
@@ -478,7 +613,7 @@
                 }
 
                 saveScrollPosition();
-                bulkActionForm.action = "<?= site_url('master-data/led/batch-update') ?>";
+                bulkActionForm.action = "<?= site_url('master-data/led/batchUpdate') ?>";
                 bulkActionForm.submit();
             });
         }
@@ -489,12 +624,52 @@
         });
     });
 
+    // Single Delete with SweetAlert2 & Fallback
     function confirmDelete(id, name) {
-        if (confirm(`Apakah Anda yakin ingin menghapus Kriteria:\n"${name}"?`)) {
+        function executeDelete() {
             saveScrollPosition();
             const form = document.getElementById('formHapus');
             form.action = `<?= site_url('master-data/led/delete/') ?>${id}?prodi=<?= esc($selectedProdi) ?>`;
             form.submit();
+        }
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Hapus Kriteria?',
+                html: `Kriteria <strong>"${name}"</strong> akan dihapus permanen.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="bi bi-trash-fill me-1"></i> Ya, Hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    executeDelete();
+                }
+            });
+        } else {
+            if (confirm(`Apakah Anda yakin ingin menghapus Kriteria:\n"${name}"?`)) {
+                executeDelete();
+            }
+        }
+    }
+
+    // Toggle Kriteria Inline Expansion Seamlessly
+    function toggleKriteria(btn) {
+        const wrapper = btn.closest('.kriteria-wrapper');
+        const textEl = wrapper.querySelector('.kriteria-text');
+        const span = btn.querySelector('span');
+        const icon = btn.querySelector('i');
+        
+        if (textEl.classList.contains('kriteria-clamped')) {
+            textEl.classList.remove('kriteria-clamped');
+            span.textContent = 'Sembunyikan';
+            icon.className = 'bi bi-chevron-up ms-1';
+        } else {
+            textEl.classList.add('kriteria-clamped');
+            span.textContent = 'Lihat Selengkapnya';
+            icon.className = 'bi bi-chevron-down ms-1';
         }
     }
 </script>

@@ -70,7 +70,7 @@
                     
                     <!-- Upload section for the avatar -->
                     <div class="w-100 mt-4 pt-4 border-top border-light">
-                        <label class="form-label text-muted small fw-bold text-uppercase w-100 text-start">Ganti Foto Profil</label>
+                        <label class="form-label text-muted small fw-bold text-uppercase w-100 text-start">Ganti Foto Profil <span class="text-secondary fw-normal text-lowercase">(opsional)</span></label>
                         <div class="input-group">
                             <input form="profileForm" type="file" name="foto" id="fotoInput" class="form-control" accept="image/png, image/jpeg, image/jpg">
                             <button form="profileForm" class="btn btn-outline-danger px-3" type="button" id="hapusFotoBtn" title="Hapus foto">
@@ -102,11 +102,12 @@
                             <div class="col-md-6">
                                 <label class="form-label text-muted small fw-bold text-uppercase">Username</label>
                                 <input type="text" name="username" class="form-control bg-light" value="<?= esc($user['username']) ?>" readonly>
-                                <div class="form-text small mt-1">Username tidak dapat diubah.</div>
+                                <div class="form-text small mt-1">Username akun terdaftar dan tidak dapat diubah.</div>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label text-muted small fw-bold text-uppercase">Ganti Password</label>
+                                <label class="form-label text-muted small fw-bold text-uppercase">Ganti Password <span class="text-secondary fw-normal text-lowercase">(opsional)</span></label>
                                 <input type="password" name="password" class="form-control" placeholder="Kosongkan jika tidak diganti...">
+                                <div class="form-text small mt-1">Minimal 6 karakter jika ingin mengganti.</div>
                             </div>
                         </div>
                     </div>
@@ -123,28 +124,28 @@
                     <div class="card-body p-4">
                         <div class="row g-3">
                             <div class="col-md-12">
-                                <label class="form-label text-muted small fw-bold text-uppercase">Nama Lengkap (Beserta Gelar)</label>
-                                <input type="text" name="nama_lengkap" class="form-control" value="<?= esc($user['nama_lengkap']) ?>">
+                                <label class="form-label text-muted small fw-bold text-uppercase">Nama Lengkap (Beserta Gelar) <span class="text-danger">*</span></label>
+                                <input type="text" name="nama_lengkap" class="form-control" value="<?= esc($user['nama_lengkap']) ?>" required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label text-muted small fw-bold text-uppercase">Email Address</label>
-                                <input type="email" name="email" class="form-control" value="<?= esc($user['email']) ?>">
+                                <label class="form-label text-muted small fw-bold text-uppercase">Email Address <span class="text-danger">*</span></label>
+                                <input type="email" name="email" class="form-control" value="<?= esc($user['email']) ?>" required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label text-muted small fw-bold text-uppercase">No. HP</label>
+                                <label class="form-label text-muted small fw-bold text-uppercase">No. HP <span class="text-secondary fw-normal text-lowercase">(opsional)</span></label>
                                 <input type="text" name="no_hp" class="form-control" value="<?= esc($user['no_hp'] ?? '') ?>" placeholder="Misal: 081234567890">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label text-muted small fw-bold text-uppercase">NIP</label>
-                                <input type="text" name="nip" class="form-control" value="<?= esc($user['nip']) ?>">
+                                <label class="form-label text-muted small fw-bold text-uppercase">NIP / NIK <span class="text-danger">*</span></label>
+                                <input type="text" name="nip" class="form-control" value="<?= esc($user['nip']) ?>" required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label text-muted small fw-bold text-uppercase">Jabatan</label>
-                                <input type="text" name="jabatan" class="form-control" value="<?= esc($user['jabatan']) ?>">
+                                <label class="form-label text-muted small fw-bold text-uppercase">Jabatan <span class="text-danger">*</span></label>
+                                <input type="text" name="jabatan" class="form-control" value="<?= esc($user['jabatan']) ?>" required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label text-muted small fw-bold text-uppercase">Unit Kerja</label>
-                                <select name="unit" class="form-select">
+                                <label class="form-label text-muted small fw-bold text-uppercase">Unit Kerja <span class="text-danger">*</span></label>
+                                <select name="unit" class="form-select" required>
                                     <option value="">-- Pilih Unit Kerja --</option>
                                     <?php foreach ($unit_kerja_list as $uk): ?>
                                         <option value="<?= esc($uk['nama_unit']) ?>" <?= ($user['unit'] == $uk['nama_unit']) ? 'selected' : '' ?>>
@@ -154,7 +155,7 @@
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label text-muted small fw-bold text-uppercase">Atasan Langsung</label>
+                                <label class="form-label text-muted small fw-bold text-uppercase">Atasan Langsung <span class="text-secondary fw-normal text-lowercase">(opsional)</span></label>
                                 <select name="atasan_id" class="form-select select2">
                                     <option value="">-- Pilih Atasan Langsung --</option>
                                     <?php foreach ($potential_bosses as $boss): ?>
@@ -165,8 +166,8 @@
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label text-muted small fw-bold text-uppercase">Pangkat / Golongan</label>
-                                <input type="text" name="pangkat" class="form-control" value="<?= esc($user['pangkat']) ?>">
+                                <label class="form-label text-muted small fw-bold text-uppercase">Pangkat / Golongan <span class="text-secondary fw-normal text-lowercase">(opsional)</span></label>
+                                <input type="text" name="pangkat" class="form-control" value="<?= esc($user['pangkat']) ?>" placeholder="Misal: Penata Muda / III/a">
                             </div>
                         </div>
 
@@ -210,13 +211,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     hapusFotoBtn.addEventListener('click', function() {
-        if (confirm('Apakah Anda yakin ingin menghapus foto profil?')) {
+        const doHapusFoto = function() {
             fotoInput.value = "";
             profilePreview.src = "";
             profilePreview.classList.add('d-none');
             profilePreviewInitials.classList.remove('d-none');
             profilePreviewInitials.classList.add('d-flex');
             hapusFotoFlag.value = "1";
+        };
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Hapus Foto Profil?',
+                text: 'Foto profil akan dihapus dan digantikan dengan inisial nama.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, Hapus Foto',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    doHapusFoto();
+                }
+            });
+        } else if (confirm('Apakah Anda yakin ingin menghapus foto profil?')) {
+            doHapusFoto();
         }
     });
 

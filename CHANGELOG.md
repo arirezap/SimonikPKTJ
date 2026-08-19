@@ -131,3 +131,41 @@ Dokumen ini berisi riwayat fitur, perbaikan (*bug fixes*), dan peningkatan antar
 - **Garansi Ketahanan Data Laporan Harian (`LogKegiatanHarian.php`):**
   - Mengubah query pembacaan log dari `INNER JOIN` menjadi `LEFT JOIN` (`->join('laporan_harian', ..., 'left')`) sehingga seluruh riwayat catatan kegiatan harian pegawai **100% aman dan tidak akan hilang/terhapus** meskipun target RHK-nya diubah atau dihapus saat revisi target bulanan.
   - Menambahkan styling `.scrollable-table, .table-responsive` dengan *smooth horizontal touch scrolling* (`-webkit-overflow-scrolling: touch`) dan `.text-nowrap-cell` agar cell tanggal dan badge status tidak terpecah per huruf di layar kecil.
+
+## 11. Modul Sistem Layout Utama, Hak Akses Sidebar, & Dynamic CSRF (`main.php` & `sidebar.php`)
+- **Penyembunyian Menu 'Kinerja'**: Menyembunyikan menu utama 'Kinerja' beserta seluruh submenunya (*Input Rencana Kerja*, *Sasaran Kinerja SKP*, *Input Realisasi*, *Kelola Target*, dan *Input Progres Keuangan*) untuk seluruh pengguna karena tidak digunakan.
+- **Pembaruan Hak Akses 'Master Data'**: Membatasi akses menu Master Data pada sidebar hanya untuk peran: **Superadmin** (`admin`), **Kepegawaian** (`kepegawaian`), dan **SPM** (`spm`).
+- **Dynamic CSRF Token Refresh pada Notifikasi (`main.php`)**: Meng-upgrade fungsi `markNotifRead()` agar membaca hash CSRF secara dinamis dari meta tag `X-CSRF-TOKEN` dan memperbaruinya setiap kali notifikasi dibaca untuk mencegah *403 Mismatch*.
+- **Pembersihan Clean Code**: Menghapus blok kode mati (*dead code*) pada `sidebar.php` untuk merapikan struktur DOM.
+
+## 12. Modul Rekap Kepegawaian Remunerasi, Notifikasi Hari Libur, Log Keamanan Aktivitas, & Versi v1.1
+- **Modul Rekap Kepegawaian (Remunerasi Monitoring):**
+  - Audit 7-Pilar pada `DashboardKepegawaian.php` dan `rekap_kinerja.php`. Menampilkan rasio kelengkapan penilaian RHK (`dinilai / total`), skor rata-rata, & predikat kinerja.
+  - Memperbarui predikat skor `>= 90` dari *Sangat Baik* menjadi **'Baik'** pada filter pill, tabel desktop, dan kartu seluler sesuai preferensi range penilaian.
+  - Menyediakan ekspor data CSV berformat BOM UTF-8 ramah MS Excel untuk sistem penggajian.
+- **Modul Notifikasi & Master Hari Libur (Holidays):**
+  - Failsafe pencarian User ID (`id` -> `user_id` -> `username`/`nip`) pada `NotificationController::fetch()`.
+  - Integrasi pengingat harian otomatis (*Virtual Reminder*) bagi pegawai di hari kerja (`is_working_day()`).
+  - Auto-sync kalender hari libur nasional & cuti bersama via API `libur.deno.dev` pada `MasterDataController.php`.
+- **Modul Log Keamanan Aktivitas (Audit Trail Overhaul):**
+  - Menambahkan **Search Bar Live** (pencarian berdasarkan Nama Pengguna, NIP, IP Address, atau Entity ID).
+  - Menambahkan **Filter Periode Tanggal** (`date_start` & `date_end`).
+  - Mengubah seluruh ikon dari FontAwesome ke **Bootstrap Icons (`bi bi-...`)** dan memasang modal dialog *Pretty JSON Viewer* untuk melihat detail `old_values` & `new_values`.
+  - Menyelaraskan template pagination ke `'bootstrap'` (`bootstrap_pagination.php`) yang ter-optimasi server-side (`LIMIT 50 OFFSET page`) dengan pilihan dinamis jumlah data per halaman.
+- **Versi Aplikasi v1.1 & Automatic Cache Busting:**
+  - Implementasi URL stylesheet dynamic cache-busting `style.css?v=1.1.TIMESTAMP` dan HTTP no-cache headers pada `main.php` agar browser seluruh pengguna 100% otomatis mengambil aset terbaru tanpa perlu clear cache manual.
+  - Memperbarui badge versi aplikasi resmi pada footer menjadi **`v1.1`**.
+
+## 13. Rilis Resmi Versi 1.2: Penyelesaian Audit 7-Pilar Menyeluruh 11 Halaman (19 Agustus 2026)
+- **Kepatuhan Aturan Standar:**
+  - Standardisasi mutlak istilah baku **"staf"** pada seluruh antarmuka, variabel kode, dan dokumentasi sistem (kepatuhan `AGENTS.md`).
+  - Penyelarasan nama resmi aplikasi menjadi **Evidence Command Center (ECC)** secara konsisten di seluruh halaman, title, topbar, dan footer.
+- **Penyempurnaan Antarmuka & Tata Letak:**
+  - **Sidebar Mini Mode (Collapsed)**: Memperbaiki background putih membentang penuh (*full-height min-height: 100vh*) dan mengoptimasi kerapatan ikon agar 14 menu pas di layar tanpa meluap.
+  - **Kelola Tim (`/tim`)**: Menambahkan pencarian instan multi-field (Nama, NIP, Jabatan, Unit Kerja) dengan kartu mini ber-kontras tajam pada Select2, merapikan baris NIP, dan menyeimbangkan tombol aksi.
+  - **Notifikasi Pintar**: Auto-clear badge angka notifikasi saat lonceng dibuka serta penambahan tombol aksi *"Tandai Semua Dibaca"*.
+  - **SweetAlert2 Dialog**: Integrasi dialog konfirmasi logout dan pelepasan anggota tim dengan fallback aman.
+- **Verifikasi Kualitas Sistem (QA Final):**
+  - **0 Syntax Error** pada seluruh 208 berkas PHP di dalam sistem.
+  - **0 Broken Route** pada seluruh rute aplikasi (`php spark routes`).
+  - Versi resmi dinaikkan menjadi **`v1.2`** dengan cache-busting `?v=1.2.TIMESTAMP`.

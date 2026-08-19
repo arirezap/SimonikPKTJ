@@ -75,11 +75,12 @@ class Dashboard extends BaseController
             ->where('users.role !=', 'admin') 
             ->where('rencana_kinerja.tahun_anggaran', $tahun_kinerja);
             
+        $subordinateIds = [];
         if (!$canSeeAll) {
-            $rencanaQuery->groupStart()
-                         ->where('users.id', $user_id)
-                         ->orWhere('users.atasan_id', $user_id)
-                         ->groupEnd();
+            $subordinates = $this->userModel->getAllStaf($user_id, $role);
+            $subordinateIds = array_column($subordinates, 'id');
+            $subordinateIds[] = $user_id; // Sertakan data atasan itu sendiri
+            $rencanaQuery->whereIn('users.id', $subordinateIds);
         }
         $allRencana = $rencanaQuery->findAll();
 
@@ -128,10 +129,7 @@ class Dashboard extends BaseController
         // ----------------------------------------------------------------
         $userQuery = $this->userModel->where('role !=', 'admin');
         if (!$canSeeAll) {
-            $userQuery->groupStart()
-                      ->where('id', $user_id)
-                      ->orWhere('atasan_id', $user_id)
-                      ->groupEnd();
+            $userQuery->whereIn('id', $subordinateIds);
         }
         $users = $userQuery->findAll();
         $chartUserLabels = [];
@@ -391,7 +389,7 @@ class Dashboard extends BaseController
 
         foreach ($unitStats as $unitName => $stat) {
             $chartPegawaiUnitLabels[] = $unitName;
-            $chartPegawaiUnitData[] = round($stat['total_rata'] / $stat['count'], 2);
+            $chartPegawaiUnitData[] = $stat['count'] > 0 ? round($stat['total_rata'] / $stat['count'], 2) : 0;
         }
 
             if ($this->request->isAJAX() && $ajax_type === 'kinerja') {

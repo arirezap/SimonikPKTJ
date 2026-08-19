@@ -8,16 +8,7 @@ $segment2 = $uri->getSegment(2); // Cth: 'dashboard', 'led', 'users'
 $current_uri = uri_string();
 $role = session()->get('role');
 
-// Helper untuk status aktif menu
-$isKinerjaActive = (
-    str_starts_with($current_uri, 'rencana') ||
-    str_starts_with($current_uri, 'realisasi') ||
-    str_starts_with($current_uri, 'kinerja') ||
-    str_starts_with($current_uri, 'alokasi') ||
-    str_starts_with($current_uri, 'keuangan') ||
-    str_starts_with($current_uri, 'skp') 
-);
-$isAkademikActive = str_starts_with($current_uri, 'akademik');
+// Helper untuk status aktif submenu
 $isMasterDataActive = str_starts_with($current_uri, 'master-data');
 $isEccActive = str_starts_with($current_uri, 'ecc');
 
@@ -71,41 +62,6 @@ $isKepegawaian = hasRole('kepegawaian');
                 </div>
             </li>
 
-            <?php
-            // Menu Kinerja disembunyikan untuk seluruh pengguna karena tidak digunakan
-            if (false):
-            ?>
-                <?php if (!$isAdmin): ?>
-                    <li class="nav-item">
-                        <a class="nav-link <?= $isKinerjaActive ? 'active' : 'collapsed' ?>" href="#kinerjaSubmenu" role="button" data-bs-toggle="collapse">
-                            <i class="bi bi-graph-up-arrow"></i><span>Kinerja</span>
-                            <i class="bi bi-chevron-down sidebar-toggle-icon ms-auto"></i>
-                        </a>
-                        <div class="collapse" id="kinerjaSubmenu">
-                            <ul class="nav flex-column ps-4">
-                                <li class="nav-item"><a href="<?= site_url('rencana/input') ?>" class="nav-link sub-link <?= ($current_uri == 'rencana/input') ? 'active' : '' ?>"><span>Input Rencana Kerja</span></a></li>
-
-                                <?php if (!hasRole('direktur')): ?>
-                                <li class="nav-item">
-                                    <a class="nav-link sub-link <?= str_starts_with($current_uri, 'skp') ? 'active' : '' ?>" href="<?= site_url('skp') ?>">
-                                        <span>Sasaran Kinerja (SKP)</span>
-                                    </a>
-                                </li>
-                                <?php endif; ?>
-                                
-                                <li class="nav-item"><a href="<?= site_url('realisasi/input') ?>" class="nav-link sub-link <?= ($current_uri == 'realisasi/input') ? 'active' : '' ?>"><span>Input Realisasi</span></a></li>
-                                <li class="nav-item"><a href="<?= site_url('kinerja/update') ?>" class="nav-link sub-link <?= (str_starts_with($current_uri, 'kinerja/update') || str_starts_with($current_uri, 'alokasi/bulanan')) ? 'active' : '' ?>"><span>Kelola Target & Realisasi</span></a></li>
-
-                                <?php if (hasAnyRole(['admin', 'kabag_kuk', 'kuk'])): ?>
-                                    <li class="menu-divider"></li>
-                                    <li class="nav-item"><a href="<?= site_url('keuangan/input') ?>" class="nav-link sub-link <?= ($current_uri == 'keuangan/input') ? 'active' : '' ?>"><span>Input Progres Keuangan</span></a></li>
-                                <?php endif; ?>
-                            </ul>
-                        </div>
-                    </li>
-                <?php endif; ?>
-            <?php endif; ?>
-
             <li class="nav-item">
                 <a class="nav-link <?= str_starts_with($current_uri, 'laporan-harian') ? 'active' : '' ?>" href="<?= site_url('laporan-harian') ?>">
                     <i class="bi bi-bullseye"></i><span>Target Kinerja Bulanan</span>
@@ -141,28 +97,6 @@ $isKepegawaian = hasRole('kepegawaian');
                     <i class="bi bi-book-half"></i><span>Panduan Penggunaan</span>
                 </a>
             </li>
-
-            <?php if (false && $isAdmin): // Disembunyikan sementara ?>
-                <li class="nav-item">
-                    <a class="nav-link <?= $isAkademikActive ? 'active' : 'collapsed' ?>" href="#akademikSubmenu" role="button" data-bs-toggle="collapse">
-                        <i class="bi bi-book-half"></i><span>Data Akademik</span>
-                        <i class="bi bi-chevron-down sidebar-toggle-icon ms-auto"></i>
-                    </a>
-                    <div class="collapse" id="akademikSubmenu">
-                        <ul class="nav flex-column ps-4">
-                            <li class="nav-item"><a href="<?= site_url('akademik') ?>" class="nav-link sub-link <?= ($current_uri == 'akademik') ? 'active' : '' ?>"><span>Rangkuman</span></a></li>
-                            <li class="nav-item"><a href="<?= site_url('akademik/jadwal') ?>" class="nav-link sub-link <?= ($current_uri == 'akademik/jadwal') ? 'active' : '' ?>"><span>Kelola Jadwal Kuliah</span></a></li>
-                        </ul>
-                    </div>
-                </li>
-                <li class="nav-item"><a href="<?= site_url('ketarunaan') ?>" class="nav-link <?= ($current_uri == 'user/ketarunaan') ? 'active' : '' ?>"><i class="bi bi-shield-check"></i><span>Data Ketarunaan</span></a></li>
-                <li class="nav-item"><a href="<?= site_url('diklat') ?>" class="nav-link <?= ($current_uri == 'user/diklat') ? 'active' : '' ?>"><i class="bi bi-easel-fill"></i><span>Data Diklat</span></a></li>
-            <?php endif; ?>
-
-
-            <?php if (false && ($isManajemenLevel || $isKabagKuk)): // Untuk Kabag & Manajemen, SEMENTARA DISEMBUNYIKAN ?>
-                <li class="nav-item"><a href="<?= site_url('monitoring') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/monitoring')) ? 'active' : '' ?>"><i class="bi bi-kanban-fill"></i><span>Monitoring Kinerja</span></a></li>
-            <?php endif; ?>
 
             <?php if ($isManajemenLevel || $isKabagKuk): ?>
                 <li class="nav-item">

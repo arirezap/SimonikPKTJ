@@ -645,45 +645,72 @@ Lapor Kegiatan Harian
             const logId = $(this).data('id');
 
             if (logId) {
-                Swal.fire({
-                    title: 'Hapus Tugas Tambahan?',
-                    text: "Data yang sudah disimpan akan dihapus permanen.",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    cancelButtonColor: '#3085d6',
-                    confirmButtonText: 'Ya, Hapus!'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        // Selalu ambil CSRF token terbaru dari form
-                        const csrfToken = $('input[name="<?= csrf_token() ?>"]').val() || $('input[name="csrf_test_name"]').val();
-                        $.ajax({
-                            url: '<?= site_url("log-kegiatan/hapusTugasTambahan") ?>',
-                            type: 'POST',
-                            data: {
-                                id: logId,
-                                '<?= csrf_token() ?>': csrfToken
-                            },
-                            success: function(response) {
-                                // Perbarui CSRF token setelah setiap request
-                                if (response.csrf_hash) {
-                                    $('input[name="<?= csrf_token() ?>"]').val(response.csrf_hash);
-                                    $('input[name="csrf_test_name"]').val(response.csrf_hash);
-                                }
-                                if(response.success) {
-                                    tr.remove();
-                                    updateRowNumbers();
-                                    Swal.fire('Terhapus!', 'Data tugas tambahan berhasil dihapus.', 'success');
-                                } else {
-                                    Swal.fire('Gagal!', response.message || 'Gagal menghapus.', 'error');
-                                }
-                            },
-                            error: function() {
-                                Swal.fire('Error', 'Terjadi kesalahan sistem.', 'error');
+                const doDeleteTambahan = function() {
+                    const csrfToken = $('input[name="<?= csrf_token() ?>"]').val() || $('input[name="csrf_test_name"]').val();
+                    $.ajax({
+                        url: '<?= site_url("log-kegiatan/hapusTugasTambahan") ?>',
+                        type: 'POST',
+                        data: {
+                            id: logId,
+                            '<?= csrf_token() ?>': csrfToken
+                        },
+                        success: function(response) {
+                            if (response.csrf_hash) {
+                                $('input[name="<?= csrf_token() ?>"]').val(response.csrf_hash);
+                                $('input[name="csrf_test_name"]').val(response.csrf_hash);
                             }
-                        });
+                            if(response.success) {
+                                tr.remove();
+                                updateRowNumbers();
+                                if (typeof Swal !== 'undefined') {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Terhapus!',
+                                        text: 'Data tugas tambahan berhasil dihapus.',
+                                        timer: 1500,
+                                        showConfirmButton: false
+                                    });
+                                } else {
+                                    alert('Data tugas tambahan berhasil dihapus.');
+                                }
+                            } else {
+                                if (typeof Swal !== 'undefined') {
+                                    Swal.fire('Gagal!', response.message || 'Gagal menghapus.', 'error');
+                                } else {
+                                    alert('Gagal: ' + (response.message || 'Gagal menghapus.'));
+                                }
+                            }
+                        },
+                        error: function() {
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire('Error', 'Terjadi kesalahan sistem.', 'error');
+                            } else {
+                                alert('Terjadi kesalahan sistem.');
+                            }
+                        }
+                    });
+                };
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Hapus Tugas Tambahan?',
+                        text: "Data yang sudah disimpan akan dihapus permanen.",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#dc3545',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: '<i class="bi bi-trash-fill me-1"></i> Ya, Hapus!',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            doDeleteTambahan();
+                        }
+                    });
+                } else {
+                    if (confirm('Hapus Tugas Tambahan? Data yang sudah disimpan akan dihapus permanen.')) {
+                        doDeleteTambahan();
                     }
-                });
+                }
             } else {
                 tr.remove();
                 updateRowNumbers();

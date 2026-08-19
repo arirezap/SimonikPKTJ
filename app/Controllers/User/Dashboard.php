@@ -148,7 +148,7 @@ class Dashboard extends BaseController
                 
                 foreach ($unitStats as $unitName => $stat) {
                     $chartPegawaiUnitLabels[] = $unitName;
-                    $chartPegawaiUnitData[] = round($stat['total_rata'] / $stat['count'], 2);
+                    $chartPegawaiUnitData[] = $stat['count'] > 0 ? round($stat['total_rata'] / $stat['count'], 2) : 0;
                 }
             }
 

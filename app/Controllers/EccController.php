@@ -55,9 +55,9 @@ class EccController extends BaseController
         $currentRole = session()->get('role');
 
         // 1. Definisikan Role Flags
-        $is_staf     = in_array($currentRole, ['aak', 'kuk', 'user']); 
-        $is_kabag    = in_array($currentRole, ['kabag_aak', 'kabag_kuk']);
-        $is_wadir    = in_array($currentRole, ['admin', 'manajemen', 'direktur', 'spm']);
+        $is_wadir    = hasAnyRole(['admin', 'manajemen', 'direktur', 'wadir', 'spm']);
+        $is_kabag    = !$is_wadir && hasAnyRole(['kabag_aak', 'kabag_kuk']);
+        $is_staf     = !$is_wadir && !$is_kabag;
 
         // 2. Ambil Semua Kriteria (Master) untuk prodi ini
         $all_criteria = $criteriaModel
@@ -70,20 +70,25 @@ class EccController extends BaseController
         // 3. Filter Kriteria berdasarkan Role
         $filtered_criteria = [];
         if (!empty($all_criteria)) {
-            foreach ($all_criteria as $c) {
-                $show = true;
-                if ($is_staf && $currentRole !== 'spm') {
-                    if ($c['role_assignment'] !== $currentRole && $c['role_assignment'] !== 'all') {
-                        $show = false;
+            if ($is_wadir) {
+                // SPM, Wadir, Direktur, Admin, Manajemen melihat seluruh kriteria
+                $filtered_criteria = $all_criteria;
+            } else {
+                foreach ($all_criteria as $c) {
+                    $show = true;
+                    if ($is_staf) {
+                        if ($c['role_assignment'] !== $currentRole && $c['role_assignment'] !== 'all' && !empty($c['role_assignment'])) {
+                            $show = false;
+                        }
+                    } elseif ($is_kabag) {
+                        $targetRole = str_replace('kabag_', '', $currentRole);
+                        if ($c['role_assignment'] !== $targetRole && $c['role_assignment'] !== 'all' && !empty($c['role_assignment'])) {
+                            $show = false;
+                        }
                     }
-                } elseif ($is_kabag) {
-                    $targetRole = str_replace('kabag_', '', $currentRole);
-                    if ($c['role_assignment'] !== $targetRole && $c['role_assignment'] !== 'all') {
-                        $show = false;
+                    if ($show) {
+                        $filtered_criteria[] = $c;
                     }
-                }
-                if ($show) {
-                    $filtered_criteria[] = $c;
                 }
             }
         }

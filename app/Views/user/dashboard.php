@@ -130,7 +130,7 @@ Dashboard
 <?php if (((isset($isAtasan) && $isAtasan) || (isset($isUnitPeers) && $isUnitPeers)) && !empty($rekapDashboard)): ?>
 <h5 class="fw-bold text-secondary mb-3" id="tabelRekapTitle">
     <?php if (isset($isAtasan) && $isAtasan): ?>
-        <i class="bi bi-people-fill me-2"></i> Monitoring Kinerja Staf Staf
+        <i class="bi bi-people-fill me-2"></i> Monitoring Kinerja Staf Saya
     <?php else: ?>
         <i class="bi bi-diagram-3-fill me-2"></i> Kinerja Rekan 1 Unit Kerja
     <?php endif; ?>

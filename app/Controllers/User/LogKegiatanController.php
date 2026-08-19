@@ -56,10 +56,26 @@ class LogKegiatanController extends BaseController
 
         $isLocked = false;
         $isDirektur = ($currentUser && $currentUser['role'] === 'direktur');
-        if ($targetStatus !== 'disetujui' && !$isDirektur) {
+        $today = date('Y-m-d');
+
+        // Aturan Khusus: Tanggal di masa depan DILARANG KERAS
+        if ($tanggalTerpilih > $today) {
+            $isLocked = true;
+        } elseif ($targetStatus !== 'disetujui' && !$isDirektur) {
             $isLocked = true;
         } elseif (!$isDirektur) {
-            if (!empty($rekapData)) {
+            // Cek pembatasan deadline masa lalu jika saklar log aktif
+            $settingModel = new \App\Models\SettingModel();
+            $isDeadlineActive = $settingModel->getValue('enable_log_deadline', '0') === '1';
+            if ($isDeadlineActive) {
+                $batasLogDays = (int) $settingModel->getValue('batas_input_log', 3);
+                $diffDays = (int) floor((strtotime($today) - strtotime($tanggalTerpilih)) / 86400);
+                if ($diffDays > $batasLogDays) {
+                    $isLocked = true;
+                }
+            }
+
+            if (!$isLocked && !empty($rekapData)) {
                 foreach ($rekapData as $row) {
                     if (isset($row['status']) && $row['status'] === 'terkirim') {
                         $isLocked = true;
@@ -94,6 +110,32 @@ class LogKegiatanController extends BaseController
     {
         $userId = session()->get('id') ?? session()->get('user_id');
         $tanggal = $this->request->getPost('tanggal');
+        $today = date('Y-m-d');
+
+        // 1. Aturan Mutlak: Tanggal kegiatan tidak boleh melebihi hari ini (masa depan)
+        if ($tanggal > $today) {
+            $msg = 'Gagal menyimpan: Tanggal kegiatan tidak boleh melebihi hari ini (tidak dapat mengisi laporan kegiatan di masa depan).';
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+            }
+            return redirect()->back()->with('error', $msg);
+        }
+
+        // 2. Cek Batas Toleransi Hari jika Saklar Batas Waktu Log Aktif
+        $settingModel = new \App\Models\SettingModel();
+        $isDeadlineActive = $settingModel->getValue('enable_log_deadline', '0') === '1';
+        if ($isDeadlineActive && !hasAnyRole(['admin', 'direktur'])) {
+            $batasLogDays = (int) $settingModel->getValue('batas_input_log', 3);
+            $diffDays = (int) floor((strtotime($today) - strtotime($tanggal)) / 86400);
+            if ($diffDays > $batasLogDays) {
+                $msg = "Gagal menyimpan: Batas waktu pengisian laporan kegiatan harian adalah maksimal {$batasLogDays} hari setelah tanggal kegiatan.";
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+                }
+                return redirect()->back()->with('error', $msg);
+            }
+        }
+
         $bulanTerpilih = date('n', strtotime($tanggal));
         $tahunTerpilih = date('Y', strtotime($tanggal));
 

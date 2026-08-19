@@ -1,5 +1,5 @@
 # Product Requirements Document (PRD)
-## Simonik PKTJ (Sistem Monitoring & Kinerja)
+## Evidence Command Center (ECC)
 
 **Status:** Active Development
 **Stack:** CodeIgniter 4, MySQL, Bootstrap 5, jQuery
@@ -61,9 +61,12 @@ Sistem menerapkan konsep pemisahan tugas menggunakan arsitektur **Tabel Pivot (M
 
 ### 6. Rencana Masa Depan (Future Roadmap)
 - [x] Implementasi arsitektur Multi-Role (Tabel Pivot).
-- [x] Modul Kepegawaian (Rekap Nilai) & Export Excel.
-- [x] Log Aktivitas Sistem (Audit Trail) untuk melacak siapa yang mengubah nilai dan kapan.
+- [x] Modul Kepegawaian (Rekap Nilai Remunerasi) & Export Excel.
+- [x] Log Aktivitas Sistem (Audit Trail) dengan Live Search, Date Range Filter, & JSON Viewer Modal.
 - [x] Refactoring & Optimalisasi Modul Laporan Kinerja & Log Kegiatan Harian.
-- [x] Pendaftaran Rute AJAX Lengkap & Perlindungan Database Try-Catch.
-- [x] Mekanisme Anti-Cache Otomatis (Cache-Control Header).
-- [ ] Grafik Historis (Chart.js) pada *dashboard* user untuk melihat tren kinerja pribadi selama setahun.
+- [x] Modul Evidence Command Center (ECC LED & Simulasi Penilaian).
+- [x] Modul Notifikasi Auto-Sync Hari Libur Nasional API.
+- [x] Sistem Layout Utama, Pembatasan Role Sidebar, & Dynamic CSRF Protection.
+- [x] Mekanisme Automatic Anti-Cache Busting v1.2 (`style.css?v=1.2.TIMESTAMP`).
+- [x] Grafik Historis (Chart.js) pada *dashboard* user untuk melihat tren kinerja pribadi selama setahun.
+- [x] Rilis Resmi Versi 1.2: Penyelesaian Audit 7-Pilar Menyeluruh 11 Halaman.

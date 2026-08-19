@@ -455,9 +455,26 @@ class UserController extends BaseController
     
     public function delete($id)
     {
+        $user = $this->userModel->find($id);
+        if (!$user) {
+            return redirect()->to('users')->with('error', 'Pengguna tidak ditemukan.');
+        }
+
+        // Hapus foto jika ada dan bukan file default
+        if (!empty($user['foto']) && $user['foto'] !== 'default.png') {
+            $fotoPath = 'assets/uploads/profile/' . basename($user['foto']);
+            if (file_exists($fotoPath)) {
+                @unlink($fotoPath);
+            }
+        }
+
+        // Hapus entri multi-roles di user_roles
+        $db = \Config\Database::connect();
+        $db->table('user_roles')->where('user_id', $id)->delete();
+
         $this->userModel->delete($id);
-        log_audit('DELETE', 'users', $id);
-        return redirect()->to('users')->with('success', 'User berhasil dihapus');
+        log_audit('DELETE', 'users', $id, $user, null);
+        return redirect()->to('users')->with('success', 'Pengguna berhasil dihapus.');
     }
 
     /**
@@ -524,7 +541,7 @@ class UserController extends BaseController
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
-        $fileName = 'Template_Import_Pengguna_SIMONIK.xlsx';
+        $fileName = 'Template_Import_Pengguna_ECC.xlsx';
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="' . $fileName . '"');
         header('Cache-Control: max-age=0');

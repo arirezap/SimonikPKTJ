@@ -161,26 +161,26 @@ th.sortable.desc .sort-icon {
         <div class="col-lg-5">
             <div class="bento-card h-100">
                 <div class="card-body p-4 d-flex flex-column justify-content-center h-100">
-                    <div class="row text-center g-0 align-items-center">
-                        <div class="col-3 border-end">
+                    <div class="row text-center g-0 align-items-stretch">
+                        <div class="col-3 border-end px-1 d-flex flex-column justify-content-between">
                             <div class="display-6 fw-bold text-dark mb-1 skeleton-hide" id="statTotalPegawai"><?= count($rekap_kinerja) ?></div>
-                            <div class="skeleton-box skeleton-show" style="width: 60%; height: 2rem; margin-bottom: 0.5rem; display: none;"></div>
-                            <span class="text-muted fw-medium" style="font-size: 0.75rem;">Total Pegawai</span>
+                            <div class="skeleton-box skeleton-show mx-auto" style="width: 60%; height: 2rem; margin-bottom: 0.5rem; display: none;"></div>
+                            <div class="text-muted fw-medium d-flex align-items-center justify-content-center" style="font-size: 0.75rem; min-height: 2.2rem; line-height: 1.15;">Total Pegawai</div>
                         </div>
-                        <div class="col-3 border-end">
+                        <div class="col-3 border-end px-1 d-flex flex-column justify-content-between">
                             <div class="display-6 fw-bold text-success mb-1 skeleton-hide" id="statSudahDinilai"><?= esc($sudah_dinilai) ?></div>
-                            <div class="skeleton-box skeleton-show" style="width: 60%; height: 2rem; margin-bottom: 0.5rem; display: none;"></div>
-                            <span class="text-muted fw-medium" style="font-size: 0.75rem;">Sudah Dinilai</span>
+                            <div class="skeleton-box skeleton-show mx-auto" style="width: 60%; height: 2rem; margin-bottom: 0.5rem; display: none;"></div>
+                            <div class="text-muted fw-medium d-flex align-items-center justify-content-center" style="font-size: 0.75rem; min-height: 2.2rem; line-height: 1.15;">Sudah Dinilai</div>
                         </div>
-                        <div class="col-3 border-end">
+                        <div class="col-3 border-end px-1 d-flex flex-column justify-content-between">
                             <div class="display-6 fw-bold text-danger mb-1 skeleton-hide" id="statBelumDinilai"><?= esc($belum_dinilai) ?></div>
-                            <div class="skeleton-box skeleton-show" style="width: 60%; height: 2rem; margin-bottom: 0.5rem; display: none;"></div>
-                            <span class="text-muted fw-medium" style="font-size: 0.75rem;">Belum Dinilai</span>
+                            <div class="skeleton-box skeleton-show mx-auto" style="width: 60%; height: 2rem; margin-bottom: 0.5rem; display: none;"></div>
+                            <div class="text-muted fw-medium d-flex align-items-center justify-content-center" style="font-size: 0.75rem; min-height: 2.2rem; line-height: 1.15;">Belum Dinilai</div>
                         </div>
-                        <div class="col-3">
-                            <div class="display-6 fw-bold text-primary mb-1 skeleton-hide"><?= number_format($rata_rata_instansi, 1, ',', '.') ?></div>
-                            <div class="skeleton-box skeleton-show" style="width: 60%; height: 2rem; margin-bottom: 0.5rem; display: none;"></div>
-                            <span class="text-muted fw-medium" style="font-size: 0.75rem;">Rata-Rata</span>
+                        <div class="col-3 px-1 d-flex flex-column justify-content-between align-items-center text-center">
+                            <div class="display-6 fw-bold text-primary mb-1 text-center w-100 skeleton-hide"><?= number_format($rata_rata_instansi, 1, ',', '.') ?></div>
+                            <div class="skeleton-box skeleton-show mx-auto" style="width: 60%; height: 2rem; margin-bottom: 0.5rem; display: none;"></div>
+                            <div class="text-muted fw-medium text-center d-flex align-items-center justify-content-center w-100" style="font-size: 0.75rem; min-height: 2.2rem; line-height: 1.15;">Rata-Rata</div>
                         </div>
                     </div>
                 </div>
@@ -262,7 +262,7 @@ th.sortable.desc .sort-icon {
                             <th class="text-center py-3 border-0 sortable" data-sort="dinilai">
                                 Telah Dinilai <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
                             </th>
-                            <th class="text-center pe-4 py-3 border-0 sortable desc" data-sort="nilai">
+                            <th class="text-center py-3 border-0 sortable desc" data-sort="nilai">
                                 Rata-Rata Nilai <span class="sort-icon"><i class="bi bi-arrow-down"></i></span>
                             </th>
                         </tr>
@@ -304,7 +304,7 @@ th.sortable.desc .sort-icon {
                                         $statusText = 'Baik';
                                     } else {
                                         $badgeClass = 'bg-success bg-opacity-10 text-success border border-success border-opacity-25';
-                                        $statusText = 'Baik';
+                                        $statusText = 'Sangat Baik';
                                     }
                                 ?>
                                 <tr class="pegawai-row" 
@@ -317,32 +317,24 @@ th.sortable.desc .sort-icon {
                                     data-val-target="<?= $jumlahTarget ?>"
                                     data-val-dinilai="<?= $dinilai ?>"
                                     data-val-nilai="<?= $rata ?>">
-                                    <td class="ps-4 py-3">
-                                        <div class="d-flex align-items-center">
-                                            <div class="flex-shrink-0">
-                                                <?php 
-                                                $fotoPath = !empty($item['pegawai']['foto']) ? 'assets/uploads/profile/' . $item['pegawai']['foto'] : '';
-                                                $hasPhoto = (!empty($fotoPath) && file_exists(FCPATH . $fotoPath));
-                                                ?>
-                                                <?php if ($hasPhoto): ?>
-                                                    <img src="<?= base_url($fotoPath) ?>" class="rounded-circle border border-2 border-white shadow-sm" style="width: 45px; height: 45px; object-fit: cover;">
-                                                <?php else: ?>
-                                                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 45px; height: 45px; font-size: 1.1rem; border: 2px solid #fff;">
-                                                        <?= strtoupper(substr(trim($item['pegawai']['nama_lengkap']), 0, 1)) ?>
-                                                    </div>
-                                                <?php endif; ?>
-                                            </div>
-                                            <div class="ms-3">
-                                                <div class="fw-bold text-dark text-truncate mb-1" style="max-width: 220px;" title="<?= esc($item['pegawai']['nama_lengkap']) ?>"><?= esc($item['pegawai']['nama_lengkap']) ?></div>
-                                                <div class="text-muted d-flex align-items-center gap-1" style="font-size: 0.75rem;">
-                                                    <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-2"><?= esc($item['pegawai']['jabatan'] ?? 'Staf') ?></span>
-                                                    <span><?= esc($item['pegawai']['nip']) ?></span>
+                                    <td class="ps-4 py-3" style="max-width: 230px;">
+                                        <div class="d-flex align-items-start">
+                                            <?= render_user_avatar($item['pegawai'], $item['pegawai']['nama_lengkap'], 40, 'mt-0.5') ?>
+                                            <div class="d-flex flex-column gap-1" style="min-width: 0;">
+                                                <div class="fw-bold text-dark text-break lh-sm" title="<?= esc($item['pegawai']['nama_lengkap']) ?>"><?= esc($item['pegawai']['nama_lengkap']) ?></div>
+                                                <div class="d-flex flex-column align-items-start gap-1" style="font-size: 0.75rem;">
+                                                    <?php if (!empty($item['pegawai']['jabatan'])): ?>
+                                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2 py-0.5 text-wrap text-start lh-sm" style="max-width: 180px;"><?= esc($item['pegawai']['jabatan']) ?></span>
+                                                    <?php endif; ?>
+                                                    <span class="text-muted small"><i class="bi bi-person-badge me-1 opacity-50"></i><?= esc($item['pegawai']['nip'] ?? '-') ?></span>
                                                 </div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td>
-                                        <span class="badge bg-light text-dark border fw-normal px-2.5 py-1.5"><i class="bi bi-building me-1 opacity-50"></i> <?= esc($item['pegawai']['unit'] ?? '-') ?></span>
+                                    <td style="max-width: 160px; min-width: 130px;">
+                                        <div class="small text-secondary text-break lh-sm py-1" style="font-size: 0.82rem;">
+                                            <i class="bi bi-building me-1 text-primary opacity-75"></i><?= esc($item['pegawai']['unit'] ?? '-') ?>
+                                        </div>
                                     </td>
 
                                     <?php if ($bulan_terpilih === 'all'): ?>
@@ -371,7 +363,7 @@ th.sortable.desc .sort-icon {
                                             <span class="text-muted"><?= $jumlahTarget ?></span>
                                         </div>
                                     </td>
-                                    <td class="text-center pe-4">
+                                    <td class="text-center py-3">
                                         <div class="d-flex flex-column align-items-center justify-content-center gap-1">
                                             <span class="fs-4 fw-bold <?= explode(' ', $badgeClass)[2] ?>"><?= number_format($rata, 1, ',', '.') ?></span>
                                             <span class="badge <?= $badgeClass ?> rounded-pill" style="font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2px;"><?= $statusText ?></span>
@@ -412,7 +404,7 @@ th.sortable.desc .sort-icon {
                                     $statusText = 'Baik';
                                 } else {
                                     $badgeClass = 'bg-success bg-opacity-10 text-success border border-success border-opacity-25';
-                                    $statusText = 'Baik';
+                                    $statusText = 'Sangat Baik';
                                 }
                             ?>
                             <div class="card border border-light-subtle rounded-3 shadow-sm mobile-pegawai-card"
@@ -423,17 +415,7 @@ th.sortable.desc .sort-icon {
                                 <div class="card-body p-3">
                                     <div class="d-flex align-items-center justify-content-between mb-3">
                                         <div class="d-flex align-items-center">
-                                            <?php 
-                                            $fotoPathMob = !empty($item['pegawai']['foto']) ? 'assets/uploads/profile/' . $item['pegawai']['foto'] : '';
-                                            $hasPhotoMob = (!empty($fotoPathMob) && file_exists(FCPATH . $fotoPathMob));
-                                            ?>
-                                            <?php if ($hasPhotoMob): ?>
-                                                <img src="<?= base_url($fotoPathMob) ?>" class="rounded-circle border me-2.5" style="width: 40px; height: 40px; object-fit: cover;">
-                                            <?php else: ?>
-                                                <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold me-2.5" style="width: 40px; height: 40px; font-size: 1rem;">
-                                                    <?= strtoupper(substr(trim($item['pegawai']['nama_lengkap']), 0, 1)) ?>
-                                                </div>
-                                            <?php endif; ?>
+                                            <?= render_user_avatar($item['pegawai'], $item['pegawai']['nama_lengkap'], 40) ?>
                                             <div>
                                                 <h6 class="fw-bold text-dark mb-0 text-truncate" style="max-width: 170px;"><?= esc($item['pegawai']['nama_lengkap']) ?></h6>
                                                 <small class="text-muted"><?= esc($item['pegawai']['unit'] ?? '-') ?></small>

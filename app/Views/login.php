@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=' . filemtime(FCPATH . 'assets/css/style.css')) ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=1.2.' . filemtime(FCPATH . 'assets/css/style.css')) ?>">
 </head>
 <body class="login-page fit-ambient-bg m-0 p-0 d-flex justify-content-center align-items-center" style="min-height: 100vh;">
 
@@ -31,19 +31,23 @@
                     <p class="text-muted mb-0" style="font-size: 0.8rem;">Evidence Command Center</p>
                 </div>
 
+                <?php 
+                    $currentUsername = old('username') ?? ($savedUsername ?? ''); 
+                    $isRemembered = !empty(old('remember')) || !empty($savedUsername);
+                ?>
                 <form action="<?= base_url('login') ?>" method="POST" autocomplete="off" id="loginForm">
                     <?= csrf_field() ?>
 
                     <div class="mb-2">
                         <label for="username" class="form-label fit-label">Nama Pengguna</label>
-                        <input type="text" name="username" id="username" class="form-control fit-input" placeholder="Masukkan username..." value="<?= old('username') ?>" required autofocus>
+                        <input type="text" name="username" id="username" class="form-control fit-input" placeholder="Masukkan username..." value="<?= esc($currentUsername) ?>" required <?= empty($currentUsername) ? 'autofocus' : '' ?>>
                     </div>
 
                     <div class="mb-3">
                         <label for="password" class="form-label fit-label">Kata Sandi</label>
                         <div class="position-relative">
-                            <input type="password" name="password" id="password" class="form-control fit-input pe-5" placeholder="Masukkan kata sandi..." required>
-                            <button type="button" id="togglePassword" class="btn btn-link text-muted position-absolute top-50 end-0 translate-middle-y text-decoration-none pe-3" tabindex="-1">
+                            <input type="password" name="password" id="password" class="form-control fit-input pe-5" placeholder="Masukkan kata sandi..." required <?= !empty($currentUsername) ? 'autofocus' : '' ?>>
+                            <button type="button" id="togglePassword" class="btn btn-link text-muted position-absolute top-50 end-0 translate-middle-y text-decoration-none pe-3" tabindex="-1" aria-label="Tampilkan atau sembunyikan kata sandi">
                                 <i class="bi bi-eye-slash" style="font-size: 0.9rem;"></i>
                             </button>
                         </div>
@@ -51,7 +55,7 @@
 
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div class="form-check m-0 p-0 d-flex align-items-center gap-2">
-                            <input class="form-check-input fit-checkbox m-0" type="checkbox" value="1" id="rememberMe" name="remember" style="margin-left: 0 !important;">
+                            <input class="form-check-input fit-checkbox m-0" type="checkbox" value="1" id="rememberMe" name="remember" <?= $isRemembered ? 'checked' : '' ?> style="margin-left: 0 !important;">
                             <label class="form-check-label text-muted user-select-none" for="rememberMe" style="cursor: pointer; font-size: 0.75rem; line-height: 1;">
                                 Ingat sesi
                             </label>
@@ -78,57 +82,85 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const togglePasswordButton = document.getElementById('togglePassword');
+        const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
 
-        if (togglePasswordButton) {
+        // Otomatis fokus ke input password jika username sudah terisi
+        if (usernameInput && passwordInput && usernameInput.value.trim() !== '') {
+            passwordInput.focus();
+        }
+
+        if (togglePasswordButton && passwordInput) {
             togglePasswordButton.addEventListener('click', function () {
                 const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
                 passwordInput.setAttribute('type', type);
 
                 const icon = this.querySelector('i');
-                icon.classList.toggle('bi-eye-slash');
-                icon.classList.toggle('bi-eye');
+                if (icon) {
+                    icon.classList.toggle('bi-eye-slash');
+                    icon.classList.toggle('bi-eye');
+                }
             });
         }
 
-        // Loading state pada tombol login
+        // Loading state pada tombol login (hanya jika form valid)
         const loginForm = document.getElementById('loginForm');
-        loginForm.addEventListener('submit', function() {
-            const btn = document.getElementById('loginBtn');
-            btn.innerHTML = '<span class="fit-spinner"></span> <span style="letter-spacing: 0.05em; font-weight: 500;">Memproses...</span>';
-            btn.style.opacity = '0.85';
-            btn.disabled = true;
-        });
+        if (loginForm) {
+            loginForm.addEventListener('submit', function(e) {
+                if (loginForm.checkValidity()) {
+                    const btn = document.getElementById('loginBtn');
+                    if (btn) {
+                        btn.innerHTML = '<span class="fit-spinner"></span> <span style="letter-spacing: 0.05em; font-weight: 500;">Memproses...</span>';
+                        btn.style.opacity = '0.85';
+                        btn.disabled = true;
+                    }
+                }
+            });
+        }
     });
 
     function forgotPassword() {
-        Swal.fire({
-            icon: 'info',
-            title: 'Lupa Password?',
-            text: 'Silakan hubungi Administrator untuk mereset password Anda.',
-            confirmButtonColor: '#1e3a8a',
-            confirmButtonText: 'Mengerti'
-        });
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'info',
+                title: 'Lupa Password?',
+                text: 'Silakan hubungi Administrator untuk mereset password Anda.',
+                confirmButtonColor: '#1e3a8a',
+                confirmButtonText: 'Mengerti'
+            });
+        } else {
+            alert('Lupa Password?\n\nSilakan hubungi Administrator untuk mereset password Anda.');
+        }
     }
 
     // Tampilkan Popup SweetAlert Jika Ada Error
     <?php if (session()->getFlashdata('error')): ?>
-    Swal.fire({
-        icon: 'error',
-        title: 'Login Gagal!',
-        text: '<?= esc(session()->getFlashdata('error')) ?>',
-        confirmButtonColor: '#1e3a8a'
-    });
+    const errText = '<?= esc(session()->getFlashdata('error'), 'js') ?>';
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: 'error',
+            title: 'Login Gagal!',
+            text: errText,
+            confirmButtonColor: '#1e3a8a'
+        });
+    } else {
+        alert('Login Gagal!\n\n' + errText);
+    }
     <?php endif; ?>
 
     // Tampilkan Popup SweetAlert Jika Ada Sukses (Misal: setelah logout)
     <?php if (session()->getFlashdata('success')): ?>
-    Swal.fire({
-        icon: 'success',
-        title: 'Berhasil!',
-        text: '<?= esc(session()->getFlashdata('success')) ?>',
-        confirmButtonColor: '#1e3a8a'
-    });
+    const successText = '<?= esc(session()->getFlashdata('success'), 'js') ?>';
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: 'success',
+            title: 'Berhasil!',
+            text: successText,
+            confirmButtonColor: '#1e3a8a'
+        });
+    } else {
+        alert('Berhasil!\n\n' + successText);
+    }
     <?php endif; ?>
 </script>
 

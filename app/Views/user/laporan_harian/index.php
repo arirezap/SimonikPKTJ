@@ -1,6 +1,6 @@
 <?= $this->extend('layouts/main') ?>
 
-<?= $this->section('title') ?>Target Laporan Bulanan<?= $this->endSection() ?>
+<?= $this->section('title') ?>Target Kinerja Bulanan<?= $this->endSection() ?>
 
 <?= $this->section('page_title') ?>
 Target Kinerja Bulanan
@@ -620,7 +620,11 @@ Target Kinerja Bulanan
                     // Focus ke input pertama yang terbuka
                     $('.form-target-staf .staf-input:not(.locked-approved)').first().focus();
                 } else {
-                    alert('Semua target sudah disetujui dan tidak dapat diedit lagi.');
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire('Informasi', 'Semua target sudah disetujui dan tidak dapat diedit lagi.', 'info');
+                    } else {
+                        alert('Semua target sudah disetujui dan tidak dapat diedit lagi.');
+                    }
                 }
             }
         });
@@ -647,13 +651,21 @@ Target Kinerja Bulanan
 
             if (!hasAtLeastOne) {
                 e.preventDefault();
-                alert('Silakan isi minimal satu rincian target kinerja sebelum mengirim ke atasan langsung.');
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Target Masih Kosong', 'Silakan isi minimal satu rincian target kinerja sebelum mengirim ke atasan langsung.', 'warning');
+                } else {
+                    alert('Silakan isi minimal satu rincian target kinerja sebelum mengirim ke atasan langsung.');
+                }
                 return false;
             }
 
             if (!isValid) {
                 e.preventDefault();
-                alert('Untuk mengirim target ke atasan langsung, pastikan semua kolom (Sasaran, Indikator, Target, Satuan) pada setiap baris terisi dengan lengkap.');
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Data Belum Lengkap', 'Untuk mengirim target ke atasan langsung, pastikan semua kolom (Sasaran, Indikator, Target, Satuan) pada setiap baris terisi dengan lengkap.', 'warning');
+                } else {
+                    alert('Untuk mengirim target ke atasan langsung, pastikan semua kolom (Sasaran, Indikator, Target, Satuan) pada setiap baris terisi dengan lengkap.');
+                }
                 return false;
             }
         });
@@ -690,17 +702,35 @@ Target Kinerja Bulanan
                             }
                         }
                         
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Tersimpan Draf',
+                                text: response.message || 'Target Bulanan berhasil disimpan sementara.',
+                                timer: 1500,
+                                showConfirmButton: false
+                            });
+                        }
+
                         setTimeout(() => {
                             btn.html(originalText).removeClass('btn-outline-success').addClass('btn-outline-primary').prop('disabled', false);
-                        }, 2500);
+                        }, 2000);
                     } else {
-                        alert('Gagal menyimpan: ' + (response.message || 'Error tidak diketahui'));
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire('Gagal', response.message || 'Gagal menyimpan target.', 'error');
+                        } else {
+                            alert('Gagal menyimpan: ' + (response.message || 'Error tidak diketahui'));
+                        }
                         btn.html(originalText).prop('disabled', false);
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error(error);
-                    alert('Terjadi kesalahan jaringan atau server. Silakan coba lagi.');
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire('Error', 'Terjadi kesalahan jaringan atau server. Silakan coba lagi.', 'error');
+                    } else {
+                        alert('Terjadi kesalahan jaringan atau server. Silakan coba lagi.');
+                    }
                     btn.html(originalText).prop('disabled', false);
                 }
             });

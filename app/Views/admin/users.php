@@ -406,7 +406,16 @@ document.addEventListener('DOMContentLoaded', function() {
                                      .map(checkbox => checkbox.value);
 
             if (selectedIds.length === 0) {
-                alert('Peringatan: Silakan pilih minimal satu pengguna untuk diedit.');
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Peringatan',
+                        text: 'Silakan pilih minimal satu pengguna untuk diedit.',
+                        icon: 'warning',
+                        confirmButtonColor: '#0d6efd'
+                    });
+                } else {
+                    alert('Peringatan: Silakan pilih minimal satu pengguna untuk diedit.');
+                }
                 return;
             }
 

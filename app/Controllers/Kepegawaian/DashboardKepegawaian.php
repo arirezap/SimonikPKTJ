@@ -14,6 +14,8 @@ class DashboardKepegawaian extends BaseController
             return redirect()->to('/dashboard');
         }
 
+        helper(['avatar']);
+
         $userModel = new User();
         $laporanModel = new \App\Models\LaporanHarian();
 
@@ -214,7 +216,8 @@ class DashboardKepegawaian extends BaseController
         usort($rows, fn($a, $b) => $b['rata_rata'] <=> $a['rata_rata']);
 
         // Generate CSV (Universal Excel-compatible)
-        $filename = "Rekap_Kinerja_{$namaBulan}_{$tahunTerpilih}.csv";
+        $cleanNamaBulan = str_replace(' ', '_', $namaBulan);
+        $filename = "Rekap_Kinerja_ECC_{$cleanNamaBulan}_{$tahunTerpilih}.csv";
         
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
@@ -225,7 +228,7 @@ class DashboardKepegawaian extends BaseController
         fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
         
         // Header
-        fputcsv($output, ['REKAP KINERJA PEGAWAI - ' . strtoupper($namaBulan) . ' ' . $tahunTerpilih], ';');
+        fputcsv($output, ['REKAP KINERJA PEGAWAI (ECC) - ' . strtoupper($namaBulan) . ' ' . $tahunTerpilih], ';');
         fputcsv($output, ['Diekspor pada: ' . date('d/m/Y H:i:s')], ';');
         fputcsv($output, [], ';');
 

@@ -1,4 +1,4 @@
-# 🚀 Simonik (Sistem Monitoring Kinerja)
+# 🚀 Evidence Command Center (ECC)
 
 <div align="center">
   <p><strong>Aplikasi berbasis web modern untuk memonitor, mengevaluasi, dan merekapitulasi kinerja institusi.</strong></p>
@@ -7,7 +7,7 @@
 ---
 
 ## 📌 Deskripsi Proyek
-**Simonik** adalah platform terintegrasi yang dirancang untuk mengelola rekam jejak dan evaluasi kinerja pegawai. Sistem ini memfasilitasi alur kerja birokrasi secara digital dan dilengkapi dengan ekosistem pelaporan yang dinamis. 
+**Evidence Command Center (ECC)** (sebelumnya dikenal sebagai Simonik) adalah platform terintegrasi yang dirancang untuk mengelola rekam jejak dan evaluasi kinerja pegawai. Sistem ini memfasilitasi alur kerja birokrasi secara digital dan dilengkapi dengan ekosistem pelaporan yang dinamis. 
 
 Dibangun dengan fokus pada kecepatan dan kenyamanan pengguna, sistem ini memastikan adopsi yang tinggi melalui antarmuka yang intuitif dan bersih.
 
@@ -58,6 +58,12 @@ Dibangun dengan fokus pada kecepatan dan kenyamanan pengguna, sistem ini memasti
    ```bash
    php spark serve
    ```
+
+---
+
+## 📌 Versi Terbaru & Dokumentasi
+- **Versi Rilis:** `v1.2` (19 Agustus 2026)
+- **Ringkasan Perubahan:** Lihat [CHANGELOG.md](file:///d:/laragon/www/SimonikPKTJ/CHANGELOG.md), [audit_code.md](file:///d:/laragon/www/SimonikPKTJ/audit_code.md), dan [daftar_pekerjaan.md](file:///d:/laragon/www/SimonikPKTJ/daftar_pekerjaan.md) untuk detail audit 100% komprehensif seluruh modul sistem.
 
 ---
 

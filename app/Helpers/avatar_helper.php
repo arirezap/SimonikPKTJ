@@ -35,7 +35,7 @@ if (!function_exists('render_user_avatar')) {
         if ($hasPhoto) {
             $imgUrl = base_url($fotoPath);
             $escNama = esc($namaLengkap);
-            return '<img src="' . $imgUrl . '" class="rounded-circle border shadow-sm ' . esc($extraClass) . '" style="width: ' . $size . 'px; height: ' . $size . 'px; object-fit: cover; flex-shrink: 0;" alt="' . $escNama . '">';
+            return '<img src="' . $imgUrl . '" class="avatar-circle-sm rounded-circle border shadow-sm me-2 ' . esc($extraClass) . '" style="width: ' . $size . 'px; height: ' . $size . 'px; object-fit: cover; flex-shrink: 0;" alt="' . $escNama . '">';
         }
 
         $initials = 'P';

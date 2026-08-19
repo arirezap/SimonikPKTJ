@@ -96,10 +96,28 @@ class LaporanHarianController extends BaseController
             }
         }
 
-        // Logika Kunci Waktu (Di-bypass agar seluruh pengguna tetap bisa mengisi target meski bulannya sudah lewat)
+        // Logika Batas Waktu Berdasarkan Pengaturan Sistem
         $settingModel = new \App\Models\SettingModel();
+        $isDeadlineActive = $settingModel->getValue('enable_target_deadline', '0') === '1';
         $batasTarget = (int) $settingModel->getValue('batas_input_target', 5);
         $isLocked = false;
+
+        if ($isDeadlineActive && !hasAnyRole(['admin', 'direktur'])) {
+            $now = new \DateTime();
+            $targetMonth = new \DateTime(sprintf('%04d-%02d-01', $tahunTerpilih, $bulanTerpilih));
+            $currentMonth = new \DateTime(date('Y-m-01'));
+
+            if ($targetMonth < $currentMonth) {
+                // Bulan lalu terkunci jika pembatasan deadline aktif
+                $isLocked = true;
+            } elseif ($targetMonth == $currentMonth) {
+                // Bulan berjalan: terkunci jika melewati tanggal batas
+                if ((int)$now->format('j') > $batasTarget) {
+                    $isLocked = true;
+                }
+            }
+            // Bulan ke depan ($targetMonth > $currentMonth) DIPERBOLEHKAN (tidak dikunci)
+        }
 
         $data = [
             'title' => 'Target Kinerja Bulanan',
@@ -126,8 +144,8 @@ class LaporanHarianController extends BaseController
         $userId = session()->get('id') ?? session()->get('user_id');
         $laporanModel = new LaporanHarian();
 
-        $bulan = $this->request->getPost('bulan');
-        $tahun = $this->request->getPost('tahun');
+        $bulan = (int)$this->request->getPost('bulan');
+        $tahun = (int)$this->request->getPost('tahun');
         
         $isEditingStaf = $this->request->getPost('is_editing_staf') == '1';
         $targetUserId = $isEditingStaf ? $this->request->getPost('staf_id') : $userId;
@@ -147,7 +165,33 @@ class LaporanHarianController extends BaseController
         $isDraft = $this->request->isAJAX() || $this->request->getPost('action') === 'draft';
         $targetStatus = $isDraft ? 'draft' : 'terkirim';
 
-        // Validasi Kunci Waktu di-bypass agar seluruh pengguna bisa mengisi target meski bulan terlewat
+        // Validasi Kunci Waktu jika pembatasan deadline target diaktifkan oleh Admin
+        $settingModel = new \App\Models\SettingModel();
+        $isDeadlineActive = $settingModel->getValue('enable_target_deadline', '0') === '1';
+        $batasTarget = (int) $settingModel->getValue('batas_input_target', 5);
+
+        if ($isDeadlineActive && !hasAnyRole(['admin', 'direktur']) && !$isEditingStaf) {
+            $now = new \DateTime();
+            $targetMonth = new \DateTime(sprintf('%04d-%02d-01', $tahun, $bulan));
+            $currentMonth = new \DateTime(date('Y-m-01'));
+            $isLocked = false;
+
+            if ($targetMonth < $currentMonth) {
+                $isLocked = true;
+            } elseif ($targetMonth == $currentMonth) {
+                if ((int)$now->format('j') > $batasTarget) {
+                    $isLocked = true;
+                }
+            }
+
+            if ($isLocked) {
+                $msg = "Gagal menyimpan: Batas waktu pengisian target kinerja untuk periode {$bulan}/{$tahun} telah berakhir (Maksimal tanggal {$batasTarget}).";
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+                }
+                return redirect()->back()->with('error', $msg);
+            }
+        }
 
         // Ambil data dari form
         $laporan_ids = $this->request->getPost('laporan_id');

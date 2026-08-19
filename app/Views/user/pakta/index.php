@@ -26,7 +26,7 @@
 
     <div class="row justify-content-center mb-5">
         <div class="col-auto">
-            <div class="paper-container" id="element-to-print">
+            <div class="paper-container paper-container-pakta" id="element-to-print">
                 
                 <div class="header-center">
                     <img src="<?= base_url('assets/logo_kemenhub.png') ?>" alt="Kemenhub" class="logo-kemenhub">

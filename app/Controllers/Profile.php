@@ -51,14 +51,42 @@ class Profile extends BaseController
         
         // 1. Validasi Input Dasar
         $rules = [
-            'nama_lengkap' => 'required',
-            'email'        => 'required|valid_email',
+            'nama_lengkap' => [
+                'rules'  => 'required',
+                'errors' => ['required' => 'Nama Lengkap wajib diisi.']
+            ],
+            'email' => [
+                'rules'  => 'required|valid_email',
+                'errors' => [
+                    'required'    => 'Email wajib diisi.',
+                    'valid_email' => 'Format email tidak valid.'
+                ]
+            ],
+            'nip' => [
+                'rules'  => 'required',
+                'errors' => ['required' => 'NIP / NIK wajib diisi.']
+            ],
+            'jabatan' => [
+                'rules'  => 'required',
+                'errors' => ['required' => 'Jabatan wajib diisi.']
+            ],
+            'unit' => [
+                'rules'  => 'required',
+                'errors' => ['required' => 'Unit Kerja wajib dipilih.']
+            ]
         ];
 
         // Validasi foto hanya jika pengguna memilih file (tidak kosong)
         $fileFoto = $this->request->getFile('foto');
         if ($fileFoto && $fileFoto->getError() !== UPLOAD_ERR_NO_FILE) {
-            $rules['foto'] = 'is_image[foto]|mime_in[foto,image/jpg,image/jpeg,image/png]|max_size[foto,2048]';
+            $rules['foto'] = [
+                'rules'  => 'is_image[foto]|mime_in[foto,image/jpg,image/jpeg,image/png]|max_size[foto,2048]',
+                'errors' => [
+                    'is_image'  => 'Berkas yang diunggah harus berupa gambar.',
+                    'mime_in'   => 'Format foto harus JPG, JPEG, atau PNG.',
+                    'max_size'  => 'Ukuran foto maksimal adalah 2MB.'
+                ]
+            ];
         }
 
         if (!$this->validate($rules)) {

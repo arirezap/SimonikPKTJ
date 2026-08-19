@@ -31,7 +31,8 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=1.1.' . filemtime(FCPATH . 'assets/css/style.css')) ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=1.2.' . filemtime(FCPATH . 'assets/css/style.css')) ?>">
+    <meta name="X-CSRF-TOKEN" content="<?= csrf_hash() ?>">
 
     <?= $this->renderSection('styles') ?>
 </head>
@@ -78,7 +79,7 @@
                                     <?= esc($formattedName) ?>
                                 </span>
                                 <span class="badge bg-primary bg-opacity-10 text-primary px-2 py-1 rounded-pill fw-semibold border border-primary-subtle d-none d-sm-inline-block" style="font-size: 0.65rem;">
-                                    <?= strtoupper(esc(session()->get('role') ?? 'GUEST')) ?>
+                                    <?= str_replace('_', ' ', strtoupper(esc(session()->get('role') ?? 'GUEST'))) ?>
                                 </span>
                             </div>
                         </div>
@@ -91,7 +92,7 @@
                         
                         
                         <!-- NOTIFICATION BELL -->
-                        <div class="dropdown">
+                        <div class="dropdown" id="notifDropdownContainer">
                             <a href="#" class="text-decoration-none position-relative" data-bs-toggle="dropdown" aria-expanded="false" id="notifDropdownToggle">
                                 <div class="bg-light rounded-circle d-flex align-items-center justify-content-center transition-all" style="width: 42px; height: 42px;">
                                     <i class="bi bi-bell-fill text-muted fs-5"></i>
@@ -103,7 +104,9 @@
                             <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2 p-0 rounded-4 overflow-hidden" style="width: 340px; max-width: 92vw;">
                                 <div class="p-3 border-bottom bg-white d-flex align-items-center justify-content-between">
                                     <h6 class="m-0 fw-bold text-dark" style="font-size: 0.95rem;"><i class="bi bi-bell me-1 text-primary"></i> Notifikasi</h6>
-                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-1" style="font-size: 0.7rem;">Baru</span>
+                                    <button type="button" class="btn btn-link btn-sm text-primary text-decoration-none p-0 fw-semibold" id="markAllReadBtn" onclick="markAllNotificationsRead(event)" style="font-size: 0.75rem;">
+                                        <i class="bi bi-check2-all me-1"></i> Tandai Semua Dibaca
+                                    </button>
                                 </div>
                                 <div id="notifList" class="list-group list-group-flush" style="max-height: 360px; overflow-y: auto; -webkit-overflow-scrolling: touch;">
                                     <div class="p-4 text-center text-muted small">
@@ -137,7 +140,7 @@
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item text-danger" href="<?= site_url('logout') ?>">
+                                    <a class="dropdown-item text-danger" href="<?= site_url('logout') ?>" onclick="confirmLogout(event)">
                                         <i class="bi bi-box-arrow-right me-2"></i> Logout
                                     </a>
                                 </li>
@@ -159,7 +162,7 @@
             <!-- Footer Aplikasi -->
             <footer class="footer-promax py-3 mt-auto d-flex justify-content-between px-4 align-items-center">
                 <span class="footer-text">&copy; <?= date('Y') ?> ECC (Evidence Command Center)</span>
-                <span class="version-badge text-muted">v1.1</span>
+                <span class="version-badge text-muted">v1.2</span>
             </footer>
 
             <?= $this->renderSection('footer_bar') ?>
@@ -167,6 +170,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
    <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -327,7 +331,53 @@
 
         // Bisa diset interval jika ingin real-time lambat (contoh: setiap 5 menit)
         setInterval(fetchNotifications, 300000); 
+
+        // Auto-clear badge & update unread status saat dropdown notifikasi dibuka
+        const notifContainer = document.getElementById('notifDropdownContainer');
+        if (notifContainer) {
+            notifContainer.addEventListener('show.bs.dropdown', function () {
+                const notifBadge = document.getElementById('notifBadge');
+                if (notifBadge && !notifBadge.classList.contains('d-none')) {
+                    markAllNotificationsRead();
+                }
+            });
+        }
     });
+
+    function markAllNotificationsRead(e) {
+        if (e) e.preventDefault();
+        
+        const notifBadge = document.getElementById('notifBadge');
+        if (notifBadge) {
+            notifBadge.classList.add('d-none');
+            notifBadge.textContent = '0';
+        }
+        
+        // Sembunyikan titik biru pada seluruh item notifikasi
+        document.querySelectorAll('#notifList a .align-self-center span').forEach(dot => {
+            dot.style.opacity = '0';
+        });
+
+        const csrfTokenName = '<?= csrf_token() ?>';
+        const csrfHash = document.querySelector('meta[name="X-CSRF-TOKEN"]')?.getAttribute('content') || '<?= csrf_hash() ?>';
+
+        fetch('<?= site_url('notifications/read-all') ?>', {
+            method: 'POST',
+            headers: { 
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/x-www-form-urlencoded' 
+            },
+            body: `${csrfTokenName}=${encodeURIComponent(csrfHash)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.csrf_hash) {
+                const metaCsrf = document.querySelector('meta[name="X-CSRF-TOKEN"]');
+                if (metaCsrf) metaCsrf.setAttribute('content', data.csrf_hash);
+            }
+        })
+        .catch(err => console.error('Error marking all notifications as read:', err));
+    }
 
     function markNotifRead(id, event, element, link) {
         event.preventDefault();
@@ -360,6 +410,29 @@
                 window.location.href = link;
             }
         });
+    }
+
+    function confirmLogout(event) {
+        if (event) event.preventDefault();
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Konfirmasi Keluar',
+                text: 'Apakah Anda yakin ingin mengakhiri sesi dan keluar dari sistem?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="bi bi-box-arrow-right me-1"></i> Ya, Keluar',
+                cancelButtonText: 'Batal',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '<?= site_url('logout') ?>';
+                }
+            });
+        } else if (confirm('Apakah Anda yakin ingin keluar dari sistem?')) {
+            window.location.href = '<?= site_url('logout') ?>';
+        }
     }
 </script>
     <?= $this->renderSection('scripts') ?>

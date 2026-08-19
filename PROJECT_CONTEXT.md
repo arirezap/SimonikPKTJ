@@ -1,7 +1,7 @@
-# 📌 Project Context: Simonik PKTJ (Sistem Informasi Monitoring Kinerja) & ECC
+# 📌 Project Context: Evidence Command Center (ECC)
 
 ## 1. Project Overview
-Aplikasi ini adalah **ECC (Evidence Command Center)**, sebuah sistem berbasis web untuk memonitoring kinerja pegawai, mengelola Rencana Kinerja, Log Kegiatan Harian, hingga Penilaian Kinerja. Aplikasi ini juga terintegrasi dengan **ECC (Evidence Command Center)** yang menampilkan dasbor analitik tingkat lanjut untuk level pimpinan.
+Aplikasi ini adalah **Evidence Command Center (ECC)** (sebelumnya bernama Simonik), sebuah sistem berbasis web untuk memonitoring kinerja pegawai, mengelola Rencana Kinerja, Log Kegiatan Harian, hingga Penilaian Kinerja. Aplikasi ini menampilkan dasbor analitik tingkat lanjut untuk level pimpinan dan manajemen instansi.
 
 ## 2. Technology Stack
 - **Backend Framework**: CodeIgniter 4 (PHP)
@@ -51,23 +51,26 @@ Aplikasi ini memiliki 3 modul yang saling berkesinambungan untuk menilai kinerja
    - *Controller*: `PenilaianKinerjaController`.
    - *Fungsi*: Mengagregasi data dari `log_kegiatan_harian`. 
    - Bagi **Staf**, modul ini berfungsi untuk melihat rekapitulasi progres mereka.
-   - Bagi **Atasan**, modul ini memunculkan antarmuka (form) untuk menilai kinerja staf/staf yang tergabung di timnya. Skor penilaian (Kualitas, Disiplin, Kerjasama) disimpan kembali ke dalam baris data di tabel `log_kegiatan_harian`.
-4. **Log Keamanan (Audit Trail)** (Background Service):
+   - Bagi **Atasan**, modul ini memunculkan antarmuka (form) untuk menilai kinerja staf/staf yang tergabung di timnya. Skor penilaian (Kualitas, Disiplin, Kerjasama) disimpan kembali ke dalam baris data di tabel `log_kegiatan_harian`.6. **Log Keamanan (Audit Trail)** (Background Service):
    - Menggunakan tabel `audit_logs` dan `app/Helpers/audit_helper.php`.
    - Merekam seluruh aktivitas `CREATE`, `UPDATE`, `DELETE`, `LOGIN/LOGOUT`, `APPROVE`, `UNLOCK_LAPORAN`, dan `CANCEL_APPROVE_TARGET` dari seluruh modul secara otomatis dan *non-blocking*. Mampu menangkap data *before-after* dalam bentuk JSON.
+   - Halaman `/admin/audit-logs` dilengkapi Live Search, Filter Periode Tanggal, Bootstrap Icons, dan Interactive JSON Viewer Modal.
 5. **Fitur Pengendalian Superadmin (Unlock & Cancel Approval)**:
-   - **Buka Kunci Laporan Harian Staf (`log-kegiatan/buka-kunci`)**: Superadmin (`hasRole('admin')`) dapat membuka kunci laporan harian & tugas tambahan staf yang sudah berstatus `terkirim` pada tanggal tertentu agar staf dapat merevisi laporannya. Status di-reset ke `draft`, mencatat audit log `UNLOCK_LAPORAN`, dan mengirim notifikasi *in-app*. Saat staf menyimpan ulang ("Simpan & Kirim"), laporan terkunci kembali secara otomatis.
+   - **Buka Kunci Laporan Harian Staf (`log-kegiatan/buka-kunci`)**: Superadmin (`hasRole('admin')`) dan Atasan Langsung dapat memberikan izin revisi laporan harian & tugas tambahan staf yang sudah berstatus `terkirim` pada tanggal tertentu agar staf dapat merevisi laporannya. Status di-reset ke `draft`, mencatat audit log `UNLOCK_LAPORAN`, dan mengirim notifikasi *in-app*. Saat staf menyimpan ulang ("Simpan & Kirim"), laporan terkunci kembali secara otomatis.
    - **Pembatalan Persetujuan Target Bulanan (`laporan-harian/batal-approve`)**: Superadmin dapat membatalkan persetujuan Target Bulanan yang sudah disetujui (`status_approval = 'disetujui'`). Status di-reset ke `draft` (`status_approval = 'menunggu_persetujuan'`), mencatat audit log `CANCEL_APPROVE_TARGET`, dan mengirim notifikasi *in-app*. Riwayat laporan harian sebelumnya **TETAP UTUH & AMAN**, dan otomatis terhubung kembali begitu target disetujui ulang oleh atasan.
    - **Diferensiasi Status Badges & Banner Revisi**: Status badge `Disetujui` (hijau), `Menunggu Persetujuan` (kuning - hanya saat `status === 'terkirim'`), dan `Draf (Perlu Revisi)` (kuning perbaikan - saat `status === 'draft'`) ditampilkan secara akurat lengkap dengan alert banner petunjuk revisi pada halaman staf.
+6. **Modul Rekap Kepegawaian & Remunerasi Monitoring**:
+   - Berada di `/kepegawaian` (`DashboardKepegawaian.php` & `rekap_kinerja.php`). Khusus untuk peran `kepegawaian` dan `admin` untuk evaluasi hak pencairan remunerasi bulanan pegawai.
+   - Menghitung rasio kelengkapan penilaian RHK (`dinilai / total`), rata-rata nilai kinerja, dan predikat kinerja (*'Baik'* untuk skor >= 90). Dilengkapi ekspor data CSV UTF-8 BOM ramah Excel.
 
 ## 6. Coding Standards & Agent Instructions
 - **Routing & Filter**: Seluruh *endpoint* AJAX dan form submission **WAJIB** terdaftar secara eksplisit di `app/Config/Routes.php` dalam grup filter otentikasi `auth`. Jangan pernah berasumsi auto-routing berjalan di server *live cPanel*.
 - **Controller Logic & Form Handling**: Usahakan logika perhitungan berat diselesaikan di Controller atau menggunakan *Query Builder* di Model. **WAJIB** menerapkan pola **PRG (Post-Redirect-Get)** pada setiap form filter atau form *submission* non-AJAX. Untuk request AJAX, selalu kembalikan respons JSON lengkap dengan `csrf_hash`.
 - **Database & Try-Catch Safety**: Semua eksekusi `insert()`, `update()`, `delete()`, dan `updateBatch()` pada *controller* wajib dibungkus dalam blok `try...catch (\Exception $e)` dan Database Transaction (`$db->transStart()` & `$db->transComplete()`) untuk mencegah kesalahan data sementara di server *live*.
 - **Handling Desimal & Sanitasi**: Nilai angka bertipe desimal harus selalu melalui sanitasi `str_replace(',', '.', trim((string)$val))` sebelum dimasukkan ke basis data agar mendukung input berbasis bahasa Indonesia (koma).
-- **Cache Control Deployment**: Halaman utama dilengkapi dengan meta tag HTTP `Cache-Control` (`no-cache, no-store, must-revalidate`) serta cache-busting `?v=filemtime(...)` pada file CSS/JS untuk memastikan pengguna mendapatkan versi aplikasi terbaru tanpa perlu *clear cache* manual.
+- **Cache Control Deployment v1.2**: Halaman utama dilengkapi dengan meta tag HTTP `Cache-Control` (`no-cache, no-store, must-revalidate`) serta cache-busting `?v=1.2.filemtime(...)` pada file CSS/JS untuk memastikan pengguna mendapatkan versi v1.2 aplikasi terbaru secara otomatis tanpa perlu *clear cache* manual.
 - **Database & Model**: Jika ada penambahan kolom pada tabel, pastikan kolom tersebut juga didaftarkan pada `$allowedFields` di Model terkait agar data dapat tersimpan.
 - **File Modifications**: Dilarang menghapus komentar/kode lama yang tidak terkait langsung me-perbaikan. Prioritaskan perbaikan *bug* secara spesifik.
 - **Chart.js**: Jika data label sumbu X terlalu panjang, gunakan format `indexAxis: 'y'` (Horizontal Bar Chart) agar rapi, dan gunakan tinggi wadah (*container*) yang dinamis.
-- **JavaScript UI & Fallback**: Setiap tombol aksi berbasis AJAX yang memanfaatkan SweetAlert2 **WAJIB** mengecek `typeof Swal !== 'undefined'` dan menyediakan fallback dialog `confirm()` agar tetap dapat mengeksekusi aksi AJAX jika library belum selesai dimuat atau terhalang koneksi CDN.
+- **JavaScript UI & Fallback**: Setiap tombol aksi berbasis AJAX yang memanfaatkan SweetAlert2 **WAJIB** mengecek `typeof Swal !== 'undefined'` dan menyediakan fallback dialog `confirm()` agar tetap dapat mengeksekusi aksi AJAX jika library belum selesai dimuat atau terhalang koneksi CDN.DN.
 

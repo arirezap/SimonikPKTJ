@@ -45,7 +45,7 @@
                                 <option value="kabag_aak" <?= $user['role'] == 'kabag_aak' ? 'selected' : '' ?>>Kabag AAK (Level 3)</option>
                                 <option value="kabag_kuk" <?= $user['role'] == 'kabag_kuk' ? 'selected' : '' ?>>Kabag KUK (Level 3)</option>
                                 <option value="manajemen" <?= $user['role'] == 'manajemen' ? 'selected' : '' ?>>Kanit / Katim / Kaprodi (Level 4)</option>
-                                <option value="user" <?= $user['role'] == 'user' ? 'selected' : '' ?>>Staff / Pegawai / Dosen (Level 5)</option>
+                                <option value="user" <?= $user['role'] == 'user' ? 'selected' : '' ?>>Staf / Pegawai / Dosen (Level 5)</option>
                                 <option value="tugas_belajar" <?= $user['role'] == 'tugas_belajar' ? 'selected' : '' ?>>Tugas Belajar (Level 5 - Kuliah/Studi di Luar)</option>
                                 <option value="admin" <?= $user['role'] == 'admin' ? 'selected' : '' ?>>Administrator (Sistem)</option>
                             </select>

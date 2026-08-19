@@ -34,7 +34,21 @@ class MasterDataController extends BaseController
     public function storeSasaran()
     {
         $sasaranModel = new Sasaran();
-        $data = ['nama_sasaran' => $this->request->getPost('nama_sasaran')];
+        $namaSasaran = trim($this->request->getPost('nama_sasaran') ?? '');
+
+        if (empty($namaSasaran)) {
+            return redirect()->to('master-data/sasaran')->withInput()
+                ->with('error', 'Gagal menyimpan. Nama sasaran tidak boleh kosong.');
+        }
+
+        // Cek duplikasi nama sasaran
+        $existing = $sasaranModel->where('nama_sasaran', $namaSasaran)->first();
+        if ($existing) {
+            return redirect()->to('master-data/sasaran')->withInput()
+                ->with('error', 'Gagal menyimpan. Sasaran dengan nama tersebut sudah ada.');
+        }
+
+        $data = ['nama_sasaran' => $namaSasaran];
 
         if (!$sasaranModel->save($data)) {
             return redirect()->to('master-data/sasaran')->withInput()
@@ -47,7 +61,21 @@ class MasterDataController extends BaseController
     public function updateSasaran($id)
     {
         $sasaranModel = new Sasaran();
-        $data = ['nama_sasaran' => $this->request->getPost('nama_sasaran')];
+        $namaSasaran = trim($this->request->getPost('nama_sasaran') ?? '');
+
+        if (empty($namaSasaran)) {
+            return redirect()->to('master-data/sasaran')->withInput()
+                ->with('error', 'Gagal memperbarui. Nama sasaran tidak boleh kosong.');
+        }
+
+        // Cek duplikasi dengan record lain
+        $existing = $sasaranModel->where('nama_sasaran', $namaSasaran)->where('id !=', $id)->first();
+        if ($existing) {
+            return redirect()->to('master-data/sasaran')->withInput()
+                ->with('error', 'Gagal memperbarui. Sasaran dengan nama tersebut sudah ada.');
+        }
+
+        $data = ['nama_sasaran' => $namaSasaran];
 
         if (!$sasaranModel->update($id, $data)) {
             return redirect()->to('master-data/sasaran')->withInput()
@@ -85,7 +113,21 @@ class MasterDataController extends BaseController
     public function storeIndikator()
     {
         $indikatorModel = new Indikator();
-        $data = ['nama_indikator' => $this->request->getPost('nama_indikator')];
+        $namaIndikator = trim($this->request->getPost('nama_indikator') ?? '');
+
+        if (empty($namaIndikator)) {
+            return redirect()->to('master-data/indikator')->withInput()
+                ->with('error', 'Gagal menyimpan. Nama indikator tidak boleh kosong.');
+        }
+
+        // Cek duplikasi nama indikator
+        $existing = $indikatorModel->where('nama_indikator', $namaIndikator)->first();
+        if ($existing) {
+            return redirect()->to('master-data/indikator')->withInput()
+                ->with('error', 'Gagal menyimpan. Indikator dengan nama tersebut sudah ada.');
+        }
+
+        $data = ['nama_indikator' => $namaIndikator];
 
         if (!$indikatorModel->save($data)) {
             return redirect()->to('master-data/indikator')->withInput()
@@ -98,7 +140,21 @@ class MasterDataController extends BaseController
     public function updateIndikator($id)
     {
         $indikatorModel = new Indikator();
-        $data = ['nama_indikator' => $this->request->getPost('nama_indikator')];
+        $namaIndikator = trim($this->request->getPost('nama_indikator') ?? '');
+
+        if (empty($namaIndikator)) {
+            return redirect()->to('master-data/indikator')->withInput()
+                ->with('error', 'Gagal memperbarui. Nama indikator tidak boleh kosong.');
+        }
+
+        // Cek duplikasi dengan record lain
+        $existing = $indikatorModel->where('nama_indikator', $namaIndikator)->where('id !=', $id)->first();
+        if ($existing) {
+            return redirect()->to('master-data/indikator')->withInput()
+                ->with('error', 'Gagal memperbarui. Indikator dengan nama tersebut sudah ada.');
+        }
+
+        $data = ['nama_indikator' => $namaIndikator];
 
         if (!$indikatorModel->update($id, $data)) {
             return redirect()->to('master-data/indikator')->withInput()
@@ -136,7 +192,21 @@ class MasterDataController extends BaseController
     public function storeSatuan()
     {
         $satuanModel = new Satuan();
-        $data = ['nama_satuan' => $this->request->getPost('nama_satuan')];
+        $namaSatuan = trim($this->request->getPost('nama_satuan') ?? '');
+
+        if (empty($namaSatuan)) {
+            return redirect()->to('master-data/satuan')->withInput()
+                ->with('error', 'Gagal menyimpan. Nama satuan tidak boleh kosong.');
+        }
+
+        // Cek duplikasi nama satuan
+        $existing = $satuanModel->where('nama_satuan', $namaSatuan)->first();
+        if ($existing) {
+            return redirect()->to('master-data/satuan')->withInput()
+                ->with('error', 'Gagal menyimpan. Satuan dengan nama tersebut sudah ada.');
+        }
+
+        $data = ['nama_satuan' => $namaSatuan];
 
         if (!$satuanModel->save($data)) {
             return redirect()->to('master-data/satuan')->withInput()
@@ -149,7 +219,21 @@ class MasterDataController extends BaseController
     public function updateSatuan($id)
     {
         $satuanModel = new Satuan();
-        $data = ['nama_satuan' => $this->request->getPost('nama_satuan')];
+        $namaSatuan = trim($this->request->getPost('nama_satuan') ?? '');
+
+        if (empty($namaSatuan)) {
+            return redirect()->to('master-data/satuan')->withInput()
+                ->with('error', 'Gagal memperbarui. Nama satuan tidak boleh kosong.');
+        }
+
+        // Cek duplikasi dengan record lain
+        $existing = $satuanModel->where('nama_satuan', $namaSatuan)->where('id !=', $id)->first();
+        if ($existing) {
+            return redirect()->to('master-data/satuan')->withInput()
+                ->with('error', 'Gagal memperbarui. Satuan dengan nama tersebut sudah ada.');
+        }
+
+        $data = ['nama_satuan' => $namaSatuan];
 
         if (!$satuanModel->update($id, $data)) {
             return redirect()->to('master-data/satuan')->withInput()
@@ -532,11 +616,25 @@ class MasterDataController extends BaseController
     public function storeStandar()
     {
         $standarModel = new LedStandar();
-        $data = ['nama_standar' => $this->request->getPost('nama_standar')];
+        $namaStandar = trim($this->request->getPost('nama_standar') ?? '');
+
+        if (empty($namaStandar)) {
+            return redirect()->to('master-data/led-standar')->withInput()
+                ->with('error', 'Gagal menyimpan. Nama standar tidak boleh kosong.');
+        }
+
+        // Cek duplikasi
+        $existing = $standarModel->where('nama_standar', $namaStandar)->first();
+        if ($existing) {
+            return redirect()->to('master-data/led-standar')->withInput()
+                ->with('error', 'Gagal menyimpan. Standar dengan nama tersebut sudah ada.');
+        }
+
+        $data = ['nama_standar' => $namaStandar];
 
         if (!$standarModel->save($data)) {
             return redirect()->to('master-data/led-standar')->withInput()
-                ->with('error', 'Gagal menyimpan data. Pastikan nama standar unik.');
+                ->with('error', 'Gagal menyimpan data.');
         }
         log_audit('CREATE', 'master_led_standar', $standarModel->getInsertID(), null, $data);
         return redirect()->to('master-data/led-standar')->with('success', 'Standar baru berhasil ditambahkan.');
@@ -545,11 +643,25 @@ class MasterDataController extends BaseController
     public function updateStandar($id)
     {
         $standarModel = new LedStandar();
-        $data = ['nama_standar' => $this->request->getPost('nama_standar')];
+        $namaStandar = trim($this->request->getPost('nama_standar') ?? '');
+
+        if (empty($namaStandar)) {
+            return redirect()->to('master-data/led-standar')->withInput()
+                ->with('error', 'Gagal memperbarui. Nama standar tidak boleh kosong.');
+        }
+
+        // Cek duplikasi dengan record lain
+        $existing = $standarModel->where('nama_standar', $namaStandar)->where('id !=', $id)->first();
+        if ($existing) {
+            return redirect()->to('master-data/led-standar')->withInput()
+                ->with('error', 'Gagal memperbarui. Standar dengan nama tersebut sudah ada.');
+        }
+
+        $data = ['nama_standar' => $namaStandar];
 
         if (!$standarModel->update($id, $data)) {
             return redirect()->to('master-data/led-standar')->withInput()
-                ->with('error', 'Gagal memperbarui data. Pastikan nama standar unik.');
+                ->with('error', 'Gagal memperbarui data.');
         }
         log_audit('UPDATE', 'master_led_standar', $id, null, $data);
         return redirect()->to('master-data/led-standar')->with('success', 'Standar berhasil diperbarui.');
@@ -671,9 +783,9 @@ class MasterDataController extends BaseController
             'filtered_criteria' => array_values($filtered_criteria),
             'submitted_data'    => $submitted_data,
             'currentRole'       => $currentRole,
-            'is_staf'           => in_array($currentRole, ['aak', 'kuk', 'user']),
-            'is_kabag'          => in_array($currentRole, ['kabag_aak', 'kabag_kuk']),
-            'is_wadir'          => in_array($currentRole, ['manajemen', 'direktur', 'wadir', 'admin', 'spm']),
+            'is_staf'           => !hasAnyRole(['manajemen', 'direktur', 'wadir', 'admin', 'spm', 'kabag_aak', 'kabag_kuk']),
+            'is_kabag'          => !hasAnyRole(['manajemen', 'direktur', 'wadir', 'admin', 'spm']) && hasAnyRole(['kabag_aak', 'kabag_kuk']),
+            'is_wadir'          => hasAnyRole(['manajemen', 'direktur', 'wadir', 'admin', 'spm']),
         ];
 
         return view('ecc/led_index', $data);
@@ -697,51 +809,103 @@ class MasterDataController extends BaseController
     public function syncHolidays()
     {
         $year = date('Y');
+        $holidayModel = new \App\Models\HolidayModel();
         
-        // Coba memanggil API libur.deno.dev
+        $urls = [
+            "https://api-hari-libur.vercel.app/api?year={$year}",
+            "https://libur.deno.dev/api?year={$year}"
+        ];
+        
+        $holidays = [];
         $client = \Config\Services::curlrequest();
-        try {
-            $response = $client->request('GET', "https://libur.deno.dev/api?year={$year}");
-            if ($response->getStatusCode() === 200) {
-                $holidays = json_decode($response->getBody(), true);
+        
+        foreach ($urls as $url) {
+            try {
+                $response = $client->request('GET', $url, [
+                    'headers' => [
+                        'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)',
+                        'Accept'     => 'application/json',
+                    ],
+                    'timeout' => 10,
+                    'http_errors' => false
+                ]);
                 
-                if (is_array($holidays)) {
-                    $holidayModel = new \App\Models\HolidayModel();
+                if ($response->getStatusCode() === 200) {
+                    $body = $response->getBody();
+                    $parsed = json_decode($body, true);
                     
-                    $countAdded = 0;
-                    foreach ($holidays as $h) {
-                        $date = $h['date']; // format YYYY-MM-DD
-                        $name = $h['name'];
-                        $isNational = isset($h['is_national_holiday']) && $h['is_national_holiday'] ? 1 : 0;
-                        
-                        // Cek apakah sudah ada (karena cuti bersama juga libur, kita masukkan semua)
-                        if (!$holidayModel->where('holiday_date', $date)->first()) {
-                            $holidayModel->insert([
-                                'holiday_date' => $date,
-                                'holiday_name' => $name,
-                                'is_national'  => $isNational
-                            ]);
-                            $countAdded++;
-                        }
+                    if (isset($parsed['data']) && is_array($parsed['data'])) {
+                        $holidays = $parsed['data'];
+                        break;
+                    } elseif (is_array($parsed) && !empty($parsed)) {
+                        $holidays = $parsed;
+                        break;
                     }
-                    
-                    return redirect()->to('master-data/holidays')->with('success', "Sinkronisasi berhasil! $countAdded hari libur & cuti bersama tahun $year ditambahkan.");
                 }
+            } catch (\Exception $e) {
+                continue;
             }
-        } catch (\Exception $e) {
-            return redirect()->to('master-data/holidays')->with('error', 'Gagal menghubungi API Hari Libur. ' . $e->getMessage());
         }
         
-        return redirect()->to('master-data/holidays')->with('error', 'Format respons API tidak sesuai atau API sedang gangguan.');
+        if (!empty($holidays)) {
+            $countAdded = 0;
+            foreach ($holidays as $h) {
+                $date = $h['date'] ?? $h['holiday_date'] ?? null;
+                $name = $h['description'] ?? $h['holiday_name'] ?? $h['name'] ?? null;
+                
+                if (!$date || !$name) {
+                    continue;
+                }
+                
+                // Tentukan apakah libur nasional atau cuti bersama
+                $isNational = 1;
+                if (isset($h['is_national_holiday'])) {
+                    $isNational = $h['is_national_holiday'] ? 1 : 0;
+                } elseif (stripos($name, 'cuti bersama') !== false) {
+                    $isNational = 0;
+                }
+                
+                // Cek apakah tanggal sudah ada
+                if (!$holidayModel->where('holiday_date', $date)->first()) {
+                    $holidayModel->insert([
+                        'holiday_date' => $date,
+                        'holiday_name' => $name,
+                        'is_national'  => $isNational
+                    ]);
+                    $countAdded++;
+                }
+            }
+            
+            log_audit('SYNC', 'master_holidays', null, null, ['year' => $year, 'added' => $countAdded]);
+            return redirect()->to('master-data/holidays')->with('success', "Sinkronisasi berhasil! {$countAdded} hari libur & cuti bersama tahun {$year} berhasil ditambahkan/disinkronkan.");
+        }
+        
+        return redirect()->to('master-data/holidays')->with('error', 'Gagal menghubungi server API Hari Libur Nasional. Silakan periksa koneksi internet atau gunakan form Tambah Libur Manual.');
     }
     
     public function storeHoliday()
     {
         $holidayModel = new \App\Models\HolidayModel();
+        $date = trim($this->request->getPost('holiday_date') ?? '');
+        $name = trim($this->request->getPost('holiday_name') ?? '');
+        $isNational = $this->request->getPost('is_national') ? 1 : 0;
+
+        if (empty($date) || empty($name)) {
+            return redirect()->to('master-data/holidays')->withInput()
+                ->with('error', 'Gagal menyimpan. Tanggal dan keterangan hari libur wajib diisi.');
+        }
+
+        // Cek duplikasi tanggal
+        $existing = $holidayModel->where('holiday_date', $date)->first();
+        if ($existing) {
+            return redirect()->to('master-data/holidays')->withInput()
+                ->with('error', 'Gagal menyimpan. Hari libur pada tanggal ' . $date . ' sudah terdaftar (' . $existing['holiday_name'] . ').');
+        }
+
         $data = [
-            'holiday_date' => $this->request->getPost('holiday_date'),
-            'holiday_name' => $this->request->getPost('holiday_name'),
-            'is_national'  => $this->request->getPost('is_national') ? 1 : 0
+            'holiday_date' => $date,
+            'holiday_name' => $name,
+            'is_national'  => $isNational
         ];
 
         if (!$holidayModel->save($data)) {
