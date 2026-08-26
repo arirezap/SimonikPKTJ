@@ -15,15 +15,17 @@ class LogKegiatanController extends BaseController
 
         $userId = session()->get('id') ?? session()->get('user_id');
         
-        // Gunakan session agar URL tetap bersih
-        if ($this->request->getMethod() === 'POST' || $this->request->getMethod() === 'post') {
-            if ($this->request->getPost('tanggal')) session()->set('log_kegiatan_tanggal', $this->request->getPost('tanggal'));
+        // Ambil parameter tanggal dari GET atau POST, sinkronkan ke session
+        $reqTanggal = $this->request->getVar('tanggal');
+        if (!empty($reqTanggal) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $reqTanggal)) {
+            session()->set('log_kegiatan_tanggal', $reqTanggal);
+            $tanggalTerpilih = $reqTanggal;
+        } else {
+            $tanggalTerpilih = session()->get('log_kegiatan_tanggal') ?? date('Y-m-d');
         }
-
-        $tanggalTerpilih = session()->get('log_kegiatan_tanggal') ?? date('Y-m-d');
         
-        $bulanTerpilih = date('n', strtotime($tanggalTerpilih));
-        $tahunTerpilih = date('Y', strtotime($tanggalTerpilih));
+        $bulanTerpilih = (int) date('n', strtotime($tanggalTerpilih));
+        $tahunTerpilih = (int) date('Y', strtotime($tanggalTerpilih));
 
         // Ambil daftar target yang sudah dibuat user pada bulan tersebut
         $allTargets = $targetModel->where('user_id', $userId)
@@ -47,7 +49,16 @@ class LogKegiatanController extends BaseController
             }
         }
 
-        $daftarTarget = ($targetStatus === 'disetujui') ? $allTargets : [];
+        // Pastikan dropdown target selalu memiliki daftar target valid
+        $daftarTarget = [];
+        foreach ($allTargets as $t) {
+            if (!$hasAtasan || $t['status_approval'] === 'disetujui' || $targetStatus === 'disetujui') {
+                $daftarTarget[] = $t;
+            }
+        }
+        if (empty($daftarTarget) && !empty($allTargets)) {
+            $daftarTarget = $allTargets;
+        }
 
         // Ambil log kegiatan harian & tugas tambahan yang sudah diinput pada tanggal tersebut
         $rekapData = $logModel->getLogWithTarget($userId, $tanggalTerpilih);

@@ -18,18 +18,26 @@ class LaporanHarianController extends BaseController
         $userId = session()->get('id') ?? session()->get('user_id');
         $role = session()->get('role');
         
-        // Gunakan session agar URL tetap bersih, dan gunakan PRG (Post-Redirect-Get) untuk mencegah Form Resubmission (403)
-        if ($this->request->getMethod() === 'POST' || $this->request->getMethod() === 'post') {
-            if ($this->request->getPost('bulan')) session()->set('laporan_harian_bulan', $this->request->getPost('bulan'));
-            if ($this->request->getPost('tahun')) session()->set('laporan_harian_tahun', $this->request->getPost('tahun'));
-            
-            $sourceTab = $this->request->getPost('source_tab');
-            if ($sourceTab === 'sendiri') {
-                session()->remove('laporan_harian_staf_id');
-            } elseif ($sourceTab === 'staf') {
-                session()->set('laporan_harian_staf_id', $this->request->getPost('staf_id'));
-            }
+        // Gunakan session dan getVar agar filter via GET, POST, maupun navigasi URL tetap sinkron
+        $reqBulan = $this->request->getVar('bulan');
+        $reqTahun = $this->request->getVar('tahun');
+        $reqStafId = $this->request->getVar('staf_id');
+        $sourceTab = $this->request->getVar('source_tab');
 
+        if (!empty($reqBulan) && is_numeric($reqBulan)) session()->set('laporan_harian_bulan', (int)$reqBulan);
+        if (!empty($reqTahun) && is_numeric($reqTahun)) session()->set('laporan_harian_tahun', (int)$reqTahun);
+        
+        if ($sourceTab === 'sendiri') {
+            session()->remove('laporan_harian_staf_id');
+        } elseif ($sourceTab === 'staf' || $reqStafId !== null) {
+            if (!empty($reqStafId)) {
+                session()->set('laporan_harian_staf_id', $reqStafId);
+            } else {
+                session()->remove('laporan_harian_staf_id');
+            }
+        }
+
+        if ($this->request->is('post') && ($sourceTab === 'sendiri' || $sourceTab === 'staf')) {
             return redirect()->to(site_url('laporan-harian'));
         }
 

@@ -1,8 +1,8 @@
 <?= $this->extend('layouts/main') ?>
 
-<?= $this->section('title') ?><?= esc($page_title ?? 'Admin Dashboard') ?><?= $this->endSection() ?>
+<?= $this->section('title') ?>Dashboard<?= $this->endSection() ?>
 
-
+<?= $this->section('page_title') ?>Dashboard<?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
 
@@ -51,9 +51,12 @@
                                         </span>
                                     </div>
                                     <?php if (empty($prodi['chart_labels'])): ?>
-                                        <div class="alert alert-light text-center border">Belum ada data Kategori LED untuk tahun ini.</div>
+                                        <div class="alert alert-light text-center border py-4 text-muted rounded-3 shadow-none">
+                                            <i class="bi bi-inbox fs-3 d-block mb-2 text-secondary opacity-75"></i>
+                                            Belum ada data Kategori LED untuk tahun ini.
+                                        </div>
                                     <?php else: ?>
-                                        <div class="radar-chart-container"><canvas id="radarChart-<?= esc($prodi['id_prodi']) ?>"></canvas></div>
+                                        <div class="radar-chart-container"><canvas id="radarChart-<?= esc($prodi['id_prodi']) ?>" role="img" aria-label="Grafik Radar Pemenuhan Standar Mutu <?= esc($prodi['nama_prodi']) ?>"></canvas></div>
                                         <p class="text-center text-muted small mt-2"><i class="bi bi-info-circle me-1"></i> Klik pada nama standar (label) di grafik untuk melihat detail.</p>
                                     <?php endif; ?>
                                 </div>
@@ -140,7 +143,7 @@
             <div class="bento-header">Sebaran Predikat Kinerja</div>
             <div class="bento-body pt-0">
                 <div class="chart-container">
-                    <canvas id="sebaranChart"></canvas>
+                    <canvas id="sebaranChart" role="img" aria-label="Grafik Sebaran Predikat Kinerja Organisasi"></canvas>
                 </div>
             </div>
         </div>
@@ -152,7 +155,7 @@
             <div class="bento-header">Tren Kinerja Bulanan Organisasi</div>
             <div class="bento-body pt-0">
                 <div class="chart-container">
-                    <canvas id="trendChart"></canvas>
+                    <canvas id="trendChart" role="img" aria-label="Grafik Tren Kinerja Bulanan Organisasi"></canvas>
                 </div>
             </div>
         </div>

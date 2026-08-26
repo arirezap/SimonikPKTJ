@@ -228,6 +228,7 @@ $routes->group('ecc', ['filter' => 'auth'], function ($routes) {
 $routes->group('kepegawaian', ['filter' => 'auth'], function ($routes) {
     $routes->get('/', 'Kepegawaian\DashboardKepegawaian::index');
     $routes->get('export-excel', 'Kepegawaian\DashboardKepegawaian::exportExcel');
+    $routes->get('detail-pegawai', 'Kepegawaian\DashboardKepegawaian::getDetailPegawai');
 });
 
 /*

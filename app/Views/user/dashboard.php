@@ -1,8 +1,6 @@
 <?= $this->extend('layouts/main') ?>
 
-<?= $this->section('title') ?>
-<?= esc($page_title ?? 'Dashboard') ?>
-<?= $this->endSection() ?>
+<?= $this->section('title') ?>Dashboard<?= $this->endSection() ?>
 
 <?= $this->section('page_title') ?>
 Dashboard
@@ -57,9 +55,12 @@ Dashboard
                                         </span>
                                     </div>
                                     <?php if (empty($prodi['chart_labels'])): ?>
-                                        <div class="alert alert-light text-center border">Belum ada data Kategori LED untuk tahun ini.</div>
+                                        <div class="alert alert-light text-center border py-4 text-muted rounded-3 shadow-none">
+                                            <i class="bi bi-inbox fs-3 d-block mb-2 text-secondary opacity-75"></i>
+                                            Belum ada data Kategori LED untuk tahun ini.
+                                        </div>
                                     <?php else: ?>
-                                        <div class="radar-chart-container"><canvas id="radarChart-<?= esc($prodi['id_prodi']) ?>"></canvas></div>
+                                        <div class="radar-chart-container"><canvas id="radarChart-<?= esc($prodi['id_prodi']) ?>" role="img" aria-label="Grafik Radar Pemenuhan Standar Mutu <?= esc($prodi['nama_prodi']) ?>"></canvas></div>
                                         <p class="text-center text-muted small mt-2"><i class="bi bi-info-circle me-1"></i> Klik pada nama standar (label) di grafik untuk melihat detail.</p>
                                     <?php endif; ?>
                                 </div>
@@ -119,7 +120,7 @@ Dashboard
             </div>
             <div class="bento-body pt-0">
                 <div class="line-chart-container">
-                    <canvas id="kumulatifChart"></canvas>
+                    <canvas id="kumulatifChart" role="img" aria-label="Grafik Tren Nilai Rata-Rata Kinerja Bulanan Pribadi"></canvas>
                 </div>
             </div>
         </div>

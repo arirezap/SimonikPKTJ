@@ -420,7 +420,7 @@ class Dashboard extends BaseController
         }
 
         $data = [
-            'page_title' => 'Dashboard Admin',
+            'page_title' => 'Dashboard',
             'tahun_ecc' => $tahun_ecc,
             'tahun_kinerja' => $tahun_kinerja,
             'bulan_kinerja' => $bulan_kinerja,

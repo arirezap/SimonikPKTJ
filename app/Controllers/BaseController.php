@@ -79,12 +79,25 @@ abstract class BaseController extends Controller
                             if (strtolower(trim($user['unit'] ?? '')) === 'satuan penjaminan mutu') {
                                 $role_aplikasi = 'spm';
                             }
+
+                            // Load semua role dari tabel pivot user_roles
+                            $userRoles = $db->table('user_roles')
+                                            ->where('user_id', $user['id'])
+                                            ->get()
+                                            ->getResultArray();
+                            $allRoles = array_column($userRoles, 'role_name');
+                            if (!in_array(strtolower($role_aplikasi), array_map('strtolower', $allRoles))) {
+                                $allRoles[] = strtolower($role_aplikasi);
+                            }
+
                             $ses_data = [
                                 'id'           => $user['id'],
+                                'user_id'      => $user['id'], // Kompatibilitas mundur
                                 'username'     => $user['username'],
                                 'nama'         => $user['nama_lengkap'], 
                                 'nip'          => $user['nip'],           
                                 'role'         => $role_aplikasi,          
+                                'all_roles'    => $allRoles,
                                 'unit'         => $user['unit'] ?? '-', 
                                 'jabatan'      => $user['jabatan'] ?? '-',
                                 'pangkat'      => $user['pangkat'] ?? '-',

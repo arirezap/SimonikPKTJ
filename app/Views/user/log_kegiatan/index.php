@@ -2,204 +2,181 @@
 
 <?= $this->section('title') ?>Lapor Kegiatan Harian<?= $this->endSection() ?>
 
-<?= $this->section('page_title') ?>
-Lapor Kegiatan Harian
-<?= $this->endSection() ?>
-
 <?= $this->section('styles') ?>
 <style>
-    .table th {
-        background-color: #f8f9fa !important;
-        color: #333;
+    @media (max-width: 767.98px) {
+        .form-control, .form-select {
+            font-size: 16px !important;
+        }
+    }
+    .num-tabular {
+        font-variant-numeric: tabular-nums;
+    }
+    .col-target-log { min-width: 240px; }
+    .col-deskripsi-log { min-width: 260px; }
+    .col-capaian-log { width: 155px; min-width: 150px; }
+    .col-bukti-log { min-width: 190px; }
+    
+    .table-responsive {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    .table-bento {
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-bottom: 0;
+        min-width: 920px;
+    }
+    .table-bento thead th {
+        background-color: #f8fafc !important;
+        color: #475569 !important;
+        font-weight: 700;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        border-bottom: 2px solid #e2e8f0;
+        padding: 0.65rem 0.75rem;
         vertical-align: middle;
     }
-    .table td, .table th {
-        border-color: #eaeaea;
+    .table-bento tbody td {
+        padding: 0.65rem 0.75rem;
+        vertical-align: middle;
+        border-color: #f1f5f9;
     }
-    .table {
-        font-size: 0.85rem;
+    .table-bento tbody tr:last-child td {
+        border-bottom: 0;
     }
-    .form-control, .form-select, .input-group-text {
-        font-size: 0.85rem;
+    
+    .input-capaian-num::-webkit-outer-spin-button,
+    .input-capaian-num::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
     }
-    .col-target { min-width: 250px; }
-    .col-deskripsi { min-width: 280px; }
-    .col-capaian {
-        width: 220px !important;
-        min-width: 220px !important;
-        max-width: 220px !important;
-    }
-    .col-capaian .input-group {
-        width: 200px !important;
-        min-width: 200px !important;
-        max-width: 200px !important;
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        margin: 0 auto !important;
-    }
-    .col-capaian .input-group > .form-control:first-child,
-    .col-capaian .input-group > input[type="number"],
-    .col-capaian .input-group > input[name="jumlah_capaian[]"],
-    .col-capaian .input-group > input[name="jumlah_capaian_tambahan[]"] {
-        width: 75px !important;
-        min-width: 75px !important;
-        max-width: 75px !important;
-        flex: 0 0 75px !important;
-        text-align: center !important;
-        padding-left: 4px !important;
-        padding-right: 4px !important;
-    }
-    .col-capaian .input-group > .input-group-text,
-    .col-capaian .input-group > input[name="satuan_tambahan[]"] {
-        width: 125px !important;
-        min-width: 125px !important;
-        max-width: 125px !important;
-        flex: 0 0 125px !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        padding-left: 4px !important;
-        padding-right: 4px !important;
-        font-weight: 500 !important;
-        text-align: center !important;
-        justify-content: center !important;
-        display: inline-flex !important;
-        align-items: center !important;
-    }
-    .col-capaian .readonly-capaian-box {
-        width: 200px !important;
-        margin: 0 auto !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        min-height: 38px !important;
-        font-weight: 600 !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-    }
-    .col-bukti { min-width: 180px; }
-    .btn {
-        transition: all 0.3s ease;
-        min-height: 42px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+    .input-capaian-num {
+        -moz-appearance: textfield;
     }
 
-    /* Mobile UI/UX Pro Max Enhancements */
-    @media (max-width: 767.98px) {
-        .btn-action-container {
-            flex-direction: column !important;
-            gap: 12px !important;
-            width: 100% !important;
-        }
-        .btn-action-container .btn {
-            width: 100% !important;
-            display: flex !important;
-            justify-content: center !important;
-        }
-        .header-section-wrapper {
-            flex-direction: column !important;
-            align-items: flex-start !important;
-            gap: 8px !important;
-        }
-        .header-section-wrapper .btn {
-            width: 100% !important;
-        }
-        .table-responsive {
-            border-radius: 12px;
-            border: 1px solid #e0e0e0;
-        }
-        .form-control, .form-select {
-            font-size: 16px !important; /* Mencegah auto-zoom browser iOS */
-        }
+    .readonly-box {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
     }
 </style>
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
-
-<?php if (session()->getFlashdata('success')) : ?>
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="bi bi-check-circle-fill me-2"></i> <?= session()->getFlashdata('success') ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+<div class="container-fluid px-2 px-md-3">
+    <!-- PAGE HEADER -->
+    <div class="d-flex justify-content-between flex-wrap align-items-center pt-2 pb-2 mb-3 border-bottom gap-2">
+        <div>
+            <h1 class="h4 mb-0 fw-bold text-dark"><i class="bi bi-calendar-check text-primary me-2"></i>Lapor Kegiatan Harian</h1>
+            <p class="text-muted small mb-0">Catat realisasi aktivitas kerja harian beserta tautan bukti pekerjaan.</p>
+        </div>
+        <div>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1.5 small fw-semibold">
+                <i class="bi bi-calendar-date me-1"></i> <?= date('d M Y', strtotime($tanggal_terpilih)) ?>
+            </span>
+        </div>
     </div>
-<?php endif; ?>
 
-<?php if (session()->getFlashdata('error')) : ?>
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i> <?= session()->getFlashdata('error') ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-<?php endif; ?>
+    <?php if (session()->getFlashdata('success')) : ?>
+        <div class="alert alert-success alert-dismissible fade show shadow-sm py-2 px-3 small mb-3 rounded-3" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> <?= session()->getFlashdata('success') ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <?php endif; ?>
 
-<div class="card shadow-sm border-0 mb-4">
-    <div class="card-body">
-        
-        <!-- Filter Tanggal -->
-        <form method="POST" action="<?= site_url('log-kegiatan') ?>" class="mb-3 px-1">
-            <?= csrf_field() ?>
-            <div class="row align-items-center">
-                <div class="col-md-3">
-                    <label class="form-label fw-bold text-dark small mb-2">Pilih Tanggal Kegiatan</label>
-                    <div class="input-group shadow-sm">
-                        <span class="input-group-text bg-primary text-white border-primary"><i class="bi bi-calendar3"></i></span>
-                        <input type="date" name="tanggal" class="form-control border-primary fw-bold text-primary" value="<?= esc($tanggal_terpilih) ?>" max="<?= date('Y-m-d') ?>" onchange="this.form.submit()">
+    <?php if (session()->getFlashdata('error')) : ?>
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm py-2 px-3 small mb-3 rounded-3" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> <?= session()->getFlashdata('error') ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <?php endif; ?>
+
+    <div class="card shadow-sm border-0 mb-4 rounded-4 overflow-hidden">
+        <div class="card-body p-3 p-md-4">
+            
+            <!-- Filter Tanggal Toolbar -->
+            <form method="GET" action="<?= site_url('log-kegiatan') ?>" class="mb-3 p-3 bg-light rounded-4 border border-light-subtle">
+                <div class="row g-2 align-items-center">
+                    <div class="col-sm-5 col-md-3">
+                        <label class="form-label fw-bold text-dark small mb-1" style="font-size: 0.72rem; letter-spacing: 0.3px;"><i class="bi bi-calendar-event text-primary me-1"></i> Tanggal Kegiatan</label>
+                        <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
+                            <span class="input-group-text bg-primary text-white border-primary"><i class="bi bi-calendar3"></i></span>
+                            <input type="date" name="tanggal" class="form-control border-primary fw-bold text-primary" value="<?= esc($tanggal_terpilih) ?>" max="<?= date('Y-m-d') ?>" onchange="this.form.submit()">
+                        </div>
+                    </div>
+                    <div class="col-sm-7 col-md-9 text-muted pt-sm-3 small">
+                        <i class="bi bi-info-circle text-primary me-1"></i> Jika pilihan target kosong, pastikan Anda telah menyusun <strong>Target Kinerja Bulanan</strong> yang sudah disetujui atasan.
                     </div>
                 </div>
-                <div class="col-md-9 text-muted mt-2 mt-md-0 pt-md-4 small">
-                    <i class="bi bi-info-circle me-1"></i> Jika pilihan target (RHK) kosong, silakan buat <strong>Target Kinerja Bulanan</strong> terlebih dahulu untuk bulan ini.
-                </div>
-            </div>
-        </form>
+            </form>
 
-        <!-- SINGLE UNIFIED TOP ALERT NOTIFICATION -->
-        <?php if (isset($target_status) && $target_status === 'belum_ada'): ?>
-            <div class="alert alert-danger mb-4 shadow-sm">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i> <strong>Target Bulanan Belum Ada!</strong> Anda belum membuat Target Kinerja Bulanan untuk bulan ini. Silakan buat dan kirimkan target terlebih dahulu pada menu <strong>Target Kinerja Bulanan</strong> agar dapat mengisi laporan harian dan tugas tambahan.
-            </div>
-        <?php elseif (isset($target_status) && $target_status === 'belum_disetujui'): ?>
-            <div class="alert alert-warning mb-4 shadow-sm">
-                <i class="bi bi-clock-history me-2"></i> <strong>Target Bulanan Belum Disetujui!</strong> Target Kinerja Bulanan Anda untuk bulan ini belum disetujui oleh atasan langsung. Anda baru dapat mengisi Lapor Kegiatan Harian & Tugas Tambahan setelah target Anda disetujui.
-            </div>
-        <?php elseif ($is_locked): ?>
-            <div class="alert alert-warning mb-4 shadow-sm d-flex align-items-center justify-content-between flex-wrap gap-2">
-                <div>
-                    <i class="bi bi-lock-fill me-2"></i> <strong>Akses Terkunci!</strong> Laporan kegiatan harian dan tugas tambahan hari ini telah dikirim dan tidak dapat diubah lagi.
+            <!-- SINGLE UNIFIED TOP ALERT NOTIFICATION -->
+            <?php if (isset($target_status) && $target_status === 'belum_ada'): ?>
+                <div class="alert alert-danger mb-3 shadow-sm py-2.5 px-3 small rounded-4 d-flex align-items-center gap-2">
+                    <i class="bi bi-exclamation-triangle-fill fs-5 text-danger flex-shrink-0"></i>
+                    <div>
+                        <strong>Target Belum Ada.</strong> Silakan susun target pada menu <strong>Target Kinerja Bulanan</strong> terlebih dahulu.
+                    </div>
                 </div>
-                <?php if (hasRole('admin')): ?>
-                <button type="button" id="btnBukaKunci"
-                    class="btn btn-sm btn-danger rounded-pill px-3 fw-semibold shadow-sm"
-                    data-tanggal="<?= esc($tanggal_terpilih) ?>"
-                    data-user-id="<?= esc(session()->get('id') ?? session()->get('user_id')) ?>"
-                    title="Buka kunci laporan agar staf dapat merevisi">
-                    <i class="bi bi-unlock-fill me-1"></i> Buka Kunci (Admin)
-                </button>
-                <?php endif; ?>
-            </div>
-        <?php endif; ?>
+            <?php elseif (isset($target_status) && $target_status === 'belum_disetujui'): ?>
+                <div class="alert alert-warning mb-3 shadow-sm py-2.5 px-3 small rounded-4 d-flex align-items-center gap-2">
+                    <i class="bi bi-clock-history fs-5 text-warning-emphasis flex-shrink-0"></i>
+                    <div>
+                        <strong>Target Belum Disetujui.</strong> Menunggu persetujuan atasan langsung sebelum dapat mengisi laporan kegiatan harian.
+                    </div>
+                </div>
+            <?php elseif ($is_locked): ?>
+                <div class="alert alert-warning mb-3 shadow-sm py-2.5 px-3 d-flex align-items-center justify-content-between flex-wrap gap-2 small rounded-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-lock-fill text-warning-emphasis fs-5 flex-shrink-0"></i>
+                        <div>
+                            <strong>Laporan Terkunci.</strong> Laporan pada tanggal ini telah dikirim ke atasan dan berada dalam status terkunci.
+                        </div>
+                    </div>
+                    <?php if (hasRole('admin')): ?>
+                    <button type="button" id="btnBukaKunci"
+                        class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold shadow-sm"
+                        data-tanggal="<?= esc($tanggal_terpilih) ?>"
+                        data-user-id="<?= esc(session()->get('id') ?? session()->get('user_id')) ?>"
+                        title="Buka kunci laporan agar staf dapat merevisi">
+                        <i class="bi bi-unlock-fill me-1"></i> Buka Kunci (Admin)
+                    </button>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+
+        <datalist id="daftarSatuanStandar">
+            <option value="Laporan">
+            <option value="Dokumen">
+            <option value="Pertemuan">
+            <option value="Kegiatan">
+            <option value="Mahasiswa">
+            <option value="Peserta">
+            <option value="Sertifikat">
+            <option value="Paket Kegiatan">
+            <option value="Jam Pelajaran (JP)">
+            <option value="Surat Keputusan (SK)">
+        </datalist>
 
         <!-- SINGLE UNIFIED FORM FOR BOTH TUGAS POKOK & TAMBAHAN -->
         <form action="<?= site_url('log-kegiatan/store') ?>" method="POST" id="formLog">
             <?= csrf_field() ?>
             <input type="hidden" name="tanggal" value="<?= esc($tanggal_terpilih) ?>">
 
-            <div class="table-responsive mb-3 border rounded shadow-sm bg-white">
-                <table class="table table-bordered align-middle table-hover mb-0" id="tabelLog">
-                    <thead class="text-center bg-light">
+            <div class="table-responsive mb-3 border rounded-4 shadow-sm bg-white">
+                <table class="table table-bordered align-middle table-hover mb-0 table-bento" id="tabelLog">
+                    <thead>
                         <tr>
-                            <th style="width: 50px;">No</th>
-                            <th class="col-target">Indikator Kinerja / RHK & Tugas</th>
-                            <th class="col-deskripsi">Deskripsi Kegiatan</th>
-                            <th class="col-capaian" style="width: 230px;">Jumlah Capaian / Output</th>
-                            <th class="col-bukti">Bukti Pekerjaan (Link)</th>
-                            <th style="width: 70px;">Aksi</th>
+                            <th style="width: 45px;" class="text-center">No</th>
+                            <th class="col-target-log">Indikator RHK / Tugas</th>
+                            <th class="col-deskripsi-log">Deskripsi Kegiatan</th>
+                            <th class="col-capaian-log text-center">Capaian</th>
+                            <th class="col-bukti-log">Bukti Pekerjaan</th>
+                            <th style="width: 55px;" class="text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -207,10 +184,10 @@ Lapor Kegiatan Harian
                         <tr class="table-primary text-primary fw-bold" id="rowHeaderPokok">
                             <td colspan="6" class="py-2.5 px-3 bg-primary-subtle text-primary border-primary">
                                 <div class="d-flex justify-content-between align-items-center header-section-wrapper">
-                                    <span class="fs-6"><i class="bi bi-list-task me-2"></i> A. TUGAS POKOK (Rencana Hasil Kerja Utama)</span>
+                                    <span class="fs-6 fw-bold"><i class="bi bi-list-task me-2"></i> A. TUGAS POKOK (RHK)</span>
                                     <?php if (!$is_locked): ?>
-                                        <button type="button" id="tambahBaris" class="btn btn-sm btn-primary rounded-pill px-3 py-1 shadow-sm">
-                                            <i class="bi bi-plus-circle me-1"></i> Tambah Kegiatan Utama
+                                        <button type="button" id="tambahBaris" class="btn btn-sm btn-primary rounded-pill px-3 py-1 shadow-sm fw-semibold">
+                                             <i class="bi bi-plus-circle me-1"></i> Tambah Kegiatan
                                         </button>
                                     <?php endif; ?>
                                 </div>
@@ -222,69 +199,84 @@ Lapor Kegiatan Harian
                         <?php if (!empty($rekap_data)): ?>
                             <?php foreach ($rekap_data as $row): ?>
                                 <tr class="row-tugas-pokok">
-                                    <td class="nomor-baris text-center fw-bold"><?= $rowIndex++ ?></td>
+                                    <td class="nomor-baris text-center fw-bold text-muted"><?= $rowIndex++ ?></td>
                                     <?php if ($is_locked || (isset($row['status']) && $row['status'] === 'terkirim')): ?>
                                         <!-- Read-only View -->
                                         <td>
                                             <?php 
                                             $targetName = '-';
-                                            foreach($daftar_target as $target) {
-                                                if ($target['id'] == $row['target_id']) {
-                                                    $targetName = esc($target['indikator_kinerja']) . ' (' . str_replace('.', ',', (float)$target['target_bulanan']) . ' ' . esc($target['satuan']) . ')';
-                                                    break;
+                                            if (!empty($row['indikator_kinerja'])) {
+                                                $targetName = esc($row['indikator_kinerja']) . (!empty($row['satuan']) ? ' (' . (!empty($row['target_bulanan']) ? str_replace('.', ',', (float)$row['target_bulanan']) . ' ' : '') . esc($row['satuan']) . ')' : '');
+                                            } else {
+                                                foreach($daftar_target as $target) {
+                                                    if ($target['id'] == $row['target_id']) {
+                                                        $targetName = esc($target['indikator_kinerja']) . ' (' . str_replace('.', ',', (float)$target['target_bulanan']) . ' ' . esc($target['satuan']) . ')';
+                                                        break;
+                                                    }
                                                 }
                                             }
                                             ?>
                                             <input type="hidden" class="target-select-hidden" value="<?= esc($row['target_id']) ?>">
-                                            <div class="p-2 border rounded bg-light text-muted"><?= $targetName ?></div>
+                                            <div class="readonly-box text-dark fw-semibold"><?= $targetName ?></div>
                                         </td>
                                         <td>
-                                            <div class="p-2 border rounded bg-light text-muted"><?= nl2br(esc($row['deskripsi_kegiatan'])) ?></div>
+                                            <div class="readonly-box text-secondary"><?= nl2br(esc($row['deskripsi_kegiatan'])) ?></div>
                                         </td>
-                                        <td class="col-capaian">
-                                            <div class="p-2 border rounded bg-light text-center fw-bold text-muted readonly-capaian-box"><?= str_replace('.', ',', (float)$row['jumlah_capaian']) ?> <?= esc($row['satuan']) ?></div>
+                                        <td class="col-capaian-log">
+                                            <div class="readonly-box text-center fw-bold text-primary num-tabular readonly-capaian-box" title="<?= str_replace('.', ',', (float)$row['jumlah_capaian']) ?> <?= esc($row['satuan']) ?>">
+                                                <?= str_replace('.', ',', (float)$row['jumlah_capaian']) ?> <?= esc($row['satuan']) ?>
+                                            </div>
                                         </td>
                                         <td>
                                             <?php if (!empty($row['link_bukti'])): ?>
-                                                <div class="p-2 border rounded bg-light text-center"><a href="<?= esc($row['link_bukti']) ?>" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-link-45deg"></i> Buka Link</a></div>
+                                                <div class="text-center">
+                                                    <a href="<?= esc($row['link_bukti']) ?>" target="_blank" class="btn btn-sm btn-light text-primary border rounded-pill px-3 py-1" title="Buka tautan bukti pekerjaan di tab baru">
+                                                        <i class="bi bi-box-arrow-up-right me-1"></i> Bukti
+                                                    </a>
+                                                </div>
                                             <?php else: ?>
-                                                <div class="p-2 border rounded bg-light text-center text-muted">-</div>
+                                                <div class="readonly-box text-center text-muted">-</div>
                                             <?php endif; ?>
                                         </td>
                                         <td class="text-center text-success">
-                                            <i class="bi bi-lock-fill text-warning" title="Terkunci"></i>
+                                            <i class="bi bi-lock-fill text-warning fs-6" title="Terkunci"></i>
                                         </td>
                                     <?php else: ?>
                                         <!-- Editable Draft View -->
                                         <input type="hidden" name="log_id[]" value="<?= $row['id'] ?>">
                                         <td>
-                                            <select name="target_id[]" class="form-select">
+                                            <select name="target_id[]" class="form-select form-select-sm">
                                                 <option value="">-- Pilih Target / RHK --</option>
-                                                 <?php foreach($daftar_target as $target): ?>
-                                                     <?php 
+                                                 <?php 
+                                                 $foundSelected = false;
+                                                 foreach($daftar_target as $target): 
                                                      $cleanIndikator = str_replace('`', '', esc($target['indikator_kinerja']));
                                                      $cleanSatuan = str_replace('`', '', esc($target['satuan']));
                                                      $labelTarget = $cleanIndikator . ' (' . str_replace('.', ',', (float)$target['target_bulanan']) . ' ' . $cleanSatuan . ')'; 
                                                      $selected = ($target['id'] == $row['target_id']) ? 'selected' : '';
-                                                     ?>
+                                                     if ($selected) $foundSelected = true;
+                                                 ?>
                                                      <option value="<?= esc($target['id']) ?>" data-satuan="<?= $cleanSatuan ?>" <?= $selected ?>><?= $labelTarget ?></option>
                                                  <?php endforeach; ?>
+                                                 <?php if (!$foundSelected && !empty($row['target_id']) && !empty($row['indikator_kinerja'])): ?>
+                                                     <option value="<?= esc($row['target_id']) ?>" data-satuan="<?= esc($row['satuan'] ?? '') ?>" selected><?= esc($row['indikator_kinerja']) ?> (<?= esc($row['satuan'] ?? '') ?>)</option>
+                                                 <?php endif; ?>
                                             </select>
                                         </td>
                                         <td>
-                                            <textarea name="deskripsi_kegiatan[]" class="form-control" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..."><?= esc($row['deskripsi_kegiatan']) ?></textarea>
+                                            <textarea name="deskripsi_kegiatan[]" class="form-control form-control-sm" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..."><?= esc($row['deskripsi_kegiatan']) ?></textarea>
                                         </td>
-                                        <td class="col-capaian">
-                                            <div class="input-group" style="width: 200px; display: flex; flex-wrap: nowrap; margin: 0 auto;">
-                                                <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control text-center" placeholder="Angka" value="<?= (float)$row['jumlah_capaian'] ?>" style="width: 75px; flex: 0 0 75px; min-width: 75px; max-width: 75px;">
-                                                <span class="input-group-text" style="width: 125px; flex: 0 0 125px; min-width: 125px; max-width: 125px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-flex; align-items: center; justify-content: center; padding: 4px;"><?= esc($row['satuan'] ?? '-') ?></span>
+                                        <td class="col-capaian-log">
+                                            <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
+                                                <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-primary" placeholder="0" value="<?= (float)$row['jumlah_capaian'] ?>">
+                                                <span class="input-group-text badge-capaian-satuan bg-light" title="<?= esc($row['satuan'] ?? '-') ?>"><?= esc($row['satuan'] ?? '-') ?></span>
                                             </div>
                                         </td>
                                         <td>
-                                            <input type="url" name="link_bukti[]" class="form-control" placeholder="https://..." value="<?= esc($row['link_bukti']) ?>">
+                                            <input type="url" name="link_bukti[]" class="form-control form-control-sm" placeholder="https://..." value="<?= esc($row['link_bukti']) ?>">
                                         </td>
                                         <td class="text-center">
-                                            <button type="button" class="btn btn-outline-danger btn-sm hapus-baris" data-id="<?= $row['id'] ?>" title="Hapus baris"><i class="bi bi-trash"></i></button>
+                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris" data-id="<?= $row['id'] ?>" title="Hapus baris" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
                                         </td>
                                     <?php endif; ?>
                                 </tr>
@@ -295,9 +287,9 @@ Lapor Kegiatan Harian
                             <!-- Baris Input Baru Default Tugas Pokok -->
                             <tr class="row-tugas-pokok input-row">
                                 <input type="hidden" name="log_id[]" value="">
-                                <td class="nomor-baris text-center fw-bold">1</td>
+                                <td class="nomor-baris text-center fw-bold text-muted">1</td>
                                 <td>
-                                    <select name="target_id[]" class="form-select">
+                                    <select name="target_id[]" class="form-select form-select-sm">
                                         <option value="">-- Pilih Target / RHK --</option>
                                         <?php foreach($daftar_target as $target): ?>
                                              <?php 
@@ -310,19 +302,19 @@ Lapor Kegiatan Harian
                                     </select>
                                 </td>
                                 <td>
-                                    <textarea name="deskripsi_kegiatan[]" class="form-control" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..."></textarea>
+                                    <textarea name="deskripsi_kegiatan[]" class="form-control form-control-sm" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..."></textarea>
                                 </td>
-                                <td class="col-capaian">
-                                    <div class="input-group" style="width: 200px; display: flex; flex-wrap: nowrap; margin: 0 auto;">
-                                        <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control text-center" placeholder="Angka" style="width: 75px; flex: 0 0 75px; min-width: 75px; max-width: 75px;">
-                                        <span class="input-group-text" style="width: 125px; flex: 0 0 125px; min-width: 125px; max-width: 125px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-flex; align-items: center; justify-content: center; padding: 4px;">-</span>
+                                <td class="col-capaian-log">
+                                    <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
+                                        <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-primary" placeholder="0">
+                                        <span class="input-group-text badge-capaian-satuan bg-light">-</span>
                                     </div>
                                 </td>
                                 <td>
-                                    <input type="url" name="link_bukti[]" class="form-control" placeholder="https://...">
+                                    <input type="url" name="link_bukti[]" class="form-control form-control-sm" placeholder="https://...">
                                 </td>
                                 <td class="text-center">
-                                    <button type="button" class="btn btn-outline-danger btn-sm hapus-baris" title="Hapus baris baru"><i class="bi bi-trash"></i></button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris" title="Hapus baris baru" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
                                 </td>
                             </tr>
                         <?php endif; ?>
@@ -333,13 +325,12 @@ Lapor Kegiatan Harian
                             <td colspan="6" class="py-2.5 px-3 bg-light border-top border-bottom border-secondary-subtle">
                                 <div class="d-flex justify-content-between align-items-center header-section-wrapper">
                                     <div>
-                                        <i class="bi bi-journal-plus me-2 text-primary"></i> 
-                                        <span class="text-dark fs-6">B. TUGAS TAMBAHAN</span>
-                                        <small class="text-muted ms-2 fw-normal">(Opsional - Tugas di luar RHK utama bulan ini)</small>
+                                        <i class="bi bi-journal-plus me-2 text-success"></i> 
+                                        <span class="text-dark fs-6 fw-bold">B. TUGAS TAMBAHAN</span>
                                     </div>
                                     <?php if (!$is_locked): ?>
-                                        <button type="button" id="tambahBarisTambahan" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 shadow-sm">
-                                            <i class="bi bi-plus-circle me-1"></i> Tambah Tugas Tambahan
+                                        <button type="button" id="tambahBarisTambahan" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1 shadow-sm fw-semibold">
+                                            <i class="bi bi-plus-circle me-1"></i> Tambah Tugas
                                         </button>
                                     <?php endif; ?>
                                 </div>
@@ -351,54 +342,58 @@ Lapor Kegiatan Harian
                         <?php if (!empty($rekap_data_tambahan)): ?>
                             <?php foreach ($rekap_data_tambahan as $rowTmb): ?>
                                 <tr class="row-tugas-tambahan">
-                                    <td class="nomor-baris-tmb text-center fw-bold"><?= $rowTmbIndex++ ?></td>
+                                    <td class="nomor-baris-tmb text-center fw-bold text-muted"><?= $rowTmbIndex++ ?></td>
                                     <?php if ($is_locked || (isset($rowTmb['status']) && $rowTmb['status'] === 'terkirim')): ?>
                                         <!-- Read-only View -->
                                         <td class="align-middle">
-                                            <div class="p-2 border rounded bg-light text-muted small text-center fw-semibold">
-                                                <i class="bi bi-journal-plus text-primary me-1"></i> Tugas Tambahan
+                                            <div class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill">
+                                                <i class="bi bi-journal-plus me-1"></i> Tugas Tambahan
                                             </div>
                                         </td>
                                         <td>
-                                            <div class="p-2 border rounded bg-light text-muted"><?= nl2br(esc($rowTmb['deskripsi_kegiatan'])) ?></div>
+                                            <div class="readonly-box text-secondary"><?= nl2br(esc($rowTmb['deskripsi_kegiatan'])) ?></div>
                                         </td>
-                                        <td class="col-capaian">
-                                            <div class="p-2 border rounded bg-light text-center fw-bold text-muted readonly-capaian-box">
+                                        <td class="col-capaian-log">
+                                            <div class="readonly-box text-center fw-bold text-success num-tabular readonly-capaian-box" title="<?= (isset($rowTmb['jumlah_capaian']) && $rowTmb['jumlah_capaian'] !== null && $rowTmb['jumlah_capaian'] !== '') ? str_replace('.', ',', (float)$rowTmb['jumlah_capaian']) : '-' ?> <?= esc($rowTmb['satuan'] ?? '') ?>">
                                                 <?= (isset($rowTmb['jumlah_capaian']) && $rowTmb['jumlah_capaian'] !== null && $rowTmb['jumlah_capaian'] !== '') ? str_replace('.', ',', (float)$rowTmb['jumlah_capaian']) : '-' ?> <?= esc($rowTmb['satuan'] ?? '') ?>
                                             </div>
                                         </td>
                                         <td>
                                             <?php if (!empty($rowTmb['link_bukti'])): ?>
-                                                <div class="p-2 border rounded bg-light text-center"><a href="<?= esc($rowTmb['link_bukti']) ?>" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-link-45deg"></i> Buka Link</a></div>
+                                                <div class="text-center">
+                                                    <a href="<?= esc($rowTmb['link_bukti']) ?>" target="_blank" class="btn btn-sm btn-light text-primary border rounded-pill px-3 py-1" title="Buka tautan bukti pekerjaan di tab baru">
+                                                        <i class="bi bi-box-arrow-up-right me-1"></i> Bukti
+                                                    </a>
+                                                </div>
                                             <?php else: ?>
-                                                <div class="p-2 border rounded bg-light text-center text-muted">-</div>
+                                                <div class="readonly-box text-center text-muted">-</div>
                                             <?php endif; ?>
                                         </td>
                                         <td class="text-center text-success">
-                                            <i class="bi bi-lock-fill text-warning" title="Terkunci"></i>
+                                            <i class="bi bi-lock-fill text-warning fs-6" title="Terkunci"></i>
                                         </td>
                                     <?php else: ?>
                                         <!-- Editable Draft View -->
                                         <input type="hidden" name="log_tambahan_id[]" value="<?= $rowTmb['id'] ?>">
                                         <td class="align-middle">
-                                            <div class="p-2 border rounded bg-light text-muted small text-center fw-semibold">
-                                                <i class="bi bi-journal-plus text-primary me-1"></i> Tugas Tambahan
+                                            <div class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill">
+                                                <i class="bi bi-journal-plus me-1"></i> Tugas Tambahan
                                             </div>
                                         </td>
                                         <td>
-                                            <textarea name="deskripsi_kegiatan_tambahan[]" class="form-control" rows="2" placeholder="Jelaskan tugas tambahan Anda..."><?= esc($rowTmb['deskripsi_kegiatan']) ?></textarea>
+                                            <textarea name="deskripsi_kegiatan_tambahan[]" class="form-control form-control-sm" rows="2" placeholder="Jelaskan tugas tambahan Anda..."><?= esc($rowTmb['deskripsi_kegiatan']) ?></textarea>
                                         </td>
-                                        <td class="col-capaian">
-                                            <div class="input-group" style="width: 200px; display: flex; flex-wrap: nowrap; margin: 0 auto;">
-                                                <input type="number" step="0.01" name="jumlah_capaian_tambahan[]" class="form-control text-center" placeholder="Angka" value="<?= isset($rowTmb['jumlah_capaian']) ? (float)$rowTmb['jumlah_capaian'] : '' ?>" style="width: 75px; flex: 0 0 75px; min-width: 75px; max-width: 75px;">
-                                                <input type="text" name="satuan_tambahan[]" class="form-control text-center" placeholder="Satuan" value="<?= esc($rowTmb['satuan'] ?? '') ?>" style="width: 125px; flex: 0 0 125px; min-width: 125px; max-width: 125px;">
+                                        <td class="col-capaian-log">
+                                            <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
+                                                <input type="number" step="0.01" name="jumlah_capaian_tambahan[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-success" placeholder="0" value="<?= isset($rowTmb['jumlah_capaian']) ? (float)$rowTmb['jumlah_capaian'] : '' ?>">
+                                                <input type="text" name="satuan_tambahan[]" class="form-control input-satuan-val text-center" placeholder="Satuan" list="daftarSatuanStandar" value="<?= esc($rowTmb['satuan'] ?? '') ?>" title="<?= esc($rowTmb['satuan'] ?? '') ?>">
                                             </div>
                                         </td>
                                         <td>
-                                            <input type="url" name="link_bukti_tambahan[]" class="form-control" placeholder="https://..." value="<?= esc($rowTmb['link_bukti']) ?>">
+                                            <input type="url" name="link_bukti_tambahan[]" class="form-control form-control-sm" placeholder="https://..." value="<?= esc($rowTmb['link_bukti']) ?>">
                                         </td>
                                         <td class="text-center">
-                                            <button type="button" class="btn btn-outline-danger btn-sm hapus-baris-tmb" data-id="<?= $rowTmb['id'] ?>" title="Hapus baris"><i class="bi bi-trash"></i></button>
+                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris-tmb" data-id="<?= $rowTmb['id'] ?>" title="Hapus baris" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
                                         </td>
                                     <?php endif; ?>
                                 </tr>
@@ -412,11 +407,11 @@ Lapor Kegiatan Harian
             <!-- SINGLE UNIFIED BUTTON TOOLBAR AT BOTTOM -->
             <?php if (!$is_locked): ?>
             <div class="d-flex justify-content-end align-items-center mt-4 gap-2 btn-action-container">
-                <button type="button" id="btnSimpanSementara" class="btn btn-outline-primary rounded-pill shadow-sm px-4 py-2 fw-bold">
-                    <i class="bi bi-cloud-arrow-up me-2"></i> Simpan Sementara
+                <button type="button" id="btnSimpanSementara" class="btn btn-outline-primary rounded-pill shadow-sm px-4 py-2 fw-semibold">
+                    <i class="bi bi-cloud-arrow-up me-1.5"></i> Simpan Draf
                 </button>
                 <button type="submit" class="btn btn-primary rounded-pill shadow-sm px-4 py-2 fw-bold">
-                    <i class="bi bi-send me-2"></i> Simpan & Kirim Laporan Harian
+                    <i class="bi bi-send me-1.5"></i> Kirim Laporan
                 </button>
             </div>
             <?php endif; ?>
@@ -432,6 +427,11 @@ Lapor Kegiatan Harian
 <script>
     $(document).ready(function() {
         const tabelLog = $('#tabelLog tbody');
+
+        // Cegah perubahan nilai angka secara tidak sengaja saat pengguna scrolling halaman dengan mouse wheel
+        $(document).on('wheel', 'input[type="number"]', function (e) {
+            $(this).blur();
+        });
 
         function updateRowNumbers() {
             tabelLog.find('tr.row-tugas-pokok').each(function(index) {
@@ -454,7 +454,7 @@ Lapor Kegiatan Harian
             const templateRow = tabelLog.find('tr.row-tugas-pokok:first');
             let newRow;
 
-            if (templateRow.length > 0) {
+            if (templateRow.length > 0 && templateRow.find('select[name="target_id[]"]').length > 0) {
                 newRow = templateRow.clone();
                 newRow.find('input[name="log_id[]"]').val('');
                 newRow.find('input[type="number"]').val('');
@@ -463,13 +463,14 @@ Lapor Kegiatan Harian
                 newRow.find('select').val('');
                 newRow.find('.input-group-text').text('-');
                 newRow.find('.hapus-baris').removeAttr('data-id');
+                newRow.find('.is-invalid').removeClass('is-invalid');
             } else {
                 newRow = `
                 <tr class="row-tugas-pokok input-row">
                     <input type="hidden" name="log_id[]" value="">
-                    <td class="nomor-baris text-center fw-bold">1</td>
+                    <td class="nomor-baris text-center fw-bold text-muted">1</td>
                     <td>
-                        <select name="target_id[]" class="form-select">
+                        <select name="target_id[]" class="form-select form-select-sm">
                             <option value="">-- Pilih Target / RHK --</option>
                             <?php foreach($daftar_target as $target): ?>
                                 <?php 
@@ -482,19 +483,19 @@ Lapor Kegiatan Harian
                         </select>
                     </td>
                     <td>
-                        <textarea name="deskripsi_kegiatan[]" class="form-control" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..."></textarea>
+                        <textarea name="deskripsi_kegiatan[]" class="form-control form-control-sm" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..."></textarea>
                     </td>
-                    <td class="col-capaian">
-                        <div class="input-group" style="width: 200px; display: flex; flex-wrap: nowrap; margin: 0 auto;">
-                            <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control text-center" placeholder="Angka" style="width: 75px; flex: 0 0 75px; min-width: 75px; max-width: 75px;">
-                            <span class="input-group-text" style="width: 125px; flex: 0 0 125px; min-width: 125px; max-width: 125px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-flex; align-items: center; justify-content: center; padding: 4px;">-</span>
+                    <td class="col-capaian-log">
+                        <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
+                            <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-primary" placeholder="0">
+                            <span class="input-group-text badge-capaian-satuan bg-light">-</span>
                         </div>
                     </td>
                     <td>
-                        <input type="url" name="link_bukti[]" class="form-control" placeholder="https://...">
+                        <input type="url" name="link_bukti[]" class="form-control form-control-sm" placeholder="https://...">
                     </td>
                     <td class="text-center">
-                        <button type="button" class="btn btn-outline-danger btn-sm hapus-baris" title="Hapus baris"><i class="bi bi-trash"></i></button>
+                        <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris" title="Hapus baris" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
                     </td>
                 </tr>`;
             }
@@ -555,8 +556,9 @@ Lapor Kegiatan Harian
                                     Swal.fire('Gagal', response.message || 'Gagal menghapus data.', 'error');
                                 }
                             },
-                            error: function() {
-                                Swal.fire('Error', 'Terjadi kesalahan jaringan atau server.', 'error');
+                            error: function(xhr, status, error) {
+                                console.error('Hapus Log Error:', xhr.responseText);
+                                Swal.fire('Error', 'Terjadi kesalahan saat menghapus data. Silakan coba lagi.', 'error');
                             }
                         });
                     };
@@ -564,12 +566,12 @@ Lapor Kegiatan Harian
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             title: 'Hapus Kegiatan Harian?',
-                            text: 'Catatan kegiatan harian ini akan dihapus permanen.',
+                            text: 'Apakah Anda yakin ingin menghapus catatan kegiatan ini?',
                             icon: 'warning',
                             showCancelButton: true,
                             confirmButtonColor: '#dc3545',
                             cancelButtonColor: '#6c757d',
-                            confirmButtonText: '<i class="bi bi-trash-fill me-1"></i> Ya, Hapus!',
+                            confirmButtonText: '<i class="bi bi-trash3-fill me-1"></i> Ya, Hapus Kegiatan',
                             cancelButtonText: 'Batal'
                         }).then((result) => {
                             if (result.isConfirmed) {
@@ -588,55 +590,61 @@ Lapor Kegiatan Harian
                 }
             } else {
                 if (typeof Swal !== 'undefined') {
-                    Swal.fire('Peringatan', 'Minimal harus mengisi satu kegiatan harian utama atau satu Tugas Tambahan sebelum menghapus baris ini.', 'warning');
+                    Swal.fire('Pemberitahuan', 'Minimal harus ada 1 kegiatan (Tugas Pokok atau Tugas Tambahan) yang dilaporkan.', 'info');
                 } else {
-                    alert('Minimal harus mengisi satu kegiatan harian utama atau satu Tugas Tambahan sebelum menghapus baris ini.');
+                    alert('Minimal harus ada 1 kegiatan (Tugas Pokok atau Tugas Tambahan) yang dilaporkan.');
                 }
             }
         });
 
         // Tambah Baris Tugas Tambahan
         $('#tambahBarisTambahan').on('click', function() {
-            const templateRow = tabelLog.find('tr.row-tugas-tambahan:last');
+            const templateRowTmb = tabelLog.find('tr.row-tugas-tambahan:first');
             let newRow;
 
-            if (templateRow.length > 0) {
-                newRow = templateRow.clone();
+            if (templateRowTmb.length > 0 && templateRowTmb.find('textarea[name="deskripsi_kegiatan_tambahan[]"]').length > 0) {
+                newRow = templateRowTmb.clone();
                 newRow.find('input[name="log_tambahan_id[]"]').val('');
-                newRow.find('textarea').val('');
-                newRow.find('input[name="jumlah_capaian_tambahan[]"]').val('');
-                newRow.find('input[name="satuan_tambahan[]"]').val('');
+                newRow.find('input[type="number"]').val('');
+                newRow.find('input[name="satuan_tambahan[]"]').val('').attr('title', '');
                 newRow.find('input[type="url"]').val('');
+                newRow.find('textarea').val('');
                 newRow.find('.hapus-baris-tmb').removeAttr('data-id');
+                newRow.find('.is-invalid').removeClass('is-invalid');
             } else {
                 newRow = `
                 <tr class="row-tugas-tambahan">
                     <input type="hidden" name="log_tambahan_id[]" value="">
-                    <td class="nomor-baris-tmb text-center fw-bold">1</td>
+                    <td class="nomor-baris-tmb text-center fw-bold text-muted">1</td>
                     <td class="align-middle">
-                        <div class="p-2 border rounded bg-light text-muted small text-center fw-semibold">
-                            <i class="bi bi-journal-plus text-primary me-1"></i> Tugas Tambahan
+                        <div class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill">
+                            <i class="bi bi-journal-plus me-1"></i> Tugas Tambahan
                         </div>
                     </td>
                     <td>
-                        <textarea name="deskripsi_kegiatan_tambahan[]" class="form-control" rows="2" placeholder="Jelaskan tugas tambahan yang Anda kerjakan hari ini..."></textarea>
+                        <textarea name="deskripsi_kegiatan_tambahan[]" class="form-control form-control-sm" rows="2" placeholder="Jelaskan tugas tambahan yang Anda kerjakan hari ini..."></textarea>
                     </td>
-                    <td class="col-capaian">
-                        <div class="input-group" style="width: 200px; display: flex; flex-wrap: nowrap; margin: 0 auto;">
-                            <input type="number" step="0.01" name="jumlah_capaian_tambahan[]" class="form-control text-center" placeholder="Angka" style="width: 75px; flex: 0 0 75px; min-width: 75px; max-width: 75px;">
-                            <input type="text" name="satuan_tambahan[]" class="form-control text-center" placeholder="Satuan" style="width: 125px; flex: 0 0 125px; min-width: 125px; max-width: 125px;">
+                    <td class="col-capaian-log">
+                        <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
+                            <input type="number" step="0.01" name="jumlah_capaian_tambahan[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-success" placeholder="0">
+                            <input type="text" name="satuan_tambahan[]" class="form-control input-satuan-val text-center" placeholder="Satuan" list="daftarSatuanStandar">
                         </div>
                     </td>
                     <td>
-                        <input type="url" name="link_bukti_tambahan[]" class="form-control" placeholder="https://...">
+                        <input type="url" name="link_bukti_tambahan[]" class="form-control form-control-sm" placeholder="https://...">
                     </td>
                     <td class="text-center">
-                        <button type="button" class="btn btn-outline-danger btn-sm hapus-baris-tmb" title="Hapus"><i class="bi bi-trash"></i></button>
+                        <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris-tmb" title="Hapus" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
                     </td>
                 </tr>`;
             }
             tabelLog.append(newRow);
             updateRowNumbers();
+        });
+
+        // Dynamic title update saat mengetik satuan tambahan
+        $(document).on('input change', '.input-satuan-val', function() {
+            $(this).attr('title', $(this).val());
         });
 
         // Hapus Baris Tugas Tambahan
@@ -699,7 +707,7 @@ Lapor Kegiatan Harian
                         showCancelButton: true,
                         confirmButtonColor: '#dc3545',
                         cancelButtonColor: '#6c757d',
-                        confirmButtonText: '<i class="bi bi-trash-fill me-1"></i> Ya, Hapus!',
+                        confirmButtonText: '<i class="bi bi-trash3-fill me-1"></i> Ya, Hapus Tugas',
                         cancelButtonText: 'Batal'
                     }).then((result) => {
                         if (result.isConfirmed) {
@@ -843,6 +851,11 @@ Lapor Kegiatan Harian
                 });
                 return false;
             }
+
+            // Hardening: Double submission prevention
+            let submitBtn = $(this).find('button[type="submit"]');
+            submitBtn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Mengirim Laporan...').prop('disabled', true);
+            $('#btnSimpanSementara').prop('disabled', true);
         });
 
         // Single Unified Submit "Simpan Sementara" (AJAX)
@@ -982,7 +995,7 @@ Lapor Kegiatan Harian
                     showCancelButton: true,
                     confirmButtonColor: '#dc3545',
                     cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="bi bi-unlock-fill me-1"></i> Ya, Buka Kunci!',
+                    confirmButtonText: '<i class="bi bi-unlock-fill me-1"></i> Ya, Buka Kunci Laporan',
                     cancelButtonText: 'Batal'
                 }).then((result) => {
                     if (result.isConfirmed) {

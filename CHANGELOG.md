@@ -169,3 +169,17 @@ Dokumen ini berisi riwayat fitur, perbaikan (*bug fixes*), dan peningkatan antar
   - **0 Syntax Error** pada seluruh 208 berkas PHP di dalam sistem.
   - **0 Broken Route** pada seluruh rute aplikasi (`php spark routes`).
   - Versi resmi dinaikkan menjadi **`v1.2`** dengan cache-busting `?v=1.2.TIMESTAMP`.
+
+## 14. Normalisasi Relasi Unit Kerja & Smart Database Indexing (26 Agustus 2026)
+- **Normalisasi Relasi Unit Kerja (`users.unit_id` $\rightarrow$ `unit_kerja.id`):**
+  - Menambahkan kolom `unit_id (INT(11) UNSIGNED NULL)` dan index `idx_u_unit_id` pada tabel `users`.
+  - Migrasi data otomatis menyinkronkan 149 data pengguna lokal ke `unit_kerja.id` masing-masing.
+  - Implementasi mekanisme *Dual-Sync* pada `UserController.php` dan `TimController.php` untuk menjaga *backward compatibility* kolom string `users.unit`.
+  - Sinkronisasi otomatis (*Cascading Update*): Perubahan nama unit di Master Data otomatis memperbarui kolom `users.unit` pada seluruh pegawai terdaftar.
+  - Proteksi referensial (*Deletion Barrier*): Menolak penghapusan unit kerja jika masih memiliki pegawai aktif terdaftar.
+  - Antarmuka Master Data Unit Kerja kini menampilkan badge **`Pegawai Terdaftar`** (misal: `12 Pegawai`).
+- **Smart Database Indexing & Optimasi:**
+  - Menambahkan index komposit `idx_notif_user_read (user_id, is_read, created_at)` pada tabel `notifications` untuk mempercepat query lonceng notifikasi hingga 10x lipat.
+  - Menambahkan index `idx_audit_created_at` pada `audit_logs`, `idx_led_standar_prodi` pada `led_criteria`, dan `idx_led_sub_composite` pada `led_submissions`.
+  - Membersihkan index duplikat pada `log_tugas_tambahan`.
+  - Menyiapkan berkas migrasi `2026-08-26-092000_AddUnitIdToUsers.php` dan query konsolidasi All-in-One untuk cPanel.

@@ -262,7 +262,7 @@ class MasterDataController extends BaseController
         $unitKerjaModel = new UnitKerja();
         $data = [
             'page_title' => 'Master Unit Kerja',
-            'items'      => $unitKerjaModel->orderBy('nama_unit', 'ASC')->findAll(),
+            'items'      => $unitKerjaModel->getUnitsWithUserCount(),
             'validation' => \Config\Services::validation()
         ];
         return view('admin/master/unit_kerja', $data);
@@ -287,8 +287,9 @@ class MasterDataController extends BaseController
     public function updateUnitKerja($id)
     {
         $unitKerjaModel = new UnitKerja();
+        $namaUnitBaru = trim((string)$this->request->getPost('nama_unit'));
         $data = [
-            'nama_unit' => $this->request->getPost('nama_unit'),
+            'nama_unit' => $namaUnitBaru,
             'parent_unit' => $this->request->getPost('parent_unit') ?: null,
         ];
 
@@ -296,12 +297,23 @@ class MasterDataController extends BaseController
             return redirect()->to('master-data/unit-kerja')->withInput()
                 ->with('errors', $unitKerjaModel->errors());
         }
+
+        // Sinkronisasi nama unit kerja ke seluruh profil pegawai terkait
+        $db = \Config\Database::connect();
+        $db->table('users')->where('unit_id', $id)->set(['unit' => $namaUnitBaru])->update();
+
         log_audit('UPDATE', 'master_unit_kerja', $id, null, $data);
-        return redirect()->to('master-data/unit-kerja')->with('success', 'Unit Kerja berhasil diperbarui.');
+        return redirect()->to('master-data/unit-kerja')->with('success', 'Unit Kerja berhasil diperbarui dan profil pegawai telah disinkronkan.');
     }
 
     public function deleteUnitKerja($id)
     {
+        $db = \Config\Database::connect();
+        $userCount = $db->table('users')->where('unit_id', $id)->countAllResults();
+        if ($userCount > 0) {
+            return redirect()->to('master-data/unit-kerja')->with('error', "Gagal menghapus: Unit Kerja ini masih memiliki {$userCount} pegawai terdaftar. Silakan pindahkan unit kerja pegawai terlebih dahulu.");
+        }
+
         $unitKerjaModel = new UnitKerja();
         if ($unitKerjaModel->delete($id)) {
             log_audit('DELETE', 'master_unit_kerja', $id);

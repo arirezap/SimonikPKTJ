@@ -25,15 +25,15 @@ $isKepegawaian = hasRole('kepegawaian');
     <i class="bi bi-list sidebar-toggle d-none d-lg-block" id="sidebarToggle"></i>
 
     <div class="sidebar-header d-none d-lg-block">
-        <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ" class="sidebar-logo">
+        <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ Tegal" class="sidebar-logo" width="45" height="45" loading="eager">
     </div>
     
     <!-- Header Sidebar Mobile (Offcanvas) -->
     <div class="offcanvas-header d-lg-none border-bottom px-4 py-3">
         <h5 class="offcanvas-title" id="sidebarOffcanvasLabel">
-            <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ" class="sidebar-logo" style="height: 45px;">
+            <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ Tegal" class="sidebar-logo" style="height: 45px; width: auto;" width="45" height="45" loading="eager">
         </h5>
-        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" data-bs-target="#sidebarOffcanvas" aria-label="Close"></button>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" data-bs-target="#sidebarOffcanvas" aria-label="Tutup navigasi"></button>
     </div>
 
     <div class="sidebar-menu offcanvas-body p-0 d-block">
@@ -47,11 +47,11 @@ $isKepegawaian = hasRole('kepegawaian');
             </li>
 
             <li class="nav-item">
-                <a class="nav-link <?= $isEccActive ? 'active' : 'collapsed' ?>" href="#eccSubmenu" role="button" data-bs-toggle="collapse">
+                <a class="nav-link <?= $isEccActive ? 'active' : 'collapsed' ?>" href="#eccSubmenu" role="button" data-bs-toggle="collapse" aria-expanded="<?= $isEccActive ? 'true' : 'false' ?>" aria-controls="eccSubmenu">
                     <i class="bi bi-display-fill"></i><span>ECC</span>
                     <i class="bi bi-chevron-down sidebar-toggle-icon ms-auto"></i>
                 </a>
-                <div class="collapse" id="eccSubmenu">
+                <div class="collapse <?= $isEccActive ? 'show' : '' ?>" id="eccSubmenu">
                     <ul class="nav flex-column ps-4">
                         <li class="nav-item"><a href="<?= site_url('ecc/led') ?>" class="nav-link sub-link <?= ($segment2 == 'led') ? 'active' : '' ?>"><span>LED</span></a></li>
 
@@ -110,11 +110,11 @@ $isKepegawaian = hasRole('kepegawaian');
 
             <?php if (hasAnyRole(['admin', 'kepegawaian', 'spm'])): ?>
                 <li class="nav-item">
-                    <a class="nav-link <?= $isMasterDataActive ? 'active' : 'collapsed' ?>" href="#masterDataSubmenu" role="button" data-bs-toggle="collapse">
+                    <a class="nav-link <?= $isMasterDataActive ? 'active' : 'collapsed' ?>" href="#masterDataSubmenu" role="button" data-bs-toggle="collapse" aria-expanded="<?= $isMasterDataActive ? 'true' : 'false' ?>" aria-controls="masterDataSubmenu">
                         <i class="bi bi-database-fill-gear"></i><span>Master Data</span>
                         <i class="bi bi-chevron-down sidebar-toggle-icon ms-auto"></i>
                     </a>
-                    <div class="collapse" id="masterDataSubmenu">
+                    <div class="collapse <?= $isMasterDataActive ? 'show' : '' ?>" id="masterDataSubmenu">
                         <ul class="nav flex-column ps-4">
                             <li class="nav-item"><a href="<?= site_url('master-data/sasaran') ?>" class="nav-link sub-link <?= ($current_uri == 'master-data/sasaran') ? 'active' : '' ?>"><span>Sasaran Program</span></a></li>
                             <li class="nav-item"><a href="<?= site_url('master-data/indikator') ?>" class="nav-link sub-link <?= ($current_uri == 'master-data/indikator') ? 'active' : '' ?>"><span>Indikator Kinerja</span></a></li>

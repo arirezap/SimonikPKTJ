@@ -25,6 +25,7 @@ class User extends Model
         'nip',
         'jabatan',
         'unit',
+        'unit_id',
         'pangkat',
         'no_hp'
     ];

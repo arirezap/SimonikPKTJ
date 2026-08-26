@@ -166,7 +166,26 @@ class UserController extends BaseController
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        $unit = $this->request->getPost('unit');
+        $unitInput = $this->request->getPost('unit_id') ?? $this->request->getPost('unit');
+        $unitId = null;
+        $unitNama = '';
+        if (!empty($unitInput)) {
+            $unitKerjaModel = new UnitKerja();
+            if (is_numeric($unitInput)) {
+                $unitDb = $unitKerjaModel->find($unitInput);
+                if ($unitDb) {
+                    $unitId = $unitDb['id'];
+                    $unitNama = $unitDb['nama_unit'];
+                }
+            } else {
+                $unitNama = trim((string)$unitInput);
+                $unitDb = $unitKerjaModel->where('nama_unit', $unitNama)->first();
+                if ($unitDb) {
+                    $unitId = $unitDb['id'];
+                }
+            }
+        }
+
         $role = $this->request->getPost('role');
 
         $data = [
@@ -174,7 +193,8 @@ class UserController extends BaseController
             'nip'          => $this->request->getPost('nip'),
             'jabatan'      => $this->request->getPost('jabatan'),
             'pangkat'      => $this->request->getPost('pangkat'),
-            'unit'         => $unit,
+            'unit'         => $unitNama,
+            'unit_id'      => $unitId,
             'role'         => $role,
             'email'        => $this->request->getPost('email'),
             'username'     => $this->request->getPost('username'),
@@ -262,14 +282,20 @@ class UserController extends BaseController
                 'rules'  => "required|is_unique[users.username,id,{$id}]",
                 'errors' => [
                     'required'  => 'Username (atau NIP) wajib diisi.',
-                    'is_unique' => 'Gagal: Username / NIP tersebut sudah dipakai oleh pengguna lain.'
+                    'is_unique' => 'Gagal: Username / NIP tersebut sudah terdaftar di sistem. Silakan gunakan yang lain.'
                 ]
             ],
             'email' => [
-                'rules'  => 'required|valid_email',
+                'rules'  => "permit_empty|valid_email|is_unique[users.email,id,{$id}]",
                 'errors' => [
-                    'required'    => 'Email wajib diisi.',
-                    'valid_email' => 'Format email tidak valid.'
+                    'valid_email' => 'Format email tidak valid.',
+                    'is_unique'   => 'Email tersebut sudah digunakan oleh akun lain.'
+                ]
+            ],
+            'password' => [
+                'rules'  => 'permit_empty|min_length[6]',
+                'errors' => [
+                    'min_length' => 'Password baru minimal harus terdiri dari 6 karakter.'
                 ]
             ],
             'nama_lengkap' => [
@@ -282,15 +308,35 @@ class UserController extends BaseController
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        $unit = $this->request->getPost('unit');
+        $unitInput = $this->request->getPost('unit_id') ?? $this->request->getPost('unit');
+        $unitId = null;
+        $unitNama = '';
+        if (!empty($unitInput)) {
+            $unitKerjaModel = new UnitKerja();
+            if (is_numeric($unitInput)) {
+                $unitDb = $unitKerjaModel->find($unitInput);
+                if ($unitDb) {
+                    $unitId = $unitDb['id'];
+                    $unitNama = $unitDb['nama_unit'];
+                }
+            } else {
+                $unitNama = trim((string)$unitInput);
+                $unitDb = $unitKerjaModel->where('nama_unit', $unitNama)->first();
+                if ($unitDb) {
+                    $unitId = $unitDb['id'];
+                }
+            }
+        }
+
         $role = $this->request->getPost('role');
-        
+
         $data = [
             'nama_lengkap' => $this->request->getPost('nama_lengkap'),
             'nip'          => $this->request->getPost('nip'),
             'jabatan'      => $this->request->getPost('jabatan'),
             'pangkat'      => $this->request->getPost('pangkat'),
-            'unit'         => $unit,
+            'unit'         => $unitNama,
+            'unit_id'      => $unitId,
             'role'         => $role,
             'email'        => $this->request->getPost('email'),
             'username'     => $this->request->getPost('username'),
@@ -363,23 +409,45 @@ class UserController extends BaseController
         }
 
         $userId = $this->request->getPost('user_id');
-        $unit = $this->request->getPost('unit');
+        $unitInput = $this->request->getPost('unit_id') ?? $this->request->getPost('unit');
 
         // Basic validation
         if (empty($userId) || ! is_numeric($userId)) {
             return $this->response->setJSON(['success' => false, 'message' => 'User ID tidak valid.'])->setStatusCode(400);
         }
 
-        $updateData = ['unit' => $unit];
+        $unitId = null;
+        $unitNama = '';
+        if (!empty($unitInput)) {
+            $unitKerjaModel = new UnitKerja();
+            if (is_numeric($unitInput)) {
+                $unitDb = $unitKerjaModel->find($unitInput);
+                if ($unitDb) {
+                    $unitId = $unitDb['id'];
+                    $unitNama = $unitDb['nama_unit'];
+                }
+            } else {
+                $unitNama = trim((string)$unitInput);
+                $unitDb = $unitKerjaModel->where('nama_unit', $unitNama)->first();
+                if ($unitDb) {
+                    $unitId = $unitDb['id'];
+                }
+            }
+        }
+
+        $updateData = [
+            'unit'    => $unitNama,
+            'unit_id' => $unitId
+        ];
 
         // Jika unit diubah menjadi Satuan Penjaminan Mutu, otomatis ubah role
-        if (strtolower(trim($unit ?? '')) === 'satuan penjaminan mutu') {
+        if (strtolower(trim($unitNama ?? '')) === 'satuan penjaminan mutu') {
             $updateData['role'] = 'spm';
         }
 
         // Sinkronisasi Atasan otomatis
-        if (!empty($unit)) {
-            $pimpinan = $this->userModel->where('unit', $unit)
+        if (!empty($unitNama)) {
+            $pimpinan = $this->userModel->where('unit', $unitNama)
                                         ->whereIn('role', ['manajemen', 'kabag_aak', 'kabag_kuk', 'kabag'])
                                         ->first();
             $updateData['atasan_id'] = $pimpinan ? $pimpinan['id'] : 0;

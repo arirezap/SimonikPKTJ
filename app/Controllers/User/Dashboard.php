@@ -171,7 +171,7 @@ class Dashboard extends BaseController
 
         // --- 3. RENDER FULL VIEW JIKA BUKAN AJAX ---
         $data = [
-            'page_title' => 'User Dashboard',
+            'page_title' => 'Dashboard',
             'tahun_ecc' => $tahun_ecc,
             'tahun_kinerja' => $tahun_kinerja,
             'daftar_tahun' => $this->getDashboardEccData(date('Y'))['daftar_tahun'],

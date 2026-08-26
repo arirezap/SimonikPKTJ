@@ -63,8 +63,9 @@
                     <tr>
                         <th style="width: 60px;" class="text-center">No</th>
                         <th>Nama Unit Kerja</th>
-                        <th style="width: 200px;" class="text-center">Penanggung Jawab</th>
-                        <th style="width: 140px;" class="text-center">Aksi</th>
+                        <th style="width: 180px;" class="text-center">Penanggung Jawab</th>
+                        <th style="width: 150px;" class="text-center">Pegawai Terdaftar</th>
+                        <th style="width: 120px;" class="text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -91,6 +92,18 @@
                             <?php endif; ?>
                         </td>
                         <td class="text-center">
+                            <?php $jml = (int)($item['jumlah_pegawai'] ?? 0); ?>
+                            <?php if ($jml > 0): ?>
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle rounded-pill px-2.5 py-1 fw-semibold" style="font-size: 0.75rem;">
+                                    <i class="bi bi-people-fill me-1"></i> <?= $jml ?> Pegawai
+                                </span>
+                            <?php else: ?>
+                                <span class="badge bg-light text-muted border rounded-pill px-2.5 py-1" style="font-size: 0.75rem;">
+                                    0 Pegawai
+                                </span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="text-center">
                             <div class="d-flex justify-content-center gap-1">
                                 <button type="button" class="btn btn-outline-warning btn-sm rounded-circle shadow-sm" 
                                     style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"
@@ -101,7 +114,7 @@
                                 </button>
                                 <button type="button" class="btn btn-outline-danger btn-sm rounded-circle shadow-sm btn-hapus" 
                                     style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"
-                                    onclick="confirmDeleteUnit(<?= $item['id'] ?>, '<?= esc($item['nama_unit'], 'js') ?>')"
+                                    onclick="confirmDeleteUnit(<?= $item['id'] ?>, '<?= esc($item['nama_unit'], 'js') ?>', <?= (int)($item['jumlah_pegawai'] ?? 0) ?>)"
                                     title="Hapus Unit Kerja">
                                     <i class="bi bi-trash-fill"></i>
                                 </button>
@@ -110,14 +123,14 @@
                     </tr>
                     <?php endforeach; else: ?>
                     <tr id="emptyRow">
-                        <td colspan="4" class="text-center py-5 text-muted">
+                        <td colspan="5" class="text-center py-5 text-muted">
                             <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary opacity-50"></i>
                             Belum ada data unit kerja.
                         </td>
                     </tr>
                     <?php endif; ?>
                     <tr id="noSearchResult" style="display: none;">
-                        <td colspan="4" class="text-center py-4 text-muted">
+                        <td colspan="5" class="text-center py-4 text-muted">
                             <i class="bi bi-search fs-3 d-block mb-1 text-secondary opacity-50"></i>
                             Tidak ada unit kerja yang cocok dengan pencarian.
                         </td>
@@ -233,7 +246,22 @@
     });
 
     // Delete Confirmation with SweetAlert2 & Native Fallback
-    function confirmDeleteUnit(id, name) {
+    function confirmDeleteUnit(id, name, employeeCount = 0) {
+        if (employeeCount > 0) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Tidak Dapat Dihapus',
+                    html: `Unit Kerja <strong>"${name}"</strong> masih memiliki <strong>${employeeCount} pegawai terdaftar</strong>.<br><br>Silakan pindahkan unit kerja pegawai yang bersangkutan terlebih dahulu di menu <em>Kelola Pengguna</em> sebelum menghapus unit ini.`,
+                    confirmButtonColor: '#0d6efd',
+                    confirmButtonText: 'Mengerti'
+                });
+            } else {
+                alert(`Tidak dapat dihapus: Unit Kerja "${name}" masih memiliki ${employeeCount} pegawai terdaftar. Silakan pindahkan pegawai terlebih dahulu.`);
+            }
+            return;
+        }
+
         function executeDelete() {
             const form = document.getElementById('formHapus');
             form.action = `<?= site_url('master-data/unit-kerja/delete/') ?>${id}`;

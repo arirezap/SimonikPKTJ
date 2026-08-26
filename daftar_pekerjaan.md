@@ -170,10 +170,25 @@ Dokumen ini adalah lembar kerja resmi pelacakan pekerjaan pengembangan, perbaika
 
 ---
 
+### 📌 HALAMAN 12: NORMALISASI RELASI UNIT KERJA & SMART DATABASE OPTIMIZATION
+
+- [x] **TUGAS 12.1: Normalisasi Relasi Unit Kerja (`users.unit_id` $\rightarrow$ `unit_kerja.id`) & Indexing**
+  - **Uraian Pekerjaan**:
+    - Penambahan kolom `unit_id` dan index `idx_u_unit_id` pada tabel `users` dengan migrasi data otomatis 149 pengguna aktif.
+    - Mekanisme *Dual-Sync* pada `UserController.php` dan `TimController.php` menjamin *backward compatibility* pada kolom string `users.unit`.
+    - Otomasi *Cascading Update* pada `MasterDataController::updateUnitKerja()` untuk memperbarui nama unit kerja secara serentak ke profil pegawai.
+    - Proteksi *Deletion Barrier* pada backend `deleteUnitKerja()` dan antarmuka SweetAlert2 frontend yang mencegah penghapusan unit kerja berpenghuni.
+    - Penambahan badge indikator **`Pegawai Terdaftar`** di tabel Master Data Unit Kerja.
+    - Penerapan *Smart Indexing* pada tabel `notifications`, `audit_logs`, `led_criteria`, dan `led_submissions` serta pembersihan index duplikat pada `log_tugas_tambahan`.
+  - **Status**: Selesai ✅ *(26 Agustus 2026)*
+
+---
+
 ## 📊 Status Progres Pelaksanaan
 
 ```text
-[████████████████████████████████████████████] 100% Selesai (11 dari 11 Halaman Ter-audit)
+[████████████████████████████████████████████] 100% Selesai (12 dari 12 Modul Ter-audit & Ter-optimasi)
 ```
 
 *(Dokumen ini diperbarui secara real-time setiap kali satu halaman selesai diaudit dan dioptimasi)*
+

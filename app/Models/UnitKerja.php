@@ -37,4 +37,16 @@ class UnitKerja extends Model
     ];
     protected $skipValidation       = false;
     protected $cleanValidationRules = true;
+
+    /**
+     * Mengambil seluruh data unit kerja beserta jumlah pegawai aktif yang terdaftar
+     */
+    public function getUnitsWithUserCount()
+    {
+        return $this->select('unit_kerja.*, COUNT(users.id) as jumlah_pegawai')
+                    ->join('users', 'users.unit_id = unit_kerja.id', 'left')
+                    ->groupBy('unit_kerja.id')
+                    ->orderBy('unit_kerja.nama_unit', 'ASC')
+                    ->findAll();
+    }
 }

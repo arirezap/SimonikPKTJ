@@ -121,7 +121,7 @@ class TimController extends BaseController
         }
 
         $userId = $this->request->getPost('user_id');
-        $unit = $this->request->getPost('unit');
+        $unitInput = $this->request->getPost('unit_id') ?? $this->request->getPost('unit');
         $myId = session()->get('id');
         $me = $this->userModel->find($myId);
         $myUnit = $me['unit'] ?? null;
@@ -132,14 +132,37 @@ class TimController extends BaseController
             return $this->response->setJSON(['success' => false, 'message' => 'Bukan staf Anda.'])->setStatusCode(403);
         }
 
-        $updateData = ['unit' => $unit];
-        if (strtolower(trim($unit ?? '')) === 'satuan penjaminan mutu') {
+        $unitId = null;
+        $unitNama = '';
+        if (!empty($unitInput)) {
+            $unitKerjaModel = new \App\Models\UnitKerja();
+            if (is_numeric($unitInput)) {
+                $unitDb = $unitKerjaModel->find($unitInput);
+                if ($unitDb) {
+                    $unitId = $unitDb['id'];
+                    $unitNama = $unitDb['nama_unit'];
+                }
+            } else {
+                $unitNama = trim((string)$unitInput);
+                $unitDb = $unitKerjaModel->where('nama_unit', $unitNama)->first();
+                if ($unitDb) {
+                    $unitId = $unitDb['id'];
+                }
+            }
+        }
+
+        $updateData = [
+            'unit'    => $unitNama,
+            'unit_id' => $unitId
+        ];
+
+        if (strtolower(trim($unitNama ?? '')) === 'satuan penjaminan mutu') {
             $updateData['role'] = 'spm';
         }
 
         // Sinkronisasi otomatis atasan berdasarkan unit yang baru
-        if (!empty($unit)) {
-            $pimpinan = $this->userModel->where('unit', $unit)
+        if (!empty($unitNama)) {
+            $pimpinan = $this->userModel->where('unit', $unitNama)
                                         ->whereIn('role', ['manajemen', 'kabag_aak', 'kabag_kuk', 'kabag'])
                                         ->first();
             if ($pimpinan) {
@@ -152,7 +175,7 @@ class TimController extends BaseController
         }
 
         if ($this->userModel->update($userId, $updateData)) {
-            log_audit('UPDATE', 'users', $userId, null, ['action' => 'UPDATE_UNIT_TIM', 'unit' => $unit]);
+            log_audit('UPDATE', 'users', $userId, null, ['action' => 'UPDATE_UNIT_TIM', 'unit' => $unitNama, 'unit_id' => $unitId]);
             return $this->response->setJSON([
                 'success' => true, 
                 'message' => 'Unit kerja berhasil diperbarui.',

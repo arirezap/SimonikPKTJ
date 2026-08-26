@@ -44,6 +44,12 @@ Modul ini merupakan *core engine* untuk evaluasi bulanan yang terdiri dari dua s
 - **Pendaftaran Rute Eksplisit:** Seluruh endpoint AJAX terdaftar pada `Routes.php` dalam grup filter otentikasi.
 - **Mekanisme Cache-Control:** Dilengkapi HTTP Cache-Control header di layout utama agar pengguna langsung mendapatkan update terbaru pasca deployment.
 
+#### 3.5. Modul Master Data & Relasi Unit Kerja Normalisasi
+- **Normalisasi Relasi (`users.unit_id`):** Tabel `users` dinormalkan dengan relasi foreign key `unit_id` ke tabel `unit_kerja` dengan mempertahankan sinkronisasi otomatis kolom teks `unit` (*Dual-Sync*).
+- **Cascading Update:** Pembaruan nama unit pada Master Data otomatis memperbarui seluruh profil pegawai terdaftar.
+- **Integrity Barrier:** Proteksi referensial menolak penghapusan unit kerja jika masih terdapat pegawai aktif.
+- **Smart Database Indexing:** Peningkatan kecepatan query melalui penambahan composite index pada notifikasi, log audit, dan modul LED ECC.
+
 ### 4. Pedoman Desain (UI/UX Guidelines)
 Aplikasi ini dikembangkan dengan berpegang teguh pada prinsip **ui-ux-pro-max**:
 - **Pendekatan Bento / Card:** Semua tabel, *form*, dan *widget* dibungkus ke dalam *card* membulat (`rounded`, `shadow-sm`) dengan latar belakang putih.
@@ -63,6 +69,9 @@ Sistem menerapkan konsep pemisahan tugas menggunakan arsitektur **Tabel Pivot (M
 - [x] Implementasi arsitektur Multi-Role (Tabel Pivot).
 - [x] Modul Kepegawaian (Rekap Nilai Remunerasi) & Export Excel.
 - [x] Log Aktivitas Sistem (Audit Trail) dengan Live Search, Date Range Filter, & JSON Viewer Modal.
+- [x] Normalisasi Relasi Unit Kerja (`users.unit_id`) & Cascading Sync.
+- [x] Smart Indexing & Optimasi Database v1.2.
+
 - [x] Refactoring & Optimalisasi Modul Laporan Kinerja & Log Kegiatan Harian.
 - [x] Modul Evidence Command Center (ECC LED & Simulasi Penilaian).
 - [x] Modul Notifikasi Auto-Sync Hari Libur Nasional API.

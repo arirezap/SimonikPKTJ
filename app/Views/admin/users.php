@@ -5,6 +5,14 @@
 <?= $this->section('styles') ?>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+<style>
+    @media (max-width: 767.98px) {
+        .form-control, .form-select {
+            font-size: 16px !important;
+        }
+    }
+</style>
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
@@ -35,7 +43,7 @@
     </div>
 
     <!-- COMPACT FILTER TOOLBAR (RESPONSIVE GRID) -->
-    <div class="card mb-3 border-0 shadow-sm rounded-3">
+    <div class="card mb-3 border-0 shadow-sm rounded-4">
         <div class="card-body p-2 p-md-3">
             <form action="<?= site_url('users') ?>" method="GET" class="row g-2 align-items-end">
                 <div class="col-12 col-md-4">
@@ -52,7 +60,7 @@
                         <option value="admin" <?= (isset($filter_role) && $filter_role == 'admin') ? 'selected' : '' ?>>Admin</option>
                         <option value="direktur" <?= (isset($filter_role) && $filter_role == 'direktur') ? 'selected' : '' ?>>Direktur</option>
                         <option value="wadir" <?= (isset($filter_role) && $filter_role == 'wadir') ? 'selected' : '' ?>>Wakil Direktur</option>
-                        <option value="user" <?= (isset($filter_role) && $filter_role == 'user') ? 'selected' : '' ?>>User / Staf</option>
+                        <option value="user" <?= (isset($filter_role) && $filter_role == 'user') ? 'selected' : '' ?>>Staf</option>
                         <option value="kabag" <?= (isset($filter_role) && $filter_role == 'kabag') ? 'selected' : '' ?>>Kabag (AAK/KUK)</option>
                     </select>
                 </div>
@@ -82,8 +90,8 @@
 
     <!-- FLASH MESSAGES -->
     <?php if (session()->has('import_errors')): ?>
-        <div class="alert alert-danger alert-dismissible fade show small mb-3" role="alert">
-            <strong>Terjadi beberapa kesalahan saat import:</strong>
+        <div class="alert alert-danger alert-dismissible fade show small mb-3 shadow-sm py-2 px-3" role="alert">
+            <strong>Terjadi kesalahan saat import:</strong>
             <ul class="mb-0 ps-3">
                 <?php foreach (session('import_errors') as $error): ?>
                     <li><?= esc($error) ?></li>
@@ -94,14 +102,14 @@
     <?php endif; ?>
 
     <?php if (session()->getFlashdata('success')): ?>
-        <div class="alert alert-success alert-dismissible fade show small mb-3" role="alert">
+        <div class="alert alert-success alert-dismissible fade show small mb-3 shadow-sm py-2 px-3" role="alert">
             <i class="bi bi-check-circle-fill me-1"></i> <?= session()->getFlashdata('success') ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
     
     <?php if (session()->getFlashdata('error')): ?>
-        <div class="alert alert-danger alert-dismissible fade show small mb-3" role="alert">
+        <div class="alert alert-danger alert-dismissible fade show small mb-3 shadow-sm py-2 px-3" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-1"></i> <?= session()->getFlashdata('error') ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
@@ -120,7 +128,7 @@
     ?>
 
     <!-- COMPACT HIGH-DENSITY TABLE (RESPONSIVE GRID) -->
-    <div class="card border-0 shadow-sm rounded-3 overflow-hidden mb-3">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-3">
         <div class="table-responsive-smooth">
             <table class="table table-sm table-hover compact-table align-middle mb-0" id="dataTable" style="min-width: 980px;">
                 <thead class="table-light border-bottom">
@@ -280,28 +288,28 @@
 <!-- MODAL IMPORT CSV -->
 <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header py-2.5">
-                <h5 class="modal-title h6 fw-bold" id="importModalLabel"><i class="bi bi-file-earmark-excel-fill me-2 text-success"></i>Import Pengguna dari Excel</h5>
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header py-3 px-4 border-bottom">
+                <h5 class="modal-title h6 fw-bold mb-0" id="importModalLabel"><i class="bi bi-file-earmark-excel-fill me-2 text-success"></i>Import Pengguna Excel</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="<?= site_url('users/import') ?>" method="post" enctype="multipart/form-data" autocomplete="off">
+            <form action="<?= site_url('users/import') ?>" method="post" enctype="multipart/form-data" autocomplete="off" id="formImportUsers">
                 <?= csrf_field() ?>
-                <div class="modal-body">
+                <div class="modal-body p-4">
                     <p class="small text-muted mb-2">
-                        Silakan unduh template Excel (.xlsx) terlebih dahulu untuk memastikan format header dan struktur data sesuai.
+                        Unduh template Excel untuk memastikan format kolom dan struktur data sesuai.
                     </p>
                     <a href="<?= site_url('users/export') ?>" class="btn btn-sm btn-outline-success mb-3 w-100 fw-semibold">
-                        <i class="bi bi-file-earmark-arrow-down-fill me-1"></i> Unduh Template Excel (.xlsx) Disini
+                        <i class="bi bi-file-earmark-arrow-down-fill me-1"></i> Unduh Template Excel (.xlsx)
                     </a>
-                    <div class="mb-3">
-                        <label for="file_excel" class="form-label small fw-bold">Pilih File Excel / CSV (.xlsx, .xls, .csv)</label>
+                    <div class="mb-2">
+                        <label for="file_excel" class="form-label small fw-bold">Pilih Berkas Excel / CSV</label>
                         <input class="form-control form-control-sm" type="file" name="file_excel" id="file_excel" required accept=".xlsx, .xls, .csv">
                     </div>
                 </div>
-                <div class="modal-footer py-2">
+                <div class="modal-footer py-2 px-4 bg-light rounded-bottom-4">
                     <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-sm btn-primary fw-bold"><i class="bi bi-upload me-1"></i> Mulai Import</button>
+                    <button type="submit" class="btn btn-sm btn-primary fw-bold" id="btnSubmitImport"><i class="bi bi-upload me-1"></i> Mulai Import</button>
                 </div>
             </form>
         </div>
@@ -311,32 +319,32 @@
 <!-- MODAL BATCH EDIT ATASAN -->
 <div class="modal fade" id="batchEditModal" tabindex="-1" aria-labelledby="batchEditModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header py-2.5">
-                <h5 class="modal-title h6 fw-bold" id="batchEditModalLabel"><i class="bi bi-people-fill me-2 text-info"></i>Batch Edit Atasan Langsung</h5>
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header py-3 px-4 border-bottom">
+                <h5 class="modal-title h6 fw-bold mb-0" id="batchEditModalLabel"><i class="bi bi-people-fill me-2 text-info"></i>Batch Edit Atasan</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="<?= site_url('users/batch_update') ?>" method="post" autocomplete="off">
+            <form action="<?= site_url('users/batch_update') ?>" method="post" autocomplete="off" id="formBatchUpdate">
                 <?= csrf_field() ?>
                 <input type="hidden" name="user_ids" id="batchUserIds">
                 <?php $qs = !empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : ''; ?>
                 <input type="hidden" name="return_qs" value="<?= esc($qs) ?>">
-                <div class="modal-body">
-                    <p class="small">Anda akan mengubah atasan untuk <strong id="batchEditCount" class="text-primary fs-6">0</strong> pengguna terpilih.</p>
-                    <div class="mb-3">
-                        <label for="atasan_id_batch" class="form-label small fw-bold">Pilih Atasan Langsung Baru</label>
+                <div class="modal-body p-4">
+                    <p class="small mb-3">Ubah atasan langsung untuk <strong id="batchEditCount" class="text-primary fs-6">0</strong> pengguna terpilih:</p>
+                    <div class="mb-2">
+                        <label for="atasan_id_batch" class="form-label small fw-bold">Atasan Langsung Baru</label>
                         <select name="atasan_id" id="atasan_id_batch" class="form-select form-select-sm">
-                            <option value="">-- Hapus Atasan (Tidak Memiliki Atasan) --</option>
+                            <option value="">-- Hapus Atasan (Tanpa Atasan) --</option>
                             <?php foreach ($potential_bosses as $boss): ?>
                                 <option value="<?= $boss['id'] ?>"><?= esc($boss['nama_lengkap']) ?> - <?= esc($boss['jabatan'] ?? 'Tanpa Jabatan') ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <div class="form-text small" style="font-size: 0.72rem;">Semua pengguna yang dicentang akan diperbarui atasannya secara serentak.</div>
+                        <div class="form-text small" style="font-size: 0.72rem;">Semua pengguna terpilih akan diperbarui atasannya secara serentak.</div>
                     </div>
                 </div>
-                <div class="modal-footer py-2">
+                <div class="modal-footer py-2 px-4 bg-light rounded-bottom-4">
                     <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-sm btn-primary fw-bold"><i class="bi bi-check-lg me-1"></i> Simpan Perubahan</button>
+                    <button type="submit" class="btn btn-sm btn-primary fw-bold" id="btnSubmitBatch"><i class="bi bi-check-lg me-1"></i> Simpan Perubahan</button>
                 </div>
             </form>
         </div>
@@ -350,6 +358,14 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Double submit handling untuk modal
+    $('#formImportUsers').on('submit', function() {
+        $('#btnSubmitImport').html('<span class="spinner-border spinner-border-sm me-1" role="status"></span> Mengimpor...').prop('disabled', true);
+    });
+    $('#formBatchUpdate').on('submit', function() {
+        $('#btnSubmitBatch').html('<span class="spinner-border spinner-border-sm me-1" role="status"></span> Menyimpan...').prop('disabled', true);
+    });
+
     // Handling Konfirmasi Hapus Pengguna (SweetAlert2)
     $(document).on('click', '.btn-delete-user', function(e) {
         e.preventDefault();
@@ -359,12 +375,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 title: 'Hapus Pengguna?',
-                html: `Apakah Anda yakin ingin menghapus akun <b>${userName}</b>?<br><small class="text-muted">Data kinerja & histori pengguna ini akan terhapus!</small>`,
+                html: `Akun <b>${userName}</b> beserta data kinerjanya akan dihapus permanen.`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#dc3545',
                 cancelButtonColor: '#6c757d',
-                confirmButtonText: '<i class="bi bi-trash-fill me-1"></i> Ya, Hapus!',
+                confirmButtonText: '<i class="bi bi-trash-fill me-1"></i> Ya, Hapus Pengguna',
                 cancelButtonText: 'Batal'
             }).then((result) => {
                 if (result.isConfirmed) {
@@ -372,7 +388,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         } else {
-            if (confirm(`Apakah Anda yakin ingin menghapus akun ${userName}?`)) {
+            if (confirm(`Hapus akun ${userName}?`)) {
                 window.location.href = href;
             }
         }

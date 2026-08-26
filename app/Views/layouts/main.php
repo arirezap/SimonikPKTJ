@@ -48,7 +48,7 @@
             <header class="navbar navbar-expand header-promax mb-2 px-3 px-md-4 py-2">
                 <div class="container-fluid px-0">
                     <div class="d-flex align-items-center">
-                        <button class="btn btn-link text-primary d-lg-none me-2 p-0 text-decoration-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas" aria-controls="sidebarOffcanvas">
+                        <button class="btn btn-link text-primary d-lg-none me-2 p-0 text-decoration-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas" aria-controls="sidebarOffcanvas" aria-label="Buka navigasi menu">
                             <i class="bi bi-list fs-1 text-primary"></i>
                         </button>
                         
@@ -78,7 +78,7 @@
                                 <span class="user-name fw-bold text-dark" style="font-size: 1.15rem; line-height: 1;">
                                     <?= esc($formattedName) ?>
                                 </span>
-                                <span class="badge bg-primary bg-opacity-10 text-primary px-2 py-1 rounded-pill fw-semibold border border-primary-subtle d-none d-sm-inline-block" style="font-size: 0.65rem;">
+                                <span class="badge bg-primary bg-opacity-10 text-primary px-2 py-1 rounded-pill fw-bold border border-primary-subtle d-none d-sm-inline-block" style="font-size: 0.6875rem; letter-spacing: 0.04em;">
                                     <?= str_replace('_', ' ', strtoupper(esc(session()->get('role') ?? 'GUEST'))) ?>
                                 </span>
                             </div>
@@ -93,7 +93,7 @@
                         
                         <!-- NOTIFICATION BELL -->
                         <div class="dropdown" id="notifDropdownContainer">
-                            <a href="#" class="text-decoration-none position-relative" data-bs-toggle="dropdown" aria-expanded="false" id="notifDropdownToggle">
+                            <a href="#" class="text-decoration-none position-relative" data-bs-toggle="dropdown" aria-expanded="false" id="notifDropdownToggle" aria-label="Lihat notifikasi sistem">
                                 <div class="bg-light rounded-circle d-flex align-items-center justify-content-center transition-all" style="width: 42px; height: 42px;">
                                     <i class="bi bi-bell-fill text-muted fs-5"></i>
                                 </div>
@@ -118,14 +118,14 @@
                         </div>
 
                         <div class="dropdown">
-                            <a href="#" class="text-decoration-none" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a href="#" class="text-decoration-none" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Menu profil pengguna">
                                 <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center shadow-sm profile-avatar transition-all" style="width: 42px; height: 42px; border: 2px solid #ffffff;">
                                     <?php
                                         $foto_session = session()->get('foto');
                                         $foto_header_path = 'assets/uploads/profile/' . $foto_session;
                                         if (!empty($foto_session) && file_exists(FCPATH . $foto_header_path)) :
                                     ?>
-                                        <img src="<?= base_url($foto_header_path) ?>" class="rounded-circle" style="width: 100%; height: 100%; object-fit: cover;">
+                                        <img src="<?= base_url($foto_header_path) ?>" alt="Foto Profil" class="rounded-circle" style="width: 100%; height: 100%; object-fit: cover;" width="42" height="42">
                                     <?php else : ?>
                                         <span class="text-primary fw-bold" style="font-size: 1.05rem; letter-spacing: 0.5px;"><?= $initials ?></span>
                                     <?php endif; ?>
@@ -160,9 +160,9 @@
             </div>
             
             <!-- Footer Aplikasi -->
-            <footer class="footer-promax py-3 mt-auto d-flex justify-content-between px-4 align-items-center">
-                <span class="footer-text">&copy; <?= date('Y') ?> ECC (Evidence Command Center)</span>
-                <span class="version-badge text-muted">v1.2</span>
+            <footer class="footer-promax py-3 mt-auto d-flex justify-content-between px-3 px-md-4 align-items-center">
+                <span class="footer-text">&copy; <?= date('Y') ?> Evidence Command Center (ECC) - PKTJ Tegal</span>
+                <span class="badge bg-light text-secondary border rounded-pill version-badge px-2 py-1" style="font-size: 0.75rem; font-variant-numeric: tabular-nums;">v1.2</span>
             </footer>
 
             <?= $this->renderSection('footer_bar') ?>
@@ -434,6 +434,13 @@
             window.location.href = '<?= site_url('logout') ?>';
         }
     }
+
+    // Cegah perubahan angka pada input type=number secara tidak sengaja saat scrolling halaman
+    document.addEventListener('wheel', function(e) {
+        if (document.activeElement && document.activeElement.type === 'number') {
+            document.activeElement.blur();
+        }
+    });
 </script>
     <?= $this->renderSection('scripts') ?>
 </body>

@@ -62,6 +62,12 @@ Aplikasi ini memiliki 3 modul yang saling berkesinambungan untuk menilai kinerja
 6. **Modul Rekap Kepegawaian & Remunerasi Monitoring**:
    - Berada di `/kepegawaian` (`DashboardKepegawaian.php` & `rekap_kinerja.php`). Khusus untuk peran `kepegawaian` dan `admin` untuk evaluasi hak pencairan remunerasi bulanan pegawai.
    - Menghitung rasio kelengkapan penilaian RHK (`dinilai / total`), rata-rata nilai kinerja, dan predikat kinerja (*'Baik'* untuk skor >= 90). Dilengkapi ekspor data CSV UTF-8 BOM ramah Excel.
+7. **Normalisasi Relasi Unit Kerja & Dual-Sync Architecture**:
+   - Berada di `users.unit_id` (berelasi ke `unit_kerja.id`) dengan `$allowedFields` terdaftar pada `User.php`.
+   - Menggunakan mekanisme *Dual-Sync* yang mempertahankan kolom string `users.unit` untuk menjaga *backward compatibility* total pada seluruh query laporan dan rekapitulasi lama.
+   - Mendukung *Cascading Update* otomatis dari `MasterDataController::updateUnitKerja()` ke seluruh pengguna yang terdaftar di unit tersebut.
+   - Memiliki proteksi *Deletion Barrier* pada `MasterDataController::deleteUnitKerja()` dan antarmuka JavaScript yang menolak penghapusan unit kerja jika masih terdapat pegawai aktif.
+   - Tabel Master Data Unit Kerja menyajikan indikator badge **`Pegawai Terdaftar`** yang dihitung via agregasi `UnitKerja::getUnitsWithUserCount()`.
 
 ## 6. Coding Standards & Agent Instructions
 - **Routing & Filter**: Seluruh *endpoint* AJAX dan form submission **WAJIB** terdaftar secara eksplisit di `app/Config/Routes.php` dalam grup filter otentikasi `auth`. Jangan pernah berasumsi auto-routing berjalan di server *live cPanel*.
@@ -72,5 +78,5 @@ Aplikasi ini memiliki 3 modul yang saling berkesinambungan untuk menilai kinerja
 - **Database & Model**: Jika ada penambahan kolom pada tabel, pastikan kolom tersebut juga didaftarkan pada `$allowedFields` di Model terkait agar data dapat tersimpan.
 - **File Modifications**: Dilarang menghapus komentar/kode lama yang tidak terkait langsung me-perbaikan. Prioritaskan perbaikan *bug* secara spesifik.
 - **Chart.js**: Jika data label sumbu X terlalu panjang, gunakan format `indexAxis: 'y'` (Horizontal Bar Chart) agar rapi, dan gunakan tinggi wadah (*container*) yang dinamis.
-- **JavaScript UI & Fallback**: Setiap tombol aksi berbasis AJAX yang memanfaatkan SweetAlert2 **WAJIB** mengecek `typeof Swal !== 'undefined'` dan menyediakan fallback dialog `confirm()` agar tetap dapat mengeksekusi aksi AJAX jika library belum selesai dimuat atau terhalang koneksi CDN.DN.
+- **JavaScript UI & Fallback**: Setiap tombol aksi berbasis AJAX yang memanfaatkan SweetAlert2 **WAJIB** mengecek `typeof Swal !== 'undefined'` dan menyediakan fallback dialog `confirm()` agar tetap dapat mengeksekusi aksi AJAX jika library belum selesai dimuat atau terhalang koneksi CDN.
 

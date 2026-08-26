@@ -88,6 +88,9 @@ class Auth extends BaseController
                     $allRoles[] = strtolower($role_aplikasi);
                 }
 
+                // Regenerasi Session ID untuk Mencegah Serangan Session Fixation
+                $session->regenerate();
+
                 // Simpan Session Lengkap
                 $ses_data = [
                     'id'           => $data['id'],
