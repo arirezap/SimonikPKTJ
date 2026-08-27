@@ -205,6 +205,22 @@
                         </div>
                     <?php endif; ?>
 
+                    <!-- TABLE TOOLBAR HEADER -->
+                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-light text-dark border px-2.5 py-1.5 small fw-semibold">
+                                <i class="bi bi-list-check text-primary me-1"></i> Rincian Target <?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?>
+                            </span>
+                        </div>
+                        <?php if ((session()->get('role') === 'direktur') || (!$is_locked && !$allApproved)): ?>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 fw-semibold shadow-none d-inline-flex align-items-center gap-1.5" data-bs-toggle="modal" data-bs-target="#modalSalinTarget" title="Salin target dan sasaran kinerja dari periode bulan sebelumnya atau periode lainnya">
+                                <i class="bi bi-copy text-primary"></i> Salin dari Bulan Lain
+                            </button>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+
                     <div class="table-responsive mb-3 border rounded-4 shadow-sm bg-white">
                         <table class="table table-bordered align-middle table-hover mb-0 table-bento tabel-target">
                             <thead>
@@ -460,6 +476,86 @@
     <?php endif; ?>
 </div>
 
+<!-- MODAL SALIN TARGET DARI PERIODE LAIN -->
+<?php
+    $defaultBulanSumber = ($bulan_terpilih > 1) ? ($bulan_terpilih - 1) : 12;
+    $defaultTahunSumber = ($bulan_terpilih > 1) ? $tahun_terpilih : ($tahun_terpilih - 1);
+?>
+<div class="modal fade" id="modalSalinTarget" tabindex="-1" aria-labelledby="modalSalinTargetLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-light border-bottom py-3 px-4">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-circle bg-primary-subtle text-primary p-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                        <i class="bi bi-copy fs-6"></i>
+                    </div>
+                    <div>
+                        <h6 class="modal-title fw-bold text-dark mb-0" id="modalSalinTargetLabel">Salin Target Kinerja</h6>
+                        <p class="text-muted small mb-0" style="font-size: 0.75rem;">Duplikasi target & sasaran dari periode pilihan Anda</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-info py-2.5 px-3 small rounded-3 mb-3 d-flex align-items-start gap-2 border-0 bg-info-subtle text-info-emphasis">
+                    <i class="bi bi-info-circle-fill text-info mt-0.5 flex-shrink-0"></i>
+                    <div>
+                        Target yang disalin akan dimasukkan sebagai <strong>Draf Baru</strong> ke bulan <strong><?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?></strong> sehingga dapat Anda periksa dan sesuaikan sebelum disimpan atau diajukan.
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-dark small mb-1.5" style="font-size: 0.75rem; letter-spacing: 0.3px;">
+                        <i class="bi bi-calendar-range text-primary me-1"></i> PILIH PERIODE SUMBER
+                    </label>
+                    <div class="row g-2">
+                        <div class="col-7">
+                            <label for="salinBulanSumber" class="form-label text-muted small mb-1" style="font-size: 0.7rem;">Bulan Sumber</label>
+                            <select id="salinBulanSumber" class="form-select form-select-sm shadow-sm rounded-3">
+                                <?php foreach($bulan_indo as $index => $nama): ?>
+                                    <option value="<?= $index + 1 ?>" <?= ($defaultBulanSumber == $index + 1) ? 'selected' : '' ?>><?= $nama ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-5">
+                            <label for="salinTahunSumber" class="form-label text-muted small mb-1" style="font-size: 0.7rem;">Tahun Sumber</label>
+                            <input type="number" id="salinTahunSumber" class="form-control form-control-sm shadow-sm rounded-3 num-tabular" value="<?= esc($defaultTahunSumber) ?>" min="2020" max="2099">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label fw-bold text-dark small mb-1.5" style="font-size: 0.75rem; letter-spacing: 0.3px;">
+                        <i class="bi bi-layers text-primary me-1"></i> METODE PENYALINAN
+                    </label>
+                    <div class="p-3 bg-light rounded-3 border">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="modeSalinTarget" id="modeSalinReplace" value="replace" checked>
+                            <label class="form-check-label small" for="modeSalinReplace">
+                                <strong class="text-dark">Gantikan Baris Tabel Saat Ini</strong>
+                                <span class="d-block text-muted" style="font-size: 0.72rem;">Mengganti seluruh baris target yang ada di tabel dengan target dari periode sumber.</span>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="modeSalinTarget" id="modeSalinAppend" value="append">
+                            <label class="form-check-label small" for="modeSalinAppend">
+                                <strong class="text-dark">Tambahkan ke Bawah Baris Saat Ini</strong>
+                                <span class="d-block text-muted" style="font-size: 0.72rem;">Menyisipkan target dari periode sumber di bawah target yang sudah ada tanpa menghapusnya.</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-top py-2.5 px-4 justify-content-between">
+                <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-semibold" data-bs-dismiss="modal">Batal</button>
+                <button type="button" id="btnEksekusiSalinTarget" class="btn btn-primary btn-sm rounded-pill px-4 fw-bold shadow-sm">
+                    <i class="bi bi-arrow-down-left-square me-1.5"></i> Ambil & Salin Target
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
@@ -625,6 +721,40 @@
             }
         });
 
+        // Helper untuk memeriksa duplikasi pasangan RHK & Indikator Kinerja di dalam tabel
+        function checkTableDuplicates(formEl) {
+            let seen = {};
+            let duplicateFound = false;
+            let dupInfo = null;
+
+            // Reset highlight merah sebelumnya
+            formEl.find('.tabel-target tbody tr').removeClass('table-danger');
+
+            formEl.find('.tabel-target tbody tr').each(function(idx) {
+                let sasaran = ($(this).find('textarea[name="sasaran_program[]"]').val() || '').trim();
+                let indikator = ($(this).find('textarea[name="indikator_kinerja[]"]').val() || '').trim();
+
+                if (sasaran !== '' || indikator !== '') {
+                    let key = (sasaran + '|||' + indikator).toLowerCase();
+                    if (seen[key] !== undefined) {
+                        duplicateFound = true;
+                        dupInfo = {
+                            firstRow: seen[key] + 1,
+                            secondRow: idx + 1,
+                            sasaran: sasaran,
+                            indikator: indikator
+                        };
+                        $(this).addClass('table-danger');
+                        formEl.find('.tabel-target tbody tr').eq(seen[key]).addClass('table-danger');
+                        return false; // Hentikan loop
+                    }
+                    seen[key] = idx;
+                }
+            });
+
+            return { hasDuplicate: duplicateFound, info: dupInfo };
+        }
+
         // Validasi saat submit "Ajukan Target" (Form submit biasa)
         $('.form-target-sendiri').on('submit', function(e) {
             let isValid = true;
@@ -665,6 +795,25 @@
                 return false;
             }
 
+            // Validasi duplikasi target
+            const dupCheck = checkTableDuplicates($(this));
+            if (dupCheck.hasDuplicate) {
+                e.preventDefault();
+                const d = dupCheck.info;
+                const msg = `Terdapat duplikasi RHK & Indikator Kinerja pada <strong>Baris ke-${d.firstRow}</strong> dan <strong>Baris ke-${d.secondRow}</strong>.<br><br>Harap sesuaikan atau gabungkan indikator agar tidak tercatat ganda.`;
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Target Duplikat Terdeteksi',
+                        html: msg,
+                        confirmButtonText: 'Periksa Baris Tersebut'
+                    });
+                } else {
+                    alert(`Terdapat duplikasi target pada Baris ke-${d.firstRow} dan Baris ke-${d.secondRow}.`);
+                }
+                return false;
+            }
+
             // Tampilkan animasi loading pada tombol submit saat valid
             const submitBtn = $(this).find('button[type="submit"]');
             if (submitBtn.length) {
@@ -687,6 +836,24 @@
             let btn = $(this);
             let originalText = btn.html();
             let form = $('.form-target-sendiri');
+
+            // Validasi duplikasi target sebelum simpan draf
+            const dupCheck = checkTableDuplicates(form);
+            if (dupCheck.hasDuplicate) {
+                const d = dupCheck.info;
+                const msg = `Terdapat duplikasi RHK & Indikator Kinerja pada <strong>Baris ke-${d.firstRow}</strong> dan <strong>Baris ke-${d.secondRow}</strong>.<br><br>Harap sesuaikan atau gabungkan indikator agar tidak tercatat ganda.`;
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Target Duplikat Terdeteksi',
+                        html: msg,
+                        confirmButtonText: 'Periksa Baris Tersebut'
+                    });
+                } else {
+                    alert(`Terdapat duplikasi target pada Baris ke-${d.firstRow} dan Baris ke-${d.secondRow}.`);
+                }
+                return;
+            }
 
             btn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menyimpan...').prop('disabled', true);
             
@@ -833,6 +1000,196 @@
                 }
             }
         });
+
+        // =============================================
+        // SALIN TARGET KINERJA DARI PERIODE PILIHAN USER
+        // =============================================
+        $('#btnEksekusiSalinTarget').on('click', function() {
+            const btn = $(this);
+            const originalText = btn.html();
+            const bulanSumber = $('#salinBulanSumber').val();
+            const tahunSumber = $('#salinTahunSumber').val();
+            const modeSalin = $('input[name="modeSalinTarget"]:checked').val() || 'replace';
+            const tabel = $('.form-target-sendiri .tabel-target tbody');
+
+            if (!bulanSumber || !tahunSumber) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Peringatan', 'Silakan pilih bulan dan tahun sumber yang valid.', 'warning');
+                } else {
+                    alert('Silakan pilih bulan dan tahun sumber yang valid.');
+                }
+                return;
+            }
+
+            btn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Mengambil Data...').prop('disabled', true);
+
+            $.ajax({
+                url: '<?= site_url('laporan-harian/get-previous-targets') ?>',
+                type: 'GET',
+                data: {
+                    bulan: bulanSumber,
+                    tahun: tahunSumber
+                },
+                dataType: 'json',
+                success: function(response) {
+                    btn.html(originalText).prop('disabled', false);
+
+                    if (response.status === 'empty') {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'Data Tidak Ditemukan',
+                                text: response.message || 'Tidak ada data target pada periode tersebut.'
+                            });
+                        } else {
+                            alert(response.message);
+                        }
+                        return;
+                    }
+
+                    if (response.status === 'success' && response.data && response.data.length > 0) {
+                        // Tutup modal
+                        const modalEl = document.getElementById('modalSalinTarget');
+                        if (modalEl) {
+                            const modalObj = bootstrap.Modal.getInstance(modalEl);
+                            if (modalObj) modalObj.hide();
+                        }
+
+                        // Cek apakah tabel saat ini hanya memiliki 1 baris dan semua isiannya kosong
+                        const barisSaatIni = tabel.find('tr');
+                        let isCurrentTableEmpty = false;
+                        if (barisSaatIni.length === 1) {
+                            const firstRow = barisSaatIni.first();
+                            const sasaran = (firstRow.find('textarea[name="sasaran_program[]"]').val() || '').trim();
+                            const indikator = (firstRow.find('textarea[name="indikator_kinerja[]"]').val() || '').trim();
+                            const targetVal = (firstRow.find('input[name="target_bulanan[]"]').val() || '').trim();
+                            if (sasaran === '' && indikator === '' && targetVal === '') {
+                                isCurrentTableEmpty = true;
+                            }
+                        }
+
+                        // Koleksi target yang sudah ada di tabel saat ini untuk mencegah duplikasi jika mode append
+                        const existingTargetKeys = new Set();
+                        if (modeSalin === 'append' && !isCurrentTableEmpty) {
+                            tabel.find('tr').each(function() {
+                                const s = ($(this).find('textarea[name="sasaran_program[]"]').val() || '').trim().toLowerCase();
+                                const i = ($(this).find('textarea[name="indikator_kinerja[]"]').val() || '').trim().toLowerCase();
+                                if (s !== '' || i !== '') {
+                                    existingTargetKeys.add(s + '|||' + i);
+                                }
+                            });
+                        }
+
+                        if (modeSalin === 'replace' || isCurrentTableEmpty) {
+                            tabel.empty();
+                        }
+
+                        let insertedCount = 0;
+                        let skippedDuplicates = 0;
+
+                        response.data.forEach(function(item) {
+                            const rawSasaran = (item.sasaran_program || '').trim();
+                            const rawIndikator = (item.indikator_kinerja || '').trim();
+                            const itemKey = rawSasaran.toLowerCase() + '|||' + rawIndikator.toLowerCase();
+
+                            // Jika mode append dan item ini sudah ada di tabel, lewati untuk mencegah duplikasi
+                            if (modeSalin === 'append' && existingTargetKeys.has(itemKey)) {
+                                skippedDuplicates++;
+                                return;
+                            }
+
+                            existingTargetKeys.add(itemKey);
+                            insertedCount++;
+
+                            const valTarget = (item.target_bulanan !== null && item.target_bulanan !== '') ? item.target_bulanan : '';
+                            const safeSasaran = escapeHtml(item.sasaran_program);
+                            const safeIndikator = escapeHtml(item.indikator_kinerja);
+                            const safeSatuan = escapeHtml(item.satuan);
+
+                            const newRow = $(`
+                                <tr>
+                                    <input type="hidden" name="laporan_id[]" value="">
+                                    <td class="nomor-baris text-center fw-bold text-muted">1</td>
+                                    <td>
+                                        <textarea name="sasaran_program[]" class="form-control form-control-sm" rows="2" placeholder="Sasaran Program Unit...">${safeSasaran}</textarea>
+                                    </td>
+                                    <td>
+                                        <textarea name="indikator_kinerja[]" class="form-control form-control-sm" rows="2" placeholder="Indikator / RHK...">${safeIndikator}</textarea>
+                                    </td>
+                                    <td>
+                                        <input type="number" step="0.01" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary input-target-val" placeholder="Target" value="${valTarget}">
+                                    </td>
+                                    <td>
+                                        <input type="text" name="satuan[]" class="form-control form-control-sm text-center input-satuan-val" placeholder="Satuan" list="daftarSatuanStandar" value="${safeSatuan}" title="${safeSatuan}">
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 status-badge"><i class="bi bi-pencil me-1"></i> Draf Baru</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris" data-id="" title="Hapus" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
+                                    </td>
+                                </tr>
+                            `);
+                            tabel.append(newRow);
+                        });
+
+                        updateRowNumbers(tabel);
+
+                        // Notifikasi hasil salin cerdas
+                        if (typeof Swal !== 'undefined') {
+                            if (insertedCount > 0 && skippedDuplicates === 0) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Target Berhasil Disalin!',
+                                    text: `${insertedCount} target dari ${response.nama_bulan_sumber} ${response.tahun_sumber} berhasil disalin ke tabel. Silakan sesuaikan angka target jika diperlukan, lalu simpan draf atau ajukan.`,
+                                    confirmButtonText: '<i class="bi bi-check2 me-1"></i> Siap, Periksa Target'
+                                });
+                            } else if (insertedCount > 0 && skippedDuplicates > 0) {
+                                Swal.fire({
+                                    icon: 'info',
+                                    title: 'Target Berhasil Ditambahkan',
+                                    text: `${insertedCount} target baru berhasil ditambahkan (${skippedDuplicates} target dilewati karena sudah ada di tabel).`,
+                                    confirmButtonText: '<i class="bi bi-check2 me-1"></i> Mengerti'
+                                });
+                            } else if (insertedCount === 0 && skippedDuplicates > 0) {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Semua Target Sudah Ada',
+                                    text: `Seluruh ${skippedDuplicates} target dari ${response.nama_bulan_sumber} ${response.tahun_sumber} sudah ada di tabel saat ini (tidak ada baris duplikat yang ditambahkan).`,
+                                    confirmButtonText: '<i class="bi bi-check2 me-1"></i> Baik'
+                                });
+                            }
+                        } else {
+                            if (insertedCount > 0) {
+                                alert(`${insertedCount} target berhasil ditambahkan (${skippedDuplicates} dilewati).`);
+                            } else {
+                                alert('Semua target dari periode tersebut sudah ada di tabel.');
+                            }
+                        }
+                    } else {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire('Gagal', response.message || 'Gagal memuat target dari periode tersebut.', 'error');
+                        } else {
+                            alert('Gagal: ' + (response.message || 'Terjadi kesalahan.'));
+                        }
+                    }
+                },
+                error: function(xhr, status, error) {
+                    btn.html(originalText).prop('disabled', false);
+                    console.error('Salin Target Error:', xhr.responseText || error);
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire('Error', 'Terjadi kesalahan jaringan atau server saat mengambil data.', 'error');
+                    } else {
+                        alert('Terjadi kesalahan jaringan atau server.');
+                    }
+                }
+            });
+        });
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return $('<div>').text(text).html();
+        }
 
     });
 </script>

@@ -217,6 +217,7 @@ class LaporanHarianController extends BaseController
         $isDirektur = (session()->get('role') === 'direktur');
         $status_approval = ($isEditingStaf || $isDirektur) ? 'disetujui' : 'menunggu_persetujuan';
 
+        $seenPairs = [];
         if ($sasaran_program_arr) {
             foreach ($sasaran_program_arr as $index => $sasaran) {
                 $indikator = $indikator_kinerja_arr[$index] ?? '';
@@ -231,6 +232,25 @@ class LaporanHarianController extends BaseController
                 // Abaikan baris yang benar-benar kosong
                 if ($sasaranStr === '' && $indikatorStr === '' && $targetStr === '' && $satuanStr === '') {
                     continue; 
+                }
+
+                // Cek duplikasi pasangan sasaran program & indikator kinerja
+                if ($sasaranStr !== '' || $indikatorStr !== '') {
+                    $pairKey = mb_strtolower($sasaranStr . '|||' . $indikatorStr);
+                    if (isset($seenPairs[$pairKey])) {
+                        $rowA = $seenPairs[$pairKey] + 1;
+                        $rowB = $index + 1;
+                        $dupMsg = "Gagal menyimpan: Terdapat duplikasi target (RHK & Indikator yang sama) pada baris ke-{$rowA} dan baris ke-{$rowB}. Harap sesuaikan indikator agar tidak tercatat ganda.";
+                        if ($this->request->isAJAX()) {
+                            return $this->response->setJSON([
+                                'success' => false,
+                                'message' => $dupMsg,
+                                'csrf_hash' => csrf_hash()
+                            ]);
+                        }
+                        return redirect()->back()->withInput()->with('error', $dupMsg);
+                    }
+                    $seenPairs[$pairKey] = $index;
                 }
 
                 // Jika Simpan & Kirim, pastikan tidak ada sel yang kosong dalam baris yang terisi
@@ -590,5 +610,77 @@ class LaporanHarianController extends BaseController
             ]);
         }
     }
+
+    /**
+     * AJAX endpoint untuk mengambil target kinerja dari bulan/periode tertentu
+     * untuk disalin ke formulir target kinerja bulan berjalan.
+     */
+    public function getPreviousTargets()
+    {
+        $userId = session()->get('id') ?? session()->get('user_id');
+        $bulanSumber = (int)$this->request->getGet('bulan');
+        $tahunSumber = (int)$this->request->getGet('tahun');
+        $stafId = $this->request->getGet('staf_id');
+
+        $targetUserId = (!empty($stafId) && is_numeric($stafId)) ? (int)$stafId : $userId;
+
+        // Validasi Otorisasi jika mengakses data staf lain
+        if ($targetUserId !== $userId) {
+            $userModel = new User();
+            $targetUser = $userModel->find($targetUserId);
+            $isAtasan = $targetUser && !empty($targetUser['atasan_id']) && ($targetUser['atasan_id'] == $userId);
+            if (!hasAnyRole(['admin', 'direktur']) && !$isAtasan) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'message' => 'Akses ditolak: Anda tidak memiliki wewenang untuk mengambil data target staf ini.'
+                ])->setStatusCode(403);
+            }
+        }
+
+        if (!$bulanSumber || !$tahunSumber) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Parameter bulan dan tahun sumber wajib dipilih.'
+            ])->setStatusCode(400);
+        }
+
+        $laporanModel = new LaporanHarian();
+        $targets = $laporanModel->where('user_id', $targetUserId)
+                                ->where('bulan', $bulanSumber)
+                                ->where('tahun', $tahunSumber)
+                                ->orderBy('id', 'ASC')
+                                ->findAll();
+
+        $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        $namaBulanSumber = $bulanIndo[$bulanSumber - 1] ?? "Bulan {$bulanSumber}";
+
+        if (empty($targets)) {
+            return $this->response->setJSON([
+                'status' => 'empty',
+                'message' => "Tidak ditemukan target kinerja pada periode {$namaBulanSumber} {$tahunSumber}.",
+                'data' => []
+            ]);
+        }
+
+        $cleanData = [];
+        foreach ($targets as $t) {
+            $cleanData[] = [
+                'sasaran_program'   => $t['sasaran_program'] ?? '',
+                'indikator_kinerja' => $t['indikator_kinerja'] ?? '',
+                'target_bulanan'    => isset($t['target_bulanan']) && $t['target_bulanan'] !== null ? (float)$t['target_bulanan'] : '',
+                'satuan'            => $t['satuan'] ?? 'Kegiatan'
+            ];
+        }
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'message' => "Berhasil memuat " . count($cleanData) . " target dari {$namaBulanSumber} {$tahunSumber}.",
+            'count' => count($cleanData),
+            'nama_bulan_sumber' => $namaBulanSumber,
+            'tahun_sumber' => $tahunSumber,
+            'data' => $cleanData
+        ]);
+    }
 }
+
 

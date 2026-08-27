@@ -187,6 +187,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
 
     // --- Laporan Kinerja Harian ---
     $routes->match(['get', 'post'], 'laporan-harian', 'User\LaporanHarianController::index');
+    $routes->get('laporan-harian/get-previous-targets', 'User\LaporanHarianController::getPreviousTargets');
     $routes->post('laporan-harian/store', 'User\LaporanHarianController::store');
     $routes->post('laporan-harian/hapus', 'User\LaporanHarianController::hapus');
     $routes->post('laporan-harian/approve', 'User\LaporanHarianController::approve');
