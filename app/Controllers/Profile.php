@@ -99,23 +99,47 @@ class Profile extends BaseController
             return redirect()->to('logout');
         }
 
+        $emailPost = trim((string)$this->request->getPost('email'));
+        $nipPost   = trim((string)$this->request->getPost('nip'));
+        $namaPost  = trim((string)$this->request->getPost('nama_lengkap'));
+        $jabatanPost = trim((string)$this->request->getPost('jabatan'));
+        $pangkatPost = trim((string)$this->request->getPost('pangkat'));
+        $unitPost  = trim((string)$this->request->getPost('unit'));
+        $noHpPost  = preg_replace('/[^0-9+]/', '', trim((string)$this->request->getPost('no_hp')));
+
+        // Validasi Keunikan Email (Mencegah collision dengan akun lain)
+        $existingEmail = $this->userModel->where('email', $emailPost)->where('id !=', $userId)->first();
+        if ($existingEmail) {
+            return redirect()->back()->withInput()->with('errors', ['email' => 'Email ini sudah digunakan oleh akun lain.']);
+        }
+
+        // Validasi Keunikan NIP / NIK (Mencegah collision dengan akun lain)
+        $existingNip = $this->userModel->where('nip', $nipPost)->where('id !=', $userId)->first();
+        if ($existingNip) {
+            return redirect()->back()->withInput()->with('errors', ['nip' => 'NIP / NIK ini sudah terdaftar pada akun lain.']);
+        }
+
         $data = [
-            'nama_lengkap' => $this->request->getPost('nama_lengkap'),
-            'nip'          => $this->request->getPost('nip'),
-            'jabatan'      => $this->request->getPost('jabatan'),
-            'pangkat'      => $this->request->getPost('pangkat'),
-            'unit'         => $this->request->getPost('unit'),
+            'nama_lengkap' => $namaPost,
+            'nip'          => $nipPost,
+            'jabatan'      => $jabatanPost,
+            'pangkat'      => $pangkatPost,
+            'unit'         => $unitPost,
             'atasan_id'    => $this->request->getPost('atasan_id') ?: null,
-            'no_hp'        => $this->request->getPost('no_hp'),
-            'email'        => $this->request->getPost('email'),
+            'no_hp'        => $noHpPost,
+            'email'        => $emailPost,
             'username'     => $user['username'], // Proteksi: Username tidak dapat diubah via POST payload
         ];
 
         // 3. Cek apakah Password diubah
         $password = $this->request->getPost('password');
+        $passwordConfirm = $this->request->getPost('password_confirm');
         if (!empty($password)) {
             if (strlen($password) < 6) {
-                return redirect()->back()->withInput()->with('errors', ['password' => 'Password minimal harus 6 karakter.']);
+                return redirect()->back()->withInput()->with('errors', ['password' => 'Password baru minimal harus 6 karakter.']);
+            }
+            if ($password !== $passwordConfirm) {
+                return redirect()->back()->withInput()->with('errors', ['password_confirm' => 'Konfirmasi password tidak cocok dengan password baru.']);
             }
             $data['password'] = password_hash($password, PASSWORD_DEFAULT);
         }
@@ -148,27 +172,29 @@ class Profile extends BaseController
             $data['foto'] = $namaFoto;
         }
 
+        // Otomatis jadikan role 'spm' jika unit kerjanya diubah ke Satuan Penjaminan Mutu
+        $role_aplikasi = $user['role'];
+        if (strtolower(trim($data['unit'] ?? '')) === 'satuan penjaminan mutu' && in_array($user['role'], ['staf', 'pegawai', 'user'])) {
+            $role_aplikasi = 'spm';
+            $data['role'] = 'spm';
+        }
+
         // 5. Eksekusi Update ke Database
         $this->userModel->update($userId, $data);
         log_audit('UPDATE', 'users', $userId, null, $data);
 
-        // Otomatis jadikan role 'spm' jika unit kerjanya diubah ke Satuan Penjaminan Mutu
-        $role_aplikasi = $user['role'];
-        if (strtolower(trim($data['unit'] ?? '')) === 'satuan penjaminan mutu') {
-            $role_aplikasi = 'spm';
-        }
-
         // 6. Update Session Data (Agar nama, unit, role & FOTO di header langsung berubah)
         $sessionData = [
-            'nama' => $data['nama_lengkap'],
-            'unit' => $data['unit'],
-            'role' => $role_aplikasi
+            'nama'         => $data['nama_lengkap'],
+            'nama_lengkap' => $data['nama_lengkap'],
+            'unit'         => $data['unit'],
+            'role'         => $role_aplikasi
         ];
         if (isset($data['foto'])) {
             $sessionData['foto'] = $data['foto'];
         }
         session()->set($sessionData);
 
-        return redirect()->to('profile')->with('success', 'Profil berhasil diperbarui.');
+        return redirect()->to('profile')->with('success', 'Profil dan kredensial akun berhasil diperbarui.');
     }
 }

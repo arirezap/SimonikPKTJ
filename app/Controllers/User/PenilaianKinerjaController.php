@@ -274,6 +274,9 @@ class PenilaianKinerjaController extends BaseController
             }
         }
 
+        $db = \Config\Database::connect();
+        $db->transStart();
+
         if (!empty($dataToUpdate)) {
             $laporanModel->updateBatch($dataToUpdate, 'id');
         }
@@ -309,6 +312,12 @@ class PenilaianKinerjaController extends BaseController
             $logTambahanModel->updateBatch($dataTambahanToUpdate, 'id');
         }
 
+        $db->transComplete();
+
+        if ($db->transStatus() === false) {
+            return redirect()->back()->with('error', 'Gagal menyimpan penilaian kinerja karena kesalahan basis data.');
+        }
+
         // Audit log & Notifikasi hanya jika benar-benar diterbitkan (submit)
         if ($statusPenilaian === 'terbit' && (!empty($dataToUpdate) || !empty($dataTambahanToUpdate))) {
             log_audit('APPROVE', 'laporan_harian/log_tugas_tambahan', 'batch_nilai', null, [$dataToUpdate, $dataTambahanToUpdate]);
@@ -337,7 +346,8 @@ class PenilaianKinerjaController extends BaseController
             $pesan = 'Penilaian kinerja berhasil disimpan sementara (Draf). Penilaian belum dipublikasikan ke staf.';
         }
 
-        return redirect()->to(site_url('penilaian-kinerja') . '#tab-penilaian-atasan')
+        $redirectHash = !empty($stafPostId) ? '#staf' : '#individu';
+        return redirect()->to(site_url('penilaian-kinerja') . $redirectHash)
                          ->with('success', $pesan);
     }
 

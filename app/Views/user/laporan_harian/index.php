@@ -44,6 +44,7 @@
         padding: 0.65rem 0.75rem;
         vertical-align: middle;
         border-color: #f1f5f9;
+        transition: background-color 0.25s ease;
     }
     .table-bento tbody tr:last-child td {
         border-bottom: 0;
@@ -65,13 +66,78 @@
         padding: 0.5rem 0.75rem;
         font-size: 0.85rem;
     }
+
+    /* Motion Design & Ergonomic Transitions */
+    @keyframes rowSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+            background-color: rgba(13, 110, 253, 0.08);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+            background-color: transparent;
+        }
+    }
+    .row-slide-in {
+        animation: rowSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes rowSlideOut {
+        from {
+            opacity: 1;
+            transform: scale(1);
+        }
+        to {
+            opacity: 0;
+            transform: scale(0.96) translateX(12px);
+        }
+    }
+    .row-slide-out {
+        animation: rowSlideOut 0.22s ease-out forwards;
+        pointer-events: none;
+    }
+
+    @keyframes pulseDuplicate {
+        0% { background-color: rgba(220, 53, 69, 0.05); }
+        50% { background-color: rgba(220, 53, 69, 0.25); }
+        100% { background-color: rgba(220, 53, 69, 0.12); }
+    }
+    .table-danger {
+        animation: pulseDuplicate 0.4s ease-in-out;
+    }
+
+    .btn-tactile {
+        transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease;
+    }
+    .btn-tactile:active {
+        transform: scale(0.97);
+    }
+
+    /* Modal Backdrop Blur & Pop-In */
+    .modal.fade .modal-dialog {
+        transform: scale(0.96) translateY(-8px);
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .modal.show .modal-dialog {
+        transform: scale(1) translateY(0);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .row-slide-in, .row-slide-out, .table-danger, .modal.fade .modal-dialog {
+            animation: none !important;
+            transform: none !important;
+            transition: none !important;
+        }
+    }
 </style>
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
 <div class="container-fluid px-2 px-md-3">
     <!-- PAGE HEADER -->
-    <div class="d-flex justify-content-between flex-wrap align-items-center pt-2 pb-2 mb-3 border-bottom gap-2">
+    <div class="d-flex justify-content-between flex-wrap align-items-center pt-2 pb-2 mb-3 border-bottom gap-2 bento-stagger bento-stagger-1">
         <div>
             <h1 class="h4 mb-0 fw-bold text-dark"><i class="bi bi-bullseye text-primary me-2"></i>Target Kinerja Bulanan</h1>
             <p class="text-muted small mb-0">Rencana Hasil Kerja (RHK) dan target kuantitatif bulanan.</p>
@@ -84,21 +150,21 @@
     </div>
 
     <?php if (session()->getFlashdata('success')) : ?>
-        <div class="alert alert-success alert-dismissible fade show shadow-sm py-2 px-3 small mb-3 rounded-3" role="alert">
+        <div class="alert alert-success alert-dismissible fade show shadow-sm py-2 px-3 small mb-3 rounded-3 bento-stagger bento-stagger-1" role="alert">
             <i class="bi bi-check-circle-fill me-2"></i> <?= session()->getFlashdata('success') ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
 
     <?php if (session()->getFlashdata('error')) : ?>
-        <div class="alert alert-danger alert-dismissible fade show shadow-sm py-2 px-3 small mb-3 rounded-3" role="alert">
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm py-2 px-3 small mb-3 rounded-3 bento-stagger bento-stagger-1" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-2"></i> <?= session()->getFlashdata('error') ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
 
     <!-- Tabs Navigation -->
-    <ul class="nav segmented-control mb-3" id="targetKinerjaTab" role="tablist">
+    <ul class="nav segmented-control mb-3 bento-stagger bento-stagger-1" id="targetKinerjaTab" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link <?= empty($staf_id_terpilih) ? 'active' : '' ?>" id="sendiri-tab" data-bs-toggle="tab" data-bs-target="#sendiri" type="button" role="tab" aria-controls="sendiri" aria-selected="<?= empty($staf_id_terpilih) ? 'true' : 'false' ?>">
                 <i class="bi bi-person-fill me-1"></i> Target Saya
@@ -130,7 +196,7 @@
 
     <!-- TAB 1: TARGET KINERJA SAYA -->
     <div class="tab-pane fade <?= empty($staf_id_terpilih) ? 'show active' : '' ?>" id="sendiri" role="tabpanel" aria-labelledby="sendiri-tab">
-        <div class="card shadow-sm border-0 mb-4 rounded-4 overflow-hidden">
+        <div class="card shadow-sm border-0 mb-4 rounded-4 overflow-hidden bento-stagger bento-stagger-2">
             <div class="card-body p-3 p-md-4">
                 <!-- Filter Bulan/Tahun -->
                 <form method="POST" action="<?= site_url('laporan-harian') ?>" class="mb-3 p-3 bg-light rounded-4 border border-light-subtle">
@@ -139,7 +205,7 @@
                     <div class="row g-2 align-items-center">
                         <div class="col-sm-6 col-md-3">
                             <label class="form-label fw-bold text-dark small mb-1" style="font-size: 0.72rem; letter-spacing: 0.3px;"><i class="bi bi-calendar-event text-primary me-1"></i> Bulan</label>
-                            <select name="bulan" class="form-select form-select-sm shadow-sm" onchange="this.form.submit()">
+                            <select name="bulan" class="form-select form-select-sm shadow-sm filter-select" onchange="this.form.submit()">
                                 <?php foreach($bulan_indo as $index => $nama): ?>
                                     <option value="<?= $index + 1 ?>" <?= ($bulan_terpilih == $index + 1) ? 'selected' : '' ?>><?= $nama ?></option>
                                 <?php endforeach; ?>
@@ -147,7 +213,7 @@
                         </div>
                         <div class="col-sm-6 col-md-2">
                             <label class="form-label fw-bold text-dark small mb-1" style="font-size: 0.72rem; letter-spacing: 0.3px;"><i class="bi bi-calendar-date text-primary me-1"></i> Tahun</label>
-                            <input type="number" name="tahun" class="form-control form-select-sm shadow-sm" value="<?= esc($tahun_terpilih) ?>" onchange="this.form.submit()">
+                            <input type="number" name="tahun" class="form-control form-select-sm shadow-sm filter-select" value="<?= esc($tahun_terpilih) ?>" onchange="this.form.submit()">
                         </div>
                         <div class="col-md-7 text-muted pt-sm-3 small">
                             <i class="bi bi-info-circle text-primary me-1"></i> Rancang dan kelola target kinerja bulanan Anda pada tabel di bawah.
@@ -292,21 +358,21 @@
                     </div>
 
                     <?php if ((session()->get('role') === 'direktur') || (!$is_locked && !$allApproved)): ?>
-                    <div class="d-flex justify-content-between align-items-center mt-4 btn-action-container flex-wrap gap-2">
-                        <button type="button" class="btn btn-primary btn-tambah-baris rounded-pill shadow-sm px-4 py-2 fw-semibold"><i class="bi bi-plus-circle me-1.5"></i> Tambah Target</button>
+                    <div class="d-flex justify-content-between align-items-center mt-4 btn-action-container flex-wrap gap-2 bento-stagger bento-stagger-3">
+                        <button type="button" class="btn btn-primary btn-tambah-baris btn-tactile rounded-pill shadow-sm px-4 py-2 fw-semibold"><i class="bi bi-plus-circle me-1.5"></i> Tambah Target</button>
                         <div class="d-flex gap-2 btn-group-mobile">
-                            <button type="button" id="btnSimpanSementara" class="btn btn-outline-primary rounded-pill shadow-sm px-4 py-2 fw-semibold"><i class="bi bi-cloud-arrow-up me-1.5"></i> Simpan Draf</button>
-                            <button type="submit" class="btn btn-success rounded-pill shadow-sm px-4 py-2 fw-bold"><i class="bi bi-send me-1.5"></i> Ajukan Target</button>
+                            <button type="button" id="btnSimpanSementara" class="btn btn-outline-primary btn-tactile rounded-pill shadow-sm px-4 py-2 fw-semibold"><i class="bi bi-cloud-arrow-up me-1.5"></i> Simpan Draf</button>
+                            <button type="submit" class="btn btn-success btn-tactile rounded-pill shadow-sm px-4 py-2 fw-bold"><i class="bi bi-send me-1.5"></i> Ajukan Target</button>
                         </div>
                     </div>
                     <?php elseif ($allApproved): ?>
-                    <div class="alert alert-success mt-4 mb-0 d-flex justify-content-between align-items-center flex-wrap gap-2 py-2.5 px-3 small rounded-4 shadow-sm">
+                    <div class="alert alert-success mt-4 mb-0 d-flex justify-content-between align-items-center flex-wrap gap-2 py-2.5 px-3 small rounded-4 shadow-sm bento-stagger bento-stagger-3">
                         <div class="d-flex align-items-center gap-2">
                             <i class="bi bi-check-circle-fill text-success fs-5 flex-shrink-0"></i>
                             <div>Semua target kinerja bulan ini telah <strong>disetujui</strong> dan dikunci oleh atasan.</div>
                         </div>
                         <?php if (hasRole('admin')): ?>
-                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold shadow-sm btn-batal-approve-target"
+                        <button type="button" class="btn btn-sm btn-outline-danger btn-tactile rounded-pill px-3 fw-bold shadow-sm btn-batal-approve-target"
                             data-staf-id="<?= esc(session()->get('id') ?? session()->get('user_id')) ?>"
                             data-bulan="<?= esc($bulan_terpilih) ?>"
                             data-tahun="<?= esc($tahun_terpilih) ?>"
@@ -324,7 +390,7 @@
     <!-- TAB 2: PERSETUJUAN TARGET STAF -->
     <?php if ($is_atasan): ?>
     <div class="tab-pane fade <?= !empty($staf_id_terpilih) ? 'show active' : '' ?>" id="staf" role="tabpanel" aria-labelledby="staf-tab">
-        <div class="card shadow-sm border-0 mb-4 rounded-4 overflow-hidden">
+        <div class="card shadow-sm border-0 mb-4 rounded-4 overflow-hidden bento-stagger bento-stagger-2">
             <div class="card-body p-3 p-md-4">
                 <!-- Filter Form untuk Staf -->
                 <form method="POST" action="<?= site_url('laporan-harian') ?>" class="mb-3 p-3 bg-light rounded-4 border border-light-subtle">
@@ -333,7 +399,7 @@
                     <div class="row g-2 align-items-end">
                         <div class="col-md-5">
                             <label class="form-label fw-bold text-dark small mb-1" style="font-size: 0.72rem; letter-spacing: 0.3px;"><i class="bi bi-person-badge text-primary me-1"></i> Pilih Staf</label>
-                            <select name="staf_id" class="form-select form-select-sm shadow-sm" onchange="this.form.submit()">
+                            <select name="staf_id" class="form-select form-select-sm shadow-sm filter-select" onchange="this.form.submit()">
                                 <option value="">-- Pilih Staf --</option>
                                 <?php foreach ($daftar_staf as $s): ?>
                                     <option value="<?= $s['id'] ?>" <?= ($s['id'] == $staf_id_terpilih) ? 'selected' : '' ?>>
@@ -344,7 +410,7 @@
                         </div>
                         <div class="col-sm-6 col-md-3">
                             <label class="form-label fw-bold text-dark small mb-1" style="font-size: 0.72rem; letter-spacing: 0.3px;"><i class="bi bi-calendar-event text-primary me-1"></i> Bulan</label>
-                            <select name="bulan" class="form-select form-select-sm shadow-sm" onchange="this.form.submit()">
+                            <select name="bulan" class="form-select form-select-sm shadow-sm filter-select" onchange="this.form.submit()">
                                 <?php foreach($bulan_indo as $index => $nama): ?>
                                     <option value="<?= $index + 1 ?>" <?= ($bulan_terpilih == $index + 1) ? 'selected' : '' ?>><?= $nama ?></option>
                                 <?php endforeach; ?>
@@ -352,7 +418,7 @@
                         </div>
                         <div class="col-sm-6 col-md-2">
                             <label class="form-label fw-bold text-dark small mb-1" style="font-size: 0.72rem; letter-spacing: 0.3px;"><i class="bi bi-calendar-date text-primary me-1"></i> Tahun</label>
-                            <input type="number" name="tahun" class="form-control form-select-sm shadow-sm" value="<?= esc($tahun_terpilih) ?>" onchange="this.form.submit()">
+                            <input type="number" name="tahun" class="form-control form-select-sm shadow-sm filter-select" value="<?= esc($tahun_terpilih) ?>" onchange="this.form.submit()">
                         </div>
                     </div>
                 </form>
@@ -436,22 +502,22 @@
                             </div>
                             
                             <?php if (!$allApprovedStaf): ?>
-                            <div class="d-flex justify-content-end gap-2 mt-4 btn-action-container">
-                                <button type="submit" id="btnApproveAll" formaction="<?= site_url('laporan-harian/approve-all') ?>" class="btn btn-success rounded-pill shadow-sm px-4 py-2 fw-bold">
+                            <div class="d-flex justify-content-end gap-2 mt-4 btn-action-container bento-stagger bento-stagger-3">
+                                <button type="submit" id="btnApproveAll" formaction="<?= site_url('laporan-harian/approve-all') ?>" class="btn btn-success btn-tactile rounded-pill shadow-sm px-4 py-2 fw-bold">
                                     <i class="bi bi-check-all me-1.5"></i> Setujui Semua
                                 </button>
-                                <button type="button" id="btnEditStaf" class="btn btn-primary rounded-pill shadow-sm px-4 py-2 fw-bold">
+                                <button type="button" id="btnEditStaf" class="btn btn-primary btn-tactile rounded-pill shadow-sm px-4 py-2 fw-bold">
                                     <i class="bi bi-pencil-square me-1.5"></i> Edit Target
                                 </button>
                             </div>
                             <?php else: ?>
-                            <div class="alert alert-success mt-4 mb-0 d-flex justify-content-between align-items-center flex-wrap gap-2 py-2.5 px-3 small rounded-4 shadow-sm">
+                            <div class="alert alert-success mt-4 mb-0 d-flex justify-content-between align-items-center flex-wrap gap-2 py-2.5 px-3 small rounded-4 shadow-sm bento-stagger bento-stagger-3">
                                 <div class="d-flex align-items-center gap-2">
                                     <i class="bi bi-check-circle-fill text-success fs-5 flex-shrink-0"></i>
                                     <div>Target kinerja staf bulan ini telah <strong>disetujui</strong>.</div>
                                 </div>
                                 <?php if (hasRole('admin')): ?>
-                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold shadow-sm btn-batal-approve-target"
+                                <button type="button" class="btn btn-sm btn-outline-danger btn-tactile rounded-pill px-3 fw-bold shadow-sm btn-batal-approve-target"
                                     data-staf-id="<?= esc($staf_id_terpilih) ?>"
                                     data-bulan="<?= esc($bulan_terpilih) ?>"
                                     data-tahun="<?= esc($tahun_terpilih) ?>"
@@ -464,7 +530,7 @@
                         </form>
                     <?php endif; ?>
                 <?php else: ?>
-                    <div class="card bg-light border-0 rounded-4 p-5 text-center my-3">
+                    <div class="card bg-light border-0 rounded-4 p-5 text-center my-3 bento-stagger bento-stagger-2">
                         <div class="opacity-50 mb-3"><i class="bi bi-people fs-1 text-primary"></i></div>
                         <h6 class="fw-bold text-dark">Pilih Staf</h6>
                         <p class="text-muted small mb-0">Silakan pilih nama staf pada pilihan dropdown di atas untuk memeriksa dan menyetujui target kinerjanya.</p>
@@ -548,7 +614,7 @@
             </div>
             <div class="modal-footer bg-light border-top py-2.5 px-4 justify-content-between">
                 <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-semibold" data-bs-dismiss="modal">Batal</button>
-                <button type="button" id="btnEksekusiSalinTarget" class="btn btn-primary btn-sm rounded-pill px-4 fw-bold shadow-sm">
+                <button type="button" id="btnEksekusiSalinTarget" class="btn btn-primary btn-sm btn-tactile rounded-pill px-4 fw-bold shadow-sm">
                     <i class="bi bi-arrow-down-left-square me-1.5"></i> Ambil & Salin Target
                 </button>
             </div>
@@ -569,11 +635,12 @@
             $(this).blur();
         });
 
-        // Fungsi Tambah Baris untuk Form Target Saya
+        // Fungsi Tambah Baris untuk Form Target Saya dengan Fluid Animation
         $('.btn-tambah-baris').on('click', function() {
             const tabel = $(this).closest('form').find('.tabel-target tbody');
             const rowPertama = tabel.find('tr:first').clone();
             
+            rowPertama.removeClass('row-slide-out table-danger').addClass('row-slide-in');
             rowPertama.find('input[name="laporan_id[]"]').val('');
             rowPertama.find('input[type="number"]').val('');
             rowPertama.find('input[type="text"]').val('').attr('title', '');
@@ -586,6 +653,11 @@
             
             tabel.append(rowPertama);
             updateRowNumbers(tabel);
+
+            // Auto focus ke sasaran program dengan smooth micro-delay
+            setTimeout(() => {
+                rowPertama.find('textarea[name="sasaran_program[]"]').focus();
+            }, 80);
         });
 
         // Dynamic title update saat mengetik satuan agar teks panjang selalu terbaca saat di-hover
@@ -609,11 +681,24 @@
             row.find('.hapus-baris').attr('data-id', '');
         }
 
-        // Fungsi Hapus Baris
+        // Fungsi Hapus Baris dengan Smooth Collapse & Slide-out
         $(document).on('click', '.hapus-baris', function() {
             const tabel = $(this).closest('tbody');
             const row = $(this).closest('tr');
             let idLaporan = row.find('input[name="laporan_id[]"]').val() || $(this).attr('data-id');
+
+            const animateRemoveRow = function() {
+                row.addClass('row-slide-out');
+                setTimeout(() => {
+                    if (tabel.find('tr').length > 1) {
+                        row.remove();
+                        updateRowNumbers(tabel);
+                    } else {
+                        row.removeClass('row-slide-out');
+                        resetRowToEmpty(row);
+                    }
+                }, 220);
+            };
 
             if (idLaporan && idLaporan.trim() !== '') {
                 const doDelete = function() {
@@ -634,12 +719,7 @@
                                 $('input[name="csrf_test_name"]').val(response.csrf_hash);
                             }
                             if (response.success) {
-                                if (tabel.find('tr').length > 1) {
-                                    row.remove();
-                                    updateRowNumbers(tabel);
-                                } else {
-                                    resetRowToEmpty(row);
-                                }
+                                animateRemoveRow();
                                 Swal.fire({
                                     icon: 'success',
                                     title: 'Terhapus',
@@ -679,12 +759,7 @@
                     }
                 }
             } else {
-                if (tabel.find('tr').length > 1) {
-                    row.remove();
-                    updateRowNumbers(tabel);
-                } else {
-                    resetRowToEmpty(row);
-                }
+                animateRemoveRow();
             }
         });
 
@@ -1107,7 +1182,7 @@
                             const safeSatuan = escapeHtml(item.satuan);
 
                             const newRow = $(`
-                                <tr>
+                                <tr class="row-slide-in">
                                     <input type="hidden" name="laporan_id[]" value="">
                                     <td class="nomor-baris text-center fw-bold text-muted">1</td>
                                     <td>

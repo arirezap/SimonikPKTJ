@@ -11,6 +11,15 @@
     }
 }
 
+/* Staggered Grid Motion */
+.bento-stagger {
+    animation: bentoEntrance 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+    will-change: transform, opacity;
+}
+.bento-stagger-1 { animation-delay: 0.04s; }
+.bento-stagger-2 { animation-delay: 0.10s; }
+.bento-stagger-3 { animation-delay: 0.18s; }
+
 /* Skeleton Loader Animation */
 @keyframes shimmer {
     0% { background-position: -1000px 0; }
@@ -62,7 +71,7 @@ th.sortable.desc .sort-icon {
     font-weight: 600;
     padding: 0.35rem 0.85rem;
     border-radius: 50rem;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     border: 1px solid #dee2e6;
     background-color: #fff;
     color: #495057;
@@ -73,12 +82,17 @@ th.sortable.desc .sort-icon {
 .filter-pill:hover {
     background-color: #f1f5f9;
     border-color: #cbd5e1;
+    transform: translateY(-1px);
+}
+.filter-pill:active {
+    transform: scale(0.95);
 }
 .filter-pill.active {
     background-color: #0d6efd;
     color: #fff;
     border-color: #0d6efd;
     box-shadow: 0 2px 8px rgba(13, 110, 253, 0.25);
+    transform: scale(1.02);
 }
 
 .num-tabular {
@@ -130,9 +144,28 @@ th.sortable.desc .sort-icon {
     box-shadow: 0 0 0 2px #0d6efd;
 }
 
+/* Row Filter Smooth Animation */
+@keyframes rowFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.pegawai-row {
+    transition: background-color 0.18s ease;
+}
+.pegawai-row.row-animated,
+.mobile-pegawai-card.row-animated {
+    animation: rowFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 /* Mobile Card Styling */
 .mobile-pegawai-card.cursor-pointer {
-    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease, border-color 0.18s ease;
     outline: none;
 }
 .mobile-pegawai-card.cursor-pointer:hover,
@@ -146,10 +179,29 @@ th.sortable.desc .sort-icon {
 .kpi-stat-box {
     border-radius: 12px;
     padding: 0.6rem 0.4rem;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.2s ease, transform 0.2s ease;
 }
 .kpi-stat-box:hover {
     background-color: #f8fafc;
+}
+
+/* Modal Backdrop Blur & Spring Reveal */
+.modal-backdrop.show {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+#modalDetailPegawai .modal-content {
+    animation: modalContentSpring 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes modalContentSpring {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 /* Mobile vs Desktop View Toggle */
@@ -169,26 +221,39 @@ th.sortable.desc .sort-icon {
         display: none !important;
     }
 }
+
+/* Accessibility Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .bento-stagger,
+    .filter-pill,
+    .pegawai-row.row-animated,
+    .mobile-pegawai-card.row-animated,
+    #modalDetailPegawai .modal-content {
+        animation: none !important;
+        transition: none !important;
+        transform: none !important;
+    }
+}
 </style>
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
 <div class="container-fluid px-2 px-md-3">
     <!-- PAGE HEADER -->
-    <div class="d-flex justify-content-between flex-wrap align-items-center pt-2 pb-2 mb-3 border-bottom gap-2">
+    <div class="d-flex justify-content-between flex-wrap align-items-center pt-2 pb-2 mb-3 border-bottom gap-2 bento-stagger bento-stagger-1">
         <div>
             <h1 class="h4 mb-0 fw-bold text-dark"><i class="bi bi-clipboard2-data-fill text-primary me-2"></i>Rekap Kinerja Kepegawaian</h1>
             <p class="text-muted small mb-0">Monitoring capaian kinerja seluruh unit untuk keperluan remunerasi & evaluasi berkala.</p>
         </div>
         <div class="d-flex align-items-center gap-2">
-            <a href="<?= site_url('kepegawaian/export-excel') ?>?bulan=<?= esc($bulan_terpilih) ?>&tahun=<?= esc($tahun_terpilih) ?>&unit=<?= esc($unit_filter) ?>" class="btn btn-sm btn-primary shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center gap-1.5" id="btnExportExcel">
+            <a href="<?= site_url('kepegawaian/export-excel') ?>?bulan=<?= esc($bulan_terpilih) ?>&tahun=<?= esc($tahun_terpilih) ?>&unit=<?= esc($unit_filter) ?>" class="btn btn-sm btn-primary shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center gap-1.5 btn-tactile" id="btnExportExcel">
                 <i class="bi bi-file-earmark-excel-fill"></i> Export Excel
             </a>
         </div>
     </div>
 
     <!-- FILTER & KPI SUMMARY ROW -->
-    <div class="row g-3 mb-3">
+    <div class="row g-3 mb-3 bento-stagger bento-stagger-2">
         <!-- FILTER CARD -->
         <div class="col-lg-6 col-xl-7">
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
@@ -229,38 +294,38 @@ th.sortable.desc .sort-icon {
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
                 <div class="card-body p-2.5 p-xl-3 d-flex flex-column justify-content-center h-100">
                     <div class="row text-center g-0 align-items-stretch">
-                        <div class="col-3 px-1 border-end d-flex flex-column justify-content-between">
+                        <div class="col-3 px-1 border-end d-flex flex-column justify-content-between kpi-stat-box">
                             <div class="text-muted fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.4px;">Total</div>
                             <div class="my-1">
-                                <div class="fw-bold text-dark num-tabular skeleton-hide" style="font-size: 1.35rem; white-space: nowrap; line-height: 1.2;" id="statTotalPegawai"><?= count($rekap_kinerja) ?></div>
+                                <div class="fw-bold text-dark num-tabular skeleton-hide" style="font-size: 1.35rem; white-space: nowrap; line-height: 1.2;" id="statTotalPegawai" data-val="<?= count($rekap_kinerja) ?>"><?= count($rekap_kinerja) ?></div>
                                 <div class="skeleton-box skeleton-show mx-auto" style="width: 60%; height: 1.6rem; display: none;"></div>
                             </div>
                             <div class="text-muted small" style="font-size: 0.68rem; white-space: nowrap;">Pegawai</div>
                         </div>
-                        <div class="col-3 px-1 border-end d-flex flex-column justify-content-between">
+                        <div class="col-3 px-1 border-end d-flex flex-column justify-content-between kpi-stat-box">
                             <div class="text-muted fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.4px;">Dinilai</div>
                             <div class="my-1">
-                                <div class="fw-bold text-success num-tabular skeleton-hide" style="font-size: 1.35rem; white-space: nowrap; line-height: 1.2;" id="statSudahDinilai"><?= esc($sudah_dinilai) ?></div>
+                                <div class="fw-bold text-success num-tabular skeleton-hide" style="font-size: 1.35rem; white-space: nowrap; line-height: 1.2;" id="statSudahDinilai" data-val="<?= esc($sudah_dinilai) ?>"><?= esc($sudah_dinilai) ?></div>
                                 <div class="skeleton-box skeleton-show mx-auto" style="width: 60%; height: 1.6rem; display: none;"></div>
                             </div>
                             <div class="text-success small fw-semibold" style="font-size: 0.68rem; white-space: nowrap;">
                                 <?= count($rekap_kinerja) > 0 ? round(($sudah_dinilai / count($rekap_kinerja)) * 100) : 0 ?>%
                             </div>
                         </div>
-                        <div class="col-3 px-1 border-end d-flex flex-column justify-content-between">
+                        <div class="col-3 px-1 border-end d-flex flex-column justify-content-between kpi-stat-box">
                             <div class="text-muted fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.4px;">Belum</div>
                             <div class="my-1">
-                                <div class="fw-bold text-danger num-tabular skeleton-hide" style="font-size: 1.35rem; white-space: nowrap; line-height: 1.2;" id="statBelumDinilai"><?= esc($belum_dinilai) ?></div>
+                                <div class="fw-bold text-danger num-tabular skeleton-hide" style="font-size: 1.35rem; white-space: nowrap; line-height: 1.2;" id="statBelumDinilai" data-val="<?= esc($belum_dinilai) ?>"><?= esc($belum_dinilai) ?></div>
                                 <div class="skeleton-box skeleton-show mx-auto" style="width: 60%; height: 1.6rem; display: none;"></div>
                             </div>
                             <div class="text-danger small fw-semibold" style="font-size: 0.68rem; white-space: nowrap;">
                                 <?= count($rekap_kinerja) > 0 ? round(($belum_dinilai / count($rekap_kinerja)) * 100) : 0 ?>%
                             </div>
                         </div>
-                        <div class="col-3 px-1 d-flex flex-column justify-content-between">
+                        <div class="col-3 px-1 d-flex flex-column justify-content-between kpi-stat-box">
                             <div class="text-muted fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.4px;">Rata-Rata</div>
                             <div class="my-1">
-                                <div class="fw-bold text-primary num-tabular skeleton-hide" style="font-size: 1.35rem; white-space: nowrap; line-height: 1.2; letter-spacing: -0.5px;"><?= str_replace('.', ',', round($rata_rata_instansi, 2)) ?></div>
+                                <div class="fw-bold text-primary num-tabular skeleton-hide" style="font-size: 1.35rem; white-space: nowrap; line-height: 1.2; letter-spacing: -0.5px;" id="statRataRataInstansi" data-val="<?= round($rata_rata_instansi, 2) ?>"><?= str_replace('.', ',', round($rata_rata_instansi, 2)) ?></div>
                                 <div class="skeleton-box skeleton-show mx-auto" style="width: 60%; height: 1.6rem; display: none;"></div>
                             </div>
                             <div class="text-primary small fw-semibold" style="font-size: 0.68rem; white-space: nowrap;">Instansi</div>
@@ -272,7 +337,7 @@ th.sortable.desc .sort-icon {
     </div>
 
     <!-- TABEL REKAP KINERJA (BENTO CARD) -->
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bento-stagger bento-stagger-3">
         <div class="card-header bg-light py-2.5 px-3 border-bottom d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
             <div>
                 <h6 class="fw-bold text-dark mb-0 small"><i class="bi bi-table text-primary me-1.5"></i>Daftar Capaian Pegawai</h6>
@@ -680,6 +745,29 @@ th.sortable.desc .sort-icon {
 
 <?= $this->section('scripts') ?>
 <script>
+// Precision Metric Count-Up Number Ticker
+function animateValue(el, start, end, duration = 750, decimals = 0, suffix = '') {
+    if (!el) return;
+    const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion || duration <= 0) {
+        el.textContent = (decimals > 0 ? end.toFixed(decimals).replace('.', ',') : Math.round(end)) + suffix;
+        return;
+    }
+    const startTime = performance.now();
+    function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        // easeOutExpo
+        const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+        const current = start + (end - start) * ease;
+        el.textContent = (decimals > 0 ? current.toFixed(decimals).replace('.', ',') : Math.round(current)) + suffix;
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        }
+    }
+    requestAnimationFrame(update);
+}
+
 function showSkeletonAndSubmit() {
     document.querySelectorAll('.skeleton-hide').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.skeleton-show').forEach(el => el.style.display = 'block');
@@ -738,9 +826,11 @@ function loadDetailPegawai(userId, nama) {
             document.getElementById('modalInfoNipUnit').textContent = `NIP: ${data.pegawai.nip} | Unit: ${data.pegawai.unit} | Jabatan: ${data.pegawai.jabatan}`;
             document.getElementById('modalTextAtasan').textContent = data.pegawai.atasan_nama;
 
-            // Scorecard
-            const scoreText = formatAngkaIndo(data.rata_rata);
-            document.getElementById('modalDetailScore').textContent = scoreText;
+            // Scorecard with live ticker
+            const scoreVal = parseFloat(data.rata_rata) || 0;
+            const scoreEl = document.getElementById('modalDetailScore');
+            animateValue(scoreEl, 0, scoreVal, 600, 2);
+
             const badgeEl = document.getElementById('modalDetailBadge');
             badgeEl.className = `badge ${data.badge_class} rounded-pill px-2.5 py-1`;
             badgeEl.textContent = data.predikat;
@@ -795,7 +885,7 @@ function loadDetailPegawai(userId, nama) {
 
             if (data.tugas_tambahan && data.tugas_tambahan.length > 0) {
                 data.tugas_tambahan.forEach((tmb, idx) => {
-                    const buktiBtn = tmb.link_bukti ? `<a href="${tmb.link_bukti}" target="_blank" class="btn btn-light btn-sm text-primary rounded-pill border px-2 py-0.5" style="font-size: 0.72rem;"><i class="bi bi-box-arrow-up-right me-1"></i>Bukti</a>` : `<span class="text-muted">-</span>`;
+                    const buktiBtn = tmb.link_bukti ? `<a href="${tmb.link_bukti}" target="_blank" class="btn btn-light btn-sm text-primary rounded-pill border px-2 py-0.5 btn-tactile" style="font-size: 0.72rem;"><i class="bi bi-box-arrow-up-right me-1"></i>Bukti</a>` : `<span class="text-muted">-</span>`;
                     const capaianText = tmb.capaian ? `${formatAngkaIndo(tmb.capaian)} ${tmb.satuan}` : '-';
 
                     const tr = document.createElement('tr');
@@ -823,6 +913,29 @@ function loadDetailPegawai(userId, nama) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Initial Metric Count-Up Tickers
+    const statTotalEl = document.getElementById('statTotalPegawai');
+    const statSudahEl = document.getElementById('statSudahDinilai');
+    const statBelumEl = document.getElementById('statBelumDinilai');
+    const statRataEl  = document.getElementById('statRataRataInstansi');
+
+    if (statTotalEl) {
+        const val = parseInt(statTotalEl.getAttribute('data-val')) || 0;
+        animateValue(statTotalEl, 0, val, 700, 0);
+    }
+    if (statSudahEl) {
+        const val = parseInt(statSudahEl.getAttribute('data-val')) || 0;
+        animateValue(statSudahEl, 0, val, 750, 0);
+    }
+    if (statBelumEl) {
+        const val = parseInt(statBelumEl.getAttribute('data-val')) || 0;
+        animateValue(statBelumEl, 0, val, 750, 0);
+    }
+    if (statRataEl) {
+        const val = parseFloat(statRataEl.getAttribute('data-val')) || 0;
+        animateValue(statRataEl, 0, val, 850, 2);
+    }
+
     const searchInput = document.getElementById('liveSearchInput');
     const tableRows = document.querySelectorAll('.pegawai-row');
     const mobileCards = document.querySelectorAll('.mobile-pegawai-card');
@@ -867,6 +980,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             if (matchesSearch && matchesCategory) {
+                if (row.style.display === 'none') {
+                    row.classList.add('row-animated');
+                }
                 row.style.display = '';
                 visibleCount++;
             } else {
@@ -895,6 +1011,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             if (matchesSearch && matchesCategory) {
+                if (card.style.display === 'none') {
+                    card.classList.add('row-animated');
+                }
                 card.style.display = '';
             } else {
                 card.style.display = 'none';
@@ -988,7 +1107,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 return isAscending ? valA - valB : valB - valA;
             });
 
-            rowsArray.forEach(row => tableBody.appendChild(row));
+            rowsArray.forEach(row => {
+                row.classList.add('row-animated');
+                tableBody.appendChild(row);
+            });
             if (desktopEmpty) tableBody.appendChild(desktopEmpty);
         });
     });

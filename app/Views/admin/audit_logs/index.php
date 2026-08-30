@@ -146,9 +146,9 @@
                                     } elseif ($action === 'UPDATE') {
                                         $badgeClass = 'bg-warning-subtle text-warning-emphasis border border-warning-subtle';
                                         $icon = 'bi-pencil-square';
-                                    } elseif ($action === 'DELETE') {
+                                    } elseif ($action === 'DELETE' || $action === 'FAILED_LOGIN' || $action === 'RATE_LIMIT_LOGIN') {
                                         $badgeClass = 'bg-danger-subtle text-danger border border-danger-subtle';
-                                        $icon = 'bi-trash3';
+                                        $icon = ($action === 'DELETE') ? 'bi-trash3' : 'bi-shield-slash';
                                     } elseif ($action === 'LOGIN' || $action === 'LOGOUT') {
                                         $badgeClass = 'bg-info-subtle text-info-emphasis border border-info-subtle';
                                         $icon = ($action === 'LOGIN') ? 'bi-box-arrow-in-right' : 'bi-box-arrow-left';

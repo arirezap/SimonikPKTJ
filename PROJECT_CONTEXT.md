@@ -68,9 +68,19 @@ Aplikasi ini memiliki 3 modul yang saling berkesinambungan untuk menilai kinerja
    - Mendukung *Cascading Update* otomatis dari `MasterDataController::updateUnitKerja()` ke seluruh pengguna yang terdaftar di unit tersebut.
    - Memiliki proteksi *Deletion Barrier* pada `MasterDataController::deleteUnitKerja()` dan antarmuka JavaScript yang menolak penghapusan unit kerja jika masih terdapat pegawai aktif.
    - Tabel Master Data Unit Kerja menyajikan indikator badge **`Pegawai Terdaftar`** yang dihitung via agregasi `UnitKerja::getUnitsWithUserCount()`.
+8. **Modul Autentikasi & Keamanan Sesi (OWASP ASVS Standard)**:
+   - **Pencegahan User Enumeration**: Pesan login diseragamkan (*"Nama pengguna atau kata sandi yang Anda masukkan salah."*) baik untuk akun yang tidak ditemukan maupun password salah.
+   - **Audit Trail `FAILED_LOGIN`**: Merekam kegagalan login dengan alasan `user_not_found` atau `invalid_password` beserta alamat IP pengguna.
+   - **Hardening Logout**: Mendukung metode POST terlindungi CSRF via `#logoutPostForm` guna mencegah serangan *Forced Logout CSRF*, mencatat audit log `LOGOUT` sebelum sesi dihancurkan, menghapus cookie otentikasi `remember_me`, dan menyuntikkan header `Cache-Control: no-store` untuk mencegah eksploitasi tombol *Back* browser pada komputer bersama.
+9. **Modul Profil Pengguna & Kredensial Akun (`/profile`)**:
+   - **Penyederhanaan Unggah Avatar**: Interaksi 1-klik langsung pada foto avatar / tombol kamera melayang (menghapus kotak file input ganda yang redundan).
+   - **Pratinjau Asinkron Lokal**: Memuat pratinjau gambar instan di browser via `FileReader`, validasi ukuran `< 2MB` dan tipe MIME sebelum upload, serta inisial cerdas 2-huruf otomatis sebagai fallback.
+   - **Hardening Kredensial**: Validasi keunikan Email dan NIP/NIK terhadap akun lain (`where('id !=', $userId)`), tombol intip password (`.btn-toggle-pw`), indikator kecocokan password real-time (`match-pop-anim`), *Dirty Form Guard* (`beforeunload`), *Double-Submit Lock*, *Mobile Floating Action Bar*, dan sinkronisasi otomatis role `'spm'` jika unit kerja diubah ke Satuan Penjaminan Mutu.
 
 ## 6. Coding Standards & Agent Instructions
-- **Routing & Filter**: Seluruh *endpoint* AJAX dan form submission **WAJIB** terdaftar secara eksplisit di `app/Config/Routes.php` dalam grup filter otentikasi `auth`. Jangan pernah berasumsi auto-routing berjalan di server *live cPanel*.
+- **Routing & Filter**: Seluruh *endpoint* AJAX dan form submission **WAJIB** terdaftar secara eksplisit di `app/Config/Routes.php` dalam grup filter otentikasi `auth`. Rute privat tidak boleh berada di luar filter `auth`.
+- **Terminology Rule**: Wajib menggunakan kata baku **"staf"** (bukan "staf") di seluruh label UI, variabel kode, dan dokumentasi.
+- **Application Naming**: Nama resmi aplikasi adalah **Evidence Command Center (ECC)** (atau **ECC**).
 - **Controller Logic & Form Handling**: Usahakan logika perhitungan berat diselesaikan di Controller atau menggunakan *Query Builder* di Model. **WAJIB** menerapkan pola **PRG (Post-Redirect-Get)** pada setiap form filter atau form *submission* non-AJAX. Untuk request AJAX, selalu kembalikan respons JSON lengkap dengan `csrf_hash`.
 - **Database & Try-Catch Safety**: Semua eksekusi `insert()`, `update()`, `delete()`, dan `updateBatch()` pada *controller* wajib dibungkus dalam blok `try...catch (\Exception $e)` dan Database Transaction (`$db->transStart()` & `$db->transComplete()`) untuk mencegah kesalahan data sementara di server *live*.
 - **Handling Desimal & Sanitasi**: Nilai angka bertipe desimal harus selalu melalui sanitasi `str_replace(',', '.', trim((string)$val))` sebelum dimasukkan ke basis data agar mendukung input berbasis bahasa Indonesia (koma).

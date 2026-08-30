@@ -186,4 +186,96 @@ Coupled with HTTP no-cache headers in `main.php`:
 
 ---
 
+## 7. ✨ Motion Design & Animation Guidelines (/impeccable animate)
+
+### 7.1 Motion Philosophy
+- **Visitor Mode**: `Operate + Read`. Animations must prioritize zero cognitive load, instant perception of hierarchical structure, and seamless continuity.
+- **Timing & Curves**:
+  - Micro-Interactions (Hover, clicks): `0.2s - 0.25s cubic-bezier(0.16, 1, 0.3, 1)`
+  - Surface Entrances (Bento Card cascade): `0.65s cubic-bezier(0.16, 1, 0.3, 1)` with $0.08\text{s}$ stagger delays (`.bento-stagger-1` through `.bento-stagger-4`).
+  - Metric Count-Up Number Ticker (`animateValue()`): $700\text{ms} - 850\text{ms}$ with `1 - Math.pow(2, -10 * progress)` (`easeOutExpo`).
+  - Chart Rendering: $900\text{ms}$ with `easeOutQuart`.
+
+### 7.2 Core Motion Tokens
+- **Bento Card Elevation**: `transform: translateY(-2.5px); box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);`
+- **Tab Cross-Fade**: `transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1)` for zero layout shift during radar and analytics navigation.
+- **Reduced Motion Fallback**:
+  - Full adherence to `@media (prefers-reduced-motion: reduce)` in CSS and `window.matchMedia` in JavaScript tickers, rendering static values and zero translations for accessibility compliance.
+
+### 7.3 High-Density Table & Data-Entry Motion Tokens
+- **Row Insertion (`.row-slide-in`)**: `animation: rowSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)` with subtle blue highlight background fading to transparent and automatic focus on the primary input (target dropdown in Tugas Pokok, deskripsi textarea in Tugas Tambahan).
+- **Row Deletion (`.row-slide-out`)**: `animation: rowSlideOut 0.22s ease-out` with subtle scale-down and horizontal slide before DOM removal, eliminating abrupt layout jumps.
+- **Dynamic Unit Badge Pop (`.badge-satuan-pop`)**: `transform: scale(1.08)` and soft tint transition on target dropdown change for instantaneous metric clarity.
+- **Duplicate Collision Pulse (`.table-danger`)**: `animation: pulseDuplicate 0.4s ease-in-out` soft red pulse alerting users of duplicate entries without modal disruption.
+- **Tactile Button Press (`.btn-tactile`)**: `transform: scale(0.97)` on `:active` with cubic-bezier response.
+
+### 7.4 Evaluative Scoring Workbench Motion Tokens (`Rekap & Penilaian Kinerja`)
+- **Real-Time Predikat Badge Pop (`.badge-predikat-pop`)**: `transform: scale(1.08)` and smooth transition during live scoring calculation for instantaneous qualitative feedback.
+- **Executive Score Card Transition (`.score-card-transition`)**: `transition: border-color 0.3s ease, color 0.3s ease, background-color 0.3s ease` providing continuous visual feedback when typing employee scores.
+- **Segmented Tab Cross-Fade (`.tab-content > .tab-pane`)**: `transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s` with `translateY(4px) -> translateY(0)` on active state.
+
+### 7.5 Global Shell, Topbar, Footer & Notification Motion Tokens
+- **Compact Single-Line Navigation**: `--sidebar-width: 250px;`, `.sidebar .nav-link` font size `0.8125rem (13px)` with `white-space: nowrap;` and `text-overflow: ellipsis;` ensuring all navigation items (e.g. *"Rekap & Penilaian Kinerja"*, *"Target Kinerja Bulanan"*) strictly sit on **1 single line** in both normal and active states.
+- **Sidebar Active Glow (`.sidebar .nav-link.active`)**: `background: linear-gradient(90deg, rgba(13, 110, 253, 0.12), rgba(13, 110, 253, 0.03)); border-left: 3px solid var(--ecc-primary); box-shadow: inset 3px 0 0 var(--ecc-primary);`
+- **Sidebar Nav Hover Slide (`.sidebar .nav-link:hover`)**: `transform: translateX(4px)` with icon scale `transform: scale(1.14)` in $220\text{ms}$ `cubic-bezier(0.16, 1, 0.3, 1)`.
+- **Desktop Flyout Reveal (`@keyframes fadeInFlyout`)**: `opacity: 0 -> 1; transform: translateX(-8px) scale(0.98) -> translateX(0) scale(1)` in $200\text{ms}$.
+- **Topbar Glassmorphism (`.header-promax`)**: `background: rgba(255, 255, 255, 0.88); backdrop-filter: blur(12px);` with smart scroll translateY hide/reveal in $280\text{ms}$.
+- **Bell Swing Animation (`@keyframes bellSwing`)**: `rotate(0deg) -> 14deg -> -12deg -> 8deg -> 0deg` in $600\text{ms}$ on bell hover.
+- **Unread Badge Heartbeat (`@keyframes notifBadgePulse`)**: `scale(1) -> scale(1.15)` with glowing red shadow pulse.
+- **Notification Dropdown Spring (`@keyframes notifMenuReveal`)**: `opacity: 0 -> 1; transform: translateY(8px) scale(0.97) -> translateY(0) scale(1)` in $220\text{ms}$.
+- **Unread Dot Pulse (`@keyframes unreadDotPulse`)**: `scale(1) -> scale(1.3)` with soft opacity cycle.
+- **Notification Empty State Float (`@keyframes emptyFloat`)**: `translateY(0) -> translateY(-5px) -> translateY(0)` in $3\text{s}$ infinite cycle.
+- **Footer Version Badge Hover (`.version-badge:hover`)**: `transform: translateY(-1.5px)` with elevation shadow in $200\text{ms}$.
+
+### 7.6 Kepegawaian Remuneration & Performance Rekap Motion Tokens
+- **Cascading Bento Stagger**: Header (`.bento-stagger-1`), KPI & Filter Grid (`.bento-stagger-2`), and Main Employee Table Card (`.bento-stagger-3`) entrance in $550\text{ms}$ `cubic-bezier(0.16, 1, 0.3, 1)`.
+- **KPI Summary & Modal Count-Up Tickers**: `animateValue()` using `easeOutExpo` ($700\text{ms} - 850\text{ms}$) on `#statTotalPegawai`, `#statSudahDinilai`, `#statBelumDinilai`, `#statRataRataInstansi`, and modal `#modalDetailScore`.
+- **Pill Filter Tactile Tap**: `.filter-pill` with `scale(0.95)` tap response and `scale(1.02)` active elevated chip state.
+- **Live Search & Filter Fade Transition (`@keyframes rowFadeIn`)**: Smooth $250\text{ms}$ `translateY(4px) -> translateY(0)` entrance for filtered employee rows.
+### 7.7 Profile Management & Security UI & Motion Tokens
+- **Interactive Avatar Focal Sequence**:
+  - Hover & Focus: `.avatar-wrapper` scale transition (`scale(1.04)`) with `.avatar-overlay` backdrop blur `2px` in $200\text{ms}$ `cubic-bezier(0.16, 1, 0.3, 1)`.
+  - Photo Cross-Fade (`@keyframes avatarPhotoIn`): $300\text{ms}$ smooth scale ($0.94 \rightarrow 1.0$) and opacity transition upon FileReader local preview load.
+  - Floating Camera Badge (`.avatar-badge-btn`): $44\text{px}$ touch target with active tactile press response (`scale(0.92)`).
+- **Live Password Match Indicator (`@keyframes matchPopIn`)**:
+  - $220\text{ms}$ micro-spring arrival ($translateY(-3px) \rightarrow 0$, $scale(0.97) \rightarrow 1.0$) providing instant affirmative feedback on password match.
+- **Cascading Bento Layout**:
+  - Header (`.bento-stagger-1`, delay $0.04\text{s}$), Avatar Overview Card (`.bento-stagger-2`, delay $0.10\text{s}$), and Security & Personal Info Bento Cards (`.bento-stagger-3`, delay $0.18\text{s}$) with $550\text{ms}$ entrance curve `cubic-bezier(0.16, 1, 0.3, 1)`.
+### 7.8 Authentication & Session Termination UI & Motion Tokens (`Login & Logout`)
+- **Login Experience & Password Toggle**:
+  - Floating Card Elevation: `.card.border-0.shadow-lg.rounded-4` with smooth entrance fade ($450\text{ms}$).
+  - Password Visibility Switch: `.btn-toggle-pw` toggles eye icon (`bi-eye` $\leftrightarrow$ `bi-eye-slash`) with subtle color shift.
+  - Interactive Login Submit: Button active state with `.btn-tactile` and loading spinner state during authentication check.
+- **Logout Lifecycle & Safety Interception**:
+  - Destructive Color Token: `#dc3545` (`.text-danger`) for session termination indicator.
+  - Interception Dialog: Modal SweetAlert2 with reverse button layout (*Batal* on left, *Ya, Keluar* on right) and keyboard `Escape` cancel support.
+  - Anti-Double Submit Loading: `Swal.showLoading()` instantly locks the confirm button upon click, preventing duplicate POST requests.
+  - Exit Continuity: Reassuring green flash alert upon landing at `/login` confirming safe session termination.
+
+---
+
+## 8. ♿ Accessibility (A11y) & Ergonomic Standards
+
+The Evidence Command Center (ECC) is built to meet **WCAG 2.1 AA** compliance across all viewports:
+
+1. **Accessible Focus-Visible Rings**:
+   - Universal focus indicator: `box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15)` on `.form-control:focus`, `.form-select:focus`, and interactive controls, providing unmistakable focus feedback without harsh default browser outlines.
+2. **Ergonomic Touch Targets ($\ge 44\text{px}$)**:
+   - All mobile buttons, tab pills, camera badge triggers, and password visibility toggles enforce minimum touch dimensions of $44\text{px} \times 44\text{px}$ for comfortable one-handed thumb interaction.
+3. **Mobile Floating Action Bar (<768px)**:
+   - Long forms (such as Profile and Daily Reporting) feature a pinned bottom action bar (`.mobile-floating-bar` with `backdrop-filter: blur(12px)`) enabling instant one-tap saving without scrolling back to the bottom.
+4. **Desktop Sticky Overview Sidebar ($\ge 992\text{px}$)**:
+   - Persona and summary cards stay comfortably pinned (`position: sticky; top: 1.5rem;`) during long form scrolling.
+5. **High-Contrast Text Hierarchy**:
+   - Primary text uses deep navy `#0f172a` ensuring contrast ratios $\ge 4.5:1$ against pure white `#ffffff` and subtle background `#f8fafc`.
+6. **Print-Optimized Stylesheet (`@media print`)**:
+   - Clean printable A4 layout automatically suppressing non-essential interactive buttons, modals, and sticky bars for pristine physical documentation.
+
+---
+
 *Evidence Command Center (ECC) Design System — Maintained for 100% visual consistency, ergonomic excellence, and enterprise-grade user experience.*
+
+
+
+
+

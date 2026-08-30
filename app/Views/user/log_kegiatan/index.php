@@ -42,6 +42,7 @@
         padding: 0.65rem 0.75rem;
         vertical-align: middle;
         border-color: #f1f5f9;
+        transition: background-color 0.25s ease;
     }
     .table-bento tbody tr:last-child td {
         border-bottom: 0;
@@ -63,13 +64,68 @@
         padding: 0.5rem 0.75rem;
         font-size: 0.85rem;
     }
+
+    /* Motion Design & Ergonomic Transitions */
+    @keyframes rowSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+            background-color: rgba(13, 110, 253, 0.08);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+            background-color: transparent;
+        }
+    }
+    .row-slide-in {
+        animation: rowSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes rowSlideOut {
+        from {
+            opacity: 1;
+            transform: scale(1);
+        }
+        to {
+            opacity: 0;
+            transform: scale(0.96) translateX(12px);
+        }
+    }
+    .row-slide-out {
+        animation: rowSlideOut 0.22s ease-out forwards;
+        pointer-events: none;
+    }
+
+    .badge-capaian-satuan {
+        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease;
+    }
+    .badge-satuan-pop {
+        transform: scale(1.08);
+        background-color: rgba(13, 110, 253, 0.1) !important;
+    }
+
+    .btn-tactile {
+        transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease;
+    }
+    .btn-tactile:active {
+        transform: scale(0.97);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .row-slide-in, .row-slide-out, .badge-satuan-pop {
+            animation: none !important;
+            transform: none !important;
+            transition: none !important;
+        }
+    }
 </style>
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
 <div class="container-fluid px-2 px-md-3">
     <!-- PAGE HEADER -->
-    <div class="d-flex justify-content-between flex-wrap align-items-center pt-2 pb-2 mb-3 border-bottom gap-2">
+    <div class="d-flex justify-content-between flex-wrap align-items-center pt-2 pb-2 mb-3 border-bottom gap-2 bento-stagger bento-stagger-1">
         <div>
             <h1 class="h4 mb-0 fw-bold text-dark"><i class="bi bi-calendar-check text-primary me-2"></i>Lapor Kegiatan Harian</h1>
             <p class="text-muted small mb-0">Catat realisasi aktivitas kerja harian beserta tautan bukti pekerjaan.</p>
@@ -82,20 +138,20 @@
     </div>
 
     <?php if (session()->getFlashdata('success')) : ?>
-        <div class="alert alert-success alert-dismissible fade show shadow-sm py-2 px-3 small mb-3 rounded-3" role="alert">
+        <div class="alert alert-success alert-dismissible fade show shadow-sm py-2 px-3 small mb-3 rounded-3 bento-stagger bento-stagger-1" role="alert">
             <i class="bi bi-check-circle-fill me-2"></i> <?= session()->getFlashdata('success') ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
 
     <?php if (session()->getFlashdata('error')) : ?>
-        <div class="alert alert-danger alert-dismissible fade show shadow-sm py-2 px-3 small mb-3 rounded-3" role="alert">
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm py-2 px-3 small mb-3 rounded-3 bento-stagger bento-stagger-1" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-2"></i> <?= session()->getFlashdata('error') ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
 
-    <div class="card shadow-sm border-0 mb-4 rounded-4 overflow-hidden">
+    <div class="card shadow-sm border-0 mb-4 rounded-4 overflow-hidden bento-stagger bento-stagger-2">
         <div class="card-body p-3 p-md-4">
             
             <!-- Filter Tanggal Toolbar -->
@@ -105,7 +161,7 @@
                         <label class="form-label fw-bold text-dark small mb-1" style="font-size: 0.72rem; letter-spacing: 0.3px;"><i class="bi bi-calendar-event text-primary me-1"></i> Tanggal Kegiatan</label>
                         <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
                             <span class="input-group-text bg-primary text-white border-primary"><i class="bi bi-calendar3"></i></span>
-                            <input type="date" name="tanggal" class="form-control border-primary fw-bold text-primary" value="<?= esc($tanggal_terpilih) ?>" max="<?= date('Y-m-d') ?>" onchange="this.form.submit()">
+                            <input type="date" name="tanggal" class="form-control border-primary fw-bold text-primary filter-select" value="<?= esc($tanggal_terpilih) ?>" max="<?= date('Y-m-d') ?>" onchange="this.form.submit()">
                         </div>
                     </div>
                     <div class="col-sm-7 col-md-9 text-muted pt-sm-3 small">
@@ -139,7 +195,7 @@
                     </div>
                     <?php if (hasRole('admin')): ?>
                     <button type="button" id="btnBukaKunci"
-                        class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold shadow-sm"
+                        class="btn btn-sm btn-outline-danger btn-tactile rounded-pill px-3 fw-semibold shadow-sm"
                         data-tanggal="<?= esc($tanggal_terpilih) ?>"
                         data-user-id="<?= esc(session()->get('id') ?? session()->get('user_id')) ?>"
                         title="Buka kunci laporan agar staf dapat merevisi">
@@ -186,7 +242,7 @@
                                 <div class="d-flex justify-content-between align-items-center header-section-wrapper">
                                     <span class="fs-6 fw-bold"><i class="bi bi-list-task me-2"></i> A. TUGAS POKOK (RHK)</span>
                                     <?php if (!$is_locked): ?>
-                                        <button type="button" id="tambahBaris" class="btn btn-sm btn-primary rounded-pill px-3 py-1 shadow-sm fw-semibold">
+                                        <button type="button" id="tambahBaris" class="btn btn-sm btn-primary btn-tactile rounded-pill px-3 py-1 shadow-sm fw-semibold">
                                              <i class="bi bi-plus-circle me-1"></i> Tambah Kegiatan
                                         </button>
                                     <?php endif; ?>
@@ -276,7 +332,7 @@
                                             <input type="url" name="link_bukti[]" class="form-control form-control-sm" placeholder="https://..." value="<?= esc($row['link_bukti']) ?>">
                                         </td>
                                         <td class="text-center">
-                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris" data-id="<?= $row['id'] ?>" title="Hapus baris" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
+                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris btn-tactile" data-id="<?= $row['id'] ?>" title="Hapus baris" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
                                         </td>
                                     <?php endif; ?>
                                 </tr>
@@ -314,7 +370,7 @@
                                     <input type="url" name="link_bukti[]" class="form-control form-control-sm" placeholder="https://...">
                                 </td>
                                 <td class="text-center">
-                                    <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris" title="Hapus baris baru" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris btn-tactile" title="Hapus baris baru" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
                                 </td>
                             </tr>
                         <?php endif; ?>
@@ -329,7 +385,7 @@
                                         <span class="text-dark fs-6 fw-bold">B. TUGAS TAMBAHAN</span>
                                     </div>
                                     <?php if (!$is_locked): ?>
-                                        <button type="button" id="tambahBarisTambahan" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1 shadow-sm fw-semibold">
+                                        <button type="button" id="tambahBarisTambahan" class="btn btn-sm btn-outline-success btn-tactile rounded-pill px-3 py-1 shadow-sm fw-semibold">
                                             <i class="bi bi-plus-circle me-1"></i> Tambah Tugas
                                         </button>
                                     <?php endif; ?>
@@ -393,7 +449,7 @@
                                             <input type="url" name="link_bukti_tambahan[]" class="form-control form-control-sm" placeholder="https://..." value="<?= esc($rowTmb['link_bukti']) ?>">
                                         </td>
                                         <td class="text-center">
-                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris-tmb" data-id="<?= $rowTmb['id'] ?>" title="Hapus baris" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
+                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris-tmb btn-tactile" data-id="<?= $rowTmb['id'] ?>" title="Hapus baris" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
                                         </td>
                                     <?php endif; ?>
                                 </tr>
@@ -406,11 +462,11 @@
 
             <!-- SINGLE UNIFIED BUTTON TOOLBAR AT BOTTOM -->
             <?php if (!$is_locked): ?>
-            <div class="d-flex justify-content-end align-items-center mt-4 gap-2 btn-action-container">
-                <button type="button" id="btnSimpanSementara" class="btn btn-outline-primary rounded-pill shadow-sm px-4 py-2 fw-semibold">
+            <div class="d-flex justify-content-end align-items-center mt-4 gap-2 btn-action-container bento-stagger bento-stagger-3">
+                <button type="button" id="btnSimpanSementara" class="btn btn-outline-primary btn-tactile rounded-pill shadow-sm px-4 py-2 fw-semibold">
                     <i class="bi bi-cloud-arrow-up me-1.5"></i> Simpan Draf
                 </button>
-                <button type="submit" class="btn btn-primary rounded-pill shadow-sm px-4 py-2 fw-bold">
+                <button type="submit" class="btn btn-primary btn-tactile rounded-pill shadow-sm px-4 py-2 fw-bold">
                     <i class="bi bi-send me-1.5"></i> Kirim Laporan
                 </button>
             </div>
@@ -449,13 +505,14 @@
             });
         }
 
-        // Tambah Baris Tugas Pokok
+        // Tambah Baris Tugas Pokok dengan Fluid Animation & Auto-Focus
         $('#tambahBaris').on('click', function() {
             const templateRow = tabelLog.find('tr.row-tugas-pokok:first');
             let newRow;
 
             if (templateRow.length > 0 && templateRow.find('select[name="target_id[]"]').length > 0) {
                 newRow = templateRow.clone();
+                newRow.removeClass('row-slide-out').addClass('row-slide-in');
                 newRow.find('input[name="log_id[]"]').val('');
                 newRow.find('input[type="number"]').val('');
                 newRow.find('input[type="url"]').val('');
@@ -465,8 +522,8 @@
                 newRow.find('.hapus-baris').removeAttr('data-id');
                 newRow.find('.is-invalid').removeClass('is-invalid');
             } else {
-                newRow = `
-                <tr class="row-tugas-pokok input-row">
+                newRow = $(`
+                <tr class="row-tugas-pokok input-row row-slide-in">
                     <input type="hidden" name="log_id[]" value="">
                     <td class="nomor-baris text-center fw-bold text-muted">1</td>
                     <td>
@@ -495,17 +552,21 @@
                         <input type="url" name="link_bukti[]" class="form-control form-control-sm" placeholder="https://...">
                     </td>
                     <td class="text-center">
-                        <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris" title="Hapus baris" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
+                        <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris btn-tactile" title="Hapus baris" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
                     </td>
-                </tr>`;
+                </tr>`);
             }
             
             $('#rowHeaderTambahan').before(newRow);
             updateRowNumbers();
             updateDropdownOptions();
+
+            setTimeout(() => {
+                $(newRow).find('select[name="target_id[]"]').focus();
+            }, 80);
         });
 
-        // Hapus Baris Tugas Pokok
+        // Hapus Baris Tugas Pokok dengan Smooth Animation
         tabelLog.on('click', '.hapus-baris', function() {
             const pokokRows = tabelLog.find('tr.row-tugas-pokok');
             const idLog = $(this).attr('data-id');
@@ -522,6 +583,15 @@
 
             // Izinkan hapus jika: ada >1 baris Pokok, ATAU baris terakhir kosong, ATAU sudah ada Tugas Tambahan
             const canDelete = pokokRows.length > 1 || isRowEmpty || hasTambahan;
+
+            const animateRemoveRow = function() {
+                row.addClass('row-slide-out');
+                setTimeout(() => {
+                    row.remove();
+                    updateRowNumbers();
+                    updateDropdownOptions();
+                }, 220);
+            };
 
             if (canDelete) {
                 if (idLog) {
@@ -542,9 +612,7 @@
                                     $('input[name="csrf_test_name"]').val(response.csrf_hash);
                                 }
                                 if (response.success) {
-                                    row.remove();
-                                    updateRowNumbers();
-                                    updateDropdownOptions();
+                                    animateRemoveRow();
                                     Swal.fire({
                                         icon: 'success',
                                         title: 'Terhapus',
@@ -584,9 +652,7 @@
                         }
                     }
                 } else {
-                    row.remove();
-                    updateRowNumbers();
-                    updateDropdownOptions();
+                    animateRemoveRow();
                 }
             } else {
                 if (typeof Swal !== 'undefined') {
@@ -597,13 +663,14 @@
             }
         });
 
-        // Tambah Baris Tugas Tambahan
+        // Tambah Baris Tugas Tambahan dengan Fluid Animation & Auto-Focus
         $('#tambahBarisTambahan').on('click', function() {
             const templateRowTmb = tabelLog.find('tr.row-tugas-tambahan:first');
             let newRow;
 
             if (templateRowTmb.length > 0 && templateRowTmb.find('textarea[name="deskripsi_kegiatan_tambahan[]"]').length > 0) {
                 newRow = templateRowTmb.clone();
+                newRow.removeClass('row-slide-out').addClass('row-slide-in');
                 newRow.find('input[name="log_tambahan_id[]"]').val('');
                 newRow.find('input[type="number"]').val('');
                 newRow.find('input[name="satuan_tambahan[]"]').val('').attr('title', '');
@@ -612,8 +679,8 @@
                 newRow.find('.hapus-baris-tmb').removeAttr('data-id');
                 newRow.find('.is-invalid').removeClass('is-invalid');
             } else {
-                newRow = `
-                <tr class="row-tugas-tambahan">
+                newRow = $(`
+                <tr class="row-tugas-tambahan row-slide-in">
                     <input type="hidden" name="log_tambahan_id[]" value="">
                     <td class="nomor-baris-tmb text-center fw-bold text-muted">1</td>
                     <td class="align-middle">
@@ -634,12 +701,16 @@
                         <input type="url" name="link_bukti_tambahan[]" class="form-control form-control-sm" placeholder="https://...">
                     </td>
                     <td class="text-center">
-                        <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris-tmb" title="Hapus" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
+                        <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris-tmb btn-tactile" title="Hapus" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
                     </td>
-                </tr>`;
+                </tr>`);
             }
             tabelLog.append(newRow);
             updateRowNumbers();
+
+            setTimeout(() => {
+                $(newRow).find('textarea[name="deskripsi_kegiatan_tambahan[]"]').focus();
+            }, 80);
         });
 
         // Dynamic title update saat mengetik satuan tambahan
@@ -647,10 +718,18 @@
             $(this).attr('title', $(this).val());
         });
 
-        // Hapus Baris Tugas Tambahan
+        // Hapus Baris Tugas Tambahan dengan Smooth Animation
         tabelLog.on('click', '.hapus-baris-tmb', function() {
             const tr = $(this).closest('tr');
             const logId = $(this).data('id');
+
+            const animateRemoveTmb = function() {
+                tr.addClass('row-slide-out');
+                setTimeout(() => {
+                    tr.remove();
+                    updateRowNumbers();
+                }, 220);
+            };
 
             if (logId) {
                 const doDeleteTambahan = function() {
@@ -668,8 +747,7 @@
                                 $('input[name="csrf_test_name"]').val(response.csrf_hash);
                             }
                             if(response.success) {
-                                tr.remove();
-                                updateRowNumbers();
+                                animateRemoveTmb();
                                 if (typeof Swal !== 'undefined') {
                                     Swal.fire({
                                         icon: 'success',
@@ -720,12 +798,11 @@
                     }
                 }
             } else {
-                tr.remove();
-                updateRowNumbers();
+                animateRemoveTmb();
             }
         });
 
-        // Auto update satuan text based on selected target
+        // Auto update satuan text based on selected target with pop animation
         tabelLog.on('change', 'select[name="target_id[]"]', function() {
             let selectedOption = $(this).find('option:selected');
             let satuan = selectedOption.data('satuan') || selectedOption.attr('data-satuan');
@@ -734,7 +811,11 @@
                 let matches = selectedText.match(/\((\d+(?:[\.,]\d+)?)\s+(.+)\)$/);
                 satuan = matches ? matches[2] : '-';
             }
-            $(this).closest('tr').find('.input-group-text').text(satuan || '-');
+            const badge = $(this).closest('tr').find('.badge-capaian-satuan');
+            badge.text(satuan || '-').addClass('badge-satuan-pop');
+            setTimeout(() => {
+                badge.removeClass('badge-satuan-pop');
+            }, 200);
             updateDropdownOptions();
         });
 

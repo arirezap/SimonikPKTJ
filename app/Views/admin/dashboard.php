@@ -7,7 +7,7 @@
 <?= $this->section('content') ?>
 
 <!-- 1. ECC DASHBOARD (TOP SECTION AS REQUESTED) -->
-<div class="row g-4 mb-5">
+<div class="row g-4 mb-5 bento-stagger bento-stagger-1">
     <div class="col-lg-8 d-flex flex-column">
         <div class="bento-card border-primary border-top border-4 flex-fill">
             <div class="bento-header d-flex flex-column flex-md-row justify-content-between align-items-md-center border-bottom pb-2 mb-2 gap-2">
@@ -115,47 +115,49 @@
 </div>
 
 <!-- 2. ANALISIS KINERJA UNIT -->
-<div class="d-flex justify-content-between align-items-center mb-4 mt-3">
-    <div>
-        <h4 class="mb-0 fw-bold text-dark">Analitik Kinerja Unit</h4>
-        <p class="text-muted mb-0 small">Ringkasan performa seluruh unit berdasarkan laporan harian yang dinilai</p>
+<div class="bento-stagger bento-stagger-2">
+    <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
+        <div>
+            <h4 class="mb-0 fw-bold text-dark">Analitik Kinerja Unit</h4>
+            <p class="text-muted mb-0 small">Ringkasan performa seluruh unit berdasarkan laporan harian yang dinilai</p>
+        </div>
+        <form id="formKinerja" class="m-0 d-flex gap-2">
+            <select class="form-select filter-select fw-bold text-primary-bento" id="bulan_kinerja" name="bulan_kinerja" style="width: auto; cursor:pointer;" onchange="updateKinerjaData()">
+                <option value="all" <?= ($bulan_kinerja === 'all' || !$bulan_kinerja) ? 'selected' : '' ?>>Semua Bulan</option>
+                <?php for ($i = 1; $i <= 12; $i++): ?>
+                    <option value="<?= $i; ?>" <?= ($bulan_kinerja == $i) ? 'selected' : ''; ?>><?= bulan_indo($i) ?></option>
+                <?php endfor; ?>
+            </select>
+            <select name="tahun_kinerja" id="tahun_kinerja" class="form-select filter-select fw-bold text-primary-bento" style="width: auto; cursor:pointer;" onchange="updateKinerjaData()">
+                <?php foreach ($daftar_tahun as $tahun_item): ?>
+                    <option value="<?= esc($tahun_item) ?>" <?= ($tahun_kinerja == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </form>
     </div>
-    <form id="formKinerja" class="m-0 d-flex gap-2">
-        <select class="form-select filter-select fw-bold text-primary-bento" id="bulan_kinerja" name="bulan_kinerja" style="width: auto; cursor:pointer;" onchange="updateKinerjaData()">
-            <option value="all" <?= ($bulan_kinerja === 'all' || !$bulan_kinerja) ? 'selected' : '' ?>>Semua Bulan</option>
-            <?php for ($i = 1; $i <= 12; $i++): ?>
-                <option value="<?= $i; ?>" <?= ($bulan_kinerja == $i) ? 'selected' : ''; ?>><?= bulan_indo($i) ?></option>
-            <?php endfor; ?>
-        </select>
-        <select name="tahun_kinerja" id="tahun_kinerja" class="form-select filter-select fw-bold text-primary-bento" style="width: auto; cursor:pointer;" onchange="updateKinerjaData()">
-            <?php foreach ($daftar_tahun as $tahun_item): ?>
-                <option value="<?= esc($tahun_item) ?>" <?= ($tahun_kinerja == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
-            <?php endforeach; ?>
-        </select>
-    </form>
-</div>
 
-<!-- Row Sebaran & Tren Kinerja -->
-<div class="row g-4 mb-5">
-    <!-- Sebaran Kinerja Doughnut Chart -->
-    <div class="col-lg-4">
-        <div class="bento-card h-100">
-            <div class="bento-header">Sebaran Predikat Kinerja</div>
-            <div class="bento-body pt-0">
-                <div class="chart-container">
-                    <canvas id="sebaranChart" role="img" aria-label="Grafik Sebaran Predikat Kinerja Organisasi"></canvas>
+    <!-- Row Sebaran & Tren Kinerja -->
+    <div class="row g-4 mb-5">
+        <!-- Sebaran Kinerja Doughnut Chart -->
+        <div class="col-lg-4">
+            <div class="bento-card h-100">
+                <div class="bento-header">Sebaran Predikat Kinerja</div>
+                <div class="bento-body pt-0">
+                    <div class="chart-container">
+                        <canvas id="sebaranChart" role="img" aria-label="Grafik Sebaran Predikat Kinerja Organisasi"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <!-- Trend Line Chart -->
-    <div class="col-lg-8">
-        <div class="bento-card h-100">
-            <div class="bento-header">Tren Kinerja Bulanan Organisasi</div>
-            <div class="bento-body pt-0">
-                <div class="chart-container">
-                    <canvas id="trendChart" role="img" aria-label="Grafik Tren Kinerja Bulanan Organisasi"></canvas>
+        
+        <!-- Trend Line Chart -->
+        <div class="col-lg-8">
+            <div class="bento-card h-100">
+                <div class="bento-header">Tren Kinerja Bulanan Organisasi</div>
+                <div class="bento-body pt-0">
+                    <div class="chart-container">
+                        <canvas id="trendChart" role="img" aria-label="Grafik Tren Kinerja Bulanan Organisasi"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -163,7 +165,7 @@
 </div>
 
 <!-- 3. LEADERBOARD UNIT & PEGAWAI -->
-<div class="row g-4 mb-5">
+<div class="row g-4 mb-5 bento-stagger bento-stagger-3">
     <!-- Kolom Kiri: Top 5 Unit -->
     <div class="col-lg-4">
         <div class="bento-card h-100 d-flex flex-column">
@@ -295,22 +297,24 @@
 </div>
 
 <!-- 4. GRAFIK KINERJA UNIT -->
-<div class="d-flex align-items-center mb-3">
-    <h5 class="fw-bold text-secondary mb-0"><i class="bi bi-building me-2"></i> Grafik Kinerja Unit</h5>
-</div>
+<div class="bento-stagger bento-stagger-4">
+    <div class="d-flex align-items-center mb-3">
+        <h5 class="fw-bold text-secondary mb-0"><i class="bi bi-building me-2"></i> Grafik Kinerja Unit</h5>
+    </div>
 
-<div class="row g-4 mb-5">
-    <div class="col-12">
-        <div class="bento-card border-top border-4 border-info">
-            <div class="bento-body p-4">
-                <?php if (empty($chartPegawaiUnitLabels)): ?>
-                    <div class="alert alert-light border text-center text-muted mb-0 shadow-sm"><i class="bi bi-info-circle me-2"></i> Belum ada data rekap kinerja staf.</div>
-                <?php else: ?>
-                    <div class="performance-chart-container">
-                        <canvas id="unitPerformanceChart"></canvas>
-                    </div>
-                    <p class="text-center text-muted small mt-3 mb-0"><i class="bi bi-info-circle me-1"></i> Klik pada grafik batang untuk melihat detail anggota unit kerja.</p>
-                <?php endif; ?>
+    <div class="row g-4 mb-5">
+        <div class="col-12">
+            <div class="bento-card border-top border-4 border-info">
+                <div class="bento-body p-4">
+                    <?php if (empty($chartPegawaiUnitLabels)): ?>
+                        <div class="alert alert-light border text-center text-muted mb-0 shadow-sm"><i class="bi bi-info-circle me-2"></i> Belum ada data rekap kinerja staf.</div>
+                    <?php else: ?>
+                        <div class="performance-chart-container">
+                            <canvas id="unitPerformanceChart"></canvas>
+                        </div>
+                        <p class="text-center text-muted small mt-3 mb-0"><i class="bi bi-info-circle me-1"></i> Klik pada grafik batang untuk melihat detail anggota unit kerja.</p>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
     </div>
@@ -354,6 +358,35 @@ window.pageCharts = window.pageCharts || {};
 window.adminUnitStatsCache = {};
 window.adminUnitLabelsCache = [];
 
+// Helper: Smooth KPI Metric Count-Up Number Ticker
+function animateValue(elementId, start, end, duration = 800, suffix = '', decimals = 0) {
+    const obj = document.getElementById(elementId);
+    if (!obj) return;
+    
+    // Respect user's reduced-motion settings
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        obj.innerHTML = (decimals > 0 ? end.toFixed(decimals) : Math.round(end)) + suffix;
+        return;
+    }
+
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        const easeProgress = 1 - Math.pow(2, -10 * progress);
+        const current = start + (end - start) * easeProgress;
+        
+        obj.innerHTML = (decimals > 0 ? current.toFixed(decimals) : Math.round(current)) + suffix;
+        
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        } else {
+            obj.innerHTML = (decimals > 0 ? end.toFixed(decimals) : Math.round(end)) + suffix;
+        }
+    };
+    window.requestAnimationFrame(step);
+}
+
 async function updateEccData() {
     const tahunEcc = document.getElementById('tahun_ecc').value;
     try {
@@ -367,12 +400,12 @@ async function updateEccData() {
                 if(window.pageCharts[canvasId]) {
                     const chart = window.pageCharts[canvasId];
                     chart.data.labels = prodi.chart_labels.map(label => {
-                        if (label.length <= 16) return label;
+                        if (label.length <= 25) return label;
                         const words = label.split(' ');
                         const lines = [];
                         let currentLine = words[0];
                         for (let i = 1; i < words.length; i++) {
-                            if (currentLine.length + 1 + words[i].length <= 16) { currentLine += ' ' + words[i]; } 
+                            if (currentLine.length + 1 + words[i].length <= 25) { currentLine += ' ' + words[i]; } 
                             else { lines.push(currentLine); currentLine = words[i]; }
                         }
                         lines.push(currentLine);
@@ -389,64 +422,46 @@ async function updateEccData() {
 }
 
 async function updateKinerjaData() {
-    const tahunKinerja = document.getElementById('tahun_kinerja').value;
     const bulanKinerja = document.getElementById('bulan_kinerja').value;
+    const tahunKinerja = document.getElementById('tahun_kinerja').value;
     try {
-        const response = await fetch(`<?= site_url('dashboard') ?>?ajax_type=kinerja&tahun_kinerja=${tahunKinerja}&bulan_kinerja=${bulanKinerja}`, {
+        const response = await fetch(`<?= site_url('dashboard') ?>?ajax_type=kinerja&bulan_kinerja=${bulanKinerja}&tahun_kinerja=${tahunKinerja}`, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
         const data = await response.json();
         if(data) {
-            // Analitik Instansi (Card Top)
-            const unitStats = data.unitStats || {};            // Update Summary Cards
-            let rataRataValue = 0;
-            let unitRanking = [];
+            // Update Text With Smooth Count-Up Tickers
+            const currentRata = parseFloat(document.getElementById('valRataRataKinerja')?.innerText || 0);
+            animateValue('valRataRataKinerja', currentRata, data.rataRataValue || 0, 750, '', 2);
+
+            const partisipasi = data.partisipasiAktif || 0;
+            const total = data.totalPegawai || 0;
+            const pctPart = total > 0 ? parseFloat(((partisipasi / total) * 100).toFixed(1)) : 0;
+            const currentPct = parseFloat(document.getElementById('valPartisipasi')?.innerText || 0);
+            animateValue('valPartisipasi', currentPct, pctPart, 750, '<span class="fs-4">%</span>', 1);
+
+            const currentPartCount = parseInt(document.getElementById('valPartisipasiCount')?.innerText || 0);
+            animateValue('valPartisipasiCount', currentPartCount, partisipasi, 750);
             
-            if (data.unitStats && Object.keys(data.unitStats).length > 0) {
-                let globalTotalAktif = 0;
-                let globalCountAktif = 0;
-                
-                for (let unit in data.unitStats) {
-                    let totalAktif = 0;
-                    let countAktif = 0;
-                    let anggota = data.unitStats[unit].anggota || [];
-                    anggota.forEach(a => {
-                        if (a.rata_rata > 0) {
-                            totalAktif += a.rata_rata;
-                            countAktif++;
-                            globalTotalAktif += a.rata_rata;
-                            globalCountAktif++;
-                        }
-                    });
-                    
-                    let unitAvg = countAktif > 0 ? (totalAktif / countAktif).toFixed(2) : 0;
-                    unitRanking.push({nama: unit, rata: parseFloat(unitAvg)});
-                }
-                rataRataValue = globalCountAktif > 0 ? (globalTotalAktif / globalCountAktif).toFixed(2) : 0;
-                unitRanking.sort((a, b) => b.rata - a.rata);
-            }
-            
-            document.getElementById('valRataRataKinerja').innerText = rataRataValue;
-            
+            const currentTotPeg = parseInt(document.getElementById('valTotalPegawai')?.innerText || 0);
+            animateValue('valTotalPegawai', currentTotPeg, total, 750);
+
+            // Top 5 Unit Table
             let htmlUnit = '';
-            let top5Unit = unitRanking.slice(0, 5);
-            if(top5Unit.length === 0) {
-                htmlUnit = '<tr><td class="text-center text-muted py-4">Belum ada data</td></tr>';
-            } else {
-                top5Unit.forEach((u, i) => {
-                    let badgeNum = '';
-                    if(i === 0) badgeNum = '<div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-warning text-dark p-0 shadow-sm" style="width:24px;height:24px;font-size:11px;">1</div>';
-                    else if(i === 1) badgeNum = '<div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-secondary text-white p-0 shadow-sm" style="width:24px;height:24px;font-size:11px;">2</div>';
-                    else if(i === 2) badgeNum = '<div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle text-white p-0 shadow-sm" style="background-color: #cd7f32; width:24px;height:24px;font-size:11px;">3</div>';
-                    else badgeNum = '<div class="d-flex justify-content-center align-items-center mx-auto fw-bold text-muted" style="width:24px;height:24px;font-size:13px;">'+(i+1)+'</div>';
-                    
-                    let rataStr = u.rata > 0 ? u.rata + '%' : '-';
-                    
+            if(data.top5Unit && data.top5Unit.length > 0) {
+                data.top5Unit.forEach((u, i) => {
+                    let badge = '';
+                    if(i === 0) badge = `<div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-warning text-dark p-0 shadow-sm" style="width:24px;height:24px;font-size:11px;">1</div>`;
+                    else if(i === 1) badge = `<div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-secondary text-white p-0 shadow-sm" style="width:24px;height:24px;font-size:11px;">2</div>`;
+                    else if(i === 2) badge = `<div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle text-white p-0 shadow-sm" style="background-color: #cd7f32; width:24px;height:24px;font-size:11px;">3</div>`;
+                    else badge = `<div class="d-flex justify-content-center align-items-center mx-auto fw-bold text-muted" style="width:24px;height:24px;font-size:13px;">${i+1}</div>`;
+
+                    const rataStr = (u.rata !== undefined && u.rata !== null) ? Number(u.rata).toFixed(2) : '0.00';
                     htmlUnit += `
                     <tr style="height: 56px;">
-                        <td style="width: 50px;" class="text-center align-middle py-2 border-bottom border-light">${badgeNum}</td>
+                        <td style="width: 50px;" class="text-center align-middle py-2 border-bottom border-light">${badge}</td>
                         <td class="py-2 border-bottom border-light" style="max-width: 0; width: 100%;">
-                            <div class="fw-bold text-dark text-truncate" style="font-size: 0.85rem;" title="${u.nama}">${u.nama}</div>
+                            <div class="fw-bold text-dark text-truncate" style="font-size: 0.85rem;" title="${escapeHtml(u.nama)}">${escapeHtml(u.nama)}</div>
                         </td>
                         <td class="text-end pe-4 py-2 border-bottom border-light">
                             <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 shadow-sm border border-success">${rataStr}</span>
@@ -455,21 +470,15 @@ async function updateKinerjaData() {
                 });
             }
             document.getElementById('tbodyTop5Unit').innerHTML = htmlUnit;
-            
-            const partisipasi = data.partisipasiAktif || 0;
-            const total = data.totalPegawai || 0;
-            const pctPart = total > 0 ? ((partisipasi / total) * 100).toFixed(1) : 0;
-            document.getElementById('valPartisipasi').innerHTML = pctPart + '<span class="fs-4">%</span>';
-            document.getElementById('valPartisipasiCount').innerText = partisipasi;
-            document.getElementById('valTotalPegawai').innerText = total;
 
             // Sebaran Doughnut Chart
             if(window.pageCharts['sebaranChart'] && data.sebaranKinerja) {
                 window.pageCharts['sebaranChart'].data.datasets[0].data = [
                     data.sebaranKinerja.sangat_baik || 0,
                     data.sebaranKinerja.baik || 0,
-                    data.sebaranKinerja.cukup || 0,
-                    data.sebaranKinerja.kurang || 0
+                    data.sebaranKinerja.butuh_perbaikan || 0,
+                    data.sebaranKinerja.kurang || 0,
+                    data.sebaranKinerja.sangat_kurang || 0
                 ];
                 window.pageCharts['sebaranChart'].update();
             }
@@ -499,8 +508,8 @@ async function updateKinerjaData() {
                     <tr style="height: 56px;">
                         <td style="width: 50px;" class="text-center align-middle py-2 border-bottom border-light">${badge}</td>
                         <td class="py-2 border-bottom border-light" style="max-width: 0; width: 100%;">
-                            <div class="fw-bold text-dark text-truncate" style="font-size: 0.85rem;" title="${item.staf.nama_lengkap}">${item.staf.nama_lengkap}</div>
-                            <div class="text-muted text-truncate" style="font-size: 0.75rem;" title="${item.staf.jabatan || '-'}">${item.staf.jabatan || '-'}</div>
+                            <div class="fw-bold text-dark text-truncate" style="font-size: 0.85rem;" title="${escapeHtml(item.staf.nama_lengkap)}">${escapeHtml(item.staf.nama_lengkap)}</div>
+                            <div class="text-muted text-truncate" style="font-size: 0.75rem;" title="${escapeHtml(item.staf.jabatan || '-')}">${escapeHtml(item.staf.jabatan || '-')}</div>
                         </td>
                         <td class="text-end pe-3 py-2 border-bottom border-light">
                             <span class="badge ${scoreClass} bg-opacity-10 rounded-pill px-2 py-1 shadow-sm border" style="font-size: 0.8rem;">${item.rata_rata}</span>
@@ -525,6 +534,13 @@ async function updateKinerjaData() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+    // Initial KPI Number Ticker Animations
+    animateValue('valRataRataKinerja', 0, <?= (float)($rataRataValue ?? 0) ?>, 850, '', 2);
+    <?php $pctPartInitial = ($totalPegawai > 0) ? round(($partisipasiAktif / $totalPegawai) * 100, 1) : 0; ?>
+    animateValue('valPartisipasi', 0, <?= (float)$pctPartInitial ?>, 850, '<span class="fs-4">%</span>', 1);
+    animateValue('valPartisipasiCount', 0, <?= (int)$partisipasiAktif ?>, 850);
+    animateValue('valTotalPegawai', 0, <?= (int)$totalPegawai ?>, 850);
+
     // Cleanup chart lama
     for (let key in window.pageCharts) {
         if (window.pageCharts[key]) { window.pageCharts[key].destroy(); delete window.pageCharts[key]; }
@@ -628,6 +644,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 options: {
                     responsive: true, 
                     maintainAspectRatio: false,
+                    animation: {
+                        duration: 900,
+                        easing: 'easeOutQuart'
+                    },
                     layout: { padding: 10 },
                     scales: {
                         r: {
@@ -692,6 +712,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: {
+                    duration: 900,
+                    easing: 'easeOutQuart'
+                },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -776,15 +800,19 @@ document.addEventListener('DOMContentLoaded', function () {
                         <?= esc($sebaranKinerja['kurang']) ?>,
                         <?= esc($sebaranKinerja['sangat_kurang']) ?>
                     ],
-                    backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444'], // green, blue, purple, yellow, red
+                    backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444'],
                     borderWidth: 0,
-                    hoverOffset: 4
+                    hoverOffset: 6
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 cutout: '75%',
+                animation: {
+                    duration: 900,
+                    easing: 'easeOutQuart'
+                },
                 plugins: {
                     legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: { family: 'system-ui' } } }
                 },
@@ -831,6 +859,10 @@ document.addEventListener('DOMContentLoaded', function () {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: {
+                    duration: 900,
+                    easing: 'easeOutQuart'
+                },
                 plugins: {
                     legend: { display: false }
                 },
@@ -847,7 +879,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 onClick: function(evt, activeElements, chart) {
                     if (activeElements.length > 0) {
                         const index = activeElements[0].index;
-                        const bulanIdx = index + 1; // 1-12
+                        const bulanIdx = index + 1;
                         const bulanNames = chart.data.labels;
                         fetchChartDetail('tren', bulanNames[index], bulanIdx);
                     }

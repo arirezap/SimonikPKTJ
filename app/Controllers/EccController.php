@@ -402,9 +402,14 @@ class EccController extends BaseController
 
         $barChartLabels = [];
         $barChartScores = [];
+        $barChartColors = [];
         $barChartTooltips = []; 
         $tableData = []; 
         $no = 1;
+
+        $totalApproved = 0;
+        $totalEvidence = 0;
+        $totalSkor = 0;
 
         foreach ($criteria_data as $item) {
             $isApproved = ($item['kabag_approved'] == 1 && !empty($item['status']));
@@ -424,8 +429,23 @@ class EccController extends BaseController
                 }
             }
 
+            // Normalisasi URL tautan bukti
+            $linkBukti = trim($item['catatan'] ?? '');
+            if (!empty($linkBukti) && !preg_match('/^https?:\/\//i', $linkBukti)) {
+                $linkBukti = 'https://' . $linkBukti;
+            }
+
+            if ($isApproved) {
+                $totalApproved++;
+            }
+            if (!empty($item['catatan'])) {
+                $totalEvidence++;
+            }
+            $totalSkor += $skor_display;
+
             $tableRow = $item;
             $tableRow['no'] = $no++;
+            $tableRow['catatan_link'] = $linkBukti;
             $tableRow['skor_display'] = $skor_display;
             $tableRow['skor_alasan_text'] = $skor_alasan; 
             $tableRow['is_approved'] = $isApproved;
@@ -434,11 +454,23 @@ class EccController extends BaseController
             $barChartLabels[] = "Kriteria " . $tableRow['no']; 
             $barChartScores[] = $skor_display; 
             
+            // Dynamic bar chart colors based on state
+            if ($isApproved) {
+                $barChartColors[] = $skor_display >= 80 ? 'rgba(16, 185, 129, 0.85)' : 'rgba(59, 130, 246, 0.85)';
+            } elseif (!empty($item['catatan'])) {
+                $barChartColors[] = 'rgba(245, 158, 11, 0.85)';
+            } else {
+                $barChartColors[] = 'rgba(203, 213, 225, 0.85)';
+            }
+
             $barChartTooltips[] = [
                 'nama_kriteria' => $item['nama_kriteria'],
                 'skor_alasan' => $skor_alasan 
             ];
         }
+
+        $totalKriteria = count($tableData);
+        $avgSkor = $totalKriteria > 0 ? round($totalSkor / $totalKriteria, 1) : 0;
         
         $from_page = $this->request->getGet('from') ?? 'user'; 
 
@@ -448,8 +480,13 @@ class EccController extends BaseController
             'prodi' => $prodi,
             'tahun' => $tahun,
             'criteria_data' => $tableData, 
+            'totalKriteria' => $totalKriteria,
+            'totalApproved' => $totalApproved,
+            'totalEvidence' => $totalEvidence,
+            'avgSkor' => $avgSkor,
             'barChartLabels' => json_encode($barChartLabels),
             'barChartScores' => json_encode($barChartScores),
+            'barChartColors' => json_encode($barChartColors),
             'barChartTooltips' => json_encode($barChartTooltips),
             'from_page' => $from_page 
         ];

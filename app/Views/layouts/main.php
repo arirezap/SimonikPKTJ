@@ -48,7 +48,7 @@
             <header class="navbar navbar-expand header-promax mb-2 px-3 px-md-4 py-2">
                 <div class="container-fluid px-0">
                     <div class="d-flex align-items-center">
-                        <button class="btn btn-link text-primary d-lg-none me-2 p-0 text-decoration-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas" aria-controls="sidebarOffcanvas" aria-label="Buka navigasi menu">
+                        <button class="btn btn-link text-primary d-lg-none me-2 p-0 text-decoration-none btn-tactile" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas" aria-controls="sidebarOffcanvas" aria-label="Buka navigasi menu">
                             <i class="bi bi-list fs-1 text-primary"></i>
                         </button>
                         
@@ -90,21 +90,20 @@
                             <i class="bi bi-calendar3 me-1"></i> <?= date('d M Y') ?>
                         </div>
                         
-                        
                         <!-- NOTIFICATION BELL -->
                         <div class="dropdown" id="notifDropdownContainer">
-                            <a href="#" class="text-decoration-none position-relative" data-bs-toggle="dropdown" aria-expanded="false" id="notifDropdownToggle" aria-label="Lihat notifikasi sistem">
-                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center transition-all" style="width: 42px; height: 42px;">
+                            <a href="#" class="text-decoration-none position-relative d-inline-block btn-tactile" data-bs-toggle="dropdown" aria-expanded="false" id="notifDropdownToggle" aria-label="Lihat notifikasi sistem">
+                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center shadow-subtle" style="width: 42px; height: 42px;">
                                     <i class="bi bi-bell-fill text-muted fs-5"></i>
                                 </div>
                                 <span id="notifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" style="font-size: 0.6rem; transform: translate(-30%, 30%) !important;">
                                     0
                                 </span>
                             </a>
-                            <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2 p-0 rounded-4 overflow-hidden" style="width: 340px; max-width: 92vw;">
+                            <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2 p-0 rounded-4 overflow-hidden notif-dropdown-menu" style="width: 340px; max-width: 92vw;">
                                 <div class="p-3 border-bottom bg-white d-flex align-items-center justify-content-between">
                                     <h6 class="m-0 fw-bold text-dark" style="font-size: 0.95rem;"><i class="bi bi-bell me-1 text-primary"></i> Notifikasi</h6>
-                                    <button type="button" class="btn btn-link btn-sm text-primary text-decoration-none p-0 fw-semibold" id="markAllReadBtn" onclick="markAllNotificationsRead(event)" style="font-size: 0.75rem;">
+                                    <button type="button" class="btn btn-link btn-sm text-primary text-decoration-none p-0 fw-semibold btn-tactile" id="markAllReadBtn" onclick="markAllNotificationsRead(event)" style="font-size: 0.75rem;">
                                         <i class="bi bi-check2-all me-1"></i> Tandai Semua Dibaca
                                     </button>
                                 </div>
@@ -118,8 +117,8 @@
                         </div>
 
                         <div class="dropdown">
-                            <a href="#" class="text-decoration-none" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Menu profil pengguna">
-                                <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center shadow-sm profile-avatar transition-all" style="width: 42px; height: 42px; border: 2px solid #ffffff;">
+                            <a href="#" class="text-decoration-none d-inline-block btn-tactile" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Menu profil pengguna">
+                                <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center shadow-sm profile-avatar" style="width: 42px; height: 42px; border: 2px solid #ffffff;">
                                     <?php
                                         $foto_session = session()->get('foto');
                                         $foto_header_path = 'assets/uploads/profile/' . $foto_session;
@@ -131,20 +130,24 @@
                                     <?php endif; ?>
                                 </div>
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" style="min-width: 200px;">
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 rounded-3" style="min-width: 200px;">
                                 <li><h6 class="dropdown-header text-primary"><?= esc($formattedName) ?></h6></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
-                                    <a class="dropdown-item" href="<?= site_url('profile') ?>">
+                                    <a class="dropdown-item btn-tactile" href="<?= site_url('profile') ?>">
                                         <i class="bi bi-person-circle me-2"></i> Profil Saya
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item text-danger" href="<?= site_url('logout') ?>" onclick="confirmLogout(event)">
+                                    <a class="dropdown-item text-danger btn-tactile" href="<?= site_url('logout') ?>" onclick="confirmLogout(event)">
                                         <i class="bi bi-box-arrow-right me-2"></i> Logout
                                     </a>
                                 </li>
                             </ul>
+                            <!-- Form Tersembunyi untuk Logout via POST (Anti-CSRF Protection) -->
+                            <form id="logoutPostForm" action="<?= site_url('logout') ?>" method="post" class="d-none">
+                                <?= csrf_field() ?>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -280,7 +283,7 @@
                             const icon = isVirtual ? 'bi-exclamation-triangle-fill' : 'bi-bell-fill';
                             
                             html += `
-                                <a href="${item.link ? item.link : '#'}" class="list-group-item list-group-item-action border-0 border-bottom p-3 d-flex gap-3 align-items-start" style="transition: all 0.2s ease;" onclick="markNotifRead('${item.id}', event, this, '${item.link}')" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor=''">
+                                <a href="${item.link ? item.link : '#'}" class="list-group-item list-group-item-action border-0 border-bottom p-3 d-flex gap-3 align-items-start notif-item btn-tactile" onclick="markNotifRead('${item.id}', event, this, '${item.link}')">
                                     <div class="d-flex align-items-center justify-content-center rounded-circle ${bgClass} bg-opacity-10 ${textClass} flex-shrink-0" style="width: 40px; height: 40px;">
                                         <i class="bi ${icon} fs-5"></i>
                                     </div>
@@ -289,7 +292,7 @@
                                         <p class="mb-1 text-secondary" style="font-size: 0.8rem; line-height: 1.4;">${item.message}</p>
                                     </div>
                                     <div class="align-self-center">
-                                        <span class="d-inline-block bg-primary rounded-circle" style="width: 8px; height: 8px;"></span>
+                                        <span class="d-inline-block bg-primary rounded-circle notif-unread-dot"></span>
                                     </div>
                                 </a>
                             `;
@@ -298,16 +301,16 @@
                     } else {
                         notifList.innerHTML = `
                             <div class="p-4 text-center text-muted">
-                                <i class="bi bi-bell-slash fs-1 text-light"></i>
-                                <div class="mt-2 small">Belum ada notifikasi baru.</div>
+                                <i class="bi bi-bell-slash fs-1 text-secondary opacity-50 notif-empty-icon d-inline-block mb-1"></i>
+                                <div class="mt-2 small text-secondary fw-medium">Belum ada notifikasi baru.</div>
                             </div>
                         `;
                     }
                 } else {
                     notifList.innerHTML = `
                         <div class="p-4 text-center text-muted">
-                            <i class="bi bi-exclamation-triangle fs-1 text-warning"></i>
-                            <div class="mt-2 small">Gagal memuat notifikasi.</div>
+                            <i class="bi bi-exclamation-triangle fs-1 text-warning d-inline-block mb-1"></i>
+                            <div class="mt-2 small text-secondary">Gagal memuat notifikasi.</div>
                         </div>
                     `;
                 }
@@ -414,6 +417,15 @@
 
     function confirmLogout(event) {
         if (event) event.preventDefault();
+        const executeLogout = function() {
+            const logoutForm = document.getElementById('logoutPostForm');
+            if (logoutForm) {
+                logoutForm.submit();
+            } else {
+                window.location.href = '<?= site_url('logout') ?>';
+            }
+        };
+
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 title: 'Konfirmasi Keluar',
@@ -424,14 +436,20 @@
                 cancelButtonColor: '#6c757d',
                 confirmButtonText: '<i class="bi bi-box-arrow-right me-1"></i> Ya, Keluar',
                 cancelButtonText: 'Batal',
-                reverseButtons: true
+                reverseButtons: true,
+                customClass: {
+                    confirmButton: 'btn btn-danger rounded-pill px-4',
+                    cancelButton: 'btn btn-secondary rounded-pill px-4'
+                },
+                buttonsStyling: false
             }).then((result) => {
                 if (result.isConfirmed) {
-                    window.location.href = '<?= site_url('logout') ?>';
+                    Swal.showLoading();
+                    executeLogout();
                 }
             });
         } else if (confirm('Apakah Anda yakin ingin keluar dari sistem?')) {
-            window.location.href = '<?= site_url('logout') ?>';
+            executeLogout();
         }
     }
 

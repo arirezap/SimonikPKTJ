@@ -39,6 +39,7 @@
         padding: 0.65rem 0.75rem;
         vertical-align: middle;
         border-color: #f1f5f9;
+        transition: background-color 0.2s ease;
     }
     .table-bento tbody tr:last-child td {
         border-bottom: 0;
@@ -85,13 +86,45 @@
         align-items: center;
         gap: 0.3rem;
     }
+
+    /* Motion Design & Ergonomic Transitions */
+    .badge-predikat-pop {
+        transform: scale(1.08);
+        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .score-card-transition {
+        transition: border-color 0.3s ease, color 0.3s ease, background-color 0.3s ease;
+    }
+    .tab-content > .tab-pane {
+        transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .tab-content > .tab-pane.fade:not(.show) {
+        transform: translateY(4px);
+    }
+    .tab-content > .tab-pane.fade.show {
+        transform: translateY(0);
+    }
+    .btn-tactile {
+        transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease;
+    }
+    .btn-tactile:active {
+        transform: scale(0.97);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .badge-predikat-pop, .tab-content > .tab-pane, .btn-tactile {
+            animation: none !important;
+            transform: none !important;
+            transition: none !important;
+        }
+    }
 </style>
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
 <div class="container-fluid px-2 px-md-3">
     <!-- PAGE HEADER -->
-    <div class="d-flex justify-content-between flex-wrap align-items-center pt-2 pb-2 mb-3 border-bottom gap-2">
+    <div class="d-flex justify-content-between flex-wrap align-items-center pt-2 pb-2 mb-3 border-bottom gap-2 bento-stagger bento-stagger-1">
         <div>
             <h1 class="h4 mb-0 fw-bold text-dark"><i class="bi bi-award-fill text-primary me-2"></i>Rekap & Penilaian Kinerja</h1>
             <p class="text-muted small mb-0">Evaluasi capaian target RHK, realisasi harian, dan penerbitan nilai capaian kinerja.</p>
@@ -104,20 +137,20 @@
     </div>
 
     <?php if (session()->getFlashdata('success')) : ?>
-        <div class="alert alert-success alert-dismissible fade show mb-3 shadow-sm py-2 px-3 small rounded-3" role="alert">
+        <div class="alert alert-success alert-dismissible fade show mb-3 shadow-sm py-2 px-3 small rounded-3 bento-stagger bento-stagger-1" role="alert">
             <i class="bi bi-check-circle-fill me-2"></i> <?= session()->getFlashdata('success') ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
 
     <?php if (session()->getFlashdata('error')) : ?>
-        <div class="alert alert-danger alert-dismissible fade show mb-3 shadow-sm py-2 px-3 small rounded-3" role="alert">
+        <div class="alert alert-danger alert-dismissible fade show mb-3 shadow-sm py-2 px-3 small rounded-3 bento-stagger bento-stagger-1" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-2"></i> <?= session()->getFlashdata('error') ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
 
-    <div class="card shadow-sm border-0 mb-4 rounded-4 overflow-hidden">
+    <div class="card shadow-sm border-0 mb-4 rounded-4 overflow-hidden bento-stagger bento-stagger-2">
         <div class="card-body p-3 p-md-4">
             
             <!-- Filter Bar Toolbar -->
@@ -153,15 +186,15 @@
             </form>
 
         <!-- Navigation Tabs -->
-        <ul class="nav segmented-control mb-4" id="penilaianTabs" role="tablist">
+        <ul class="nav segmented-control mb-4 bento-stagger bento-stagger-2" id="penilaianTabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link <?= empty($staf_id_terpilih) ? 'active' : '' ?>" id="individu-tab" data-bs-toggle="tab" data-bs-target="#individu" type="button" role="tab" aria-controls="individu" aria-selected="<?= empty($staf_id_terpilih) ? 'true' : 'false' ?>">
+                <button class="nav-link btn-tactile <?= empty($staf_id_terpilih) ? 'active' : '' ?>" id="individu-tab" data-bs-toggle="tab" data-bs-target="#individu" type="button" role="tab" aria-controls="individu" aria-selected="<?= empty($staf_id_terpilih) ? 'true' : 'false' ?>">
                     <i class="bi bi-person-fill me-1.5"></i> Target Saya
                 </button>
             </li>
             <?php if ($is_atasan): ?>
             <li class="nav-item" role="presentation">
-                <button class="nav-link <?= !empty($staf_id_terpilih) ? 'active' : '' ?>" id="staf-tab" data-bs-toggle="tab" data-bs-target="#staf" type="button" role="tab" aria-controls="staf" aria-selected="<?= !empty($staf_id_terpilih) ? 'true' : 'false' ?>">
+                <button class="nav-link btn-tactile <?= !empty($staf_id_terpilih) ? 'active' : '' ?>" id="staf-tab" data-bs-toggle="tab" data-bs-target="#staf" type="button" role="tab" aria-controls="staf" aria-selected="<?= !empty($staf_id_terpilih) ? 'true' : 'false' ?>">
                     <i class="bi bi-people-fill me-1.5"></i> Penilaian Staf
                 </button>
             </li>
@@ -338,7 +371,7 @@
                                              </td>
                                             <td class="text-center">
                                                 <?php if (!empty($tmb['link_bukti'])): ?>
-                                                    <a href="<?= esc($tmb['link_bukti']) ?>" target="_blank" class="btn btn-light btn-sm text-primary rounded-pill border px-2 py-0.5" style="font-size: 0.72rem;" title="Lihat Bukti Pekerjaan"><i class="bi bi-box-arrow-up-right me-1"></i>Bukti</a>
+                                                    <a href="<?= esc($tmb['link_bukti']) ?>" target="_blank" class="btn btn-light btn-sm text-primary rounded-pill border px-2 py-0.5 btn-tactile" style="font-size: 0.72rem;" title="Lihat Bukti Pekerjaan"><i class="bi bi-box-arrow-up-right me-1"></i>Bukti</a>
                                                 <?php else: ?>
                                                     <span class="text-muted">-</span>
                                                 <?php endif; ?>
@@ -369,11 +402,11 @@
                     </div>
 
                     <?php if (session()->get('role') === 'direktur'): ?>
-                    <div class="d-flex justify-content-end mb-4 gap-2 btn-action-container">
-                        <button type="submit" name="action" value="draft" class="btn btn-outline-primary rounded-pill px-4 fw-bold">
+                    <div class="d-flex justify-content-end mb-4 gap-2 btn-action-container bento-stagger bento-stagger-3">
+                        <button type="submit" name="action" value="draft" class="btn btn-outline-primary btn-tactile rounded-pill px-4 fw-bold">
                             <i class="bi bi-pencil me-1"></i> Simpan Draf
                         </button>
-                        <button type="submit" name="action" value="submit" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm">
+                        <button type="submit" name="action" value="submit" class="btn btn-success btn-tactile rounded-pill px-4 fw-bold shadow-sm">
                             <i class="bi bi-send me-1"></i> Simpan & Terbitkan
                         </button>
                     </div>
@@ -381,7 +414,7 @@
                     <?php endif; ?>
 
                     <!-- RINGKASAN SKOR EXECUTIVE DI PALING BAWAH EVALUASI -->
-                    <div class="card bg-white border border-2 border-<?= $warnaScore === 'warning text-dark' ? 'warning' : $warnaScore ?> rounded-4 p-3 shadow-sm mb-4">
+                    <div class="card bg-white border border-2 border-<?= $warnaScore === 'warning text-dark' ? 'warning' : $warnaScore ?> rounded-4 p-3 shadow-sm mb-4 score-card-transition bento-stagger bento-stagger-3">
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 score-banner-wrapper">
                             <div>
                                 <h6 class="fw-bold text-dark mb-1"><i class="bi bi-award-fill text-primary me-2"></i> NILAI AKHIR KINERJA BULANAN</h6>
@@ -449,7 +482,7 @@
                                     <strong>Perhatian:</strong> Anda memiliki laporan harian yang <strong>masih berupa Draf (Belum Dikirim)</strong> pada bulan ini. Laporan draf tidak dihitung dalam realisasi kinerja sampai Anda mengirimkannya.
                                 </div>
                             </div>
-                            <a href="<?= site_url('log-kegiatan') ?>" class="btn btn-sm btn-warning text-dark fw-bold ms-md-3 flex-shrink-0 rounded-pill px-3">
+                            <a href="<?= site_url('log-kegiatan') ?>" class="btn btn-sm btn-warning btn-tactile text-dark fw-bold ms-md-3 flex-shrink-0 rounded-pill px-3">
                                 <i class="bi bi-send-fill me-1"></i> Buka & Kirim Laporan
                             </a>
                         </div>
@@ -526,7 +559,7 @@
                                             
                                             <td class="text-center">
                                                 <?php if (!empty($it['link_bukti'])): ?>
-                                                    <a href="<?= esc($it['link_bukti']) ?>" target="_blank" class="btn btn-light btn-sm text-primary rounded-pill border px-2 py-0.5" style="font-size: 0.72rem;" title="Lihat Bukti Pekerjaan"><i class="bi bi-box-arrow-up-right me-1"></i>Bukti</a>
+                                                    <a href="<?= esc($it['link_bukti']) ?>" target="_blank" class="btn btn-light btn-sm text-primary rounded-pill border px-2 py-0.5 btn-tactile" style="font-size: 0.72rem;" title="Lihat Bukti Pekerjaan"><i class="bi bi-box-arrow-up-right me-1"></i>Bukti</a>
                                                 <?php else: ?>
                                                     <span class="text-muted" style="font-size: 0.8rem;">-</span>
                                                 <?php endif; ?>
@@ -634,6 +667,7 @@
 
                         <form action="<?= site_url('penilaian-kinerja/store') ?>" method="POST" id="formPenilaian">
                             <?= csrf_field() ?>
+                            <input type="hidden" name="action" id="penilaianActionInput" value="submit">
                             <input type="hidden" name="staf_id" value="<?= esc($staf_id_terpilih) ?>">
                             <input type="hidden" name="bulan" value="<?= esc($bulan_terpilih) ?>">
                             <input type="hidden" name="tahun" value="<?= esc($tahun_terpilih) ?>">
@@ -822,10 +856,10 @@
                             </div>
 
                             <!-- ACTION TOOLBAR AT BOTTOM OF STAF FORM -->
-                            <div class="d-flex justify-content-end mb-4 gap-2 btn-action-container">
-                                <button type="reset" class="btn btn-outline-secondary rounded-pill px-3 py-2 fw-semibold shadow-sm" title="Kosongkan seluruh isian nilai pada halaman ini"><i class="bi bi-arrow-counterclockwise me-1"></i> Reset Nilai</button>
-                                <button type="submit" name="action" value="draft" class="btn btn-outline-primary rounded-pill px-4 py-2 fw-semibold shadow-sm" title="Simpan sebagai draf"><i class="bi bi-journal-bookmark me-1"></i> Simpan Draf</button>
-                                <button type="submit" name="action" value="submit" class="btn btn-success rounded-pill px-4 py-2 fw-bold shadow-sm" title="Simpan dan terbitkan nilai kinerja"><i class="bi bi-check-circle-fill me-1.5"></i> Simpan & Terbitkan Penilaian</button>
+                            <div class="d-flex justify-content-end mb-4 gap-2 btn-action-container bento-stagger bento-stagger-3">
+                                <button type="reset" class="btn btn-outline-secondary btn-tactile rounded-pill px-3 py-2 fw-semibold shadow-sm" title="Kosongkan seluruh isian nilai pada halaman ini"><i class="bi bi-arrow-counterclockwise me-1"></i> Reset Nilai</button>
+                                <button type="submit" name="action" value="draft" class="btn btn-outline-primary btn-tactile rounded-pill px-4 py-2 fw-semibold shadow-sm" title="Simpan sebagai draf"><i class="bi bi-journal-bookmark me-1"></i> Simpan Draf</button>
+                                <button type="submit" name="action" value="submit" class="btn btn-success btn-tactile rounded-pill px-4 py-2 fw-bold shadow-sm" title="Simpan dan terbitkan nilai kinerja"><i class="bi bi-check-circle-fill me-1.5"></i> Simpan & Terbitkan Penilaian</button>
                             </div>
                         </form>
 
@@ -1036,7 +1070,7 @@
                         rhkFilled++;
                     }
                     let p = getPredikatInfo(v);
-                    badgeContainer.html('<span class="badge ' + p.class + ' rounded-pill px-2 py-0.5" style="font-size:0.72rem;">' + p.label + '</span>');
+                    badgeContainer.html('<span class="badge ' + p.class + ' rounded-pill px-2 py-0.5 badge-predikat-pop" style="font-size:0.72rem;">' + p.label + '</span>');
                     $(this).removeClass('border-warning shadow-sm');
                 } else {
                     badgeContainer.html('<span class="badge bg-light text-muted border border-secondary-subtle rounded-pill px-2 py-0.5" style="font-size:0.72rem;"><i class="bi bi-dash-circle me-1"></i> Belum dinilai</span>');
@@ -1057,7 +1091,7 @@
                     tambahanFilled = true;
                     $('#textTambahanStatus').text(vTambahan + '%');
                     if (hintContainer.length) {
-                        hintContainer.html('<span class="badge bg-success-subtle text-success border border-success-subtle mt-1 rounded-pill px-2 py-0.5" style="font-size:0.72rem;"><i class="bi bi-check-circle me-1"></i> Terisi</span>');
+                        hintContainer.html('<span class="badge bg-success-subtle text-success border border-success-subtle mt-1 rounded-pill px-2 py-0.5 badge-predikat-pop" style="font-size:0.72rem;"><i class="bi bi-check-circle me-1"></i> Terisi</span>');
                     }
                     $('#inputNilaiTambahanGabungan').removeClass('border-warning shadow-sm');
                 } else {
@@ -1100,7 +1134,7 @@
             textEl.addClass('text-' + pRata.textClass);
             wrapper.addClass('border-' + pRata.textClass);
 
-            badgeEl.attr('class', 'badge ' + pRata.class + ' fs-6 px-3 py-2 rounded-pill').text(pRata.label);
+            badgeEl.attr('class', 'badge ' + pRata.class + ' fs-6 px-3 py-2 rounded-pill badge-predikat-pop').text(pRata.label);
 
             return { totalUnfilled, count, totalFilled, totalComponents };
         }
@@ -1165,17 +1199,21 @@
             });
         });
 
-        // Hardening: Form Submission Validation, Unfilled Component Hints & Double Submission Prevention
+        // Hardening: Form Submission Validation, Unfilled Component Hints & Action Sync
         let isPublishConfirmed = false;
         let lastClickedAction = 'submit';
 
         $('#formPenilaian button[type="submit"]').on('click', function() {
             lastClickedAction = $(this).val() || 'submit';
+            $('#penilaianActionInput').val(lastClickedAction);
         });
 
         $('#formPenilaian').on('submit', function(e) {
             let form = $(this);
             let hasInvalid = false;
+
+            // Make sure the hidden input is always set before any button state changes
+            $('#penilaianActionInput').val(lastClickedAction);
 
             form.find('.input-nilai-capaian').each(function() {
                 let v = parseFloat($(this).val());
@@ -1221,12 +1259,10 @@
                 }).then((result) => {
                     if (result.isConfirmed) {
                         isPublishConfirmed = true;
-                        if (!$('#formPenilaian input[name="action"][type="hidden"]').length) {
-                            form.append('<input type="hidden" name="action" value="submit">');
-                        }
+                        $('#penilaianActionInput').val('submit');
                         form.find('button[type="submit"]').prop('disabled', true);
                         form.find('button[value="submit"]').html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menerbitkan...');
-                        form.submit();
+                        form[0].submit();
                     } else {
                         // Highlight kolom yang masih kosong dengan border warning
                         $('.input-nilai-capaian').each(function() {
@@ -1248,12 +1284,18 @@
                 return false;
             }
 
+            // Sync hidden action input before submission
+            $('#penilaianActionInput').val(lastClickedAction);
+
             let submitBtns = form.find('button[type="submit"]');
-            submitBtns.prop('disabled', true);
             let activeBtn = form.find('button[value="' + lastClickedAction + '"]');
             if (activeBtn.length) {
-                activeBtn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menyimpan...');
+                activeBtn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> ' + (lastClickedAction === 'submit' ? 'Menerbitkan...' : 'Menyimpan...'));
             }
+            // Use setTimeout to disable buttons so current submit event carries the form data normally
+            setTimeout(() => {
+                submitBtns.prop('disabled', true);
+            }, 10);
         });
 
         $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {

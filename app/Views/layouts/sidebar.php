@@ -22,7 +22,7 @@ $isKepegawaian = hasRole('kepegawaian');
 
 
 <div class="sidebar bg-white offcanvas-lg offcanvas-start border-end" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarOffcanvasLabel">
-    <i class="bi bi-list sidebar-toggle d-none d-lg-block" id="sidebarToggle"></i>
+    <i class="bi bi-list sidebar-toggle d-none d-lg-block btn-tactile" id="sidebarToggle" title="Ciutkan / Lebarkan Navigasi"></i>
 
     <div class="sidebar-header d-none d-lg-block">
         <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ Tegal" class="sidebar-logo" width="45" height="45" loading="eager">
@@ -33,7 +33,7 @@ $isKepegawaian = hasRole('kepegawaian');
         <h5 class="offcanvas-title" id="sidebarOffcanvasLabel">
             <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ Tegal" class="sidebar-logo" style="height: 45px; width: auto;" width="45" height="45" loading="eager">
         </h5>
-        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" data-bs-target="#sidebarOffcanvas" aria-label="Tutup navigasi"></button>
+        <button type="button" class="btn-close text-reset btn-tactile" data-bs-dismiss="offcanvas" data-bs-target="#sidebarOffcanvas" aria-label="Tutup navigasi"></button>
     </div>
 
     <div class="sidebar-menu offcanvas-body p-0 d-block">

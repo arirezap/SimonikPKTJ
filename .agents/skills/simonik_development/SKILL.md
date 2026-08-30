@@ -53,7 +53,17 @@ Panduan ini berisi pedoman lengkap arsitektur sistem, peta modul, basis data, da
 - **Kriteria LED (`app/Models/LedCriteria.php` & `Admin\MasterDataController::led`):** Pengelolaan kriteria Evaluasi Diri.
 - **ECC & Simulasi (`app/Controllers/EccController`):** Modul simulasi Evaluasi Capaian Kinerja (LKPS dan Standar LED) untuk keperluan akreditasi kampus politeknik.
 
-### E. Modul Pengendalian Superadmin (Unlock & Cancel Approval)
+### D. Modul Autentikasi & Keamanan Sesi (OWASP Compliant)
+- **Pencegahan User Enumeration (`app/Controllers/Auth.php`):** Pesan kesalahan login diseragamkan (*"Nama pengguna atau kata sandi yang Anda masukkan salah."*) baik untuk akun tidak terdaftar maupun kata sandi salah.
+- **Pencatatan Audit Trail `FAILED_LOGIN`:** Merekam kegagalan login dengan alasan `user_not_found` atau `invalid_password` beserta IP Address.
+- **Hardened Logout (`app/Controllers/Auth.php` & `app/Views/layouts/main.php`):** Eksekusi logout via form POST terlindungi CSRF (`#logoutPostForm`) untuk mencegah serangan *Forced Logout CSRF*, pencatatan audit log `LOGOUT` sebelum pemusnahan sesi, penghapusan cookie otentikasi `remember_me`, dan injeksi header `Cache-Control: no-store` untuk mencegah kebocoran data via tombol *Back* browser.
+
+### E. Modul Profil Pengguna & Keamanan Kredensial (`/profile`)
+- **Penyederhanaan Unggah Avatar (`app/Views/profile.php`):** Interaksi 1-klik langsung pada foto avatar / tombol kamera badge tanpa kotak input ganda yang redundan.
+- **Pratinjau Asinkron Lokal:** Pembacaan gambar via `FileReader`, validasi berkas instan (< 2MB, MIME JPG/PNG), dan inisial cerdas 2-huruf otomatis sebagai fallback.
+- **Hardening Kredensial (`app/Controllers/Profile.php`):** Pengecekan keunikan Email & NIP/NIK terhadap akun lain (`where('id !=', $userId)`), tombol intip password (`.btn-toggle-pw`), indikator kecocokan password real-time (`match-pop-anim`), *Dirty Form Guard* (`beforeunload`), *Double-Submit Lock*, *Mobile Floating Action Bar*, dan sinkronisasi otomatis role `'spm'`.
+
+### F. Modul Pengendalian Superadmin (Unlock & Cancel Approval)
 - **Buka Kunci Laporan Harian Staf (`POST log-kegiatan/buka-kunci`):** Superadmin (`hasRole('admin')`) dapat membuka kunci laporan harian & tugas tambahan staf yang berstatus `terkirim` pada tanggal tertentu. Mengubah status ke `draft`, mencatat audit log `UNLOCK_LAPORAN`, dan mengirim notifikasi *in-app*. Terkunci otomatis saat staf menyimpan ulang.
 - **Pembatalan Persetujuan Target Bulanan (`POST laporan-harian/batal-approve`):** Superadmin dapat membatalkan persetujuan Target Bulanan yang sudah disetujui (`status_approval = 'disetujui'`). Mengubah status ke `draft` (`status_approval = 'menunggu_persetujuan'`), dibungkus transaksi DB (`$db->transStart()` & `$db->transComplete()`), mencatat audit log `CANCEL_APPROVE_TARGET`, dan mengirim notifikasi *in-app*. Seluruh laporan harian terdahulu TETAP UTUH & AMAN.
 - **Diferensiasi Badge Status:** Status `Disetujui` (hijau), `Menunggu Persetujuan` (kuning - saat `status === 'terkirim'`), dan `Draf (Perlu Revisi)` (kuning perbaikan - saat `status === 'draft'`) ditampilkan secara akurat di tabel pegawai & atasan.

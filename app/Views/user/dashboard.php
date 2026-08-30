@@ -11,7 +11,7 @@ Dashboard
 <?= $this->section('content') ?>
 
 <!-- 1. ECC DASHBOARD (TOP SECTION AS REQUESTED) -->
-<div class="row g-4 mb-5">
+<div class="row g-4 mb-5 bento-stagger bento-stagger-1">
     <div class="col-lg-8 d-flex flex-column">
         <div class="bento-card border-primary border-top border-4 flex-fill">
             <div class="bento-header d-flex flex-column flex-md-row justify-content-between align-items-md-center border-bottom pb-2 mb-2 gap-2">
@@ -51,7 +51,7 @@ Dashboard
                                 <div class="col-12 px-0 px-md-3">
                                     <div class="text-center mb-3">
                                         <span class="badge bg-light text-dark border px-2 py-1 rounded-pill shadow-sm" style="font-size: 0.75rem;">
-                                            Rangkuman Skor LED: <strong class="text-primary-bento"><?= esc($prodi['nama_prodi']) ?></strong>
+                                             Rangkuman Skor LED: <strong class="text-primary-bento"><?= esc($prodi['nama_prodi']) ?></strong>
                                         </span>
                                     </div>
                                     <?php if (empty($prodi['chart_labels'])): ?>
@@ -79,7 +79,7 @@ Dashboard
                 <div class="stat-label text-white-50 mb-2">Nilai Rata-Rata Kinerja</div>
                 <div class="stat-value text-white mb-2" id="valRataRataCapaian"><?= round($rataRataCapaian, 1) ?><span class="fs-4">%</span></div>
                 <div class="progress w-75 bg-white bg-opacity-25 mt-2 rounded-pill" style="height: 6px;">
-                    <div class="progress-bar bg-warning" id="barRataRataCapaian" style="width: <?= min(100, $rataRataCapaian) ?>%"></div>
+                    <div class="progress-bar bg-warning" id="barRataRataCapaian" style="width: <?= min(100, $rataRataCapaian) ?>%; transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);"></div>
                 </div>
             </div>
         </div>
@@ -87,7 +87,7 @@ Dashboard
         <!-- Total Indikator -->
         <div class="bento-card flex-fill shadow-sm border-top border-4 border-primary" style="min-height: 150px;">
             <div class="bento-body d-flex align-items-center justify-content-center h-100">
-                <div class="bg-light rounded-circle p-3 me-3 text-primary-bento">
+                <div class="bg-light rounded-circle p-3 me-3 text-primary-bento shadow-sm">
                     <i class="bi bi-list-check fs-3"></i>
                 </div>
                 <div>
@@ -100,27 +100,28 @@ Dashboard
 </div>
 
 <!-- 2. ANALISIS KINERJA PRIBADI -->
-<div class="d-flex justify-content-between align-items-center mb-3 mt-3">
-    <h5 class="fw-bold text-secondary mb-0"><i class="bi bi-person-workspace me-2"></i> Kinerja Pribadi</h5>
-    <form id="formKinerja" class="m-0 d-flex gap-2">
-        <select name="tahun_kinerja" id="tahun_kinerja" class="form-select filter-select fw-bold text-primary-bento" style="width: auto; cursor:pointer;" onchange="updateKinerjaData()">
-            <?php foreach ($daftar_tahun as $tahun_item): ?>
-                <option value="<?= esc($tahun_item) ?>" <?= ($tahun_kinerja == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
-            <?php endforeach; ?>
-        </select>
-    </form>
-</div>
-<div class="row g-4 mb-5">
-
-    <!-- Tren Kumulatif Chart -->
-    <div class="col-12">
-        <div class="bento-card">
-            <div class="bento-header">
-                Tren Nilai Rata-Rata Kinerja Bulanan
-            </div>
-            <div class="bento-body pt-0">
-                <div class="line-chart-container">
-                    <canvas id="kumulatifChart" role="img" aria-label="Grafik Tren Nilai Rata-Rata Kinerja Bulanan Pribadi"></canvas>
+<div class="bento-stagger bento-stagger-2">
+    <div class="d-flex justify-content-between align-items-center mb-3 mt-3">
+        <h5 class="fw-bold text-secondary mb-0"><i class="bi bi-person-workspace me-2"></i> Kinerja Pribadi</h5>
+        <form id="formKinerja" class="m-0 d-flex gap-2">
+            <select name="tahun_kinerja" id="tahun_kinerja" class="form-select filter-select fw-bold text-primary-bento" style="width: auto; cursor:pointer;" onchange="updateKinerjaData()">
+                <?php foreach ($daftar_tahun as $tahun_item): ?>
+                    <option value="<?= esc($tahun_item) ?>" <?= ($tahun_kinerja == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </form>
+    </div>
+    <div class="row g-4 mb-5">
+        <!-- Tren Kumulatif Chart -->
+        <div class="col-12">
+            <div class="bento-card">
+                <div class="bento-header">
+                    Tren Nilai Rata-Rata Kinerja Bulanan
+                </div>
+                <div class="bento-body pt-0">
+                    <div class="line-chart-container">
+                        <canvas id="kumulatifChart" role="img" aria-label="Grafik Tren Nilai Rata-Rata Kinerja Bulanan Pribadi"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -129,18 +130,19 @@ Dashboard
 
 <!-- 3. ANALISIS KINERJA STAF / REKAN SATU UNIT -->
 <?php if (((isset($isAtasan) && $isAtasan) || (isset($isUnitPeers) && $isUnitPeers)) && !empty($rekapDashboard)): ?>
-<h5 class="fw-bold text-secondary mb-3" id="tabelRekapTitle">
-    <?php if (isset($isAtasan) && $isAtasan): ?>
-        <i class="bi bi-people-fill me-2"></i> Monitoring Kinerja Staf Saya
-    <?php else: ?>
-        <i class="bi bi-diagram-3-fill me-2"></i> Kinerja Rekan 1 Unit Kerja
-    <?php endif; ?>
-</h5>
-<div class="row g-4 mb-5" id="tabelRekapContainer">
-    <div class="col-12">
-        <div class="bento-card">
-            <div class="bento-body p-0">
-                <div class="table-responsive">
+<div class="bento-stagger bento-stagger-3">
+    <h5 class="fw-bold text-secondary mb-3" id="tabelRekapTitle">
+        <?php if (isset($isAtasan) && $isAtasan): ?>
+            <i class="bi bi-people-fill me-2"></i> Monitoring Kinerja Staf Saya
+        <?php else: ?>
+            <i class="bi bi-diagram-3-fill me-2"></i> Kinerja Rekan 1 Unit Kerja
+        <?php endif; ?>
+    </h5>
+    <div class="row g-4 mb-5" id="tabelRekapContainer">
+        <div class="col-12">
+            <div class="bento-card">
+                <div class="bento-body p-0">
+                    <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0 border-0">
                         <thead class="bg-light-bento text-muted small text-uppercase" style="letter-spacing: 0.5px;">
                             <tr>
@@ -258,6 +260,36 @@ window.userDashboardCharts = window.userDashboardCharts || {};
 window.unitStatsCache = {};
 window.unitLabelsCache = [];
 
+// Helper: Smooth KPI Metric Count-Up Number Ticker
+function animateValue(elementId, start, end, duration = 800, suffix = '', decimals = 0) {
+    const obj = document.getElementById(elementId);
+    if (!obj) return;
+    
+    // Respect user's reduced-motion settings
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        obj.innerHTML = (decimals > 0 ? end.toFixed(decimals) : Math.round(end)) + suffix;
+        return;
+    }
+
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        // Exponential ease-out
+        const easeProgress = 1 - Math.pow(2, -10 * progress);
+        const current = start + (end - start) * easeProgress;
+        
+        obj.innerHTML = (decimals > 0 ? current.toFixed(decimals) : Math.round(current)) + suffix;
+        
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        } else {
+            obj.innerHTML = (decimals > 0 ? end.toFixed(decimals) : Math.round(end)) + suffix;
+        }
+    };
+    window.requestAnimationFrame(step);
+}
+
 async function updateEccData() {
     const tahunEcc = document.getElementById('tahun_ecc').value;
     try {
@@ -300,11 +332,16 @@ async function updateKinerjaData() {
         });
         const data = await response.json();
         if(data) {
-            // Update Text
+            // Update Text with smooth Count-up Ticker
             const rr = data.rataRataCapaian || 0;
-            document.getElementById('valRataRataCapaian').innerHTML = rr.toFixed(1) + '<span class="fs-4">%</span>';
-            document.getElementById('barRataRataCapaian').style.width = Math.min(100, rr) + '%';
-            document.getElementById('valTotalIndikator').innerText = data.totalIndikator || 0;
+            const currentRr = parseFloat(document.getElementById('valRataRataCapaian')?.innerText || 0);
+            animateValue('valRataRataCapaian', currentRr, rr, 700, '<span class="fs-4">%</span>', 1);
+            
+            const bar = document.getElementById('barRataRataCapaian');
+            if (bar) bar.style.width = Math.min(100, rr) + '%';
+            
+            const currentTot = parseInt(document.getElementById('valTotalIndikator')?.innerText || 0);
+            animateValue('valTotalIndikator', currentTot, data.totalIndikator || 0, 700);
             
             // Update Line Chart
             if(window.userDashboardCharts['kumulatifChart']) {
@@ -396,6 +433,10 @@ async function updateKinerjaData() {
 
 document.addEventListener('DOMContentLoaded', function () {
     
+    // Initial KPI Number Ticker Entrance
+    animateValue('valRataRataCapaian', 0, <?= round($rataRataCapaian, 1) ?>, 850, '<span class="fs-4">%</span>', 1);
+    animateValue('valTotalIndikator', 0, <?= (int)$totalIndikator ?>, 850);
+
     // Cleanup Old Charts
     for (let key in window.userDashboardCharts) {
         if (window.userDashboardCharts[key]) {
@@ -503,6 +544,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 options: {
                     responsive: true, 
                     maintainAspectRatio: false,
+                    animation: {
+                        duration: 900,
+                        easing: 'easeOutQuart'
+                    },
                     layout: { padding: 10 },
                     scales: { 
                         r: { 
@@ -532,7 +577,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 const prodi = chart.config.data.prodi.toLowerCase();
                                 const tahun = chart.config.data.tahun;
                                 document.body.style.cursor = 'wait'; 
-                                window.location.href = `<?= site_url('ecc/detailStandar') ?>/${labelId}/${prodi}/${tahun}`;
+                                window.location.href = `<?= site_url('ecc/detailStandar') ?>/${labelId}/${prodi}/${tahun}?from=user`;
                             }
                         }
                     }
@@ -568,6 +613,10 @@ document.addEventListener('DOMContentLoaded', function () {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: {
+                    duration: 900,
+                    easing: 'easeOutQuart'
+                },
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
                     legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, font: { family: 'system-ui' } } }

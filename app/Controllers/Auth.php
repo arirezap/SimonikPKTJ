@@ -32,21 +32,31 @@ class Auth extends BaseController
     {
         $session = session();
         
-        // PERBAIKAN DISINI: Gunakan User, bukan UserModel
         $model = new User(); 
         
         $username = trim((string) $this->request->getVar('username'));
         $password = (string) $this->request->getVar('password');
-        
-        $data = $model->where('username', $username)->first();
+
+        // Validasi input awal
+        if (empty($username) || empty($password)) {
+            $session->setFlashdata('error', 'Nama pengguna dan kata sandi wajib diisi.');
+            return redirect()->to('/login')->withInput();
+        }
         
         // --- PROTEKSI BRUTE FORCE ATTACK (THROTTLING) ---
         $throttler = \Config\Services::throttler();
         $ipAddress = $this->request->getIPAddress();
         if ($throttler->check(md5($ipAddress . '_login'), 10, MINUTE) === false) {
+            log_audit('RATE_LIMIT_LOGIN', 'auth', null, null, [
+                'username' => $username,
+                'ip'       => $ipAddress,
+                'reason'   => 'brute_force_throttled'
+            ]);
             $session->setFlashdata('error', 'Terlalu banyak percobaan login yang gagal dari perangkat Anda. Silakan tunggu 1 menit.');
-            return redirect()->to('/login');
+            return redirect()->to('/login')->withInput();
         }
+
+        $data = $model->where('username', $username)->first();
 
         if ($data) {
             $pass = $data['password'];
@@ -127,41 +137,53 @@ class Auth extends BaseController
                 // Catat Log Audit Login
                 log_audit('LOGIN', 'users', $data['id']);
 
-                // Redirect Sesuai Role
-                $isKabag = false;
-                foreach ($allRoles as $r) {
-                    if (str_contains($r, 'kabag')) {
-                        $isKabag = true;
-                        break;
-                    }
-                }
-
-                if (hasAnyRole(['admin', 'direktur', 'wadir', 'manajemen']) || $isKabag) {
-                    return redirect()->to('/dashboard');
-                } else {
-                    return redirect()->to('/dashboard');
-                }
+                return redirect()->to('/dashboard');
                 
             } else {
-                $session->setFlashdata('error', 'Password yang Anda masukkan salah.');
-                return redirect()->to('/login');
+                // Catat Log Percobaan Login Gagal (Password Salah)
+                log_audit('FAILED_LOGIN', 'users', $data['id'], null, [
+                    'username' => $username,
+                    'reason'   => 'invalid_password'
+                ]);
+
+                $session->setFlashdata('error', 'Nama pengguna atau kata sandi yang Anda masukkan salah.');
+                return redirect()->to('/login')->withInput();
             }
         } else {
-            $session->setFlashdata('error', 'Username tidak ditemukan di sistem.');
-            return redirect()->to('/login');
+            // Catat Log Percobaan Login Gagal (User Tidak Ditemukan)
+            log_audit('FAILED_LOGIN', 'auth', null, null, [
+                'username' => $username,
+                'reason'   => 'user_not_found'
+            ]);
+
+            $session->setFlashdata('error', 'Nama pengguna atau kata sandi yang Anda masukkan salah.');
+            return redirect()->to('/login')->withInput();
         }
     }
 
     public function logout()
     {
         $userId = session()->get('id') ?? session()->get('user_id');
+        $username = session()->get('username') ?? 'unknown';
+        
         if ($userId) {
-            log_audit('LOGOUT', 'users', $userId);
+            log_audit('LOGOUT', 'users', $userId, null, [
+                'username'   => $username,
+                'ip_address' => $this->request->getIPAddress(),
+                'user_agent' => (string)$this->request->getUserAgent()
+            ]);
         }
 
+        // Hancurkan data sesi dan hapus cookie remember_me
         session()->destroy();
         helper('cookie');
         delete_cookie('remember_me');
-        return redirect()->to('/login');
+
+        // Kembalikan ke halaman login dengan flash message dan proteksi cache-control
+        return redirect()->to('/login')
+            ->with('success', 'Anda telah berhasil keluar dari sistem.')
+            ->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0')
+            ->setHeader('Pragma', 'no-cache')
+            ->setHeader('Expires', 'Sat, 26 Jul 1997 05:00:00 GMT');
     }
 }

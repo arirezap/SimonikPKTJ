@@ -38,12 +38,14 @@ $routes->get('/', 'Home::index');
 // Authentication Routes
 $routes->get('login', 'Auth::login');
 $routes->post('login', 'Auth::processLogin');
-$routes->get('logout', 'Auth::logout');
-// Profile Routes
-$routes->get('profile', 'Profile::index');
-$routes->post('profile/update', 'Profile::update');
-// Admin Routes (Group)
+$routes->match(['get', 'post'], 'logout', 'Auth::logout');
+
+// Authenticated Routes (Group)
 $routes->group('', ['filter' => 'auth'], function ($routes) {
+    // Profile Routes
+    $routes->get('profile', 'Profile::index');
+    $routes->post('profile/update', 'Profile::update');
+
     $routes->get('dashboard', 'DashboardController::index');
 
 // Notifications
@@ -245,10 +247,3 @@ $routes->group('kepegawaian', ['filter' => 'auth'], function ($routes) {
 if (file_exists(APPPATH . 'Config/' . ENVIRONMENT . '/Routes.php')) {
     require APPPATH . 'Config/' . ENVIRONMENT . '/Routes.php';
 }
-
-
-
-
-$routes->get('test', 'TestController::index');
-
-$routes->get('test3', 'TestController3::index');
