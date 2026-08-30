@@ -246,8 +246,11 @@ th.sortable.desc .sort-icon {
             <p class="text-muted small mb-0">Monitoring capaian kinerja seluruh unit untuk keperluan remunerasi & evaluasi berkala.</p>
         </div>
         <div class="d-flex align-items-center gap-2">
-            <a href="<?= site_url('kepegawaian/export-excel') ?>?bulan=<?= esc($bulan_terpilih) ?>&tahun=<?= esc($tahun_terpilih) ?>&unit=<?= esc($unit_filter) ?>" class="btn btn-sm btn-primary shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center gap-1.5 btn-tactile" id="btnExportExcel">
+            <a href="<?= site_url('kepegawaian/export-excel') ?>?bulan=<?= esc($bulan_terpilih) ?>&tahun=<?= esc($tahun_terpilih) ?>&unit=<?= esc($unit_filter) ?>" class="btn btn-sm btn-success shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center gap-1.5 btn-tactile" id="btnExportExcel" title="Unduh Workbook Excel (.xlsx) Multi-Sheet Data Lengkap">
                 <i class="bi bi-file-earmark-excel-fill"></i> Export Excel
+            </a>
+            <a href="<?= site_url('kepegawaian/export-pdf') ?>?bulan=<?= esc($bulan_terpilih) ?>&tahun=<?= esc($tahun_terpilih) ?>&unit=<?= esc($unit_filter) ?>" class="btn btn-sm btn-danger shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center gap-1.5 btn-tactile" id="btnExportPdf" title="Unduh Laporan PDF Resmi A4 Landscape">
+                <i class="bi bi-file-earmark-pdf-fill"></i> Export PDF
             </a>
         </div>
     </div>
@@ -255,7 +258,7 @@ th.sortable.desc .sort-icon {
     <!-- FILTER & KPI SUMMARY ROW -->
     <div class="row g-3 mb-3 bento-stagger bento-stagger-2">
         <!-- FILTER CARD -->
-        <div class="col-lg-6 col-xl-7">
+        <div class="col-lg-5 col-xl-5">
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
                 <div class="card-header bg-light py-2.5 px-3 border-bottom">
                     <h6 class="fw-bold text-dark mb-0 small"><i class="bi bi-funnel-fill text-primary me-1.5"></i>Filter Periode & Unit Kerja</h6>
@@ -289,46 +292,63 @@ th.sortable.desc .sort-icon {
             </div>
         </div>
 
-        <!-- KPI SUMMARY CARD -->
-        <div class="col-lg-6 col-xl-5">
+        <!-- KPI SUMMARY CARD (5 METRIC BOXES) -->
+        <div class="col-lg-7 col-xl-7">
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
                 <div class="card-body p-2.5 p-xl-3 d-flex flex-column justify-content-center h-100">
                     <div class="row text-center g-0 align-items-stretch">
-                        <div class="col-3 px-1 border-end d-flex flex-column justify-content-between kpi-stat-box">
-                            <div class="text-muted fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.4px;">Total</div>
+                        <!-- 1. Total Pegawai -->
+                        <div class="col px-1 border-end d-flex flex-column justify-content-between kpi-stat-box">
+                            <div class="text-muted fw-bold text-uppercase" style="font-size: 0.62rem; letter-spacing: 0.3px;">Total</div>
                             <div class="my-1">
-                                <div class="fw-bold text-dark num-tabular skeleton-hide" style="font-size: 1.35rem; white-space: nowrap; line-height: 1.2;" id="statTotalPegawai" data-val="<?= count($rekap_kinerja) ?>"><?= count($rekap_kinerja) ?></div>
-                                <div class="skeleton-box skeleton-show mx-auto" style="width: 60%; height: 1.6rem; display: none;"></div>
+                                <div class="fw-bold text-dark num-tabular skeleton-hide" style="font-size: 1.25rem; white-space: nowrap; line-height: 1.2;" id="statTotalPegawai" data-val="<?= count($rekap_kinerja) ?>"><?= count($rekap_kinerja) ?></div>
+                                <div class="skeleton-box skeleton-show mx-auto" style="width: 60%; height: 1.5rem; display: none;"></div>
                             </div>
-                            <div class="text-muted small" style="font-size: 0.68rem; white-space: nowrap;">Pegawai</div>
+                            <div class="text-muted small" style="font-size: 0.65rem; white-space: nowrap;">Pegawai</div>
                         </div>
-                        <div class="col-3 px-1 border-end d-flex flex-column justify-content-between kpi-stat-box">
-                            <div class="text-muted fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.4px;">Dinilai</div>
+
+                        <!-- 2. Sudah Dinilai -->
+                        <div class="col px-1 border-end d-flex flex-column justify-content-between kpi-stat-box">
+                            <div class="text-muted fw-bold text-uppercase" style="font-size: 0.62rem; letter-spacing: 0.3px;">Dinilai</div>
                             <div class="my-1">
-                                <div class="fw-bold text-success num-tabular skeleton-hide" style="font-size: 1.35rem; white-space: nowrap; line-height: 1.2;" id="statSudahDinilai" data-val="<?= esc($sudah_dinilai) ?>"><?= esc($sudah_dinilai) ?></div>
-                                <div class="skeleton-box skeleton-show mx-auto" style="width: 60%; height: 1.6rem; display: none;"></div>
+                                <div class="fw-bold text-success num-tabular skeleton-hide" style="font-size: 1.25rem; white-space: nowrap; line-height: 1.2;" id="statSudahDinilai" data-val="<?= esc($sudah_dinilai) ?>"><?= esc($sudah_dinilai) ?></div>
+                                <div class="skeleton-box skeleton-show mx-auto" style="width: 60%; height: 1.5rem; display: none;"></div>
                             </div>
-                            <div class="text-success small fw-semibold" style="font-size: 0.68rem; white-space: nowrap;">
+                            <div class="text-success small fw-semibold" style="font-size: 0.65rem; white-space: nowrap;">
                                 <?= count($rekap_kinerja) > 0 ? round(($sudah_dinilai / count($rekap_kinerja)) * 100) : 0 ?>%
                             </div>
                         </div>
-                        <div class="col-3 px-1 border-end d-flex flex-column justify-content-between kpi-stat-box">
-                            <div class="text-muted fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.4px;">Belum</div>
+
+                        <!-- 3. Belum Dinilai -->
+                        <div class="col px-1 border-end d-flex flex-column justify-content-between kpi-stat-box">
+                            <div class="text-muted fw-bold text-uppercase" style="font-size: 0.62rem; letter-spacing: 0.3px;">Belum</div>
                             <div class="my-1">
-                                <div class="fw-bold text-danger num-tabular skeleton-hide" style="font-size: 1.35rem; white-space: nowrap; line-height: 1.2;" id="statBelumDinilai" data-val="<?= esc($belum_dinilai) ?>"><?= esc($belum_dinilai) ?></div>
-                                <div class="skeleton-box skeleton-show mx-auto" style="width: 60%; height: 1.6rem; display: none;"></div>
+                                <div class="fw-bold text-danger num-tabular skeleton-hide" style="font-size: 1.25rem; white-space: nowrap; line-height: 1.2;" id="statBelumDinilai" data-val="<?= esc($belum_dinilai) ?>"><?= esc($belum_dinilai) ?></div>
+                                <div class="skeleton-box skeleton-show mx-auto" style="width: 60%; height: 1.5rem; display: none;"></div>
                             </div>
-                            <div class="text-danger small fw-semibold" style="font-size: 0.68rem; white-space: nowrap;">
+                            <div class="text-danger small fw-semibold" style="font-size: 0.65rem; white-space: nowrap;">
                                 <?= count($rekap_kinerja) > 0 ? round(($belum_dinilai / count($rekap_kinerja)) * 100) : 0 ?>%
                             </div>
                         </div>
-                        <div class="col-3 px-1 d-flex flex-column justify-content-between kpi-stat-box">
-                            <div class="text-muted fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.4px;">Rata-Rata</div>
+
+                        <!-- 4. Rata-Rata Dinilai (Sampel Pegawai yang Sudah Terbit Nilainya) -->
+                        <div class="col px-1 border-end d-flex flex-column justify-content-between kpi-stat-box" title="Rata-rata mutu dari seluruh pegawai yang sudah dinilai">
+                            <div class="text-muted fw-bold text-uppercase" style="font-size: 0.62rem; letter-spacing: 0.3px;">Rata Dinilai</div>
                             <div class="my-1">
-                                <div class="fw-bold text-primary num-tabular skeleton-hide" style="font-size: 1.35rem; white-space: nowrap; line-height: 1.2; letter-spacing: -0.5px;" id="statRataRataInstansi" data-val="<?= round($rata_rata_instansi, 2) ?>"><?= str_replace('.', ',', round($rata_rata_instansi, 2)) ?></div>
-                                <div class="skeleton-box skeleton-show mx-auto" style="width: 60%; height: 1.6rem; display: none;"></div>
+                                <div class="fw-bold text-primary num-tabular skeleton-hide" style="font-size: 1.25rem; white-space: nowrap; line-height: 1.2; letter-spacing: -0.5px;" id="statRataRataDinilai" data-val="<?= round($rata_rata_dinilai ?? $rata_rata_instansi, 2) ?>"><?= str_replace('.', ',', round($rata_rata_dinilai ?? $rata_rata_instansi, 2)) ?></div>
+                                <div class="skeleton-box skeleton-show mx-auto" style="width: 60%; height: 1.5rem; display: none;"></div>
                             </div>
-                            <div class="text-primary small fw-semibold" style="font-size: 0.68rem; white-space: nowrap;">Instansi</div>
+                            <div class="text-primary small fw-semibold" style="font-size: 0.65rem; white-space: nowrap;">Sudah Dinilai</div>
+                        </div>
+
+                        <!-- 5. Rata-Rata Keseluruhan (Total Semua Pegawai, Belum Dinilai = 0) -->
+                        <div class="col px-1 d-flex flex-column justify-content-between kpi-stat-box" title="Rata-rata capaian dari seluruh total pegawai (yang belum dinilai dihitung 0)">
+                            <div class="text-muted fw-bold text-uppercase" style="font-size: 0.62rem; letter-spacing: 0.3px;">Rata Total</div>
+                            <div class="my-1">
+                                <div class="fw-bold text-info-emphasis num-tabular skeleton-hide" style="font-size: 1.25rem; white-space: nowrap; line-height: 1.2; letter-spacing: -0.5px;" id="statRataRataTotal" data-val="<?= round($rata_rata_keseluruhan ?? 0, 2) ?>"><?= str_replace('.', ',', round($rata_rata_keseluruhan ?? 0, 2)) ?></div>
+                                <div class="skeleton-box skeleton-show mx-auto" style="width: 60%; height: 1.5rem; display: none;"></div>
+                            </div>
+                            <div class="text-muted small fw-semibold" style="font-size: 0.65rem; white-space: nowrap;">Semua Pegawai</div>
                         </div>
                     </div>
                 </div>
@@ -1133,6 +1153,98 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Synchronized Export Handlers with SweetAlert2 Loading Alert
+    async function triggerExportWithLoading(btnEl, typeText, defaultFilename) {
+        const url = btnEl.getAttribute('href');
+        if (!url) return;
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: `Menyiapkan ${typeText}...`,
+                html: `
+                    <div class="d-flex flex-column align-items-center gap-2 my-2">
+                        <div class="ecc-loading-spinner-wrapper">
+                            <div class="ecc-loading-spinner"></div>
+                        </div>
+                        <div class="ecc-loading-title">Sedang mengompilasi data instansi...</div>
+                        <span class="ecc-loading-desc">Sistem sedang merekap data target, capaian realisasi, dan tugas tambahan. File akan langsung terunduh begitu proses selesai.</span>
+                        <span class="ecc-loading-badge-step"><i class="bi bi-shield-check text-primary"></i> Streaming terenkripsi & aman</span>
+                    </div>
+                `,
+                customClass: {
+                    popup: 'ecc-loading-popup'
+                },
+                showConfirmButton: false,
+                allowOutsideClick: false,
+                didOpen: async () => {
+                    try {
+                        const response = await fetch(url);
+                        if (!response.ok) {
+                            throw new Error('Gagal menyiapkan berkas dari server');
+                        }
+
+                        let filename = defaultFilename;
+                        const disposition = response.headers.get('Content-Disposition');
+                        if (disposition && disposition.includes('filename=')) {
+                            const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                            if (match && match[1]) {
+                                filename = match[1].replace(/['"]/g, '').trim();
+                            }
+                        }
+
+                        const blob = await response.blob();
+                        const blobUrl = window.URL.createObjectURL(blob);
+                        const downloadAnchor = document.createElement('a');
+                        downloadAnchor.style.display = 'none';
+                        downloadAnchor.href = blobUrl;
+                        downloadAnchor.download = filename;
+                        document.body.appendChild(downloadAnchor);
+                        downloadAnchor.click();
+                        
+                        setTimeout(() => {
+                            window.URL.revokeObjectURL(blobUrl);
+                            if (document.body.contains(downloadAnchor)) {
+                                document.body.removeChild(downloadAnchor);
+                            }
+                        }, 2000);
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Unduhan Berhasil!',
+                            text: `Berkas ${filename} berhasil disiapkan dan diunduh.`,
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    } catch (err) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal Mengunduh',
+                            text: 'Terjadi kendala saat mengompilasi berkas. Silakan coba beberapa saat lagi.'
+                        });
+                    }
+                }
+            });
+        } else {
+            window.location.href = url;
+        }
+    }
+
+    const btnExportExcel = document.getElementById('btnExportExcel');
+    if (btnExportExcel) {
+        btnExportExcel.addEventListener('click', function(e) {
+            e.preventDefault();
+            triggerExportWithLoading(this, 'Berkas Excel (.xlsx)', 'Rekap_Kinerja_ECC.xlsx');
+        });
+    }
+
+    const btnExportPdf = document.getElementById('btnExportPdf');
+    if (btnExportPdf) {
+        btnExportPdf.addEventListener('click', function(e) {
+            e.preventDefault();
+            triggerExportWithLoading(this, 'Laporan PDF Resmi', 'Laporan_Rekapitulasi_Kinerja_ECC.pdf');
+        });
+    }
 });
 </script>
 <?= $this->endSection() ?>

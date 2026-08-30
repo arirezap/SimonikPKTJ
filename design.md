@@ -1,7 +1,7 @@
 # 🎨 DESIGN SYSTEM & UI/UX GUIDELINES
 ## Evidence Command Center (ECC)
 **Official Application Name:** Evidence Command Center (ECC) (formerly Simonik)  
-**Version:** 1.2.0 (Enterprise Production Release)  
+**Version:** 1.3.0 (Enterprise Production Release)  
 **Design Philosophy:** Modern Enterprise Bento Grid, Visual Excellence, Micro-Interactions, Mobile-First Touch Experience, 3-Tier Data Guards, and High-Performance Ergonomics.
 
 ---
@@ -170,7 +170,7 @@ For dense tabular data (Penilaian Kinerja, Rekap Kepegawaian, Activity Log):
 ### 6.1 Automatic Cache Busting
 To ensure client browsers immediately receive styling updates without requiring manual cache clearing:
 ```html
-<link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=1.2.' . filemtime(FCPATH . 'assets/css/style.css')) ?>">
+<link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=1.3.' . filemtime(FCPATH . 'assets/css/style.css')) ?>">
 ```
 Coupled with HTTP no-cache headers in `main.php`:
 ```html
@@ -273,7 +273,188 @@ The Evidence Command Center (ECC) is built to meet **WCAG 2.1 AA** compliance ac
 
 ---
 
+## 9. 🔔 SweetAlert2 & Notification Modal Standards (/ui-ux-pro-max)
+
+To maintain absolute aesthetic harmony with ECC Bento Cards and eliminate disruptive modal antipatterns:
+
+### 9.1 Confirmation & Interactive Dialog Tokens
+All confirmation and interactive dialogs across ECC must adhere to the unified design tokens:
+- **Popup Container**: `.rounded-4` ($20\text{px} / 1.25\text{rem}$ border-radius), `.shadow-lg`, `.border-0`, `padding: 1.75rem`.
+- **Title & Typography**: `font-weight: 700`, `color: #0f172a`, `font-size: 1.2rem`, `letter-spacing: -0.02em`.
+- **Action Buttons (`buttonsStyling: false`)**:
+  - Primary / Confirm: `.btn.btn-primary.btn-tactile.rounded-pill.px-4.py-2.fw-semibold.shadow-sm`
+  - Destructive / Logout: `.btn.btn-danger.btn-tactile.rounded-pill.px-4.py-2.fw-semibold.shadow-sm`
+  - Cancel / Dismiss: `.btn.btn-secondary.btn-tactile.rounded-pill.px-4.py-2.fw-semibold.shadow-sm`
+- **Reverse Button Layout**: Destructive and confirmation modals place the *Cancel* action on the left and the primary *Action* on the right for thumb ergonomics.
+
+### 9.2 Non-Blocking Sleek Toast Notifications
+Routine success notifications (such as successful session logout, draft auto-saving, or background sync) must **never** block the entire screen with modal popups. They must use non-blocking corner toasts:
+```javascript
+const Toast = Swal.mixin({
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 3500,
+    timerProgressBar: true,
+    didOpen: (toast) => {
+        toast.addEventListener('mouseenter', Swal.stopTimer);
+        toast.addEventListener('mouseleave', Swal.resumeTimer);
+    },
+    customClass: {
+        popup: 'rounded-4 shadow border-0'
+    }
+});
+```
+
+### 9.3 Resilience & Zero-Failure Native Fallback
+Every modal and toast invocation must verify `typeof Swal !== 'undefined'` and supply native browser dialogs (`window.confirm()`, `window.alert()`) to guarantee 100% functionality in offline, firewalled, or CDN-delayed environments.
+
+### 9.4 Standardized Loading Alerts & Async Export Event Pipeline
+For operations with server-side computation latency (e.g. **Multi-Sheet Excel Exports**, **PDF Document Compilation**, **Bulk Database Batch Queries**), static timeouts must **NEVER** be used because they cause desynchronization between the UI popup and browser file download stream.
+
+Always implement the **Asynchronous Fetch-to-Blob Pipeline**:
+1. **Interactive Modal:** Opens SweetAlert2 with `.ecc-loading-popup` and stays persistently active while fetching bytes in the background.
+2. **Tab Stability:** The browser tab does NOT enter a perpetual busy/stuck state.
+3. **Blob Object URL:** Converts the completed response stream to a Blob (`window.URL.createObjectURL(blob)`) and triggers native download instantly.
+4. **Synchronous Transition:** Modal transitions to a green success confirmation (`Unduhan Berhasil!`) precisely when the file is handed over to the user's filesystem.
+
+```javascript
+/**
+ * ECC Standardized Asynchronous Download & Loading Alert Trigger
+ * @param {HTMLElement} btnEl - The clicked button/link element
+ * @param {string} typeText - E.g. 'Berkas Excel (.xlsx)' or 'Laporan PDF Resmi'
+ * @param {string} defaultFilename - E.g. 'Rekap_Kinerja_ECC.xlsx'
+ */
+async function triggerEccAsyncDownload(btnEl, typeText, defaultFilename) {
+    const url = btnEl.getAttribute('href');
+    if (!url) return;
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: `Menyiapkan ${typeText}...`,
+            html: `
+                <div class="d-flex flex-column align-items-center gap-2 my-2">
+                    <div class="ecc-loading-spinner-wrapper">
+                        <div class="ecc-loading-spinner"></div>
+                    </div>
+                    <div class="ecc-loading-title">Sedang mengompilasi data instansi...</div>
+                    <span class="ecc-loading-desc">Sistem sedang merekap data target, capaian realisasi, dan tugas tambahan. File akan langsung terunduh begitu proses selesai.</span>
+                    <span class="ecc-loading-badge-step"><i class="bi bi-shield-check text-primary"></i> Streaming terenkripsi & aman</span>
+                </div>
+            `,
+            customClass: {
+                popup: 'ecc-loading-popup'
+            },
+            showConfirmButton: false,
+            allowOutsideClick: false,
+            didOpen: async () => {
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error('Gagal menyiapkan berkas dari server');
+                    }
+
+                    let filename = defaultFilename;
+                    const disposition = response.headers.get('Content-Disposition');
+                    if (disposition && disposition.includes('filename=')) {
+                        const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                        if (match && match[1]) {
+                            filename = match[1].replace(/['"]/g, '').trim();
+                        }
+                    }
+
+                    const blob = await response.blob();
+                    const blobUrl = window.URL.createObjectURL(blob);
+                    const downloadAnchor = document.createElement('a');
+                    downloadAnchor.style.display = 'none';
+                    downloadAnchor.href = blobUrl;
+                    downloadAnchor.download = filename;
+                    document.body.appendChild(downloadAnchor);
+                    downloadAnchor.click();
+
+                    setTimeout(() => {
+                        window.URL.revokeObjectURL(blobUrl);
+                        if (document.body.contains(downloadAnchor)) {
+                            document.body.removeChild(downloadAnchor);
+                        }
+                    }, 2000);
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Unduhan Berhasil!',
+                        text: `Berkas ${filename} berhasil disiapkan dan diunduh.`,
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } catch (err) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal Mengunduh',
+                        text: 'Terjadi kendala saat mengompilasi berkas. Silakan coba beberapa saat lagi.'
+                    });
+                }
+            }
+        });
+    } else {
+        window.location.href = url;
+    }
+}
+```
+
+---
+
+## 10. 🎬 Motion Design & Micro-Animation Tokens (/impeccable animate)
+
+The Evidence Command Center (ECC) uses purpose-driven motion design to make data-dense interfaces feel tactile, responsive, and alive without causing cognitive fatigue.
+
+### 10.1 Motion Token Catalog
+
+| Motion Token / Class | Trigger / Context | Timing & Easing | Visual Transformation & Purpose |
+| :--- | :--- | :--- | :--- |
+| **Bento Entrance** (`.bento-stagger-1..4`) | Initial page render | $500\text{ms}$ `cubic-bezier(0.16, 1, 0.3, 1)` | Staggered upward reveal ($16\text{px} \rightarrow 0$) conveying structural hierarchy. |
+| **Row Insertion** (`.row-slide-in`) | Add row click (Target/Log) | $350\text{ms}$ `cubic-bezier(0.16, 1, 0.3, 1)` | Smooth slide down ($-10\text{px}$) with temporary soft blue glow to highlight newly added row. |
+| **Row Removal** (`.row-slide-out`) | Delete row click | $220\text{ms}$ `ease-out` | Graceful scale decay ($1.0 \rightarrow 0.96$) and slide right ($+12\text{px}$) preventing abrupt DOM collapse. |
+| **Badge Satuan Pop** (`.badge-satuan-pop`) | Target selection change | $280\text{ms}$ `cubic-bezier(0.16, 1, 0.3, 1)` | Elastic scale pop ($0.85 \rightarrow 1.1 \rightarrow 1.0$) confirming dynamic unit synchronization. |
+| **Duplicate Pulse** (`.table-danger`) | Form validation error | $400\text{ms}$ `ease-in-out` | Subtle breathing pulse ($5\% \rightarrow 25\% \rightarrow 12\%$) drawing immediate focus to duplicate rows. |
+| **Tactile Button Press** (`.btn-tactile`) | Mouse click / Tap | $150\text{ms}$ `cubic-bezier(0.16, 1, 0.3, 1)` | Physical depression feel (`transform: scale(0.97)`) providing immediate haptic satisfaction. |
+| **Card Hover Lift** (`.bento-card:hover`) | Cursor hover | $250\text{ms}$ `cubic-bezier(0.16, 1, 0.3, 1)` | Elevation lift (`translateY(-2.5px)`) and soft deep shadow expansion. |
+| **Modal Pop-In** (`.modal.fade .modal-dialog`) | Dialog open | $250\text{ms}$ `cubic-bezier(0.16, 1, 0.3, 1)` | Scale pop ($0.96 \rightarrow 1.0$) accompanied by $4\text{px}$ backdrop glassmorphic blur. |
+| **Chart-to-Table Glow** (`.table-active-pulse`)| Chart segment click | $1800\text{ms}$ `cubic-bezier(0.16, 1, 0.3, 1)` | Soft blue ambient illumination directing eye to filtered table row after auto-scroll. |
+
+---
+
+### 10.2 Strict Accessibility Standard: Reduced Motion Enforcement
+
+In strict compliance with **WCAG 2.1 Criterion 2.3.3 (Animation from Interactions)**, all CSS keyframes, continuous scaling, and position transitions are automatically neutralized whenever the user enables "Reduce Motion" in their operating system:
+
+```css
+@media (prefers-reduced-motion: reduce) {
+    .bento-card,
+    .card.shadow-sm,
+    .bento-stagger,
+    .tab-content > .tab-pane,
+    .btn-tactile,
+    .btn,
+    .row-slide-in,
+    .row-slide-out,
+    .badge-satuan-pop,
+    .table-danger,
+    .table-danger-pulse,
+    .modal.fade .modal-dialog,
+    .table-active-pulse,
+    .swal2-popup,
+    .swal2-styled {
+        animation: none !important;
+        transition: none !important;
+        transform: none !important;
+    }
+}
+```
+
+---
+
 *Evidence Command Center (ECC) Design System — Maintained for 100% visual consistency, ergonomic excellence, and enterprise-grade user experience.*
+
 
 
 

@@ -37,7 +37,7 @@ class Dashboard extends BaseController
         if (!$this->request->isAJAX() || $ajax_type === 'kinerja') {
             $db = \Config\Database::connect();
             
-            $laporanPribadi = $db->table('laporan_harian')
+            $laporanPribadi = $db->table('target_kinerja_bulanan')
                                  ->where('user_id', $user_id)
                                  ->where('tahun', $tahun_kinerja)
                                  ->where("nilai_capaian IS NOT NULL AND nilai_capaian != ''")
@@ -61,7 +61,7 @@ class Dashboard extends BaseController
             
             $rataRataCapaian = $countNilai > 0 ? round($totalNilai / $countNilai, 2) : 0;
             
-            $totalIndikator = $db->table('laporan_harian')
+            $totalIndikator = $db->table('target_kinerja_bulanan')
                                  ->where('user_id', $user_id)
                                  ->where('tahun', $tahun_kinerja)
                                  ->countAllResults();

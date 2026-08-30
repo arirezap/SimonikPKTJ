@@ -181,7 +181,7 @@ class Profile extends BaseController
 
         // 5. Eksekusi Update ke Database
         $this->userModel->update($userId, $data);
-        log_audit('UPDATE', 'users', $userId, null, $data);
+        log_audit('UPDATE', 'users', $userId, $user, $data);
 
         // 6. Update Session Data (Agar nama, unit, role & FOTO di header langsung berubah)
         $sessionData = [
@@ -190,7 +190,7 @@ class Profile extends BaseController
             'unit'         => $data['unit'],
             'role'         => $role_aplikasi
         ];
-        if (isset($data['foto'])) {
+        if (array_key_exists('foto', $data)) {
             $sessionData['foto'] = $data['foto'];
         }
         session()->set($sessionData);

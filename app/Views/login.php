@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=1.2.' . filemtime(FCPATH . 'assets/css/style.css')) ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=1.3.' . filemtime(FCPATH . 'assets/css/style.css')) ?>">
     <style>
         body.login-page {
             background-color: #f8fafc;
@@ -351,7 +351,7 @@
                 </form>
 
                 <div class="text-center mt-3 anim-stagger anim-stagger-6">
-                    <p class="text-muted mb-0" style="font-size: 0.75rem; color: #64748b;">&copy; <?= date("Y"); ?> PKTJ Tegal. Hak Cipta Dilindungi.</p>
+                    <p class="text-muted mb-0" style="font-size: 0.75rem; color: #64748b;">&copy; <?= date("Y"); ?> Evidence Command Center (ECC) v1.3 &bull; PKTJ Tegal</p>
                 </div>
             </div>
             
@@ -454,43 +454,69 @@
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 icon: 'info',
-                title: 'Lupa Password?',
-                text: 'Silakan hubungi Administrator untuk mereset password Anda.',
-                confirmButtonColor: '#1e3a8a',
-                confirmButtonText: 'Mengerti'
+                title: 'Lupa Kata Sandi?',
+                text: 'Silakan hubungi Administrator atau Unit Kepegawaian untuk mereset kata sandi akun Anda.',
+                confirmButtonText: '<i class="bi bi-check-lg me-1"></i> Mengerti',
+                customClass: {
+                    popup: 'rounded-4 shadow-lg border-0 p-4',
+                    title: 'fw-bold text-dark fs-5 mb-2',
+                    htmlContainer: 'text-muted small mb-3',
+                    confirmButton: 'btn btn-primary btn-tactile rounded-pill px-4 py-2 fw-semibold shadow-sm'
+                },
+                buttonsStyling: false
             });
         } else {
-            alert('Lupa Password?\n\nSilakan hubungi Administrator untuk mereset password Anda.');
+            alert('Lupa Kata Sandi?\n\nSilakan hubungi Administrator atau Unit Kepegawaian untuk mereset kata sandi akun Anda.');
         }
     }
 
-    // Tampilkan Popup SweetAlert Jika Ada Error
+    // Tampilkan Alert SweetAlert Jika Ada Error Login
     <?php if (session()->getFlashdata('error')): ?>
     const errText = '<?= esc(session()->getFlashdata('error'), 'js') ?>';
     if (typeof Swal !== 'undefined') {
         Swal.fire({
             icon: 'error',
-            title: 'Login Gagal!',
+            title: 'Autentikasi Gagal',
             text: errText,
-            confirmButtonColor: '#1e3a8a'
+            confirmButtonText: 'Coba Lagi',
+            customClass: {
+                popup: 'rounded-4 shadow-lg border-0 p-4',
+                title: 'fw-bold text-dark fs-5 mb-2',
+                htmlContainer: 'text-muted small mb-3',
+                confirmButton: 'btn btn-danger btn-tactile rounded-pill px-4 py-2 fw-semibold shadow-sm'
+            },
+            buttonsStyling: false
         });
     } else {
-        alert('Login Gagal!\n\n' + errText);
+        alert('Autentikasi Gagal!\n\n' + errText);
     }
     <?php endif; ?>
 
-    // Tampilkan Popup SweetAlert Jika Ada Sukses (Misal: setelah logout)
+    // Tampilkan Toast Elegan Jika Ada Sukses (Misal: setelah logout) - Non-blocking
     <?php if (session()->getFlashdata('success')): ?>
     const successText = '<?= esc(session()->getFlashdata('success'), 'js') ?>';
     if (typeof Swal !== 'undefined') {
-        Swal.fire({
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3500,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer);
+                toast.addEventListener('mouseleave', Swal.resumeTimer);
+            },
+            customClass: {
+                popup: 'rounded-4 shadow border-0'
+            }
+        });
+        Toast.fire({
             icon: 'success',
-            title: 'Berhasil!',
-            text: successText,
-            confirmButtonColor: '#1e3a8a'
+            title: 'Berhasil Keluar',
+            text: successText
         });
     } else {
-        alert('Berhasil!\n\n' + successText);
+        alert('Berhasil Keluar!\n\n' + successText);
     }
     <?php endif; ?>
 </script>

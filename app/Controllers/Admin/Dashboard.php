@@ -262,7 +262,7 @@ class Dashboard extends BaseController
         // 6. TREN KINERJA BULANAN & LEADERBOARD (PRO MAX UI)
         // ----------------------------------------------------------------
         $db = \Config\Database::connect();
-        $allTargets = $db->table('laporan_harian')
+        $allTargets = $db->table('target_kinerja_bulanan')
             ->select('bulan, nilai_capaian')
             ->where('tahun', $tahun_kinerja)
             ->where("nilai_capaian IS NOT NULL AND nilai_capaian != ''")
@@ -324,18 +324,18 @@ class Dashboard extends BaseController
         $chartPegawaiUnitData = [];
         
         // Optimize: Calculate unitStats for ALL users globally (not just subordinates)
-        $query = $db->table('laporan_harian')
-            ->select('users.unit, users.nama_lengkap, users.jabatan, laporan_harian.nilai_capaian, laporan_harian.user_id')
-            ->join('users', 'users.id = laporan_harian.user_id')
-            ->where('laporan_harian.tahun', $tahun_kinerja)
-            ->where("laporan_harian.nilai_capaian IS NOT NULL AND laporan_harian.nilai_capaian != ''");
+        $query = $db->table('target_kinerja_bulanan')
+            ->select('users.unit, users.nama_lengkap, users.jabatan, target_kinerja_bulanan.nilai_capaian, target_kinerja_bulanan.user_id')
+            ->join('users', 'users.id = target_kinerja_bulanan.user_id')
+            ->where('target_kinerja_bulanan.tahun', $tahun_kinerja)
+            ->where("target_kinerja_bulanan.nilai_capaian IS NOT NULL AND target_kinerja_bulanan.nilai_capaian != ''");
             
         if ($bulan_kinerja !== 'all') {
-            $query->where('laporan_harian.bulan', $bulanAngka);
+            $query->where('target_kinerja_bulanan.bulan', $bulanAngka);
         }
         $allTargetsUnit = $query->get()->getResultArray();
 
-        $targetQuery = $db->table('laporan_harian')
+        $targetQuery = $db->table('target_kinerja_bulanan')
             ->select('user_id, COUNT(id) as total_laporan')
             ->where('tahun', $tahun_kinerja);
         if ($bulan_kinerja !== 'all') {
@@ -465,9 +465,9 @@ class Dashboard extends BaseController
         $tahun = $this->request->getGet('tahun') ?: date('Y');
         $bulan = $this->request->getGet('bulan') ?: date('n');
 
-        $user_id = session()->get('id');
+        $user_id = session()->get('id') ?? session()->get('user_id');
         $role = session()->get('role');
-        $canSeeAll = hasAnyRole(['direktur', 'admin']);
+        $canSeeAll = hasAnyRole(['admin', 'direktur', 'wadir', 'manajemen']);
         
         $db = \Config\Database::connect();
         
@@ -516,12 +516,12 @@ class Dashboard extends BaseController
             
         } else if ($mode === 'tren') {
             // Trend is global
-            $allTargetsUnit = $db->table('laporan_harian')
-                ->select('users.unit, users.nama_lengkap, users.jabatan, laporan_harian.nilai_capaian, laporan_harian.user_id')
-                ->join('users', 'users.id = laporan_harian.user_id')
-                ->where('laporan_harian.tahun', $tahun)
-                ->where('laporan_harian.bulan', $bulan)
-                ->where("laporan_harian.nilai_capaian IS NOT NULL AND laporan_harian.nilai_capaian != ''")
+            $allTargetsUnit = $db->table('target_kinerja_bulanan')
+                ->select('users.unit, users.nama_lengkap, users.jabatan, target_kinerja_bulanan.nilai_capaian, target_kinerja_bulanan.user_id')
+                ->join('users', 'users.id = target_kinerja_bulanan.user_id')
+                ->where('target_kinerja_bulanan.tahun', $tahun)
+                ->where('target_kinerja_bulanan.bulan', $bulan)
+                ->where("target_kinerja_bulanan.nilai_capaian IS NOT NULL AND target_kinerja_bulanan.nilai_capaian != ''")
                 ->get()->getResultArray();
 
             $userPerformance = [];

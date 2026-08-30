@@ -31,7 +31,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=1.2.' . filemtime(FCPATH . 'assets/css/style.css')) ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=1.3.' . filemtime(FCPATH . 'assets/css/style.css')) ?>">
     <meta name="X-CSRF-TOKEN" content="<?= csrf_hash() ?>">
 
     <?= $this->renderSection('styles') ?>
@@ -165,7 +165,7 @@
             <!-- Footer Aplikasi -->
             <footer class="footer-promax py-3 mt-auto d-flex justify-content-between px-3 px-md-4 align-items-center">
                 <span class="footer-text">&copy; <?= date('Y') ?> Evidence Command Center (ECC) - PKTJ Tegal</span>
-                <span class="badge bg-light text-secondary border rounded-pill version-badge px-2 py-1" style="font-size: 0.75rem; font-variant-numeric: tabular-nums;">v1.2</span>
+                <span class="badge bg-light text-secondary border rounded-pill version-badge px-2 py-1" style="font-size: 0.75rem; font-variant-numeric: tabular-nums;">v1.3</span>
             </footer>
 
             <?= $this->renderSection('footer_bar') ?>
@@ -179,9 +179,6 @@
     document.addEventListener('DOMContentLoaded', function() {
         const sidebarToggle = document.getElementById('sidebarToggle');
         const mainWrapper = document.querySelector('.main-wrapper');
-        
-        // Ambil semua link yang punya fungsi dropdown/collapse
-        const dropdownLinks = document.querySelectorAll('.sidebar .nav-link[data-bs-toggle="collapse"], .sidebar .nav-link[data-bs-toggle-backup="collapse"]');
 
         // Fungsi untuk mengatur perilaku Dropdown
         function setSidebarState(isMini) {
@@ -191,29 +188,6 @@
                 mainWrapper.classList.remove('sidebar-toggled');
             }
         }
-
-        function updateMenuBehavior() {
-            if (window.innerWidth < 992) {
-                // Mobile: Enable Accordion
-                dropdownLinks.forEach(link => {
-                    link.setAttribute('data-bs-toggle', 'collapse');
-                    link.removeAttribute('data-bs-toggle-backup');
-                });
-            } else {
-                // Desktop: Disable Accordion (Use CSS Flyout)
-                dropdownLinks.forEach(link => {
-                    link.setAttribute('data-bs-toggle-backup', 'collapse');
-                    link.removeAttribute('data-bs-toggle');
-                });
-                // Tutup semua menu yang sedang terbuka agar rapi
-                document.querySelectorAll('.sidebar .collapse.show').forEach(el => {
-                    el.classList.remove('show');
-                });
-            }
-        }
-
-        window.addEventListener('resize', updateMenuBehavior);
-        updateMenuBehavior();
 
         // Cek LocalStorage saat load
         const isToggled = localStorage.getItem('sidebarToggled') === 'true';
@@ -225,10 +199,7 @@
         if (sidebarToggle) {
             sidebarToggle.addEventListener('click', function() {
                 const willBeToggled = !mainWrapper.classList.contains('sidebar-toggled');
-                
                 setSidebarState(willBeToggled);
-                
-                // Simpan preferensi user
                 localStorage.setItem('sidebarToggled', willBeToggled);
             });
         }
@@ -265,34 +236,55 @@
                 const notifList = document.getElementById('notifList');
                 
                 if (data.status === 'success') {
+                    const unreadCount = parseInt(data.unread_count ?? data.count ?? 0);
                     // Update Badge
-                    if (data.count > 0) {
-                        notifBadge.textContent = data.count > 99 ? '99+' : data.count;
+                    if (unreadCount > 0) {
+                        notifBadge.textContent = unreadCount > 99 ? '99+' : unreadCount;
                         notifBadge.classList.remove('d-none');
                     } else {
                         notifBadge.classList.add('d-none');
+                        notifBadge.textContent = '0';
                     }
 
                     // Update List
-                    if (data.data.length > 0) {
+                    if (data.data && data.data.length > 0) {
                         let html = '';
+                        const escapeHtml = (str) => {
+                            if (!str) return '';
+                            return String(str)
+                                .replace(/&/g, '&amp;')
+                                .replace(/</g, '&lt;')
+                                .replace(/>/g, '&gt;')
+                                .replace(/"/g, '&quot;')
+                                .replace(/'/g, '&#039;');
+                        };
+
                         data.data.forEach(item => {
                             const isVirtual = item.is_virtual;
-                            const bgClass = isVirtual ? 'bg-warning' : 'bg-primary';
-                            const textClass = isVirtual ? 'text-warning' : 'text-primary';
-                            const icon = isVirtual ? 'bi-exclamation-triangle-fill' : 'bi-bell-fill';
+                            const isUnread = (parseInt(item.is_read) === 0) || isVirtual;
+                            const bgClass = isVirtual ? 'bg-warning' : (isUnread ? 'bg-primary' : 'bg-secondary');
+                            const textClass = isVirtual ? 'text-warning' : (isUnread ? 'text-primary' : 'text-secondary');
+                            const icon = isVirtual ? 'bi-exclamation-triangle-fill' : (isUnread ? 'bi-bell-fill' : 'bi-bell');
+                            const safeLink = (item.link && !item.link.toLowerCase().startsWith('javascript:')) ? item.link : '#';
+                            const safeTitle = escapeHtml(item.title);
+                            const safeMessage = escapeHtml(item.message);
+                            const safeTime = escapeHtml(item.time_ago || '');
+                            const unreadDotHtml = isUnread ? '<span class="d-inline-block bg-primary rounded-circle notif-unread-dot" title="Belum dibaca"></span>' : '';
+                            const itemClass = isUnread ? 'notif-item is-unread' : 'notif-item is-read';
+                            const titleWeight = isUnread ? 'fw-bold text-dark' : 'fw-semibold text-body-secondary';
                             
                             html += `
-                                <a href="${item.link ? item.link : '#'}" class="list-group-item list-group-item-action border-0 border-bottom p-3 d-flex gap-3 align-items-start notif-item btn-tactile" onclick="markNotifRead('${item.id}', event, this, '${item.link}')">
-                                    <div class="d-flex align-items-center justify-content-center rounded-circle ${bgClass} bg-opacity-10 ${textClass} flex-shrink-0" style="width: 40px; height: 40px;">
+                                <a href="${safeLink}" class="list-group-item list-group-item-action border-0 border-bottom p-3 d-flex gap-3 align-items-start ${itemClass} btn-tactile" data-notif-id="${escapeHtml(item.id)}" onclick="markNotifRead('${escapeHtml(item.id)}', event, this, '${safeLink}')">
+                                    <div class="d-flex align-items-center justify-content-center rounded-circle ${bgClass} bg-opacity-10 ${textClass} flex-shrink-0" style="width: 38px; height: 38px;">
                                         <i class="bi ${icon} fs-5"></i>
                                     </div>
-                                    <div class="flex-grow-1 pe-2">
-                                        <h6 class="mb-1 fw-bold text-dark" style="font-size: 0.9rem;">${item.title}</h6>
-                                        <p class="mb-1 text-secondary" style="font-size: 0.8rem; line-height: 1.4;">${item.message}</p>
+                                    <div class="flex-grow-1 pe-1">
+                                        <h6 class="mb-1 ${titleWeight}" style="font-size: 0.875rem;">${safeTitle}</h6>
+                                        <p class="mb-1 text-secondary" style="font-size: 0.78rem; line-height: 1.35;">${safeMessage}</p>
+                                        <small class="text-muted" style="font-size: 0.7rem;"><i class="bi bi-clock me-1"></i>${safeTime}</small>
                                     </div>
-                                    <div class="align-self-center">
-                                        <span class="d-inline-block bg-primary rounded-circle notif-unread-dot"></span>
+                                    <div class="align-self-center ps-1">
+                                        ${unreadDotHtml}
                                     </div>
                                 </a>
                             `;
@@ -302,7 +294,7 @@
                         notifList.innerHTML = `
                             <div class="p-4 text-center text-muted">
                                 <i class="bi bi-bell-slash fs-1 text-secondary opacity-50 notif-empty-icon d-inline-block mb-1"></i>
-                                <div class="mt-2 small text-secondary fw-medium">Belum ada notifikasi baru.</div>
+                                <div class="mt-2 small text-secondary fw-medium">Belum ada riwayat notifikasi.</div>
                             </div>
                         `;
                     }
@@ -332,19 +324,8 @@
         // Panggil saat pertama kali load
         fetchNotifications();
 
-        // Bisa diset interval jika ingin real-time lambat (contoh: setiap 5 menit)
+        // Polling setiap 5 menit (300.000ms)
         setInterval(fetchNotifications, 300000); 
-
-        // Auto-clear badge & update unread status saat dropdown notifikasi dibuka
-        const notifContainer = document.getElementById('notifDropdownContainer');
-        if (notifContainer) {
-            notifContainer.addEventListener('show.bs.dropdown', function () {
-                const notifBadge = document.getElementById('notifBadge');
-                if (notifBadge && !notifBadge.classList.contains('d-none')) {
-                    markAllNotificationsRead();
-                }
-            });
-        }
     });
 
     function markAllNotificationsRead(e) {
@@ -356,9 +337,17 @@
             notifBadge.textContent = '0';
         }
         
-        // Sembunyikan titik biru pada seluruh item notifikasi
-        document.querySelectorAll('#notifList a .align-self-center span').forEach(dot => {
-            dot.style.opacity = '0';
+        // Perbarui visual seluruh notifikasi di list menjadi status terbaca (tanpa menghapus item)
+        document.querySelectorAll('#notifList a').forEach(el => {
+            el.classList.remove('is-unread');
+            el.classList.add('is-read');
+            const dot = el.querySelector('.notif-unread-dot');
+            if (dot) dot.remove();
+            const title = el.querySelector('h6');
+            if (title) {
+                title.classList.remove('fw-bold', 'text-dark');
+                title.classList.add('fw-semibold', 'text-body-secondary');
+            }
         });
 
         const csrfTokenName = '<?= csrf_token() ?>';
@@ -383,8 +372,40 @@
     }
 
     function markNotifRead(id, event, element, link) {
-        event.preventDefault();
+        // Jika ada link valid dan pengguna mengklik, kita izinkan navigasi setelah update status
+        const hasValidLink = link && link !== 'null' && link !== '#';
+        if (!hasValidLink) {
+            event.preventDefault();
+        }
         
+        // Ubah tampilan notifikasi ini menjadi status terbaca
+        if (element) {
+            element.classList.remove('is-unread');
+            element.classList.add('is-read');
+            const dot = element.querySelector('.notif-unread-dot');
+            if (dot) dot.remove();
+            const title = element.querySelector('h6');
+            if (title) {
+                title.classList.remove('fw-bold', 'text-dark');
+                title.classList.add('fw-semibold', 'text-body-secondary');
+            }
+        }
+
+        // Kurangi count unread badge jika masih ada
+        const notifBadge = document.getElementById('notifBadge');
+        if (notifBadge && !notifBadge.classList.contains('d-none')) {
+            let currentCount = parseInt(notifBadge.textContent);
+            if (!isNaN(currentCount) && currentCount > 0) {
+                currentCount--;
+                if (currentCount <= 0) {
+                    notifBadge.classList.add('d-none');
+                    notifBadge.textContent = '0';
+                } else {
+                    notifBadge.textContent = currentCount;
+                }
+            }
+        }
+
         const csrfTokenName = '<?= csrf_token() ?>';
         const csrfHash = document.querySelector('meta[name="X-CSRF-TOKEN"]')?.getAttribute('content') || '<?= csrf_hash() ?>';
 
@@ -402,14 +423,12 @@
                 const metaCsrf = document.querySelector('meta[name="X-CSRF-TOKEN"]');
                 if (metaCsrf) metaCsrf.setAttribute('content', data.csrf_hash);
             }
-            if (link && link !== 'null' && link !== '#') {
+            if (hasValidLink) {
                 window.location.href = link;
-            } else if (element) {
-                element.remove();
             }
         })
         .catch(error => {
-            if (link && link !== 'null' && link !== '#') {
+            if (hasValidLink) {
                 window.location.href = link;
             }
         });
@@ -432,14 +451,15 @@
                 text: 'Apakah Anda yakin ingin mengakhiri sesi dan keluar dari sistem?',
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#dc3545',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: '<i class="bi bi-box-arrow-right me-1"></i> Ya, Keluar',
+                confirmButtonText: '<i class="bi bi-box-arrow-right me-1.5"></i> Ya, Keluar',
                 cancelButtonText: 'Batal',
                 reverseButtons: true,
                 customClass: {
-                    confirmButton: 'btn btn-danger rounded-pill px-4',
-                    cancelButton: 'btn btn-secondary rounded-pill px-4'
+                    popup: 'rounded-4 shadow-lg border-0 p-4',
+                    title: 'fw-bold text-dark fs-5 mb-2',
+                    htmlContainer: 'text-muted small mb-4',
+                    confirmButton: 'btn btn-danger btn-tactile rounded-pill px-4 py-2 fw-semibold shadow-sm',
+                    cancelButton: 'btn btn-secondary btn-tactile rounded-pill px-4 py-2 fw-semibold shadow-sm'
                 },
                 buttonsStyling: false
             }).then((result) => {

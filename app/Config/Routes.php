@@ -80,6 +80,7 @@ $routes->post('notifications/read-all', 'NotificationController::markAllAsRead')
 
     // Log Keamanan Aktivitas
     $routes->get('admin/audit-logs', 'Admin\AuditLogController::index');
+    $routes->get('admin/audit-logs/export', 'Admin\AuditLogController::exportExcel');
 
     // Master Data Group
     $routes->group('master-data', function ($routes) {
@@ -189,7 +190,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
 
     // --- Laporan Kinerja Harian ---
     $routes->match(['get', 'post'], 'laporan-harian', 'User\LaporanHarianController::index');
-    $routes->get('laporan-harian/get-previous-targets', 'User\LaporanHarianController::getPreviousTargets');
+    $routes->match(['get', 'post'], 'laporan-harian/get-previous-targets', 'User\LaporanHarianController::getPreviousTargets');
     $routes->post('laporan-harian/store', 'User\LaporanHarianController::store');
     $routes->post('laporan-harian/hapus', 'User\LaporanHarianController::hapus');
     $routes->post('laporan-harian/approve', 'User\LaporanHarianController::approve');
@@ -227,10 +228,11 @@ $routes->group('ecc', ['filter' => 'auth'], function ($routes) {
     $routes->get('lkps', 'EccController::lkps');
 });
 
-// Kepegawaian Routes (Multi-Role: kepegawaian, admin)
+// Kepegawaian Routes (Multi-Role: kepegawaian, admin, direktur, wadir, kabag)
 $routes->group('kepegawaian', ['filter' => 'auth'], function ($routes) {
     $routes->get('/', 'Kepegawaian\DashboardKepegawaian::index');
     $routes->get('export-excel', 'Kepegawaian\DashboardKepegawaian::exportExcel');
+    $routes->get('export-pdf', 'Kepegawaian\DashboardKepegawaian::exportPdf');
     $routes->get('detail-pegawai', 'Kepegawaian\DashboardKepegawaian::getDetailPegawai');
 });
 

@@ -74,12 +74,17 @@ class TimController extends BaseController
     public function addStaf()
     {
         $stafId = $this->request->getPost('staf_id');
-        $myId = session()->get('id');
+        $myId = session()->get('id') ?? session()->get('user_id');
         $me = $this->userModel->find($myId);
         $myUnit = $me['unit'] ?? '';
 
-        if (empty($stafId)) {
-            return redirect()->back()->with('error', 'Silakan pilih pegawai.');
+        if (empty($stafId) || (int)$stafId === (int)$myId) {
+            return redirect()->back()->with('error', 'Silakan pilih pegawai yang valid.');
+        }
+
+        $targetUser = $this->userModel->find($stafId);
+        if (!$targetUser || in_array($targetUser['role'], ['admin', 'direktur'])) {
+            return redirect()->back()->with('error', 'Pengguna tersebut tidak dapat ditambahkan sebagai anggota tim.');
         }
 
         $this->userModel->update($stafId, [

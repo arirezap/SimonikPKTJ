@@ -11,7 +11,7 @@ class PenilaianKinerjaController extends BaseController
     public function index()
     {
         $logModel = new \App\Models\LogKegiatanHarian();
-        $laporanModel = new \App\Models\LaporanHarian();
+        $laporanModel = new \App\Models\TargetKinerja();
         $userModel = new User();
 
         $userId = session()->get('id') ?? session()->get('user_id');
@@ -264,9 +264,18 @@ class PenilaianKinerjaController extends BaseController
             foreach ($laporan_ids as $index => $idLaporan) {
                 if (empty($idLaporan)) continue;
 
+                $valRaw = isset($nilai_capaian_arr[$index]) ? trim((string)$nilai_capaian_arr[$index]) : '';
+                $valScore = null;
+                if ($valRaw !== '') {
+                    $valClean = str_replace(',', '.', $valRaw);
+                    if (is_numeric($valClean)) {
+                        $valScore = min(150.0, max(0.0, (float)$valClean));
+                    }
+                }
+
                 $rowUpdate = [
                     'id' => $idLaporan,
-                    'nilai_capaian' => $nilai_capaian_arr[$index] !== '' ? $nilai_capaian_arr[$index] : null,
+                    'nilai_capaian' => $valScore,
                     'status_penilaian' => $statusPenilaian,
                 ];
 
@@ -293,10 +302,18 @@ class PenilaianKinerjaController extends BaseController
                 if (empty($idTambahan)) continue;
 
                 $valScore = null;
-                if ($nilai_tambahan_gabungan !== null && $nilai_tambahan_gabungan !== '') {
-                    $valScore = (float)$nilai_tambahan_gabungan;
-                } elseif (isset($nilai_tambahan_arr[$index]) && $nilai_tambahan_arr[$index] !== '') {
-                    $valScore = (float)$nilai_tambahan_arr[$index];
+                $rawScoreTmb = null;
+                if ($nilai_tambahan_gabungan !== null && trim((string)$nilai_tambahan_gabungan) !== '') {
+                    $rawScoreTmb = trim((string)$nilai_tambahan_gabungan);
+                } elseif (isset($nilai_tambahan_arr[$index]) && trim((string)$nilai_tambahan_arr[$index]) !== '') {
+                    $rawScoreTmb = trim((string)$nilai_tambahan_arr[$index]);
+                }
+
+                if ($rawScoreTmb !== null && $rawScoreTmb !== '') {
+                    $cleanedTmb = str_replace(',', '.', $rawScoreTmb);
+                    if (is_numeric($cleanedTmb)) {
+                        $valScore = min(100.0, max(0.0, (float)$cleanedTmb));
+                    }
                 }
 
                 $rowUpdate = [
@@ -320,7 +337,7 @@ class PenilaianKinerjaController extends BaseController
 
         // Audit log & Notifikasi hanya jika benar-benar diterbitkan (submit)
         if ($statusPenilaian === 'terbit' && (!empty($dataToUpdate) || !empty($dataTambahanToUpdate))) {
-            log_audit('APPROVE', 'laporan_harian/log_tugas_tambahan', 'batch_nilai', null, [$dataToUpdate, $dataTambahanToUpdate]);
+            log_audit('APPROVE', 'target_kinerja_bulanan/log_tugas_tambahan', 'batch_nilai', null, [$dataToUpdate, $dataTambahanToUpdate]);
             
             $targetUserId = session()->get('penilaian_staf_id');
             if (!$targetUserId && !empty($dataToUpdate)) {

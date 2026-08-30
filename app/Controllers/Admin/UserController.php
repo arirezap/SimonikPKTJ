@@ -528,6 +528,11 @@ class UserController extends BaseController
             return redirect()->to('users')->with('error', 'Pengguna tidak ditemukan.');
         }
 
+        $currentUserId = session()->get('id') ?? session()->get('user_id');
+        if ($user['username'] === 'admin' || $user['role'] === 'admin' || (int)$id === (int)$currentUserId) {
+            return redirect()->to('users')->with('error', 'Akun Administrator utama atau akun Anda sendiri tidak dapat dihapus demi keamanan sistem.');
+        }
+
         // Hapus foto jika ada dan bukan file default
         if (!empty($user['foto']) && $user['foto'] !== 'default.png') {
             $fotoPath = 'assets/uploads/profile/' . basename($user['foto']);
@@ -536,9 +541,12 @@ class UserController extends BaseController
             }
         }
 
-        // Hapus entri multi-roles di user_roles
         $db = \Config\Database::connect();
+        // Hapus entri multi-roles di user_roles
         $db->table('user_roles')->where('user_id', $id)->delete();
+
+        // Reset atasan_id pada staf yang dipimpin oleh user ini agar tidak terjadi orphan link
+        $this->userModel->where('atasan_id', $id)->set(['atasan_id' => 0])->update();
 
         $this->userModel->delete($id);
         log_audit('DELETE', 'users', $id, $user, null);
@@ -707,8 +715,18 @@ class UserController extends BaseController
         }
 
         if (!empty($dataToInsert)) {
-            $this->userModel->insertBatch($dataToInsert);
-            $insertedCount = count($dataToInsert);
+            $db = \Config\Database::connect();
+            foreach ($dataToInsert as $newUserData) {
+                $newId = $this->userModel->insert($newUserData);
+                if ($newId) {
+                    $db->table('user_roles')->insert([
+                        'user_id'    => $newId,
+                        'role_name'  => strtolower($newUserData['role']),
+                        'created_at' => date('Y-m-d H:i:s')
+                    ]);
+                    $insertedCount++;
+                }
+            }
         }
 
         if ($insertedCount > 0) {
@@ -743,9 +761,9 @@ class UserController extends BaseController
             return redirect()->back()->with('error', 'Data tidak lengkap untuk melakukan reset.');
         }
 
-        // Ambil ID target dari laporan_harian (sebagai referensi jika diperlukan)
-        $laporanHarianModel = new \App\Models\LaporanHarian();
-        $targetData = $laporanHarianModel->where('user_id', $userId)
+        // Ambil ID target dari target_kinerja_bulanan (sebagai referensi jika diperlukan)
+        $targetKinerjaModel = new \App\Models\TargetKinerja();
+        $targetData = $targetKinerjaModel->where('user_id', $userId)
                                          ->where('bulan', $bulan)
                                          ->where('tahun', $tahun)
                                          ->findAll();
@@ -761,9 +779,9 @@ class UserController extends BaseController
                          ->where('YEAR(tanggal_kegiatan)', $tahun)
                          ->delete();
 
-        // 2. Hapus Target Kinerja Bulanan (laporan_harian)
+        // 2. Hapus Target Kinerja Bulanan (target_kinerja_bulanan)
         if (!empty($targetIds)) {
-            $laporanHarianModel->whereIn('id', $targetIds)->delete();
+            $targetKinerjaModel->whereIn('id', $targetIds)->delete();
         }
 
         // 3. Hapus Nilai Rekap Remunerasi

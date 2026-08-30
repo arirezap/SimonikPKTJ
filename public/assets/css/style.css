@@ -1,6 +1,6 @@
 /* ===================================================================
    EVIDENCE COMMAND CENTER (ECC) — CORE STYLESHEET
-   Version: 1.2.0 (Optimized & Consolidated)
+   Version: 1.3.0 (Enterprise Production Release)
    =================================================================== */
 
 /* -------------------------------------------------------------------
@@ -77,17 +77,32 @@ body {
     width: var(--sidebar-width);
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
-    height: 100%;
-    align-self: stretch;
+    height: 100vh;
+    max-height: 100vh;
     position: sticky;
     top: 0;
-    padding: 1.15rem 0.75rem;
+    padding: 1.15rem 0.75rem 2rem 0.75rem;
     background: #ffffff !important;
     border-right: 1px solid rgba(0, 0, 0, 0.05);
     z-index: 100;
-    overflow-y: auto;
+    overflow-y: auto !important;
     overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+}
+
+.sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+.sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.35);
+    border-radius: 10px;
+}
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.6);
 }
 
 .sidebar-header {
@@ -286,19 +301,16 @@ body {
     font-size: 1.2rem;
 }
 
-/* Desktop Fly-out Submenu with Invisible Bridge (>= 992px) */
+/* Desktop Fly-out Submenu for Mini Sidebar Only (>= 992px) */
 @media (min-width: 992px) {
-    .sidebar, .sidebar-menu {
-        overflow: visible !important;
-    }
-    .sidebar .sidebar-toggle-icon {
+    .sidebar-toggled .sidebar .sidebar-toggle-icon {
         transform: rotate(-90deg);
         transition: transform 0.2s;
     }
-    .sidebar .nav-item {
+    .sidebar-toggled .sidebar .nav-item {
         position: relative;
     }
-    .sidebar .collapse {
+    .sidebar-toggled .sidebar .collapse {
         display: none;
         position: absolute;
         left: 100%;
@@ -307,12 +319,12 @@ body {
         background: #ffffff;
         border: 1px solid #e9ecef;
         box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.1);
-        border-radius: 0 6px 6px 6px;
+        border-radius: 0 8px 8px 8px;
         z-index: 9999;
         padding: 0.5rem 0;
         margin-left: 2px;
     }
-    .sidebar .collapse::before {
+    .sidebar-toggled .sidebar .collapse::before {
         content: "";
         position: absolute;
         top: 0;
@@ -322,7 +334,7 @@ body {
         background: transparent;
         display: block;
     }
-    .sidebar .nav-item:hover > .collapse {
+    .sidebar-toggled .sidebar .nav-item:hover > .collapse {
         display: block !important;
         height: auto !important;
         visibility: visible !important;
@@ -333,24 +345,24 @@ body {
         from { opacity: 0; transform: translateX(-5px); }
         to { opacity: 1; transform: translateX(0); }
     }
-    .sidebar .collapse .nav-link {
+    .sidebar-toggled .sidebar .collapse .nav-link {
         justify-content: flex-start;
         padding: 8px 15px;
         color: #495057;
         border-radius: 0;
         margin-bottom: 0;
     }
-    .sidebar .collapse .nav-link span {
+    .sidebar-toggled .sidebar .collapse .nav-link span {
         display: inline-block !important;
         font-size: 0.85rem;
         white-space: normal;
     }
-    .sidebar .collapse .nav-link:hover {
+    .sidebar-toggled .sidebar .collapse .nav-link:hover {
         background-color: #f8f9fa;
-        color: var(--primary-color);
+        color: var(--ecc-primary);
         font-weight: 500;
     }
-    .sidebar .collapse .nav-link.sub-link {
+    .sidebar-toggled .sidebar .collapse .nav-link.sub-link {
         padding-left: 15px !important;
     }
 }
@@ -1436,6 +1448,72 @@ body.login-page {
     transform: scale(0.97) !important;
 }
 
+/* Dynamic Table Row Insertion (Slide-In with Soft Highlight) */
+@keyframes rowSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+        background-color: rgba(13, 110, 253, 0.08);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        background-color: transparent;
+    }
+}
+.row-slide-in {
+    animation: rowSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Dynamic Table Row Removal (Slide-Out with Scale Decay) */
+@keyframes rowSlideOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.96) translateX(12px);
+    }
+}
+.row-slide-out {
+    animation: rowSlideOut 0.22s ease-out forwards;
+    pointer-events: none;
+}
+
+/* Dynamic Satuan Badge Pop Transition */
+@keyframes badgePop {
+    0% { transform: scale(0.85); opacity: 0.5; }
+    60% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); }
+}
+.badge-satuan-pop {
+    animation: badgePop 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Duplicate Highlight Pulse */
+@keyframes pulseDuplicate {
+    0% { background-color: rgba(220, 53, 69, 0.05); }
+    50% { background-color: rgba(220, 53, 69, 0.25); }
+    100% { background-color: rgba(220, 53, 69, 0.12); }
+}
+.table-danger, .table-danger-pulse {
+    animation: pulseDuplicate 0.4s ease-in-out;
+}
+
+/* Modal Pop-In & Backdrop Blur */
+.modal.fade .modal-dialog {
+    transform: scale(0.96) translateY(-8px);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.modal.show .modal-dialog {
+    transform: scale(1) translateY(0);
+}
+.modal-backdrop.show {
+    backdrop-filter: blur(4px);
+    background-color: rgba(15, 23, 42, 0.45);
+}
+
 /* Table Active Pulse Glow (Chart Click-to-Scroll) */
 @keyframes tableRowPulse {
     0% { background-color: rgba(13, 110, 253, 0.3); }
@@ -1445,6 +1523,136 @@ body.login-page {
 
 .table-active-pulse {
     animation: tableRowPulse 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* -------------------------------------------------------------------
+   14. SWEETALERT2 ECC DESIGN SYSTEM TOKENS
+   ------------------------------------------------------------------- */
+.swal2-popup {
+    border-radius: 1.25rem !important; /* 20px - Matches .rounded-4 */
+    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.2), 0 0 0 1px rgba(226, 232, 240, 0.8) !important;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+    padding: 1.75rem !important;
+    border: none !important;
+}
+
+.swal2-popup.swal2-toast {
+    border-radius: 1rem !important;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 0 0 1px rgba(226, 232, 240, 0.8) !important;
+    padding: 0.85rem 1.25rem !important;
+}
+
+.swal2-title {
+    font-weight: 700 !important;
+    color: var(--text-dark) !important;
+    font-size: 1.2rem !important;
+    letter-spacing: -0.02em !important;
+}
+
+.swal2-html-container {
+    color: var(--text-gray) !important;
+    font-size: 0.9rem !important;
+    line-height: 1.5 !important;
+}
+
+.swal2-actions {
+    gap: 0.65rem !important;
+    margin-top: 1.25rem !important;
+}
+
+.swal2-styled.swal2-confirm {
+    border-radius: 50rem !important;
+    font-weight: 600 !important;
+    padding: 0.6rem 1.5rem !important;
+    font-size: 0.875rem !important;
+    transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease !important;
+}
+
+.swal2-styled.swal2-confirm:active {
+    transform: scale(0.97) !important;
+}
+
+.swal2-styled.swal2-cancel {
+    border-radius: 50rem !important;
+    font-weight: 600 !important;
+    padding: 0.6rem 1.5rem !important;
+    font-size: 0.875rem !important;
+    transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease !important;
+}
+
+.swal2-styled.swal2-cancel:active {
+    transform: scale(0.97) !important;
+}
+
+.swal2-timer-progress-bar {
+    background: linear-gradient(90deg, #10b981, #059669) !important;
+    height: 3px !important;
+}
+
+/* -------------------------------------------------------------------
+   14. ECC STANDARDIZED LOADING ALERTS & ASYNC EXPORT OVERLAYS
+   ------------------------------------------------------------------- */
+.ecc-loading-popup {
+    border-radius: 1.25rem !important;
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.15), 0 0 0 1px rgba(15, 23, 42, 0.05) !important;
+    padding: 2rem 1.75rem !important;
+    backdrop-filter: blur(8px) !important;
+}
+
+.ecc-loading-spinner-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1.25rem;
+    border-radius: 50%;
+    background: rgba(13, 110, 253, 0.08);
+    position: relative;
+}
+
+.ecc-loading-spinner {
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 3px solid rgba(13, 110, 253, 0.2);
+    border-top-color: #0d6efd;
+    border-radius: 50%;
+    animation: ecc-spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.ecc-loading-title {
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    margin-bottom: 0.35rem !important;
+}
+
+.ecc-loading-desc {
+    font-size: 0.875rem !important;
+    color: #64748b !important;
+    line-height: 1.5 !important;
+    margin: 0 auto !important;
+    max-width: 340px !important;
+}
+
+.ecc-loading-badge-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 50rem;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 0.85rem;
+}
+
+@keyframes ecc-spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* Accessibility Reduced Motion */
@@ -1460,6 +1668,13 @@ body.login-page {
     .tab-content > .tab-pane,
     .btn-tactile,
     .btn,
+    .row-slide-in,
+    .row-slide-out,
+    .badge-satuan-pop,
+    .table-danger,
+    .table-danger-pulse,
+    .modal.fade .modal-dialog,
+    .table-active-pulse,
     #notifBadge,
     .notif-unread-dot,
     .notif-empty-icon,
@@ -1467,7 +1682,11 @@ body.login-page {
     .notif-item,
     #notifDropdownToggle,
     #notifDropdownToggle:hover i.bi-bell-fill,
-    .version-badge {
+    .version-badge,
+    .swal2-popup,
+    .swal2-styled,
+    .ecc-loading-popup,
+    .ecc-loading-spinner {
         animation: none !important;
         transition: none !important;
         transform: none !important;

@@ -324,7 +324,7 @@
                                         </td>
                                         <td class="col-capaian-log">
                                             <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
-                                                <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-primary" placeholder="0" value="<?= (float)$row['jumlah_capaian'] ?>">
+                                                <input type="number" step="any" min="0.0001" name="jumlah_capaian[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-primary" placeholder="0" value="<?= (float)$row['jumlah_capaian'] ?>">
                                                 <span class="input-group-text badge-capaian-satuan bg-light" title="<?= esc($row['satuan'] ?? '-') ?>"><?= esc($row['satuan'] ?? '-') ?></span>
                                             </div>
                                         </td>
@@ -362,7 +362,7 @@
                                 </td>
                                 <td class="col-capaian-log">
                                     <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
-                                        <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-primary" placeholder="0">
+                                        <input type="number" step="any" min="0.0001" name="jumlah_capaian[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-primary" placeholder="0">
                                         <span class="input-group-text badge-capaian-satuan bg-light">-</span>
                                     </div>
                                 </td>
@@ -441,7 +441,7 @@
                                         </td>
                                         <td class="col-capaian-log">
                                             <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
-                                                <input type="number" step="0.01" name="jumlah_capaian_tambahan[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-success" placeholder="0" value="<?= isset($rowTmb['jumlah_capaian']) ? (float)$rowTmb['jumlah_capaian'] : '' ?>">
+                                                <input type="number" step="any" min="0.0001" name="jumlah_capaian_tambahan[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-success" placeholder="0" value="<?= isset($rowTmb['jumlah_capaian']) ? (float)$rowTmb['jumlah_capaian'] : '' ?>">
                                                 <input type="text" name="satuan_tambahan[]" class="form-control input-satuan-val text-center" placeholder="Satuan" list="daftarSatuanStandar" value="<?= esc($rowTmb['satuan'] ?? '') ?>" title="<?= esc($rowTmb['satuan'] ?? '') ?>">
                                             </div>
                                         </td>
@@ -857,9 +857,10 @@
                         deskripsiElem.addClass('is-invalid');
                         missingCols.push('Deskripsi Kegiatan');
                     }
-                    if (capaian === '') {
+                    let capaianVal = parseFloat(capaian.replace(',', '.'));
+                    if (capaian === '' || isNaN(capaianVal) || capaianVal <= 0) {
                         capaianElem.addClass('is-invalid');
-                        missingCols.push('Jumlah Capaian');
+                        missingCols.push(capaianVal <= 0 ? 'Jumlah Capaian (> 0)' : 'Jumlah Capaian');
                     }
                     if (!link || link === 'https://...') {
                         linkElem.addClass('is-invalid');
@@ -892,9 +893,10 @@
                         deskripsiElem.addClass('is-invalid');
                         missingCols.push('Deskripsi Kegiatan');
                     }
-                    if (capaianTmb === '') {
+                    let capaianValTmb = parseFloat(capaianTmb.replace(',', '.'));
+                    if (capaianTmb === '' || isNaN(capaianValTmb) || capaianValTmb <= 0) {
                         capaianElem.addClass('is-invalid');
-                        missingCols.push('Jumlah Capaian');
+                        missingCols.push(capaianValTmb <= 0 ? 'Jumlah Capaian (> 0)' : 'Jumlah Capaian');
                     }
                     if (!linkTmb || linkTmb === 'https://...') {
                         linkElem.addClass('is-invalid');

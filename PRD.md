@@ -70,12 +70,11 @@ Sistem menerapkan konsep pemisahan tugas menggunakan arsitektur **Tabel Pivot (M
 - [x] Modul Kepegawaian (Rekap Nilai Remunerasi) & Export Excel.
 - [x] Log Aktivitas Sistem (Audit Trail) dengan Live Search, Date Range Filter, & JSON Viewer Modal.
 - [x] Normalisasi Relasi Unit Kerja (`users.unit_id`) & Cascading Sync.
-- [x] Smart Indexing & Optimasi Database v1.2.
-
+- [x] Smart Indexing & Optimasi Database v1.3.
 - [x] Refactoring & Optimalisasi Modul Laporan Kinerja & Log Kegiatan Harian.
 - [x] Modul Evidence Command Center (ECC LED & Simulasi Penilaian).
-- [x] Modul Notifikasi Auto-Sync Hari Libur Nasional API.
+- [x] Modul Notifikasi Auto-Sync Hari Libur Nasional API & History Retention.
 - [x] Sistem Layout Utama, Pembatasan Role Sidebar, & Dynamic CSRF Protection.
-- [x] Mekanisme Automatic Anti-Cache Busting v1.2 (`style.css?v=1.2.TIMESTAMP`).
+- [x] Mekanisme Automatic Anti-Cache Busting v1.3 (`style.css?v=1.3.TIMESTAMP`).
 - [x] Grafik Historis (Chart.js) pada *dashboard* user untuk melihat tren kinerja pribadi selama setahun.
-- [x] Rilis Resmi Versi 1.2: Penyelesaian Audit 7-Pilar Menyeluruh 11 Halaman.
+- [x] Rilis Resmi Versi 1.3: Penyelesaian Audit 8-Pilar Menyeluruh Seluruh Modul Sistem (31 Agustus 2026).

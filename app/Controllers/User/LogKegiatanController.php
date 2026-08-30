@@ -4,14 +4,14 @@ namespace App\Controllers\User;
 
 use App\Controllers\BaseController;
 use App\Models\LogKegiatanHarian;
-use App\Models\LaporanHarian;
+use App\Models\TargetKinerja;
 
 class LogKegiatanController extends BaseController
 {
     public function index()
     {
         $logModel = new LogKegiatanHarian();
-        $targetModel = new LaporanHarian();
+        $targetModel = new TargetKinerja();
 
         $userId = session()->get('id') ?? session()->get('user_id');
         
@@ -151,7 +151,7 @@ class LogKegiatanController extends BaseController
         $tahunTerpilih = date('Y', strtotime($tanggal));
 
         // Cek persetujuan target bulanan
-        $targetModel = new LaporanHarian();
+        $targetModel = new TargetKinerja();
         $allTargets = $targetModel->where('user_id', $userId)
                                   ->where('bulan', $bulanTerpilih)
                                   ->where('tahun', $tahunTerpilih)
@@ -310,14 +310,23 @@ class LogKegiatanController extends BaseController
 
                 $capaianStr = trim((string)($jumlah_capaian_arr[$index] ?? ''));
                 $capaianValNum = str_replace(',', '.', $capaianStr);
-                if ($capaianStr === '' || !is_numeric($capaianValNum)) {
+                if ($capaianStr === '' || !is_numeric($capaianValNum) || (float)$capaianValNum <= 0) {
                     if (!$isDraft) {
                         if ($this->request->isAJAX()) {
-                            return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Pokok harus diisi angka yang valid.', 'csrf_hash' => csrf_hash()]);
+                            return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Pokok harus diisi angka lebih dari 0 (tidak boleh 0 atau bernilai negatif).', 'csrf_hash' => csrf_hash()]);
                         }
-                        return redirect()->back()->with('error', 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Pokok harus diisi angka yang valid.');
+                        return redirect()->back()->with('error', 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Pokok harus diisi angka lebih dari 0 (tidak boleh 0 atau bernilai negatif).');
                     }
-                    $capaianValNum = 0.00;
+                    if ($capaianStr !== '' && (float)$capaianValNum <= 0) {
+                        if ($this->request->isAJAX()) {
+                            return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Pokok harus lebih besar dari 0 (tidak boleh 0 atau negatif).', 'csrf_hash' => csrf_hash()]);
+                        }
+                        return redirect()->back()->with('error', 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Pokok harus lebih besar dari 0 (tidak boleh 0 atau negatif).');
+                    }
+                    $capaianValNum = null;
+                }
+                if ($capaianValNum === null && $isDraft) {
+                    continue; // Lewati jika draf dan capaian belum diisi
                 }
 
                 $linkBukti = !empty($link_bukti_arr[$index]) ? trim((string)$link_bukti_arr[$index]) : null;
@@ -370,14 +379,23 @@ class LogKegiatanController extends BaseController
                 
                 $capaianStrTmb = trim((string)($jumlah_capaian_tambahan_arr[$index] ?? ''));
                 $capaianValNumTmb = str_replace(',', '.', $capaianStrTmb);
-                if ($capaianStrTmb === '' || !is_numeric($capaianValNumTmb)) {
+                if ($capaianStrTmb === '' || !is_numeric($capaianValNumTmb) || (float)$capaianValNumTmb <= 0) {
                     if (!$isDraft) {
                         if ($this->request->isAJAX()) {
-                            return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Tambahan harus diisi angka yang valid.', 'csrf_hash' => csrf_hash()]);
+                            return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Tambahan harus diisi angka lebih dari 0 (tidak boleh 0 atau bernilai negatif).', 'csrf_hash' => csrf_hash()]);
                         }
-                        return redirect()->back()->with('error', 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Tambahan harus diisi angka yang valid.');
+                        return redirect()->back()->with('error', 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Tambahan harus diisi angka lebih dari 0 (tidak boleh 0 atau bernilai negatif).');
                     }
-                    $capaianValNumTmb = 0.00;
+                    if ($capaianStrTmb !== '' && (float)$capaianValNumTmb <= 0) {
+                        if ($this->request->isAJAX()) {
+                            return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Tambahan harus lebih besar dari 0 (tidak boleh 0 atau negatif).', 'csrf_hash' => csrf_hash()]);
+                        }
+                        return redirect()->back()->with('error', 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Tambahan harus lebih besar dari 0 (tidak boleh 0 atau negatif).');
+                    }
+                    $capaianValNumTmb = null;
+                }
+                if ($capaianValNumTmb === null && $isDraft) {
+                    continue; // Lewati jika draf dan capaian belum diisi
                 }
 
                 $satuanTmb = !empty($satuan_tambahan_arr[$index]) ? trim((string)$satuan_tambahan_arr[$index]) : 'Kegiatan';
@@ -550,19 +568,12 @@ class LogKegiatanController extends BaseController
                 if (empty($deskripsi)) continue;
 
                 $capaianStrTmb = trim((string)($jumlah_capaian_tambahan_arr[$index] ?? ''));
-                if ($capaianStrTmb === '') {
-                    if ($this->request->isAJAX()) {
-                        return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Tambahan tidak boleh kosong. Harap isi angka (minimal 0).', 'csrf_hash' => csrf_hash()]);
-                    }
-                    return redirect()->back()->with('error', 'Gagal menyimpan. Kolom Jumlah Capaian tidak boleh kosong. Harap isi angka (minimal 0).');
-                }
-
                 $capaianValNumTmb = str_replace(',', '.', $capaianStrTmb);
-                if (!is_numeric($capaianValNumTmb)) {
+                if ($capaianStrTmb === '' || !is_numeric($capaianValNumTmb) || (float)$capaianValNumTmb <= 0) {
                     if ($this->request->isAJAX()) {
-                        return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Format Jumlah Capaian pada Tugas Tambahan tidak valid.', 'csrf_hash' => csrf_hash()]);
+                        return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Tambahan harus diisi angka lebih dari 0 (tidak boleh 0 atau bernilai negatif).', 'csrf_hash' => csrf_hash()]);
                     }
-                    return redirect()->back()->with('error', 'Gagal menyimpan. Format Jumlah Capaian tidak valid.');
+                    return redirect()->back()->with('error', 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Tambahan harus diisi angka lebih dari 0 (tidak boleh 0 atau bernilai negatif).');
                 }
 
                 $rowData = [
@@ -696,7 +707,7 @@ class LogKegiatanController extends BaseController
             // Ubah status log_kegiatan_harian kembali menjadi 'draft'
             $logModel->where('user_id', $targetUserId)
                      ->where('tanggal_kegiatan', $tanggal)
-                     ->set(['status' => 'draft', 'status_approval' => 'menunggu_persetujuan'])
+                     ->set(['status' => 'draft'])
                      ->update();
 
             // Ubah status log_tugas_tambahan kembali menjadi 'draft'

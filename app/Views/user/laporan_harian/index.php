@@ -213,7 +213,7 @@
                         </div>
                         <div class="col-sm-6 col-md-2">
                             <label class="form-label fw-bold text-dark small mb-1" style="font-size: 0.72rem; letter-spacing: 0.3px;"><i class="bi bi-calendar-date text-primary me-1"></i> Tahun</label>
-                            <input type="number" name="tahun" class="form-control form-select-sm shadow-sm filter-select" value="<?= esc($tahun_terpilih) ?>" onchange="this.form.submit()">
+                            <input type="number" name="tahun" class="form-control form-select-sm shadow-sm filter-select num-tabular" value="<?= esc($tahun_terpilih) ?>" min="2020" max="2099" onchange="this.form.submit()">
                         </div>
                         <div class="col-md-7 text-muted pt-sm-3 small">
                             <i class="bi bi-info-circle text-primary me-1"></i> Rancang dan kelola target kinerja bulanan Anda pada tabel di bawah.
@@ -315,7 +315,7 @@
                                                 <textarea name="indikator_kinerja[]" class="form-control form-control-sm" rows="2" placeholder="Indikator / RHK..." <?= $isRowLocked ? 'readonly' : '' ?>><?= esc($row['indikator_kinerja']) ?></textarea>
                                             </td>
                                             <td>
-                                                <input type="number" step="0.01" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary input-target-val" placeholder="Target" value="<?= isset($row['target_bulanan']) && $row['target_bulanan'] !== null ? (float)$row['target_bulanan'] : '' ?>" <?= $isRowLocked ? 'readonly' : '' ?>>
+                                                <input type="number" step="any" min="0.0001" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary input-target-val" placeholder="Target" value="<?= isset($row['target_bulanan']) && $row['target_bulanan'] !== null ? (float)$row['target_bulanan'] : '' ?>" <?= $isRowLocked ? 'readonly' : '' ?>>
                                             </td>
                                             <td>
                                                 <input type="text" name="satuan[]" class="form-control form-control-sm text-center input-satuan-val" placeholder="Satuan" list="daftarSatuanStandar" value="<?= esc($row['satuan']) ?>" title="<?= esc($row['satuan']) ?>" <?= $isRowLocked ? 'readonly' : '' ?>>
@@ -343,7 +343,7 @@
                                         <td class="nomor-baris text-center fw-bold text-muted">1</td>
                                         <td><textarea name="sasaran_program[]" class="form-control form-control-sm" rows="2" placeholder="Sasaran Program Unit..."></textarea></td>
                                         <td><textarea name="indikator_kinerja[]" class="form-control form-control-sm" rows="2" placeholder="Indikator / RHK..."></textarea></td>
-                                        <td><input type="number" step="0.01" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary input-target-val" placeholder="Target"></td>
+                                        <td><input type="number" step="any" min="0.0001" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary input-target-val" placeholder="Target"></td>
                                         <td><input type="text" name="satuan[]" class="form-control form-control-sm text-center input-satuan-val" placeholder="Satuan" list="daftarSatuanStandar"></td>
                                         <td class="text-center"><span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 status-badge"><i class="bi bi-pencil me-1"></i> Draf Baru</span></td>
                                         <td class="text-center">
@@ -418,7 +418,7 @@
                         </div>
                         <div class="col-sm-6 col-md-2">
                             <label class="form-label fw-bold text-dark small mb-1" style="font-size: 0.72rem; letter-spacing: 0.3px;"><i class="bi bi-calendar-date text-primary me-1"></i> Tahun</label>
-                            <input type="number" name="tahun" class="form-control form-select-sm shadow-sm filter-select" value="<?= esc($tahun_terpilih) ?>" onchange="this.form.submit()">
+                            <input type="number" name="tahun" class="form-control form-select-sm shadow-sm filter-select num-tabular" value="<?= esc($tahun_terpilih) ?>" min="2020" max="2099" onchange="this.form.submit()">
                         </div>
                     </div>
                 </form>
@@ -466,6 +466,7 @@
                                             <th class="col-target text-center">Target</th>
                                             <th class="col-satuan text-center">Satuan</th>
                                             <th class="col-status text-center">Status</th>
+                                            <th style="width: 55px; display: none;" class="text-center col-aksi-staf">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -481,7 +482,7 @@
                                                     <textarea name="indikator_kinerja[]" class="form-control form-control-sm staf-input <?= $isStafApproved ? 'locked-approved' : '' ?>" rows="2" required readonly><?= esc($row['indikator_kinerja']) ?></textarea>
                                                 </td>
                                                 <td>
-                                                    <input type="number" step="0.01" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary staf-input input-target-val <?= $isStafApproved ? 'locked-approved' : '' ?>" value="<?= (float)$row['target_bulanan'] ?>" required readonly>
+                                                    <input type="number" step="any" min="0.0001" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary staf-input input-target-val <?= $isStafApproved ? 'locked-approved' : '' ?>" value="<?= (float)$row['target_bulanan'] ?>" required readonly>
                                                 </td>
                                                 <td>
                                                     <input type="text" name="satuan[]" class="form-control form-control-sm text-center staf-input input-satuan-val <?= $isStafApproved ? 'locked-approved' : '' ?>" list="daftarSatuanStandar" value="<?= esc($row['satuan']) ?>" title="<?= esc($row['satuan']) ?>" required readonly>
@@ -495,6 +496,11 @@
                                                         <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2.5 py-1 status-badge"><i class="bi bi-pencil me-1"></i> Draf</span>
                                                     <?php endif; ?>
                                                 </td>
+                                                <td class="text-center col-aksi-staf" style="display: none;">
+                                                    <?php if (!$isStafApproved): ?>
+                                                    <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris btn-hapus-staf" data-id="<?= esc($row['id']) ?>" title="Hapus Target" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
+                                                    <?php endif; ?>
+                                                </td>
                                             </tr>
                                         <?php endforeach; ?>
                                     </tbody>
@@ -502,13 +508,20 @@
                             </div>
                             
                             <?php if (!$allApprovedStaf): ?>
-                            <div class="d-flex justify-content-end gap-2 mt-4 btn-action-container bento-stagger bento-stagger-3">
-                                <button type="submit" id="btnApproveAll" formaction="<?= site_url('laporan-harian/approve-all') ?>" class="btn btn-success btn-tactile rounded-pill shadow-sm px-4 py-2 fw-bold">
-                                    <i class="bi bi-check-all me-1.5"></i> Setujui Semua
-                                </button>
-                                <button type="button" id="btnEditStaf" class="btn btn-primary btn-tactile rounded-pill shadow-sm px-4 py-2 fw-bold">
-                                    <i class="bi bi-pencil-square me-1.5"></i> Edit Target
-                                </button>
+                            <div class="d-flex justify-content-between align-items-center mt-4 btn-action-container flex-wrap gap-2 bento-stagger bento-stagger-3">
+                                <div>
+                                    <button type="button" id="btnTambahTargetStaf" class="btn btn-primary btn-tambah-baris-staf btn-tactile rounded-pill shadow-sm px-4 py-2 fw-semibold" style="display: none;">
+                                        <i class="bi bi-plus-circle me-1.5"></i> Tambah Target
+                                    </button>
+                                </div>
+                                <div class="d-flex gap-2 btn-group-mobile">
+                                    <button type="submit" id="btnApproveAll" formaction="<?= site_url('laporan-harian/approve-all') ?>" class="btn btn-success btn-tactile rounded-pill shadow-sm px-4 py-2 fw-bold">
+                                        <i class="bi bi-check-all me-1.5"></i> Setujui Semua
+                                    </button>
+                                    <button type="button" id="btnEditStaf" class="btn btn-primary btn-tactile rounded-pill shadow-sm px-4 py-2 fw-bold">
+                                        <i class="bi bi-pencil-square me-1.5"></i> Edit Target
+                                    </button>
+                                </div>
                             </div>
                             <?php else: ?>
                             <div class="alert alert-success mt-4 mb-0 d-flex justify-content-between align-items-center flex-wrap gap-2 py-2.5 px-3 small rounded-4 shadow-sm bento-stagger bento-stagger-3">
@@ -630,6 +643,15 @@
 <script>
     $(document).ready(function() {
         
+        // Helper untuk menyinkronkan token CSRF ke seluruh form & meta tag di halaman
+        function updateAllCsrfTokens(newHash) {
+            if (!newHash) return;
+            const csrfTokenName = '<?= csrf_token() ?>';
+            $('input[name="' + csrfTokenName + '"]').val(newHash);
+            $('input[name="csrf_test_name"]').val(newHash);
+            $('meta[name="csrf-token"]').attr('content', newHash);
+        }
+
         // Cegah perubahan nilai angka secara tidak sengaja saat pengguna scrolling halaman dengan mouse wheel
         $(document).on('wheel', 'input[type="number"]', function (e) {
             $(this).blur();
@@ -703,7 +725,7 @@
             if (idLaporan && idLaporan.trim() !== '') {
                 const doDelete = function() {
                     let csrfTokenName = '<?= csrf_token() ?>';
-                    let csrfHash = $('input[name="' + csrfTokenName + '"]').val() || '<?= csrf_hash() ?>';
+                    let csrfHash = $('input[name="' + csrfTokenName + '"]').first().val() || $('input[name="csrf_test_name"]').first().val() || '<?= csrf_hash() ?>';
                     
                     let postData = { id: idLaporan };
                     postData[csrfTokenName] = csrfHash;
@@ -715,25 +737,34 @@
                         dataType: 'json',
                         success: function(response) {
                             if (response.csrf_hash) {
-                                $('input[name="' + csrfTokenName + '"]').val(response.csrf_hash);
-                                $('input[name="csrf_test_name"]').val(response.csrf_hash);
+                                updateAllCsrfTokens(response.csrf_hash);
                             }
                             if (response.success) {
                                 animateRemoveRow();
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Terhapus',
-                                    text: 'Target RHK berhasil dihapus.',
-                                    timer: 1500,
-                                    showConfirmButton: false
-                                });
+                                if (typeof Swal !== 'undefined') {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Target Terhapus',
+                                        text: response.message || 'Target RHK berhasil dihapus.',
+                                        timer: (response.affected_logs && response.affected_logs > 0) ? 3500 : 1500,
+                                        showConfirmButton: (response.affected_logs && response.affected_logs > 0)
+                                    });
+                                }
                             } else {
-                                Swal.fire('Gagal', response.message || 'Gagal menghapus data.', 'error');
+                                if (typeof Swal !== 'undefined') {
+                                    Swal.fire('Gagal', response.message || 'Gagal menghapus data.', 'error');
+                                } else {
+                                    alert(response.message || 'Gagal menghapus data.');
+                                }
                             }
                         },
                         error: function(xhr, status, error) {
                             console.error('Hapus Error:', xhr.responseText);
-                            Swal.fire('Error', 'Terjadi kesalahan saat menghapus data. Silakan coba lagi.', 'error');
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire('Error', 'Terjadi kesalahan saat menghapus data. Silakan coba lagi.', 'error');
+                            } else {
+                                alert('Terjadi kesalahan saat menghapus data. Silakan coba lagi.');
+                            }
                         }
                     });
                 };
@@ -741,7 +772,7 @@
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
                         title: 'Hapus Target Bulanan?',
-                        text: 'Target RHK ini akan dihapus dari sistem.',
+                        html: '<p class="mb-2">Target RHK ini akan dihapus dari sistem.</p><p class="small text-muted mb-0"><i class="bi bi-info-circle text-primary me-1"></i> Jika target ini pernah digunakan pada laporan harian, pilihan target kegiatan tersebut akan dikosongkan dan statusnya kembali menjadi <strong>Draf</strong> agar targetnya dapat disesuaikan kembali.</p>',
                         icon: 'warning',
                         showCancelButton: true,
                         confirmButtonColor: '#dc3545',
@@ -754,7 +785,7 @@
                         }
                     });
                 } else {
-                    if (confirm('Hapus target bulanan ini?')) {
+                    if (confirm('Hapus target bulanan ini?\n\nJika target ini pernah digunakan pada laporan harian, status laporan tersebut akan kembali menjadi draf.')) {
                         doDelete();
                     }
                 }
@@ -784,6 +815,12 @@
                     $(this).removeClass('btn-primary').addClass('btn-warning text-dark');
                     $(this).html('<i class="bi bi-check-circle me-1.5"></i> Simpan & Setujui');
                     $('#btnApproveAll').hide(); // Sembunyikan tombol approve all saat mode edit
+                    
+                    // Tampilkan tombol Tambah Target dan kolom Aksi Hapus di tabel staf
+                    $('#btnTambahTargetStaf').fadeIn(200);
+                    $('.form-target-staf .col-aksi-staf').fadeIn(200);
+                    $('.form-target-staf .btn-hapus-staf').css('display', 'inline-flex');
+
                     // Focus ke input pertama yang terbuka
                     $('.form-target-staf .staf-input:not(.locked-approved)').first().focus();
                 } else {
@@ -794,6 +831,30 @@
                     }
                 }
             }
+        });
+
+        // Fungsi Tambah Baris untuk Form Target Staf (Mode Edit Atasan)
+        $(document).on('click', '.btn-tambah-baris-staf', function() {
+            const tabel = $(this).closest('form').find('.tabel-target tbody');
+            const rowPertama = tabel.find('tr:first').clone();
+            
+            rowPertama.removeClass('row-slide-out table-danger').addClass('row-slide-in');
+            rowPertama.find('input[name="laporan_id[]"]').val('');
+            rowPertama.find('input[type="number"]').val('').removeAttr('readonly').removeClass('locked-approved');
+            rowPertama.find('input[type="text"]').val('').attr('title', '').removeAttr('readonly').removeClass('locked-approved');
+            rowPertama.find('textarea').val('').removeAttr('readonly').removeClass('locked-approved');
+            
+            rowPertama.find('.status-badge').removeClass('bg-success-subtle text-success bg-warning-subtle text-warning-emphasis bg-secondary-subtle text-secondary').addClass('bg-primary-subtle text-primary border border-primary-subtle').html('<i class="bi bi-pencil me-1"></i> Draf Baru');
+            rowPertama.find('.col-aksi-staf').show();
+            rowPertama.find('.hapus-baris').attr('data-id', '').css('display', 'inline-flex');
+            
+            tabel.append(rowPertama);
+            updateRowNumbers(tabel);
+
+            // Auto focus ke sasaran program dengan smooth micro-delay
+            setTimeout(() => {
+                rowPertama.find('textarea[name="sasaran_program[]"]').focus();
+            }, 80);
         });
 
         // Helper untuk memeriksa duplikasi pasangan RHK & Indikator Kinerja di dalam tabel
@@ -830,12 +891,23 @@
             return { hasDuplicate: duplicateFound, info: dupInfo };
         }
 
-        // Validasi saat submit "Ajukan Target" (Form submit biasa)
+        // Flag konfirmasi dialog Ajukan Target
+        let isTargetSubmitConfirmed = false;
+
+        // Validasi saat submit "Ajukan Target" (Form submit biasa dengan konfirmasi SweetAlert)
         $('.form-target-sendiri').on('submit', function(e) {
+            if (isTargetSubmitConfirmed) {
+                return true;
+            }
+
+            const formEl = $(this);
             let isValid = true;
             let hasAtLeastOne = false;
 
-            $(this).find('.tabel-target tbody tr').each(function() {
+            let isTargetPositive = true;
+            let invalidRow = null;
+
+            formEl.find('.tabel-target tbody tr').each(function(idx) {
                 let sasaran = $(this).find('textarea[name="sasaran_program[]"]').val().trim();
                 let indikator = $(this).find('textarea[name="indikator_kinerja[]"]').val().trim();
                 let target = $(this).find('input[name="target_bulanan[]"]').val().trim();
@@ -846,6 +918,14 @@
                     hasAtLeastOne = true;
                     if (sasaran === '' || indikator === '' || target === '' || satuan === '') {
                         isValid = false;
+                    }
+                    if (target !== '') {
+                        let targetNum = parseFloat(target.replace(',', '.'));
+                        if (isNaN(targetNum) || targetNum <= 0) {
+                            isValid = false;
+                            isTargetPositive = false;
+                            invalidRow = idx + 1;
+                        }
                     }
                 }
             });
@@ -860,18 +940,29 @@
                 return false;
             }
 
+            if (!isTargetPositive) {
+                e.preventDefault();
+                let errMsg = invalidRow ? `Nilai Target Bulanan pada Baris ke-${invalidRow} harus lebih besar dari 0 (tidak boleh 0 atau negatif).` : 'Nilai Target Bulanan harus lebih besar dari 0 (tidak boleh 0 atau negatif).';
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Nilai Target Tidak Valid', errMsg, 'warning');
+                } else {
+                    alert(errMsg);
+                }
+                return false;
+            }
+
             if (!isValid) {
                 e.preventDefault();
                 if (typeof Swal !== 'undefined') {
-                    Swal.fire('Data Belum Lengkap', 'Pastikan semua kolom (Sasaran, Indikator, Target, Satuan) terisi sebelum diajukan.', 'warning');
+                    Swal.fire('Data Belum Lengkap', 'Pastikan semua kolom (Sasaran, Indikator, Target, Satuan) terisi dengan benar sebelum diajukan.', 'warning');
                 } else {
-                    alert('Pastikan semua kolom (Sasaran, Indikator, Target, Satuan) terisi sebelum diajukan.');
+                    alert('Pastikan semua kolom (Sasaran, Indikator, Target, Satuan) terisi dengan benar sebelum diajukan.');
                 }
                 return false;
             }
 
             // Validasi duplikasi target
-            const dupCheck = checkTableDuplicates($(this));
+            const dupCheck = checkTableDuplicates(formEl);
             if (dupCheck.hasDuplicate) {
                 e.preventDefault();
                 const d = dupCheck.info;
@@ -889,12 +980,42 @@
                 return false;
             }
 
-            // Tampilkan animasi loading pada tombol submit saat valid
-            const submitBtn = $(this).find('button[type="submit"]');
-            if (submitBtn.length) {
-                submitBtn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Mengajukan...').prop('disabled', true);
+            e.preventDefault();
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Ajukan Target Kinerja?',
+                    html: `Rincian target kinerja untuk periode <strong><?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?></strong> akan diajukan ke atasan langsung untuk diperiksa dan disetujui.`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#198754',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="bi bi-send-fill me-1"></i> Ya, Ajukan Sekarang',
+                    cancelButtonText: 'Periksa Kembali',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        isTargetSubmitConfirmed = true;
+                        const submitBtn = formEl.find('button[type="submit"]');
+                        if (submitBtn.length) {
+                            submitBtn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Mengajukan...').prop('disabled', true);
+                        }
+                        $('#btnSimpanSementara').prop('disabled', true);
+                        formEl[0].submit();
+                    }
+                });
+            } else {
+                if (confirm('Ajukan target kinerja bulanan ini ke atasan langsung?')) {
+                    isTargetSubmitConfirmed = true;
+                    const submitBtn = formEl.find('button[type="submit"]');
+                    if (submitBtn.length) {
+                        submitBtn.prop('disabled', true);
+                    }
+                    $('#btnSimpanSementara').prop('disabled', true);
+                    formEl[0].submit();
+                }
             }
-            $('#btnSimpanSementara').prop('disabled', true);
+            return false;
         });
 
         // Validasi saat submit "Persetujuan Target Staf"
@@ -939,8 +1060,7 @@
                 dataType: 'json',
                 success: function(response) {
                     if (response.csrf_hash) {
-                        $('input[name="<?= csrf_token() ?>"]').val(response.csrf_hash);
-                        $('input[name="csrf_test_name"]').val(response.csrf_hash);
+                        updateAllCsrfTokens(response.csrf_hash);
                     }
 
                     if (response.success) {
@@ -999,7 +1119,7 @@
             const bulan     = $(this).data('bulan');
             const tahun     = $(this).data('tahun');
             const csrfName  = '<?= csrf_token() ?>';
-            const csrfToken = $('input[name="' + csrfName + '"]').first().val() || $('input[name="csrf_test_name"]').val();
+            const csrfToken = $('input[name="' + csrfName + '"]').first().val() || $('input[name="csrf_test_name"]').first().val() || '<?= csrf_hash() ?>';
 
             if (!stafId || !bulan || !tahun) {
                 alert('Parameter staf_id, bulan, atau tahun tidak valid.');
@@ -1019,8 +1139,7 @@
                     dataType: 'json',
                     success: function(response) {
                         if (response.csrf_hash) {
-                            $('input[name="' + csrfName + '"]').val(response.csrf_hash);
-                            $('input[name="csrf_test_name"]').val(response.csrf_hash);
+                            updateAllCsrfTokens(response.csrf_hash);
                         }
                         if (response.success) {
                             if (typeof Swal !== 'undefined') {
@@ -1077,7 +1196,7 @@
         });
 
         // =============================================
-        // SALIN TARGET KINERJA DARI PERIODE PILIHAN USER
+        // SALIN TARGET KINERJA DARI PERIODE PILIHAN USER (POST)
         // =============================================
         $('#btnEksekusiSalinTarget').on('click', function() {
             const btn = $(this);
@@ -1086,6 +1205,8 @@
             const tahunSumber = $('#salinTahunSumber').val();
             const modeSalin = $('input[name="modeSalinTarget"]:checked').val() || 'replace';
             const tabel = $('.form-target-sendiri .tabel-target tbody');
+            const csrfTokenName = '<?= csrf_token() ?>';
+            const csrfHash = $('input[name="' + csrfTokenName + '"]').first().val() || $('input[name="csrf_test_name"]').first().val() || '<?= csrf_hash() ?>';
 
             if (!bulanSumber || !tahunSumber) {
                 if (typeof Swal !== 'undefined') {
@@ -1098,16 +1219,22 @@
 
             btn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Mengambil Data...').prop('disabled', true);
 
+            let postData = {
+                bulan: bulanSumber,
+                tahun: tahunSumber
+            };
+            postData[csrfTokenName] = csrfHash;
+
             $.ajax({
                 url: '<?= site_url('laporan-harian/get-previous-targets') ?>',
-                type: 'GET',
-                data: {
-                    bulan: bulanSumber,
-                    tahun: tahunSumber
-                },
+                type: 'POST',
+                data: postData,
                 dataType: 'json',
                 success: function(response) {
                     btn.html(originalText).prop('disabled', false);
+                    if (response.csrf_hash) {
+                        updateAllCsrfTokens(response.csrf_hash);
+                    }
 
                     if (response.status === 'empty') {
                         if (typeof Swal !== 'undefined') {

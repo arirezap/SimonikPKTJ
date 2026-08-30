@@ -74,13 +74,15 @@ class NotificationController extends BaseController
                 }
             }
             
-            $notifications = get_unread_notifications($userId);
-            if (!is_array($notifications)) {
-                $notifications = [];
+            $dbNotifications = get_user_notifications($userId, 20);
+            if (!is_array($dbNotifications)) {
+                $dbNotifications = [];
             }
+
+            $unreadDbCount = count_unread_notifications($userId);
             
             // Cek pengingat harian (Virtual Notification)
-            $reminder = null;
+            $virtualNotifications = [];
             if (is_working_day()) {
                 $logModel = new LogKegiatanHarian();
                 $today = date('Y-m-d');
@@ -91,17 +93,16 @@ class NotificationController extends BaseController
                                    ->first();
                                    
                 if (!$hasLog) {
-                    $reminder = [
+                    $virtualNotifications[] = [
                         'id' => 'virtual_reminder',
                         'title' => 'Pengingat Laporan Harian',
                         'message' => 'Anda belum mengisi laporan kegiatan harian untuk hari ini.',
                         'link' => site_url('log-kegiatan'),
                         'is_read' => 0,
+                        'time_ago' => 'Hari ini',
                         'created_at' => date('Y-m-d H:i:s'),
                         'is_virtual' => true
                     ];
-                    
-                    array_unshift($notifications, $reminder);
                 }
             }
 
@@ -127,12 +128,13 @@ class NotificationController extends BaseController
                             ? "Hari ini adalah batas akhir pengisian target kinerja bulanan (Tanggal {$batasTarget})." 
                             : "Batas pengisian target kinerja bulanan tersisa {$sisaHari} hari lagi (Maksimal tanggal {$batasTarget}).";
 
-                        $notifications[] = [
+                        $virtualNotifications[] = [
                             'id' => 'virtual_target_deadline',
                             'title' => 'Pengingat Batas Target Bulanan',
                             'message' => $pesanTarget,
                             'link' => site_url('laporan-harian'),
                             'is_read' => 0,
+                            'time_ago' => 'Mendesak',
                             'created_at' => date('Y-m-d H:i:s'),
                             'is_virtual' => true
                         ];
@@ -153,12 +155,13 @@ class NotificationController extends BaseController
                             ? "Hari ini adalah batas akhir penilaian kinerja staf untuk periode bulan lalu (Maksimal tanggal {$batasPenilaian})."
                             : "Batas penilaian kinerja staf bulan lalu tersisa {$sisaHariPenilaian} hari lagi (Maksimal tanggal {$batasPenilaian}).";
 
-                        $notifications[] = [
+                        $virtualNotifications[] = [
                             'id' => 'virtual_penilaian_deadline',
                             'title' => 'Pengingat Penilaian Kinerja Staf',
                             'message' => $pesanPenilaian,
                             'link' => site_url('penilaian-kinerja'),
                             'is_read' => 0,
+                            'time_ago' => 'Mendesak',
                             'created_at' => date('Y-m-d H:i:s'),
                             'is_virtual' => true
                         ];
@@ -166,10 +169,23 @@ class NotificationController extends BaseController
                 }
             }
 
+            // Format waktu relatif untuk setiap notifikasi database
+            $formattedDbNotifs = [];
+            foreach ($dbNotifications as $n) {
+                $n['is_virtual'] = false;
+                $n['time_ago'] = format_notif_time($n['created_at']);
+                $formattedDbNotifs[] = $n;
+            }
+
+            $allNotifications = array_merge($virtualNotifications, $formattedDbNotifs);
+            $totalUnreadCount = $unreadDbCount + count($virtualNotifications);
+
             return $this->response->setJSON([
-                'status' => 'success',
-                'count' => count($notifications),
-                'data' => $notifications
+                'status'       => 'success',
+                'unread_count' => $totalUnreadCount,
+                'count'        => $totalUnreadCount,
+                'total_count'  => count($allNotifications),
+                'data'         => $allNotifications
             ]);
             
         } catch (\Exception $e) {

@@ -14,8 +14,7 @@ $isEccActive = str_starts_with($current_uri, 'ecc');
 
 // Definisi Peran Helper (menggunakan multi-role helper)
 $isAdmin = hasRole('admin');
-$isManajemenLevel = hasAnyRole(['manajemen', 'kabag_aak']);
-$isKabagKuk = hasRole('kabag_kuk');
+$isTimLeader = hasAnyRole(['manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'kanit', 'katim', 'kapokja', 'admin']);
 $isDirektur = hasRole('direktur');
 $isKepegawaian = hasRole('kepegawaian');
 ?>
@@ -98,15 +97,13 @@ $isKepegawaian = hasRole('kepegawaian');
                 </a>
             </li>
 
-            <?php if ($isManajemenLevel || $isKabagKuk): ?>
+            <?php if ($isTimLeader): ?>
                 <li class="nav-item">
-                    <a class="nav-link <?= (str_starts_with($current_uri, 'user/tim') || $current_uri == 'tim') ? 'active' : '' ?>" href="<?= site_url('tim') ?>">
+                    <a class="nav-link <?= (str_starts_with($current_uri, 'user/tim') || str_starts_with($current_uri, 'tim')) ? 'active' : '' ?>" href="<?= site_url('tim') ?>">
                         <i class="bi bi-people-fill"></i><span>Kelola Tim</span>
                     </a>
                 </li>
             <?php endif; ?>
-
-
 
             <?php if (hasAnyRole(['admin', 'kepegawaian', 'spm'])): ?>
                 <li class="nav-item">
@@ -116,31 +113,31 @@ $isKepegawaian = hasRole('kepegawaian');
                     </a>
                     <div class="collapse <?= $isMasterDataActive ? 'show' : '' ?>" id="masterDataSubmenu">
                         <ul class="nav flex-column ps-4">
-                            <li class="nav-item"><a href="<?= site_url('master-data/sasaran') ?>" class="nav-link sub-link <?= ($current_uri == 'master-data/sasaran') ? 'active' : '' ?>"><span>Sasaran Program</span></a></li>
-                            <li class="nav-item"><a href="<?= site_url('master-data/indikator') ?>" class="nav-link sub-link <?= ($current_uri == 'master-data/indikator') ? 'active' : '' ?>"><span>Indikator Kinerja</span></a></li>
-                            <li class="nav-item"><a href="<?= site_url('master-data/satuan') ?>" class="nav-link sub-link <?= ($current_uri == 'master-data/satuan') ? 'active' : '' ?>"><span>Satuan</span></a></li>
-                            <li class="nav-item"><a href="<?= site_url('master-data/unit-kerja') ?>" class="nav-link sub-link <?= ($current_uri == 'master-data/unit-kerja') ? 'active' : '' ?>"><span>Unit Kerja</span></a></li>
+                            <li class="nav-item"><a href="<?= site_url('master-data/sasaran') ?>" class="nav-link sub-link <?= str_starts_with($current_uri, 'master-data/sasaran') ? 'active' : '' ?>"><span>Sasaran Program</span></a></li>
+                            <li class="nav-item"><a href="<?= site_url('master-data/indikator') ?>" class="nav-link sub-link <?= str_starts_with($current_uri, 'master-data/indikator') ? 'active' : '' ?>"><span>Indikator Kinerja</span></a></li>
+                            <li class="nav-item"><a href="<?= site_url('master-data/satuan') ?>" class="nav-link sub-link <?= str_starts_with($current_uri, 'master-data/satuan') ? 'active' : '' ?>"><span>Satuan</span></a></li>
+                            <li class="nav-item"><a href="<?= site_url('master-data/unit-kerja') ?>" class="nav-link sub-link <?= str_starts_with($current_uri, 'master-data/unit-kerja') ? 'active' : '' ?>"><span>Unit Kerja</span></a></li>
                             <li class="menu-divider"></li>
-                            <li class="nav-item"><a href="<?= site_url('master-data/led') ?>" class="nav-link sub-link <?= ($current_uri == 'master-data/led') ? 'active' : '' ?>"><span>Kriteria LED</span></a></li>
-                            <li class="nav-item"><a href="<?= site_url('master-data/led-standar') ?>" class="nav-link sub-link <?= ($current_uri == 'master-data/led-standar') ? 'active' : '' ?>"><span>Standar LED</span></a></li>
-                            <li class="nav-item"><a href="<?= site_url('master-data/holidays') ?>" class="nav-link sub-link <?= ($current_uri == 'master-data/holidays') ? 'active' : '' ?>"><span>Hari Libur Nasional</span></a></li>
+                            <li class="nav-item"><a href="<?= site_url('master-data/led') ?>" class="nav-link sub-link <?= str_starts_with($current_uri, 'master-data/led') ? 'active' : '' ?>"><span>Kriteria LED</span></a></li>
+                            <li class="nav-item"><a href="<?= site_url('master-data/led-standar') ?>" class="nav-link sub-link <?= str_starts_with($current_uri, 'master-data/led-standar') ? 'active' : '' ?>"><span>Standar LED</span></a></li>
+                            <li class="nav-item"><a href="<?= site_url('master-data/holidays') ?>" class="nav-link sub-link <?= str_starts_with($current_uri, 'master-data/holidays') ? 'active' : '' ?>"><span>Hari Libur Nasional</span></a></li>
                         </ul>
                     </div>
                 </li>
             <?php endif; ?>
 
             <?php if (hasAnyRole(['admin', 'kepegawaian'])): ?>
-                <li class="nav-item"><a href="<?= site_url('users') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/users') || $current_uri == 'users') ? 'active' : '' ?>"><i class="bi bi-people-fill"></i><span>Kelola Pengguna</span></a></li>
+                <li class="nav-item"><a href="<?= site_url('users') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/users') || str_starts_with($current_uri, 'users')) ? 'active' : '' ?>"><i class="bi bi-people-fill"></i><span>Kelola Pengguna</span></a></li>
             <?php else: ?>
-                <li class="nav-item"><a href="<?= site_url('daftar-pegawai') ?>" class="nav-link <?= ($current_uri == 'daftar-pegawai') ? 'active' : '' ?>"><i class="bi bi-person-lines-fill"></i><span>Daftar Pegawai</span></a></li>
+                <li class="nav-item"><a href="<?= site_url('daftar-pegawai') ?>" class="nav-link <?= str_starts_with($current_uri, 'daftar-pegawai') ? 'active' : '' ?>"><i class="bi bi-person-lines-fill"></i><span>Daftar Pegawai</span></a></li>
             <?php endif; ?>
 
             <?php if ($isAdmin): ?>
                 <li class="nav-item"><a href="<?= site_url('admin/audit-logs') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/audit-logs')) ? 'active' : '' ?>"><i class="bi bi-shield-check"></i><span>Log Aktivitas Sistem</span></a></li>
-                <li class="nav-item"><a href="<?= site_url('settings') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/settings')) ? 'active' : '' ?>"><i class="bi bi-gear-fill"></i><span>Pengaturan Sistem</span></a></li>
+                <li class="nav-item"><a href="<?= site_url('settings') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/settings') || str_starts_with($current_uri, 'settings')) ? 'active' : '' ?>"><i class="bi bi-gear-fill"></i><span>Pengaturan Sistem</span></a></li>
             <?php endif; ?> 
 
-            <?php if ($isKepegawaian || $isAdmin): ?>
+            <?php if (hasAnyRole(['kepegawaian', 'admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk'])): ?>
                 <li class="nav-item">
                     <a class="nav-link <?= str_starts_with($current_uri, 'kepegawaian') ? 'active' : '' ?>" href="<?= site_url('kepegawaian') ?>">
                         <i class="bi bi-clipboard2-data-fill"></i><span>Rekap Kepegawaian</span>

@@ -11,6 +11,35 @@ if (!function_exists('log_audit')) {
      * @param array  $newValues   Data sesudah dirubah (associative array)
      * @return void
      */
+    /**
+     * Sanitasi rekursif data audit untuk menyamarkan kata sandi, token, dan rahasia
+     */
+    function sanitize_audit_payload($data)
+    {
+        if (!is_array($data)) {
+            return $data;
+        }
+
+        $sensitiveKeys = [
+            'password', 'password_hash', 'pass', 'token', 'secret',
+            'api_key', 'auth_key', 'csrf_hash', 'remember_token'
+        ];
+
+        $sanitized = [];
+        foreach ($data as $key => $value) {
+            $lowerKey = strtolower((string)$key);
+            if (in_array($lowerKey, $sensitiveKeys, true)) {
+                $sanitized[$key] = '******** (disamarkan)';
+            } elseif (is_array($value)) {
+                $sanitized[$key] = sanitize_audit_payload($value);
+            } else {
+                $sanitized[$key] = $value;
+            }
+        }
+
+        return $sanitized;
+    }
+
     function log_audit(string $action, string $entity = '-', $entityId = null, array $oldValues = null, array $newValues = null)
     {
         try {
@@ -26,13 +55,17 @@ if (!function_exists('log_audit')) {
             // Dapatkan user ID yang sedang aktif (bisa admin atau user biasa)
             $userId = session()->get('id') ?? null;
 
+            // Sanitasi data sebelum diubah menjadi JSON
+            $cleanOldValues = $oldValues !== null ? sanitize_audit_payload($oldValues) : null;
+            $cleanNewValues = $newValues !== null ? sanitize_audit_payload($newValues) : null;
+
             $data = [
                 'user_id'    => $userId,
                 'action'     => strtoupper($action),
                 'entity'     => $entity,
                 'entity_id'  => $entityId,
-                'old_values' => $oldValues !== null ? json_encode($oldValues) : null,
-                'new_values' => $newValues !== null ? json_encode($newValues) : null,
+                'old_values' => $cleanOldValues !== null ? json_encode($cleanOldValues, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : null,
+                'new_values' => $cleanNewValues !== null ? json_encode($cleanNewValues, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : null,
                 'ip_address' => $ipAddress,
                 'user_agent' => substr($userAgentString, 0, 250), // Batasi panjang
                 'created_at' => date('Y-m-d H:i:s')

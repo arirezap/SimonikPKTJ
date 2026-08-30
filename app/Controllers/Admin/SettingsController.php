@@ -105,11 +105,19 @@ class SettingsController extends BaseController
             ]);
         }
 
-        // 2. Simpan nilai parameter angka
+        // 2. Simpan nilai parameter angka dengan batasan (clamping) valid
         $settings = $this->request->getPost('settings');
         if ($settings && is_array($settings)) {
             foreach ($settings as $key => $value) {
-                $valClean = max(1, (int)trim($value));
+                $rawVal = (int)trim((string)$value);
+                if (in_array($key, ['batas_input_target', 'batas_penilaian_kinerja'])) {
+                    $valClean = min(31, max(1, $rawVal));
+                } elseif ($key === 'batas_input_log') {
+                    $valClean = min(60, max(1, $rawVal));
+                } else {
+                    $valClean = max(1, $rawVal);
+                }
+
                 $settingModel->update($key, [
                     'setting_value' => (string)$valClean,
                     'updated_at'    => date('Y-m-d H:i:s')

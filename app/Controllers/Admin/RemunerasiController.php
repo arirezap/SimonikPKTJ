@@ -65,7 +65,7 @@ class RemunerasiController extends BaseController
         // Ambil data yang sudah ada SEKALI SAJA untuk efisiensi
         $existingData = $remunModel
             ->where('tahun', $tahun)
-            ->where('bulan', 'bulan')
+            ->where('bulan', $bulan)
             ->findAll();
         $existingMap = array_column($existingData, 'id', 'user_id'); // Map [user_id => remunerasi_id]
 

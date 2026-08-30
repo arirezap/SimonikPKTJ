@@ -28,11 +28,11 @@ class LogKegiatanHarian extends Model
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
-    // Join dengan laporan_harian untuk mengambil RHK
+    // Join dengan target_kinerja_bulanan untuk mengambil RHK
     public function getLogWithTarget($userId, $tanggal)
     {
-        return $this->select('log_kegiatan_harian.*, laporan_harian.sasaran_program, laporan_harian.indikator_kinerja, laporan_harian.target_bulanan, laporan_harian.satuan')
-                    ->join('laporan_harian', 'laporan_harian.id = log_kegiatan_harian.target_id', 'left')
+        return $this->select('log_kegiatan_harian.*, target_kinerja_bulanan.sasaran_program, target_kinerja_bulanan.indikator_kinerja, target_kinerja_bulanan.target_bulanan, target_kinerja_bulanan.satuan')
+                    ->join('target_kinerja_bulanan', 'target_kinerja_bulanan.id = log_kegiatan_harian.target_id', 'left')
                     ->where('log_kegiatan_harian.user_id', $userId)
                     ->where('log_kegiatan_harian.tanggal_kegiatan', $tanggal)
                     ->orderBy('log_kegiatan_harian.created_at', 'ASC')
@@ -44,8 +44,8 @@ class LogKegiatanHarian extends Model
         $startDate = sprintf('%04d-%02d-01', (int)$tahun, (int)$bulan);
         $endDate   = date('Y-m-t', strtotime($startDate));
 
-        $builder = $this->select('log_kegiatan_harian.*, laporan_harian.sasaran_program, laporan_harian.indikator_kinerja, laporan_harian.target_bulanan, laporan_harian.satuan')
-                    ->join('laporan_harian', 'laporan_harian.id = log_kegiatan_harian.target_id', 'left')
+        $builder = $this->select('log_kegiatan_harian.*, target_kinerja_bulanan.sasaran_program, target_kinerja_bulanan.indikator_kinerja, target_kinerja_bulanan.target_bulanan, target_kinerja_bulanan.satuan')
+                    ->join('target_kinerja_bulanan', 'target_kinerja_bulanan.id = log_kegiatan_harian.target_id', 'left')
                     ->where('log_kegiatan_harian.user_id', $userId)
                     ->where('log_kegiatan_harian.tanggal_kegiatan >=', $startDate)
                     ->where('log_kegiatan_harian.tanggal_kegiatan <=', $endDate);

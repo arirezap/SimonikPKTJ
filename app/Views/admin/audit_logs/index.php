@@ -41,6 +41,19 @@
         </div>
         
         <div class="d-flex align-items-center gap-2">
+            <?php
+                $exportQuery = http_build_query(array_filter([
+                    'search'     => $filter_search ?? '',
+                    'action'     => $filter_action ?? '',
+                    'entity'     => $filter_entity ?? '',
+                    'date_start' => $filter_date_start ?? '',
+                    'date_end'   => $filter_date_end ?? ''
+                ]));
+                $exportUrl = base_url('admin/audit-logs/export' . ($exportQuery ? '?' . $exportQuery : ''));
+            ?>
+            <a href="<?= $exportUrl ?>" id="btnExportAuditExcel" class="btn btn-sm btn-success rounded-pill px-3 fw-semibold shadow-sm" title="Export Audit Logs ke Excel">
+                <i class="bi bi-file-earmark-excel-fill me-1"></i> Export Excel
+            </a>
             <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold shadow-sm" onclick="window.location.reload();" title="Segarkan data audit log">
                 <i class="bi bi-arrow-repeat me-1"></i> Segarkan Data
             </button>
@@ -143,7 +156,7 @@
                                     if ($action === 'CREATE') {
                                         $badgeClass = 'bg-success-subtle text-success border border-success-subtle';
                                         $icon = 'bi-plus-circle';
-                                    } elseif ($action === 'UPDATE') {
+                                    } elseif ($action === 'UPDATE' || $action === 'UPDATE_TARGET_STAF') {
                                         $badgeClass = 'bg-warning-subtle text-warning-emphasis border border-warning-subtle';
                                         $icon = 'bi-pencil-square';
                                     } elseif ($action === 'DELETE' || $action === 'FAILED_LOGIN' || $action === 'RATE_LIMIT_LOGIN') {
@@ -152,9 +165,21 @@
                                     } elseif ($action === 'LOGIN' || $action === 'LOGOUT') {
                                         $badgeClass = 'bg-info-subtle text-info-emphasis border border-info-subtle';
                                         $icon = ($action === 'LOGIN') ? 'bi-box-arrow-in-right' : 'bi-box-arrow-left';
-                                    } elseif ($action === 'APPROVE' || $action === 'SIMULASI') {
+                                    } elseif ($action === 'APPROVE' || $action === 'APPROVE_ALL' || $action === 'SIMULASI') {
                                         $badgeClass = 'bg-primary-subtle text-primary border border-primary-subtle';
-                                        $icon = 'bi-check-circle';
+                                        $icon = ($action === 'APPROVE_ALL') ? 'bi-check-all' : 'bi-check-circle';
+                                    } elseif ($action === 'SUBMIT_TARGET') {
+                                        $badgeClass = 'bg-primary-subtle text-primary border border-primary-subtle';
+                                        $icon = 'bi-send';
+                                    } elseif ($action === 'DRAFT_TARGET') {
+                                        $badgeClass = 'bg-secondary-subtle text-secondary border border-secondary-subtle';
+                                        $icon = 'bi-file-earmark';
+                                    } elseif ($action === 'UNLOCK_LAPORAN' || $action === 'CANCEL_APPROVE_TARGET') {
+                                        $badgeClass = 'bg-warning-subtle text-warning-emphasis border border-warning-subtle';
+                                        $icon = ($action === 'UNLOCK_LAPORAN') ? 'bi-unlock' : 'bi-arrow-counterclockwise';
+                                    } elseif ($action === 'REVISI_LAPORAN') {
+                                        $badgeClass = 'bg-warning-subtle text-warning-emphasis border border-warning-subtle';
+                                        $icon = 'bi-arrow-repeat';
                                     } else {
                                         $badgeClass = 'bg-secondary-subtle text-secondary border border-secondary-subtle';
                                         $icon = 'bi-activity';
@@ -317,6 +342,85 @@ document.addEventListener("DOMContentLoaded", function() {
     tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
+
+    const btnExport = document.getElementById('btnExportAuditExcel');
+    if (btnExport) {
+        btnExport.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const url = this.getAttribute('href');
+            if (!url) return;
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Menyiapkan Berkas Excel (.xlsx)...',
+                    html: `
+                        <div class="d-flex flex-column align-items-center gap-2 my-2">
+                            <div class="ecc-loading-spinner-wrapper">
+                                <div class="ecc-loading-spinner"></div>
+                            </div>
+                            <div class="ecc-loading-title">Sedang mengompilasi data audit log...</div>
+                            <span class="ecc-loading-desc">Sistem sedang merekap catatan aktivitas dan jejak keamanan. File akan langsung terunduh begitu proses selesai.</span>
+                            <span class="ecc-loading-badge-step"><i class="bi bi-shield-check text-primary"></i> Data terenkripsi & tersanitasi</span>
+                        </div>
+                    `,
+                    customClass: {
+                        popup: 'ecc-loading-popup'
+                    },
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    didOpen: async () => {
+                        try {
+                            const response = await fetch(url);
+                            if (!response.ok) {
+                                throw new Error('Gagal menyiapkan berkas dari server');
+                            }
+
+                            let filename = 'Audit_Logs_ECC.xlsx';
+                            const disposition = response.headers.get('Content-Disposition');
+                            if (disposition && disposition.includes('filename=')) {
+                                const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                                if (match && match[1]) {
+                                    filename = match[1].replace(/['"]/g, '').trim();
+                                }
+                            }
+
+                            const blob = await response.blob();
+                            const blobUrl = window.URL.createObjectURL(blob);
+                            const downloadAnchor = document.createElement('a');
+                            downloadAnchor.style.display = 'none';
+                            downloadAnchor.href = blobUrl;
+                            downloadAnchor.download = filename;
+                            document.body.appendChild(downloadAnchor);
+                            downloadAnchor.click();
+
+                            setTimeout(() => {
+                                window.URL.revokeObjectURL(blobUrl);
+                                if (document.body.contains(downloadAnchor)) {
+                                    document.body.removeChild(downloadAnchor);
+                                }
+                            }, 2000);
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Unduhan Berhasil!',
+                                text: `Berkas ${filename} berhasil disiapkan dan diunduh.`,
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                        } catch (err) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal Mengunduh',
+                                text: 'Terjadi kendala saat mengompilasi log audit. Silakan coba beberapa saat lagi.'
+                            });
+                        }
+                    }
+                });
+            } else {
+                window.location.href = url;
+            }
+        });
+    }
 });
 </script>
 <?= $this->endSection() ?>

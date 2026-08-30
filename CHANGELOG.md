@@ -183,3 +183,23 @@ Dokumen ini berisi riwayat fitur, perbaikan (*bug fixes*), dan peningkatan antar
   - Menambahkan index `idx_audit_created_at` pada `audit_logs`, `idx_led_standar_prodi` pada `led_criteria`, dan `idx_led_sub_composite` pada `led_submissions`.
   - Membersihkan index duplikat pada `log_tugas_tambahan`.
   - Menyiapkan berkas migrasi `2026-08-26-092000_AddUnitIdToUsers.php` dan query konsolidasi All-in-One untuk cPanel.
+
+## 15. Rilis Resmi Versi 1.3: Audit Forensik 8-Pilar Menyeluruh & Rekapitulasi Kepegawaian (31 Agustus 2026)
+- **Modul Rekapitulasi Kinerja Kepegawaian (`/kepegawaian`):**
+  - Penyelesaian engine ekspor PDF dinas berstandar cetak resmi (`rekap_kinerja_pdf.php`) dengan proteksi overflow halaman dan tabel dinas rapi.
+  - Penyelesaian engine ekspor Excel berformat numerik murni (`rekap_kinerja_excel.php`) dengan styling enterprise.
+  - Modal Detail Pegawai AJAX dengan daftar target kinerja dan log kegiatan harian lengkap.
+- **Penyempurnaan Modul Notifikasi & Riwayat (*Retention*):**
+  - Mempertahankan riwayat notifikasi lama di dalam dropdown meskipun status terbaca (*read*) telah aktif, dilengkapi label waktu relatif cerdas (*"15 mnt lalu"*, *"Kemarin 14:10"*, dll.).
+  - Pembedaan tipografi dan visual status (*Unread blue pulsating dot* vs *Read muted*).
+- **Hardening Modul Profil Saya (`/profile`):**
+  - Penyempurnaan sinkronisasi sesi saat menghapus foto profil (`array_key_exists`) agar avatar di topbar langsung berubah seketika tanpa perlu relogin.
+  - Pencatatan log audit perubahan profil dengan diff lengkap data lama vs baru.
+- **Penyempurnaan Interaktivitas & Clickable Modules di Dashboard:**
+  - Radar Chart Akreditasi LED ECC dengan navigasi klik sumbu standar ke halaman Detail Standar.
+  - Anchor grafik batang kriteria dengan *smooth-scroll* dan animasi highlight denyut (`.table-active-pulse`).
+  - Modal drilldown predikat kinerja pegawai (Doughnut chart) dan rincian staf per unit kerja (Bar chart).
+- **Hardening Modul Logout (`/logout`):**
+  - Form POST anti-CSRF dengan header anti-cache penangkal *Back-Button History Leak*.
+- **Versi Aplikasi v1.3:**
+  - Peningkatan versi rilis menjadi **`v1.3`** di seluruh layout, login, header CSS, dan dokumentasi proyek.

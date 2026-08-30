@@ -11,14 +11,7 @@ class Auth extends BaseController
     {
         // Cek jika user sudah login
         if (session()->get('isLoggedIn')) {
-            $role = session()->get('role');
-            
-            // ADMIN, MANAJEMEN, & KABAG -> Admin Dashboard
-            if (in_array($role, ['admin', 'direktur', 'wadir', 'manajemen']) || str_contains($role, 'kabag')) {
-                return redirect()->to('dashboard');
-            }
-            
-            // DIREKTUR & PEGAWAI -> User Dashboard
+            $role = (string) session()->get('role');
             return redirect()->to('dashboard');
         }
 
