@@ -44,6 +44,24 @@
         <?= $this->include('layouts/sidebar') ?>
 
         <div class="content-wrapper">
+            <?php 
+                $isMaintenanceModeOn = false;
+                try {
+                    $settingMdl = new \App\Models\SettingModel();
+                    $isMaintenanceModeOn = ($settingMdl->getValue('enable_maintenance_mode', '0') === '1');
+                } catch (\Throwable $e) {}
+            ?>
+            <?php if ($isMaintenanceModeOn && hasRole('admin')): ?>
+                <div class="alert alert-warning border-0 rounded-0 py-2 px-3 mb-0 d-flex flex-wrap align-items-center justify-content-between text-dark shadow-sm" style="background: linear-gradient(90deg, #fef3c7, #fde68a); border-bottom: 2px solid #f59e0b !important; font-size: 0.82rem; z-index: 1040;">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="spinner-grow spinner-grow-sm text-warning" role="status"></span>
+                        <span><strong>Mode Pemeliharaan AKTIF:</strong> Pengguna biasa dialihkan ke halaman pemeliharaan. Anda memiliki akses penuh Administrator.</span>
+                    </div>
+                    <a href="<?= site_url('settings') ?>" class="btn btn-warning btn-sm rounded-pill px-3 py-0.5 fw-bold btn-tactile text-dark shadow-sm border border-warning-subtle" style="font-size: 0.75rem;">
+                        <i class="bi bi-sliders me-1"></i> Kelola Pengaturan
+                    </a>
+                </div>
+            <?php endif; ?>
             
             <header class="navbar navbar-expand header-promax mb-2 px-3 px-md-4 py-2">
                 <div class="container-fluid px-0">

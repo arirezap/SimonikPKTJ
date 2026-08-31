@@ -36,6 +36,7 @@ class Filters extends BaseFilters
         'performance'   => PerformanceMetrics::class,
         // Filter Custom Anda
         'auth'          => \App\Filters\AuthFilter::class,
+        'maintenance'   => \App\Filters\MaintenanceFilter::class,
     ];
 
     /**
@@ -74,6 +75,7 @@ class Filters extends BaseFilters
      */
     public array $globals = [
         'before' => [
+            'maintenance', // Mode Pemeliharaan (Maintenance Mode)
             // 'honeypot',
             'csrf', // CSRF Aktif Global (Aman)
         ],

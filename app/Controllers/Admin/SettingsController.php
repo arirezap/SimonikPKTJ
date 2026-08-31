@@ -49,6 +49,16 @@ class SettingsController extends BaseController
                 'setting_name'  => 'Batas Tanggal Penilaian Kinerja oleh Atasan',
                 'setting_value' => '10',
                 'description'   => 'Tanggal maksimal di bulan berikutnya bagi atasan langsung untuk memberikan nilai capaian kinerja staf (Contoh: Tanggal 10).'
+            ],
+            'enable_maintenance_mode' => [
+                'setting_name'  => 'Status Mode Pemeliharaan (Maintenance Mode)',
+                'setting_value' => '0',
+                'description'   => 'Aktifkan (ON) untuk mengalihkan seluruh pengguna selain Administrator ke halaman pemeliharaan sementara saat pembaruan berlangsung.'
+            ],
+            'maintenance_message' => [
+                'setting_name'  => 'Pesan Pemeliharaan Sistem',
+                'setting_value' => 'Sistem sedang melakukan sinkronisasi pembaruan performa dan peningkatan fitur terbaru. Layanan akan kembali normal dalam beberapa saat.',
+                'description'   => 'Pesan kustom yang ditampilkan kepada pengguna saat mode pemeliharaan aktif.'
             ]
         ];
 
@@ -88,6 +98,8 @@ class SettingsController extends BaseController
             'isMonthlyLogDeadlineActive' => ($settingsMap['enable_monthly_log_deadline']['setting_value'] ?? '1') === '1',
             'isLogDeadlineActive'        => ($settingsMap['enable_log_deadline']['setting_value'] ?? '0') === '1',
             'isPenilaianDeadlineActive'  => ($settingsMap['enable_penilaian_deadline']['setting_value'] ?? '0') === '1',
+            'isMaintenanceActive'        => ($settingsMap['enable_maintenance_mode']['setting_value'] ?? '0') === '1',
+            'maintenanceMessage'         => $settingsMap['maintenance_message']['setting_value'] ?? 'Sistem sedang melakukan sinkronisasi pembaruan performa dan peningkatan fitur terbaru. Layanan akan kembali normal dalam beberapa saat.',
         ];
         
         return view('admin/settings/index', $data);
@@ -108,6 +120,7 @@ class SettingsController extends BaseController
             'enable_monthly_log_deadline' => $this->request->getPost('enable_monthly_log_deadline') ? '1' : '0',
             'enable_log_deadline'         => $this->request->getPost('enable_log_deadline') ? '1' : '0',
             'enable_penilaian_deadline'   => $this->request->getPost('enable_penilaian_deadline') ? '1' : '0',
+            'enable_maintenance_mode'     => $this->request->getPost('enable_maintenance_mode') ? '1' : '0',
         ];
 
         foreach ($toggles as $tKey => $tVal) {
@@ -117,19 +130,23 @@ class SettingsController extends BaseController
             ]);
         }
 
-        // 2. Simpan nilai parameter angka dengan batasan (clamping) valid
+        // 2. Simpan nilai parameter angka dan teks dengan batasan (clamping) valid
         $settings = $this->request->getPost('settings');
         if ($settings && is_array($settings)) {
             foreach ($settings as $key => $value) {
-                $rawVal = (int)trim((string)$value);
-                if (in_array($key, ['batas_input_target', 'batas_penilaian_kinerja'])) {
-                    $valClean = min(31, max(1, $rawVal));
-                } elseif ($key === 'toleransi_hari_bulan_lalu') {
-                    $valClean = min(30, max(0, $rawVal)); // Min 0 hari, Max 30 hari
-                } elseif ($key === 'batas_input_log') {
-                    $valClean = min(60, max(1, $rawVal));
+                if ($key === 'maintenance_message') {
+                    $valClean = trim((string)$value);
                 } else {
-                    $valClean = max(0, $rawVal);
+                    $rawVal = (int)trim((string)$value);
+                    if (in_array($key, ['batas_input_target', 'batas_penilaian_kinerja'])) {
+                        $valClean = (string)min(31, max(1, $rawVal));
+                    } elseif ($key === 'toleransi_hari_bulan_lalu') {
+                        $valClean = (string)min(30, max(0, $rawVal)); // Min 0 hari, Max 30 hari
+                    } elseif ($key === 'batas_input_log') {
+                        $valClean = (string)min(60, max(1, $rawVal));
+                    } else {
+                        $valClean = (string)max(0, $rawVal);
+                    }
                 }
 
                 $settingModel->update($key, [
@@ -139,11 +156,15 @@ class SettingsController extends BaseController
             }
         }
 
-        log_audit('UPDATE', 'settings', 'individual_deadlines', null, [
+        log_audit('UPDATE', 'settings', 'system_and_deadlines', null, [
             'toggles' => $toggles,
             'values'  => $settings
         ]);
         
-        return redirect()->back()->with('success', 'Pengaturan batas waktu berhasil diperbarui.');
+        $msg = $toggles['enable_maintenance_mode'] === '1'
+            ? 'Pengaturan berhasil diperbarui. MODE PEMELIHARAAN AKTIF untuk seluruh pengguna non-admin.'
+            : 'Pengaturan sistem berhasil diperbarui.';
+
+        return redirect()->back()->with('success', $msg);
     }
 }

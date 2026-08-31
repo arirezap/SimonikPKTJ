@@ -75,6 +75,53 @@
         <?= csrf_field() ?>
 
         <div class="row g-3 g-md-4 mb-4">
+            <!-- 0. MODE PEMELIHARAAN (MAINTENANCE MODE) -->
+            <div class="col-12">
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden setting-card <?= $isMaintenanceActive ? 'border-warning shadow' : '' ?>" id="cardMaintenance" style="<?= $isMaintenanceActive ? 'border: 2px solid #f59e0b !important;' : '' ?>">
+                    <div class="card-header <?= $isMaintenanceActive ? 'bg-warning-subtle text-dark' : 'bg-light-subtle' ?> py-3 px-3 px-md-4 border-bottom d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-2.5">
+                            <span class="badge <?= $isMaintenanceActive ? 'bg-warning text-dark' : 'bg-secondary-subtle text-secondary' ?> border rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 1rem;">
+                                <i class="bi bi-tools"></i>
+                            </span>
+                            <div>
+                                <h6 class="fw-bold text-dark mb-0">Mode Pemeliharaan Sistem (Maintenance Mode)</h6>
+                                <span class="text-muted" style="font-size: 0.72rem;">Kunci akses seluruh pengguna biasa selama pembaruan kode / basis data</span>
+                            </div>
+                        </div>
+                        <div class="form-check form-switch fs-4 m-0">
+                            <input class="form-check-input cursor-pointer" type="checkbox" role="switch" name="enable_maintenance_mode" value="1" id="switchMaintenance" aria-label="Saklar mode pemeliharaan sistem" <?= $isMaintenanceActive ? 'checked' : '' ?>>
+                        </div>
+                    </div>
+                    <div class="card-body p-3 p-md-4">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-12 col-md-7">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="badge <?= $isMaintenanceActive ? 'bg-warning text-dark border border-warning-subtle' : 'bg-success-subtle text-success border border-success-subtle' ?> px-2.5 py-1 rounded-pill small fw-semibold" id="badgeMaintenance">
+                                        <i class="bi <?= $isMaintenanceActive ? 'bi-cone-striped' : 'bi-check-circle-fill' ?> me-1"></i>
+                                        <span><?= $isMaintenanceActive ? 'Mode Pemeliharaan AKTIF' : 'Sistem Aktif Normal' ?></span>
+                                    </span>
+                                    <span class="text-muted small" style="font-size: 0.75rem;">
+                                        <i class="bi bi-info-circle me-1"></i> Administrator tetap dapat masuk & mengelola sistem.
+                                    </span>
+                                </div>
+                                <p class="text-muted small mb-0 leading-relaxed">
+                                    Ketika saklar ini diaktifkan, seluruh pengguna non-admin (Staf, Atasan, Direktur, Kepegawaian, Tamu) akan dialihkan ke halaman pemberitahuan pemeliharaan dengan hitung mundur otomatis 30 detik tanpa perlu menyunting file cPanel.
+                                </p>
+                            </div>
+                            <div class="col-12 col-md-5">
+                                <div class="p-3 bg-light rounded-3 border border-light-subtle">
+                                    <label class="form-label fw-bold text-dark small mb-1.5 d-flex align-items-center justify-content-between">
+                                        <span><i class="bi bi-chat-left-quote text-primary me-1"></i> Pesan untuk Pengguna</span>
+                                        <span class="text-muted" style="font-size: 0.7rem;">Opsional</span>
+                                    </label>
+                                    <textarea name="settings[maintenance_message]" rows="2" class="form-control form-control-sm" placeholder="Sistem sedang dalam pembaruan..." style="font-size: 0.82rem; resize: none;"><?= esc($maintenanceMessage) ?></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- 1. TARGET BULANAN -->
             <div class="col-12 col-lg-6">
                 <div class="card border-0 shadow-sm h-100 rounded-4 overflow-hidden setting-card" id="cardTarget">
@@ -330,6 +377,30 @@
                 targetCard.style.opacity = '0.85';
             }
         }
+    }
+
+    const switchMaint = document.getElementById('switchMaintenance');
+    const badgeMaint  = document.getElementById('badgeMaintenance');
+    const cardMaint   = document.getElementById('cardMaintenance');
+
+    if (switchMaint && badgeMaint) {
+        switchMaint.addEventListener('change', function() {
+            if (this.checked) {
+                badgeMaint.className = 'badge bg-warning text-dark border border-warning-subtle px-2.5 py-1 rounded-pill small fw-semibold';
+                badgeMaint.innerHTML = '<i class="bi bi-cone-striped me-1"></i> <span>Mode Pemeliharaan AKTIF</span>';
+                if (cardMaint) {
+                    cardMaint.style.border = '2px solid #f59e0b !important';
+                    cardMaint.classList.add('border-warning', 'shadow');
+                }
+            } else {
+                badgeMaint.className = 'badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill small fw-semibold';
+                badgeMaint.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> <span>Sistem Aktif Normal</span>';
+                if (cardMaint) {
+                    cardMaint.style.border = '';
+                    cardMaint.classList.remove('border-warning', 'shadow');
+                }
+            }
+        });
     }
 
     document.querySelectorAll('.toggle-deadline').forEach(switchEl => {
