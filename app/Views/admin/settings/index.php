@@ -11,9 +11,19 @@
     }
     .setting-card {
         transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    }
+    .setting-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06) !important;
     }
     .setting-card.active-deadline {
         border-color: #fca5a5 !important;
+        box-shadow: 0 4px 16px rgba(239, 68, 68, 0.08) !important;
+    }
+    .setting-card .form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
     }
 </style>
 <?= $this->endSection() ?>
@@ -64,14 +74,17 @@
     <form action="<?= site_url('settings/store') ?>" method="POST" id="formSettings" autocomplete="off">
         <?= csrf_field() ?>
 
-        <div class="row g-3 mb-4">
+        <div class="row g-3 g-md-4 mb-4">
             <!-- 1. TARGET BULANAN -->
-            <div class="col-lg-4">
+            <div class="col-12 col-lg-6">
                 <div class="card border-0 shadow-sm h-100 rounded-4 overflow-hidden setting-card" id="cardTarget">
-                    <div class="card-header bg-light py-3 px-3 border-bottom d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="badge bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; font-size: 0.75rem;">1</span>
-                            <h6 class="fw-bold text-dark mb-0">Target Bulanan</h6>
+                    <div class="card-header bg-light-subtle py-3 px-3 px-md-4 border-bottom d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-2.5">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 28px; height: 28px; font-size: 0.85rem;">1</span>
+                            <div>
+                                <h6 class="fw-bold text-dark mb-0">Target Kinerja Bulanan</h6>
+                                <span class="text-muted" style="font-size: 0.72rem;">Batas waktu penyusunan RHK</span>
+                            </div>
                         </div>
                         <div class="form-check form-switch fs-5 m-0">
                             <input class="form-check-input cursor-pointer toggle-deadline" type="checkbox" role="switch" name="enable_target_deadline" value="1" id="switchTarget" data-target="cardTarget" data-status="badgeTarget" data-input="input_batas_target" aria-label="Saklar batas waktu target bulanan" <?= $isTargetDeadlineActive ? 'checked' : '' ?>>
@@ -79,36 +92,107 @@
                     </div>
                     <div class="card-body p-3 p-md-4 d-flex flex-column justify-content-between">
                         <div>
-                            <div class="mb-2">
+                            <div class="d-flex align-items-center justify-content-between mb-2.5">
                                 <span class="badge <?= $isTargetDeadlineActive ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-success-subtle text-success border border-success-subtle' ?> px-2.5 py-1 rounded-pill small fw-semibold" id="badgeTarget">
                                     <i class="bi <?= $isTargetDeadlineActive ? 'bi-lock-fill' : 'bi-unlock-fill' ?> me-1"></i>
                                     <span><?= $isTargetDeadlineActive ? 'Batas Waktu Aktif' : 'Mode Bebas' ?></span>
                                 </span>
+                                <span class="text-muted small" style="font-size: 0.75rem;">Menu: Target Kinerja Bulanan</span>
                             </div>
-                            <p class="text-muted small mb-3">
-                                Batas tanggal tiap bulan berjalan untuk menyusun dan mengajukan target RHK.
+                            <p class="text-muted small mb-3 leading-relaxed">
+                                Batas tanggal tiap bulan berjalan bagi pegawai untuk menyusun dan mengajukan target RHK bulanan kepada atasan langsung.
                             </p>
                         </div>
-                        <div class="mt-2 pt-2 border-top">
-                            <label class="form-label small fw-bold text-dark mb-1">Tanggal Maksimal:</label>
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text bg-light">Tanggal</span>
-                                <input type="number" min="1" max="31" name="settings[batas_input_target]" id="input_batas_target" class="form-control text-center fw-bold fs-6" value="<?= esc($settingsMap['batas_input_target']['setting_value'] ?? '5') ?>" required>
-                                <span class="input-group-text bg-light">tiap bulan</span>
+                        
+                        <!-- PARAMETER CONTROL BOX -->
+                        <div class="p-3 bg-light rounded-3 border border-light-subtle">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <div>
+                                    <label class="form-label fw-bold text-dark small mb-0 d-flex align-items-center gap-1.5">
+                                        <i class="bi bi-calendar-event text-primary"></i> Tanggal Maksimal
+                                    </label>
+                                    <span class="text-muted d-block" style="font-size: 0.72rem;">Setiap bulan berjalan</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="input-group input-group-sm shadow-sm" style="width: 130px;">
+                                        <span class="input-group-text bg-white text-muted fw-semibold">Tgl</span>
+                                        <input type="number" min="1" max="31" name="settings[batas_input_target]" id="input_batas_target" class="form-control text-center fw-bold text-primary fs-6" value="<?= esc($settingsMap['batas_input_target']['setting_value'] ?? '5') ?>" required>
+                                    </div>
+                                    <span class="text-muted small fw-medium">tiap bulan</span>
+                                </div>
                             </div>
-                            <div class="form-text text-muted small mt-1" style="font-size: 0.72rem;">Default: Tanggal 5</div>
+                            <div class="form-text text-muted small mt-2 pt-1 border-top" style="font-size: 0.72rem;">
+                                <i class="bi bi-info-circle me-1"></i> Default sistem: Tanggal 5 setiap bulan berjalan
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 2. LAPOR KEGIATAN HARIAN -->
-            <div class="col-lg-4">
+            <!-- 2. KUNCI PENGISIAN BULAN LALU (BATAS AKHIR BULAN) -->
+            <div class="col-12 col-lg-6">
+                <div class="card border-0 shadow-sm h-100 rounded-4 overflow-hidden setting-card" id="cardMonthlyLog">
+                    <div class="card-header bg-light-subtle py-3 px-3 px-md-4 border-bottom d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-2.5">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 28px; height: 28px; font-size: 0.85rem;">2</span>
+                            <div>
+                                <h6 class="fw-bold text-dark mb-0">Kunci Laporan Bulan Lalu</h6>
+                                <span class="text-muted" style="font-size: 0.72rem;">Batas pengisian akhir bulan (Cutoff)</span>
+                            </div>
+                        </div>
+                        <div class="form-check form-switch fs-5 m-0">
+                            <input class="form-check-input cursor-pointer toggle-deadline" type="checkbox" role="switch" name="enable_monthly_log_deadline" value="1" id="switchMonthlyLog" data-target="cardMonthlyLog" data-status="badgeMonthlyLog" data-input="input_toleransi_bulan_lalu" aria-label="Saklar kunci laporan bulan lalu" <?= $isMonthlyLogDeadlineActive ? 'checked' : '' ?>>
+                        </div>
+                    </div>
+                    <div class="card-body p-3 p-md-4 d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="d-flex align-items-center justify-content-between mb-2.5">
+                                <span class="badge <?= $isMonthlyLogDeadlineActive ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-success-subtle text-success border border-success-subtle' ?> px-2.5 py-1 rounded-pill small fw-semibold" id="badgeMonthlyLog">
+                                    <i class="bi <?= $isMonthlyLogDeadlineActive ? 'bi-lock-fill' : 'bi-unlock-fill' ?> me-1"></i>
+                                    <span><?= $isMonthlyLogDeadlineActive ? 'Kunci Aktif' : 'Mode Bebas' ?></span>
+                                </span>
+                                <span class="text-muted small" style="font-size: 0.75rem;">Menu: Lapor Kegiatan Harian</span>
+                            </div>
+                            <p class="text-muted small mb-3 leading-relaxed">
+                                Seluruh tanggal di bulan berjalan bebas diisi kapan saja. Begitu memasuki bulan berikutnya, pengisian bulan lalu otomatis terkunci.
+                            </p>
+                        </div>
+
+                        <!-- PARAMETER CONTROL BOX -->
+                        <div class="p-3 bg-light rounded-3 border border-light-subtle">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <div>
+                                    <label class="form-label fw-bold text-dark small mb-0 d-flex align-items-center gap-1.5">
+                                        <i class="bi bi-clock-history text-primary"></i> Toleransi Tambahan
+                                    </label>
+                                    <span class="text-muted d-block" style="font-size: 0.72rem;">Setelah tanggal akhir bulan</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="input-group input-group-sm shadow-sm" style="width: 130px;">
+                                        <span class="input-group-text bg-white text-muted fw-semibold">+</span>
+                                        <input type="number" min="0" max="30" name="settings[toleransi_hari_bulan_lalu]" id="input_toleransi_bulan_lalu" class="form-control text-center fw-bold text-primary fs-6" value="<?= esc($settingsMap['toleransi_hari_bulan_lalu']['setting_value'] ?? '0') ?>" required>
+                                    </div>
+                                    <span class="text-muted small fw-medium">hari ekstra</span>
+                                </div>
+                            </div>
+                            <div class="form-text text-muted small mt-2 pt-1 border-top" style="font-size: 0.72rem;">
+                                <i class="bi bi-info-circle me-1"></i> <strong>0 Hari:</strong> Tepat tgl 1 jam 00:00 terkunci (Misal: 1 Sept untuk bulan Agustus)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. TOLERANSI HARIAN LOG KEGIATAN -->
+            <div class="col-12 col-lg-6">
                 <div class="card border-0 shadow-sm h-100 rounded-4 overflow-hidden setting-card" id="cardLog">
-                    <div class="card-header bg-light py-3 px-3 border-bottom d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="badge bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; font-size: 0.75rem;">2</span>
-                            <h6 class="fw-bold text-dark mb-0">Lapor Kegiatan Harian</h6>
+                    <div class="card-header bg-light-subtle py-3 px-3 px-md-4 border-bottom d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-2.5">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 28px; height: 28px; font-size: 0.85rem;">3</span>
+                            <div>
+                                <h6 class="fw-bold text-dark mb-0">Toleransi Harian Pelaporan</h6>
+                                <span class="text-muted" style="font-size: 0.72rem;">Batas bergulir per tanggal kegiatan</span>
+                            </div>
                         </div>
                         <div class="form-check form-switch fs-5 m-0">
                             <input class="form-check-input cursor-pointer toggle-deadline" type="checkbox" role="switch" name="enable_log_deadline" value="1" id="switchLog" data-target="cardLog" data-status="badgeLog" data-input="input_batas_log" aria-label="Saklar batas waktu log harian" <?= $isLogDeadlineActive ? 'checked' : '' ?>>
@@ -116,36 +200,53 @@
                     </div>
                     <div class="card-body p-3 p-md-4 d-flex flex-column justify-content-between">
                         <div>
-                            <div class="mb-2">
+                            <div class="d-flex align-items-center justify-content-between mb-2.5">
                                 <span class="badge <?= $isLogDeadlineActive ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-success-subtle text-success border border-success-subtle' ?> px-2.5 py-1 rounded-pill small fw-semibold" id="badgeLog">
                                     <i class="bi <?= $isLogDeadlineActive ? 'bi-lock-fill' : 'bi-unlock-fill' ?> me-1"></i>
-                                    <span><?= $isLogDeadlineActive ? 'Batas Waktu Aktif' : 'Mode Bebas' ?></span>
+                                    <span><?= $isLogDeadlineActive ? 'Batas Harian Aktif' : 'Mode Bebas' ?></span>
                                 </span>
+                                <span class="text-muted small" style="font-size: 0.75rem;">Rolling Daily Limit</span>
                             </div>
-                            <p class="text-muted small mb-3">
-                                Batas toleransi hari pengisian setelah tanggal kegiatan berlangsung.
+                            <p class="text-muted small mb-3 leading-relaxed">
+                                Membatasi pengisian laporan harian maksimal N hari setelah masing-masing tanggal kegiatan berlangsung (Masa depan tetap dilarang).
                             </p>
                         </div>
-                        <div class="mt-2 pt-2 border-top">
-                            <label class="form-label small fw-bold text-dark mb-1">Toleransi Hari:</label>
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text bg-light">Maksimal</span>
-                                <input type="number" min="1" max="60" name="settings[batas_input_log]" id="input_batas_log" class="form-control text-center fw-bold fs-6" value="<?= esc($settingsMap['batas_input_log']['setting_value'] ?? '3') ?>" required>
-                                <span class="input-group-text bg-light">hari setelahnya</span>
+
+                        <!-- PARAMETER CONTROL BOX -->
+                        <div class="p-3 bg-light rounded-3 border border-light-subtle">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <div>
+                                    <label class="form-label fw-bold text-dark small mb-0 d-flex align-items-center gap-1.5">
+                                        <i class="bi bi-hourglass-split text-primary"></i> Toleransi Hari Pelaporan
+                                    </label>
+                                    <span class="text-muted d-block" style="font-size: 0.72rem;">Setelah tanggal kegiatan</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="input-group input-group-sm shadow-sm" style="width: 130px;">
+                                        <span class="input-group-text bg-white text-muted fw-semibold">Maks</span>
+                                        <input type="number" min="1" max="60" name="settings[batas_input_log]" id="input_batas_log" class="form-control text-center fw-bold text-primary fs-6" value="<?= esc($settingsMap['batas_input_log']['setting_value'] ?? '3') ?>" required>
+                                    </div>
+                                    <span class="text-muted small fw-medium">hari setelahnya</span>
+                                </div>
                             </div>
-                            <div class="form-text text-muted small mt-1" style="font-size: 0.72rem;">Default: H+3 hari (Masa depan tetap dilarang)</div>
+                            <div class="form-text text-muted small mt-2 pt-1 border-top" style="font-size: 0.72rem;">
+                                <i class="bi bi-info-circle me-1"></i> Default sistem: H+3 hari per tanggal kegiatan
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 3. PENILAIAN OLEH ATASAN -->
-            <div class="col-lg-4">
+            <!-- 4. PENILAIAN OLEH ATASAN -->
+            <div class="col-12 col-lg-6">
                 <div class="card border-0 shadow-sm h-100 rounded-4 overflow-hidden setting-card" id="cardPenilaian">
-                    <div class="card-header bg-light py-3 px-3 border-bottom d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="badge bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; font-size: 0.75rem;">3</span>
-                            <h6 class="fw-bold text-dark mb-0">Penilaian Staf</h6>
+                    <div class="card-header bg-light-subtle py-3 px-3 px-md-4 border-bottom d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-2.5">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 28px; height: 28px; font-size: 0.85rem;">4</span>
+                            <div>
+                                <h6 class="fw-bold text-dark mb-0">Penilaian Kinerja Staf</h6>
+                                <span class="text-muted" style="font-size: 0.72rem;">Batas waktu verifikasi atasan</span>
+                            </div>
                         </div>
                         <div class="form-check form-switch fs-5 m-0">
                             <input class="form-check-input cursor-pointer toggle-deadline" type="checkbox" role="switch" name="enable_penilaian_deadline" value="1" id="switchPenilaian" data-target="cardPenilaian" data-status="badgePenilaian" data-input="input_batas_penilaian" aria-label="Saklar batas waktu penilaian atasan" <?= $isPenilaianDeadlineActive ? 'checked' : '' ?>>
@@ -153,24 +254,38 @@
                     </div>
                     <div class="card-body p-3 p-md-4 d-flex flex-column justify-content-between">
                         <div>
-                            <div class="mb-2">
+                            <div class="d-flex align-items-center justify-content-between mb-2.5">
                                 <span class="badge <?= $isPenilaianDeadlineActive ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-success-subtle text-success border border-success-subtle' ?> px-2.5 py-1 rounded-pill small fw-semibold" id="badgePenilaian">
                                     <i class="bi <?= $isPenilaianDeadlineActive ? 'bi-lock-fill' : 'bi-unlock-fill' ?> me-1"></i>
                                     <span><?= $isPenilaianDeadlineActive ? 'Batas Waktu Aktif' : 'Mode Bebas' ?></span>
                                 </span>
+                                <span class="text-muted small" style="font-size: 0.75rem;">Menu: Penilaian Staf</span>
                             </div>
-                            <p class="text-muted small mb-3">
-                                Batas tanggal di bulan berikutnya bagi atasan untuk menilai kinerja staf.
+                            <p class="text-muted small mb-3 leading-relaxed">
+                                Batas tanggal di bulan berikutnya bagi atasan langsung untuk memberikan nilai capaian target kinerja staf di bawahnya.
                             </p>
                         </div>
-                        <div class="mt-2 pt-2 border-top">
-                            <label class="form-label small fw-bold text-dark mb-1">Tanggal Maksimal:</label>
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text bg-light">Tanggal</span>
-                                <input type="number" min="1" max="31" name="settings[batas_penilaian_kinerja]" id="input_batas_penilaian" class="form-control text-center fw-bold fs-6" value="<?= esc($settingsMap['batas_penilaian_kinerja']['setting_value'] ?? '10') ?>" required>
-                                <span class="input-group-text bg-light">bulan depan</span>
+
+                        <!-- PARAMETER CONTROL BOX -->
+                        <div class="p-3 bg-light rounded-3 border border-light-subtle">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <div>
+                                    <label class="form-label fw-bold text-dark small mb-0 d-flex align-items-center gap-1.5">
+                                        <i class="bi bi-award-fill text-primary"></i> Tanggal Maksimal
+                                    </label>
+                                    <span class="text-muted d-block" style="font-size: 0.72rem;">Di bulan berikutnya</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="input-group input-group-sm shadow-sm" style="width: 130px;">
+                                        <span class="input-group-text bg-white text-muted fw-semibold">Tgl</span>
+                                        <input type="number" min="1" max="31" name="settings[batas_penilaian_kinerja]" id="input_batas_penilaian" class="form-control text-center fw-bold text-primary fs-6" value="<?= esc($settingsMap['batas_penilaian_kinerja']['setting_value'] ?? '10') ?>" required>
+                                    </div>
+                                    <span class="text-muted small fw-medium">bulan depan</span>
+                                </div>
                             </div>
-                            <div class="form-text text-muted small mt-1" style="font-size: 0.72rem;">Default: Tanggal 10 di bulan berikutnya</div>
+                            <div class="form-text text-muted small mt-2 pt-1 border-top" style="font-size: 0.72rem;">
+                                <i class="bi bi-info-circle me-1"></i> Default sistem: Tanggal 10 di bulan berikutnya
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -179,12 +294,13 @@
 
         <!-- BOTTOM ACTION BAR -->
         <div class="card border-0 shadow-sm rounded-4 mb-4">
-            <div class="card-body p-3 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
-                <span class="text-muted small">
-                    <i class="bi bi-info-circle me-1"></i> Perubahan saklar dan angka akan disimpan ke sistem dan dicatat di log aktivitas.
-                </span>
-                <button type="submit" class="btn btn-primary btn-sm rounded-pill px-4 fw-bold shadow-sm" id="btnSubmitSettings">
-                    <i class="bi bi-check-circle-fill me-1"></i> Simpan Pengaturan
+            <div class="card-body p-3 p-md-4 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3">
+                <div class="d-flex align-items-center gap-2 text-muted small">
+                    <i class="bi bi-shield-check fs-5 text-primary"></i>
+                    <span>Perubahan saklar dan angka parameter akan langsung diberlakukan ke sistem dan dicatat ke dalam audit trail.</span>
+                </div>
+                <button type="submit" class="btn btn-primary btn-tactile rounded-pill px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2 flex-shrink-0" id="btnSubmitSettings">
+                    <i class="bi bi-check-circle-fill"></i> Simpan Pengaturan
                 </button>
             </div>
         </div>

@@ -66,30 +66,30 @@ class LogKegiatanController extends BaseController
         $rekapDataTambahan = $logTambahanModel->getLogByDate($userId, $tanggalTerpilih);
 
         $isLocked = false;
+        $lockReason = '';
         $isDirektur = ($currentUser && $currentUser['role'] === 'direktur');
         $today = date('Y-m-d');
 
         // Aturan Khusus: Tanggal di masa depan DILARANG KERAS
         if ($tanggalTerpilih > $today) {
             $isLocked = true;
+            $lockReason = 'Tanggal kegiatan di masa depan tidak dapat diisi atau dilaporkan.';
         } elseif ($targetStatus !== 'disetujui' && !$isDirektur) {
             $isLocked = true;
+            $lockReason = 'Target Kinerja Bulanan untuk bulan ini belum dibuat atau belum disetujui atasan.';
         } elseif (!$isDirektur) {
-            // Cek pembatasan deadline masa lalu jika saklar log aktif
-            $settingModel = new \App\Models\SettingModel();
-            $isDeadlineActive = $settingModel->getValue('enable_log_deadline', '0') === '1';
-            if ($isDeadlineActive) {
-                $batasLogDays = (int) $settingModel->getValue('batas_input_log', 3);
-                $diffDays = (int) floor((strtotime($today) - strtotime($tanggalTerpilih)) / 86400);
-                if ($diffDays > $batasLogDays) {
-                    $isLocked = true;
-                }
+            // Cek pembatasan deadline masa lalu (Kunci Akhir Bulan atau Toleransi Harian)
+            $lockCheck = $this->checkDateLockStatus($tanggalTerpilih, $currentUser);
+            if ($lockCheck['is_locked']) {
+                $isLocked = true;
+                $lockReason = $lockCheck['reason'];
             }
 
             if (!$isLocked && !empty($rekapData)) {
                 foreach ($rekapData as $row) {
                     if (isset($row['status']) && $row['status'] === 'terkirim') {
                         $isLocked = true;
+                        $lockReason = 'Laporan kegiatan pada tanggal ini telah dikirim ke atasan dan berada dalam status terkunci.';
                         break;
                     }
                 }
@@ -98,20 +98,66 @@ class LogKegiatanController extends BaseController
                 foreach ($rekapDataTambahan as $rowTmb) {
                     if (isset($rowTmb['status']) && $rowTmb['status'] === 'terkirim') {
                         $isLocked = true;
+                        $lockReason = 'Laporan tugas tambahan pada tanggal ini telah dikirim ke atasan dan berada dalam status terkunci.';
                         break;
                     }
                 }
             }
         }
 
+        // DATA STATUS HARIAN UNTUK DOT DATEPICKER (Tahun Terpilih)
+        $holidayModel = new \App\Models\HolidayModel();
+        $holidays = $holidayModel->where('YEAR(holiday_date)', $tahunTerpilih)->findAll();
+        $holidayMap = [];
+        foreach ($holidays as $h) {
+            $holidayMap[$h['holiday_date']] = $h['holiday_name'];
+        }
+
+        // Ambil semua log kegiatan harian & tugas tambahan user pada tahun ini
+        $yearlyLogs = $logModel->select('tanggal_kegiatan, status')
+                               ->where('user_id', $userId)
+                               ->where('YEAR(tanggal_kegiatan)', $tahunTerpilih)
+                               ->findAll();
+        $yearlyLogsTambahan = $logTambahanModel->select('tanggal_kegiatan, status')
+                                              ->where('user_id', $userId)
+                                              ->where('YEAR(tanggal_kegiatan)', $tahunTerpilih)
+                                              ->findAll();
+
+        $dateStatusMap = [];
+        foreach (array_merge($yearlyLogs, $yearlyLogsTambahan) as $rowLog) {
+            $d = $rowLog['tanggal_kegiatan'];
+            if (!isset($dateStatusMap[$d])) {
+                $dateStatusMap[$d] = ['has_draft' => false, 'has_sent' => false, 'count' => 0];
+            }
+            $dateStatusMap[$d]['count']++;
+            if ($rowLog['status'] === 'draft') {
+                $dateStatusMap[$d]['has_draft'] = true;
+            } elseif ($rowLog['status'] === 'terkirim') {
+                $dateStatusMap[$d]['has_sent'] = true;
+            }
+        }
+
+        // Format map sederhana untuk Flatpickr JS: [ 'YYYY-MM-DD' => 'terkirim' | 'draft' ]
+        $flatpickrDateStatus = [];
+        foreach ($dateStatusMap as $dateStr => $info) {
+            if ($info['has_draft']) {
+                $flatpickrDateStatus[$dateStr] = 'draft';
+            } elseif ($info['has_sent']) {
+                $flatpickrDateStatus[$dateStr] = 'terkirim';
+            }
+        }
+
         $data = [
-            'title' => 'Lapor Kegiatan Harian',
-            'tanggal_terpilih' => $tanggalTerpilih,
-            'daftar_target' => $daftarTarget,
-            'rekap_data' => $rekapData,
+            'title'               => 'Lapor Kegiatan Harian',
+            'tanggal_terpilih'    => $tanggalTerpilih,
+            'daftar_target'       => $daftarTarget,
+            'rekap_data'          => $rekapData,
             'rekap_data_tambahan' => $rekapDataTambahan,
-            'is_locked' => $isLocked,
-            'target_status' => $targetStatus
+            'is_locked'           => $isLocked,
+            'lock_reason'         => $lockReason,
+            'target_status'       => $targetStatus,
+            'date_status_map'     => $flatpickrDateStatus,
+            'holiday_map'         => $holidayMap
         ];
 
         return view('user/log_kegiatan/index', $data);
@@ -121,30 +167,18 @@ class LogKegiatanController extends BaseController
     {
         $userId = session()->get('id') ?? session()->get('user_id');
         $tanggal = $this->request->getPost('tanggal');
-        $today = date('Y-m-d');
+        $userModel = new \App\Models\User();
+        $currentUser = $userModel->find($userId);
+        $isDirektur = ($currentUser && $currentUser['role'] === 'direktur');
 
-        // 1. Aturan Mutlak: Tanggal kegiatan tidak boleh melebihi hari ini (masa depan)
-        if ($tanggal > $today) {
-            $msg = 'Gagal menyimpan: Tanggal kegiatan tidak boleh melebihi hari ini (tidak dapat mengisi laporan kegiatan di masa depan).';
+        // 1. Cek apakah tanggal kegiatan terkunci oleh kebijakan batas waktu sistem
+        $lockCheck = $this->checkDateLockStatus($tanggal, $currentUser);
+        if ($lockCheck['is_locked'] && !$isDirektur) {
+            $msg = 'Gagal menyimpan: ' . $lockCheck['reason'];
             if ($this->request->isAJAX()) {
                 return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
             }
             return redirect()->back()->with('error', $msg);
-        }
-
-        // 2. Cek Batas Toleransi Hari jika Saklar Batas Waktu Log Aktif
-        $settingModel = new \App\Models\SettingModel();
-        $isDeadlineActive = $settingModel->getValue('enable_log_deadline', '0') === '1';
-        if ($isDeadlineActive && !hasAnyRole(['admin', 'direktur'])) {
-            $batasLogDays = (int) $settingModel->getValue('batas_input_log', 3);
-            $diffDays = (int) floor((strtotime($today) - strtotime($tanggal)) / 86400);
-            if ($diffDays > $batasLogDays) {
-                $msg = "Gagal menyimpan: Batas waktu pengisian laporan kegiatan harian adalah maksimal {$batasLogDays} hari setelah tanggal kegiatan.";
-                if ($this->request->isAJAX()) {
-                    return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
-                }
-                return redirect()->back()->with('error', $msg);
-            }
         }
 
         $bulanTerpilih = date('n', strtotime($tanggal));
@@ -552,6 +586,20 @@ class LogKegiatanController extends BaseController
 
         $logTambahanModel = new \App\Models\LogTugasTambahan();
         $tanggal = $this->request->getPost('tanggal');
+        $userModel = new \App\Models\User();
+        $currentUser = $userModel->find($userId);
+        $isDirektur = ($currentUser && $currentUser['role'] === 'direktur');
+
+        // Cek apakah tanggal kegiatan terkunci oleh kebijakan batas waktu sistem
+        $lockCheck = $this->checkDateLockStatus($tanggal, $currentUser);
+        if ($lockCheck['is_locked'] && !$isDirektur) {
+            $msg = 'Gagal menyimpan: ' . $lockCheck['reason'];
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+            }
+            return redirect()->back()->with('error', $msg);
+        }
+
         $status = $this->request->isAJAX() ? 'draft' : 'terkirim';
 
         $log_ids = $this->request->getPost('log_tambahan_id');
@@ -764,5 +812,65 @@ class LogKegiatanController extends BaseController
                 'csrf_hash' => csrf_hash()
             ]);
         }
+    }
+
+    /**
+     * Helper untuk mengecek apakah tanggal kegiatan terkunci oleh kebijakan batas waktu sistem
+     * @return array ['is_locked' => bool, 'reason' => string]
+     */
+    private function checkDateLockStatus(string $tanggal, ?array $currentUser = null): array
+    {
+        $today = date('Y-m-d');
+
+        // 1. Tanggal kegiatan di masa depan DILARANG KERAS
+        if ($tanggal > $today) {
+            return [
+                'is_locked' => true,
+                'reason'    => 'Tanggal kegiatan di masa depan tidak dapat diisi atau dilaporkan.'
+            ];
+        }
+
+        // Direktur dan Superadmin dibebaskan dari batas waktu pengisian operasional
+        if ($currentUser && in_array($currentUser['role'] ?? '', ['direktur', 'admin'])) {
+            return ['is_locked' => false, 'reason' => ''];
+        }
+
+        $settingModel = new \App\Models\SettingModel();
+
+        // 2. Kunci Pengisian Bulan Lalu (End-of-Month Cutoff Deadline)
+        $isMonthlyDeadlineActive = $settingModel->getValue('enable_monthly_log_deadline', '1') === '1';
+        if ($isMonthlyDeadlineActive) {
+            $toleransiDays = (int) $settingModel->getValue('toleransi_hari_bulan_lalu', 0);
+            $lastDayOfMonth = date('Y-m-t', strtotime($tanggal));
+            $deadlineDate = date('Y-m-d', strtotime("$lastDayOfMonth + {$toleransiDays} days"));
+
+            if ($today > $deadlineDate) {
+                $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                $mIndex = (int) date('n', strtotime($tanggal)) - 1;
+                $tahunKegiatan = date('Y', strtotime($tanggal));
+                $namaBulan = ($bulanIndo[$mIndex] ?? '') . " {$tahunKegiatan}";
+                $tglBatasIndo = date('d', strtotime($deadlineDate)) . ' ' . ($bulanIndo[(int)date('n', strtotime($deadlineDate)) - 1] ?? '') . ' ' . date('Y', strtotime($deadlineDate));
+
+                return [
+                    'is_locked' => true,
+                    'reason'    => "Pengisian laporan kegiatan untuk periode {$namaBulan} telah ditutup sejak tanggal {$tglBatasIndo} (Batas akhir bulan + toleransi {$toleransiDays} hari)."
+                ];
+            }
+        }
+
+        // 3. Toleransi Harian Berjalan (Rolling Daily Limit)
+        $isDailyDeadlineActive = $settingModel->getValue('enable_log_deadline', '0') === '1';
+        if ($isDailyDeadlineActive) {
+            $batasLogDays = (int) $settingModel->getValue('batas_input_log', 3);
+            $diffDays = (int) floor((strtotime($today) - strtotime($tanggal)) / 86400);
+            if ($diffDays > $batasLogDays) {
+                return [
+                    'is_locked' => true,
+                    'reason'    => "Batas waktu pengisian laporan kegiatan harian adalah maksimal {$batasLogDays} hari setelah tanggal kegiatan."
+                ];
+            }
+        }
+
+        return ['is_locked' => false, 'reason' => ''];
     }
 }

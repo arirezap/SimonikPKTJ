@@ -20,10 +20,20 @@ class SettingsController extends BaseController
                 'setting_value' => '5',
                 'description'   => 'Tanggal maksimal di bulan berjalan untuk menyusun dan mengirimkan target kinerja bulanan (Contoh: Tanggal 5).'
             ],
-            'enable_log_deadline' => [
-                'setting_name'  => 'Status Batas Waktu Laporan Harian',
+            'enable_monthly_log_deadline' => [
+                'setting_name'  => 'Status Kunci Laporan Bulan Lalu',
+                'setting_value' => '1',
+                'description'   => 'Aktifkan (ON) untuk mengunci pengisian seluruh tanggal di bulan-bulan sebelumnya setelah melewati akhir bulan (plus toleransi hari), atau Non-aktifkan (OFF) agar bulan lalu tetap bebas diisi.'
+            ],
+            'toleransi_hari_bulan_lalu' => [
+                'setting_name'  => 'Toleransi Hari Pengisian Bulan Lalu',
                 'setting_value' => '0',
-                'description'   => 'Aktifkan (ON) untuk membatasi input laporan kegiatan harian dengan batas toleransi hari, atau Non-aktifkan (OFF) agar bebas diisi kapanpun (tanggal masa depan tetap dilarang).'
+                'description'   => 'Jumlah hari toleransi tambahan setelah tanggal terakhir di bulan tersebut sebelum pengisian dikunci secara permanen (Contoh: 0 hari = terkunci tepat tanggal 1 bulan berikutnya).'
+            ],
+            'enable_log_deadline' => [
+                'setting_name'  => 'Status Batas Waktu Harian Laporan',
+                'setting_value' => '0',
+                'description'   => 'Aktifkan (ON) untuk membatasi input laporan kegiatan harian dengan toleransi hari per tanggal kegiatan, atau Non-aktifkan (OFF) agar bebas diisi kapanpun.'
             ],
             'batas_input_log' => [
                 'setting_name'  => 'Toleransi Hari Pelaporan Kegiatan Harian',
@@ -72,11 +82,12 @@ class SettingsController extends BaseController
         }
 
         $data = [
-            'title'       => 'Pengaturan Sistem',
-            'settingsMap' => $settingsMap,
-            'isTargetDeadlineActive'    => ($settingsMap['enable_target_deadline']['setting_value'] ?? '0') === '1',
-            'isLogDeadlineActive'       => ($settingsMap['enable_log_deadline']['setting_value'] ?? '0') === '1',
-            'isPenilaianDeadlineActive' => ($settingsMap['enable_penilaian_deadline']['setting_value'] ?? '0') === '1',
+            'title'                      => 'Pengaturan Sistem',
+            'settingsMap'                => $settingsMap,
+            'isTargetDeadlineActive'     => ($settingsMap['enable_target_deadline']['setting_value'] ?? '0') === '1',
+            'isMonthlyLogDeadlineActive' => ($settingsMap['enable_monthly_log_deadline']['setting_value'] ?? '1') === '1',
+            'isLogDeadlineActive'        => ($settingsMap['enable_log_deadline']['setting_value'] ?? '0') === '1',
+            'isPenilaianDeadlineActive'  => ($settingsMap['enable_penilaian_deadline']['setting_value'] ?? '0') === '1',
         ];
         
         return view('admin/settings/index', $data);
@@ -93,9 +104,10 @@ class SettingsController extends BaseController
         
         // 1. Simpan status masing-masing saklar toggle (1 per 1)
         $toggles = [
-            'enable_target_deadline'    => $this->request->getPost('enable_target_deadline') ? '1' : '0',
-            'enable_log_deadline'       => $this->request->getPost('enable_log_deadline') ? '1' : '0',
-            'enable_penilaian_deadline' => $this->request->getPost('enable_penilaian_deadline') ? '1' : '0',
+            'enable_target_deadline'      => $this->request->getPost('enable_target_deadline') ? '1' : '0',
+            'enable_monthly_log_deadline' => $this->request->getPost('enable_monthly_log_deadline') ? '1' : '0',
+            'enable_log_deadline'         => $this->request->getPost('enable_log_deadline') ? '1' : '0',
+            'enable_penilaian_deadline'   => $this->request->getPost('enable_penilaian_deadline') ? '1' : '0',
         ];
 
         foreach ($toggles as $tKey => $tVal) {
@@ -112,10 +124,12 @@ class SettingsController extends BaseController
                 $rawVal = (int)trim((string)$value);
                 if (in_array($key, ['batas_input_target', 'batas_penilaian_kinerja'])) {
                     $valClean = min(31, max(1, $rawVal));
+                } elseif ($key === 'toleransi_hari_bulan_lalu') {
+                    $valClean = min(30, max(0, $rawVal)); // Min 0 hari, Max 30 hari
                 } elseif ($key === 'batas_input_log') {
                     $valClean = min(60, max(1, $rawVal));
                 } else {
-                    $valClean = max(1, $rawVal);
+                    $valClean = max(0, $rawVal);
                 }
 
                 $settingModel->update($key, [

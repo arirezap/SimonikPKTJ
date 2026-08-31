@@ -246,10 +246,10 @@ th.sortable.desc .sort-icon {
             <p class="text-muted small mb-0">Monitoring capaian kinerja seluruh unit untuk keperluan remunerasi & evaluasi berkala.</p>
         </div>
         <div class="d-flex align-items-center gap-2">
-            <a href="<?= site_url('kepegawaian/export-excel') ?>?bulan=<?= esc($bulan_terpilih) ?>&tahun=<?= esc($tahun_terpilih) ?>&unit=<?= esc($unit_filter) ?>" class="btn btn-sm btn-success shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center gap-1.5 btn-tactile" id="btnExportExcel" title="Unduh Workbook Excel (.xlsx) Multi-Sheet Data Lengkap">
+            <a href="<?= site_url('kepegawaian/export-excel') ?>?bulan=<?= esc($bulan_terpilih) ?>&tahun=<?= esc($tahun_terpilih) ?>&unit=<?= esc($unit_filter) ?>&role=<?= esc($role_filter ?? '') ?>" class="btn btn-sm btn-success shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center gap-1.5 btn-tactile" id="btnExportExcel" title="Unduh Workbook Excel (.xlsx) Multi-Sheet Data Lengkap">
                 <i class="bi bi-file-earmark-excel-fill"></i> Export Excel
             </a>
-            <a href="<?= site_url('kepegawaian/export-pdf') ?>?bulan=<?= esc($bulan_terpilih) ?>&tahun=<?= esc($tahun_terpilih) ?>&unit=<?= esc($unit_filter) ?>" class="btn btn-sm btn-danger shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center gap-1.5 btn-tactile" id="btnExportPdf" title="Unduh Laporan PDF Resmi A4 Landscape">
+            <a href="<?= site_url('kepegawaian/export-pdf') ?>?bulan=<?= esc($bulan_terpilih) ?>&tahun=<?= esc($tahun_terpilih) ?>&unit=<?= esc($unit_filter) ?>&role=<?= esc($role_filter ?? '') ?>" class="btn btn-sm btn-danger shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center gap-1.5 btn-tactile" id="btnExportPdf" title="Unduh Laporan PDF Resmi A4 Landscape">
                 <i class="bi bi-file-earmark-pdf-fill"></i> Export PDF
             </a>
         </div>
@@ -258,27 +258,32 @@ th.sortable.desc .sort-icon {
     <!-- FILTER & KPI SUMMARY ROW -->
     <div class="row g-3 mb-3 bento-stagger bento-stagger-2">
         <!-- FILTER CARD -->
-        <div class="col-lg-5 col-xl-5">
+        <div class="col-lg-6 col-xl-6">
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
-                <div class="card-header bg-light py-2.5 px-3 border-bottom">
-                    <h6 class="fw-bold text-dark mb-0 small"><i class="bi bi-funnel-fill text-primary me-1.5"></i>Filter Periode & Unit Kerja</h6>
+                <div class="card-header bg-light py-2.5 px-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold text-dark mb-0 small"><i class="bi bi-funnel-fill text-primary me-1.5"></i>Filter Periode, Unit Kerja & Kategori</h6>
+                    <?php if (!empty($unit_filter) || !empty($role_filter)): ?>
+                        <a href="<?= site_url('kepegawaian') ?>?bulan=<?= esc($bulan_terpilih) ?>&tahun=<?= esc($tahun_terpilih) ?>" class="badge bg-secondary-subtle text-secondary text-decoration-none rounded-pill px-2 py-1" style="font-size: 0.7rem;">
+                            <i class="bi bi-x-circle me-1"></i>Reset Filter
+                        </a>
+                    <?php endif; ?>
                 </div>
                 <div class="card-body p-3">
                     <form method="GET" action="<?= site_url('kepegawaian') ?>" class="row g-2 align-items-end" id="filterForm">
-                        <div class="col-sm-4">
+                        <div class="col-6 col-sm-3">
                             <label class="form-label text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.68rem; letter-spacing: 0.3px;">Periode Bulan</label>
                             <select name="bulan" class="form-select form-select-sm" onchange="showSkeletonAndSubmit()">
-                                <option value="all" <?= ($bulan_terpilih === 'all') ? 'selected' : '' ?>>Sepanjang Tahun (1 Tahun)</option>
+                                <option value="all" <?= ($bulan_terpilih === 'all') ? 'selected' : '' ?>>Sepanjang Tahun</option>
                                 <?php foreach($bulan_indo as $index => $nama): ?>
                                     <option value="<?= $index + 1 ?>" <?= ($bulan_terpilih == $index + 1 && $bulan_terpilih !== 'all') ? 'selected' : '' ?>><?= $nama ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <div class="col-sm-3">
+                        <div class="col-6 col-sm-2">
                             <label class="form-label text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.68rem; letter-spacing: 0.3px;">Tahun</label>
-                            <input type="number" name="tahun" id="filterTahunInput" class="form-control form-control-sm" value="<?= esc($tahun_terpilih) ?>" onchange="showSkeletonAndSubmit()">
+                            <input type="number" name="tahun" id="filterTahunInput" class="form-control form-control-sm text-center fw-bold" value="<?= esc($tahun_terpilih) ?>" onchange="showSkeletonAndSubmit()">
                         </div>
-                        <div class="col-sm-5">
+                        <div class="col-12 col-sm-4">
                             <label class="form-label text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.68rem; letter-spacing: 0.3px;">Unit Kerja</label>
                             <select name="unit" class="form-select form-select-sm" onchange="showSkeletonAndSubmit()">
                                 <option value="">Semua Unit Kerja</option>
@@ -287,13 +292,24 @@ th.sortable.desc .sort-icon {
                                 <?php endforeach; ?>
                             </select>
                         </div>
+                        <div class="col-12 col-sm-3">
+                            <label class="form-label text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.68rem; letter-spacing: 0.3px;">Role / Kategori</label>
+                            <select name="role" class="form-select form-select-sm" onchange="showSkeletonAndSubmit()">
+                                <option value="">Semua Role</option>
+                                <option value="pimpinan" <?= (($role_filter ?? '') === 'pimpinan') ? 'selected' : '' ?>>Pimpinan</option>
+                                <option value="manajemen" <?= (($role_filter ?? '') === 'manajemen') ? 'selected' : '' ?>>Manajemen</option>
+                                <option value="kepegawaian" <?= (($role_filter ?? '') === 'kepegawaian') ? 'selected' : '' ?>>Kepegawaian</option>
+                                <option value="tugas_belajar" <?= (($role_filter ?? '') === 'tugas_belajar') ? 'selected' : '' ?>>Tugas Belajar</option>
+                                <option value="user" <?= (($role_filter ?? '') === 'user' || ($role_filter ?? '') === 'staf') ? 'selected' : '' ?>>Staf Pelaksana</option>
+                            </select>
+                        </div>
                     </form>
                 </div>
             </div>
         </div>
 
         <!-- KPI SUMMARY CARD (5 METRIC BOXES) -->
-        <div class="col-lg-7 col-xl-7">
+        <div class="col-lg-6 col-xl-6">
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
                 <div class="card-body p-2.5 p-xl-3 d-flex flex-column justify-content-center h-100">
                     <div class="row text-center g-0 align-items-stretch">
@@ -430,8 +446,8 @@ th.sortable.desc .sort-icon {
                             <th class="text-center py-2.5 sortable" data-sort="dinilai" style="width: 110px;">
                                 Dinilai <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
                             </th>
-                            <th class="text-center pe-3 py-2.5 sortable desc" data-sort="nilai" style="width: 130px;">
-                                Rata-Rata <span class="sort-icon"><i class="bi bi-arrow-down"></i></span>
+                            <th class="text-center pe-3 py-2.5 sortable" data-sort="nilai" style="width: 130px;">
+                                Rata-Rata <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
                             </th>
                         </tr>
                     </thead>

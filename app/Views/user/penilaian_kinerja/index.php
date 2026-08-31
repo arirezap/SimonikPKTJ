@@ -216,7 +216,7 @@
                         $jmlDinilai = 0;
                         $totalNilai = 0;
                         foreach ($rekap_data_sendiri as $rd) {
-                            if (isset($rd['status_penilaian']) && $rd['status_penilaian'] === 'terbit' && !empty($rd['nilai_capaian'])) {
+                            if (isset($rd['status_penilaian']) && $rd['status_penilaian'] === 'terbit' && $rd['nilai_capaian'] !== null && $rd['nilai_capaian'] !== '') {
                                 $jmlDinilai++;
                                 $totalNilai += (float)$rd['nilai_capaian'];
                             }
@@ -320,7 +320,7 @@
                                             <?php if (session()->get('role') === 'direktur'): ?>
                                                 <input type="hidden" name="laporan_id[]" value="<?= esc($row['id']) ?>">
                                                 <div class="input-group input-group-sm">
-                                                    <input type="number" step="0.01" min="0" max="100" name="nilai_capaian[]" class="form-control text-center text-primary fw-bold num-tabular input-nilai-capaian" value="<?= isset($row['nilai_capaian']) && $row['nilai_capaian'] !== null ? (float)$row['nilai_capaian'] : '' ?>" placeholder="0 - 100">
+                                                    <input type="number" step="0.01" min="0" max="150" name="nilai_capaian[]" class="form-control text-center text-primary fw-bold num-tabular input-nilai-capaian" value="<?= isset($row['nilai_capaian']) && $row['nilai_capaian'] !== null ? (float)$row['nilai_capaian'] : '' ?>" placeholder="0 - 150">
                                                     <span class="input-group-text">%</span>
                                                 </div>
                                             <?php else: ?>
@@ -388,7 +388,7 @@
                                         <?php if (session()->get('role') === 'direktur'): ?>
                                             <input type="hidden" name="log_tambahan_id[]" value="<?= esc($tugas_tambahan_sendiri[0]['id']) ?>">
                                             <div class="input-group input-group-sm justify-content-center" style="max-width: 130px; margin: 0 auto;">
-                                                <input type="number" step="0.01" min="0" max="100" name="nilai_tugas_tambahan_gabungan" class="form-control text-center text-success fw-bold num-tabular input-nilai-capaian" value="<?= $scoreTambahanIndividu !== null ? (float)$scoreTambahanIndividu : '' ?>" placeholder="0 - 100">
+                                                <input type="number" step="0.01" min="0" max="150" name="nilai_tugas_tambahan_gabungan" class="form-control text-center text-success fw-bold num-tabular input-nilai-capaian" value="<?= $scoreTambahanIndividu !== null ? (float)$scoreTambahanIndividu : '' ?>" placeholder="0 - 150">
                                                 <span class="input-group-text">%</span>
                                             </div>
                                         <?php else: ?>
@@ -611,7 +611,7 @@
                             $jmlDinilaiBwh = 0;
                             $totalNilaiBwh = 0;
                             foreach ($rekap_data_staf as $rd) {
-                                if (!empty($rd['nilai_capaian'])) {
+                                if ($rd['nilai_capaian'] !== null && $rd['nilai_capaian'] !== '') {
                                     $jmlDinilaiBwh++;
                                     $totalNilaiBwh += (float)$rd['nilai_capaian'];
                                 }
@@ -805,11 +805,11 @@
                                     <tfoot class="table-light fw-bold" style="border-top: 2px solid #dee2e6;">
                                         <tr>
                                             <td colspan="4" class="text-end pe-3 align-middle text-dark fw-bold" style="font-size: 0.82rem;">
-                                                <i class="bi bi-journal-check text-success me-1"></i> Nilai Tugas Tambahan (0 - 100%):
+                                                <i class="bi bi-journal-check text-success me-1"></i> Nilai Tugas Tambahan (0 - 150%):
                                             </td>
                                             <td class="p-2 align-middle text-center col-nilai">
                                                 <div class="input-group input-group-sm shadow-sm rounded-3 border border-success-subtle" style="width: 100%; min-width: 145px;">
-                                                    <input type="number" step="0.01" max="100" min="0" name="nilai_tugas_tambahan_gabungan" id="inputNilaiTambahanGabungan" class="form-control text-center fw-bold text-success px-2 num-tabular input-nilai-capaian" style="font-size:0.95rem; min-width: 90px;" value="<?= $scoreTambahanStaf !== null ? $scoreTambahanStaf : '' ?>" placeholder="0 - 100" <?= !$is_penilai ? 'readonly' : '' ?>>
+                                                    <input type="number" step="0.01" max="150" min="0" name="nilai_tugas_tambahan_gabungan" id="inputNilaiTambahanGabungan" class="form-control text-center fw-bold text-success px-2 num-tabular input-nilai-capaian" style="font-size:0.95rem; min-width: 90px;" value="<?= $scoreTambahanStaf !== null ? $scoreTambahanStaf : '' ?>" placeholder="0 - 150" <?= !$is_penilai ? 'readonly' : '' ?>>
                                                     <span class="input-group-text bg-success-subtle text-success fw-bold px-2">%</span>
                                                 </div>
                                                 <div id="hintTambahanContainer">
@@ -1085,7 +1085,7 @@
 
             if (hasTambahan) {
                 let hintContainer = $('#hintTambahanContainer');
-                if (rawTambahan !== '' && !isNaN(vTambahan) && vTambahan >= 0 && vTambahan <= 100) {
+                if (rawTambahan !== '' && !isNaN(vTambahan) && vTambahan >= 0 && vTambahan <= 150) {
                     total += vTambahan;
                     count++;
                     tambahanFilled = true;
@@ -1224,7 +1224,7 @@
             });
 
             let vTambahan = parseFloat($('#inputNilaiTambahanGabungan').val());
-            if (!isNaN(vTambahan) && (vTambahan < 0 || vTambahan > 100)) {
+            if (!isNaN(vTambahan) && (vTambahan < 0 || vTambahan > 150)) {
                 hasInvalid = true;
                 $('#inputNilaiTambahanGabungan').addClass('is-invalid');
             }
@@ -1234,7 +1234,7 @@
                 Swal.fire({
                     icon: 'error',
                     title: 'Nilai Tidak Sesuai',
-                    text: 'Terdapat nilai capaian yang di luar batas yang diperbolehkan (RHK: 0 - 150%, Tugas Tambahan: 0 - 100%).'
+                    text: 'Terdapat nilai capaian yang di luar batas yang diperbolehkan (0 - 150%).'
                 });
                 return false;
             }
@@ -1247,18 +1247,34 @@
                 Swal.fire({
                     title: 'Ada Nilai Belum Diisi',
                     html: `Terdapat <strong>${stats.totalUnfilled} komponen penilaian</strong> yang belum diisi nilainya.<br><br>` +
-                          `Nilai akhir kinerja staf akan dihitung dari <strong>${stats.totalFilled} komponen</strong> yang sudah terisi.<br><br>` +
+                          `Jika Anda tetap melanjutkan penerbitan, seluruh komponen yang kosong akan <strong>diberi nilai 0 (Nol)</strong> dan dihitung ke dalam nilai akhir kinerja staf.<br><br>` +
                           `Apakah Anda ingin tetap menerbitkan penilaian?`,
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#198754',
                     cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="bi bi-check-circle-fill me-1"></i> Ya, Terbitkan Penilaian',
+                    confirmButtonText: '<i class="bi bi-check-circle-fill me-1"></i> Ya, Tetap Terbitkan (Nilai 0)',
                     cancelButtonText: 'Periksa Kembali',
                     reverseButtons: true
                 }).then((result) => {
                     if (result.isConfirmed) {
                         isPublishConfirmed = true;
+
+                        // Otomatis isi seluruh input RHK yang kosong dengan '0'
+                        $('.input-nilai-capaian').each(function() {
+                            if ($(this).val() === '') {
+                                $(this).val('0');
+                            }
+                        });
+
+                        // Otomatis isi input tugas tambahan jika ada dan kosong dengan '0'
+                        if ($('#inputNilaiTambahanGabungan').length && $('#inputNilaiTambahanGabungan').val() === '') {
+                            $('#inputNilaiTambahanGabungan').val('0');
+                        }
+
+                        // Hitung ulang kalkulasi di layar dengan nilai 0
+                        calculateOverallStafScore();
+
                         $('#penilaianActionInput').val('submit');
                         form.find('button[type="submit"]').prop('disabled', true);
                         form.find('button[value="submit"]').html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menerbitkan...');

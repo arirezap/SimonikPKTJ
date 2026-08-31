@@ -44,7 +44,13 @@
         padding: 0.65rem 0.75rem;
         vertical-align: middle;
         border-color: #f1f5f9;
-        transition: background-color 0.25s ease;
+        transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .table-bento tbody tr {
+        transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .table-bento tbody tr:hover td {
+        background-color: rgba(241, 245, 249, 0.75);
     }
     .table-bento tbody tr:last-child td {
         border-bottom: 0;
@@ -59,6 +65,19 @@
         -moz-appearance: textfield;
     }
 
+    /* Table Input Focus & Micro-elevation */
+    .table-bento input.form-control,
+    .table-bento textarea.form-control {
+        transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, transform 0.15s ease;
+        border-radius: 8px;
+    }
+    .table-bento input.form-control:focus,
+    .table-bento textarea.form-control:focus {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+        background-color: #ffffff !important;
+    }
+
     .readonly-box {
         background-color: #f8fafc;
         border: 1px solid #e2e8f0;
@@ -67,16 +86,19 @@
         font-size: 0.85rem;
     }
 
-    /* Motion Design & Ergonomic Transitions */
+    /* Motion Design & Natural Deceleration Transitions */
     @keyframes rowSlideIn {
-        from {
+        0% {
             opacity: 0;
-            transform: translateY(-10px);
-            background-color: rgba(13, 110, 253, 0.08);
+            transform: translateY(-12px) scale(0.98);
+            background-color: rgba(13, 110, 253, 0.12);
         }
-        to {
+        60% {
+            background-color: rgba(13, 110, 253, 0.06);
+        }
+        100% {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateY(0) scale(1);
             background-color: transparent;
         }
     }
@@ -85,34 +107,82 @@
     }
 
     @keyframes rowSlideOut {
-        from {
+        0% {
             opacity: 1;
-            transform: scale(1);
+            transform: translateX(0) scale(1);
+            background-color: rgba(220, 53, 69, 0.08);
         }
-        to {
+        100% {
             opacity: 0;
-            transform: scale(0.96) translateX(12px);
+            transform: translateX(18px) scale(0.96);
+            background-color: rgba(220, 53, 69, 0.15);
         }
     }
     .row-slide-out {
-        animation: rowSlideOut 0.22s ease-out forwards;
+        animation: rowSlideOut 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         pointer-events: none;
     }
 
     @keyframes pulseDuplicate {
-        0% { background-color: rgba(220, 53, 69, 0.05); }
-        50% { background-color: rgba(220, 53, 69, 0.25); }
-        100% { background-color: rgba(220, 53, 69, 0.12); }
+        0% {
+            background-color: rgba(220, 53, 69, 0.06);
+            transform: translateX(0);
+        }
+        20% {
+            background-color: rgba(220, 53, 69, 0.25);
+            transform: translateX(-4px);
+        }
+        40% {
+            transform: translateX(4px);
+        }
+        60% {
+            background-color: rgba(220, 53, 69, 0.18);
+            transform: translateX(-2px);
+        }
+        80% {
+            transform: translateX(2px);
+        }
+        100% {
+            background-color: rgba(220, 53, 69, 0.10);
+            transform: translateX(0);
+        }
     }
     .table-danger {
-        animation: pulseDuplicate 0.4s ease-in-out;
+        animation: pulseDuplicate 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
+    /* Segmented Tab Pane Transition */
+    .tab-content > .tab-pane {
+        opacity: 0;
+        transform: translateY(8px);
+        transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .tab-content > .tab-pane.active {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    /* Status Badge Pop */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+    }
+    .status-badge:hover {
+        transform: scale(1.05);
+    }
+
+    /* Tactile Buttons */
     .btn-tactile {
-        transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease;
+        transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, border-color 0.2s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    .btn-tactile:hover {
+        transform: translateY(-1px);
     }
     .btn-tactile:active {
-        transform: scale(0.97);
+        transform: scale(0.965);
     }
 
     /* Modal Backdrop Blur & Pop-In */
@@ -124,8 +194,28 @@
         transform: scale(1) translateY(0);
     }
 
+    /* Modal Radio Card Selection */
+    .modal-radio-card {
+        border: 1.5px solid #e2e8f0;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        cursor: pointer;
+    }
+    .modal-radio-card:hover {
+        border-color: #93c5fd;
+        background-color: #f8faff !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.06);
+    }
+    .modal-radio-card.active {
+        border-color: #3b82f6 !important;
+        background-color: #eff6ff !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+    }
+
     @media (prefers-reduced-motion: reduce) {
-        .row-slide-in, .row-slide-out, .table-danger, .modal.fade .modal-dialog {
+        .row-slide-in, .row-slide-out, .table-danger, .modal.fade .modal-dialog,
+        .tab-content > .tab-pane, .status-badge, .btn-tactile, .modal-radio-card,
+        .table-bento tbody tr {
             animation: none !important;
             transform: none !important;
             transition: none !important;
@@ -607,21 +697,21 @@
                     <label class="form-label fw-bold text-dark small mb-1.5" style="font-size: 0.75rem; letter-spacing: 0.3px;">
                         <i class="bi bi-layers text-primary me-1"></i> METODE PENYALINAN
                     </label>
-                    <div class="p-3 bg-light rounded-3 border">
-                        <div class="form-check mb-2">
-                            <input class="form-check-input" type="radio" name="modeSalinTarget" id="modeSalinReplace" value="replace" checked>
-                            <label class="form-check-label small" for="modeSalinReplace">
-                                <strong class="text-dark">Gantikan Baris Tabel Saat Ini</strong>
-                                <span class="d-block text-muted" style="font-size: 0.72rem;">Mengganti seluruh baris target yang ada di tabel dengan target dari periode sumber.</span>
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="modeSalinTarget" id="modeSalinAppend" value="append">
-                            <label class="form-check-label small" for="modeSalinAppend">
-                                <strong class="text-dark">Tambahkan ke Bawah Baris Saat Ini</strong>
-                                <span class="d-block text-muted" style="font-size: 0.72rem;">Menyisipkan target dari periode sumber di bawah target yang sudah ada tanpa menghapusnya.</span>
-                            </label>
-                        </div>
+                    <div class="d-flex flex-column gap-2">
+                        <label class="modal-radio-card d-flex align-items-start gap-3 p-3 rounded-3 bg-white position-relative active" for="modeSalinReplace">
+                            <input class="form-check-input mt-1 flex-shrink-0" type="radio" name="modeSalinTarget" id="modeSalinReplace" value="replace" checked>
+                            <div>
+                                <strong class="text-dark d-block">Gantikan Baris Tabel Saat Ini</strong>
+                                <span class="text-muted small" style="font-size: 0.75rem;">Mengganti seluruh baris target yang ada di tabel dengan target dari periode sumber.</span>
+                            </div>
+                        </label>
+                        <label class="modal-radio-card d-flex align-items-start gap-3 p-3 rounded-3 bg-white position-relative" for="modeSalinAppend">
+                            <input class="form-check-input mt-1 flex-shrink-0" type="radio" name="modeSalinTarget" id="modeSalinAppend" value="append">
+                            <div>
+                                <strong class="text-dark d-block">Tambahkan ke Bawah Baris Saat Ini</strong>
+                                <span class="text-muted small" style="font-size: 0.75rem;">Menyisipkan target dari periode sumber di bawah target yang sudah ada tanpa menghapusnya.</span>
+                            </div>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -1309,7 +1399,7 @@
                             const safeSatuan = escapeHtml(item.satuan);
 
                             const newRow = $(`
-                                <tr class="row-slide-in">
+                                <tr class="row-slide-in" style="animation-delay: ${insertedCount * 45}ms;">
                                     <input type="hidden" name="laporan_id[]" value="">
                                     <td class="nomor-baris text-center fw-bold text-muted">1</td>
                                     <td>
@@ -1386,6 +1476,12 @@
                     }
                 }
             });
+        });
+
+        // Toggle active class pada modal radio card
+        $(document).on('change', 'input[name="modeSalinTarget"]', function() {
+            $('.modal-radio-card').removeClass('active');
+            $(this).closest('.modal-radio-card').addClass('active');
         });
 
         function escapeHtml(text) {

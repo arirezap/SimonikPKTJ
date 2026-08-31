@@ -33,6 +33,7 @@ class DashboardKepegawaian extends BaseController
         $bulanTerpilih = $this->request->getGet('bulan') ?? date('n');
         $tahunTerpilih = $this->request->getGet('tahun') ?? date('Y');
         $unitFilter    = $this->request->getGet('unit') ?? '';
+        $roleFilter    = $this->request->getGet('role') ?? '';
 
         $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
         $namaBulan = ($bulanTerpilih === 'all') ? 'Sepanjang Tahun' : ($bulanIndo[(int)$bulanTerpilih - 1] ?? '');
@@ -46,7 +47,23 @@ class DashboardKepegawaian extends BaseController
         if (!empty($unitFilter)) {
             $builder = $builder->where('unit', $unitFilter);
         }
-        $semuaPegawai = $builder->orderBy('nama_lengkap', 'ASC')->findAll();
+        if (!empty($roleFilter)) {
+            if ($roleFilter === 'pimpinan') {
+                $builder = $builder->whereIn('role', ['direktur', 'wadir']);
+            } elseif ($roleFilter === 'manajemen' || $roleFilter === 'struktural') {
+                $builder = $builder->whereIn('role', ['kabag', 'kabag_aak', 'kabag_kuk', 'manajemen']);
+            } elseif ($roleFilter === 'kepegawaian') {
+                $builder = $builder->where('role', 'kepegawaian');
+            } elseif ($roleFilter === 'tugas_belajar') {
+                $builder = $builder->where('role', 'tugas_belajar');
+            } elseif ($roleFilter === 'user' || $roleFilter === 'staf') {
+                $builder = $builder->where('role', 'user');
+            } else {
+                $builder = $builder->where('role', $roleFilter);
+            }
+        }
+        $semuaPegawai = $builder->findAll();
+        $semuaPegawai = $this->sortPegawaiByHierarchy($semuaPegawai);
 
         // Hitung rekap kinerja tiap pegawai
         $rekapKinerja = [];
@@ -70,7 +87,7 @@ class DashboardKepegawaian extends BaseController
                     $b = (int)$rd['bulan'];
                     $targetsPerBulan[$b]++;
                     
-                    if (!empty($rd['nilai_capaian'])) {
+                    if ($rd['nilai_capaian'] !== null && $rd['nilai_capaian'] !== '') {
                         $dinilaiPerBulan[$b]++;
                         $nilaiPerBulan[$b] += (float)$rd['nilai_capaian'];
                         
@@ -110,7 +127,7 @@ class DashboardKepegawaian extends BaseController
                 $jmlTotalKomponen = array_sum($targetsPerBulan);
             } else {
                 foreach ($rekapData as $rd) {
-                    if (!empty($rd['nilai_capaian'])) {
+                    if ($rd['nilai_capaian'] !== null && $rd['nilai_capaian'] !== '') {
                         $jmlDinilai++;
                         $totalNilai += (float)$rd['nilai_capaian'];
                     }
@@ -148,9 +165,14 @@ class DashboardKepegawaian extends BaseController
             ];
         }
 
-        // Urutkan dari rata-rata tertinggi
+        // Urutkan rekap berdasarkan hierarki jabatan resmi (Direktur s.d. Staf Terbawah)
         usort($rekapKinerja, function ($a, $b) {
-            return $b['rata_rata'] <=> $a['rata_rata'];
+            $wA = $this->getHierarchyWeight($a['pegawai']);
+            $wB = $this->getHierarchyWeight($b['pegawai']);
+            if ($wA !== $wB) {
+                return $wA <=> $wB;
+            }
+            return strcasecmp($a['pegawai']['nama_lengkap'] ?? '', $b['pegawai']['nama_lengkap'] ?? '');
         });
 
         // Hitung statistik instansi
@@ -178,6 +200,7 @@ class DashboardKepegawaian extends BaseController
             'bulan_indo'            => $bulanIndo,
             'daftar_unit'           => $daftarUnit,
             'unit_filter'           => $unitFilter,
+            'role_filter'           => $roleFilter,
             'sudah_dinilai'         => $sudahDinilai,
             'belum_dinilai'         => $belumDinilai,
             'rata_rata_dinilai'     => $rataRataDinilai,
@@ -208,6 +231,101 @@ class DashboardKepegawaian extends BaseController
         } else {
             return ['text' => 'Sangat Kurang', 'fill' => 'FEE2E2', 'color' => '991B1B'];
         }
+    }
+
+    /**
+     * Menghitung bobot hierarki jabatan organisasi (Tier 1 = Direktur s.d. Tier 13 = Staf Terbawah)
+     */
+    private function getHierarchyWeight($u): int
+    {
+        $role    = strtolower(trim($u['role'] ?? ''));
+        $jabatan = strtolower(trim($u['jabatan'] ?? ''));
+        $unit    = strtolower(trim($u['unit'] ?? ''));
+        $nama    = strtolower(trim($u['nama_lengkap'] ?? ''));
+
+        // Tier 1: Direktur
+        if ($role === 'direktur' || $jabatan === 'direktur' || (strpos($jabatan, 'direktur') === 0 && strpos($jabatan, 'wakil') === false) || $unit === 'direktur') {
+            return 100;
+        }
+
+        // Tier 2: Wakil Direktur 1
+        if (strpos($jabatan, 'wakil direktur 1') !== false || strpos($jabatan, 'wadir 1') !== false || strpos($unit, 'wakil direktur 1') !== false || strpos($nama, 'edi purwanto') !== false) {
+            return 200;
+        }
+
+        // Tier 3: Wakil Direktur 2
+        if (strpos($jabatan, 'wakil direktur 2') !== false || strpos($jabatan, 'wadir 2') !== false || strpos($unit, 'wakil direktur 2') !== false || strpos($nama, 'sugianto') !== false) {
+            return 300;
+        }
+
+        // Tier 4: Wakil Direktur 3
+        if (strpos($jabatan, 'wakil direktur 3') !== false || strpos($jabatan, 'wadir 3') !== false || strpos($unit, 'wakil direktur 3') !== false || strpos($nama, 'setya wijayanta') !== false) {
+            return 400;
+        }
+
+        // Generic Wadir
+        if ($role === 'wadir' || strpos($jabatan, 'wakil direktur') !== false || strpos($jabatan, 'wadir') !== false) {
+            return 450;
+        }
+
+        // Tier 5: Kepala Bagian (Kabag AAK / KUK)
+        if (in_array($role, ['kabag', 'kabag_aak', 'kabag_kuk']) || strpos($jabatan, 'kepala bagian') !== false || strpos($jabatan, 'kabag') !== false || (strpos($unit, 'bagian ') === 0 && $role === 'manajemen')) {
+            return 500;
+        }
+
+        // Tier 6: Ketua Tim (Katim) & Kepala Satuan (SPI / SPM) / Koordinator
+        if ($role === 'katim' || strpos($jabatan, 'katim') !== false || strpos($jabatan, 'ketua tim') !== false || strpos($jabatan, 'koordinator') !== false || (strpos($unit, 'tim substansi') !== false && $role === 'manajemen') || (strpos($unit, 'satuan') !== false && $role === 'manajemen')) {
+            return 600;
+        }
+
+        // Tier 7: Kepala Pusat (Kapus P3M / Karakter)
+        if ($role === 'kapus' || strpos($jabatan, 'kapus') !== false || strpos($jabatan, 'kepala pusat') !== false || (strpos($unit, 'pusat') !== false && $role === 'manajemen')) {
+            return 700;
+        }
+
+        // Tier 8: Kepala Unit (Kanit TI / Lab / Usaha / Kesehatan / Perpus / Bahasa / Asrama)
+        if ($role === 'kanit' || strpos($jabatan, 'kanit') !== false || strpos($jabatan, 'kepala unit') !== false || (strpos($unit, 'unit ') === 0 && $role === 'manajemen')) {
+            return 800;
+        }
+
+        // Tier 9: Ketua / Sekretaris Program Studi (Kaprodi / Sekprodi)
+        if (strpos($jabatan, 'kaprodi') !== false || strpos($jabatan, 'ketua prodi') !== false || strpos($jabatan, 'sekretaris prodi') !== false || strpos($jabatan, 'sekprodi') !== false || (strpos($unit, 'prodi') !== false && $role === 'manajemen')) {
+            return 900;
+        }
+
+        // Tier 10: Ketua Pokja (Kapokja Diklat / Humas / Sarpras)
+        if ($role === 'kapokja' || strpos($jabatan, 'kapokja') !== false || strpos($jabatan, 'ketua pokja') !== false || (strpos($unit, 'pokja') !== false && $role === 'manajemen') || $role === 'manajemen') {
+            return 1000;
+        }
+
+        // Tier 11: Tenaga Pendidik / Dosen / Lektor / Instruktur
+        if (strpos($jabatan, 'dosen') !== false || strpos($jabatan, 'lektor') !== false || strpos($jabatan, 'instruktur') !== false || strpos($jabatan, 'asisten ahli') !== false || strpos($jabatan, 'guru') !== false) {
+            return 1100;
+        }
+
+        // Tier 12: Jabatan Fungsional Tertentu (JFT: Pranata, Arsiparis, Analis, Auditor, Medis, dll.)
+        if (strpos($jabatan, 'ahli') !== false || strpos($jabatan, 'pranata') !== false || strpos($jabatan, 'arsiparis') !== false || strpos($jabatan, 'analis') !== false || strpos($jabatan, 'auditor') !== false || strpos($jabatan, 'pustakawan') !== false || strpos($jabatan, 'terampil') !== false || strpos($jabatan, 'penelaah') !== false || strpos($jabatan, 'perekam') !== false) {
+            return 1200;
+        }
+
+        // Tier 13: Staf Pelaksana & Fungsional Umum
+        return 1300;
+    }
+
+    /**
+     * Mengurutkan daftar pegawai berdasarkan hierarki jabatan resmi (Direktur s.d. Staf)
+     */
+    private function sortPegawaiByHierarchy(array $pegawaiList): array
+    {
+        usort($pegawaiList, function($a, $b) {
+            $wA = $this->getHierarchyWeight($a);
+            $wB = $this->getHierarchyWeight($b);
+            if ($wA !== $wB) {
+                return $wA <=> $wB;
+            }
+            return strcasecmp($a['nama_lengkap'] ?? '', $b['nama_lengkap'] ?? '');
+        });
+        return $pegawaiList;
     }
 
     /**
@@ -291,7 +409,7 @@ class DashboardKepegawaian extends BaseController
                     $b = (int)$rd['bulan'];
                     $targetsPerBulan[$b]++;
                     
-                    if (!empty($rd['nilai_capaian'])) {
+                    if ($rd['nilai_capaian'] !== null && $rd['nilai_capaian'] !== '') {
                         $dinilaiPerBulan[$b]++;
                         $nilaiPerBulan[$b] += (float)$rd['nilai_capaian'];
                         $jmlDinilai++;
@@ -378,7 +496,7 @@ class DashboardKepegawaian extends BaseController
                 $jmlTotalKomponen = array_sum($targetsPerBulan);
             } else {
                 foreach ($userTargets as $rd) {
-                    if (!empty($rd['nilai_capaian'])) {
+                    if ($rd['nilai_capaian'] !== null && $rd['nilai_capaian'] !== '') {
                         $jmlDinilai++;
                         $totalNilai += (float)$rd['nilai_capaian'];
                     }
@@ -461,8 +579,15 @@ class DashboardKepegawaian extends BaseController
             ];
         }
 
-        // Urutkan rekap dari nilai tertinggi
-        usort($rekapKinerja, fn($a, $b) => $b['rata_rata'] <=> $a['rata_rata']);
+        // Urutkan rekap berdasarkan hierarki jabatan resmi (Direktur s.d. Staf Terbawah)
+        usort($rekapKinerja, function($a, $b) {
+            $wA = $this->getHierarchyWeight($a['pegawai']);
+            $wB = $this->getHierarchyWeight($b['pegawai']);
+            if ($wA !== $wB) {
+                return $wA <=> $wB;
+            }
+            return strcasecmp($a['pegawai']['nama_lengkap'] ?? '', $b['pegawai']['nama_lengkap'] ?? '');
+        });
 
         return [
             'rekapKinerja'  => $rekapKinerja,
@@ -484,6 +609,7 @@ class DashboardKepegawaian extends BaseController
         $bulanTerpilih = $this->request->getGet('bulan') ?? date('n');
         $tahunTerpilih = $this->request->getGet('tahun') ?? date('Y');
         $unitFilter    = $this->request->getGet('unit') ?? '';
+        $roleFilter    = $this->request->getGet('role') ?? '';
 
         $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
         $namaBulan = ($bulanTerpilih === 'all') ? 'Sepanjang Tahun' : ($bulanIndo[(int)$bulanTerpilih - 1] ?? '');
@@ -500,7 +626,23 @@ class DashboardKepegawaian extends BaseController
         if (!empty($unitFilter)) {
             $builder = $builder->where('unit', $unitFilter);
         }
-        $semuaPegawai = $builder->orderBy('nama_lengkap', 'ASC')->findAll();
+        if (!empty($roleFilter)) {
+            if ($roleFilter === 'pimpinan') {
+                $builder = $builder->whereIn('role', ['direktur', 'wadir']);
+            } elseif ($roleFilter === 'manajemen' || $roleFilter === 'struktural') {
+                $builder = $builder->whereIn('role', ['kabag', 'kabag_aak', 'kabag_kuk', 'manajemen']);
+            } elseif ($roleFilter === 'kepegawaian') {
+                $builder = $builder->where('role', 'kepegawaian');
+            } elseif ($roleFilter === 'tugas_belajar') {
+                $builder = $builder->where('role', 'tugas_belajar');
+            } elseif ($roleFilter === 'user' || $roleFilter === 'staf') {
+                $builder = $builder->where('role', 'user');
+            } else {
+                $builder = $builder->where('role', $roleFilter);
+            }
+        }
+        $semuaPegawai = $builder->findAll();
+        $semuaPegawai = $this->sortPegawaiByHierarchy($semuaPegawai);
 
         // Ambil data rekap secara bulk (Super Fast Batch Fetching)
         $bulkData = $this->getBulkRekapKinerja($semuaPegawai, $userMap, $bulanTerpilih, $tahunTerpilih, $bulanIndo, $namaBulan, true);
@@ -536,10 +678,19 @@ class DashboardKepegawaian extends BaseController
         $sheet1 = $spreadsheet->getActiveSheet();
         $sheet1->setTitle('Rekap Kinerja Pegawai');
 
+        $roleLabels = [
+            'pimpinan'      => 'Pimpinan (Direktur & Wadir)',
+            'manajemen'     => 'Manajemen / Struktural',
+            'kepegawaian'   => 'Pengelola Kepegawaian',
+            'tugas_belajar' => 'Tugas Belajar',
+            'user'          => 'Staf Pelaksana'
+        ];
+        $roleLabelText = !empty($roleFilter) ? ($roleLabels[$roleFilter] ?? ucfirst($roleFilter)) : 'Semua Role';
+
         // Header Title
         $sheet1->setCellValue('A1', 'EVIDENCE COMMAND CENTER (ECC) - POLITEKNIK KESELAMATAN TRANSPORTASI JALAN');
         $sheet1->setCellValue('A2', 'LAPORAN REKAPITULASI CAPAIAN KINERJA PEGAWAI');
-        $sheet1->setCellValue('A3', "Periode: {$namaBulan} {$tahunTerpilih} | Unit Kerja: " . (!empty($unitFilter) ? $unitFilter : 'Semua Unit Kerja'));
+        $sheet1->setCellValue('A3', "Periode: {$namaBulan} {$tahunTerpilih} | Unit: " . (!empty($unitFilter) ? $unitFilter : 'Semua Unit') . " | Kategori: {$roleLabelText}");
         $sheet1->setCellValue('A4', 'Diekspor pada: ' . date('d/m/Y H:i:s') . ' WIB | Status Dokumen: Resmi');
 
         $sheet1->getStyle('A1')->getFont()->setSize(14)->setBold(true)->getColor()->setRGB('1E3A8A');
@@ -826,6 +977,7 @@ class DashboardKepegawaian extends BaseController
         $bulanTerpilih = $this->request->getGet('bulan') ?? date('n');
         $tahunTerpilih = $this->request->getGet('tahun') ?? date('Y');
         $unitFilter    = $this->request->getGet('unit') ?? '';
+        $roleFilter    = $this->request->getGet('role') ?? '';
 
         $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
         $namaBulan = ($bulanTerpilih === 'all') ? 'Sepanjang Tahun' : ($bulanIndo[(int)$bulanTerpilih - 1] ?? '');
@@ -842,7 +994,23 @@ class DashboardKepegawaian extends BaseController
         if (!empty($unitFilter)) {
             $builder = $builder->where('unit', $unitFilter);
         }
-        $semuaPegawai = $builder->orderBy('nama_lengkap', 'ASC')->findAll();
+        if (!empty($roleFilter)) {
+            if ($roleFilter === 'pimpinan') {
+                $builder = $builder->whereIn('role', ['direktur', 'wadir']);
+            } elseif ($roleFilter === 'manajemen' || $roleFilter === 'struktural') {
+                $builder = $builder->whereIn('role', ['kabag', 'kabag_aak', 'kabag_kuk', 'manajemen']);
+            } elseif ($roleFilter === 'kepegawaian') {
+                $builder = $builder->where('role', 'kepegawaian');
+            } elseif ($roleFilter === 'tugas_belajar') {
+                $builder = $builder->where('role', 'tugas_belajar');
+            } elseif ($roleFilter === 'user' || $roleFilter === 'staf') {
+                $builder = $builder->where('role', 'user');
+            } else {
+                $builder = $builder->where('role', $roleFilter);
+            }
+        }
+        $semuaPegawai = $builder->findAll();
+        $semuaPegawai = $this->sortPegawaiByHierarchy($semuaPegawai);
 
         // Bulk Fetch Data Kinerja (Super Fast Batch Query)
         $bulkData = $this->getBulkRekapKinerja($semuaPegawai, $userMap, $bulanTerpilih, $tahunTerpilih, $bulanIndo, $namaBulan, false);
@@ -872,6 +1040,7 @@ class DashboardKepegawaian extends BaseController
             'nama_bulan'            => $namaBulan,
             'bulan_indo'            => $bulanIndo,
             'unit_filter'           => $unitFilter,
+            'role_filter'           => $roleFilter,
             'sudah_dinilai'         => $sudahDinilai,
             'belum_dinilai'         => $belumDinilai,
             'rata_rata_dinilai'     => $rataRataDinilai,

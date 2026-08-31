@@ -42,7 +42,13 @@
         padding: 0.65rem 0.75rem;
         vertical-align: middle;
         border-color: #f1f5f9;
-        transition: background-color 0.25s ease;
+        transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .table-bento tbody tr:not(#rowHeaderPokok):not(#rowHeaderTambahan) {
+        transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .table-bento tbody tr:not(#rowHeaderPokok):not(#rowHeaderTambahan):hover td {
+        background-color: rgba(241, 245, 249, 0.75);
     }
     .table-bento tbody tr:last-child td {
         border-bottom: 0;
@@ -57,69 +63,366 @@
         -moz-appearance: textfield;
     }
 
+    /* Table Input Focus & Hover Micro-Interactions */
+    .table-bento input.form-control,
+    .table-bento textarea.form-control,
+    .table-bento select.form-select {
+        transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease;
+        border-radius: 8px;
+    }
+    .table-bento input.form-control:focus,
+    .table-bento textarea.form-control:focus,
+    .table-bento select.form-select:focus {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+        background-color: #ffffff !important;
+    }
+
+    /* Validation Error Attention Pulse */
+    @keyframes invalidPulse {
+        0% { transform: translateX(0); box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+        20% { transform: translateX(-3px); box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.25); }
+        40% { transform: translateX(3px); }
+        60% { transform: translateX(-2px); }
+        80% { transform: translateX(2px); }
+        100% { transform: translateX(0); box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2); }
+    }
+    .form-control.is-invalid, .form-select.is-invalid {
+        animation: invalidPulse 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+        border-color: #dc3545 !important;
+    }
+
     .readonly-box {
         background-color: #f8fafc;
         border: 1px solid #e2e8f0;
         border-radius: 8px;
         padding: 0.5rem 0.75rem;
         font-size: 0.85rem;
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+    .readonly-box:hover {
+        background-color: #ffffff;
+        border-color: #cbd5e1;
     }
 
-    /* Motion Design & Ergonomic Transitions */
-    @keyframes rowSlideIn {
-        from {
+    /* Motion Design & Natural Deceleration Transitions */
+    @keyframes rowSlideInPokok {
+        0% {
             opacity: 0;
-            transform: translateY(-10px);
-            background-color: rgba(13, 110, 253, 0.08);
+            transform: translateY(-12px) scale(0.98);
+            background-color: rgba(13, 110, 253, 0.12);
         }
-        to {
+        60% {
+            background-color: rgba(13, 110, 253, 0.05);
+        }
+        100% {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateY(0) scale(1);
             background-color: transparent;
         }
     }
-    .row-slide-in {
-        animation: rowSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    .row-tugas-pokok.row-slide-in {
+        animation: rowSlideInPokok 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes rowSlideInTambahan {
+        0% {
+            opacity: 0;
+            transform: translateY(-12px) scale(0.98);
+            background-color: rgba(25, 135, 84, 0.14);
+        }
+        60% {
+            background-color: rgba(25, 135, 84, 0.06);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            background-color: transparent;
+        }
+    }
+    .row-tugas-tambahan.row-slide-in {
+        animation: rowSlideInTambahan 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
     @keyframes rowSlideOut {
-        from {
+        0% {
             opacity: 1;
-            transform: scale(1);
+            transform: translateX(0) scale(1);
+            background-color: rgba(220, 53, 69, 0.08);
         }
-        to {
+        100% {
             opacity: 0;
-            transform: scale(0.96) translateX(12px);
+            transform: translateX(18px) scale(0.96);
+            background-color: rgba(220, 53, 69, 0.15);
         }
     }
     .row-slide-out {
-        animation: rowSlideOut 0.22s ease-out forwards;
+        animation: rowSlideOut 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         pointer-events: none;
     }
 
     .badge-capaian-satuan {
-        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease;
+        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, color 0.2s ease;
     }
     .badge-satuan-pop {
-        transform: scale(1.08);
-        background-color: rgba(13, 110, 253, 0.1) !important;
+        transform: scale(1.12);
+        background-color: rgba(13, 110, 253, 0.15) !important;
+        color: #0d6efd !important;
+        font-weight: 700;
     }
 
     .btn-tactile {
-        transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease;
+        transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, border-color 0.2s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    .btn-tactile:hover {
+        transform: translateY(-1px);
     }
     .btn-tactile:active {
-        transform: scale(0.97);
+        transform: scale(0.965);
+    }
+
+    /* Flatpickr Custom Styling with Smooth Pop-in & Indicator Dots */
+    .flatpickr-calendar {
+        border-radius: 16px !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12) !important;
+        font-family: 'Inter', sans-serif !important;
+        overflow: hidden;
+        animation: calendarPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes calendarPopIn {
+        from {
+            opacity: 0;
+            transform: scale(0.96) translateY(-8px);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+    .flatpickr-months {
+        background-color: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        padding-top: 4px;
+        padding-bottom: 4px;
+    }
+    .flatpickr-current-month {
+        font-weight: 700;
+        font-size: 0.95rem;
+    }
+    .flatpickr-weekday {
+        font-weight: 700 !important;
+        font-size: 0.72rem !important;
+        color: #64748b !important;
+    }
+    .flatpickr-day {
+        border-radius: 8px !important;
+        position: relative !important;
+        font-weight: 500;
+        height: 38px;
+        line-height: 32px;
+        margin: 1px;
+        transition: background-color 0.15s ease, transform 0.15s ease;
+    }
+    .flatpickr-day:hover {
+        background-color: #eff6ff !important;
+        transform: scale(1.04);
+    }
+    .flatpickr-day.selected {
+        background: #0d6efd !important;
+        border-color: #0d6efd !important;
+        color: #ffffff !important;
+        font-weight: 700;
+        transform: scale(1.06);
+    }
+    .flatpickr-day.today {
+        border-color: #93c5fd !important;
+    }
+    .flatpickr-day .fp-dot {
+        position: absolute;
+        bottom: 3px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        pointer-events: none;
+    }
+    .flatpickr-day.selected .fp-dot {
+        background-color: #ffffff !important;
+    }
+    .fp-dot-sent {
+        background-color: #10b981; /* Hijau Terkirim */
+    }
+    .fp-dot-draft {
+        background-color: #f59e0b; /* Kuning Draf */
+    }
+    .fp-dot-missing {
+        background-color: #ef4444; /* Merah Belum Diisi */
+    }
+    .flatpickr-day.is-holiday {
+        color: #ef4444 !important;
+        font-weight: 600;
+    }
+
+    /* Date Selector Button Styling - Symmetrical Bento Pro-Max */
+    .date-nav-btn {
+        width: 35px;
+        height: 35px;
+        min-width: 35px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px !important;
+        border: 1.5px solid #dbeafe !important;
+        background-color: #ffffff !important;
+        color: #2563eb !important;
+        font-size: 0.78rem;
+        font-weight: 600;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        text-decoration: none;
+    }
+    .date-nav-btn:hover:not(.disabled) {
+        background-color: #eff6ff !important;
+        border-color: #3b82f6 !important;
+        color: #1d4ed8 !important;
+        transform: translateY(-1.5px);
+        box-shadow: 0 4px 10px rgba(13, 110, 253, 0.15);
+    }
+    .date-selector-box {
+        height: 35px;
+        border-radius: 10px !important;
+        border: 1.5px solid #dbeafe !important;
+        background-color: #ffffff !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        cursor: pointer;
+    }
+    .date-selector-box:hover {
+        background-color: #eff6ff !important;
+        border-color: #3b82f6 !important;
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.18) !important;
+        transform: translateY(-1.5px);
+    }
+    .date-selector-box:active {
+        transform: scale(0.985);
+    }
+    .date-btn-input {
+        background-color: transparent !important;
+        color: #1e3a8a !important;
+        font-weight: 700 !important;
+        font-size: 0.76rem !important;
+        letter-spacing: 0.1px;
+        cursor: pointer !important;
+        padding-left: 0.4rem !important;
+        padding-right: 0.2rem !important;
+        height: 100% !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .date-today-btn {
+        height: 35px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px !important;
+        font-size: 0.74rem;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+        padding: 0 12px;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .date-today-btn:hover {
+        transform: translateY(-1.5px);
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
+    }
+    .legend-status-pill {
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 50rem;
+        padding: 0.35rem 0.85rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        white-space: nowrap;
+        transition: box-shadow 0.2s ease;
+    }
+    .legend-status-pill:hover {
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+    }
+    .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-weight: 600;
+        font-size: 0.72rem;
+        white-space: nowrap;
+    }
+    .legend-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+        transition: transform 0.2s ease;
+    }
+    .legend-item:hover .legend-dot {
+        transform: scale(1.3);
+    }
+    .legend-dot-success {
+        background-color: #10b981;
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+    }
+    .legend-dot-warning {
+        background-color: #f59e0b;
+        box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+    }
+    .legend-dot-danger {
+        background-color: #ef4444;
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+    }
+
+    /* Proof Link Button Micro-Interaction */
+    .btn-bukti-link {
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .btn-bukti-link:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(13, 110, 253, 0.15);
+    }
+    .btn-bukti-link:hover i {
+        transform: translate(1px, -1px);
+    }
+    .btn-bukti-link i {
+        display: inline-block;
+        transition: transform 0.15s ease;
     }
 
     @media (prefers-reduced-motion: reduce) {
-        .row-slide-in, .row-slide-out, .badge-satuan-pop {
+        .row-tugas-pokok.row-slide-in,
+        .row-tugas-tambahan.row-slide-in,
+        .row-slide-out,
+        .badge-satuan-pop,
+        .btn-tactile,
+        .flatpickr-calendar,
+        .date-nav-btn,
+        .date-selector-box,
+        .date-today-btn,
+        .form-control.is-invalid,
+        .form-select.is-invalid,
+        .table-bento tbody tr {
             animation: none !important;
             transform: none !important;
             transition: none !important;
         }
     }
 </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/airbnb.css">
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
@@ -154,21 +457,73 @@
     <div class="card shadow-sm border-0 mb-4 rounded-4 overflow-hidden bento-stagger bento-stagger-2">
         <div class="card-body p-3 p-md-4">
             
-            <!-- Filter Tanggal Toolbar -->
-            <form method="GET" action="<?= site_url('log-kegiatan') ?>" class="mb-3 p-3 bg-light rounded-4 border border-light-subtle">
-                <div class="row g-2 align-items-center">
-                    <div class="col-sm-5 col-md-3">
-                        <label class="form-label fw-bold text-dark small mb-1" style="font-size: 0.72rem; letter-spacing: 0.3px;"><i class="bi bi-calendar-event text-primary me-1"></i> Tanggal Kegiatan</label>
-                        <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
-                            <span class="input-group-text bg-primary text-white border-primary"><i class="bi bi-calendar3"></i></span>
-                            <input type="date" name="tanggal" class="form-control border-primary fw-bold text-primary filter-select" value="<?= esc($tanggal_terpilih) ?>" max="<?= date('Y-m-d') ?>" onchange="this.form.submit()">
+            <!-- Filter Tanggal Toolbar (Interactive Symmetrical Datepicker with Status Dots) -->
+            <div class="mb-3 p-3 p-md-3.5 bg-light rounded-4 border border-light-subtle">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2.5">
+                    <!-- Left: Date Picker & Navigation Controls -->
+                    <div>
+                        <label class="form-label fw-bold text-dark small mb-1.5" style="font-size: 0.73rem; letter-spacing: 0.3px;">
+                            <i class="bi bi-calendar-event text-primary me-1"></i> Tanggal Kegiatan
+                        </label>
+                        
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <?php
+                                $prevDay = date('Y-m-d', strtotime($tanggal_terpilih . ' -1 day'));
+                                $nextDay = date('Y-m-d', strtotime($tanggal_terpilih . ' +1 day'));
+                                $today   = date('Y-m-d');
+                            ?>
+                            <!-- Prev Day Button (Left) -->
+                            <a href="<?= site_url('log-kegiatan') ?>?tanggal=<?= $prevDay ?>" class="date-nav-btn btn-tactile shadow-xs" title="Hari Sebelumnya (<?= date('d/m/Y', strtotime($prevDay)) ?>)">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+
+                            <!-- Main Datepicker Center Button -->
+                            <div class="date-selector-wrapper position-relative" style="width: 275px; min-width: 250px;">
+                                <div class="input-group input-group-sm shadow-xs rounded-3 overflow-hidden date-selector-box d-flex align-items-center px-1" id="dateSelectorGroup" title="Klik untuk memilih tanggal di kalender">
+                                    <span class="input-group-text bg-primary text-white border-0 rounded-2 px-1.5 py-0.5 my-0.5">
+                                        <i class="bi bi-calendar-date-fill" style="font-size: 0.76rem;"></i>
+                                    </span>
+                                    <input type="text" id="tanggalPicker" class="form-control border-0 fw-bold date-btn-input shadow-none h-100" value="<?= esc($tanggal_terpilih) ?>" placeholder="Pilih tanggal..." readonly style="cursor: pointer;">
+                                    <span class="input-group-text bg-transparent border-0 text-primary px-1 h-100">
+                                        <i class="bi bi-chevron-down fw-bold" style="font-size: 0.68rem;"></i>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Next Day Button (Right) -->
+                            <a href="<?= ($nextDay <= $today) ? site_url('log-kegiatan') . '?tanggal=' . $nextDay : 'javascript:void(0)' ?>" class="date-nav-btn btn-tactile shadow-xs <?= ($nextDay > $today) ? 'disabled opacity-50 pe-none' : '' ?>" title="Hari Berikutnya (<?= date('d/m/Y', strtotime($nextDay)) ?>)">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+
+                            <!-- Today Quick Jump Button -->
+                            <?php if ($tanggal_terpilih !== $today): ?>
+                                <a href="<?= site_url('log-kegiatan') ?>?tanggal=<?= $today ?>" class="btn btn-sm btn-primary date-today-btn btn-tactile shadow-xs text-nowrap ms-1" title="Kembali ke Hari Ini">
+                                    Hari Ini
+                                </a>
+                            <?php endif; ?>
                         </div>
                     </div>
-                    <div class="col-sm-7 col-md-9 text-muted pt-sm-3 small">
-                        <i class="bi bi-info-circle text-primary me-1"></i> Jika pilihan target kosong, pastikan Anda telah menyusun <strong>Target Kinerja Bulanan</strong> yang sudah disetujui atasan.
+                    
+                    <!-- Right: Legend Indicators (Guaranteed Single Crisp Line) -->
+                    <div class="text-end pt-md-3">
+                        <div class="legend-status-pill">
+                            <span class="text-muted fw-bold" style="font-size: 0.72rem;">Indikator:</span>
+                            <span class="legend-item text-success">
+                                <span class="legend-dot legend-dot-success"></span>
+                                <span>Terkirim</span>
+                            </span>
+                            <span class="legend-item text-warning-emphasis">
+                                <span class="legend-dot legend-dot-warning"></span>
+                                <span>Draf</span>
+                            </span>
+                            <span class="legend-item text-danger">
+                                <span class="legend-dot legend-dot-danger"></span>
+                                <span>Belum Diisi</span>
+                            </span>
+                        </div>
                     </div>
                 </div>
-            </form>
+            </div>
 
             <!-- SINGLE UNIFIED TOP ALERT NOTIFICATION -->
             <?php if (isset($target_status) && $target_status === 'belum_ada'): ?>
@@ -190,7 +545,7 @@
                     <div class="d-flex align-items-center gap-2">
                         <i class="bi bi-lock-fill text-warning-emphasis fs-5 flex-shrink-0"></i>
                         <div>
-                            <strong>Laporan Terkunci.</strong> Laporan pada tanggal ini telah dikirim ke atasan dan berada dalam status terkunci.
+                            <strong>Laporan Terkunci.</strong> <?= esc(!empty($lock_reason) ? $lock_reason : 'Laporan pada tanggal ini telah dikirim ke atasan dan berada dalam status terkunci.') ?>
                         </div>
                     </div>
                     <?php if (hasRole('admin')): ?>
@@ -286,7 +641,7 @@
                                         <td>
                                             <?php if (!empty($row['link_bukti'])): ?>
                                                 <div class="text-center">
-                                                    <a href="<?= esc($row['link_bukti']) ?>" target="_blank" class="btn btn-sm btn-light text-primary border rounded-pill px-3 py-1" title="Buka tautan bukti pekerjaan di tab baru">
+                                                    <a href="<?= esc($row['link_bukti']) ?>" target="_blank" class="btn btn-sm btn-light text-primary border rounded-pill px-3 py-1 btn-bukti-link btn-tactile shadow-xs" title="Buka tautan bukti pekerjaan di tab baru">
                                                         <i class="bi bi-box-arrow-up-right me-1"></i> Bukti
                                                     </a>
                                                 </div>
@@ -417,7 +772,7 @@
                                         <td>
                                             <?php if (!empty($rowTmb['link_bukti'])): ?>
                                                 <div class="text-center">
-                                                    <a href="<?= esc($rowTmb['link_bukti']) ?>" target="_blank" class="btn btn-sm btn-light text-primary border rounded-pill px-3 py-1" title="Buka tautan bukti pekerjaan di tab baru">
+                                                    <a href="<?= esc($rowTmb['link_bukti']) ?>" target="_blank" class="btn btn-sm btn-light text-primary border rounded-pill px-3 py-1 btn-bukti-link btn-tactile shadow-xs" title="Buka tautan bukti pekerjaan di tab baru">
                                                         <i class="bi bi-box-arrow-up-right me-1"></i> Bukti
                                                     </a>
                                                 </div>
@@ -1092,6 +1447,61 @@
             }
         });
 
+        // =============================================
+        // [FLATPICKR DATEPICKER WITH COLORED STATUS DOTS]
+        // =============================================
+        const dateStatusMap = <?= json_encode($date_status_map ?? []) ?>;
+        const holidayMap    = <?= json_encode($holiday_map ?? []) ?>;
+        const todayStr      = '<?= date('Y-m-d') ?>';
+
+        if (typeof flatpickr !== 'undefined' && document.getElementById('tanggalPicker')) {
+            const fpInstance = flatpickr("#tanggalPicker", {
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "l, j F Y",
+                altInputClass: "form-control border-0 fw-bold date-btn-input shadow-none",
+                defaultDate: "<?= esc($tanggal_terpilih) ?>",
+                maxDate: "today",
+                locale: "id",
+                disableMobile: true,
+                onDayCreate: function(dObj, dStr, fp, dayElem) {
+                    const dateStr = fp.formatDate(dayElem.dateObj, "Y-m-d");
+                    const dayOfWeek = dayElem.dateObj.getDay(); // 0 = Minggu, 6 = Sabtu
+                    const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+                    const isHoliday = !!holidayMap[dateStr];
+                    const isWorkingDay = (!isWeekend && !isHoliday);
+                    const isPastOrToday = (dateStr <= todayStr);
+                    
+                    if (isHoliday) {
+                        dayElem.classList.add('is-holiday');
+                        dayElem.setAttribute('title', 'Libur: ' + holidayMap[dateStr]);
+                    }
+
+                    const status = dateStatusMap[dateStr];
+                    if (status === 'terkirim') {
+                        dayElem.classList.add('has-log-sent');
+                        dayElem.innerHTML += '<span class="fp-dot fp-dot-sent" title="Laporan Terkirim"></span>';
+                    } else if (status === 'draft') {
+                        dayElem.classList.add('has-log-draft');
+                        dayElem.innerHTML += '<span class="fp-dot fp-dot-draft" title="Draf Tersimpan"></span>';
+                    } else if (isWorkingDay && isPastOrToday) {
+                        dayElem.classList.add('has-log-missing');
+                        dayElem.innerHTML += '<span class="fp-dot fp-dot-missing" title="Hari Kerja Belum Diisi"></span>';
+                    }
+                },
+                onChange: function(selectedDates, dateStr, instance) {
+                    if (dateStr && dateStr !== "<?= esc($tanggal_terpilih) ?>") {
+                        window.location.href = '<?= site_url('log-kegiatan') ?>?tanggal=' + dateStr;
+                    }
+                }
+            });
+
+            $('#dateSelectorGroup').on('click', function() {
+                fpInstance.open();
+            });
+        }
     });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
 <?= $this->endSection() ?>

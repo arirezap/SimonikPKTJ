@@ -240,6 +240,16 @@
 
     <!-- JUDUL LAPORAN & METADATA -->
     <div class="doc-title">Laporan Rekapitulasi Capaian Kinerja Pegawai</div>
+    <?php
+    $roleLabels = [
+        'pimpinan'      => 'Pimpinan (Direktur & Wadir)',
+        'manajemen'     => 'Manajemen / Struktural',
+        'kepegawaian'   => 'Pengelola Kepegawaian',
+        'tugas_belajar' => 'Tugas Belajar',
+        'user'          => 'Staf Pelaksana'
+    ];
+    $roleLabelPdf = !empty($role_filter) ? ($roleLabels[$role_filter] ?? ucfirst($role_filter)) : 'Semua Role';
+    ?>
     <table class="meta-table">
         <tr>
             <td style="width: 15%; font-weight: bold;">Periode Evaluasi</td>
@@ -250,8 +260,8 @@
         <tr>
             <td style="font-weight: bold;">Waktu Ekspor</td>
             <td>: <?= date('d/m/Y H:i:s') ?> WIB</td>
-            <td style="font-weight: bold;">Status Data</td>
-            <td>: <span style="color: #059669; font-weight: bold;">Resmi (Official ECC Report)</span></td>
+            <td style="font-weight: bold;">Kategori Role</td>
+            <td>: <span style="font-weight: bold; color: #1e3a8a;"><?= esc($roleLabelPdf) ?></span></td>
         </tr>
     </table>
 

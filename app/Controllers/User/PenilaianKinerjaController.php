@@ -271,6 +271,9 @@ class PenilaianKinerjaController extends BaseController
                     if (is_numeric($valClean)) {
                         $valScore = min(150.0, max(0.0, (float)$valClean));
                     }
+                } elseif ($statusPenilaian === 'terbit') {
+                    // Jika diterbitkan tapi nilai kosong, atasan telah mengonfirmasi untuk menghitung dengan nilai 0
+                    $valScore = 0.0;
                 }
 
                 $rowUpdate = [
@@ -312,8 +315,11 @@ class PenilaianKinerjaController extends BaseController
                 if ($rawScoreTmb !== null && $rawScoreTmb !== '') {
                     $cleanedTmb = str_replace(',', '.', $rawScoreTmb);
                     if (is_numeric($cleanedTmb)) {
-                        $valScore = min(100.0, max(0.0, (float)$cleanedTmb));
+                        $valScore = min(150.0, max(0.0, (float)$cleanedTmb));
                     }
+                } elseif ($statusPenilaian === 'terbit') {
+                    // Jika diterbitkan tapi nilai tugas tambahan kosong, dihitung dengan nilai 0
+                    $valScore = 0.0;
                 }
 
                 $rowUpdate = [
