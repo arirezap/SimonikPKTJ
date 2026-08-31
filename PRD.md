@@ -47,8 +47,14 @@ Modul ini merupakan *core engine* untuk evaluasi bulanan yang terdiri dari dua s
 #### 3.5. Modul Master Data & Relasi Unit Kerja Normalisasi
 - **Normalisasi Relasi (`users.unit_id`):** Tabel `users` dinormalkan dengan relasi foreign key `unit_id` ke tabel `unit_kerja` dengan mempertahankan sinkronisasi otomatis kolom teks `unit` (*Dual-Sync*).
 - **Cascading Update:** Pembaruan nama unit pada Master Data otomatis memperbarui seluruh profil pegawai terdaftar.
-- **Integrity Barrier:** Proteksi referensial menolak penghapusan unit kerja jika masih terdapat pegawai aktif.
-- **Smart Database Indexing:** Peningkatan kecepatan query melalui penambahan composite index pada notifikasi, log audit, dan modul LED ECC.
+#### 3.6. Modul Pengaturan Sistem Terpusat & Mode Pemeliharaan (Maintenance Mode)
+- **Mode Pemeliharaan Mandiri (Web-Based Maintenance Mode):** Administrator dapat mengaktifkan mode pemeliharaan dengan 1 klik melalui menu `/settings` tanpa perlu mengedit file `.htaccess` atau membuka cPanel.
+- **Perilaku Sistem:** Pengguna non-admin dialihkan ke `public/maintenance.html` (Bento layout, auto-refresh 30s, status 503), sedangkan Administrator tetap memiliki akses 100% dengan banner indikator peringatan di header.
+- **Kebijakan Batas Waktu Kinerja:** Mengatur batas input target bulanan, batas penilaian kinerja oleh atasan, batas kunci laporan bulan lalu (End-of-Month Cutoff), dan toleransi hari laporan harian.
+
+#### 3.7. Presisi Desimal Tinggi & Skala Penilaian 0 - 150%
+- **Presisi Desimal 4 Digit (`DECIMAL(10,4)`):** Mendukung perhitungan target dan realisasi pecahan halus (contoh: `0.3333`, `0.1250`) tanpa pemotongan atau pembulatan paksa.
+- **Standardisasi Skala Tugas Tambahan:** Skala penilaian tugas tambahan diselaraskan menjadi `0 - 150%` setara dengan Target RHK bulanan.
 
 ### 4. Pedoman Desain (UI/UX Guidelines)
 Aplikasi ini dikembangkan dengan berpegang teguh pada prinsip **ui-ux-pro-max**:
@@ -78,3 +84,7 @@ Sistem menerapkan konsep pemisahan tugas menggunakan arsitektur **Tabel Pivot (M
 - [x] Mekanisme Automatic Anti-Cache Busting v1.3 (`style.css?v=1.3.TIMESTAMP`).
 - [x] Grafik Historis (Chart.js) pada *dashboard* user untuk melihat tren kinerja pribadi selama setahun.
 - [x] Rilis Resmi Versi 1.3: Penyelesaian Audit 8-Pilar Menyeluruh Seluruh Modul Sistem (31 Agustus 2026).
+- [x] Fitur Mode Pemeliharaan Mandiri Administrator (Web-Based Maintenance Mode) via `/settings`.
+- [x] Presisi Desimal 4 Digit (`DECIMAL(10,4)`) & Standardisasi Penilaian Tugas Tambahan 0 - 150%.
+- [x] Engine Ekspor Rekap Kepegawaian Multi-Sheet Excel & PDF Landscape A4 dengan Pengurutan Hierarki 13-Tier Jabatan.
+

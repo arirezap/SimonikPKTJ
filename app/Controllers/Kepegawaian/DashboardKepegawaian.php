@@ -19,8 +19,8 @@ class DashboardKepegawaian extends BaseController
 {
     public function index()
     {
-        // Role yang diizinkan: Kepegawaian, Admin, Direktur, Wadir, dan Kabag
-        if (!hasAnyRole(['kepegawaian', 'admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk'])) {
+        // Role yang diizinkan: Kepegawaian, Admin, Direktur, Wadir, Manajemen, Kabag, dan SPM
+        if (!hasAnyRole(['kepegawaian', 'admin', 'direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'spm'])) {
             return redirect()->to('/dashboard');
         }
 
@@ -65,115 +65,16 @@ class DashboardKepegawaian extends BaseController
         $semuaPegawai = $builder->findAll();
         $semuaPegawai = $this->sortPegawaiByHierarchy($semuaPegawai);
 
-        // Hitung rekap kinerja tiap pegawai
-        $rekapKinerja = [];
-        foreach ($semuaPegawai as $pegawai) {
-            $rekapData = $laporanModel->getTargetWithRealization($pegawai['id'], $bulanTerpilih, $tahunTerpilih);
-            
-            $jmlDinilai = 0;
-            $totalNilai = 0;
-            $jmlTarget  = count($rekapData);
-            
-            $rataRataPerBulan = array_fill(1, 12, null);
-            $hasTugasTambahan = false;
-            $scoreTambahan = null;
-
-            if ($bulanTerpilih === 'all') {
-                $targetsPerBulan = array_fill(1, 12, 0);
-                $dinilaiPerBulan = array_fill(1, 12, 0);
-                $nilaiPerBulan = array_fill(1, 12, 0);
-
-                foreach ($rekapData as $rd) {
-                    $b = (int)$rd['bulan'];
-                    $targetsPerBulan[$b]++;
-                    
-                    if ($rd['nilai_capaian'] !== null && $rd['nilai_capaian'] !== '') {
-                        $dinilaiPerBulan[$b]++;
-                        $nilaiPerBulan[$b] += (float)$rd['nilai_capaian'];
-                        
-                        $jmlDinilai++;
-                        $totalNilai += (float)$rd['nilai_capaian'];
-                    }
-                }
-
-                // Cek Tugas Tambahan per bulan
-                for ($m = 1; $m <= 12; $m++) {
-                    $tmbBulan = $logTambahanModel->getLogByMonth($pegawai['id'], $m, $tahunTerpilih, true);
-                    if (!empty($tmbBulan)) {
-                        $targetsPerBulan[$m]++;
-                        $scoreM = null;
-                        foreach ($tmbBulan as $tmb) {
-                            if ($tmb['nilai_capaian'] !== null) {
-                                $scoreM = (float)$tmb['nilai_capaian'];
-                                break;
-                            }
-                        }
-                        if ($scoreM !== null) {
-                            $dinilaiPerBulan[$m]++;
-                            $nilaiPerBulan[$m] += $scoreM;
-                            $jmlDinilai++;
-                            $totalNilai += $scoreM;
-                        }
-                    }
-                }
-
-                for ($i = 1; $i <= 12; $i++) {
-                    if ($targetsPerBulan[$i] > 0) {
-                        $rataRataPerBulan[$i] = $dinilaiPerBulan[$i] > 0 ? round($nilaiPerBulan[$i] / $dinilaiPerBulan[$i], 2) : 0;
-                    }
-                }
-                $validMonths = array_filter($rataRataPerBulan, fn($v) => $v !== null);
-                $rataRata = count($validMonths) > 0 ? round(array_sum($validMonths) / count($validMonths), 2) : 0;
-                $jmlTotalKomponen = array_sum($targetsPerBulan);
-            } else {
-                foreach ($rekapData as $rd) {
-                    if ($rd['nilai_capaian'] !== null && $rd['nilai_capaian'] !== '') {
-                        $jmlDinilai++;
-                        $totalNilai += (float)$rd['nilai_capaian'];
-                    }
-                }
-
-                // Cek Tugas Tambahan pada bulan terpilih
-                $tugasTambahan = $logTambahanModel->getLogByMonth($pegawai['id'], $bulanTerpilih, $tahunTerpilih, true);
-                if (!empty($tugasTambahan)) {
-                    $hasTugasTambahan = true;
-                    foreach ($tugasTambahan as $tmb) {
-                        if ($tmb['nilai_capaian'] !== null) {
-                            $scoreTambahan = (float)$tmb['nilai_capaian'];
-                            break;
-                        }
-                    }
-                    if ($scoreTambahan !== null) {
-                        $jmlDinilai++;
-                        $totalNilai += $scoreTambahan;
-                    }
-                }
-
-                $jmlTotalKomponen = $jmlTarget + ($hasTugasTambahan ? 1 : 0);
-                $rataRata = $jmlDinilai > 0 ? round($totalNilai / $jmlDinilai, 2) : 0;
-            }
-
-            $rekapKinerja[] = [
-                'pegawai'             => $pegawai,
-                'jumlah_rhk'          => $jmlTarget,
-                'jumlah_komponen'     => $jmlTotalKomponen,
-                'rhk_dinilai'         => $jmlDinilai,
-                'has_tugas_tambahan'  => $hasTugasTambahan,
-                'score_tambahan'      => $scoreTambahan,
-                'rata_rata'           => $rataRata,
-                'rata_rata_per_bulan' => $rataRataPerBulan
-            ];
+        // Mapping atasan untuk lookup cepat
+        $allUsers = $userModel->select('id, nama_lengkap, nip, unit, jabatan')->findAll();
+        $userMap = [];
+        foreach ($allUsers as $u) {
+            $userMap[$u['id']] = $u;
         }
 
-        // Urutkan rekap berdasarkan hierarki jabatan resmi (Direktur s.d. Staf Terbawah)
-        usort($rekapKinerja, function ($a, $b) {
-            $wA = $this->getHierarchyWeight($a['pegawai']);
-            $wB = $this->getHierarchyWeight($b['pegawai']);
-            if ($wA !== $wB) {
-                return $wA <=> $wB;
-            }
-            return strcasecmp($a['pegawai']['nama_lengkap'] ?? '', $b['pegawai']['nama_lengkap'] ?? '');
-        });
+        // Ambil data rekap secara bulk (Ultra Fast 2-Query Batch Fetching)
+        $bulkData = $this->getBulkRekapKinerja($semuaPegawai, $userMap, $bulanTerpilih, $tahunTerpilih, $bulanIndo, $namaBulan, false);
+        $rekapKinerja = $bulkData['rekapKinerja'];
 
         // Hitung statistik instansi
         $sudahDinilai = 0;
@@ -409,7 +310,7 @@ class DashboardKepegawaian extends BaseController
                     $b = (int)$rd['bulan'];
                     $targetsPerBulan[$b]++;
                     
-                    if ($rd['nilai_capaian'] !== null && $rd['nilai_capaian'] !== '') {
+                    if (($rd['status_penilaian'] ?? '') === 'terbit' && $rd['nilai_capaian'] !== null && $rd['nilai_capaian'] !== '') {
                         $dinilaiPerBulan[$b]++;
                         $nilaiPerBulan[$b] += (float)$rd['nilai_capaian'];
                         $jmlDinilai++;
@@ -420,7 +321,7 @@ class DashboardKepegawaian extends BaseController
                         $targetVal = round((float)$rd['target_bulanan'], 4);
                         $realVal = round((float)$rd['total_realisasi'], 4);
                         $gapVal = round($realVal - $targetVal, 4);
-                        $nilaiRhk = ($rd['nilai_capaian'] !== null && $rd['nilai_capaian'] !== '') ? (float)$rd['nilai_capaian'] : null;
+                        $nilaiRhk = (($rd['status_penilaian'] ?? '') === 'terbit' && $rd['nilai_capaian'] !== null && $rd['nilai_capaian'] !== '') ? (float)$rd['nilai_capaian'] : null;
 
                         $rincianDetail[] = [
                             'nama'       => $pegawai['nama_lengkap'],
@@ -449,7 +350,7 @@ class DashboardKepegawaian extends BaseController
                         $targetsPerBulan[$m]++;
                         $scoreM = null;
                         foreach ($tmbBulan as $tmb) {
-                            if ($tmb['nilai_capaian'] !== null) {
+                            if (($tmb['status_penilaian'] ?? '') === 'terbit' && $tmb['nilai_capaian'] !== null && trim((string)$tmb['nilai_capaian']) !== '') {
                                 $scoreM = (float)$tmb['nilai_capaian'];
                                 break;
                             }
@@ -463,7 +364,7 @@ class DashboardKepegawaian extends BaseController
 
                         if ($includeRincianDetail) {
                             foreach ($tmbBulan as $tmbItem) {
-                                $tmbNilai = ($tmbItem['nilai_capaian'] !== null) ? (float)$tmbItem['nilai_capaian'] : null;
+                                $tmbNilai = (($tmbItem['status_penilaian'] ?? '') === 'terbit' && $tmbItem['nilai_capaian'] !== null) ? (float)$tmbItem['nilai_capaian'] : null;
                                 $rincianDetail[] = [
                                     'nama'       => $pegawai['nama_lengkap'],
                                     'nip'        => $pegawai['nip'] ?? '-',
@@ -491,12 +392,12 @@ class DashboardKepegawaian extends BaseController
                         $rataRataPerBulan[$i] = $dinilaiPerBulan[$i] > 0 ? round($nilaiPerBulan[$i] / $dinilaiPerBulan[$i], 2) : 0;
                     }
                 }
-                $validMonths = array_filter($rataRataPerBulan, fn($v) => $v !== null);
+                $validMonths = array_filter($rataRataPerBulan, fn($v) => $v !== null && $v > 0);
                 $rataRata = count($validMonths) > 0 ? round(array_sum($validMonths) / count($validMonths), 2) : 0;
                 $jmlTotalKomponen = array_sum($targetsPerBulan);
             } else {
                 foreach ($userTargets as $rd) {
-                    if ($rd['nilai_capaian'] !== null && $rd['nilai_capaian'] !== '') {
+                    if (($rd['status_penilaian'] ?? '') === 'terbit' && $rd['nilai_capaian'] !== null && $rd['nilai_capaian'] !== '') {
                         $jmlDinilai++;
                         $totalNilai += (float)$rd['nilai_capaian'];
                     }
@@ -505,7 +406,7 @@ class DashboardKepegawaian extends BaseController
                         $targetVal = round((float)$rd['target_bulanan'], 4);
                         $realVal = round((float)$rd['total_realisasi'], 4);
                         $gapVal = round($realVal - $targetVal, 4);
-                        $nilaiRhk = ($rd['nilai_capaian'] !== null && $rd['nilai_capaian'] !== '') ? (float)$rd['nilai_capaian'] : null;
+                        $nilaiRhk = (($rd['status_penilaian'] ?? '') === 'terbit' && $rd['nilai_capaian'] !== null && $rd['nilai_capaian'] !== '') ? (float)$rd['nilai_capaian'] : null;
 
                         $rincianDetail[] = [
                             'nama'       => $pegawai['nama_lengkap'],
@@ -532,12 +433,12 @@ class DashboardKepegawaian extends BaseController
                 if (!empty($tugasTambahan)) {
                     $hasTugasTambahan = true;
                     foreach ($tugasTambahan as $tmb) {
-                        if ($tmb['nilai_capaian'] !== null && $scoreTambahan === null) {
+                        if (($tmb['status_penilaian'] ?? '') === 'terbit' && $tmb['nilai_capaian'] !== null && $scoreTambahan === null) {
                             $scoreTambahan = (float)$tmb['nilai_capaian'];
                         }
 
                         if ($includeRincianDetail) {
-                            $tmbNilai = ($tmb['nilai_capaian'] !== null) ? (float)$tmb['nilai_capaian'] : null;
+                            $tmbNilai = (($tmb['status_penilaian'] ?? '') === 'terbit' && $tmb['nilai_capaian'] !== null) ? (float)$tmb['nilai_capaian'] : null;
                             $rincianDetail[] = [
                                 'nama'       => $pegawai['nama_lengkap'],
                                 'nip'        => $pegawai['nip'] ?? '-',
@@ -600,7 +501,7 @@ class DashboardKepegawaian extends BaseController
      */
     public function exportExcel()
     {
-        if (!hasAnyRole(['kepegawaian', 'admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk'])) {
+        if (!hasAnyRole(['kepegawaian', 'admin', 'direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'spm'])) {
             return redirect()->to('/dashboard');
         }
 
@@ -953,6 +854,24 @@ class DashboardKepegawaian extends BaseController
         $cleanNamaBulan = str_replace(' ', '_', $namaBulan);
         $fileName = "Rekap_Kinerja_ECC_{$cleanNamaBulan}_{$tahunTerpilih}.xlsx";
 
+        // Catat ke Audit Log
+        if (function_exists('log_audit')) {
+            log_audit(
+                'EXPORT_EXCEL_KEPEGAWAIAN',
+                'rekap_kinerja_kepegawaian',
+                session()->get('id') ?? session()->get('user_id'),
+                null,
+                [
+                    'bulan'         => $bulanTerpilih,
+                    'tahun'         => $tahunTerpilih,
+                    'unit'          => $unitFilter,
+                    'role'          => $roleFilter,
+                    'total_pegawai' => $totalPegawai,
+                    'file_name'     => $fileName
+                ]
+            );
+        }
+
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment; filename="' . $fileName . '"');
         header('Access-Control-Expose-Headers: Content-Disposition');
@@ -968,7 +887,7 @@ class DashboardKepegawaian extends BaseController
      */
     public function exportPdf()
     {
-        if (!hasAnyRole(['kepegawaian', 'admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk'])) {
+        if (!hasAnyRole(['kepegawaian', 'admin', 'direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'spm'])) {
             return redirect()->to('/dashboard');
         }
 
@@ -1061,6 +980,25 @@ class DashboardKepegawaian extends BaseController
 
         $cleanNamaBulan = str_replace(' ', '_', $namaBulan);
         $fileName = "Laporan_Rekapitulasi_Kinerja_ECC_{$cleanNamaBulan}_{$tahunTerpilih}.pdf";
+
+        // Catat ke Audit Log
+        if (function_exists('log_audit')) {
+            log_audit(
+                'EXPORT_PDF_KEPEGAWAIAN',
+                'rekap_kinerja_kepegawaian',
+                session()->get('id') ?? session()->get('user_id'),
+                null,
+                [
+                    'bulan'         => $bulanTerpilih,
+                    'tahun'         => $tahunTerpilih,
+                    'unit'          => $unitFilter,
+                    'role'          => $roleFilter,
+                    'total_pegawai' => $totalPegawai,
+                    'file_name'     => $fileName
+                ]
+            );
+        }
+
         header('Access-Control-Expose-Headers: Content-Disposition');
         $dompdf->stream($fileName, ['Attachment' => true]);
         exit;
@@ -1071,7 +1009,7 @@ class DashboardKepegawaian extends BaseController
      */
     public function getDetailPegawai()
     {
-        if (!hasAnyRole(['kepegawaian', 'admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk'])) {
+        if (!hasAnyRole(['kepegawaian', 'admin', 'direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'spm'])) {
             return $this->response->setJSON(['status' => 'error', 'message' => 'Akses ditolak'])->setStatusCode(403);
         }
 

@@ -4,19 +4,20 @@ Dokumen ini berisi roadmap dan daftar periksa (*checklist*) audit komprehensif u
 
 ---
 
-## 🎯 7 Pilar Utama Standar Audit
+## 🎯 8 Pilar Utama Standar Audit
 
-Setiap modul dan fungsi diuji dan diaudit berdasarkan 7 pilar berikut:
+Setiap modul dan fungsi diuji dan diaudit berdasarkan 8 pilar berikut:
 
 | Pilar | Domain | Deskripsi & Kriteria Kelulusan |
 | :--- | :--- | :--- |
 | **1. Code Audit & Sintaks** | MVC & CI4 Standards | Kepatuhan struktur CodeIgniter 4, *strict typing*, dan **0 syntax error** pada `php -l`. |
 | **2. Fungsi & Logika Bisnis** | Business Logic | Akurasi kalkulasi skor bulanan, filter periode/tahun, dan validasi alur kerja (persetujuan atasan). |
-| **3. Reusable Code & DRY** | Modul & Helper | Pemanfaatan helper terpusat (`avatar_helper`, `badge_helper`), serta sentralisasi CSS/JS global. |
-| **4. Keamanan (Security)** | Vulnerability Mitigation | Proteksi CSRF, XSS Escaping (`esc()` / `escapeHtml()`), Otorisasi Role (`hasRole()`), & Throttling. |
-| **5. Clean Code & Istilah** | Naming & Standards | Kepatuhan strict istilah **"staf"** (aturan `AGENTS.md`), variabel intuitif, & struktur rapi. |
+| **3. Reusable Code & DRY** | Modul & Helper | Pemanfaatan helper terpusat (`avatar_helper`, `badge_helper`, `tanggal_helper`, `audit_helper`), serta sentralisasi CSS/JS global. |
+| **4. Keamanan (Security)** | Vulnerability Mitigation | Proteksi CSRF, XSS Escaping (`esc()` / `escapeHtml()`), Otorisasi Role (`hasRole()`, `hasAnyRole()`), & Throttling. |
+| **5. Clean Code & Efisiensi** | Architecture & Performance | Algoritma batch query cepat (O(N) in-memory), bebas query N+1, variabel intuitif, & struktur modular. |
 | **6. Potensi Bug & Edge Cases** | Exception & Edge Cases | Penanganan data `null/empty`, penanganan error AJAX, & pencegahan memory leak modal Bootstrap. |
 | **7. Mobile-Friendly View** | Responsive UI/UX | Tampilan responsif (<768px & <576px), *swipable touch tabs*, *touch target* min 44px, & tabel terpotong rapi. |
+| **8. Standarisasi Bahasa & ECC** | Terminology & Branding | Kepatuhan mutlak istilah baku **"staf"** (aturan `AGENTS.md`) dan identitas **"Evidence Command Center (ECC)"**. |
 
 ---
 
@@ -159,16 +160,27 @@ Setiap modul dan fungsi diuji dan diaudit berdasarkan 7 pilar berikut:
 - [x] **Model & View**: `app/Models/AuditLog.php` & `app/Views/admin/audit_logs/index.php`
 - **Fokus Audit & Status**:
   - [x] **Pemberian Filter & Pencarian Lengkap**: Penambahan pencarian dinamis (Nama, NIP, IP, Entity ID), filter rentang tanggal (`date_start` & `date_end`), serta filter aksi & entitas.
-  - [x] **Desain UI/UX Bento Box & Icons Standard**: Pembaruan ikon dari FontAwesome ke Bootstrap Icons (`bi bi-...`), penataan tabel responsif, & penyelarasan warna badge sesuai standar SIMONIK.
+  - [x] **Desain UI/UX Bento Box & Icons Standard**: Pembaruan ikon dari FontAwesome ke Bootstrap Icons (`bi bi-...`), penataan tabel responsif, & penyelarasan warna badge sesuai standar ECC.
   - [x] **Viewer JSON Interactive**: Penyediaan modal dialog *Pretty JSON Viewer* untuk memeriksa perubahan `old_values` & `new_values` secara detail & rapi.
+
+---
+
+### 13. 🗺️ Modul Konfigurasi Perutean & Filter Akses (Routes & Security Guards)
+- [x] **Configuration**: `app/Config/Routes.php`
+- **Fokus Audit & Status (Lintas Seluruh Jenis User Pengguna)**:
+  - [x] **Integritas 117 Rute Sistem**: Verifikasi 100% pemetaan rute ke target Controller dan Method aktif tanpa ada broken route.
+  - [x] **Proteksi Filter Auth Menyeluruh**: Seluruh rute privat dikunci rapat di dalam grup filter `['filter' => 'auth']`.
+  - [x] **Auto-Routing Non-Aktif**: Memastikan `$routes->setAutoRoute(false);` aktif untuk mengeliminasi celah eksekusi liar.
+  - [x] **Standarisasi Rute Hapus Master Data**: Penyelarasan rute `holidays/delete/(:num)` menjadi `$routes->match(['get', 'post'], ...)` untuk mendukung form modal dialog SweetAlert2 ber-CSRF.
+  - [x] **Kepatuhan Penamaan Rute & Istilah**: Konsistensi rute `/penilaian-staf` dan domain `/ecc/*`.
 
 ---
 
 ## 📈 Laporan Kemajuan Audit & Target Selanjutnya
 
 ```text
-[████████████████████████████████████████] 100.0% Selesai (12 dari 12 Modul ECC Ter-audit Penuh)
+[████████████████████████████████████████] 100.0% Selesai (13 dari 13 Modul ECC Ter-audit Penuh)
 ```
 
 ### 🎉 SELURUH AUDIT MODUL KODE EVIDENCE COMMAND CENTER (ECC) TELAH SELESAI (100% COMPLETE)!
- Seluruh 12 modul utama (User & Role Management, Dashboard & Navigation, SKP, Laporan Harian, Log Kegiatan Harian, Penilaian Kinerja, Kontrak Kinerja & Pakta Integritas, ECC Monitoring, Sidebar/Top Bar/Footer Layout, Rekap Kepegawaian Remunerasi, Notifikasi Hari Libur, dan Log Keamanan Aktivitas) telah melewati audit 7-Pilar secara komprehensif, bebas dari syntax error, dan sepenuhnya mematuhi standar Clean Code, Keamanan, & Mobile-Friendly View.
+Seluruh 13 modul utama (Autentikasi, Dashboard, User & Profil, Target Kinerja Bulanan, Log Kegiatan Harian, Rekap & Penilaian Kinerja, Kontrak & Pakta Integritas, ECC Monitoring, Layout Utama, Rekap Kepegawaian Remunerasi, Notifikasi Hari Libur, Log Keamanan Aktivitas, dan Konfigurasi Routes) telah melewati audit 8-Pilar secara komprehensif, bebas dari syntax error, dan sepenuhnya mematuhi standar Clean Code, Keamanan, & Mobile-Friendly View.

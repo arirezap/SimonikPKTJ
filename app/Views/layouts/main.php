@@ -111,12 +111,12 @@
                         <!-- NOTIFICATION BELL -->
                         <div class="dropdown" id="notifDropdownContainer">
                             <a href="#" class="text-decoration-none position-relative d-inline-block btn-tactile" data-bs-toggle="dropdown" aria-expanded="false" id="notifDropdownToggle" aria-label="Lihat notifikasi sistem">
-                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center shadow-subtle" style="width: 42px; height: 42px;">
+                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center shadow-subtle position-relative" style="width: 40px; height: 40px;">
                                     <i class="bi bi-bell-fill text-muted fs-5"></i>
+                                    <span id="notifBadge" class="position-absolute badge rounded-pill bg-danger d-none shadow-sm" style="font-size: 0.55rem; padding: 0.2em 0.42em; top: -2px; right: -2px; border: 2px solid #ffffff; line-height: 1; z-index: 2;">
+                                        0
+                                    </span>
                                 </div>
-                                <span id="notifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" style="font-size: 0.6rem; transform: translate(-30%, 30%) !important;">
-                                    0
-                                </span>
                             </a>
                             <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2 p-0 rounded-4 overflow-hidden notif-dropdown-menu" style="width: 340px; max-width: 92vw;">
                                 <div class="p-3 border-bottom bg-white d-flex align-items-center justify-content-between">

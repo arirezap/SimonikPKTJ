@@ -203,3 +203,36 @@ Dokumen ini berisi riwayat fitur, perbaikan (*bug fixes*), dan peningkatan antar
   - Form POST anti-CSRF dengan header anti-cache penangkal *Back-Button History Leak*.
 - **Versi Aplikasi v1.3:**
   - Peningkatan versi rilis menjadi **`v1.3`** di seluruh layout, login, header CSS, dan dokumentasi proyek.
+
+## 16. Mode Pemeliharaan Mandiri (Maintenance Mode), Presisi Desimal 4 Digit, & Sinkronisasi Live (31 Agustus 2026)
+- **Mode Pemeliharaan Mandiri Administrator (Web-Based Maintenance Mode):**
+  - Pembuatan filter `app/Filters/MaintenanceFilter.php` dan pendaftaran global pada `app/Config/Filters.php`.
+  - Integrasi saklar switch 1-klik pada menu **Pengaturan Sistem** (`/settings`) dengan status badge dinamis (🟢 *Sistem Aktif Normal* vs 🟡 *Mode Pemeliharaan AKTIF*).
+  - Pengguna biasa dialihkan ke `public/maintenance.html` (desain Bento Modern, auto-refresh 30 detik, HTTP status code 503 *Service Unavailable*).
+  - Administrator tetap memiliki akses 100% dengan banner indikator peringatan menyala di topbar.
+- **Presisi Desimal 4 Digit (`DECIMAL(10,4)`):**
+  - Modifikasi skema kolom `target_kinerja_bulanan.target_bulanan`, `log_kegiatan_harian.jumlah_capaian`, dan `log_tugas_tambahan.jumlah_capaian` dari `DECIMAL(10,2)` ke `DECIMAL(10,4)` untuk mendukung angka pecahan desimal presisi tinggi tanpa pemotongan/pembulatan paksa.
+  - Penyesuaian form input HTML (`step="any"`, `min="0.0001"`) dan sanitasi backend.
+- **Penyelarasan Skala Penilaian Tugas Tambahan (0 - 150%):**
+  - Penyelarasan skala input penilaian Tugas Tambahan menjadi `0 - 150%` pada frontend, JavaScript realtime validation, dan backend controller (`PenilaianKinerjaController.php`).
+- **Kebijakan Batas Waktu & Kunci Laporan Bulan Lalu:**
+  - Penambahan pengaturan `enable_monthly_log_deadline` dan `toleransi_hari_bulan_lalu` untuk membatasi pelaporan bulan lampau setelah melewati akhir bulan berjalan.
+- **Sinkronisasi Database Produksi cPanel:**
+  - Perumusan query migrasi konsolidasi All-in-One dengan proteksi `USE \`ekinerja_kinerja\`;` dan *zero-downtime view synchronization*.
+
+## 17. Rilis Resmi Versi 1.4: Audit 8-Pilar Routes, Otorisasi Multi-Peran Rekap Kepegawaian, & Sinkronisasi Paritas Basis Data (1 September 2026)
+- **Audit 8-Pilar Konfigurasi Perutean (`app/Config/Routes.php`):**
+  - Pengujian dan verifikasi **117 rute** aktif yang memetakan langsung ke Controller dan Method (0 broken route).
+  - Pengetatan filter grup otentikasi `['filter' => 'auth']` pada seluruh endpoint privat sistem.
+  - Penyelarasan rute hapus Master Data `master-data/holidays/delete/(:num)` menjadi `$routes->match(['get', 'post'], ...)` untuk mendukung pengiriman form modal SweetAlert2 ber-token CSRF secara aman.
+- **Penyelarasan Otorisasi Multi-Peran & Default Periode Rekap Kepegawaian (`DashboardKepegawaian.php`):**
+  - Memperluas otorisasi `hasAnyRole` pada `index()`, `exportExcel()`, `exportPdf()`, dan `getDetailPegawai()` mencakup seluruh jajaran pimpinan dan struktural: `['kepegawaian', 'admin', 'direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'spm']`.
+  - Menetapkan default menu awal saat membuka Rekap Kepegawaian (`/kepegawaian`) memuat **Bulan Sekarang (`date('n')`)** sesuai kebutuhan operasional terkini.
+  - Mempertahankan kalkulasi *Ultra-Fast 2-Query Batch Fetching Engine* dan pembobotan hierarki 13-tier institusional.
+- **Audit Paritas Basis Data Produksi cPanel (`ekinerja_kinerja (2).sql`):**
+  - Komparasi 24 tabel basis data antara lokal MySQL dan dump cPanel (`ekinerja_kinerja (2).sql`).
+  - Terkonfirmasi 0 *missing columns*, 100% tipe data dan presisi (`DECIMAL(10,4)` & `DECIMAL(5,2)`) identik, serta seluruh 10 keys tabel `settings` lengkap.
+  - **Keputusan:** Tidak diperlukan query SQL manual di phpMyAdmin cPanel saat melakukan `git push`.
+- **Pembaruan Graphify Knowledge Graph ECC:**
+  - Pembaruan penuh basis pengetahuan struktural sistem: 662 berkas, 7.334 nodes, 17.633 edges, dan 393 communities pada `graphify-out/`.
+

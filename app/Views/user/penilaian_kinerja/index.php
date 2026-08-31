@@ -160,7 +160,7 @@
                 <div class="row g-2 align-items-end">
                     <div class="col-6 col-sm-3 col-md-3">
                         <label class="form-label fw-bold text-dark small mb-1" style="font-size: 0.72rem; letter-spacing: 0.3px;"><i class="bi bi-calendar-month text-primary me-1"></i> Bulan</label>
-                        <select name="bulan" class="form-select form-select-sm border-primary fw-semibold" onchange="this.form.submit()">
+                        <select name="bulan" class="form-select form-select-sm border-primary fw-semibold" aria-label="Pilih Bulan Penilaian" onchange="this.form.submit()">
                             <?php foreach($bulan_indo as $index => $nama): ?>
                                 <option value="<?= $index + 1 ?>" <?= ($bulan_terpilih == $index + 1) ? 'selected' : '' ?>><?= $nama ?></option>
                             <?php endforeach; ?>
@@ -168,13 +168,13 @@
                     </div>
                     <div class="col-6 col-sm-2 col-md-2">
                         <label class="form-label fw-bold text-dark small mb-1" style="font-size: 0.72rem; letter-spacing: 0.3px;"><i class="bi bi-calendar-event text-primary me-1"></i> Tahun</label>
-                        <input type="number" name="tahun" class="form-control form-control-sm border-primary fw-semibold" value="<?= esc($tahun_terpilih) ?>" onchange="this.form.submit()">
+                        <input type="number" name="tahun" class="form-control form-control-sm border-primary fw-semibold" aria-label="Input Tahun Penilaian" value="<?= esc($tahun_terpilih) ?>" onchange="this.form.submit()">
                     </div>
                     
                     <?php if ($is_super): ?>
                     <div class="col-12 col-sm-4 col-md-4">
                         <label class="form-label fw-bold text-dark small mb-1" style="font-size: 0.72rem; letter-spacing: 0.3px;"><i class="bi bi-building text-primary me-1"></i> Unit Kerja</label>
-                        <select name="unit_kerja" class="form-select form-select-sm border-primary fw-semibold" onchange="this.form.submit()">
+                        <select name="unit_kerja" class="form-select form-select-sm border-primary fw-semibold" aria-label="Pilih Unit Kerja" onchange="this.form.submit()">
                             <option value="">Semua Unit Kerja</option>
                             <?php foreach ($daftar_unit as $u): ?>
                                 <option value="<?= esc($u) ?>" <?= ($u == $unit_kerja_terpilih) ? 'selected' : '' ?>><?= esc($u) ?></option>
@@ -248,7 +248,7 @@
                         } else {
                             if ($rataRataIndividu <= 25) { $warnaScore = 'danger'; $predikatRataIndividu = 'Sangat Kurang'; $badgeColorRataIndividu = 'danger'; }
                             elseif ($rataRataIndividu <= 75) { $warnaScore = 'warning text-dark'; $predikatRataIndividu = 'Kurang'; $badgeColorRataIndividu = 'warning text-dark'; }
-                            elseif ($rataRataIndividu <= 90) { $warnaScore = 'secondary'; $predikatRataIndividu = 'Butuh Perbaikan'; $badgeColorRataIndividu = 'secondary'; }
+                            elseif ($rataRataIndividu <= 90) { $warnaScore = 'info text-dark'; $predikatRataIndividu = 'Butuh Perbaikan'; $badgeColorRataIndividu = 'info text-dark'; }
                             elseif ($rataRataIndividu <= 100) { $warnaScore = 'primary'; $predikatRataIndividu = 'Baik'; $badgeColorRataIndividu = 'primary'; }
                             else { $warnaScore = 'success'; $predikatRataIndividu = 'Sangat Baik'; $badgeColorRataIndividu = 'success'; }
                         }
@@ -262,7 +262,7 @@
                             <span class="text-muted opacity-50">|</span>
                             <span class="text-nowrap"><span class="badge bg-warning text-dark px-1.5 py-0.5" style="font-size:0.72rem;">Kurang</span> &gt; 25% - 75%</span>
                             <span class="text-muted opacity-50">|</span>
-                            <span class="text-nowrap"><span class="badge bg-secondary px-1.5 py-0.5" style="font-size:0.72rem;">Butuh Perbaikan</span> &gt; 75% - 90%</span>
+                            <span class="text-nowrap"><span class="badge bg-info text-dark px-1.5 py-0.5" style="font-size:0.72rem;">Butuh Perbaikan</span> &gt; 75% - 90%</span>
                             <span class="text-muted opacity-50">|</span>
                             <span class="text-nowrap"><span class="badge bg-primary px-1.5 py-0.5" style="font-size:0.72rem;">Baik</span> &gt; 90% - 100%</span>
                             <span class="text-muted opacity-50">|</span>
@@ -280,6 +280,10 @@
                     <?php if (session()->get('role') === 'direktur'): ?>
                     <form method="POST" action="<?= site_url('penilaian-kinerja/store') ?>">
                         <?= csrf_field() ?>
+                        <input type="hidden" name="is_self_eval" value="1">
+                        <input type="hidden" name="staf_id" value="<?= esc(session()->get('id') ?? session()->get('user_id')) ?>">
+                        <input type="hidden" name="bulan" value="<?= esc($bulan_terpilih) ?>">
+                        <input type="hidden" name="tahun" value="<?= esc($tahun_terpilih) ?>">
                     <?php endif; ?>
 
                     <div class="table-responsive mb-4 bg-white border rounded-4 shadow-sm">
@@ -320,7 +324,7 @@
                                             <?php if (session()->get('role') === 'direktur'): ?>
                                                 <input type="hidden" name="laporan_id[]" value="<?= esc($row['id']) ?>">
                                                 <div class="input-group input-group-sm">
-                                                    <input type="number" step="0.01" min="0" max="150" name="nilai_capaian[]" class="form-control text-center text-primary fw-bold num-tabular input-nilai-capaian" value="<?= isset($row['nilai_capaian']) && $row['nilai_capaian'] !== null ? (float)$row['nilai_capaian'] : '' ?>" placeholder="0 - 150">
+                                                    <input type="number" step="0.01" min="0" max="150" name="nilai_capaian[]" class="form-control text-center text-primary fw-bold num-tabular input-nilai-capaian" value="<?= isset($row['nilai_capaian']) && $row['nilai_capaian'] !== null ? (float)$row['nilai_capaian'] : '' ?>" placeholder="0 - 150" aria-label="Nilai Capaian Mandiri RHK: <?= esc($row['indikator_kinerja']) ?>">
                                                     <span class="input-group-text">%</span>
                                                 </div>
                                             <?php else: ?>
@@ -388,7 +392,7 @@
                                         <?php if (session()->get('role') === 'direktur'): ?>
                                             <input type="hidden" name="log_tambahan_id[]" value="<?= esc($tugas_tambahan_sendiri[0]['id']) ?>">
                                             <div class="input-group input-group-sm justify-content-center" style="max-width: 130px; margin: 0 auto;">
-                                                <input type="number" step="0.01" min="0" max="150" name="nilai_tugas_tambahan_gabungan" class="form-control text-center text-success fw-bold num-tabular input-nilai-capaian" value="<?= $scoreTambahanIndividu !== null ? (float)$scoreTambahanIndividu : '' ?>" placeholder="0 - 150">
+                                                <input type="number" step="0.01" min="0" max="150" name="nilai_tugas_tambahan_gabungan" class="form-control text-center text-success fw-bold num-tabular input-nilai-capaian" value="<?= $scoreTambahanIndividu !== null ? (float)$scoreTambahanIndividu : '' ?>" placeholder="0 - 150" aria-label="Nilai Tugas Tambahan Mandiri">
                                                 <span class="input-group-text">%</span>
                                             </div>
                                         <?php else: ?>
@@ -414,7 +418,7 @@
                     <?php endif; ?>
 
                     <!-- RINGKASAN SKOR EXECUTIVE DI PALING BAWAH EVALUASI -->
-                    <div class="card bg-white border border-2 border-<?= $warnaScore === 'warning text-dark' ? 'warning' : $warnaScore ?> rounded-4 p-3 shadow-sm mb-4 score-card-transition bento-stagger bento-stagger-3">
+                    <div class="card bg-white border border-2 border-<?= ($warnaScore === 'warning text-dark' || $warnaScore === 'info text-dark') ? ($warnaScore === 'warning text-dark' ? 'warning' : 'info') : $warnaScore ?> rounded-4 p-3 shadow-sm mb-4 score-card-transition bento-stagger bento-stagger-3" role="region" aria-label="Ringkasan Nilai Akhir Kinerja Mandiri">
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 score-banner-wrapper">
                             <div>
                                 <h6 class="fw-bold text-dark mb-1"><i class="bi bi-award-fill text-primary me-2"></i> NILAI AKHIR KINERJA BULANAN</h6>
@@ -438,7 +442,7 @@
                                     <?php endif; ?>
                                 </div>
                             </div>
-                            <div class="d-flex align-items-center gap-3">
+                            <div class="d-flex align-items-center gap-3" aria-live="polite" aria-atomic="true">
                                 <span class="badge bg-<?= $badgeColorRataIndividu ?> fs-6 px-3 py-2 rounded-pill"><?= $predikatRataIndividu ?></span>
                                 <span class="fs-2 fw-bold text-<?= $warnaScore ?> mb-0 lh-1 num-tabular" style="white-space: nowrap;"><?= str_replace('.', ',', round($rataRataIndividu, 2)) ?></span>
                             </div>
@@ -587,7 +591,7 @@
                     <div class="row align-items-end">
                         <div class="col-md-6">
                             <label class="form-label fw-bold text-success mb-1 small" style="font-size: 0.75rem; letter-spacing: 0.3px;"><i class="bi bi-person-check me-1"></i> Pilih Staf yang Akan Dinilai</label>
-                            <select name="staf_id" id="selectStaf" class="form-select border-success form-select-sm" onchange="this.form.submit()">
+                            <select name="staf_id" id="selectStaf" class="form-select border-success form-select-sm" aria-label="Pilih Staf yang Akan Dinilai" onchange="this.form.submit()">
                                 <option value="">-- Pilih Staf --</option>
                                 <?php foreach ($daftar_staf as $b): ?>
                                     <option value="<?= $b['id'] ?>" <?= ($b['id'] == $staf_id_terpilih) ? 'selected' : '' ?>>
@@ -643,7 +647,7 @@
                             } else {
                                 if ($rataRataBwh <= 25) { $warnaScoreBwh = 'danger'; $predikatRataRataBwh = 'Sangat Kurang'; $badgeColorRataBwh = 'danger'; }
                                 elseif ($rataRataBwh <= 75) { $warnaScoreBwh = 'warning text-dark'; $predikatRataRataBwh = 'Kurang'; $badgeColorRataBwh = 'warning text-dark'; }
-                                elseif ($rataRataBwh <= 90) { $warnaScoreBwh = 'secondary'; $predikatRataRataBwh = 'Butuh Perbaikan'; $badgeColorRataBwh = 'secondary'; }
+                                elseif ($rataRataBwh <= 90) { $warnaScoreBwh = 'info text-dark'; $predikatRataRataBwh = 'Butuh Perbaikan'; $badgeColorRataBwh = 'info text-dark'; }
                                 elseif ($rataRataBwh <= 100) { $warnaScoreBwh = 'primary'; $predikatRataRataBwh = 'Baik'; $badgeColorRataBwh = 'primary'; }
                                 else { $warnaScoreBwh = 'success'; $predikatRataRataBwh = 'Sangat Baik'; $badgeColorRataBwh = 'success'; }
                             }
@@ -657,7 +661,7 @@
                                 <span class="text-muted opacity-50">|</span>
                                 <span class="text-nowrap"><span class="badge bg-warning text-dark px-1.5 py-0.5" style="font-size:0.72rem;">Kurang</span> &gt; 25% - 75%</span>
                                 <span class="text-muted opacity-50">|</span>
-                                <span class="text-nowrap"><span class="badge bg-secondary px-1.5 py-0.5" style="font-size:0.72rem;">Butuh Perbaikan</span> &gt; 75% - 90%</span>
+                                <span class="text-nowrap"><span class="badge bg-info text-dark px-1.5 py-0.5" style="font-size:0.72rem;">Butuh Perbaikan</span> &gt; 75% - 90%</span>
                                 <span class="text-muted opacity-50">|</span>
                                 <span class="text-nowrap"><span class="badge bg-primary px-1.5 py-0.5" style="font-size:0.72rem;">Baik</span> &gt; 90% - 100%</span>
                                 <span class="text-muted opacity-50">|</span>
@@ -715,7 +719,7 @@
                                                     $n = (float)$nilai_capaian;
                                                     if ($n <= 25) { $predikatLabel = 'Sangat Kurang'; $predikatBadge = 'bg-danger'; }
                                                     elseif ($n <= 75) { $predikatLabel = 'Kurang'; $predikatBadge = 'bg-warning text-dark'; }
-                                                    elseif ($n <= 90) { $predikatLabel = 'Butuh Perbaikan'; $predikatBadge = 'bg-secondary'; }
+                                                    elseif ($n <= 90) { $predikatLabel = 'Butuh Perbaikan'; $predikatBadge = 'bg-info text-dark'; }
                                                     elseif ($n <= 100) { $predikatLabel = 'Baik'; $predikatBadge = 'bg-primary'; }
                                                     else { $predikatLabel = 'Sangat Baik'; $predikatBadge = 'bg-success'; }
                                                 } else {
@@ -739,7 +743,7 @@
                                                 <td class="align-middle p-2 text-center col-nilai">
                                                     <input type="hidden" name="laporan_id[]" value="<?= esc($row['id']) ?>">
                                                     <div class="input-group input-group-sm mb-1 shadow-sm rounded-3 border border-primary-subtle" style="width: 100%; min-width: 145px;">
-                                                        <input type="number" name="nilai_capaian[]" class="form-control text-center input-nilai-capaian fw-bold text-primary px-2 num-tabular" style="font-size:0.95rem; min-width: 90px;" value="<?= $nilai_capaian !== null ? (float)$nilai_capaian : '' ?>" step="0.01" min="0" max="150" placeholder="0 - 150">
+                                                        <input type="number" name="nilai_capaian[]" class="form-control text-center input-nilai-capaian fw-bold text-primary px-2 num-tabular" style="font-size:0.95rem; min-width: 90px;" value="<?= $nilai_capaian !== null ? (float)$nilai_capaian : '' ?>" step="0.01" min="0" max="150" placeholder="0 - 150" aria-label="Input Nilai Capaian RHK: <?= esc($row['indikator_kinerja']) ?>">
                                                         <span class="input-group-text bg-primary-subtle text-primary fw-bold px-2">%</span>
                                                     </div>
                                                     <div class="predikat-badge-container">
@@ -809,7 +813,7 @@
                                             </td>
                                             <td class="p-2 align-middle text-center col-nilai">
                                                 <div class="input-group input-group-sm shadow-sm rounded-3 border border-success-subtle" style="width: 100%; min-width: 145px;">
-                                                    <input type="number" step="0.01" max="150" min="0" name="nilai_tugas_tambahan_gabungan" id="inputNilaiTambahanGabungan" class="form-control text-center fw-bold text-success px-2 num-tabular input-nilai-capaian" style="font-size:0.95rem; min-width: 90px;" value="<?= $scoreTambahanStaf !== null ? $scoreTambahanStaf : '' ?>" placeholder="0 - 150" <?= !$is_penilai ? 'readonly' : '' ?>>
+                                                    <input type="number" step="0.01" max="150" min="0" name="nilai_tugas_tambahan_gabungan" id="inputNilaiTambahanGabungan" class="form-control text-center fw-bold text-success px-2 num-tabular input-nilai-capaian" style="font-size:0.95rem; min-width: 90px;" value="<?= $scoreTambahanStaf !== null ? $scoreTambahanStaf : '' ?>" placeholder="0 - 150" aria-label="Input Nilai Akumulasi Tugas Tambahan Staf" <?= !$is_penilai ? 'readonly' : '' ?>>
                                                     <span class="input-group-text bg-success-subtle text-success fw-bold px-2">%</span>
                                                 </div>
                                                 <div id="hintTambahanContainer">
@@ -827,7 +831,7 @@
                             </div>
 
                             <!-- RINGKASAN EXECUTIVE SKOR AKHIR DI PALING BAWAH PENILAIAN -->
-                            <div class="card bg-white border border-2 border-<?= $warnaScoreBwh === 'warning text-dark' ? 'warning' : $warnaScoreBwh ?> rounded-4 p-3 shadow-sm mb-4" id="cardKinerjaStafSummary">
+                            <div class="card bg-white border border-2 border-<?= ($warnaScoreBwh === 'warning text-dark' || $warnaScoreBwh === 'info text-dark') ? ($warnaScoreBwh === 'warning text-dark' ? 'warning' : 'info') : $warnaScoreBwh ?> rounded-4 p-3 shadow-sm mb-4" id="cardKinerjaStafSummary" role="region" aria-label="Ringkasan Nilai Akhir Kinerja Staf">
                                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 score-banner-wrapper">
                                     <div>
                                         <h6 class="fw-bold text-dark mb-1"><i class="bi bi-award-fill text-success me-2"></i> NILAI AKHIR KINERJA STAF</h6>
@@ -848,7 +852,7 @@
                                             </span>
                                         </div>
                                     </div>
-                                    <div class="d-flex align-items-center gap-3">
+                                    <div class="d-flex align-items-center gap-3" aria-live="polite" aria-atomic="true">
                                         <span id="totalPredikatStafBadge" class="badge bg-<?= $badgeColorRataBwh ?> fs-6 px-3 py-2 rounded-pill"><?= $predikatRataRataBwh ?></span>
                                         <span class="fs-2 fw-bold text-<?= $warnaScoreBwh ?> mb-0 lh-1 num-tabular" id="totalKinerjaStafText" style="white-space: nowrap;"><?= str_replace('.', ',', round($rataRataBwh, 2)) ?></span>
                                     </div>
@@ -857,9 +861,9 @@
 
                             <!-- ACTION TOOLBAR AT BOTTOM OF STAF FORM -->
                             <div class="d-flex justify-content-end mb-4 gap-2 btn-action-container bento-stagger bento-stagger-3">
-                                <button type="reset" class="btn btn-outline-secondary btn-tactile rounded-pill px-3 py-2 fw-semibold shadow-sm" title="Kosongkan seluruh isian nilai pada halaman ini"><i class="bi bi-arrow-counterclockwise me-1"></i> Reset Nilai</button>
-                                <button type="submit" name="action" value="draft" class="btn btn-outline-primary btn-tactile rounded-pill px-4 py-2 fw-semibold shadow-sm" title="Simpan sebagai draf"><i class="bi bi-journal-bookmark me-1"></i> Simpan Draf</button>
-                                <button type="submit" name="action" value="submit" class="btn btn-success btn-tactile rounded-pill px-4 py-2 fw-bold shadow-sm" title="Simpan dan terbitkan nilai kinerja"><i class="bi bi-check-circle-fill me-1.5"></i> Simpan & Terbitkan Penilaian</button>
+                                <button type="reset" class="btn btn-outline-secondary btn-tactile rounded-pill px-3 py-2 fw-semibold shadow-sm" title="Kosongkan seluruh isian nilai pada halaman ini" aria-label="Kosongkan seluruh isian nilai pada halaman ini"><i class="bi bi-arrow-counterclockwise me-1"></i> Reset Nilai</button>
+                                <button type="submit" name="action" value="draft" class="btn btn-outline-primary btn-tactile rounded-pill px-4 py-2 fw-semibold shadow-sm" title="Simpan sebagai draf" aria-label="Simpan draf penilaian kinerja staf"><i class="bi bi-journal-bookmark me-1"></i> Simpan Draf</button>
+                                <button type="submit" name="action" value="submit" class="btn btn-success btn-tactile rounded-pill px-4 py-2 fw-bold shadow-sm" title="Simpan dan terbitkan nilai kinerja" aria-label="Simpan dan terbitkan nilai kinerja staf"><i class="bi bi-check-circle-fill me-1.5"></i> Simpan & Terbitkan Penilaian</button>
                             </div>
                         </form>
 
@@ -1046,7 +1050,7 @@
             }
             if (val <= 25) return { label: 'Sangat Kurang', class: 'bg-danger', textClass: 'danger' };
             if (val <= 75) return { label: 'Kurang', class: 'bg-warning text-dark', textClass: 'warning' };
-            if (val <= 90) return { label: 'Butuh Perbaikan', class: 'bg-secondary', textClass: 'secondary' };
+            if (val <= 90) return { label: 'Butuh Perbaikan', class: 'bg-info text-dark', textClass: 'info' };
             if (val <= 100) return { label: 'Baik', class: 'bg-primary', textClass: 'primary' };
             return { label: 'Sangat Baik', class: 'bg-success', textClass: 'success' };
         }
@@ -1054,11 +1058,12 @@
         function calculateOverallStafScore() {
             let total = 0;
             let count = 0;
-            let rhkTotal = $('.input-nilai-capaian').length;
+            let rhkInputs = $('#tablePenilaianStaf tbody .input-nilai-capaian');
+            let rhkTotal = rhkInputs.length;
             let rhkFilled = 0;
 
-            // 1. Hitung Nilai RHK
-            $('.input-nilai-capaian').each(function() {
+            // 1. Hitung Nilai RHK (hanya dari baris tbody)
+            rhkInputs.each(function() {
                 let rawVal = $(this).val();
                 let v = parseFloat(rawVal);
                 let badgeContainer = $(this).closest('td').find('.predikat-badge-container');
@@ -1128,8 +1133,8 @@
             let wrapper = $('#cardKinerjaStafSummary');
             let badgeEl = $('#totalPredikatStafBadge');
 
-            textEl.removeClass('text-success text-secondary text-danger text-warning text-primary');
-            wrapper.removeClass('border-success border-secondary border-danger border-warning border-primary');
+            textEl.removeClass('text-success text-secondary text-danger text-warning text-primary text-info');
+            wrapper.removeClass('border-success border-secondary border-danger border-warning border-primary border-info');
 
             textEl.addClass('text-' + pRata.textClass);
             wrapper.addClass('border-' + pRata.textClass);
@@ -1261,7 +1266,7 @@
                         isPublishConfirmed = true;
 
                         // Otomatis isi seluruh input RHK yang kosong dengan '0'
-                        $('.input-nilai-capaian').each(function() {
+                        $('#tablePenilaianStaf tbody .input-nilai-capaian').each(function() {
                             if ($(this).val() === '') {
                                 $(this).val('0');
                             }

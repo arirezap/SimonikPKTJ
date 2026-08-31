@@ -1,7 +1,7 @@
 # 🎨 DESIGN SYSTEM & UI/UX GUIDELINES
 ## Evidence Command Center (ECC)
 **Official Application Name:** Evidence Command Center (ECC) (formerly Simonik)  
-**Version:** 1.3.0 (Enterprise Production Release)  
+**Version:** 1.4.0 (Enterprise Production Release - 1 September 2026)  
 **Design Philosophy:** Modern Enterprise Bento Grid, Visual Excellence, Micro-Interactions, Mobile-First Touch Experience, 3-Tier Data Guards, and High-Performance Ergonomics.
 
 ---
@@ -453,7 +453,101 @@ In strict compliance with **WCAG 2.1 Criterion 2.3.3 (Animation from Interaction
 
 ---
 
+## 11. 📅 Ergonomic Datepicker, Toolbar Controls & Calendar Status Dots
+
+To ensure fast and error-free daily logging across various display sizes:
+- **Date Button Affordance (`.btn-flatpickr-ecc`)**:
+  - Always uses crisp white background (`#ffffff`), solid border (`1px solid #cbd5e1`), and dark slate text (`#334155`) to clearly indicate that the element is an interactive button, not static text.
+  - Height standardized to `35px` with font size `0.76rem` to prevent long Indonesian date strings (e.g., *"Senin, 31 Agustus 2026"*) from wrapping or truncating.
+- **Calendar Status Dots**:
+  - 🟢 **Terkirim (`.dot-terkirim` / `#10b981`)**: Indicates daily log has been finalized and submitted to supervisor.
+  - 🟡 **Draf (`.dot-draft` / `#f59e0b`)**: Indicates report is saved as draft and requires submission.
+  - 🔴 **Kosong / Belum Diisi (`.dot-empty` / `#ef4444`)**: Indicates working day with zero recorded activities.
+
+---
+
+## 12. 🛠️ Web-Based Maintenance Mode & System Settings UX Standards
+
+- **Interactive Switch Card (`.setting-card.active-maintenance`)**:
+  - Amber border accent (`2px solid #f59e0b`) and elevated shadow (`0 8px 24px rgba(245, 158, 11, 0.12)`) when maintenance mode is active.
+  - Dynamic status badge: 🟢 `Sistem Aktif Normal` $\leftrightarrow$ 🟡 `Mode Pemeliharaan AKTIF`.
+- **Top Bar Persistent Administrator Banner (`.maintenance-alert-banner`)**:
+  - Renders a non-intrusive amber gradient alert (`#fef3c7` $\rightarrow$ `#fde68a`) with pulsating indicator dot across all Admin pages when maintenance is enabled.
+- **Client Maintenance Page (`public/maintenance.html`)**:
+  - Clean Bento card layout with automated 30-second countdown timer and instant refresh trigger.
+  - Serves HTTP `503 Service Unavailable` with `Retry-After: 30` headers for optimal SEO and caching protection.
+
+---
+
+## 13. 🔢 High-Precision Decimal Inputs (`DECIMAL(10,4)`) & 0–150% Scale Standards
+
+- **Tabular Font Feature (`.input-decimal-4`)**:
+  - Enforces `font-variant-numeric: tabular-nums` and `font-feature-settings: "tnum"` so decimal digits remain perfectly vertically aligned in financial and performance tables.
+  - Suppresses native browser up/down number spin buttons to prevent layout disruption and accidental mouse-drag alteration.
+- **Mouse Wheel Protection**:
+  - Prevents scrolling through numbers by unfocusing (`.blur()`) on mouse wheel event over number inputs.
+- **Unified 0–150% Scoring Scale**:
+  - Both Rencana Hasil Kerja (RHK) and Tugas Tambahan share the uniform score spectrum of `0% - 150%` with automated real-time badge recoloring and client-side bounding checks.
+
+---
+
+## 14. 🏢 13-Tier Organizational Hierarchy Badges & Skeleton Loaders
+
+- **Hierarchical Tier Badges**:
+  - **Tier 1 (Direktur)**: Deep Indigo (`#1e1b4b` / `#312e81`)
+  - **Tier 2 (Wakil Direktur 1-3)**: Navy Blue (`#1e3a8a` / `#1d4ed8`)
+  - **Tier 3 (Kabag / Katim / Kapus / Kanit)**: Deep Teal (`#0f766e` / `#14b8a6`)
+  - **Tier 4 (Dosen / Tenaga Fungsional)**: Slate Gray (`#475569` / `#64748b`)
+  - **Tier 5 (Staf Pelaksana)**: Neutral Subtle (`#f1f5f9` / `#cbd5e1`)
+- **Async Skeleton Shimmer Loader (`.skeleton-shimmer`)**:
+  - Displays a continuous $1.5\text{s}$ shimmer animation (`#f1f5f9` $\leftrightarrow$ `#e2e8f0`) during asynchronous AJAX modal queries, eliminating jarring layout shifts (*Cumulative Layout Shift = 0*).
+
+---
+
+## 15. 📊 Executive Multi-Sheet Excel & Landscape A4 PDF Document Engine Standards
+
+- **Spreadsheet Multi-Sheet Hierarchy**:
+  - **Sheet 1 (Ringkasan Eksekutif)**: Executive summary KPI metrics and 12-month performance matrix.
+  - **Sheet 2 (Audit Trail Rincian)**: Detailed breakdown per employee, indicator, target vs realization, gaps, and evidence links.
+- **Formal Print PDF Layout (Dompdf Landscape A4)**:
+  - Official institution letterhead (Kop Surat Politeknik Keselamatan Transportasi Jalan).
+  - Page-budgeted tables with repeated table headers on page breaks (`<thead>` repeat).
+  - High-contrast typography and digital signature validation blocks.
+
+---
+
+## 16. ♿ Accessibility Standards & Screen Reader Labels (`aria-label`)
+
+In compliance with modern enterprise web accessibility:
+- **Export Action Buttons**:
+  - Excel: `aria-label="Unduh Rekapitulasi Kinerja Excel Multi-Sheet Lengkap"`
+  - PDF: `aria-label="Unduh Rekapitulasi Kinerja PDF Resmi A4 Landscape"`
+- **Filter Toolbar Selects**:
+  - Periode Bulan: `aria-label="Pilih Periode Bulan Rekap"`
+  - Tahun Input: `aria-label="Input Tahun Rekap"`
+  - Unit Kerja: `aria-label="Pilih Filter Unit Kerja"`
+  - Role Filter: `aria-label="Pilih Filter Kategori Role"`
+- **Live Search Boxes**:
+  - `aria-label="Pencarian cepat nama pegawai, NIP, jabatan, atau unit kerja"`
+- **Color Contrast Ratio**:
+  - All text elements maintain a minimum contrast ratio of $\ge 4.5:1$ against surface backgrounds for optimal readability.
+
+---
+
+## 17. 🛡️ Multi-Role Authorization UX & Dynamic Navigation States
+
+- **Role-Aware Navigation Badges (`render_role_badge()`)**:
+  - Consistent visual pills representing the 10 system roles (`Superadmin`, `Direktur`, `Wakil Direktur`, `Kabag`, `Manajemen`, `SPM`, `Kepegawaian`, `Pegawai / Staf`, `Tugas Belajar`).
+- **Contextual Action Visibility**:
+  - Supervisor actions (Persetujuan, Terbitkan Nilai) only appear when the authenticated user possesses valid subordinate assignment.
+  - Superadmin controls (`bukaKunci`, `batalApprove`) are highlighted with distinct administrative badges and warning dialogs.
+- **Dynamic Active Route Highlighting**:
+  - Active sidebar navigation pills dynamically reflect current route paths without layout jumping.
+
+---
+
 *Evidence Command Center (ECC) Design System — Maintained for 100% visual consistency, ergonomic excellence, and enterprise-grade user experience.*
+
 
 
 

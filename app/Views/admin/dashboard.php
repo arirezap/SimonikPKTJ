@@ -23,7 +23,7 @@
                 
                 <!-- Filter Tahun ECC -->
                 <form id="formEcc" class="m-0 d-flex gap-2">
-                    <select name="tahun_ecc" id="tahun_ecc" class="form-select form-select-sm filter-select fw-bold text-primary-bento" style="width: auto; cursor:pointer;" onchange="updateEccData()">
+                    <select name="tahun_ecc" id="tahun_ecc" aria-label="Pilih Tahun ECC" class="form-select form-select-sm filter-select fw-bold text-primary-bento" style="width: auto; cursor:pointer;" onchange="updateEccData()">
                         <?php foreach ($daftar_tahun as $tahun_item): ?>
                             <option value="<?= esc($tahun_item) ?>" <?= ($tahun_ecc == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
                         <?php endforeach; ?>
@@ -33,21 +33,21 @@
             
             <div class="bento-body pt-2">
                 <ul class="nav nav-pills ecc-tabs mb-4" id="prodiTab" role="tablist">
-                    <?php foreach($prodiData as $prodi): ?>
+                    <?php $tabIdx = 0; foreach($prodiData as $prodi): ?>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link py-1 px-3" style="font-size: 0.85rem;" id="tab-<?= esc($prodi['id_prodi']) ?>" data-bs-toggle="tab" data-bs-target="#content-<?= esc($prodi['id_prodi']) ?>" type="button" role="tab"><?= esc($prodi['nama_prodi']) ?></button>
+                            <button class="nav-link py-1 px-3 <?= $tabIdx === 0 ? 'active' : '' ?>" style="font-size: 0.85rem;" id="tab-<?= esc($prodi['id_prodi']) ?>" data-bs-toggle="tab" data-bs-target="#content-<?= esc($prodi['id_prodi']) ?>" type="button" role="tab"><?= esc($prodi['nama_prodi']) ?></button>
                         </li>
-                    <?php endforeach; ?>
+                    <?php $tabIdx++; endforeach; ?>
                 </ul>
 
                 <div class="tab-content border-0 p-0 shadow-none bg-transparent" id="prodiTabContent">
-                    <?php foreach($prodiData as $prodi): ?>
-                        <div class="tab-pane fade" id="content-<?= esc($prodi['id_prodi']) ?>" role="tabpanel">
+                    <?php $paneIdx = 0; foreach($prodiData as $prodi): ?>
+                        <div class="tab-pane fade <?= $paneIdx === 0 ? 'show active' : '' ?>" id="content-<?= esc($prodi['id_prodi']) ?>" role="tabpanel">
                             <div class="row justify-content-center">
                                 <div class="col-12 px-0 px-md-3">
                                     <div class="text-center mb-3">
                                         <span class="badge bg-light text-dark border px-2 py-1 rounded-pill shadow-sm" style="font-size: 0.75rem;">
-                                            Rangkuman Skor LED: <strong class="text-primary-bento"><?= esc($prodi['nama_prodi']) ?></strong>
+                                             Rangkuman Skor LED: <strong class="text-primary-bento"><?= esc($prodi['nama_prodi']) ?></strong>
                                         </span>
                                     </div>
                                     <?php if (empty($prodi['chart_labels'])): ?>
@@ -62,7 +62,7 @@
                                 </div>
                             </div>
                         </div>
-                    <?php endforeach; ?>
+                    <?php $paneIdx++; endforeach; ?>
                 </div>
             </div>
         </div>
@@ -73,26 +73,8 @@
         <div class="bento-card bg-primary-bento text-white flex-fill shadow-sm" style="min-height:150px;">
             <div class="bento-body p-4 d-flex flex-column justify-content-center h-100">
                 <div class="stat-label text-white-50 mb-1">Rata-Rata Kinerja Bulanan</div>
-                <div class="stat-value text-white mb-2" id="valRataRataKinerja">
-                    <?php 
-                        $rataRataValue = 0;
-                        if (!empty($unitStats)) {
-                            $totalAktif = 0;
-                            $countAktif = 0;
-                            foreach ($unitStats as $unit) {
-                                if (isset($unit['anggota'])) {
-                                    foreach ($unit['anggota'] as $anggota) {
-                                        if ($anggota['rata_rata'] > 0) {
-                                            $totalAktif += $anggota['rata_rata'];
-                                            $countAktif++;
-                                        }
-                                    }
-                                }
-                            }
-                            $rataRataValue = $countAktif > 0 ? round($totalAktif / $countAktif, 2) : 0;
-                        }
-                        echo esc($rataRataValue);
-                    ?>
+                <div class="stat-value text-white mb-2" id="valRataRataKinerja" aria-live="polite" aria-atomic="true">
+                    <?= number_format((float)($rataRataValue ?? 0), 2, ',', '.') ?>
                 </div>
                 <div class="text-white-50 small"><i class="bi bi-graph-up-arrow me-1"></i> Skor Agregat Seluruh Pegawai</div>
             </div>
@@ -102,7 +84,7 @@
         <div class="bento-card flex-fill shadow-sm border-top border-4 border-primary" style="min-height:150px;">
             <div class="bento-body p-4 d-flex flex-column justify-content-center h-100">
                 <div class="stat-label mb-1">Tingkat Partisipasi Aktif</div>
-                <div class="stat-value text-dark mb-2" id="valPartisipasi">
+                <div class="stat-value text-dark mb-2" id="valPartisipasi" aria-live="polite" aria-atomic="true">
                     <?php 
                         $pctPart = ($totalPegawai > 0) ? round(($partisipasiAktif / $totalPegawai) * 100, 1) : 0;
                         echo esc($pctPart);
@@ -122,13 +104,13 @@
             <p class="text-muted mb-0 small">Ringkasan performa seluruh unit berdasarkan laporan harian yang dinilai</p>
         </div>
         <form id="formKinerja" class="m-0 d-flex gap-2">
-            <select class="form-select filter-select fw-bold text-primary-bento" id="bulan_kinerja" name="bulan_kinerja" style="width: auto; cursor:pointer;" onchange="updateKinerjaData()">
+            <select class="form-select filter-select fw-bold text-primary-bento" id="bulan_kinerja" name="bulan_kinerja" aria-label="Pilih Bulan Kinerja" style="width: auto; cursor:pointer;" onchange="updateKinerjaData()">
                 <option value="all" <?= ($bulan_kinerja === 'all' || !$bulan_kinerja) ? 'selected' : '' ?>>Semua Bulan</option>
                 <?php for ($i = 1; $i <= 12; $i++): ?>
                     <option value="<?= $i; ?>" <?= ($bulan_kinerja == $i) ? 'selected' : ''; ?>><?= bulan_indo($i) ?></option>
                 <?php endfor; ?>
             </select>
-            <select name="tahun_kinerja" id="tahun_kinerja" class="form-select filter-select fw-bold text-primary-bento" style="width: auto; cursor:pointer;" onchange="updateKinerjaData()">
+            <select name="tahun_kinerja" id="tahun_kinerja" class="form-select filter-select fw-bold text-primary-bento" aria-label="Pilih Tahun Kinerja" style="width: auto; cursor:pointer;" onchange="updateKinerjaData()">
                 <?php foreach ($daftar_tahun as $tahun_item): ?>
                     <option value="<?= esc($tahun_item) ?>" <?= ($tahun_kinerja == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
                 <?php endforeach; ?>
@@ -177,29 +159,6 @@
                 <div class="table-responsive">
                     <table class="table table-borderless table-hover align-middle mb-0">
                         <tbody id="tbodyTop5Unit">
-                            <?php 
-                                $unitRanking = [];
-                                if (!empty($unitStats)) {
-                                    foreach ($unitStats as $unitName => $unitData) {
-                                        $totalAktif = 0;
-                                        $countAktif = 0;
-                                        if (isset($unitData['anggota'])) {
-                                            foreach ($unitData['anggota'] as $anggota) {
-                                                if ($anggota['rata_rata'] > 0) {
-                                                    $totalAktif += $anggota['rata_rata'];
-                                                    $countAktif++;
-                                                }
-                                            }
-                                        }
-                                        $avg = $countAktif > 0 ? round($totalAktif / $countAktif, 2) : 0;
-                                        $unitRanking[] = ['nama' => $unitName, 'rata' => $avg];
-                                    }
-                                    usort($unitRanking, function($a, $b) {
-                                        return $b['rata'] <=> $a['rata'];
-                                    });
-                                }
-                                $top5Unit = array_slice($unitRanking, 0, 5);
-                            ?>
                             <?php if(empty($top5Unit)): ?>
                                 <tr><td class="text-center text-muted py-4">Belum ada data</td></tr>
                             <?php else: ?>
@@ -215,7 +174,7 @@
                                         <div class="fw-bold text-dark text-truncate" style="font-size: 0.85rem;" title="<?= esc($u['nama']) ?>"><?= esc($u['nama']) ?></div>
                                     </td>
                                     <td class="text-end pe-4 py-2 border-bottom border-light">
-                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 shadow-sm border border-success"><?= $u['rata'] > 0 ? $u['rata'] . '%' : '-' ?></span>
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 shadow-sm border border-success"><?= $u['rata'] > 0 ? number_format((float)$u['rata'], 2, ',', '.') : '-' ?></span>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -250,7 +209,7 @@
                                         <div class="text-muted text-truncate" style="font-size: 0.75rem;" title="<?= esc(trim($t['staf']['jabatan'] ?? '') ?: '-') ?>"><?= esc(trim($t['staf']['jabatan'] ?? '') ?: '-') ?></div>
                                     </td>
                                     <td class="text-end pe-3 py-2 border-bottom border-light">
-                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 shadow-sm border border-success" style="font-size: 0.8rem;"><?= esc($t['rata_rata']) ?></span>
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 shadow-sm border border-success" style="font-size: 0.8rem;"><?= number_format((float)$t['rata_rata'], 2, ',', '.') ?></span>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -283,7 +242,7 @@
                                         <div class="text-muted text-truncate" style="font-size: 0.75rem;" title="<?= esc(trim($b['staf']['jabatan'] ?? '') ?: '-') ?>"><?= esc(trim($b['staf']['jabatan'] ?? '') ?: '-') ?></div>
                                     </td>
                                     <td class="text-end pe-3 py-2 border-bottom border-light">
-                                        <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2 py-1 shadow-sm border border-danger" style="font-size: 0.8rem;"><?= esc($b['rata_rata']) ?></span>
+                                        <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2 py-1 shadow-sm border border-danger" style="font-size: 0.8rem;"><?= number_format((float)$b['rata_rata'], 2, ',', '.') ?></span>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -310,7 +269,7 @@
                         <div class="alert alert-light border text-center text-muted mb-0 shadow-sm"><i class="bi bi-info-circle me-2"></i> Belum ada data rekap kinerja staf.</div>
                     <?php else: ?>
                         <div class="performance-chart-container">
-                            <canvas id="unitPerformanceChart"></canvas>
+                            <canvas id="unitPerformanceChart" role="img" aria-label="Grafik Batang Kinerja Seluruh Unit Kerja Organisasi"></canvas>
                         </div>
                         <p class="text-center text-muted small mt-3 mb-0"><i class="bi bi-info-circle me-1"></i> Klik pada grafik batang untuk melihat detail anggota unit kerja.</p>
                     <?php endif; ?>
@@ -504,6 +463,7 @@ async function updateKinerjaData() {
                         badge = `<div class="d-flex justify-content-center align-items-center mx-auto fw-bold text-danger" style="width:24px;height:24px;font-size:13px;">${i+1}</div>`;
                     }
                     const scoreClass = isTop ? 'bg-success text-success border-success' : 'bg-danger text-danger border-danger';
+                    const rataStr = (item.rata_rata !== undefined && item.rata_rata !== null) ? Number(item.rata_rata).toFixed(2) : '0.00';
                     html += `
                     <tr style="height: 56px;">
                         <td style="width: 50px;" class="text-center align-middle py-2 border-bottom border-light">${badge}</td>
@@ -512,7 +472,7 @@ async function updateKinerjaData() {
                             <div class="text-muted text-truncate" style="font-size: 0.75rem;" title="${escapeHtml(item.staf.jabatan || '-')}">${escapeHtml(item.staf.jabatan || '-')}</div>
                         </td>
                         <td class="text-end pe-3 py-2 border-bottom border-light">
-                            <span class="badge ${scoreClass} bg-opacity-10 rounded-pill px-2 py-1 shadow-sm border" style="font-size: 0.8rem;">${item.rata_rata}</span>
+                            <span class="badge ${scoreClass} bg-opacity-10 rounded-pill px-2 py-1 shadow-sm border" style="font-size: 0.8rem;">${rataStr}</span>
                         </td>
                     </tr>`;
                 });
@@ -547,30 +507,25 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // --- SCRIPT UNTUK MENGINGAT TAB AKTIF ECC ---
-    const prodiTabs = document.querySelectorAll('#prodiTab button[data-bs-toggle="tab"]');
-    const activeTabKey = 'activeProdiTab';
+    const activeTabKey = 'ecc_active_prodi_tab';
+    const savedTabTarget = localStorage.getItem(activeTabKey);
+    if (savedTabTarget) {
+        const targetBtn = document.querySelector(`button[data-bs-target="${savedTabTarget}"]`);
+        if (targetBtn) {
+            const tabObj = bootstrap.Tab.getInstance(targetBtn) || new bootstrap.Tab(targetBtn);
+            tabObj.show();
+        }
+    }
 
+    const prodiTabs = document.querySelectorAll('#prodiTab button[data-bs-toggle="tab"]');
     prodiTabs.forEach(tab => {
         tab.addEventListener('shown.bs.tab', function (event) {
             const targetId = event.target.getAttribute('data-bs-target');
             if (targetId) {
-                sessionStorage.setItem(activeTabKey, targetId);
+                localStorage.setItem(activeTabKey, targetId);
             }
         });
     });
-
-    const savedTabId = sessionStorage.getItem(activeTabKey);
-    let tabToActivate = null;
-    if (savedTabId) {
-        tabToActivate = document.querySelector(`button[data-bs-target="${savedTabId}"]`);
-    }
-    if (!tabToActivate) {
-        tabToActivate = document.querySelector('#prodiTab button[data-bs-toggle="tab"]');
-    }
-    if (tabToActivate) {
-        const tab = new bootstrap.Tab(tabToActivate);
-        tab.show();
-    }
 
     // --- Helper: Word Wrap ---
     function splitLabel(label, maxLength = 16) {
@@ -617,7 +572,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // --- INIT RADAR CHART ECC ---
-    const prodiData = <?= json_encode($prodiData ?? []) ?>;
+    const prodiData = <?= json_encode($prodiData ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
     const selectedTahun = '<?= esc($tahun_ecc) ?>';
 
     for (const [id, data] of Object.entries(prodiData)) {
@@ -687,9 +642,9 @@ document.addEventListener('DOMContentLoaded', function () {
     <?php if (!empty($chartPegawaiUnitLabels)): ?>
     const ctxUnit = document.getElementById('unitPerformanceChart');
     if (ctxUnit) {
-        window.adminUnitStatsCache = <?= json_encode($unitStats ?? []) ?>;
-        window.adminUnitLabelsCache = <?= json_encode($chartPegawaiUnitLabels ?? []) ?>;
-        const unitData = <?= json_encode($chartPegawaiUnitData ?? []) ?>;
+        window.adminUnitStatsCache = <?= json_encode($unitStats ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+        window.adminUnitLabelsCache = <?= json_encode($chartPegawaiUnitLabels ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+        const unitData = <?= json_encode($chartPegawaiUnitData ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
         
         const dynamicHeight = Math.max(200, window.adminUnitLabelsCache.length * 40);
         ctxUnit.parentElement.style.height = dynamicHeight + 'px';
@@ -722,13 +677,16 @@ document.addEventListener('DOMContentLoaded', function () {
                         backgroundColor: '#1e293b',
                         padding: 12,
                         callbacks: {
-                            label: function(context) { return 'Rata-Rata: ' + context.parsed.x + '%'; }
+                            label: function(context) { return 'Rata-Rata: ' + Number(context.parsed.x || 0).toFixed(2); }
                         }
                     }
                 },
                 scales: {
                     x: {
-                        beginAtZero: true, max: 100, grid: { borderDash: [2, 4], color: '#f1f5f9' }
+                        beginAtZero: true,
+                        suggestedMax: 100,
+                        grace: '8%',
+                        grid: { borderDash: [2, 4], color: '#f1f5f9' }
                     },
                     y: {
                         grid: { display: false }, ticks: { font: { size: 11, family: 'system-ui' } }
@@ -745,11 +703,16 @@ document.addEventListener('DOMContentLoaded', function () {
                         let tbody = '';
                         if(details && details.length > 0) {
                             details.forEach(item => {
-                                let badgeClass = 'bg-success';
-                                if(item.rata_rata < 60) badgeClass = 'bg-danger';
-                                else if(item.rata_rata < 75) badgeClass = 'bg-warning text-dark';
-                                else if(item.rata_rata == 0 && item.dinilai == 0) badgeClass = 'bg-secondary';
+                                let badgeClass = 'bg-secondary';
+                                if (item.dinilai > 0 || item.rata_rata > 0) {
+                                    if (item.rata_rata > 100) badgeClass = 'bg-success';
+                                    else if (item.rata_rata > 90) badgeClass = 'bg-primary';
+                                    else if (item.rata_rata > 75) badgeClass = 'bg-info text-dark';
+                                    else if (item.rata_rata > 25) badgeClass = 'bg-warning text-dark';
+                                    else badgeClass = 'bg-danger';
+                                }
                                 
+                                const scoreItemStr = Number(item.rata_rata || 0).toFixed(2);
                                 tbody += `
                                     <tr>
                                         <td class="ps-3 py-3 border-bottom border-light">
@@ -760,7 +723,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                             <span class="badge bg-light text-dark border shadow-sm">${escapeHtml(item.dinilai)} / ${escapeHtml(item.total_laporan)}</span>
                                         </td>
                                         <td class="text-center py-3 border-bottom border-light pe-3">
-                                            <span class="badge ${badgeClass} fs-6 rounded-pill px-3 shadow-sm">${escapeHtml(item.rata_rata)}</span>
+                                            <span class="badge ${badgeClass} fs-6 rounded-pill px-3 shadow-sm">${scoreItemStr}</span>
                                         </td>
                                     </tr>
                                 `;
@@ -843,7 +806,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
                 datasets: [{
                     label: 'Rata-Rata Kinerja',
-                    data: <?= json_encode($trendBulananData) ?>,
+                    data: <?= json_encode($trendBulananData ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>,
                     borderColor: '#4f46e5',
                     backgroundColor: 'rgba(79, 70, 229, 0.1)',
                     borderWidth: 3,
@@ -869,7 +832,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 scales: {
                     y: {
                         beginAtZero: true,
-                        max: 100,
+                        suggestedMax: 100,
+                        grace: '8%',
                         grid: { borderDash: [5, 5], color: '#f3f4f6', drawBorder: false }
                     },
                     x: {
@@ -943,18 +907,20 @@ document.addEventListener('DOMContentLoaded', function () {
                     
                     res.data.forEach(p => {
                         let badgeColor = 'secondary';
-                        if (p.rata_rata >= 90) badgeColor = 'success';
-                        else if (p.rata_rata >= 75) badgeColor = 'primary';
-                        else if (p.rata_rata >= 60) badgeColor = 'warning text-dark';
-                        else if (p.rata_rata > 0) badgeColor = 'danger';
+                        if (p.rata_rata > 100) badgeColor = 'success';
+                        else if (p.rata_rata > 90) badgeColor = 'primary';
+                        else if (p.rata_rata > 75) badgeColor = 'info text-dark';
+                        else if (p.rata_rata > 25) badgeColor = 'warning text-dark';
+                        else if (p.rata_rata > 0 || (p.dinilai && p.dinilai > 0)) badgeColor = 'danger';
 
+                        const scoreDetailStr = Number(p.rata_rata || 0).toFixed(2);
                         html += `<tr>
                                     <td class="ps-3">
                                         <div class="fw-bold text-dark">${escapeHtml(p.nama)}</div>
                                         <div class="text-muted small">${escapeHtml(p.jabatan || '-')} • ${escapeHtml(p.unit || '-')}</div>
                                     </td>
                                     <td class="text-center">
-                                        <span class="badge bg-${badgeColor} rounded-pill px-3 py-2" style="font-size:0.85rem">${escapeHtml(p.rata_rata)}</span>
+                                        <span class="badge bg-${badgeColor} rounded-pill px-3 py-2" style="font-size:0.85rem">${scoreDetailStr}</span>
                                     </td>
                                  </tr>`;
                     });

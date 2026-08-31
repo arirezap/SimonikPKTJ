@@ -3,15 +3,21 @@
 namespace App\Controllers\User;
 
 use App\Controllers\BaseController;
+use App\Controllers\Traits\KinerjaBatchTrait;
 use App\Models\LogKegiatanHarian;
+use App\Models\LogTugasTambahan;
+use App\Models\SettingModel;
+use App\Models\TargetKinerja;
 use App\Models\User;
 
 class PenilaianKinerjaController extends BaseController
 {
+    use KinerjaBatchTrait;
+
     public function index()
     {
-        $logModel = new \App\Models\LogKegiatanHarian();
-        $laporanModel = new \App\Models\TargetKinerja();
+        $logModel = new LogKegiatanHarian();
+        $laporanModel = new TargetKinerja();
         $userModel = new User();
 
         $userId = session()->get('id') ?? session()->get('user_id');
@@ -52,7 +58,7 @@ class PenilaianKinerjaController extends BaseController
         $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
         $role = session()->get('role');
-        $isSuper = hasAnyRole(['admin']);
+        $isSuper = hasAnyRole(['admin', 'direktur', 'wadir']);
 
         // Ambil daftar unit kerja untuk filter (Hanya untuk Admin Utama)
         $daftarUnit = [];
@@ -114,31 +120,13 @@ class PenilaianKinerjaController extends BaseController
             }
         }
 
-        $logTambahanModel = new \App\Models\LogTugasTambahan();
+        $logTambahanModel = new LogTugasTambahan();
 
         // Ambil rekap data sebulan penuh untuk diri sendiri (selalu ada)
         $rekapDataSendiri = $laporanModel->getTargetWithRealization($userId, $bulanTerpilih, $tahunTerpilih);
         $rawLogSendiri = $logModel->getLogByMonth($userId, $bulanTerpilih, $tahunTerpilih);
         $tugasTambahanSendiri = $logTambahanModel->getLogByMonth($userId, $bulanTerpilih, $tahunTerpilih);
-        
-        // Gabungkan Tugas Pokok dan Tugas Tambahan Diri Sendiri untuk Tabel Bagian C
-        $combinedSendiri = [];
-        foreach ($rawLogSendiri as $l) {
-            $l['is_tambahan'] = false;
-            $combinedSendiri[] = $l;
-        }
-        foreach ($tugasTambahanSendiri as $tmb) {
-            $tmb['is_tambahan'] = true;
-            $tmb['indikator_kinerja'] = 'Tugas Tambahan';
-            $combinedSendiri[] = $tmb;
-        }
-        usort($combinedSendiri, function($a, $b) {
-            if ($a['tanggal_kegiatan'] !== $b['tanggal_kegiatan']) {
-                return strtotime($a['tanggal_kegiatan']) <=> strtotime($b['tanggal_kegiatan']);
-            }
-            return ($a['is_tambahan'] ? 1 : 0) <=> ($b['is_tambahan'] ? 1 : 0);
-        });
-        $logHarianSendiri = $combinedSendiri;
+        $logHarianSendiri = $this->combineAndSortLogs($rawLogSendiri, $tugasTambahanSendiri);
         
         // Ambil rekap data staf terpilih (jika ada)
         $rekapDataStaf = [];
@@ -148,25 +136,7 @@ class PenilaianKinerjaController extends BaseController
             $rekapDataStaf = $laporanModel->getTargetWithRealization($stafIdTerpilih, $bulanTerpilih, $tahunTerpilih, true);
             $rawLogHarian = $logModel->getLogByMonth($stafIdTerpilih, $bulanTerpilih, $tahunTerpilih, true);
             $tugasTambahanStaf = $logTambahanModel->getLogByMonth($stafIdTerpilih, $bulanTerpilih, $tahunTerpilih, true);
-
-            // Gabungkan Tugas Pokok dan Tugas Tambahan untukTabel Bukti & Activity Log Staf (Bagian C)
-            $combinedLogs = [];
-            foreach ($rawLogHarian as $l) {
-                $l['is_tambahan'] = false;
-                $combinedLogs[] = $l;
-            }
-            foreach ($tugasTambahanStaf as $tmb) {
-                $tmb['is_tambahan'] = true;
-                $tmb['indikator_kinerja'] = 'Tugas Tambahan';
-                $combinedLogs[] = $tmb;
-            }
-            usort($combinedLogs, function($a, $b) {
-                if ($a['tanggal_kegiatan'] !== $b['tanggal_kegiatan']) {
-                    return strtotime($a['tanggal_kegiatan']) <=> strtotime($b['tanggal_kegiatan']);
-                }
-                return ($a['is_tambahan'] ? 1 : 0) <=> ($b['is_tambahan'] ? 1 : 0);
-            });
-            $logHarianStaf = $combinedLogs;
+            $logHarianStaf = $this->combineAndSortLogs($rawLogHarian, $tugasTambahanStaf);
         }
 
         $data = [
@@ -210,7 +180,7 @@ class PenilaianKinerjaController extends BaseController
             }
         }
 
-        $laporanModel = new \App\Models\LaporanHarian();
+        $laporanModel = new TargetKinerja();
         $action = $this->request->getPost('action');
         $statusPenilaian = ($action === 'submit') ? 'terbit' : 'draft';
 
@@ -219,21 +189,39 @@ class PenilaianKinerjaController extends BaseController
         $tahunPost  = $this->request->getPost('tahun');
         $unitPost   = $this->request->getPost('unit_kerja');
 
-        // Otorisasi: Pastikan penilai adalah Atasan Langsung dari staf atau Superadmin
-        if (!empty($stafPostId) && $stafPostId != $userId) {
+        $isSelfEval = $this->request->getPost('is_self_eval') === '1' || (empty($stafPostId) || $stafPostId == $userId);
+
+        if ($isSelfEval) {
+            $currentUser = $userModel->find($userId);
+            // Evaluasi mandiri HANYA diizinkan untuk Direktur (atau user tanpa atasan di sistem)
+            if (!($currentUser && ($currentUser['role'] === 'direktur' || empty($currentUser['atasan_id'])))) {
+                return redirect()->back()->with('error', 'Akses ditolak. Penilaian kinerja staf harus dilakukan oleh Atasan Langsung.');
+            }
+            $targetUserId = $userId;
+            $targetUserRecord = $currentUser;
+        } else {
+            // Otorisasi: Pastikan penilai adalah Atasan Langsung dari staf atau Pimpinan/Superadmin/Kepegawaian
             $stafUser = $userModel->find($stafPostId);
-            $isAtasan = $stafUser && !empty($stafUser['atasan_id']) && ($stafUser['atasan_id'] == $userId);
-            if (!hasAnyRole(['admin', 'direktur']) && !$isAtasan) {
+            if (!$stafUser) {
+                return redirect()->back()->with('error', 'Staf tidak ditemukan.');
+            }
+            $isAtasan = !empty($stafUser['atasan_id']) && ($stafUser['atasan_id'] == $userId);
+            if (!hasAnyRole(['admin', 'direktur', 'wadir', 'kepegawaian']) && !$isAtasan) {
                 return redirect()->back()->with('error', 'Akses ditolak. Anda tidak memiliki izin menilai kinerja staf ini.');
             }
+            $targetUserId = $stafPostId;
+            $targetUserRecord = $stafUser;
         }
 
         // Cek Batas Waktu Penilaian jika Saklar Batas Waktu Penilaian Aktif
-        $settingModel = new \App\Models\SettingModel();
+        $settingModel = new SettingModel();
         $isDeadlineActive = $settingModel->getValue('enable_penilaian_deadline', '0') === '1';
-        if ($isDeadlineActive && !hasAnyRole(['admin', 'direktur']) && !empty($bulanPost) && !empty($tahunPost)) {
+        $evalYear  = !empty($tahunPost) ? (int)$tahunPost : (int)(session()->get('penilaian_tahun') ?? date('Y'));
+        $evalMonth = !empty($bulanPost) ? (int)$bulanPost : (int)(session()->get('penilaian_bulan') ?? date('n'));
+
+        if ($isDeadlineActive && !hasRole('admin')) {
             $batasPenilaian = (int) $settingModel->getValue('batas_penilaian_kinerja', 10);
-            $evalMonthStart = new \DateTime(sprintf('%04d-%02d-01', (int)$bulanPost ? (int)$tahunPost : (int)date('Y'), (int)$bulanPost ?: (int)date('n')));
+            $evalMonthStart = new \DateTime(sprintf('%04d-%02d-01', $evalYear, $evalMonth));
             $currentMonthStart = new \DateTime(date('Y-m-01'));
             
             // Jika menilai periode lampau (sebelum bulan berjalan)
@@ -245,12 +233,14 @@ class PenilaianKinerjaController extends BaseController
                 
                 $now = new \DateTime();
                 if ($now > $deadlineDate) {
-                    return redirect()->back()->with('error', "Gagal: Batas waktu penilaian kinerja untuk periode {$bulanPost}/{$tahunPost} telah berakhir pada tanggal " . $deadlineDate->format('d M Y') . ".");
+                    $bulanIndoList = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                    $namaBulanEval = $bulanIndoList[$evalMonth - 1] ?? $evalMonth;
+                    return redirect()->back()->with('error', "Gagal: Batas waktu penilaian kinerja untuk periode {$namaBulanEval} {$evalYear} telah berakhir pada tanggal " . $deadlineDate->format('d M Y') . ".");
                 }
             }
         }
 
-        if (!empty($stafPostId)) session()->set('penilaian_staf_id', $stafPostId);
+        if (!$isSelfEval && !empty($stafPostId)) session()->set('penilaian_staf_id', $stafPostId);
         if (!empty($bulanPost))  session()->set('penilaian_bulan', $bulanPost);
         if (!empty($tahunPost))  session()->set('penilaian_tahun', $tahunPost);
         if (!empty($unitPost))   session()->set('penilaian_unit_kerja', $unitPost);
@@ -286,15 +276,21 @@ class PenilaianKinerjaController extends BaseController
             }
         }
 
-        $db = \Config\Database::connect();
-        $db->transStart();
-
+        $oldTargetValues = [];
         if (!empty($dataToUpdate)) {
-            $laporanModel->updateBatch($dataToUpdate, 'id');
+            $targetIds = array_column($dataToUpdate, 'id');
+            $oldTargets = $laporanModel->whereIn('id', $targetIds)->findAll();
+            foreach ($oldTargets as $ot) {
+                $oldTargetValues[$ot['id']] = [
+                    'id' => $ot['id'],
+                    'nilai_capaian' => $ot['nilai_capaian'],
+                    'status_penilaian' => $ot['status_penilaian']
+                ];
+            }
         }
 
         // --- PENILAIAN TUGAS TAMBAHAN ---
-        $logTambahanModel = new \App\Models\LogTugasTambahan();
+        $logTambahanModel = new LogTugasTambahan();
         $log_tambahan_ids = $this->request->getPost('log_tambahan_id');
         $nilai_tambahan_arr = $this->request->getPost('nilai_tambahan');
         $nilai_tambahan_gabungan = $this->request->getPost('nilai_tugas_tambahan_gabungan');
@@ -331,31 +327,63 @@ class PenilaianKinerjaController extends BaseController
                 $dataTambahanToUpdate[] = $rowUpdate;
             }
         }
+
+        $oldTambahanValues = [];
         if (!empty($dataTambahanToUpdate)) {
-            $logTambahanModel->updateBatch($dataTambahanToUpdate, 'id');
+            $tambahanIds = array_column($dataTambahanToUpdate, 'id');
+            $oldTambahans = $logTambahanModel->whereIn('id', $tambahanIds)->findAll();
+            foreach ($oldTambahans as $otm) {
+                $oldTambahanValues[$otm['id']] = [
+                    'id' => $otm['id'],
+                    'nilai_capaian' => $otm['nilai_capaian'],
+                    'status_penilaian' => $otm['status_penilaian']
+                ];
+            }
         }
 
-        $db->transComplete();
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        try {
+            if (!empty($dataToUpdate)) {
+                $laporanModel->updateBatch($dataToUpdate, 'id');
+            }
+            if (!empty($dataTambahanToUpdate)) {
+                $logTambahanModel->updateBatch($dataTambahanToUpdate, 'id');
+            }
+
+            $db->transComplete();
+        } catch (\Throwable $e) {
+            try { @$db->transRollback(); } catch (\Throwable $t) {}
+            return redirect()->back()->with('error', 'Gagal menyimpan penilaian kinerja ke database: ' . $e->getMessage());
+        }
 
         if ($db->transStatus() === false) {
             return redirect()->back()->with('error', 'Gagal menyimpan penilaian kinerja karena kesalahan basis data.');
         }
 
-        // Audit log & Notifikasi hanya jika benar-benar diterbitkan (submit)
-        if ($statusPenilaian === 'terbit' && (!empty($dataToUpdate) || !empty($dataTambahanToUpdate))) {
-            log_audit('APPROVE', 'target_kinerja_bulanan/log_tugas_tambahan', 'batch_nilai', null, [$dataToUpdate, $dataTambahanToUpdate]);
-            
-            $targetUserId = session()->get('penilaian_staf_id');
-            if (!$targetUserId && !empty($dataToUpdate)) {
-                $firstLaporan = $laporanModel->find($dataToUpdate[0]['id']);
-                $targetUserId = $firstLaporan['user_id'] ?? null;
-            }
-            if (!$targetUserId && !empty($dataTambahanToUpdate)) {
-                $firstTambahan = $logTambahanModel->find($dataTambahanToUpdate[0]['id']);
-                $targetUserId = $firstTambahan['user_id'] ?? null;
-            }
+        $stafName = $targetUserRecord['nama_lengkap'] ?? $targetUserRecord['nama'] ?? 'Pegawai';
 
-            if (!empty($targetUserId) && $targetUserId != $userId) {
+        // Audit log & Notifikasi
+        if ($statusPenilaian === 'terbit' && (!empty($dataToUpdate) || !empty($dataTambahanToUpdate))) {
+            if (function_exists('log_audit')) {
+                log_audit(
+                    'APPROVE_PENILAIAN_KINERJA',
+                    'target_kinerja_bulanan',
+                    $targetUserId,
+                    ['target' => $oldTargetValues, 'tambahan' => $oldTambahanValues],
+                    [
+                        'target'           => $dataToUpdate,
+                        'tambahan'         => $dataTambahanToUpdate,
+                        'staf'             => $stafName,
+                        'bulan'            => $evalMonth,
+                        'tahun'            => $evalYear,
+                        'status_penilaian' => 'terbit'
+                    ]
+                );
+            }
+            
+            if (!$isSelfEval && !empty($targetUserId) && $targetUserId != $userId) {
                 helper('notification');
                 send_notification(
                     $targetUserId,
@@ -363,80 +391,106 @@ class PenilaianKinerjaController extends BaseController
                     'Atasan telah menerbitkan Nilai Kinerja Bulanan Anda.',
                     site_url('penilaian-kinerja')
                 );
+                $pesan = 'Penilaian kinerja staf berhasil diterbitkan.';
+            } else {
+                $pesan = 'Nilai capaian kinerja mandiri Anda berhasil diterbitkan.';
             }
-            $pesan = 'Penilaian kinerja staf berhasil diterbitkan.';
         } else {
-            $pesan = 'Penilaian kinerja berhasil disimpan sementara (Draf). Penilaian belum dipublikasikan ke staf.';
+            if (function_exists('log_audit') && (!empty($dataToUpdate) || !empty($dataTambahanToUpdate))) {
+                log_audit(
+                    'DRAFT_PENILAIAN_KINERJA',
+                    'target_kinerja_bulanan',
+                    $targetUserId,
+                    ['target' => $oldTargetValues, 'tambahan' => $oldTambahanValues],
+                    [
+                        'target'           => $dataToUpdate,
+                        'tambahan'         => $dataTambahanToUpdate,
+                        'staf'             => $stafName,
+                        'bulan'            => $evalMonth,
+                        'tahun'            => $evalYear,
+                        'status_penilaian' => 'draft'
+                    ]
+                );
+            }
+
+            $pesan = $isSelfEval 
+                ? 'Nilai kinerja mandiri berhasil disimpan sementara (Draf).' 
+                : 'Penilaian kinerja berhasil disimpan sementara (Draf). Penilaian belum dipublikasikan ke staf.';
         }
 
-        $redirectHash = !empty($stafPostId) ? '#staf' : '#individu';
+        $redirectHash = $isSelfEval ? '#individu' : (!empty($stafPostId) ? '#staf' : '#individu');
         return redirect()->to(site_url('penilaian-kinerja') . $redirectHash)
                          ->with('success', $pesan);
     }
 
     public function getChartDataApi()
     {
-        // if (!$this->request->isAJAX()) return $this->response->setStatusCode(403)->setJSON(['error' => 'Invalid request']);
+        $currentUserId = session()->get('id') ?? session()->get('user_id');
+        $userModel = new User();
 
-        $userId = $this->request->getGet('user_id');
-        $bulan = (int)$this->request->getGet('bulan');
-        $tahun = (int)$this->request->getGet('tahun');
+        // Failsafe session id
+        if (!is_numeric($currentUserId) || strlen((string)$currentUserId) > 10) {
+            $userDb = $userModel->where('username', $currentUserId)
+                                ->orWhere('nip', $currentUserId)
+                                ->orWhere('id', $currentUserId)
+                                ->first();
+            if ($userDb) {
+                $currentUserId = $userDb['id'];
+            }
+        }
 
-        if (!$userId || !$bulan || !$tahun) return $this->response->setJSON(['error' => 'Missing parameters']);
+        $userId = (int)$this->request->getGet('user_id');
+        $bulan  = (int)$this->request->getGet('bulan');
+        $tahun  = (int)$this->request->getGet('tahun');
 
-        $laporanModel = new \App\Models\LaporanHarian();
-        $logTambahanModel = new \App\Models\LogTugasTambahan();
+        if (!$userId || !$bulan || !$tahun) {
+            return $this->response->setStatusCode(400)->setJSON(['error' => 'Parameter tidak lengkap']);
+        }
+
+        // Proteksi IDOR: Pastikan user hanya dapat mengakses datanya sendiri, atau requester adalah atasan langsung/manajemen
+        if ($userId != $currentUserId && !hasAnyRole(['admin', 'direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'kepegawaian'])) {
+            $daftarStaf = $userModel->getAllStaf($currentUserId);
+            $allowedIds = array_column($daftarStaf, 'id');
+            if (!in_array($userId, $allowedIds)) {
+                return $this->response->setStatusCode(403)->setJSON(['error' => 'Akses ditolak. Anda tidak berhak melihat data kinerja pegawai ini.']);
+            }
+        }
+
+        $targetModel = new TargetKinerja();
         $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
         $trendBulan = [];
         $trendNilai = [];
-        $stafIdTerpilih = session()->get('penilaian_staf_id');
-        $bulanTerpilih = session()->get('penilaian_bulan');
-        $tahunTerpilih = session()->get('penilaian_tahun');
         
+        // Kumpulkan tahun yang terlibat dalam 6 bulan terakhir untuk batch loading efisien
+        $yearsInvolved = [];
+        $monthsToFetch = [];
         for ($i = 5; $i >= 0; $i--) {
             $timestamp = mktime(0, 0, 0, $bulan - $i, 1, $tahun);
             $m = (int)date('n', $timestamp);
             $y = (int)date('Y', $timestamp);
-            $namaBulan = $bulanIndo[$m - 1] . ' ' . substr($y, 2, 2);
-            
-            // Hitung rata-rata: (Total Nilai Laporan + Total Nilai Tambahan) / (Jml Laporan Dinilai + Jml Tambahan Dinilai)
-            $jmlDinilaiPokok = 0;
-            $totalNilaiPokok = 0;
-            
-            $rekapDataStafAfter = $laporanModel->where('user_id', $userId)
-                                          ->where('bulan', $m)
-                                          ->where('tahun', $y)
-                                          ->findAll();
-
-            foreach ($rekapDataStafAfter as $rd) {
-                if ($rd['nilai_capaian'] !== null && $rd['nilai_capaian'] !== '') {
-                    $jmlDinilaiPokok++;
-                    $totalNilaiPokok += (float)$rd['nilai_capaian'];
-                }
-            }
-
-            $jmlDinilaiTambahan = 0;
-            $totalNilaiTambahan = 0;
-            $tugasTambahanStafAfter = $logTambahanModel->getLogByMonth($userId, $m, $y);
-            foreach ($tugasTambahanStafAfter as $tt) {
-                if ($tt['nilai_capaian'] !== null && $tt['nilai_capaian'] !== '') {
-                    $jmlDinilaiTambahan++;
-                    $totalNilaiTambahan += (float)$tt['nilai_capaian'];
-                }
-            }
-
-            $jmlTotal = $jmlDinilaiPokok + $jmlDinilaiTambahan;
-            $rataRata = 0;
-            if ($jmlTotal > 0) {
-                $rataRata = (float)(($totalNilaiPokok + $totalNilaiTambahan) / $jmlTotal);
-            }
-
-            $trendBulan[] = $namaBulan;
-            $trendNilai[] = round($rataRata, 2);
+            $yearsInvolved[$y] = true;
+            $monthsToFetch[] = ['bulan' => $m, 'tahun' => $y, 'label' => $bulanIndo[$m - 1] . ' ' . substr($y, 2, 2)];
         }
 
-        $rekapData = $laporanModel->getTargetWithRealization($userId, $bulan, $tahun);
+        // Batch fetch data kinerja per tahun (O(1) in-memory)
+        $batchDataPerYear = [];
+        foreach (array_keys($yearsInvolved) as $yVal) {
+            $batchDataPerYear[$yVal] = $this->loadBatchKinerjaData($yVal, [$userId]);
+        }
+
+        foreach ($monthsToFetch as $item) {
+            $m = $item['bulan'];
+            $y = $item['tahun'];
+            [$bTargets, $bTambahan] = $batchDataPerYear[$y] ?? [[], []];
+
+            $stat = $this->hitungKinerjaPegawai($userId, $m, $y, $bTargets, $bTambahan);
+
+            $trendBulan[] = $item['label'];
+            $trendNilai[] = round((float)($stat['rata_rata'] ?? 0), 2);
+        }
+
+        $rekapData = $targetModel->getTargetWithRealization($userId, $bulan, $tahun);
         
         $totalRealisasi = 0;
         $totalTarget = 0;
@@ -453,5 +507,29 @@ class PenilaianKinerjaController extends BaseController
             'sikap' => ['disiplin' => 0, 'kerjasama' => 0],
             'produktivitas' => ['realisasi' => $totalRealisasi, 'sisa' => max(0, $totalTarget - $totalRealisasi)]
         ]);
+    }
+
+    /**
+     * Helper untuk menggabungkan log kegiatan utama dan tugas tambahan, lalu mengurutkannya secara kronologis.
+     */
+    private function combineAndSortLogs(array $rawLogs, array $tugasTambahan): array
+    {
+        $combined = [];
+        foreach ($rawLogs as $l) {
+            $l['is_tambahan'] = false;
+            $combined[] = $l;
+        }
+        foreach ($tugasTambahan as $tmb) {
+            $tmb['is_tambahan'] = true;
+            $tmb['indikator_kinerja'] = 'Tugas Tambahan';
+            $combined[] = $tmb;
+        }
+        usort($combined, function($a, $b) {
+            if (($a['tanggal_kegiatan'] ?? '') !== ($b['tanggal_kegiatan'] ?? '')) {
+                return strtotime($a['tanggal_kegiatan'] ?? '') <=> strtotime($b['tanggal_kegiatan'] ?? '');
+            }
+            return (!empty($a['is_tambahan']) ? 1 : 0) <=> (!empty($b['is_tambahan']) ? 1 : 0);
+        });
+        return $combined;
     }
 }

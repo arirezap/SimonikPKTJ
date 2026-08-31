@@ -23,7 +23,7 @@ $routes->setDefaultController('Home');
 $routes->setDefaultMethod('index');
 $routes->setTranslateURIDashes(false);
 $routes->set404Override();
-$routes->setAutoRoute(true);
+$routes->setAutoRoute(false);
 
 /*
  * --------------------------------------------------------------------
@@ -52,7 +52,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
 $routes->get('notifications/fetch', 'NotificationController::fetch');
 $routes->post('notifications/read/(:segment)', 'NotificationController::markAsRead/$1');
 $routes->post('notifications/read-all', 'NotificationController::markAllAsRead');
-    $routes->get('dashboard/api-detail-chart', 'Admin\Dashboard::apiDetailChart');
+    $routes->match(['get', 'post'], 'dashboard/api-detail-chart', 'Admin\Dashboard::apiDetailChart');
     $routes->get('monitoring', 'Admin\MonitoringController::index');
     $routes->get('monitoring/exportExcel/(:num)/(:num)', 'Admin\MonitoringController::exportExcel/$1/$2');
     $routes->get('monitoring/exportPdf/(:num)/(:num)', 'Admin\MonitoringController::exportPdf/$1/$2');
@@ -88,7 +88,7 @@ $routes->post('notifications/read-all', 'NotificationController::markAllAsRead')
         $routes->get('holidays', 'Admin\MasterDataController::holidays');
         $routes->post('holidays/sync', 'Admin\MasterDataController::syncHolidays');
         $routes->post('holidays/store', 'Admin\MasterDataController::storeHoliday');
-        $routes->get('holidays/delete/(:num)', 'Admin\MasterDataController::deleteHoliday/$1');
+        $routes->match(['get', 'post'], 'holidays/delete/(:num)', 'Admin\MasterDataController::deleteHoliday/$1');
 
         // Rute untuk Sasaran Program
         $routes->get('sasaran', 'Admin\MasterDataController::sasaran');

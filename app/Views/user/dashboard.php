@@ -27,7 +27,7 @@ Dashboard
                 
                 <!-- Filter Tahun ECC -->
                 <form id="formEcc" class="m-0 d-flex gap-2">
-                    <select name="tahun_ecc" id="tahun_ecc" class="form-select form-select-sm filter-select fw-bold text-primary-bento" style="width: auto; cursor:pointer;" onchange="updateEccData()">
+                    <select name="tahun_ecc" id="tahun_ecc" aria-label="Pilih Tahun ECC" class="form-select form-select-sm filter-select fw-bold text-primary-bento" style="width: auto; cursor:pointer;" onchange="updateEccData()">
                         <?php foreach ($daftar_tahun as $tahun_item): ?>
                             <option value="<?= esc($tahun_item) ?>" <?= ($tahun_ecc == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
                         <?php endforeach; ?>
@@ -37,16 +37,16 @@ Dashboard
             
             <div class="bento-body pt-2">
                 <ul class="nav nav-pills ecc-tabs mb-4" id="prodiTab" role="tablist">
-                    <?php foreach($prodiData as $prodi): ?>
+                    <?php $tabIdx = 0; foreach($prodiData as $prodi): ?>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link py-1 px-3" style="font-size: 0.85rem;" id="tab-<?= esc($prodi['id_prodi']) ?>" data-bs-toggle="tab" data-bs-target="#content-<?= esc($prodi['id_prodi']) ?>" type="button" role="tab"><?= esc($prodi['nama_prodi']) ?></button>
+                            <button class="nav-link py-1 px-3 <?= $tabIdx === 0 ? 'active' : '' ?>" style="font-size: 0.85rem;" id="tab-<?= esc($prodi['id_prodi']) ?>" data-bs-toggle="tab" data-bs-target="#content-<?= esc($prodi['id_prodi']) ?>" type="button" role="tab"><?= esc($prodi['nama_prodi']) ?></button>
                         </li>
-                    <?php endforeach; ?>
+                    <?php $tabIdx++; endforeach; ?>
                 </ul>
 
                 <div class="tab-content border-0 p-0 shadow-none bg-transparent" id="prodiTabContent">
-                    <?php foreach($prodiData as $prodi): ?>
-                        <div class="tab-pane fade" id="content-<?= esc($prodi['id_prodi']) ?>" role="tabpanel">
+                    <?php $paneIdx = 0; foreach($prodiData as $prodi): ?>
+                        <div class="tab-pane fade <?= $paneIdx === 0 ? 'show active' : '' ?>" id="content-<?= esc($prodi['id_prodi']) ?>" role="tabpanel">
                             <div class="row justify-content-center">
                                 <div class="col-12 px-0 px-md-3">
                                     <div class="text-center mb-3">
@@ -66,7 +66,7 @@ Dashboard
                                 </div>
                             </div>
                         </div>
-                    <?php endforeach; ?>
+                    <?php $paneIdx++; endforeach; ?>
                 </div>
             </div>
         </div>
@@ -77,22 +77,23 @@ Dashboard
         <div class="bento-card bg-primary-bento text-white flex-fill shadow-sm" style="min-height: 150px;">
             <div class="bento-body d-flex flex-column justify-content-center align-items-center text-center py-4 h-100">
                 <div class="stat-label text-white-50 mb-2">Nilai Rata-Rata Kinerja</div>
-                <div class="stat-value text-white mb-2" id="valRataRataCapaian"><?= round($rataRataCapaian, 1) ?><span class="fs-4">%</span></div>
+                <div class="stat-value text-white mb-2" id="valRataRataCapaian" aria-live="polite" aria-atomic="true"><?= number_format($rataRataCapaian, 2, ',', '.') ?></div>
                 <div class="progress w-75 bg-white bg-opacity-25 mt-2 rounded-pill" style="height: 6px;">
                     <div class="progress-bar bg-warning" id="barRataRataCapaian" style="width: <?= min(100, $rataRataCapaian) ?>%; transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);"></div>
                 </div>
             </div>
         </div>
         
-        <!-- Total Indikator -->
+        <!-- Total Komponen Dinilai -->
         <div class="bento-card flex-fill shadow-sm border-top border-4 border-primary" style="min-height: 150px;">
             <div class="bento-body d-flex align-items-center justify-content-center h-100">
                 <div class="bg-light rounded-circle p-3 me-3 text-primary-bento shadow-sm">
-                    <i class="bi bi-list-check fs-3"></i>
+                    <i class="bi bi-layers-fill fs-3"></i>
                 </div>
                 <div>
-                    <div class="stat-value fs-2" id="valTotalIndikator"><?= $totalIndikator ?></div>
-                    <div class="stat-label text-uppercase" style="letter-spacing: 0.5px; font-size: 0.85rem;">Target Kinerja</div>
+                    <div class="stat-value fs-2" id="valTotalIndikator" aria-live="polite" aria-atomic="true"><?= $totalIndikator ?></div>
+                    <div class="stat-label text-uppercase" style="letter-spacing: 0.5px; font-size: 0.82rem;">Komponen Dinilai</div>
+                    <div class="text-muted small" style="font-size: 0.72rem;">RHK Utama & Tugas Tambahan</div>
                 </div>
             </div>
         </div>
@@ -104,7 +105,7 @@ Dashboard
     <div class="d-flex justify-content-between align-items-center mb-3 mt-3">
         <h5 class="fw-bold text-secondary mb-0"><i class="bi bi-person-workspace me-2"></i> Kinerja Pribadi</h5>
         <form id="formKinerja" class="m-0 d-flex gap-2">
-            <select name="tahun_kinerja" id="tahun_kinerja" class="form-select filter-select fw-bold text-primary-bento" style="width: auto; cursor:pointer;" onchange="updateKinerjaData()">
+            <select name="tahun_kinerja" id="tahun_kinerja" aria-label="Pilih Tahun Kinerja" class="form-select filter-select fw-bold text-primary-bento" style="width: auto; cursor:pointer;" onchange="updateKinerjaData()">
                 <?php foreach ($daftar_tahun as $tahun_item): ?>
                     <option value="<?= esc($tahun_item) ?>" <?= ($tahun_kinerja == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
                 <?php endforeach; ?>
@@ -155,11 +156,15 @@ Dashboard
                         <tbody class="border-top-0" id="tbodyKinerjaStaf">
                             <?php foreach ($rekapDashboard as $rekap): ?>
                                 <?php 
-                                    $rata = $rekap['rata_rata'];
-                                    $warnaBadge = 'bg-success';
-                                    if ($rata < 60) $warnaBadge = 'bg-danger';
-                                    elseif ($rata < 75) $warnaBadge = 'bg-warning text-dark';
-                                    elseif ($rata == 0 && $rekap['dinilai'] == 0) $warnaBadge = 'bg-secondary';
+                                    $rata = (float)$rekap['rata_rata'];
+                                    $warnaBadge = 'bg-secondary';
+                                    if ($rekap['dinilai'] > 0 || $rata > 0) {
+                                        if ($rata > 100) $warnaBadge = 'bg-success';
+                                        elseif ($rata > 90) $warnaBadge = 'bg-primary';
+                                        elseif ($rata > 75) $warnaBadge = 'bg-info text-dark';
+                                        elseif ($rata > 25) $warnaBadge = 'bg-warning text-dark';
+                                        else $warnaBadge = 'bg-danger';
+                                    }
                                 ?>
                                 <tr>
                                     <td class="ps-4 py-3 border-bottom-0 border-bottom border-light">
@@ -183,7 +188,7 @@ Dashboard
                                     </td>
                                     <td class="text-center py-3 border-bottom-0 border-bottom border-light">
                                         <span class="badge <?= $warnaBadge ?> fs-6 rounded-pill px-3 py-2 shadow-sm">
-                                            <?= $rata ?>
+                                            <?= number_format($rata, 2, ',', '.') ?>
                                         </span>
                                     </td>
                                 </tr>
@@ -212,7 +217,7 @@ Dashboard
                     <div class="alert alert-light border text-center text-muted mb-0 shadow-sm"><i class="bi bi-info-circle me-2"></i> Belum ada data rekap kinerja staf.</div>
                 <?php else: ?>
                     <div class="performance-chart-container">
-                        <canvas id="unitPerformanceChart"></canvas>
+                        <canvas id="unitPerformanceChart" role="img" aria-label="Grafik Batang Kinerja Pegawai Per Unit Kerja"></canvas>
                     </div>
                     <p class="text-center text-muted small mt-3 mb-0"><i class="bi bi-info-circle me-1"></i> Klik pada grafik batang untuk melihat detail anggota unit kerja.</p>
                 <?php endif; ?>
@@ -333,9 +338,9 @@ async function updateKinerjaData() {
         const data = await response.json();
         if(data) {
             // Update Text with smooth Count-up Ticker
-            const rr = data.rataRataCapaian || 0;
-            const currentRr = parseFloat(document.getElementById('valRataRataCapaian')?.innerText || 0);
-            animateValue('valRataRataCapaian', currentRr, rr, 700, '<span class="fs-4">%</span>', 1);
+            const currentRr = parseFloat(document.getElementById('valRataRataCapaian')?.innerText?.replace(',', '.') || 0);
+            const rr = parseFloat(data.rataRataCapaian || 0);
+            animateValue('valRataRataCapaian', currentRr, rr, 700, '', 2);
             
             const bar = document.getElementById('barRataRataCapaian');
             if (bar) bar.style.width = Math.min(100, rr) + '%';
@@ -379,15 +384,20 @@ async function updateKinerjaData() {
 
                     let htmlStaf = '';
                     rekapDashboard.forEach(rekap => {
-                        let rata = rekap.rata_rata;
-                        let warnaBadge = 'bg-success';
-                        if (rata < 60) warnaBadge = 'bg-danger';
-                        else if (rata < 75) warnaBadge = 'bg-warning text-dark';
-                        else if (rata == 0 && rekap.dinilai == 0) warnaBadge = 'bg-secondary';
+                        let rata = Number(rekap.rata_rata || 0);
+                        let warnaBadge = 'bg-secondary';
+                        if ((rekap.dinilai > 0) || rata > 0) {
+                            if (rata > 100) warnaBadge = 'bg-success';
+                            else if (rata > 90) warnaBadge = 'bg-primary';
+                            else if (rata > 75) warnaBadge = 'bg-info text-dark';
+                            else if (rata > 25) warnaBadge = 'bg-warning text-dark';
+                            else warnaBadge = 'bg-danger';
+                        }
                         
                         let fotoVal = rekap.staf.foto || rekap.staf.avatar;
                         let avatar = fotoVal ? `<?= base_url('assets/uploads/profile/') ?>${fotoVal}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(rekap.staf.nama_lengkap)}&background=random`;
                         let jabatan = rekap.staf.jabatan || '-';
+                        let rataStr = rata.toFixed(2);
                         
                         htmlStaf += `
                         <tr>
@@ -407,7 +417,7 @@ async function updateKinerjaData() {
                                 <span class="badge bg-light text-secondary border px-2 py-1">${escapeHtml(rekap.dinilai)} / ${escapeHtml(rekap.total_laporan)}</span>
                             </td>
                             <td class="text-center py-3 border-bottom border-light pe-4">
-                                <span class="badge ${warnaBadge} fs-6 rounded-pill px-3 py-2 shadow-sm">${escapeHtml(rata)}</span>
+                                <span class="badge ${warnaBadge} fs-6 rounded-pill px-3 py-2 shadow-sm">${rataStr}</span>
                             </td>
                         </tr>`;
                     });
@@ -434,7 +444,7 @@ async function updateKinerjaData() {
 document.addEventListener('DOMContentLoaded', function () {
     
     // Initial KPI Number Ticker Entrance
-    animateValue('valRataRataCapaian', 0, <?= round($rataRataCapaian, 1) ?>, 850, '<span class="fs-4">%</span>', 1);
+    animateValue('valRataRataCapaian', 0, <?= round($rataRataCapaian, 2) ?>, 850, '', 2);
     animateValue('valTotalIndikator', 0, <?= (int)$totalIndikator ?>, 850);
 
     // Cleanup Old Charts
@@ -446,24 +456,23 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // --- SCRIPT UNTUK MENGINGAT TAB AKTIF ECC ---
-    const activeTab = localStorage.getItem('userDashboardTab');
-    if (activeTab) {
-        const tabTrigger = document.querySelector('button[data-bs-target="' + activeTab + '"]');
-        if (tabTrigger) {
-            new bootstrap.Tab(tabTrigger).show();
-        } else {
-            const firstTab = document.querySelector('#prodiTab button');
-            if (firstTab) new bootstrap.Tab(firstTab).show();
+    const activeTabKey = 'ecc_active_prodi_tab';
+    const savedTabTarget = localStorage.getItem(activeTabKey);
+    if (savedTabTarget) {
+        const targetBtn = document.querySelector(`button[data-bs-target="${savedTabTarget}"]`);
+        if (targetBtn) {
+            const tabObj = bootstrap.Tab.getInstance(targetBtn) || new bootstrap.Tab(targetBtn);
+            tabObj.show();
         }
-    } else {
-        const firstTab = document.querySelector('#prodiTab button');
-        if (firstTab) new bootstrap.Tab(firstTab).show();
     }
 
-    const tabElements = document.querySelectorAll('button[data-bs-toggle="tab"]');
+    const tabElements = document.querySelectorAll('#prodiTab button[data-bs-toggle="tab"]');
     tabElements.forEach(tab => {
         tab.addEventListener('shown.bs.tab', event => {
-            localStorage.setItem('userDashboardTab', event.target.getAttribute('data-bs-target'));
+            const target = event.target.getAttribute('data-bs-target');
+            if (target) {
+                localStorage.setItem(activeTabKey, target);
+            }
         });
     });
 
@@ -487,7 +496,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // --- DATA ECC ---
-    const prodiData = <?= json_encode($prodiData) ?>;
+    const prodiData = <?= json_encode($prodiData ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
     const selectedTahun = '<?= esc($tahun_ecc) ?>';
 
     // --- EVENT KLIK LABEL ECC ---
@@ -592,11 +601,11 @@ document.addEventListener('DOMContentLoaded', function () {
         window.userDashboardCharts['kumulatifChart'] = new Chart(ctxKumulatif.getContext('2d'), {
             type: 'line',
             data: {
-                labels: <?= json_encode($lineChartLabels ?? []) ?>,
+                labels: <?= json_encode($lineChartLabels ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>,
                 datasets: [
                     {
                         label: 'Nilai Rata-rata',
-                        data: <?= json_encode($lineChartRealisasiData ?? []) ?>,
+                        data: <?= json_encode($lineChartRealisasiData ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>,
                         borderColor: '#2962ff',
                         backgroundColor: 'rgba(41, 98, 255, 0.1)',
                         borderWidth: 3,
@@ -622,7 +631,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, font: { family: 'system-ui' } } }
                 },
                 scales: {
-                    y: { beginAtZero: true, grid: { borderDash: [2, 4], color: '#f1f5f9' } },
+                    y: { beginAtZero: true, suggestedMax: 100, grace: '8%', grid: { borderDash: [2, 4], color: '#f1f5f9' } },
                     x: { grid: { display: false } }
                 }
             }
@@ -633,9 +642,9 @@ document.addEventListener('DOMContentLoaded', function () {
     <?php if (isset($isSuper) && $isSuper && !empty($chartPegawaiUnitLabels)): ?>
     const ctxUnit = document.getElementById('unitPerformanceChart');
     if (ctxUnit) {
-        window.unitStatsCache = <?= json_encode($unitStats ?? []) ?>;
-        window.unitLabelsCache = <?= json_encode($chartPegawaiUnitLabels ?? []) ?>;
-        const unitData = <?= json_encode($chartPegawaiUnitData ?? []) ?>;
+        window.unitStatsCache = <?= json_encode($unitStats ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+        window.unitLabelsCache = <?= json_encode($chartPegawaiUnitLabels ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+        const unitData = <?= json_encode($chartPegawaiUnitData ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
         
         window.userDashboardCharts['unitChart'] = new Chart(ctxUnit, {
             type: 'bar',
@@ -660,12 +669,12 @@ document.addEventListener('DOMContentLoaded', function () {
                         backgroundColor: '#1e293b',
                         padding: 12,
                         callbacks: {
-                            label: function(context) { return 'Rata-Rata: ' + context.parsed.y + '%'; }
+                            label: function(context) { return 'Rata-Rata: ' + Number(context.parsed.y || 0).toFixed(2); }
                         }
                     }
                 },
                 scales: {
-                    y: { beginAtZero: true, max: 100, grid: { borderDash: [2, 4], color: '#f1f5f9' } },
+                    y: { beginAtZero: true, suggestedMax: 100, grace: '8%', grid: { borderDash: [2, 4], color: '#f1f5f9' } },
                     x: { grid: { display: false } }
                 },
                 onClick: (e, elements) => {
@@ -680,21 +689,24 @@ document.addEventListener('DOMContentLoaded', function () {
                         if(details && details.length > 0) {
                             details.forEach(item => {
                                 let badgeClass = 'bg-success';
-                                if(item.rata_rata < 60) badgeClass = 'bg-danger';
-                                else if(item.rata_rata < 75) badgeClass = 'bg-warning text-dark';
+                                if(item.rata_rata <= 25 && item.dinilai > 0) badgeClass = 'bg-danger';
+                                else if(item.rata_rata <= 75 && item.dinilai > 0) badgeClass = 'bg-warning text-dark';
+                                else if(item.rata_rata <= 90 && item.dinilai > 0) badgeClass = 'bg-secondary';
+                                else if(item.rata_rata <= 100 && item.dinilai > 0) badgeClass = 'bg-primary';
                                 else if(item.rata_rata == 0 && item.dinilai == 0) badgeClass = 'bg-secondary';
                                 
+                                const modalRataStr = Number(item.rata_rata || 0).toFixed(2);
                                 tbody += `
                                     <tr>
                                         <td class="ps-3 py-3 border-bottom border-light">
-                                            <div class="fw-bold text-dark">${item.nama}</div>
-                                            <div class="small text-muted">${item.jabatan || '-'}</div>
+                                            <div class="fw-bold text-dark">${escapeHtml(item.nama)}</div>
+                                            <div class="small text-muted">${escapeHtml(item.jabatan || '-')}</div>
                                         </td>
                                         <td class="text-center py-3 border-bottom border-light">
-                                            <span class="badge bg-light text-dark border shadow-sm">${item.dinilai} / ${item.total_laporan}</span>
+                                            <span class="badge bg-light text-dark border shadow-sm">${escapeHtml(item.dinilai)} / ${escapeHtml(item.total_laporan)}</span>
                                         </td>
                                         <td class="text-center py-3 border-bottom border-light pe-3">
-                                            <span class="badge ${badgeClass} fs-6 rounded-pill px-3 shadow-sm">${item.rata_rata}</span>
+                                            <span class="badge ${badgeClass} fs-6 rounded-pill px-3 shadow-sm">${modalRataStr}</span>
                                         </td>
                                     </tr>
                                 `;
@@ -704,7 +716,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
                         document.getElementById('unitDetailTbody').innerHTML = tbody;
                         
-                        new bootstrap.Modal(document.getElementById('unitDetailModal')).show();
+                        const unitModalEl = document.getElementById('unitDetailModal');
+                        const unitModal = bootstrap.Modal.getInstance(unitModalEl) || new bootstrap.Modal(unitModalEl);
+                        unitModal.show();
                     }
                 },
                 onHover: (e, elements) => {

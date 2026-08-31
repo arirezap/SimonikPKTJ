@@ -246,10 +246,10 @@ th.sortable.desc .sort-icon {
             <p class="text-muted small mb-0">Monitoring capaian kinerja seluruh unit untuk keperluan remunerasi & evaluasi berkala.</p>
         </div>
         <div class="d-flex align-items-center gap-2">
-            <a href="<?= site_url('kepegawaian/export-excel') ?>?bulan=<?= esc($bulan_terpilih) ?>&tahun=<?= esc($tahun_terpilih) ?>&unit=<?= esc($unit_filter) ?>&role=<?= esc($role_filter ?? '') ?>" class="btn btn-sm btn-success shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center gap-1.5 btn-tactile" id="btnExportExcel" title="Unduh Workbook Excel (.xlsx) Multi-Sheet Data Lengkap">
+            <a href="<?= site_url('kepegawaian/export-excel') ?>?bulan=<?= esc($bulan_terpilih) ?>&tahun=<?= esc($tahun_terpilih) ?>&unit=<?= esc($unit_filter) ?>&role=<?= esc($role_filter ?? '') ?>" class="btn btn-sm btn-success shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center gap-1.5 btn-tactile" id="btnExportExcel" title="Unduh Workbook Excel (.xlsx) Multi-Sheet Data Lengkap" aria-label="Unduh Rekapitulasi Kinerja Excel Multi-Sheet Lengkap">
                 <i class="bi bi-file-earmark-excel-fill"></i> Export Excel
             </a>
-            <a href="<?= site_url('kepegawaian/export-pdf') ?>?bulan=<?= esc($bulan_terpilih) ?>&tahun=<?= esc($tahun_terpilih) ?>&unit=<?= esc($unit_filter) ?>&role=<?= esc($role_filter ?? '') ?>" class="btn btn-sm btn-danger shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center gap-1.5 btn-tactile" id="btnExportPdf" title="Unduh Laporan PDF Resmi A4 Landscape">
+            <a href="<?= site_url('kepegawaian/export-pdf') ?>?bulan=<?= esc($bulan_terpilih) ?>&tahun=<?= esc($tahun_terpilih) ?>&unit=<?= esc($unit_filter) ?>&role=<?= esc($role_filter ?? '') ?>" class="btn btn-sm btn-danger shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center gap-1.5 btn-tactile" id="btnExportPdf" title="Unduh Laporan PDF Resmi A4 Landscape" aria-label="Unduh Rekapitulasi Kinerja PDF Resmi A4 Landscape">
                 <i class="bi bi-file-earmark-pdf-fill"></i> Export PDF
             </a>
         </div>
@@ -272,7 +272,7 @@ th.sortable.desc .sort-icon {
                     <form method="GET" action="<?= site_url('kepegawaian') ?>" class="row g-2 align-items-end" id="filterForm">
                         <div class="col-6 col-sm-3">
                             <label class="form-label text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.68rem; letter-spacing: 0.3px;">Periode Bulan</label>
-                            <select name="bulan" class="form-select form-select-sm" onchange="showSkeletonAndSubmit()">
+                            <select name="bulan" class="form-select form-select-sm" aria-label="Pilih Periode Bulan Rekap" onchange="showSkeletonAndSubmit()">
                                 <option value="all" <?= ($bulan_terpilih === 'all') ? 'selected' : '' ?>>Sepanjang Tahun</option>
                                 <?php foreach($bulan_indo as $index => $nama): ?>
                                     <option value="<?= $index + 1 ?>" <?= ($bulan_terpilih == $index + 1 && $bulan_terpilih !== 'all') ? 'selected' : '' ?>><?= $nama ?></option>
@@ -281,11 +281,11 @@ th.sortable.desc .sort-icon {
                         </div>
                         <div class="col-6 col-sm-2">
                             <label class="form-label text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.68rem; letter-spacing: 0.3px;">Tahun</label>
-                            <input type="number" name="tahun" id="filterTahunInput" class="form-control form-control-sm text-center fw-bold" value="<?= esc($tahun_terpilih) ?>" onchange="showSkeletonAndSubmit()">
+                            <input type="number" name="tahun" id="filterTahunInput" class="form-control form-control-sm text-center fw-bold" aria-label="Input Tahun Rekap" value="<?= esc($tahun_terpilih) ?>" onchange="showSkeletonAndSubmit()">
                         </div>
                         <div class="col-12 col-sm-4">
                             <label class="form-label text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.68rem; letter-spacing: 0.3px;">Unit Kerja</label>
-                            <select name="unit" class="form-select form-select-sm" onchange="showSkeletonAndSubmit()">
+                            <select name="unit" class="form-select form-select-sm" aria-label="Pilih Filter Unit Kerja" onchange="showSkeletonAndSubmit()">
                                 <option value="">Semua Unit Kerja</option>
                                 <?php foreach ($daftar_unit as $u): ?>
                                     <option value="<?= esc($u) ?>" <?= ($u == $unit_filter) ? 'selected' : '' ?>><?= esc($u) ?></option>
@@ -294,7 +294,7 @@ th.sortable.desc .sort-icon {
                         </div>
                         <div class="col-12 col-sm-3">
                             <label class="form-label text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.68rem; letter-spacing: 0.3px;">Role / Kategori</label>
-                            <select name="role" class="form-select form-select-sm" onchange="showSkeletonAndSubmit()">
+                            <select name="role" class="form-select form-select-sm" aria-label="Pilih Filter Kategori Role" onchange="showSkeletonAndSubmit()">
                                 <option value="">Semua Role</option>
                                 <option value="pimpinan" <?= (($role_filter ?? '') === 'pimpinan') ? 'selected' : '' ?>>Pimpinan</option>
                                 <option value="manajemen" <?= (($role_filter ?? '') === 'manajemen') ? 'selected' : '' ?>>Manajemen</option>
@@ -383,7 +383,7 @@ th.sortable.desc .sort-icon {
                 <!-- Live Search Box -->
                 <div class="input-group input-group-sm" style="max-width: 250px;">
                     <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
-                    <input type="text" id="liveSearchInput" class="form-control border-start-0 ps-0" placeholder="Cari nama, NIP, unit..." autocomplete="off">
+                    <input type="text" id="liveSearchInput" class="form-control border-start-0 ps-0" placeholder="Cari nama, NIP, unit..." autocomplete="off" aria-label="Pencarian cepat nama pegawai, NIP, jabatan, atau unit kerja">
                 </div>
                 <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 small">
                     <?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?>
@@ -394,11 +394,11 @@ th.sortable.desc .sort-icon {
         <!-- Quick Status Filter Pills -->
         <div class="px-3 py-2 bg-white border-bottom d-flex align-items-center gap-1.5 flex-wrap" id="pillFilterGroup">
             <span class="text-muted small fw-bold me-1" style="font-size: 0.72rem;">Filter Cepat:</span>
-            <button type="button" class="filter-pill active" data-filter="all"><i class="bi bi-grid-fill me-0.5"></i> Semua</button>
-            <button type="button" class="filter-pill" data-filter="sudah"><i class="bi bi-check-circle-fill text-success me-0.5"></i> Sudah Dinilai</button>
-            <button type="button" class="filter-pill" data-filter="belum"><i class="bi bi-hourglass-split text-danger me-0.5"></i> Belum Dinilai</button>
-            <button type="button" class="filter-pill" data-filter="perhatian"><i class="bi bi-exclamation-triangle-fill text-warning me-0.5"></i> &lt; 75 (Perhatian)</button>
-            <button type="button" class="filter-pill" data-filter="baik"><i class="bi bi-stars text-primary me-0.5"></i> &ge; 90 (Baik)</button>
+            <button type="button" class="filter-pill active" data-filter="all" role="button" aria-label="Tampilkan Semua Pegawai"><i class="bi bi-grid-fill me-0.5"></i> Semua</button>
+            <button type="button" class="filter-pill" data-filter="sudah" role="button" aria-label="Filter Pegawai yang Sudah Dinilai"><i class="bi bi-check-circle-fill text-success me-0.5"></i> Sudah Dinilai</button>
+            <button type="button" class="filter-pill" data-filter="belum" role="button" aria-label="Filter Pegawai yang Belum Dinilai"><i class="bi bi-hourglass-split text-danger me-0.5"></i> Belum Dinilai</button>
+            <button type="button" class="filter-pill" data-filter="perhatian" role="button" aria-label="Filter Pegawai Nilai Kurang dari 75"><i class="bi bi-exclamation-triangle-fill text-warning me-0.5"></i> &lt; 75 (Perhatian)</button>
+            <button type="button" class="filter-pill" data-filter="baik" role="button" aria-label="Filter Pegawai Nilai Baik Lebih dari 90"><i class="bi bi-stars text-primary me-0.5"></i> &ge; 90 (Baik)</button>
         </div>
 
         <div class="card-body p-0">

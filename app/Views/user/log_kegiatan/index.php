@@ -262,9 +262,28 @@
     .fp-dot-missing {
         background-color: #ef4444; /* Merah Belum Diisi */
     }
-    .flatpickr-day.is-holiday {
+    .flatpickr-day.is-holiday,
+    .flatpickr-day.is-weekend {
         color: #ef4444 !important;
-        font-weight: 600;
+        font-weight: 700;
+    }
+    .flatpickr-day.is-holiday.prevMonthDay,
+    .flatpickr-day.is-holiday.nextMonthDay,
+    .flatpickr-day.is-weekend.prevMonthDay,
+    .flatpickr-day.is-weekend.nextMonthDay {
+        color: #fca5a5 !important;
+        opacity: 0.6;
+    }
+    .flatpickr-day.selected.is-holiday,
+    .flatpickr-day.selected.is-weekend {
+        background: #0d6efd !important;
+        border-color: #0d6efd !important;
+        color: #ffffff !important;
+    }
+    .flatpickr-weekday:nth-child(6),
+    .flatpickr-weekday:nth-child(7) {
+        color: #ef4444 !important;
+        font-weight: 800 !important;
     }
 
     /* Date Selector Button Styling - Symmetrical Bento Pro-Max */
@@ -473,7 +492,7 @@
                                 $today   = date('Y-m-d');
                             ?>
                             <!-- Prev Day Button (Left) -->
-                            <a href="<?= site_url('log-kegiatan') ?>?tanggal=<?= $prevDay ?>" class="date-nav-btn btn-tactile shadow-xs" title="Hari Sebelumnya (<?= date('d/m/Y', strtotime($prevDay)) ?>)">
+                            <a href="<?= site_url('log-kegiatan') ?>?tanggal=<?= $prevDay ?>" class="date-nav-btn btn-tactile shadow-xs" title="Hari Sebelumnya (<?= date('d/m/Y', strtotime($prevDay)) ?>)" aria-label="Hari Sebelumnya">
                                 <i class="bi bi-chevron-left"></i>
                             </a>
 
@@ -483,7 +502,7 @@
                                     <span class="input-group-text bg-primary text-white border-0 rounded-2 px-1.5 py-0.5 my-0.5">
                                         <i class="bi bi-calendar-date-fill" style="font-size: 0.76rem;"></i>
                                     </span>
-                                    <input type="text" id="tanggalPicker" class="form-control border-0 fw-bold date-btn-input shadow-none h-100" value="<?= esc($tanggal_terpilih) ?>" placeholder="Pilih tanggal..." readonly style="cursor: pointer;">
+                                    <input type="text" id="tanggalPicker" class="form-control border-0 fw-bold date-btn-input shadow-none h-100" value="<?= esc($tanggal_terpilih) ?>" placeholder="Pilih tanggal..." aria-label="Pilih Tanggal Kalender Kegiatan" readonly style="cursor: pointer;">
                                     <span class="input-group-text bg-transparent border-0 text-primary px-1 h-100">
                                         <i class="bi bi-chevron-down fw-bold" style="font-size: 0.68rem;"></i>
                                     </span>
@@ -491,13 +510,13 @@
                             </div>
 
                             <!-- Next Day Button (Right) -->
-                            <a href="<?= ($nextDay <= $today) ? site_url('log-kegiatan') . '?tanggal=' . $nextDay : 'javascript:void(0)' ?>" class="date-nav-btn btn-tactile shadow-xs <?= ($nextDay > $today) ? 'disabled opacity-50 pe-none' : '' ?>" title="Hari Berikutnya (<?= date('d/m/Y', strtotime($nextDay)) ?>)">
+                            <a href="<?= ($nextDay <= $today) ? site_url('log-kegiatan') . '?tanggal=' . $nextDay : 'javascript:void(0)' ?>" class="date-nav-btn btn-tactile shadow-xs <?= ($nextDay > $today) ? 'disabled opacity-50 pe-none' : '' ?>" title="Hari Berikutnya (<?= date('d/m/Y', strtotime($nextDay)) ?>)" aria-label="Hari Berikutnya">
                                 <i class="bi bi-chevron-right"></i>
                             </a>
 
                             <!-- Today Quick Jump Button -->
                             <?php if ($tanggal_terpilih !== $today): ?>
-                                <a href="<?= site_url('log-kegiatan') ?>?tanggal=<?= $today ?>" class="btn btn-sm btn-primary date-today-btn btn-tactile shadow-xs text-nowrap ms-1" title="Kembali ke Hari Ini">
+                                <a href="<?= site_url('log-kegiatan') ?>?tanggal=<?= $today ?>" class="btn btn-sm btn-primary date-today-btn btn-tactile shadow-xs text-nowrap ms-1" title="Kembali ke Hari Ini" aria-label="Kembali ke Hari Ini">
                                     Hari Ini
                                 </a>
                             <?php endif; ?>
@@ -508,15 +527,15 @@
                     <div class="text-end pt-md-3">
                         <div class="legend-status-pill">
                             <span class="text-muted fw-bold" style="font-size: 0.72rem;">Indikator:</span>
-                            <span class="legend-item text-success">
+                            <span class="legend-item text-success" title="Laporan sudah dikirim">
                                 <span class="legend-dot legend-dot-success"></span>
                                 <span>Terkirim</span>
                             </span>
-                            <span class="legend-item text-warning-emphasis">
+                            <span class="legend-item text-warning-emphasis" title="Laporan masih draf">
                                 <span class="legend-dot legend-dot-warning"></span>
                                 <span>Draf</span>
                             </span>
-                            <span class="legend-item text-danger">
+                            <span class="legend-item text-danger" title="Hari kerja yang belum diisi">
                                 <span class="legend-dot legend-dot-danger"></span>
                                 <span>Belum Diisi</span>
                             </span>
@@ -548,15 +567,6 @@
                             <strong>Laporan Terkunci.</strong> <?= esc(!empty($lock_reason) ? $lock_reason : 'Laporan pada tanggal ini telah dikirim ke atasan dan berada dalam status terkunci.') ?>
                         </div>
                     </div>
-                    <?php if (hasRole('admin')): ?>
-                    <button type="button" id="btnBukaKunci"
-                        class="btn btn-sm btn-outline-danger btn-tactile rounded-pill px-3 fw-semibold shadow-sm"
-                        data-tanggal="<?= esc($tanggal_terpilih) ?>"
-                        data-user-id="<?= esc(session()->get('id') ?? session()->get('user_id')) ?>"
-                        title="Buka kunci laporan agar staf dapat merevisi">
-                        <i class="bi bi-unlock-fill me-1"></i> Buka Kunci (Admin)
-                    </button>
-                    <?php endif; ?>
                 </div>
             <?php endif; ?>
 
@@ -656,7 +666,7 @@
                                         <!-- Editable Draft View -->
                                         <input type="hidden" name="log_id[]" value="<?= $row['id'] ?>">
                                         <td>
-                                            <select name="target_id[]" class="form-select form-select-sm">
+                                            <select name="target_id[]" class="form-select form-select-sm" aria-label="Pilih Target RHK baris <?= $rowIndex ?>">
                                                 <option value="">-- Pilih Target / RHK --</option>
                                                  <?php 
                                                  $foundSelected = false;
@@ -675,19 +685,19 @@
                                             </select>
                                         </td>
                                         <td>
-                                            <textarea name="deskripsi_kegiatan[]" class="form-control form-control-sm" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..."><?= esc($row['deskripsi_kegiatan']) ?></textarea>
+                                            <textarea name="deskripsi_kegiatan[]" class="form-control form-control-sm" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..." aria-label="Deskripsi Kegiatan Pokok baris <?= $rowIndex ?>"><?= esc($row['deskripsi_kegiatan']) ?></textarea>
                                         </td>
                                         <td class="col-capaian-log">
                                             <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
-                                                <input type="number" step="any" min="0.0001" name="jumlah_capaian[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-primary" placeholder="0" value="<?= (float)$row['jumlah_capaian'] ?>">
+                                                <input type="number" step="any" min="0.0001" name="jumlah_capaian[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-primary" placeholder="0" value="<?= (float)$row['jumlah_capaian'] ?>" aria-label="Jumlah Capaian Pokok baris <?= $rowIndex ?>">
                                                 <span class="input-group-text badge-capaian-satuan bg-light" title="<?= esc($row['satuan'] ?? '-') ?>"><?= esc($row['satuan'] ?? '-') ?></span>
                                             </div>
                                         </td>
                                         <td>
-                                            <input type="url" name="link_bukti[]" class="form-control form-control-sm" placeholder="https://..." value="<?= esc($row['link_bukti']) ?>">
+                                            <input type="url" name="link_bukti[]" class="form-control form-control-sm" placeholder="https://..." value="<?= esc($row['link_bukti']) ?>" aria-label="Tautan Bukti Pekerjaan Pokok baris <?= $rowIndex ?>">
                                         </td>
                                         <td class="text-center">
-                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris btn-tactile" data-id="<?= $row['id'] ?>" title="Hapus baris" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
+                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris btn-tactile" data-id="<?= $row['id'] ?>" title="Hapus baris" aria-label="Hapus kegiatan pokok baris <?= $rowIndex ?>" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
                                         </td>
                                     <?php endif; ?>
                                 </tr>
@@ -700,7 +710,7 @@
                                 <input type="hidden" name="log_id[]" value="">
                                 <td class="nomor-baris text-center fw-bold text-muted">1</td>
                                 <td>
-                                    <select name="target_id[]" class="form-select form-select-sm">
+                                    <select name="target_id[]" class="form-select form-select-sm" aria-label="Pilih Target RHK baris 1">
                                         <option value="">-- Pilih Target / RHK --</option>
                                         <?php foreach($daftar_target as $target): ?>
                                              <?php 
@@ -713,19 +723,19 @@
                                     </select>
                                 </td>
                                 <td>
-                                    <textarea name="deskripsi_kegiatan[]" class="form-control form-control-sm" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..."></textarea>
+                                    <textarea name="deskripsi_kegiatan[]" class="form-control form-control-sm" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..." aria-label="Deskripsi Kegiatan Pokok baris 1"></textarea>
                                 </td>
                                 <td class="col-capaian-log">
                                     <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
-                                        <input type="number" step="any" min="0.0001" name="jumlah_capaian[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-primary" placeholder="0">
+                                        <input type="number" step="any" min="0.0001" name="jumlah_capaian[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-primary" placeholder="0" aria-label="Jumlah Capaian Pokok baris 1">
                                         <span class="input-group-text badge-capaian-satuan bg-light">-</span>
                                     </div>
                                 </td>
                                 <td>
-                                    <input type="url" name="link_bukti[]" class="form-control form-control-sm" placeholder="https://...">
+                                    <input type="url" name="link_bukti[]" class="form-control form-control-sm" placeholder="https://..." aria-label="Tautan Bukti Pekerjaan Pokok baris 1">
                                 </td>
                                 <td class="text-center">
-                                    <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris btn-tactile" title="Hapus baris baru" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris btn-tactile" title="Hapus baris baru" aria-label="Hapus kegiatan pokok baris 1" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
                                 </td>
                             </tr>
                         <?php endif; ?>
@@ -792,19 +802,19 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <textarea name="deskripsi_kegiatan_tambahan[]" class="form-control form-control-sm" rows="2" placeholder="Jelaskan tugas tambahan Anda..."><?= esc($rowTmb['deskripsi_kegiatan']) ?></textarea>
+                                            <textarea name="deskripsi_kegiatan_tambahan[]" class="form-control form-control-sm" rows="2" placeholder="Jelaskan tugas tambahan Anda..." aria-label="Deskripsi Kegiatan Tambahan baris <?= $rowTmbIndex ?>"><?= esc($rowTmb['deskripsi_kegiatan']) ?></textarea>
                                         </td>
                                         <td class="col-capaian-log">
                                             <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
-                                                <input type="number" step="any" min="0.0001" name="jumlah_capaian_tambahan[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-success" placeholder="0" value="<?= isset($rowTmb['jumlah_capaian']) ? (float)$rowTmb['jumlah_capaian'] : '' ?>">
-                                                <input type="text" name="satuan_tambahan[]" class="form-control input-satuan-val text-center" placeholder="Satuan" list="daftarSatuanStandar" value="<?= esc($rowTmb['satuan'] ?? '') ?>" title="<?= esc($rowTmb['satuan'] ?? '') ?>">
+                                                <input type="number" step="any" min="0.0001" name="jumlah_capaian_tambahan[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-success" placeholder="0" value="<?= isset($rowTmb['jumlah_capaian']) ? (float)$rowTmb['jumlah_capaian'] : '' ?>" aria-label="Jumlah Capaian Tambahan baris <?= $rowTmbIndex ?>">
+                                                <input type="text" name="satuan_tambahan[]" class="form-control input-satuan-val text-center" placeholder="Satuan" list="daftarSatuanStandar" value="<?= esc($rowTmb['satuan'] ?? '') ?>" title="<?= esc($rowTmb['satuan'] ?? '') ?>" aria-label="Satuan Capaian Tambahan baris <?= $rowTmbIndex ?>">
                                             </div>
                                         </td>
                                         <td>
-                                            <input type="url" name="link_bukti_tambahan[]" class="form-control form-control-sm" placeholder="https://..." value="<?= esc($rowTmb['link_bukti']) ?>">
+                                            <input type="url" name="link_bukti_tambahan[]" class="form-control form-control-sm" placeholder="https://..." value="<?= esc($rowTmb['link_bukti']) ?>" aria-label="Tautan Bukti Pekerjaan Tambahan baris <?= $rowTmbIndex ?>">
                                         </td>
                                         <td class="text-center">
-                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris-tmb btn-tactile" data-id="<?= $rowTmb['id'] ?>" title="Hapus baris" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
+                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris-tmb btn-tactile" data-id="<?= $rowTmb['id'] ?>" title="Hapus baris" aria-label="Hapus tugas tambahan baris <?= $rowTmbIndex ?>" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
                                         </td>
                                     <?php endif; ?>
                                 </tr>
@@ -846,10 +856,22 @@
 
         function updateRowNumbers() {
             tabelLog.find('tr.row-tugas-pokok').each(function(index) {
-                $(this).find('.nomor-baris').text(index + 1);
+                const num = index + 1;
+                $(this).find('.nomor-baris').text(num);
+                $(this).find('select[name="target_id[]"]').attr('aria-label', `Pilih Target RHK baris ${num}`);
+                $(this).find('textarea[name="deskripsi_kegiatan[]"]').attr('aria-label', `Deskripsi Kegiatan Pokok baris ${num}`);
+                $(this).find('input[name="jumlah_capaian[]"]').attr('aria-label', `Jumlah Capaian Pokok baris ${num}`);
+                $(this).find('input[name="link_bukti[]"]').attr('aria-label', `Tautan Bukti Pekerjaan Pokok baris ${num}`);
+                $(this).find('.hapus-baris').attr('aria-label', `Hapus kegiatan pokok baris ${num}`);
             });
             tabelLog.find('tr.row-tugas-tambahan').each(function(index) {
-                $(this).find('.nomor-baris-tmb').text(index + 1);
+                const num = index + 1;
+                $(this).find('.nomor-baris-tmb').text(num);
+                $(this).find('textarea[name="deskripsi_kegiatan_tambahan[]"]').attr('aria-label', `Deskripsi Kegiatan Tambahan baris ${num}`);
+                $(this).find('input[name="jumlah_capaian_tambahan[]"]').attr('aria-label', `Jumlah Capaian Tambahan baris ${num}`);
+                $(this).find('input[name="satuan_tambahan[]"]').attr('aria-label', `Satuan Capaian Tambahan baris ${num}`);
+                $(this).find('input[name="link_bukti_tambahan[]"]').attr('aria-label', `Tautan Bukti Pekerjaan Tambahan baris ${num}`);
+                $(this).find('.hapus-baris-tmb').attr('aria-label', `Hapus tugas tambahan baris ${num}`);
             });
         }
 
@@ -882,7 +904,7 @@
                     <input type="hidden" name="log_id[]" value="">
                     <td class="nomor-baris text-center fw-bold text-muted">1</td>
                     <td>
-                        <select name="target_id[]" class="form-select form-select-sm">
+                        <select name="target_id[]" class="form-select form-select-sm" aria-label="Pilih Target RHK baris">
                             <option value="">-- Pilih Target / RHK --</option>
                             <?php foreach($daftar_target as $target): ?>
                                 <?php 
@@ -895,19 +917,19 @@
                         </select>
                     </td>
                     <td>
-                        <textarea name="deskripsi_kegiatan[]" class="form-control form-control-sm" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..."></textarea>
+                        <textarea name="deskripsi_kegiatan[]" class="form-control form-control-sm" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..." aria-label="Deskripsi Kegiatan Pokok baris"></textarea>
                     </td>
                     <td class="col-capaian-log">
                         <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
-                            <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-primary" placeholder="0">
+                            <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-primary" placeholder="0" aria-label="Jumlah Capaian Pokok baris">
                             <span class="input-group-text badge-capaian-satuan bg-light">-</span>
                         </div>
                     </td>
                     <td>
-                        <input type="url" name="link_bukti[]" class="form-control form-control-sm" placeholder="https://...">
+                        <input type="url" name="link_bukti[]" class="form-control form-control-sm" placeholder="https://..." aria-label="Tautan Bukti Pekerjaan Pokok baris">
                     </td>
                     <td class="text-center">
-                        <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris btn-tactile" title="Hapus baris" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
+                        <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris btn-tactile" title="Hapus baris" aria-label="Hapus kegiatan pokok baris" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
                     </td>
                 </tr>`);
             }
@@ -1044,19 +1066,19 @@
                         </div>
                     </td>
                     <td>
-                        <textarea name="deskripsi_kegiatan_tambahan[]" class="form-control form-control-sm" rows="2" placeholder="Jelaskan tugas tambahan yang Anda kerjakan hari ini..."></textarea>
+                        <textarea name="deskripsi_kegiatan_tambahan[]" class="form-control form-control-sm" rows="2" placeholder="Jelaskan tugas tambahan yang Anda kerjakan hari ini..." aria-label="Deskripsi Kegiatan Tambahan baris"></textarea>
                     </td>
                     <td class="col-capaian-log">
                         <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
-                            <input type="number" step="0.01" name="jumlah_capaian_tambahan[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-success" placeholder="0">
-                            <input type="text" name="satuan_tambahan[]" class="form-control input-satuan-val text-center" placeholder="Satuan" list="daftarSatuanStandar">
+                            <input type="number" step="0.01" name="jumlah_capaian_tambahan[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-success" placeholder="0" aria-label="Jumlah Capaian Tambahan baris">
+                            <input type="text" name="satuan_tambahan[]" class="form-control input-satuan-val text-center" placeholder="Satuan" list="daftarSatuanStandar" aria-label="Satuan Capaian Tambahan baris">
                         </div>
                     </td>
                     <td>
-                        <input type="url" name="link_bukti_tambahan[]" class="form-control form-control-sm" placeholder="https://...">
+                        <input type="url" name="link_bukti_tambahan[]" class="form-control form-control-sm" placeholder="https://..." aria-label="Tautan Bukti Pekerjaan Tambahan baris">
                     </td>
                     <td class="text-center">
-                        <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris-tmb btn-tactile" title="Hapus" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
+                        <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris-tmb btn-tactile" title="Hapus" aria-label="Hapus tugas tambahan baris" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
                     </td>
                 </tr>`);
             }
@@ -1364,90 +1386,6 @@
         });
 
         // =============================================
-        // [SUPERADMIN] Buka Kunci Laporan Harian
-        // =============================================
-        $(document).on('click', '#btnBukaKunci', function(e) {
-            e.preventDefault();
-            const tanggal    = $(this).data('tanggal');
-            const targetUser = $(this).data('user-id');
-            const csrfName   = '<?= csrf_token() ?>';
-            const csrfToken  = $('input[name="' + csrfName + '"]').first().val() || $('input[name="csrf_test_name"]').val();
-
-            if (!tanggal || !targetUser) {
-                alert('Parameter tanggal atau user ID tidak valid.');
-                return;
-            }
-
-            function executeBukaKunci() {
-                $.ajax({
-                    url: '<?= site_url('log-kegiatan/buka-kunci') ?>',
-                    type: 'POST',
-                    data: {
-                        target_user_id: targetUser,
-                        tanggal: tanggal,
-                        [csrfName]: csrfToken
-                    },
-                    dataType: 'json',
-                    success: function(response) {
-                        if (response.csrf_hash) {
-                            $('input[name="' + csrfName + '"]').val(response.csrf_hash);
-                            $('input[name="csrf_test_name"]').val(response.csrf_hash);
-                        }
-                        if (response.success) {
-                            if (typeof Swal !== 'undefined') {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Berhasil!',
-                                    text: response.message,
-                                    timer: 2500,
-                                    showConfirmButton: false
-                                }).then(() => { location.reload(); });
-                            } else {
-                                alert(response.message);
-                                location.reload();
-                            }
-                        } else {
-                            if (typeof Swal !== 'undefined') {
-                                Swal.fire('Gagal!', response.message || 'Terjadi kesalahan.', 'error');
-                            } else {
-                                alert('Gagal: ' + (response.message || 'Terjadi kesalahan.'));
-                            }
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error(xhr.responseText || error);
-                        if (typeof Swal !== 'undefined') {
-                            Swal.fire('Error', 'Terjadi kesalahan jaringan atau server.', 'error');
-                        } else {
-                            alert('Terjadi kesalahan jaringan atau server.');
-                        }
-                    }
-                });
-            }
-
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: 'Buka Kunci Laporan?',
-                    html: `Laporan tanggal <strong>${tanggal}</strong> akan dibuka kuncinya.<br>Staf akan dapat merevisi dan mengirim ulang laporan.<br><br><span class='text-danger fw-bold'>Setelah revisi dikirim, laporan akan terkunci kembali otomatis.</span>`,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#dc3545',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="bi bi-unlock-fill me-1"></i> Ya, Buka Kunci Laporan',
-                    cancelButtonText: 'Batal'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        executeBukaKunci();
-                    }
-                });
-            } else {
-                if (confirm(`Buka Kunci Laporan tanggal ${tanggal}?\n\nStaf akan dapat merevisi dan mengirim ulang laporan.`)) {
-                    executeBukaKunci();
-                }
-            }
-        });
-
-        // =============================================
         // [FLATPICKR DATEPICKER WITH COLORED STATUS DOTS]
         // =============================================
         const dateStatusMap = <?= json_encode($date_status_map ?? []) ?>;
@@ -1474,7 +1412,10 @@
                     
                     if (isHoliday) {
                         dayElem.classList.add('is-holiday');
-                        dayElem.setAttribute('title', 'Libur: ' + holidayMap[dateStr]);
+                        dayElem.setAttribute('title', holidayMap[dateStr]);
+                    } else if (isWeekend) {
+                        dayElem.classList.add('is-weekend', 'is-holiday');
+                        dayElem.setAttribute('title', dayOfWeek === 0 ? 'Minggu' : 'Sabtu');
                     }
 
                     const status = dateStatusMap[dateStr];

@@ -295,7 +295,7 @@
                     <div class="row g-2 align-items-center">
                         <div class="col-sm-6 col-md-3">
                             <label class="form-label fw-bold text-dark small mb-1" style="font-size: 0.72rem; letter-spacing: 0.3px;"><i class="bi bi-calendar-event text-primary me-1"></i> Bulan</label>
-                            <select name="bulan" class="form-select form-select-sm shadow-sm filter-select" onchange="this.form.submit()">
+                            <select name="bulan" class="form-select form-select-sm shadow-sm filter-select" aria-label="Pilih Bulan Target Kinerja" onchange="this.form.submit()">
                                 <?php foreach($bulan_indo as $index => $nama): ?>
                                     <option value="<?= $index + 1 ?>" <?= ($bulan_terpilih == $index + 1) ? 'selected' : '' ?>><?= $nama ?></option>
                                 <?php endforeach; ?>
@@ -303,7 +303,7 @@
                         </div>
                         <div class="col-sm-6 col-md-2">
                             <label class="form-label fw-bold text-dark small mb-1" style="font-size: 0.72rem; letter-spacing: 0.3px;"><i class="bi bi-calendar-date text-primary me-1"></i> Tahun</label>
-                            <input type="number" name="tahun" class="form-control form-select-sm shadow-sm filter-select num-tabular" value="<?= esc($tahun_terpilih) ?>" min="2020" max="2099" onchange="this.form.submit()">
+                            <input type="number" name="tahun" class="form-control form-select-sm shadow-sm filter-select num-tabular" aria-label="Input Tahun Target Kinerja" value="<?= esc($tahun_terpilih) ?>" min="2020" max="2099" onchange="this.form.submit()">
                         </div>
                         <div class="col-md-7 text-muted pt-sm-3 small">
                             <i class="bi bi-info-circle text-primary me-1"></i> Rancang dan kelola target kinerja bulanan Anda pada tabel di bawah.
@@ -368,7 +368,7 @@
                                 <i class="bi bi-list-check text-primary me-1"></i> Rincian Target <?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?>
                             </span>
                         </div>
-                        <?php if ((session()->get('role') === 'direktur') || (!$is_locked && !$allApproved)): ?>
+                        <?php if (!$is_locked && !$allApproved): ?>
                         <div>
                             <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 fw-semibold shadow-none d-inline-flex align-items-center gap-1.5" data-bs-toggle="modal" data-bs-target="#modalSalinTarget" title="Salin target dan sasaran kinerja dari periode bulan sebelumnya atau periode lainnya">
                                 <i class="bi bi-copy text-primary"></i> Salin dari Bulan Lain
@@ -392,23 +392,22 @@
                             </thead>
                             <tbody>
                                  <?php if (!empty($rekap_data_sendiri)): ?>
-                                    <?php $isDirektur = (session()->get('role') === 'direktur'); ?>
                                     <?php foreach ($rekap_data_sendiri as $index => $row): ?>
-                                        <?php $isRowLocked = !$isDirektur && ($is_locked || $row['status_approval'] === 'disetujui'); ?>
+                                        <?php $isRowLocked = ($is_locked || $row['status_approval'] === 'disetujui'); ?>
                                         <tr>
                                             <input type="hidden" name="laporan_id[]" value="<?= esc($row['id']) ?>">
                                             <td class="nomor-baris text-center fw-bold text-muted"><?= $index + 1 ?></td>
                                             <td>
-                                                <textarea name="sasaran_program[]" class="form-control form-control-sm" rows="2" placeholder="Sasaran Program Unit..." <?= $isRowLocked ? 'readonly' : '' ?>><?= esc($row['sasaran_program']) ?></textarea>
+                                                <textarea name="sasaran_program[]" class="form-control form-control-sm" rows="2" placeholder="Sasaran Program Unit..." aria-label="Sasaran Program Unit baris <?= $index + 1 ?>" <?= $isRowLocked ? 'readonly' : '' ?>><?= esc($row['sasaran_program']) ?></textarea>
                                             </td>
                                             <td>
-                                                <textarea name="indikator_kinerja[]" class="form-control form-control-sm" rows="2" placeholder="Indikator / RHK..." <?= $isRowLocked ? 'readonly' : '' ?>><?= esc($row['indikator_kinerja']) ?></textarea>
+                                                <textarea name="indikator_kinerja[]" class="form-control form-control-sm" rows="2" placeholder="Indikator / RHK..." aria-label="Indikator Kinerja Individu baris <?= $index + 1 ?>" <?= $isRowLocked ? 'readonly' : '' ?>><?= esc($row['indikator_kinerja']) ?></textarea>
                                             </td>
                                             <td>
-                                                <input type="number" step="any" min="0.0001" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary input-target-val" placeholder="Target" value="<?= isset($row['target_bulanan']) && $row['target_bulanan'] !== null ? (float)$row['target_bulanan'] : '' ?>" <?= $isRowLocked ? 'readonly' : '' ?>>
+                                                <input type="number" step="any" min="0.0001" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary input-target-val" placeholder="Target" aria-label="Target Kuantitatif baris <?= $index + 1 ?>" value="<?= isset($row['target_bulanan']) && $row['target_bulanan'] !== null ? (float)$row['target_bulanan'] : '' ?>" <?= $isRowLocked ? 'readonly' : '' ?>>
                                             </td>
                                             <td>
-                                                <input type="text" name="satuan[]" class="form-control form-control-sm text-center input-satuan-val" placeholder="Satuan" list="daftarSatuanStandar" value="<?= esc($row['satuan']) ?>" title="<?= esc($row['satuan']) ?>" <?= $isRowLocked ? 'readonly' : '' ?>>
+                                                <input type="text" name="satuan[]" class="form-control form-control-sm text-center input-satuan-val" placeholder="Satuan" list="daftarSatuanStandar" aria-label="Satuan Target baris <?= $index + 1 ?>" value="<?= esc($row['satuan']) ?>" title="<?= esc($row['satuan']) ?>" <?= $isRowLocked ? 'readonly' : '' ?>>
                                             </td>
                                             <td class="text-center">
                                                 <?php if($row['status_approval'] === 'disetujui'): ?>
@@ -421,23 +420,23 @@
                                             </td>
                                             <td class="text-center">
                                                 <?php if (!$isRowLocked): ?>
-                                                <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris" data-id="<?= esc($row['id']) ?>" title="Hapus" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
+                                                <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris" data-id="<?= esc($row['id']) ?>" title="Hapus Target" aria-label="Hapus target baris <?= $index + 1 ?>" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
                                                 <?php endif; ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
-                                <?php elseif (!$is_locked || (session()->get('role') === 'direktur')): ?>
+                                <?php elseif (!$is_locked): ?>
                                     <!-- Baris Kosong Default -->
                                     <tr>
                                         <input type="hidden" name="laporan_id[]" value="">
                                         <td class="nomor-baris text-center fw-bold text-muted">1</td>
-                                        <td><textarea name="sasaran_program[]" class="form-control form-control-sm" rows="2" placeholder="Sasaran Program Unit..."></textarea></td>
-                                        <td><textarea name="indikator_kinerja[]" class="form-control form-control-sm" rows="2" placeholder="Indikator / RHK..."></textarea></td>
-                                        <td><input type="number" step="any" min="0.0001" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary input-target-val" placeholder="Target"></td>
-                                        <td><input type="text" name="satuan[]" class="form-control form-control-sm text-center input-satuan-val" placeholder="Satuan" list="daftarSatuanStandar"></td>
+                                        <td><textarea name="sasaran_program[]" class="form-control form-control-sm" rows="2" placeholder="Sasaran Program Unit..." aria-label="Sasaran Program Unit baris 1"></textarea></td>
+                                        <td><textarea name="indikator_kinerja[]" class="form-control form-control-sm" rows="2" placeholder="Indikator / RHK..." aria-label="Indikator Kinerja Individu baris 1"></textarea></td>
+                                        <td><input type="number" step="any" min="0.0001" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary input-target-val" placeholder="Target" aria-label="Target Kuantitatif baris 1"></td>
+                                        <td><input type="text" name="satuan[]" class="form-control form-control-sm text-center input-satuan-val" placeholder="Satuan" list="daftarSatuanStandar" aria-label="Satuan Target baris 1"></td>
                                         <td class="text-center"><span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 status-badge"><i class="bi bi-pencil me-1"></i> Draf Baru</span></td>
                                         <td class="text-center">
-                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris" data-id="" title="Hapus" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
+                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris" data-id="" title="Hapus Target" aria-label="Hapus target baris 1" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
                                         </td>
                                     </tr>
                                 <?php else: ?>
@@ -447,7 +446,7 @@
                         </table>
                     </div>
 
-                    <?php if ((session()->get('role') === 'direktur') || (!$is_locked && !$allApproved)): ?>
+                    <?php if (!$is_locked && !$allApproved): ?>
                     <div class="d-flex justify-content-between align-items-center mt-4 btn-action-container flex-wrap gap-2 bento-stagger bento-stagger-3">
                         <button type="button" class="btn btn-primary btn-tambah-baris btn-tactile rounded-pill shadow-sm px-4 py-2 fw-semibold"><i class="bi bi-plus-circle me-1.5"></i> Tambah Target</button>
                         <div class="d-flex gap-2 btn-group-mobile">
@@ -487,9 +486,22 @@
                     <?= csrf_field() ?>
                     <input type="hidden" name="source_tab" value="staf">
                     <div class="row g-2 align-items-end">
-                        <div class="col-md-5">
+                        <?php if (!empty($is_super) && !empty($daftar_unit)): ?>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold text-dark small mb-1" style="font-size: 0.72rem; letter-spacing: 0.3px;"><i class="bi bi-building text-primary me-1"></i> Unit Kerja</label>
+                            <select name="unit_kerja" class="form-select form-select-sm shadow-sm filter-select" aria-label="Pilih Unit Kerja" onchange="this.form.submit()">
+                                <option value="">-- Semua Unit Kerja --</option>
+                                <?php foreach ($daftar_unit as $u): ?>
+                                    <option value="<?= esc($u) ?>" <?= ($unit_kerja_terpilih == $u) ? 'selected' : '' ?>>
+                                        <?= esc($u) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <?php endif; ?>
+                        <div class="<?= (!empty($is_super) && !empty($daftar_unit)) ? 'col-md-4' : 'col-md-5' ?>">
                             <label class="form-label fw-bold text-dark small mb-1" style="font-size: 0.72rem; letter-spacing: 0.3px;"><i class="bi bi-person-badge text-primary me-1"></i> Pilih Staf</label>
-                            <select name="staf_id" class="form-select form-select-sm shadow-sm filter-select" onchange="this.form.submit()">
+                            <select name="staf_id" class="form-select form-select-sm shadow-sm filter-select" aria-label="Pilih Staf" onchange="this.form.submit()">
                                 <option value="">-- Pilih Staf --</option>
                                 <?php foreach ($daftar_staf as $s): ?>
                                     <option value="<?= $s['id'] ?>" <?= ($s['id'] == $staf_id_terpilih) ? 'selected' : '' ?>>
@@ -500,7 +512,7 @@
                         </div>
                         <div class="col-sm-6 col-md-3">
                             <label class="form-label fw-bold text-dark small mb-1" style="font-size: 0.72rem; letter-spacing: 0.3px;"><i class="bi bi-calendar-event text-primary me-1"></i> Bulan</label>
-                            <select name="bulan" class="form-select form-select-sm shadow-sm filter-select" onchange="this.form.submit()">
+                            <select name="bulan" class="form-select form-select-sm shadow-sm filter-select" aria-label="Pilih Bulan Target Staf" onchange="this.form.submit()">
                                 <?php foreach($bulan_indo as $index => $nama): ?>
                                     <option value="<?= $index + 1 ?>" <?= ($bulan_terpilih == $index + 1) ? 'selected' : '' ?>><?= $nama ?></option>
                                 <?php endforeach; ?>
@@ -508,7 +520,7 @@
                         </div>
                         <div class="col-sm-6 col-md-2">
                             <label class="form-label fw-bold text-dark small mb-1" style="font-size: 0.72rem; letter-spacing: 0.3px;"><i class="bi bi-calendar-date text-primary me-1"></i> Tahun</label>
-                            <input type="number" name="tahun" class="form-control form-select-sm shadow-sm filter-select num-tabular" value="<?= esc($tahun_terpilih) ?>" min="2020" max="2099" onchange="this.form.submit()">
+                            <input type="number" name="tahun" class="form-control form-select-sm shadow-sm filter-select num-tabular" aria-label="Input Tahun Target Staf" value="<?= esc($tahun_terpilih) ?>" min="2020" max="2099" onchange="this.form.submit()">
                         </div>
                     </div>
                 </form>
@@ -566,16 +578,16 @@
                                                 <input type="hidden" name="laporan_id[]" value="<?= esc($row['id']) ?>">
                                                 <td class="nomor-baris text-center fw-bold text-muted"><?= $index + 1 ?></td>
                                                 <td>
-                                                    <textarea name="sasaran_program[]" class="form-control form-control-sm staf-input <?= $isStafApproved ? 'locked-approved' : '' ?>" rows="2" required readonly><?= esc($row['sasaran_program']) ?></textarea>
+                                                    <textarea name="sasaran_program[]" class="form-control form-control-sm staf-input <?= $isStafApproved ? 'locked-approved' : '' ?>" rows="2" placeholder="Sasaran Program Unit..." aria-label="Sasaran Program Unit Staf baris <?= $index + 1 ?>" required readonly><?= esc($row['sasaran_program']) ?></textarea>
                                                 </td>
                                                 <td>
-                                                    <textarea name="indikator_kinerja[]" class="form-control form-control-sm staf-input <?= $isStafApproved ? 'locked-approved' : '' ?>" rows="2" required readonly><?= esc($row['indikator_kinerja']) ?></textarea>
+                                                    <textarea name="indikator_kinerja[]" class="form-control form-control-sm staf-input <?= $isStafApproved ? 'locked-approved' : '' ?>" rows="2" placeholder="Indikator / RHK..." aria-label="Indikator Kinerja Individu Staf baris <?= $index + 1 ?>" required readonly><?= esc($row['indikator_kinerja']) ?></textarea>
                                                 </td>
                                                 <td>
-                                                    <input type="number" step="any" min="0.0001" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary staf-input input-target-val <?= $isStafApproved ? 'locked-approved' : '' ?>" value="<?= (float)$row['target_bulanan'] ?>" required readonly>
+                                                    <input type="number" step="any" min="0.0001" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary staf-input input-target-val <?= $isStafApproved ? 'locked-approved' : '' ?>" aria-label="Target Kuantitatif Staf baris <?= $index + 1 ?>" value="<?= (float)$row['target_bulanan'] ?>" required readonly>
                                                 </td>
                                                 <td>
-                                                    <input type="text" name="satuan[]" class="form-control form-control-sm text-center staf-input input-satuan-val <?= $isStafApproved ? 'locked-approved' : '' ?>" list="daftarSatuanStandar" value="<?= esc($row['satuan']) ?>" title="<?= esc($row['satuan']) ?>" required readonly>
+                                                    <input type="text" name="satuan[]" class="form-control form-control-sm text-center staf-input input-satuan-val <?= $isStafApproved ? 'locked-approved' : '' ?>" list="daftarSatuanStandar" aria-label="Satuan Target Staf baris <?= $index + 1 ?>" value="<?= esc($row['satuan']) ?>" title="<?= esc($row['satuan']) ?>" required readonly>
                                                 </td>
                                                 <td class="text-center">
                                                     <?php if($row['status_approval'] === 'disetujui'): ?>
@@ -588,7 +600,7 @@
                                                 </td>
                                                 <td class="text-center col-aksi-staf" style="display: none;">
                                                     <?php if (!$isStafApproved): ?>
-                                                    <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris btn-hapus-staf" data-id="<?= esc($row['id']) ?>" title="Hapus Target" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
+                                                    <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris btn-hapus-staf" data-id="<?= esc($row['id']) ?>" title="Hapus Target" aria-label="Hapus target staf baris <?= $index + 1 ?>" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
                                                     <?php endif; ?>
                                                 </td>
                                             </tr>
@@ -779,7 +791,13 @@
 
         function updateRowNumbers(tabel) {
             tabel.find('tr').each(function(index) {
-                $(this).find('.nomor-baris').text(index + 1);
+                let rowNum = index + 1;
+                $(this).find('.nomor-baris').text(rowNum);
+                $(this).find('textarea[name="sasaran_program[]"]').attr('aria-label', 'Sasaran Program Unit baris ' + rowNum);
+                $(this).find('textarea[name="indikator_kinerja[]"]').attr('aria-label', 'Indikator Kinerja Individu baris ' + rowNum);
+                $(this).find('input[name="target_bulanan[]"]').attr('aria-label', 'Target Kuantitatif baris ' + rowNum);
+                $(this).find('input[name="satuan[]"]').attr('aria-label', 'Satuan Target baris ' + rowNum);
+                $(this).find('.hapus-baris').attr('aria-label', 'Hapus target baris ' + rowNum);
             });
         }
 
@@ -1403,22 +1421,22 @@
                                     <input type="hidden" name="laporan_id[]" value="">
                                     <td class="nomor-baris text-center fw-bold text-muted">1</td>
                                     <td>
-                                        <textarea name="sasaran_program[]" class="form-control form-control-sm" rows="2" placeholder="Sasaran Program Unit...">${safeSasaran}</textarea>
+                                        <textarea name="sasaran_program[]" class="form-control form-control-sm" rows="2" placeholder="Sasaran Program Unit..." aria-label="Sasaran Program Unit baris ${insertedCount}">${safeSasaran}</textarea>
                                     </td>
                                     <td>
-                                        <textarea name="indikator_kinerja[]" class="form-control form-control-sm" rows="2" placeholder="Indikator / RHK...">${safeIndikator}</textarea>
+                                        <textarea name="indikator_kinerja[]" class="form-control form-control-sm" rows="2" placeholder="Indikator / RHK..." aria-label="Indikator Kinerja Individu baris ${insertedCount}">${safeIndikator}</textarea>
                                     </td>
                                     <td>
-                                        <input type="number" step="0.01" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary input-target-val" placeholder="Target" value="${valTarget}">
+                                        <input type="number" step="0.01" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary input-target-val" placeholder="Target" aria-label="Target Kuantitatif baris ${insertedCount}" value="${valTarget}">
                                     </td>
                                     <td>
-                                        <input type="text" name="satuan[]" class="form-control form-control-sm text-center input-satuan-val" placeholder="Satuan" list="daftarSatuanStandar" value="${safeSatuan}" title="${safeSatuan}">
+                                        <input type="text" name="satuan[]" class="form-control form-control-sm text-center input-satuan-val" placeholder="Satuan" list="daftarSatuanStandar" aria-label="Satuan Target baris ${insertedCount}" value="${safeSatuan}" title="${safeSatuan}">
                                     </td>
                                     <td class="text-center">
                                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 status-badge"><i class="bi bi-pencil me-1"></i> Draf Baru</span>
                                     </td>
                                     <td class="text-center">
-                                        <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris" data-id="" title="Hapus" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
+                                        <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris" data-id="" title="Hapus Target" aria-label="Hapus target baris ${insertedCount}" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
                                     </td>
                                 </tr>
                             `);

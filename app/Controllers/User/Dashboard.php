@@ -6,10 +6,11 @@ use App\Controllers\BaseController;
 use App\Models\RencanaKinerja as RencanaKinerjaModel;
 use App\Models\User as UserModel;
 use App\Controllers\Traits\EccDataTrait; 
+use App\Controllers\Traits\KinerjaBatchTrait;
 
 class Dashboard extends BaseController
 {
-    use EccDataTrait; 
+    use EccDataTrait, KinerjaBatchTrait; 
 
     public function index()
     {
@@ -35,42 +36,17 @@ class Dashboard extends BaseController
 
         // --- 2. PROSES DATA Kinerja Pribadi (Berdasarkan Laporan Harian) ---
         if (!$this->request->isAJAX() || $ajax_type === 'kinerja') {
-            $db = \Config\Database::connect();
-            
-            $laporanPribadi = $db->table('target_kinerja_bulanan')
-                                 ->where('user_id', $user_id)
-                                 ->where('tahun', $tahun_kinerja)
-                                 ->where("nilai_capaian IS NOT NULL AND nilai_capaian != ''")
-                                 ->get()->getResultArray();
-                                 
-            $totalNilai = 0;
-            $countNilai = count($laporanPribadi);
-            $monthly_rata = array_fill(0, 12, 0);
-            $monthly_count = array_fill(0, 12, 0);
-            
-            foreach ($laporanPribadi as $lap) {
-                $nilai = (float)$lap['nilai_capaian'];
-                $totalNilai += $nilai;
-                
-                $bIdx = (int)$lap['bulan'] - 1;
-                if ($bIdx >= 0 && $bIdx <= 11) {
-                    $monthly_rata[$bIdx] += $nilai;
-                    $monthly_count[$bIdx]++;
-                }
-            }
-            
-            $rataRataCapaian = $countNilai > 0 ? round($totalNilai / $countNilai, 2) : 0;
-            
-            $totalIndikator = $db->table('target_kinerja_bulanan')
-                                 ->where('user_id', $user_id)
-                                 ->where('tahun', $tahun_kinerja)
-                                 ->countAllResults();
-                                 
-            $lineChartRealisasiData = [];
-            for ($i = 0; $i < 12; $i++) {
-                $lineChartRealisasiData[] = $monthly_count[$i] > 0 ? round($monthly_rata[$i] / $monthly_count[$i], 2) : 0;
-            }
+            // BATCH LOAD: Ambil seluruh data kinerja tahun ini dalam 2 query ringkas (O(1) in-memory)
+            [$batchTargets, $batchTambahan] = $this->loadBatchKinerjaData($tahun_kinerja);
 
+            $statPersonal = $this->hitungKinerjaPegawai($user_id, 'all', $tahun_kinerja, $batchTargets, $batchTambahan);
+            $rataRataCapaian = $statPersonal['rata_rata'];
+            $totalIndikator = $statPersonal['total_laporan'];
+            
+            $lineChartRealisasiData = [];
+            for ($i = 1; $i <= 12; $i++) {
+                $lineChartRealisasiData[] = $statPersonal['monthly_averages'][$i] ?? 0;
+            }
 
             $role = session()->get('role');
             $isSuper = hasAnyRole(['admin', 'direktur', 'wadir', 'manajemen']);
@@ -89,30 +65,17 @@ class Dashboard extends BaseController
                 $isUnitPeers = true;
             }
 
-            $laporanModel = new \App\Models\LaporanHarian();
             $rekapDashboard = [];
 
             if (!empty($daftarStaf)) {
                 foreach ($daftarStaf as $staf) {
-                    $targets = $laporanModel->getTargetWithRealization($staf['id'], $bulanTerpilih, $tahun_kinerja);
-                    $total_laporan = count($targets);
-                    $dinilai = 0;
-                    $total_nilai = 0;
-
-                    foreach ($targets as $t) {
-                        if ($t['nilai_capaian'] !== null && trim($t['nilai_capaian']) !== '') {
-                            $dinilai++;
-                            $total_nilai += (float)$t['nilai_capaian'];
-                        }
-                    }
-                    
-                    $rata_rata = $dinilai > 0 ? round($total_nilai / $dinilai, 2) : 0;
+                    $statStaf = $this->hitungKinerjaPegawai($staf['id'], $bulanTerpilih, $tahun_kinerja, $batchTargets, $batchTambahan);
                     
                     $rekapDashboard[] = [
                         'staf' => $staf,
-                        'total_laporan' => $total_laporan,
-                        'dinilai' => $dinilai,
-                        'rata_rata' => $rata_rata
+                        'total_laporan' => $statStaf['total_laporan'],
+                        'dinilai' => $statStaf['dinilai'],
+                        'rata_rata' => $statStaf['rata_rata']
                     ];
                 }
             }
@@ -174,7 +137,7 @@ class Dashboard extends BaseController
             'page_title' => 'Dashboard',
             'tahun_ecc' => $tahun_ecc,
             'tahun_kinerja' => $tahun_kinerja,
-            'daftar_tahun' => $this->getDashboardEccData(date('Y'))['daftar_tahun'],
+            'daftar_tahun' => $eccData['daftar_tahun'] ?? [date('Y')],
             
             'prodiData' => $eccData['prodiData'] ?? [],
             

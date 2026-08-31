@@ -3,9 +3,10 @@
 namespace App\Controllers\User;
 
 use App\Controllers\BaseController;
-use App\Models\TargetKinerja;
-use App\Models\LaporanHarian;
+use App\Models\LogKegiatanHarian;
 use App\Models\Satuan;
+use App\Models\SettingModel;
+use App\Models\TargetKinerja;
 use App\Models\User;
 
 /**
@@ -35,11 +36,23 @@ class LaporanHarianController extends BaseController
         $reqBulan = $this->request->getVar('bulan');
         $reqTahun = $this->request->getVar('tahun');
         $reqStafId = $this->request->getVar('staf_id');
+        $reqUnitKerja = $this->request->getVar('unit_kerja');
         $sourceTab = $this->request->getVar('source_tab');
 
         if (!empty($reqBulan) && is_numeric($reqBulan)) session()->set('laporan_harian_bulan', (int)$reqBulan);
         if (!empty($reqTahun) && is_numeric($reqTahun)) session()->set('laporan_harian_tahun', (int)$reqTahun);
         
+        if ($reqUnitKerja !== null) {
+            if ($reqUnitKerja !== session()->get('laporan_harian_unit_kerja')) {
+                session()->remove('laporan_harian_staf_id');
+            }
+            if (!empty($reqUnitKerja)) {
+                session()->set('laporan_harian_unit_kerja', $reqUnitKerja);
+            } else {
+                session()->remove('laporan_harian_unit_kerja');
+            }
+        }
+
         if ($sourceTab === 'sendiri') {
             session()->remove('laporan_harian_staf_id');
         } elseif ($sourceTab === 'staf' || $reqStafId !== null) {
@@ -57,6 +70,7 @@ class LaporanHarianController extends BaseController
         $bulanTerpilih = session()->get('laporan_harian_bulan') ?? date('n');
         $tahunTerpilih = session()->get('laporan_harian_tahun') ?? date('Y');
         $stafIdTerpilih = session()->get('laporan_harian_staf_id') ?? '';
+        $unitKerjaTerpilih = session()->get('laporan_harian_unit_kerja') ?? '';
 
         $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
         $namaBulan = $bulanIndo[$bulanTerpilih - 1];
@@ -67,10 +81,20 @@ class LaporanHarianController extends BaseController
                                   ->where('tahun', $tahunTerpilih)
                                   ->findAll();
 
-        // Cek apakah user punya staf/staf (Hanya Admin yang punya opsi lihat semua)
-        $isSuper = hasAnyRole(['admin']);
+        // Cek apakah user punya staf atau akses pimpinan eksekutif (Admin, Direktur, Wadir)
+        $isSuper = hasAnyRole(['admin', 'direktur', 'wadir']);
+        $daftarUnit = [];
         if ($isSuper) {
-            $daftarStaf = $userModel->where('id !=', $userId)->orderBy('nama_lengkap', 'ASC')->findAll();
+            $units = $userModel->select('unit')->distinct()->where('unit !=', null)->where('unit !=', '')->orderBy('unit', 'ASC')->findAll();
+            foreach ($units as $u) {
+                $daftarUnit[] = $u['unit'];
+            }
+
+            $builder = $userModel->where('id !=', $userId);
+            if (!empty($unitKerjaTerpilih)) {
+                $builder = $builder->where('unit', $unitKerjaTerpilih);
+            }
+            $daftarStaf = $builder->orderBy('nama_lengkap', 'ASC')->findAll();
             $isAtasan = true;
         } else {
             $daftarStaf = $userModel->getStaf($userId);
@@ -118,12 +142,12 @@ class LaporanHarianController extends BaseController
         }
 
         // Logika Batas Waktu Berdasarkan Pengaturan Sistem
-        $settingModel = new \App\Models\SettingModel();
+        $settingModel = new SettingModel();
         $isDeadlineActive = $settingModel->getValue('enable_target_deadline', '0') === '1';
         $batasTarget = (int) $settingModel->getValue('batas_input_target', 5);
         $isLocked = false;
 
-        if ($isDeadlineActive && !hasAnyRole(['admin', 'direktur'])) {
+        if ($isDeadlineActive && !hasRole('admin')) {
             $now = new \DateTime();
             $targetMonth = new \DateTime(sprintf('%04d-%02d-01', $tahunTerpilih, $bulanTerpilih));
             $currentMonth = new \DateTime(date('Y-m-01'));
@@ -154,7 +178,10 @@ class LaporanHarianController extends BaseController
             'is_atasan' => $isAtasan,
             'is_penyetuju' => $isPenyetuju,
             'daftar_staf' => $daftarStaf,
-            'staf_id_terpilih' => $stafIdTerpilih
+            'staf_id_terpilih' => $stafIdTerpilih,
+            'is_super' => $isSuper,
+            'daftar_unit' => $daftarUnit,
+            'unit_kerja_terpilih' => $unitKerjaTerpilih
         ];
 
         return view('user/laporan_harian/index', $data);
@@ -171,11 +198,11 @@ class LaporanHarianController extends BaseController
         $isEditingStaf = $this->request->getPost('is_editing_staf') == '1';
         $targetUserId = $isEditingStaf ? $this->request->getPost('staf_id') : $userId;
 
-        // Otorisasi: Jika menyunting target milik staf lain, pastikan user adalah Atasan Langsung, Admin, atau Direktur
+        // Otorisasi: Jika menyunting target milik staf lain, pastikan user adalah Atasan Langsung, Admin, Direktur, Wadir, atau Kepegawaian
         if ($isEditingStaf && $targetUserId != $userId) {
-            $targetUser = (new \App\Models\User())->find($targetUserId);
+            $targetUser = (new User())->find($targetUserId);
             $isAtasan = $targetUser && !empty($targetUser['atasan_id']) && ($targetUser['atasan_id'] == $userId);
-            if (!hasAnyRole(['admin', 'direktur']) && !$isAtasan) {
+            if (!hasAnyRole(['admin', 'direktur', 'wadir', 'kepegawaian']) && !$isAtasan) {
                 if ($this->request->isAJAX()) {
                     return $this->response->setJSON(['success' => false, 'message' => 'Akses ditolak. Anda tidak memiliki izin menyunting target staf ini.', 'csrf_hash' => csrf_hash()]);
                 }
@@ -187,11 +214,11 @@ class LaporanHarianController extends BaseController
         $targetStatus = $isDraft ? 'draft' : 'terkirim';
 
         // Validasi Kunci Waktu jika pembatasan deadline target diaktifkan oleh Admin
-        $settingModel = new \App\Models\SettingModel();
+        $settingModel = new SettingModel();
         $isDeadlineActive = $settingModel->getValue('enable_target_deadline', '0') === '1';
         $batasTarget = (int) $settingModel->getValue('batas_input_target', 5);
 
-        if ($isDeadlineActive && !hasAnyRole(['admin', 'direktur']) && !$isEditingStaf) {
+        if ($isDeadlineActive && !hasRole('admin') && !$isEditingStaf) {
             $now = new \DateTime();
             $targetMonth = new \DateTime(sprintf('%04d-%02d-01', $tahun, $bulan));
             $currentMonth = new \DateTime(date('Y-m-01'));
@@ -354,6 +381,23 @@ class LaporanHarianController extends BaseController
             return redirect()->back()->withInput()->with('error', $msg);
         }
 
+        $oldTargetValues = [];
+        if (!empty($dataToUpdate)) {
+            $updateIds = array_column($dataToUpdate, 'id');
+            $oldTargets = $laporanModel->whereIn('id', $updateIds)->findAll();
+            foreach ($oldTargets as $ot) {
+                $oldTargetValues[$ot['id']] = [
+                    'id' => $ot['id'],
+                    'sasaran_program' => $ot['sasaran_program'],
+                    'indikator_kinerja' => $ot['indikator_kinerja'],
+                    'target_bulanan' => $ot['target_bulanan'],
+                    'satuan' => $ot['satuan'],
+                    'status_approval' => $ot['status_approval'],
+                    'status' => $ot['status']
+                ];
+            }
+        }
+
         $insertedIds = [];
         $db = \Config\Database::connect();
         $db->transStart();
@@ -396,18 +440,20 @@ class LaporanHarianController extends BaseController
         }
 
         // Catat Audit Trail aktivitas penetapan / pembaruan target
-        $targetUser = (new \App\Models\User())->find($targetUserId);
+        $targetUser = (new User())->find($targetUserId);
         $targetUserName = $targetUser['nama_lengkap'] ?? "User #{$targetUserId}";
         $actionType = $isEditingStaf ? 'UPDATE_TARGET_STAF' : ($isDraft ? 'DRAFT_TARGET' : 'SUBMIT_TARGET');
 
-        log_audit($actionType, 'target_kinerja_bulanan', $targetUserId, null, [
+        log_audit($actionType, 'target_kinerja_bulanan', $targetUserId, !empty($oldTargetValues) ? $oldTargetValues : null, [
             'bulan'         => $bulan,
             'tahun'         => $tahun,
             'target_staf'   => $targetUserName,
             'jumlah_target' => count($dataToUpdate) + count($dataToInsert),
             'status'        => $targetStatus,
             'is_draft'      => $isDraft ? 1 : 0,
-            'disimpan_oleh' => session()->get('nama_lengkap')
+            'disimpan_oleh' => session()->get('nama_lengkap'),
+            'updated_rows'  => $dataToUpdate,
+            'inserted_rows' => $dataToInsert
         ]);
 
         if ($this->request->isAJAX()) {
@@ -458,9 +504,9 @@ class LaporanHarianController extends BaseController
             $laporanModel = new TargetKinerja();
             $laporan = $laporanModel->find($id);
             if ($laporan) {
-                $targetUser = (new \App\Models\User())->find($laporan['user_id']);
+                $targetUser = (new User())->find($laporan['user_id']);
                 $isAtasan = $targetUser && !empty($targetUser['atasan_id']) && ($targetUser['atasan_id'] == $currentUserId);
-                if (!hasAnyRole(['admin', 'direktur']) && !$isAtasan) {
+                if (!hasAnyRole(['admin', 'direktur', 'wadir', 'kepegawaian']) && !$isAtasan) {
                     return $this->response->setJSON([
                         'success' => false,
                         'message' => 'Akses ditolak. Anda tidak memiliki izin menyetujui target ini.',
@@ -507,10 +553,10 @@ class LaporanHarianController extends BaseController
         $currentUserId = session()->get('id') ?? session()->get('user_id');
 
         if ($staf_id && $bulan && $tahun) {
-            // Otorisasi: Pastikan penilai adalah Atasan Langsung dari staf atau Superadmin
-            $targetUser = (new \App\Models\User())->find($staf_id);
+            // Otorisasi: Pastikan penilai adalah Atasan Langsung dari staf, Superadmin, Direktur, Wadir, atau Kepegawaian
+            $targetUser = (new User())->find($staf_id);
             $isAtasan = $targetUser && !empty($targetUser['atasan_id']) && ($targetUser['atasan_id'] == $currentUserId);
-            if (!hasAnyRole(['admin', 'direktur']) && !$isAtasan) {
+            if (!hasAnyRole(['admin', 'direktur', 'wadir', 'kepegawaian']) && !$isAtasan) {
                 return redirect()->back()->with('error', 'Akses ditolak. Anda tidak memiliki izin menyetujui target staf ini.');
             }
 
@@ -558,11 +604,11 @@ class LaporanHarianController extends BaseController
             $laporanModel = new TargetKinerja();
             $laporan = $laporanModel->find($id);
             if ($laporan) {
-                $targetUser = (new \App\Models\User())->find($laporan['user_id']);
+                $targetUser = (new User())->find($laporan['user_id']);
                 $isAtasan = $targetUser && !empty($targetUser['atasan_id']) && ($targetUser['atasan_id'] == $currentUserId);
 
-                // Otorisasi: Pastikan target milik user bersangkutan atau user adalah Admin / Direktur / Kepegawaian / Atasan Langsung
-                if ($laporan['user_id'] != $currentUserId && !hasAnyRole(['admin', 'kepegawaian', 'direktur']) && !$isAtasan) {
+                // Otorisasi: Pastikan target milik user bersangkutan atau user adalah Admin / Direktur / Wadir / Kepegawaian / Atasan Langsung
+                if ($laporan['user_id'] != $currentUserId && !hasAnyRole(['admin', 'kepegawaian', 'direktur', 'wadir']) && !$isAtasan) {
                     return $this->response->setJSON([
                         'success' => false,
                         'message' => 'Akses ditolak. Anda tidak memiliki izin menghapus target ini.',
@@ -585,7 +631,7 @@ class LaporanHarianController extends BaseController
                 $db = \Config\Database::connect();
                 $db->transStart();
 
-                $logModel = new \App\Models\LogKegiatanHarian();
+                $logModel = new LogKegiatanHarian();
                 $affectedLogs = $logModel->where('target_id', $id)->countAllResults();
                 if ($affectedLogs > 0) {
                     // Lepaskan target_id dan kembalikan status laporan harian ke 'draft'
@@ -777,7 +823,7 @@ class LaporanHarianController extends BaseController
             $userModel = new User();
             $targetUser = $userModel->find($targetUserId);
             $isAtasan = $targetUser && !empty($targetUser['atasan_id']) && ($targetUser['atasan_id'] == $userId);
-            if (!hasAnyRole(['admin', 'direktur']) && !$isAtasan) {
+            if (!hasAnyRole(['admin', 'direktur', 'wadir', 'kepegawaian']) && !$isAtasan) {
                 return $this->response->setJSON([
                     'status' => 'error',
                     'message' => 'Akses ditolak: Anda tidak memiliki wewenang untuk mengambil data target staf ini.',
