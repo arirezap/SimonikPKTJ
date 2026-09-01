@@ -11,6 +11,22 @@
     }
 }
 
+/* Custom Filter Control Sizing & Spacing */
+.filter-select-custom {
+    font-size: 0.8rem !important;
+    padding: 0.35rem 1.4rem 0.35rem 0.55rem !important;
+    background-position: right 0.4rem center !important;
+    background-size: 11px 9px !important;
+    border-radius: 0.5rem !important;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.filter-input-year {
+    font-size: 0.82rem !important;
+    padding: 0.35rem 0.25rem !important;
+    border-radius: 0.5rem !important;
+}
+
 /* Staggered Grid Motion */
 .bento-stagger {
     animation: bentoEntrance 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -64,35 +80,53 @@ th.sortable.desc .sort-icon {
     color: #0d6efd;
 }
 
-/* Quick Filter Pills */
+/* Quick Filter Pills (8pt Compact Grid System - Single Row Guarantee) */
+#pillFilterGroup {
+    padding: 8px 16px !important;
+    gap: 6px !important;
+    overflow-x: auto;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+#pillFilterGroup::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
 .filter-pill {
     cursor: pointer;
-    font-size: 0.76rem;
+    font-size: 0.72rem;
     font-weight: 600;
-    padding: 0.35rem 0.85rem;
-    border-radius: 50rem;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    line-height: 14px;
+    height: 28px; /* 4px/8px sub-grid: 7 x 4px */
+    padding: 0 10px; /* Compact padding */
+    border-radius: 16px; /* 8px multiplier: 2 x 8px */
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     border: 1px solid #dee2e6;
-    background-color: #fff;
+    background-color: #ffffff;
     color: #495057;
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
+    justify-content: center;
+    gap: 5px; /* 4-5px icon gap */
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 .filter-pill:hover {
     background-color: #f1f5f9;
     border-color: #cbd5e1;
+    color: #0f172a;
     transform: translateY(-1px);
 }
 .filter-pill:active {
-    transform: scale(0.95);
+    transform: scale(0.96);
 }
 .filter-pill.active {
     background-color: #0d6efd;
-    color: #fff;
+    color: #ffffff;
     border-color: #0d6efd;
-    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.25);
-    transform: scale(1.02);
+    box-shadow: 0 2px 6px rgba(13, 110, 253, 0.22);
+}
+.filter-pill.active i {
+    color: #ffffff !important;
 }
 
 .num-tabular {
@@ -258,10 +292,13 @@ th.sortable.desc .sort-icon {
     <!-- FILTER & KPI SUMMARY ROW -->
     <div class="row g-3 mb-3 bento-stagger bento-stagger-2">
         <!-- FILTER CARD -->
-        <div class="col-lg-6 col-xl-6">
+        <div class="col-lg-7 col-xl-7">
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
                 <div class="card-header bg-light py-2.5 px-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h6 class="fw-bold text-dark mb-0 small"><i class="bi bi-funnel-fill text-primary me-1.5"></i>Filter Periode, Unit Kerja & Kategori</h6>
+                    <h6 class="fw-bold text-dark mb-0 small d-flex align-items-center">
+                        <i class="bi bi-funnel-fill text-primary me-2 fs-6"></i>
+                        <span>Filter Periode, Unit Kerja & Kategori</span>
+                    </h6>
                     <?php if (!empty($unit_filter) || !empty($role_filter)): ?>
                         <a href="<?= site_url('kepegawaian') ?>?bulan=<?= esc($bulan_terpilih) ?>&tahun=<?= esc($tahun_terpilih) ?>" class="badge bg-secondary-subtle text-secondary text-decoration-none rounded-pill px-2 py-1" style="font-size: 0.7rem;">
                             <i class="bi bi-x-circle me-1"></i>Reset Filter
@@ -272,7 +309,7 @@ th.sortable.desc .sort-icon {
                     <form method="GET" action="<?= site_url('kepegawaian') ?>" class="row g-2 align-items-end" id="filterForm">
                         <div class="col-6 col-sm-3">
                             <label class="form-label text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.68rem; letter-spacing: 0.3px;">Periode Bulan</label>
-                            <select name="bulan" class="form-select form-select-sm" aria-label="Pilih Periode Bulan Rekap" onchange="showSkeletonAndSubmit()">
+                            <select name="bulan" class="form-select form-select-sm filter-select-custom" aria-label="Pilih Periode Bulan Rekap" onchange="showSkeletonAndSubmit()">
                                 <option value="all" <?= ($bulan_terpilih === 'all') ? 'selected' : '' ?>>Sepanjang Tahun</option>
                                 <?php foreach($bulan_indo as $index => $nama): ?>
                                     <option value="<?= $index + 1 ?>" <?= ($bulan_terpilih == $index + 1 && $bulan_terpilih !== 'all') ? 'selected' : '' ?>><?= $nama ?></option>
@@ -281,11 +318,11 @@ th.sortable.desc .sort-icon {
                         </div>
                         <div class="col-6 col-sm-2">
                             <label class="form-label text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.68rem; letter-spacing: 0.3px;">Tahun</label>
-                            <input type="number" name="tahun" id="filterTahunInput" class="form-control form-control-sm text-center fw-bold" aria-label="Input Tahun Rekap" value="<?= esc($tahun_terpilih) ?>" onchange="showSkeletonAndSubmit()">
+                            <input type="number" name="tahun" id="filterTahunInput" class="form-control form-control-sm text-center fw-bold filter-input-year" aria-label="Input Tahun Rekap" value="<?= esc($tahun_terpilih) ?>" onchange="showSkeletonAndSubmit()">
                         </div>
                         <div class="col-12 col-sm-4">
                             <label class="form-label text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.68rem; letter-spacing: 0.3px;">Unit Kerja</label>
-                            <select name="unit" class="form-select form-select-sm" aria-label="Pilih Filter Unit Kerja" onchange="showSkeletonAndSubmit()">
+                            <select name="unit" class="form-select form-select-sm filter-select-custom" aria-label="Pilih Filter Unit Kerja" onchange="showSkeletonAndSubmit()">
                                 <option value="">Semua Unit Kerja</option>
                                 <?php foreach ($daftar_unit as $u): ?>
                                     <option value="<?= esc($u) ?>" <?= ($u == $unit_filter) ? 'selected' : '' ?>><?= esc($u) ?></option>
@@ -294,7 +331,7 @@ th.sortable.desc .sort-icon {
                         </div>
                         <div class="col-12 col-sm-3">
                             <label class="form-label text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.68rem; letter-spacing: 0.3px;">Role / Kategori</label>
-                            <select name="role" class="form-select form-select-sm" aria-label="Pilih Filter Kategori Role" onchange="showSkeletonAndSubmit()">
+                            <select name="role" class="form-select form-select-sm filter-select-custom" aria-label="Pilih Filter Kategori Role" onchange="showSkeletonAndSubmit()">
                                 <option value="">Semua Role</option>
                                 <option value="pimpinan" <?= (($role_filter ?? '') === 'pimpinan') ? 'selected' : '' ?>>Pimpinan</option>
                                 <option value="manajemen" <?= (($role_filter ?? '') === 'manajemen') ? 'selected' : '' ?>>Manajemen</option>
@@ -309,7 +346,7 @@ th.sortable.desc .sort-icon {
         </div>
 
         <!-- KPI SUMMARY CARD (5 METRIC BOXES) -->
-        <div class="col-lg-6 col-xl-6">
+        <div class="col-lg-5 col-xl-5">
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
                 <div class="card-body p-2.5 p-xl-3 d-flex flex-column justify-content-center h-100">
                     <div class="row text-center g-0 align-items-stretch">
@@ -376,7 +413,10 @@ th.sortable.desc .sort-icon {
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bento-stagger bento-stagger-3">
         <div class="card-header bg-light py-2.5 px-3 border-bottom d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
             <div>
-                <h6 class="fw-bold text-dark mb-0 small"><i class="bi bi-table text-primary me-1.5"></i>Daftar Capaian Pegawai</h6>
+                <h6 class="fw-bold text-dark mb-0 small d-flex align-items-center">
+                    <i class="bi bi-table text-primary me-2 fs-6"></i>
+                    <span>Daftar Capaian Pegawai</span>
+                </h6>
                 <small class="text-muted" id="visibleCounter" style="font-size: 0.72rem;">Menampilkan <?= count($rekap_kinerja) ?> pegawai</small>
             </div>
             <div class="d-flex align-items-center gap-2">
@@ -391,14 +431,15 @@ th.sortable.desc .sort-icon {
             </div>
         </div>
 
-        <!-- Quick Status Filter Pills -->
-        <div class="px-3 py-2 bg-white border-bottom d-flex align-items-center gap-1.5 flex-wrap" id="pillFilterGroup">
-            <span class="text-muted small fw-bold me-1" style="font-size: 0.72rem;">Filter Cepat:</span>
-            <button type="button" class="filter-pill active" data-filter="all" role="button" aria-label="Tampilkan Semua Pegawai"><i class="bi bi-grid-fill me-0.5"></i> Semua</button>
-            <button type="button" class="filter-pill" data-filter="sudah" role="button" aria-label="Filter Pegawai yang Sudah Dinilai"><i class="bi bi-check-circle-fill text-success me-0.5"></i> Sudah Dinilai</button>
-            <button type="button" class="filter-pill" data-filter="belum" role="button" aria-label="Filter Pegawai yang Belum Dinilai"><i class="bi bi-hourglass-split text-danger me-0.5"></i> Belum Dinilai</button>
-            <button type="button" class="filter-pill" data-filter="perhatian" role="button" aria-label="Filter Pegawai Nilai Kurang dari 75"><i class="bi bi-exclamation-triangle-fill text-warning me-0.5"></i> &lt; 75 (Perhatian)</button>
-            <button type="button" class="filter-pill" data-filter="baik" role="button" aria-label="Filter Pegawai Nilai Baik Lebih dari 90"><i class="bi bi-stars text-primary me-0.5"></i> &ge; 90 (Baik)</button>
+        <!-- Quick Status Filter Pills (8px Compact Grid Spacing - 1 Single Row) -->
+        <div class="bg-white border-bottom d-flex align-items-center flex-nowrap" id="pillFilterGroup">
+            <span class="text-muted small fw-bold me-1 flex-shrink-0" style="font-size: 0.7rem; letter-spacing: 0.3px;">Filter Cepat:</span>
+            <button type="button" class="filter-pill active" data-filter="all" role="button" aria-label="Tampilkan Semua Pegawai"><i class="bi bi-grid-fill"></i> Semua</button>
+            <button type="button" class="filter-pill" data-filter="sudah" role="button" aria-label="Filter Pegawai yang Sudah Dinilai"><i class="bi bi-check-circle-fill text-success"></i> Sudah Dinilai</button>
+            <button type="button" class="filter-pill" data-filter="belum" role="button" aria-label="Filter Pegawai yang Belum Dinilai"><i class="bi bi-hourglass-split text-warning"></i> Belum Dinilai</button>
+            <button type="button" class="filter-pill" data-filter="tidak_mengerjakan" role="button" aria-label="Filter Pegawai yang Tidak Mengerjakan Target/Laporan"><i class="bi bi-x-octagon-fill text-danger"></i> Tidak Mengerjakan</button>
+            <button type="button" class="filter-pill" data-filter="perhatian" role="button" aria-label="Filter Pegawai Nilai Kurang dari 75"><i class="bi bi-exclamation-triangle-fill text-warning"></i> &lt; 75 (Perhatian)</button>
+            <button type="button" class="filter-pill" data-filter="baik" role="button" aria-label="Filter Pegawai Nilai Baik Lebih dari 90"><i class="bi bi-stars text-primary"></i> &ge; 90 (Baik)</button>
         </div>
 
         <div class="card-body p-0">
@@ -424,29 +465,29 @@ th.sortable.desc .sort-icon {
             <div class="table-responsive desktop-table-view" id="tableContent">
                 <table class="table table-bordered table-hover align-middle mb-0 table-bento" id="mainDataTable">
                     <thead>
-                        <tr>
-                            <th class="ps-3 py-2.5 sortable" data-sort="nama" style="min-width: 230px;">
+                        <tr class="text-center align-middle">
+                            <th class="text-center py-2.5 sortable fw-bold" data-sort="nama" style="min-width: 280px; max-width: 380px;">
                                 Pegawai <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
                             </th>
-                            <th class="py-2.5 sortable" data-sort="unit" style="min-width: 140px;">
+                            <th class="text-center py-2.5 sortable fw-bold" data-sort="unit" style="min-width: 140px; max-width: 200px;">
                                 Unit Kerja <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
                             </th>
                             <?php if ($bulan_terpilih === 'all'): ?>
                                 <?php foreach (['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'] as $m): ?>
-                                    <th class="text-center py-2.5" style="min-width: 48px; font-size: 0.7rem;"><?= $m ?></th>
+                                    <th class="text-center py-2.5 fw-bold" style="min-width: 48px; font-size: 0.75rem;"><?= $m ?></th>
                                 <?php endforeach; ?>
-                                <th class="text-center py-2.5 border-start bg-light shadow-sm sortable" data-sort="target" style="min-width: 85px;">
+                                <th class="text-center py-2.5 border-start bg-light shadow-sm sortable fw-bold" data-sort="target" style="min-width: 85px;">
                                     Target Thn <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
                                 </th>
                             <?php else: ?>
-                                <th class="text-center py-2.5 sortable" data-sort="target" style="width: 110px;">
+                                <th class="text-center py-2.5 sortable fw-bold" data-sort="target" style="width: 110px;">
                                     Komponen <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
                                 </th>
                             <?php endif; ?>
-                            <th class="text-center py-2.5 sortable" data-sort="dinilai" style="width: 110px;">
+                            <th class="text-center py-2.5 sortable fw-bold" data-sort="dinilai" style="width: 110px;">
                                 Dinilai <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
                             </th>
-                            <th class="text-center pe-3 py-2.5 sortable" data-sort="nilai" style="width: 130px;">
+                            <th class="text-center pe-3 py-2.5 sortable fw-bold" data-sort="nilai" style="width: 130px;">
                                 Rata-Rata <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
                             </th>
                         </tr>
@@ -468,9 +509,16 @@ th.sortable.desc .sort-icon {
                                     $dinilai = $item['rhk_dinilai'];
                                     $jumlahTarget = $item['jumlah_komponen'] ?? $item['jumlah_rhk'];
                                     
-                                    $statusCat = ($dinilai > 0) ? 'sudah' : 'belum';
-                                    if ($dinilai > 0 && $rata < 75) $statusCat .= ' perhatian';
-                                    if ($dinilai > 0 && $rata >= 90) $statusCat .= ' baik';
+                                    $statusCat = '';
+                                    if ($jumlahTarget == 0) {
+                                        $statusCat = 'tidak_mengerjakan belum';
+                                    } elseif ($dinilai > 0) {
+                                        $statusCat = 'sudah';
+                                        if ($rata < 75) $statusCat .= ' perhatian';
+                                        if ($rata >= 90) $statusCat .= ' baik';
+                                    } else {
+                                        $statusCat = 'belum';
+                                    }
 
                                     if ($dinilai == 0) {
                                         $badgeClass = 'bg-secondary-subtle text-secondary border border-secondary-subtle';
@@ -502,31 +550,41 @@ th.sortable.desc .sort-icon {
                                     data-val-target="<?= $jumlahTarget ?>"
                                     data-val-dinilai="<?= $dinilai ?>"
                                     data-val-nilai="<?= $rata ?>">
-                                    <td class="ps-3 py-2.5" style="max-width: 240px;">
-                                        <div class="d-flex align-items-center cursor-pointer pegawai-trigger btn-detail-pegawai" 
+                                    <td class="ps-3 py-2.5" style="min-width: 280px; max-width: 380px;">
+                                        <div class="d-flex align-items-start cursor-pointer pegawai-trigger btn-detail-pegawai" 
                                              role="button" 
                                              tabindex="0"
                                              data-user-id="<?= $item['pegawai']['id'] ?>" 
                                              data-nama="<?= esc($item['pegawai']['nama_lengkap']) ?>"
                                              title="Klik untuk melihat rincian capaian kinerja <?= esc($item['pegawai']['nama_lengkap']) ?>">
-                                            <?= render_user_avatar($item['pegawai'], $item['pegawai']['nama_lengkap'], 34, 'me-2 flex-shrink-0') ?>
-                                            <div class="overflow-hidden">
-                                                <span class="fw-bold text-dark d-block text-truncate lh-sm pegawai-nama-link" style="font-size: 0.82rem;">
+                                            <?= render_user_avatar($item['pegawai'], $item['pegawai']['nama_lengkap'], 34, 'me-2 mt-0.5 flex-shrink-0') ?>
+                                            <div class="flex-grow-1" style="min-width: 0;">
+                                                <!-- Baris 1: NAMA (Full text, otomatis wrap ke bawah jika panjang) -->
+                                                <span class="fw-bold text-dark d-block lh-sm pegawai-nama-link" style="font-size: 0.81rem; word-break: break-word; line-height: 1.35;">
                                                     <?= esc($item['pegawai']['nama_lengkap']) ?>
                                                 </span>
-                                                <div class="d-flex align-items-center gap-1 mt-0.5" style="font-size: 0.7rem;">
-                                                    <?php if (!empty($item['pegawai']['jabatan'])): ?>
-                                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-1.5 py-0 text-truncate" style="max-width: 130px;"><?= esc($item['pegawai']['jabatan']) ?></span>
-                                                    <?php endif; ?>
-                                                    <span class="text-muted num-tabular"><?= esc($item['pegawai']['nip'] ?: '-') ?></span>
+                                                <!-- Baris 2: NIP -->
+                                                <div class="text-muted num-tabular mt-0.5" style="font-size: 0.72rem; line-height: 1.2;">
+                                                    <i class="bi bi-person-vcard me-1 opacity-50"></i><?= esc($item['pegawai']['nip'] ?: '-') ?>
                                                 </div>
+                                                <!-- Baris 3: JABATAN -->
+                                                <?php if (!empty($item['pegawai']['jabatan'])): ?>
+                                                    <div class="mt-1">
+                                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-1.5 py-0.5 text-wrap text-start d-inline-block" style="font-size: 0.68rem; font-weight: 500; word-break: break-word; line-height: 1.25;">
+                                                            <?= esc($item['pegawai']['jabatan']) ?>
+                                                        </span>
+                                                    </div>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     </td>
-                                    <td style="max-width: 150px;">
-                                        <span class="small text-secondary text-truncate d-block" style="font-size: 0.78rem;">
-                                            <i class="bi bi-building me-1 text-primary opacity-75"></i><?= esc($item['pegawai']['unit'] ?: '-') ?>
-                                        </span>
+                                    <td class="py-2.5 align-middle" style="min-width: 140px; max-width: 200px;">
+                                        <div class="d-flex align-items-start gap-1.5 lh-sm">
+                                            <i class="bi bi-building text-primary opacity-75 mt-0.5 flex-shrink-0" style="font-size: 0.8rem;"></i>
+                                            <span class="text-secondary fw-medium" style="font-size: 0.78rem; word-break: break-word; line-height: 1.35;">
+                                                <?= esc($item['pegawai']['unit'] ?: '-') ?>
+                                            </span>
+                                        </div>
                                     </td>
 
                                     <?php if ($bulan_terpilih === 'all'): ?>
@@ -595,9 +653,16 @@ th.sortable.desc .sort-icon {
                                 $dinilai = $item['rhk_dinilai'];
                                 $jumlahTarget = $item['jumlah_komponen'] ?? $item['jumlah_rhk'];
                                 
-                                $statusCat = ($dinilai > 0) ? 'sudah' : 'belum';
-                                if ($dinilai > 0 && $rata < 75) $statusCat .= ' perhatian';
-                                if ($dinilai > 0 && $rata >= 90) $statusCat .= ' baik';
+                                $statusCat = '';
+                                if ($jumlahTarget == 0) {
+                                    $statusCat = 'tidak_mengerjakan belum';
+                                } elseif ($dinilai > 0) {
+                                    $statusCat = 'sudah';
+                                    if ($rata < 75) $statusCat .= ' perhatian';
+                                    if ($rata >= 90) $statusCat .= ' baik';
+                                } else {
+                                    $statusCat = 'belum';
+                                }
 
                                 if ($dinilai == 0) {
                                     $badgeClass = 'bg-secondary-subtle text-secondary border border-secondary-subtle';
@@ -667,23 +732,23 @@ th.sortable.desc .sort-icon {
     </div>
 </div>
 
-<!-- MODAL DETAIL KINERJA PEGAWAI (BENTO POPUP) -->
+<!-- MODAL DETAIL KINERJA PEGAWAI (BENTO POPUP - 8pt Grid System) -->
 <div class="modal fade" id="modalDetailPegawai" tabindex="-1" aria-labelledby="modalDetailPegawaiLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden" style="border-top: 4px solid #0d6efd !important;">
-            <div class="modal-header bg-light border-bottom py-2.5 px-3 px-md-4">
-                <div class="d-flex align-items-center gap-2.5">
-                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 40px; height: 40px;">
+            <div class="modal-header bg-light border-bottom" style="padding: 16px 24px;">
+                <div class="d-flex align-items-center" style="gap: 12px;">
+                    <div class="bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 40px; height: 40px; border-radius: 12px;">
                         <i class="bi bi-person-badge fs-5"></i>
                     </div>
                     <div>
-                        <h6 class="modal-title fw-bold text-dark mb-0" id="detailNamaPegawai">Rincian Kinerja Pegawai</h6>
-                        <small class="text-muted" id="detailSubPegawai" style="font-size: 0.75rem;">Periode: <?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?></small>
+                        <h6 class="modal-title fw-bold text-dark mb-0" id="detailNamaPegawai" style="font-size: 1rem; line-height: 1.3;">Rincian Kinerja Pegawai</h6>
+                        <small class="text-muted d-block" id="detailSubPegawai" style="font-size: 0.75rem; margin-top: 2px;">Periode: <?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?></small>
                     </div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-3 p-md-4">
+            <div class="modal-body" style="padding: 24px;">
                 <!-- Loader Inside Modal -->
                 <div id="modalDetailLoader" class="text-center py-5">
                     <div class="spinner-border text-primary mb-2" role="status">
@@ -694,42 +759,46 @@ th.sortable.desc .sort-icon {
 
                 <!-- Modal Detail Content -->
                 <div id="modalDetailContent" style="display: none;">
-                    <!-- EXECUTIVE PROFILE & SCORECARD -->
-                    <div class="card bg-light border-0 rounded-4 p-3 mb-3">
-                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-                            <div>
-                                <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.5px;">Profil Pegawai</div>
-                                <div class="fw-bold text-dark fs-6" id="modalInfoNama">-</div>
-                                <div class="text-secondary small mt-0.5" id="modalInfoNipUnit">-</div>
-                                <div class="text-muted small mt-1" id="modalInfoAtasan"><i class="bi bi-person-check text-success me-1"></i> Atasan Langsung: <strong id="modalTextAtasan" class="text-dark">-</strong></div>
-                            </div>
-                            <div class="d-flex align-items-center gap-3 bg-white p-2.5 px-3 rounded-4 border shadow-sm flex-shrink-0">
-                                <div class="text-end">
-                                    <div class="text-muted small fw-semibold" style="font-size: 0.68rem;">NILAI AKHIR</div>
-                                    <span class="badge" id="modalDetailBadge">-</span>
+                    <!-- EXECUTIVE PROFILE & SCORECARD (8pt Grid) -->
+                    <div class="card border rounded-4 shadow-sm" style="background-color: #f8fafc; border-color: #e2e8f0 !important; padding: 16px; margin-bottom: 24px;">
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center" style="gap: 16px;">
+                            <div class="flex-grow-1">
+                                <div class="text-muted fw-bold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.5px; margin-bottom: 4px;">Profil Pegawai</div>
+                                <div class="fw-bold text-dark" id="modalInfoNama" style="font-size: 1.1rem; line-height: 1.3; margin-bottom: 4px;">-</div>
+                                <div class="text-secondary" id="modalInfoNipUnit" style="font-size: 0.75rem; line-height: 1.4; margin-bottom: 8px;">-</div>
+                                <div class="text-muted d-flex align-items-center" id="modalInfoAtasan" style="font-size: 0.75rem; gap: 6px;">
+                                    <i class="bi bi-person-check text-success"></i> 
+                                    <span>Atasan Langsung: <strong id="modalTextAtasan" class="text-dark">-</strong></span>
                                 </div>
-                                <div class="fs-2 fw-bold text-primary num-tabular lh-1" id="modalDetailScore">0</div>
+                            </div>
+                            <div class="d-flex align-items-center bg-white rounded-3 border shadow-sm flex-shrink-0" style="padding: 12px 16px; gap: 16px;">
+                                <div class="text-end">
+                                    <div class="text-muted fw-semibold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.4px; margin-bottom: 4px;">NILAI AKHIR</div>
+                                    <span class="badge" id="modalDetailBadge" style="font-size: 0.68rem; padding: 4px 8px; border-radius: 8px;">-</span>
+                                </div>
+                                <div class="fw-bold text-primary num-tabular lh-1" id="modalDetailScore" style="font-size: 1.75rem; min-width: 60px; text-align: right;">0,00</div>
                             </div>
                         </div>
                     </div>
 
                     <!-- TABEL A: TARGET KINERJA RHK -->
-                    <div class="d-flex justify-content-between align-items-center mb-2 mt-3">
-                        <h6 class="fw-bold text-dark mb-0 small">
-                            <i class="bi bi-list-task text-primary me-1.5"></i>A. Rincian Target Kinerja (RHK)
+                    <div class="d-flex justify-content-between align-items-center" style="margin-bottom: 8px;">
+                        <h6 class="fw-bold text-dark mb-0 d-flex align-items-center" style="font-size: 0.82rem; gap: 8px;">
+                            <i class="bi bi-list-task text-primary fs-6"></i>
+                            <span>A. Rincian Target Kinerja (RHK)</span>
                         </h6>
-                        <span class="badge bg-light text-dark border small" id="modalBadgeCountRhk">0 RHK</span>
+                        <span class="badge bg-light text-dark border" id="modalBadgeCountRhk" style="font-size: 0.72rem; padding: 4px 8px; border-radius: 8px;">0 RHK</span>
                     </div>
-                    <div class="table-responsive bg-white border rounded-4 shadow-sm mb-3 overflow-hidden">
-                        <table class="table table-bordered table-hover align-middle mb-0 table-bento" style="font-size: 0.8rem;">
+                    <div class="table-responsive bg-white border rounded-3 shadow-sm overflow-hidden" style="margin-bottom: 24px;">
+                        <table class="table table-bordered table-hover align-middle mb-0 table-bento" style="font-size: 0.78rem;">
                             <thead>
-                                <tr>
-                                    <th style="width: 40px;" class="text-center">No</th>
-                                    <th>Indikator Kinerja / RHK</th>
-                                    <th style="width: 120px;" class="text-center">Target</th>
-                                    <th style="width: 120px;" class="text-center">Realisasi</th>
-                                    <th style="width: 125px;" class="text-center">Selisih</th>
-                                    <th style="width: 110px;" class="text-center">Nilai Capaian</th>
+                                <tr class="text-center align-middle" style="background-color: #f8fafc;">
+                                    <th style="width: 44px; padding: 10px 8px;" class="text-center">No</th>
+                                    <th style="padding: 10px 12px;" class="text-start">Indikator Kinerja / RHK</th>
+                                    <th style="width: 120px; padding: 10px 8px;" class="text-center">Target</th>
+                                    <th style="width: 120px; padding: 10px 8px;" class="text-center">Realisasi</th>
+                                    <th style="width: 130px; padding: 10px 8px;" class="text-center">Selisih</th>
+                                    <th style="width: 110px; padding: 10px 8px;" class="text-center">Nilai Capaian</th>
                                 </tr>
                             </thead>
                             <tbody id="modalTableRhkBody">
@@ -739,21 +808,22 @@ th.sortable.desc .sort-icon {
                     </div>
 
                     <!-- TABEL B: TUGAS TAMBAHAN -->
-                    <div class="d-flex justify-content-between align-items-center mb-2 mt-3">
-                        <h6 class="fw-bold text-dark mb-0 small">
-                            <i class="bi bi-journal-plus text-success me-1.5"></i>B. Tugas Tambahan
+                    <div class="d-flex justify-content-between align-items-center" style="margin-bottom: 8px;">
+                        <h6 class="fw-bold text-dark mb-0 d-flex align-items-center" style="font-size: 0.82rem; gap: 8px;">
+                            <i class="bi bi-journal-plus text-success fs-6"></i>
+                            <span>B. Tugas Tambahan</span>
                         </h6>
-                        <span class="badge bg-light text-dark border small" id="modalBadgeScoreTambahan">Nilai: -</span>
+                        <span class="badge bg-light text-dark border" id="modalBadgeScoreTambahan" style="font-size: 0.72rem; padding: 4px 8px; border-radius: 8px;">Nilai: -</span>
                     </div>
-                    <div class="table-responsive bg-white border rounded-4 shadow-sm mb-2 overflow-hidden">
-                        <table class="table table-bordered table-hover align-middle mb-0 table-bento" style="font-size: 0.8rem;">
+                    <div class="table-responsive bg-white border rounded-3 shadow-sm overflow-hidden" style="margin-bottom: 8px;">
+                        <table class="table table-bordered table-hover align-middle mb-0 table-bento" style="font-size: 0.78rem;">
                             <thead>
-                                <tr>
-                                    <th style="width: 40px;" class="text-center">No</th>
-                                    <th>Deskripsi Kegiatan</th>
-                                    <th style="width: 110px;" class="text-center">Tanggal</th>
-                                    <th style="width: 120px;" class="text-center">Capaian</th>
-                                    <th style="width: 90px;" class="text-center">Bukti</th>
+                                <tr class="text-center align-middle" style="background-color: #f8fafc;">
+                                    <th style="width: 44px; padding: 10px 8px;" class="text-center">No</th>
+                                    <th style="padding: 10px 12px;" class="text-start">Deskripsi Kegiatan</th>
+                                    <th style="width: 110px; padding: 10px 8px;" class="text-center">Tanggal</th>
+                                    <th style="width: 120px; padding: 10px 8px;" class="text-center">Capaian</th>
+                                    <th style="width: 90px; padding: 10px 8px;" class="text-center">Bukti</th>
                                 </tr>
                             </thead>
                             <tbody id="modalTableTambahanBody">
@@ -771,9 +841,12 @@ th.sortable.desc .sort-icon {
                     <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="retryFetchDetail()">Coba Lagi</button>
                 </div>
             </div>
-            <div class="modal-footer bg-light py-2 px-3 border-top">
-                <button type="button" class="btn btn-sm btn-secondary rounded-pill px-4 fw-semibold" data-bs-dismiss="modal">Tutup</button>
+            <div class="modal-footer bg-light border-top" style="padding: 12px 24px;">
+                <button type="button" class="btn btn-sm btn-secondary rounded-pill px-4 fw-semibold" style="height: 32px; font-size: 0.78rem;" data-bs-dismiss="modal">Tutup</button>
             </div>
+        </div>
+    </div>
+</div>
         </div>
     </div>
 </div>
@@ -859,8 +932,11 @@ function loadDetailPegawai(userId, nama) {
 
             // Populate Pegawai Info
             document.getElementById('modalInfoNama').textContent = data.pegawai.nama;
-            document.getElementById('modalInfoNipUnit').textContent = `NIP: ${data.pegawai.nip} | Unit: ${data.pegawai.unit} | Jabatan: ${data.pegawai.jabatan}`;
-            document.getElementById('modalTextAtasan').textContent = data.pegawai.atasan_nama;
+            const nipText = data.pegawai.nip ? `NIP: ${data.pegawai.nip}` : 'NIP: -';
+            const unitText = data.pegawai.unit ? `Unit: ${data.pegawai.unit}` : 'Unit: -';
+            const jabText = data.pegawai.jabatan ? `Jabatan: ${data.pegawai.jabatan}` : 'Jabatan: -';
+            document.getElementById('modalInfoNipUnit').textContent = `${nipText} | ${unitText} | ${jabText}`;
+            document.getElementById('modalTextAtasan').textContent = data.pegawai.atasan_nama || '-';
 
             // Scorecard with live ticker
             const scoreVal = parseFloat(data.rata_rata) || 0;
@@ -868,7 +944,7 @@ function loadDetailPegawai(userId, nama) {
             animateValue(scoreEl, 0, scoreVal, 600, 2);
 
             const badgeEl = document.getElementById('modalDetailBadge');
-            badgeEl.className = `badge ${data.badge_class} rounded-pill px-2.5 py-1`;
+            badgeEl.className = `badge ${data.badge_class} rounded-pill px-2 py-0.5`;
             badgeEl.textContent = data.predikat;
 
             // Tabel A: RHK
@@ -880,28 +956,28 @@ function loadDetailPegawai(userId, nama) {
                     const selisih = Math.round((Number(rhk.selisih) || 0) * 10000) / 10000;
                     let selisihBadge = '';
                     if (selisih > 0) {
-                        selisihBadge = `<span class="badge bg-success-subtle text-success border border-success-subtle px-1.5 py-0.5 num-tabular">+${formatAngkaIndo(selisih)} ${rhk.satuan}</span>`;
+                        selisihBadge = `<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5 num-tabular" style="font-size: 0.72rem; border-radius: 6px;">+${formatAngkaIndo(selisih)} ${rhk.satuan}</span>`;
                     } else if (selisih < 0) {
-                        selisihBadge = `<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-1.5 py-0.5 num-tabular">${formatAngkaIndo(selisih)} ${rhk.satuan}</span>`;
+                        selisihBadge = `<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-0.5 num-tabular" style="font-size: 0.72rem; border-radius: 6px;">${formatAngkaIndo(selisih)} ${rhk.satuan}</span>`;
                     } else {
-                        selisihBadge = `<span class="badge bg-light text-dark border px-1.5 py-0.5 num-tabular">0 ${rhk.satuan}</span>`;
+                        selisihBadge = `<span class="badge bg-light text-dark border px-2 py-0.5 num-tabular" style="font-size: 0.72rem; border-radius: 6px;">0 ${rhk.satuan}</span>`;
                     }
 
                     const nilaiText = rhk.nilai_capaian !== null ? `<span class="fw-bold text-primary num-tabular">${formatAngkaIndo(rhk.nilai_capaian)}%</span>` : `<span class="text-muted">-</span>`;
 
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td class="text-center fw-bold text-muted">${i + 1}</td>
-                        <td class="fw-semibold text-dark">${rhk.indikator}</td>
-                        <td class="text-center fw-bold text-dark num-tabular">${formatAngkaIndo(rhk.target)} ${rhk.satuan}</td>
-                        <td class="text-center fw-bold text-primary num-tabular">${formatAngkaIndo(rhk.realisasi)} ${rhk.satuan}</td>
-                        <td class="text-center num-tabular">${selisihBadge}</td>
-                        <td class="text-center align-middle">${nilaiText}</td>
+                        <td class="text-center fw-bold text-muted" style="padding: 10px 8px;">${i + 1}</td>
+                        <td class="fw-semibold text-dark lh-sm" style="padding: 10px 12px; font-size: 0.78rem;">${rhk.indikator}</td>
+                        <td class="text-center fw-bold text-dark num-tabular" style="padding: 10px 8px; font-size: 0.78rem;">${formatAngkaIndo(rhk.target)} ${rhk.satuan}</td>
+                        <td class="text-center fw-bold text-primary num-tabular" style="padding: 10px 8px; font-size: 0.78rem;">${formatAngkaIndo(rhk.realisasi)} ${rhk.satuan}</td>
+                        <td class="text-center num-tabular" style="padding: 10px 8px;">${selisihBadge}</td>
+                        <td class="text-center align-middle" style="padding: 10px 8px;">${nilaiText}</td>
                     `;
                     rhkBody.appendChild(tr);
                 });
             } else {
-                rhkBody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-3">Tidak ada data target RHK pada periode ini.</td></tr>`;
+                rhkBody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4 small">Tidak ada data target RHK pada periode ini.</td></tr>`;
             }
 
             // Tabel B: Tugas Tambahan
@@ -921,21 +997,21 @@ function loadDetailPegawai(userId, nama) {
 
             if (data.tugas_tambahan && data.tugas_tambahan.length > 0) {
                 data.tugas_tambahan.forEach((tmb, idx) => {
-                    const buktiBtn = tmb.link_bukti ? `<a href="${tmb.link_bukti}" target="_blank" class="btn btn-light btn-sm text-primary rounded-pill border px-2 py-0.5 btn-tactile" style="font-size: 0.72rem;"><i class="bi bi-box-arrow-up-right me-1"></i>Bukti</a>` : `<span class="text-muted">-</span>`;
+                    const buktiBtn = tmb.link_bukti ? `<a href="${tmb.link_bukti}" target="_blank" class="btn btn-light btn-sm text-primary rounded-pill border px-2.5 py-0.5 btn-tactile" style="font-size: 0.72rem; height: 26px; display: inline-flex; align-items: center;"><i class="bi bi-box-arrow-up-right me-1"></i>Bukti</a>` : `<span class="text-muted">-</span>`;
                     const capaianText = tmb.capaian ? `${formatAngkaIndo(tmb.capaian)} ${tmb.satuan}` : '-';
 
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td class="text-center fw-bold text-muted">${idx + 1}</td>
-                        <td>${tmb.deskripsi.replace(/\n/g, '<br>')}</td>
-                        <td class="text-center text-muted num-tabular">${tmb.tanggal}</td>
-                        <td class="text-center fw-semibold text-dark num-tabular">${capaianText}</td>
-                        <td class="text-center">${buktiBtn}</td>
+                        <td class="text-center fw-bold text-muted" style="padding: 10px 8px;">${idx + 1}</td>
+                        <td class="text-dark lh-sm" style="padding: 10px 12px; font-size: 0.78rem;">${tmb.deskripsi.replace(/\n/g, '<br>')}</td>
+                        <td class="text-center text-muted num-tabular" style="padding: 10px 8px; font-size: 0.78rem;">${tmb.tanggal}</td>
+                        <td class="text-center fw-semibold text-dark num-tabular" style="padding: 10px 8px; font-size: 0.78rem;">${capaianText}</td>
+                        <td class="text-center" style="padding: 10px 8px;">${buktiBtn}</td>
                     `;
                     tambBody.appendChild(tr);
                 });
             } else {
-                tambBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">Tidak ada tugas tambahan pada periode ini.</td></tr>`;
+                tambBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4 small">Tidak ada tugas tambahan pada periode ini.</td></tr>`;
             }
 
             document.getElementById('modalDetailLoader').style.display = 'none';
@@ -1009,6 +1085,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 matchesCategory = statusCat.includes('sudah');
             } else if (currentFilterCategory === 'belum') {
                 matchesCategory = statusCat.includes('belum');
+            } else if (currentFilterCategory === 'tidak_mengerjakan') {
+                matchesCategory = statusCat.includes('tidak_mengerjakan');
             } else if (currentFilterCategory === 'perhatian') {
                 matchesCategory = statusCat.includes('perhatian');
             } else if (currentFilterCategory === 'baik') {
@@ -1040,6 +1118,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 matchesCategory = statusCat.includes('sudah');
             } else if (currentFilterCategory === 'belum') {
                 matchesCategory = statusCat.includes('belum');
+            } else if (currentFilterCategory === 'tidak_mengerjakan') {
+                matchesCategory = statusCat.includes('tidak_mengerjakan');
             } else if (currentFilterCategory === 'perhatian') {
                 matchesCategory = statusCat.includes('perhatian');
             } else if (currentFilterCategory === 'baik') {

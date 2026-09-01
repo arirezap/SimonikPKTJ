@@ -361,17 +361,19 @@
                         </div>
                     <?php endif; ?>
 
-                    <!-- TABLE TOOLBAR HEADER -->
-                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="badge bg-light text-dark border px-2.5 py-1.5 small fw-semibold">
-                                <i class="bi bi-list-check text-primary me-1"></i> Rincian Target <?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?>
+                    <!-- TABLE TOOLBAR HEADER (8pt Grid) -->
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap" style="gap: 8px;">
+                        <div class="d-flex align-items-center" style="gap: 8px;">
+                            <span class="badge bg-light text-dark border fw-semibold d-inline-flex align-items-center" style="padding: 6px 12px; font-size: 0.78rem; border-radius: 8px; gap: 6px;">
+                                <i class="bi bi-list-check text-primary"></i>
+                                <span>Rincian Target <?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?></span>
                             </span>
                         </div>
                         <?php if (!$is_locked && !$allApproved): ?>
                         <div>
-                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 fw-semibold shadow-none d-inline-flex align-items-center gap-1.5" data-bs-toggle="modal" data-bs-target="#modalSalinTarget" title="Salin target dan sasaran kinerja dari periode bulan sebelumnya atau periode lainnya">
-                                <i class="bi bi-copy text-primary"></i> Salin dari Bulan Lain
+                            <button type="button" class="btn btn-outline-primary btn-tactile rounded-pill fw-semibold shadow-none d-inline-flex align-items-center" style="height: 32px; padding: 0 16px; font-size: 0.78rem; gap: 8px; border-radius: 16px;" data-bs-toggle="modal" data-bs-target="#modalSalinTarget" title="Salin target dan sasaran kinerja dari periode bulan sebelumnya atau periode lainnya">
+                                <i class="bi bi-copy text-primary"></i>
+                                <span>Salin dari Bulan Lain</span>
                             </button>
                         </div>
                         <?php endif; ?>
@@ -657,82 +659,91 @@
     <?php endif; ?>
 </div>
 
-<!-- MODAL SALIN TARGET DARI PERIODE LAIN -->
+<!-- MODAL SALIN TARGET DARI PERIODE LAIN (8pt Grid System) -->
 <?php
     $defaultBulanSumber = ($bulan_terpilih > 1) ? ($bulan_terpilih - 1) : 12;
     $defaultTahunSumber = ($bulan_terpilih > 1) ? $tahun_terpilih : ($tahun_terpilih - 1);
 ?>
 <div class="modal fade" id="modalSalinTarget" tabindex="-1" aria-labelledby="modalSalinTargetLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <div class="modal-header bg-light border-bottom py-3 px-4">
-                <div class="d-flex align-items-center gap-2">
-                    <div class="rounded-circle bg-primary-subtle text-primary p-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
-                        <i class="bi bi-copy fs-6"></i>
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden" style="border-top: 4px solid #0d6efd !important;">
+            <div class="modal-header bg-light border-bottom" style="padding: 16px 24px;">
+                <div class="d-flex align-items-center" style="gap: 12px;">
+                    <div class="bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 40px; height: 40px; border-radius: 12px;">
+                        <i class="bi bi-copy fs-5"></i>
                     </div>
                     <div>
-                        <h6 class="modal-title fw-bold text-dark mb-0" id="modalSalinTargetLabel">Salin Target Kinerja</h6>
-                        <p class="text-muted small mb-0" style="font-size: 0.75rem;">Duplikasi target & sasaran dari periode pilihan Anda</p>
+                        <h6 class="modal-title fw-bold text-dark mb-0" id="modalSalinTargetLabel" style="font-size: 1rem; line-height: 1.3;">Salin Target Kinerja</h6>
+                        <small class="text-muted d-block" style="font-size: 0.75rem; margin-top: 2px;">Duplikasi target & sasaran dari periode pilihan Anda</small>
                     </div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-4">
-                <div class="alert alert-info py-2.5 px-3 small rounded-3 mb-3 d-flex align-items-start gap-2 border-0 bg-info-subtle text-info-emphasis">
-                    <i class="bi bi-info-circle-fill text-info mt-0.5 flex-shrink-0"></i>
+            <div class="modal-body" style="padding: 24px;">
+                <!-- Alert Info -->
+                <div class="alert alert-info border-0 bg-info-subtle text-info-emphasis d-flex align-items-start" style="padding: 12px 16px; border-radius: 12px; margin-bottom: 20px; gap: 12px; font-size: 0.78rem; line-height: 1.45;">
+                    <i class="bi bi-info-circle-fill text-info mt-0.5 flex-shrink-0 fs-6"></i>
                     <div>
                         Target yang disalin akan dimasukkan sebagai <strong>Draf Baru</strong> ke bulan <strong><?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?></strong> sehingga dapat Anda periksa dan sesuaikan sebelum disimpan atau diajukan.
                     </div>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label fw-bold text-dark small mb-1.5" style="font-size: 0.75rem; letter-spacing: 0.3px;">
-                        <i class="bi bi-calendar-range text-primary me-1"></i> PILIH PERIODE SUMBER
+                <!-- Section 1: Periode Sumber -->
+                <div style="margin-bottom: 20px;">
+                    <label class="form-label fw-bold text-dark text-uppercase d-flex align-items-center" style="font-size: 0.72rem; letter-spacing: 0.4px; margin-bottom: 8px; gap: 6px;">
+                        <i class="bi bi-calendar-range text-primary"></i>
+                        <span>PILIH PERIODE SUMBER</span>
                     </label>
                     <div class="row g-2">
                         <div class="col-7">
-                            <label for="salinBulanSumber" class="form-label text-muted small mb-1" style="font-size: 0.7rem;">Bulan Sumber</label>
-                            <select id="salinBulanSumber" class="form-select form-select-sm shadow-sm rounded-3">
+                            <label for="salinBulanSumber" class="form-label text-muted fw-semibold mb-1" style="font-size: 0.7rem;">Bulan Sumber</label>
+                            <select id="salinBulanSumber" class="form-select form-select-sm shadow-sm" style="height: 36px; padding: 6px 12px; font-size: 0.8rem; border-radius: 8px;">
                                 <?php foreach($bulan_indo as $index => $nama): ?>
                                     <option value="<?= $index + 1 ?>" <?= ($defaultBulanSumber == $index + 1) ? 'selected' : '' ?>><?= $nama ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="col-5">
-                            <label for="salinTahunSumber" class="form-label text-muted small mb-1" style="font-size: 0.7rem;">Tahun Sumber</label>
-                            <input type="number" id="salinTahunSumber" class="form-control form-control-sm shadow-sm rounded-3 num-tabular" value="<?= esc($defaultTahunSumber) ?>" min="2020" max="2099">
+                            <label for="salinTahunSumber" class="form-label text-muted fw-semibold mb-1" style="font-size: 0.7rem;">Tahun Sumber</label>
+                            <input type="number" id="salinTahunSumber" class="form-control form-control-sm shadow-sm num-tabular" style="height: 36px; padding: 6px 12px; font-size: 0.8rem; border-radius: 8px;" value="<?= esc($defaultTahunSumber) ?>" min="2020" max="2099">
                         </div>
                     </div>
                 </div>
 
-                <div class="mb-2">
-                    <label class="form-label fw-bold text-dark small mb-1.5" style="font-size: 0.75rem; letter-spacing: 0.3px;">
-                        <i class="bi bi-layers text-primary me-1"></i> METODE PENYALINAN
+                <!-- Section 2: Metode Penyalinan -->
+                <div style="margin-bottom: 8px;">
+                    <label class="form-label fw-bold text-dark text-uppercase d-flex align-items-center" style="font-size: 0.72rem; letter-spacing: 0.4px; margin-bottom: 8px; gap: 6px;">
+                        <i class="bi bi-layers text-primary"></i>
+                        <span>METODE PENYALINAN</span>
                     </label>
-                    <div class="d-flex flex-column gap-2">
-                        <label class="modal-radio-card d-flex align-items-start gap-3 p-3 rounded-3 bg-white position-relative active" for="modeSalinReplace">
+                    <div class="d-flex flex-column" style="gap: 8px;">
+                        <label class="modal-radio-card d-flex align-items-start bg-white position-relative active" for="modeSalinReplace" style="padding: 12px 16px; border-radius: 12px; gap: 12px;">
                             <input class="form-check-input mt-1 flex-shrink-0" type="radio" name="modeSalinTarget" id="modeSalinReplace" value="replace" checked>
                             <div>
-                                <strong class="text-dark d-block">Gantikan Baris Tabel Saat Ini</strong>
-                                <span class="text-muted small" style="font-size: 0.75rem;">Mengganti seluruh baris target yang ada di tabel dengan target dari periode sumber.</span>
+                                <strong class="text-dark d-block" style="font-size: 0.82rem; line-height: 1.3; margin-bottom: 2px;">Gantikan Baris Tabel Saat Ini</strong>
+                                <span class="text-muted d-block" style="font-size: 0.75rem; line-height: 1.4;">Mengganti seluruh baris target yang ada di tabel dengan target dari periode sumber.</span>
                             </div>
                         </label>
-                        <label class="modal-radio-card d-flex align-items-start gap-3 p-3 rounded-3 bg-white position-relative" for="modeSalinAppend">
+                        <label class="modal-radio-card d-flex align-items-start bg-white position-relative" for="modeSalinAppend" style="padding: 12px 16px; border-radius: 12px; gap: 12px;">
                             <input class="form-check-input mt-1 flex-shrink-0" type="radio" name="modeSalinTarget" id="modeSalinAppend" value="append">
                             <div>
-                                <strong class="text-dark d-block">Tambahkan ke Bawah Baris Saat Ini</strong>
-                                <span class="text-muted small" style="font-size: 0.75rem;">Menyisipkan target dari periode sumber di bawah target yang sudah ada tanpa menghapusnya.</span>
+                                <strong class="text-dark d-block" style="font-size: 0.82rem; line-height: 1.3; margin-bottom: 2px;">Tambahkan ke Bawah Baris Saat Ini</strong>
+                                <span class="text-muted d-block" style="font-size: 0.75rem; line-height: 1.4;">Menyisipkan target dari periode sumber di bawah target yang sudah ada tanpa menghapusnya.</span>
                             </div>
                         </label>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer bg-light border-top py-2.5 px-4 justify-content-between">
-                <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-semibold" data-bs-dismiss="modal">Batal</button>
-                <button type="button" id="btnEksekusiSalinTarget" class="btn btn-primary btn-sm btn-tactile rounded-pill px-4 fw-bold shadow-sm">
-                    <i class="bi bi-arrow-down-left-square me-1.5"></i> Ambil & Salin Target
+            <div class="modal-footer bg-light border-top d-flex justify-content-between align-items-center" style="padding: 12px 24px;">
+                <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill fw-semibold" style="height: 32px; padding: 0 16px; font-size: 0.78rem; border-radius: 16px;" data-bs-dismiss="modal">Batal</button>
+                <button type="button" id="btnEksekusiSalinTarget" class="btn btn-primary btn-sm btn-tactile rounded-pill fw-bold shadow-sm d-inline-flex align-items-center" style="height: 32px; padding: 0 20px; font-size: 0.78rem; border-radius: 16px; gap: 8px;">
+                    <i class="bi bi-arrow-down-left-square"></i>
+                    <span>Ambil & Salin Target</span>
                 </button>
             </div>
+        </div>
+    </div>
+</div>
         </div>
     </div>
 </div>

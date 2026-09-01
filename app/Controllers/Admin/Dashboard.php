@@ -43,8 +43,9 @@ class Dashboard extends BaseController
     {
         $ajax_type = $this->request->getGet('ajax_type');
         $tahun_ecc = $this->request->getGet('tahun_ecc') ?? date('Y');
-        $tahun_kinerja = $this->request->getGet('tahun_kinerja') ?? date('Y');
-        $bulan_kinerja = $this->request->getGet('bulan_kinerja') ?? 'all';
+
+        $tahun_kinerja = $this->request->getGet('tahun_kinerja') ?? (string)date('Y');
+        $bulan_kinerja = $this->request->getGet('bulan_kinerja') ?? (string)date('n');
 
         $user_id = session()->get('id') ?? session()->get('user_id');
         $role = session()->get('role');
@@ -347,44 +348,60 @@ class Dashboard extends BaseController
             ];
         }
 
-        uasort($unitStats, function($a, $b) {
-            $avgA = $a['count'] > 0 ? $a['total_rata'] / $a['count'] : 0;
-            $avgB = $b['count'] > 0 ? $b['total_rata'] / $b['count'] : 0;
-            return $avgB <=> $avgA;
-        });
-
-        // Agregasi Top 5 Unit & Rata-Rata Seluruh Pegawai Organisasi
-        $rataRataValue = 0;
         $unitRanking = [];
+        $totalSumPegawai = 0;
+        $totalCountPegawai = 0;
+
         if (!empty($unitStats)) {
-            $totalAktif = 0;
-            $countAktif = 0;
-            foreach ($unitStats as $unitName => $unitData) {
+            foreach ($unitStats as $unitName => &$unitData) {
+                $unitTotal = 0;
                 $unitTotalAktif = 0;
                 $unitCountAktif = 0;
+                $totalAnggota = $unitData['count'];
+
                 if (isset($unitData['anggota'])) {
                     foreach ($unitData['anggota'] as $anggota) {
+                        $unitTotal += $anggota['rata_rata'];
+                        $totalSumPegawai += $anggota['rata_rata'];
+                        $totalCountPegawai++;
                         if ($anggota['rata_rata'] > 0) {
                             $unitTotalAktif += $anggota['rata_rata'];
                             $unitCountAktif++;
-                            $totalAktif += $anggota['rata_rata'];
-                            $countAktif++;
                         }
                     }
                 }
-                $avg = $unitCountAktif > 0 ? round($unitTotalAktif / $unitCountAktif, 2) : 0;
-                $unitRanking[] = ['nama' => $unitName, 'rata' => $avg];
+
+                // Rata-rata unit dihitung terhadap SELURUH pegawai di unit tersebut (termasuk nilai 0.0/tidak mengerjakan)
+                $avg = $totalAnggota > 0 ? round($unitTotal / $totalAnggota, 2) : 0;
+                $unitData['rata_rata_unit'] = $avg;
+                $unitRanking[] = [
+                    'nama' => $unitName,
+                    'rata' => $avg,
+                    'total_aktif' => $unitCountAktif,
+                    'total_anggota' => $totalAnggota
+                ];
             }
-            $rataRataValue = $countAktif > 0 ? round($totalAktif / $countAktif, 2) : 0;
+            unset($unitData);
+
+            // Rata-rata organisasi agregat seluruh pegawai
+            $rataRataValue = $totalCountPegawai > 0 ? round($totalSumPegawai / $totalCountPegawai, 2) : 0;
+
             usort($unitRanking, function($a, $b) {
-                return $b['rata'] <=> $a['rata'];
+                if ($b['rata'] != $a['rata']) {
+                    return $b['rata'] <=> $a['rata'];
+                }
+                if ($b['total_aktif'] != $a['total_aktif']) {
+                    return $b['total_aktif'] <=> $a['total_aktif'];
+                }
+                return strcasecmp($a['nama'], $b['nama']);
             });
         }
+
         $top5Unit = array_slice($unitRanking, 0, 5);
 
-        foreach ($unitStats as $unitName => $stat) {
-            $chartPegawaiUnitLabels[] = $unitName;
-            $chartPegawaiUnitData[] = $stat['count'] > 0 ? round($stat['total_rata'] / $stat['count'], 2) : 0;
+        foreach ($unitRanking as $ur) {
+            $chartPegawaiUnitLabels[] = $ur['nama'];
+            $chartPegawaiUnitData[] = $ur['rata'];
         }
 
             if ($this->request->isAJAX() && $ajax_type === 'kinerja') {

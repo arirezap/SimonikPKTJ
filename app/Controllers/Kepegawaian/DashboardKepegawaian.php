@@ -30,8 +30,8 @@ class DashboardKepegawaian extends BaseController
         $laporanModel = new LaporanHarian();
         $logTambahanModel = new LogTugasTambahan();
 
-        $bulanTerpilih = $this->request->getGet('bulan') ?? date('n');
-        $tahunTerpilih = $this->request->getGet('tahun') ?? date('Y');
+        $bulanTerpilih = $this->request->getGet('bulan') ?? (string)date('n');
+        $tahunTerpilih = $this->request->getGet('tahun') ?? (string)date('Y');
         $unitFilter    = $this->request->getGet('unit') ?? '';
         $roleFilter    = $this->request->getGet('role') ?? '';
 
@@ -507,8 +507,8 @@ class DashboardKepegawaian extends BaseController
 
         $userModel = new User();
 
-        $bulanTerpilih = $this->request->getGet('bulan') ?? date('n');
-        $tahunTerpilih = $this->request->getGet('tahun') ?? date('Y');
+        $bulanTerpilih = $this->request->getGet('bulan') ?? (string)date('n');
+        $tahunTerpilih = $this->request->getGet('tahun') ?? (string)date('Y');
         $unitFilter    = $this->request->getGet('unit') ?? '';
         $roleFilter    = $this->request->getGet('role') ?? '';
 

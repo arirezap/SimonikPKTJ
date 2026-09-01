@@ -6,6 +6,23 @@
 
 <?= $this->section('content') ?>
 
+<!-- 0. TOP FILTER TOOLBAR (ALIGNED LEFT & PROPER PADDING) -->
+<div class="d-flex justify-content-start align-items-center flex-wrap gap-2 mb-4 bento-stagger bento-stagger-1">
+    <form id="formKinerja" class="m-0 d-flex flex-wrap gap-2 align-items-center">
+        <select class="form-select form-select-sm filter-select fw-semibold text-dark bg-white shadow-xs rounded-pill border py-1.5 ps-3 pe-4" id="bulan_kinerja" name="bulan_kinerja" aria-label="Pilih Bulan Kinerja" style="width: auto; min-width: 140px; cursor:pointer;" onchange="updateKinerjaData()">
+            <option value="all" <?= ($bulan_kinerja === 'all') ? 'selected' : '' ?>>Semua Bulan (Setahun)</option>
+            <?php for ($i = 1; $i <= 12; $i++): ?>
+                <option value="<?= $i; ?>" <?= ((string)$bulan_kinerja === (string)$i) ? 'selected' : ''; ?>><?= bulan_indo($i) ?></option>
+            <?php endfor; ?>
+        </select>
+        <select name="tahun_kinerja" id="tahun_kinerja" class="form-select form-select-sm filter-select fw-semibold text-dark bg-white shadow-xs rounded-pill border py-1.5 ps-3 pe-4" aria-label="Pilih Tahun Kinerja" style="width: auto; min-width: 130px; cursor:pointer;" onchange="updateKinerjaData()">
+            <?php foreach ($daftar_tahun as $tahun_item): ?>
+                <option value="<?= esc($tahun_item) ?>" <?= ($tahun_kinerja == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
+            <?php endforeach; ?>
+        </select>
+    </form>
+</div>
+
 <!-- 1. ECC DASHBOARD (TOP SECTION AS REQUESTED) -->
 <div class="row g-4 mb-5 bento-stagger bento-stagger-1">
     <div class="col-lg-8 d-flex flex-column">
@@ -101,21 +118,8 @@
     <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
         <div>
             <h4 class="mb-0 fw-bold text-dark">Analitik Kinerja Unit</h4>
-            <p class="text-muted mb-0 small">Ringkasan performa seluruh unit berdasarkan laporan harian yang dinilai</p>
+            <p class="text-muted mb-0 small">Ringkasan performa seluruh unit berdasarkan laporan harian yang dinilai pada periode terpilih</p>
         </div>
-        <form id="formKinerja" class="m-0 d-flex gap-2">
-            <select class="form-select filter-select fw-bold text-primary-bento" id="bulan_kinerja" name="bulan_kinerja" aria-label="Pilih Bulan Kinerja" style="width: auto; cursor:pointer;" onchange="updateKinerjaData()">
-                <option value="all" <?= ($bulan_kinerja === 'all' || !$bulan_kinerja) ? 'selected' : '' ?>>Semua Bulan</option>
-                <?php for ($i = 1; $i <= 12; $i++): ?>
-                    <option value="<?= $i; ?>" <?= ($bulan_kinerja == $i) ? 'selected' : ''; ?>><?= bulan_indo($i) ?></option>
-                <?php endfor; ?>
-            </select>
-            <select name="tahun_kinerja" id="tahun_kinerja" class="form-select filter-select fw-bold text-primary-bento" aria-label="Pilih Tahun Kinerja" style="width: auto; cursor:pointer;" onchange="updateKinerjaData()">
-                <?php foreach ($daftar_tahun as $tahun_item): ?>
-                    <option value="<?= esc($tahun_item) ?>" <?= ($tahun_kinerja == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </form>
     </div>
 
     <!-- Row Sebaran & Tren Kinerja -->
@@ -284,7 +288,7 @@
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content rounded-4 border-0 shadow-lg">
             <div class="modal-header border-bottom-0 pb-0">
-                <h5 class="modal-title fw-bold" id="unitDetailModalLabel">Detail Pegawai: <span id="modalUnitName" class="text-primary-bento"></span></h5>
+                <h5 class="modal-title fw-bold d-flex align-items-center flex-wrap gap-2" id="unitDetailModalLabel">Detail Pegawai: <span id="modalUnitName" class="text-primary-bento"></span> <span id="modalPeriodBadge" class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill fs-7 fw-semibold"></span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body pt-3 pb-4">
@@ -378,6 +382,15 @@ async function updateEccData() {
             }
         }
     } catch(err) { console.error("Gagal mengambil data ECC:", err); }
+}
+
+function updateDashboardYear(val) {
+    const tahunEcc = document.getElementById('tahun_ecc');
+    if (tahunEcc) {
+        tahunEcc.value = val;
+    }
+    updateEccData();
+    updateKinerjaData();
 }
 
 async function updateKinerjaData() {
@@ -699,6 +712,13 @@ document.addEventListener('DOMContentLoaded', function () {
                         const details = window.adminUnitStatsCache[selectedUnit]?.anggota;
                         
                         document.getElementById('modalUnitName').innerText = selectedUnit;
+                        const bulanSelect = document.getElementById('bulan_kinerja');
+                        const tahunSelect = document.getElementById('tahun_kinerja');
+                        const periodText = (bulanSelect && tahunSelect && bulanSelect.selectedIndex >= 0) 
+                            ? `${bulanSelect.options[bulanSelect.selectedIndex].text} ${tahunSelect.value}`
+                            : '';
+                        const periodBadgeEl = document.getElementById('modalPeriodBadge');
+                        if (periodBadgeEl) periodBadgeEl.innerText = periodText;
                         
                         let tbody = '';
                         if(details && details.length > 0) {

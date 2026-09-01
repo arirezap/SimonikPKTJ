@@ -20,7 +20,8 @@ class Dashboard extends BaseController
 
         $ajax_type = $this->request->getGet('ajax_type');
         $tahun_ecc = $this->request->getGet('tahun_ecc') ?? date('Y');
-        $tahun_kinerja = $this->request->getGet('tahun_kinerja') ?? date('Y');
+        $tahun_kinerja = $this->request->getGet('tahun_kinerja') ?? (string)date('Y');
+        $bulanTerpilih = $this->request->getGet('bulan_kinerja') ?? (string)date('n');
 
         // --- 1. PROSES DATA ECC ---
         $eccData = null;
@@ -50,7 +51,6 @@ class Dashboard extends BaseController
 
             $role = session()->get('role');
             $isSuper = hasAnyRole(['admin', 'direktur', 'wadir', 'manajemen']);
-            $bulanTerpilih = date('n');
             $daftarStaf = $userModel->getAllStaf($user_id, $role);
             $isAtasan = !empty($daftarStaf);
             
@@ -103,15 +103,46 @@ class Dashboard extends BaseController
                     ];
                 }
                 
-                uasort($unitStats, function($a, $b) {
-                    $avgA = $a['count'] > 0 ? $a['total_rata'] / $a['count'] : 0;
-                    $avgB = $b['count'] > 0 ? $b['total_rata'] / $b['count'] : 0;
-                    return $avgB <=> $avgA;
+                $unitRanking = [];
+                foreach ($unitStats as $unitName => &$unitData) {
+                    $unitTotal = 0;
+                    $unitTotalAktif = 0;
+                    $unitCountAktif = 0;
+                    $totalAnggota = $unitData['count'];
+
+                    if (isset($unitData['anggota'])) {
+                        foreach ($unitData['anggota'] as $anggota) {
+                            $unitTotal += $anggota['rata_rata'];
+                            if ($anggota['rata_rata'] > 0) {
+                                $unitTotalAktif += $anggota['rata_rata'];
+                                $unitCountAktif++;
+                            }
+                        }
+                    }
+                    $avg = $totalAnggota > 0 ? round($unitTotal / $totalAnggota, 2) : 0;
+                    $unitData['rata_rata_unit'] = $avg;
+                    $unitRanking[] = [
+                        'nama' => $unitName,
+                        'rata' => $avg,
+                        'total_aktif' => $unitCountAktif,
+                        'total_anggota' => $totalAnggota
+                    ];
+                }
+                unset($unitData);
+
+                usort($unitRanking, function($a, $b) {
+                    if ($b['rata'] != $a['rata']) {
+                        return $b['rata'] <=> $a['rata'];
+                    }
+                    if ($b['total_aktif'] != $a['total_aktif']) {
+                        return $b['total_aktif'] <=> $a['total_aktif'];
+                    }
+                    return strcasecmp($a['nama'], $b['nama']);
                 });
-                
-                foreach ($unitStats as $unitName => $stat) {
-                    $chartPegawaiUnitLabels[] = $unitName;
-                    $chartPegawaiUnitData[] = $stat['count'] > 0 ? round($stat['total_rata'] / $stat['count'], 2) : 0;
+
+                foreach ($unitRanking as $ur) {
+                    $chartPegawaiUnitLabels[] = $ur['nama'];
+                    $chartPegawaiUnitData[] = $ur['rata'];
                 }
             }
 

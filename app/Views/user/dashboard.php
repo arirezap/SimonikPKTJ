@@ -10,6 +10,17 @@ Dashboard
 
 <?= $this->section('content') ?>
 
+<!-- 0. TOP FILTER TOOLBAR (ALIGNED LEFT & PROPER PADDING) -->
+<div class="d-flex justify-content-start align-items-center flex-wrap gap-2 mb-4 bento-stagger bento-stagger-1">
+    <form id="formKinerja" class="m-0 d-flex flex-wrap gap-2 align-items-center">
+        <select name="tahun_kinerja" id="tahun_kinerja" class="form-select form-select-sm filter-select fw-semibold text-dark bg-white shadow-xs rounded-pill border py-1.5 ps-3 pe-4" aria-label="Pilih Tahun Kinerja" style="width: auto; min-width: 130px; cursor:pointer;" onchange="updateKinerjaData()">
+            <?php foreach ($daftar_tahun as $tahun_item): ?>
+                <option value="<?= esc($tahun_item) ?>" <?= ($tahun_kinerja == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
+            <?php endforeach; ?>
+        </select>
+    </form>
+</div>
+
 <!-- 1. ECC DASHBOARD (TOP SECTION AS REQUESTED) -->
 <div class="row g-4 mb-5 bento-stagger bento-stagger-1">
     <div class="col-lg-8 d-flex flex-column">
@@ -104,13 +115,6 @@ Dashboard
 <div class="bento-stagger bento-stagger-2">
     <div class="d-flex justify-content-between align-items-center mb-3 mt-3">
         <h5 class="fw-bold text-secondary mb-0"><i class="bi bi-person-workspace me-2"></i> Kinerja Pribadi</h5>
-        <form id="formKinerja" class="m-0 d-flex gap-2">
-            <select name="tahun_kinerja" id="tahun_kinerja" aria-label="Pilih Tahun Kinerja" class="form-select filter-select fw-bold text-primary-bento" style="width: auto; cursor:pointer;" onchange="updateKinerjaData()">
-                <?php foreach ($daftar_tahun as $tahun_item): ?>
-                    <option value="<?= esc($tahun_item) ?>" <?= ($tahun_kinerja == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </form>
     </div>
     <div class="row g-4 mb-5">
         <!-- Tren Kumulatif Chart -->
@@ -231,7 +235,7 @@ Dashboard
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content rounded-4 border-0 shadow-lg">
             <div class="modal-header border-bottom-0 pb-0">
-                <h5 class="modal-title fw-bold" id="unitDetailModalLabel">Detail Pegawai: <span id="modalUnitName" class="text-primary-bento"></span></h5>
+                <h5 class="modal-title fw-bold d-flex align-items-center flex-wrap gap-2" id="unitDetailModalLabel">Detail Pegawai: <span id="modalUnitName" class="text-primary-bento"></span> <span id="modalPeriodBadge" class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill fs-7 fw-semibold"></span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body pt-3 pb-4">
@@ -327,6 +331,15 @@ async function updateEccData() {
             }
         }
     } catch(err) { console.error("Gagal mengambil data ECC:", err); }
+}
+
+function updateDashboardYear(val) {
+    const tahunEcc = document.getElementById('tahun_ecc');
+    if (tahunEcc) {
+        tahunEcc.value = val;
+    }
+    updateEccData();
+    updateKinerjaData();
 }
 
 async function updateKinerjaData() {
@@ -684,6 +697,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         const details = window.unitStatsCache[selectedUnit]?.anggota;
                         
                         document.getElementById('modalUnitName').innerText = selectedUnit;
+                        const tahunSelect = document.getElementById('tahun_kinerja');
+                        const periodBadgeEl = document.getElementById('modalPeriodBadge');
+                        if (periodBadgeEl) {
+                            periodBadgeEl.innerText = tahunSelect ? `Tahun ${tahunSelect.value}` : '';
+                        }
                         
                         let tbody = '';
                         if(details && details.length > 0) {
