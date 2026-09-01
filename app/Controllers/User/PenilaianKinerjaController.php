@@ -33,20 +33,36 @@ class PenilaianKinerjaController extends BaseController
             }
         }
         
-        // Gunakan PRG pattern agar terhindar dari form resubmission dan error 403
+        // Sinkronisasi parameter filter via GET, POST, maupun navigasi URL
+        $reqBulan = $this->request->getVar('bulan');
+        $reqTahun = $this->request->getVar('tahun');
+        $reqStafId = $this->request->getVar('staf_id');
+        $reqUnitKerja = $this->request->getVar('unit_kerja');
+
+        if (!empty($reqBulan) && is_numeric($reqBulan)) session()->set('penilaian_bulan', (int)$reqBulan);
+        if (!empty($reqTahun) && is_numeric($reqTahun)) session()->set('penilaian_tahun', (int)$reqTahun);
+        if ($reqStafId !== null) {
+            if (!empty($reqStafId)) {
+                session()->set('penilaian_staf_id', $reqStafId);
+            } else {
+                session()->remove('penilaian_staf_id');
+            }
+        }
+        if ($reqUnitKerja !== null) {
+            if (!empty($reqUnitKerja)) {
+                session()->set('penilaian_unit_kerja', $reqUnitKerja);
+            } else {
+                session()->remove('penilaian_unit_kerja');
+            }
+        }
+
+        // Gunakan PRG pattern agar terhindar dari form resubmission dan error 403 saat POST non-AJAX
         if ($this->request->getMethod() === 'POST' || $this->request->getMethod() === 'post') {
-            if ($this->request->getPost('bulan')) session()->set('penilaian_bulan', $this->request->getPost('bulan'));
-            if ($this->request->getPost('tahun')) session()->set('penilaian_tahun', $this->request->getPost('tahun'));
-            if (isset($_POST['staf_id'])) session()->set('penilaian_staf_id', $this->request->getPost('staf_id'));
-            if (isset($_POST['unit_kerja'])) session()->set('penilaian_unit_kerja', $this->request->getPost('unit_kerja'));
-            
             $hash = '';
             if ($this->request->getPost('active_tab')) {
                 $activeTab = $this->request->getPost('active_tab');
                 $hash = '#' . $activeTab;
-                // Jangan hapus penilaian_staf_id agar jika user kembali ke tab staf, stafnya masih terpilih
             }
-            
             return redirect()->to(site_url('penilaian-kinerja') . $hash);
         }
 
@@ -385,11 +401,15 @@ class PenilaianKinerjaController extends BaseController
             
             if (!$isSelfEval && !empty($targetUserId) && $targetUserId != $userId) {
                 helper('notification');
+                $bulanIndoArr = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                $namaBulanEval = $bulanIndoArr[(int)$evalMonth - 1] ?? "Bulan {$evalMonth}";
+                $atasanName = session()->get('nama_lengkap') ?? 'Atasan Langsung';
+
                 send_notification(
                     $targetUserId,
                     'Penilaian Kinerja Diterbitkan',
-                    'Atasan telah menerbitkan Nilai Kinerja Bulanan Anda.',
-                    site_url('penilaian-kinerja')
+                    "{$atasanName} telah menerbitkan Nilai Kinerja Bulanan Anda untuk periode {$namaBulanEval} {$evalYear}. Silakan periksa rekapitulasi nilai dan capaian Anda.",
+                    site_url('penilaian-kinerja?bulan=' . $evalMonth . '&tahun=' . $evalYear . '&active_tab=individu')
                 );
                 $pesan = 'Penilaian kinerja staf berhasil diterbitkan.';
             } else {

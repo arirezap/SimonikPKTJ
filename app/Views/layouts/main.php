@@ -31,7 +31,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=1.3.' . filemtime(FCPATH . 'assets/css/style.css')) ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=1.4.' . filemtime(FCPATH . 'assets/css/style.css')) ?>">
     <meta name="X-CSRF-TOKEN" content="<?= csrf_hash() ?>">
 
     <?= $this->renderSection('styles') ?>
@@ -118,14 +118,14 @@
                                     </span>
                                 </div>
                             </a>
-                            <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2 p-0 rounded-4 overflow-hidden notif-dropdown-menu" style="width: 340px; max-width: 92vw;">
+                            <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2 p-0 rounded-4 overflow-hidden notif-dropdown-menu" style="width: 380px; max-width: 95vw;">
                                 <div class="p-3 border-bottom bg-white d-flex align-items-center justify-content-between">
-                                    <h6 class="m-0 fw-bold text-dark" style="font-size: 0.95rem;"><i class="bi bi-bell me-1 text-primary"></i> Notifikasi</h6>
-                                    <button type="button" class="btn btn-link btn-sm text-primary text-decoration-none p-0 fw-semibold btn-tactile" id="markAllReadBtn" onclick="markAllNotificationsRead(event)" style="font-size: 0.75rem;">
-                                        <i class="bi bi-check2-all me-1"></i> Tandai Semua Dibaca
+                                    <h6 class="m-0 fw-bold text-dark d-flex align-items-center" style="font-size: 0.95rem;"><i class="bi bi-bell-fill me-1.5 text-primary"></i> Notifikasi</h6>
+                                    <button type="button" class="btn btn-link btn-sm text-primary text-decoration-none p-0 fw-semibold btn-tactile d-flex align-items-center gap-1" id="markAllReadBtn" onclick="markAllNotificationsRead(event)" style="font-size: 0.76rem;">
+                                        <i class="bi bi-check2-all"></i> Tandai Semua Dibaca
                                     </button>
                                 </div>
-                                <div id="notifList" class="list-group list-group-flush" style="max-height: 360px; overflow-y: auto; -webkit-overflow-scrolling: touch;">
+                                <div id="notifList" class="list-group list-group-flush">
                                     <div class="p-4 text-center text-muted small">
                                         <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
                                         <div class="mt-2">Memuat notifikasi...</div>
@@ -280,9 +280,55 @@
                         data.data.forEach(item => {
                             const isVirtual = item.is_virtual;
                             const isUnread = (parseInt(item.is_read) === 0) || isVirtual;
-                            const bgClass = isVirtual ? 'bg-warning' : (isUnread ? 'bg-primary' : 'bg-secondary');
-                            const textClass = isVirtual ? 'text-warning' : (isUnread ? 'text-primary' : 'text-secondary');
-                            const icon = isVirtual ? 'bi-exclamation-triangle-fill' : (isUnread ? 'bi-bell-fill' : 'bi-bell');
+                            
+                            let bgClass = 'bg-secondary';
+                            let textClass = 'text-secondary';
+                            let icon = 'bi-bell';
+
+                            const titleLower = (item.title || '').toLowerCase();
+
+                            if (item.id === 'virtual_target_awal_bulan' || item.id === 'virtual_target_draft_reminder') {
+                                bgClass = 'bg-primary';
+                                textClass = 'text-primary';
+                                icon = 'bi-bullseye';
+                            } else if (item.id === 'virtual_target_approval_needed') {
+                                bgClass = 'bg-primary';
+                                textClass = 'text-primary';
+                                icon = 'bi-person-check-fill';
+                            } else if (item.id === 'virtual_penilaian_bulan_lalu') {
+                                bgClass = 'bg-info';
+                                textClass = 'text-info';
+                                icon = 'bi-clipboard-check-fill';
+                            } else if (item.id === 'virtual_reminder') {
+                                bgClass = 'bg-warning';
+                                textClass = 'text-warning';
+                                icon = 'bi-journal-check';
+                            } else if (item.id === 'virtual_target_deadline' || item.id === 'virtual_penilaian_deadline') {
+                                bgClass = 'bg-danger';
+                                textClass = 'text-danger';
+                                icon = 'bi-exclamation-triangle-fill';
+                            } else if (titleLower.includes('nilai') || titleLower.includes('diterbitkan')) {
+                                bgClass = 'bg-success';
+                                textClass = 'text-success';
+                                icon = 'bi-award-fill';
+                            } else if (titleLower.includes('disetujui')) {
+                                bgClass = 'bg-success';
+                                textClass = 'text-success';
+                                icon = 'bi-check-circle-fill';
+                            } else if (titleLower.includes('revisi') || titleLower.includes('dibatalkan')) {
+                                bgClass = 'bg-warning';
+                                textClass = 'text-warning';
+                                icon = 'bi-pencil-square';
+                            } else if (isVirtual) {
+                                bgClass = 'bg-warning';
+                                textClass = 'text-warning';
+                                icon = 'bi-exclamation-circle-fill';
+                            } else if (isUnread) {
+                                bgClass = 'bg-primary';
+                                textClass = 'text-primary';
+                                icon = 'bi-bell-fill';
+                            }
+
                             const safeLink = (item.link && !item.link.toLowerCase().startsWith('javascript:')) ? item.link : '#';
                             const safeTitle = escapeHtml(item.title);
                             const safeMessage = escapeHtml(item.message);
@@ -293,15 +339,15 @@
                             
                             html += `
                                 <a href="${safeLink}" class="list-group-item list-group-item-action border-0 border-bottom p-3 d-flex gap-3 align-items-start ${itemClass} btn-tactile" data-notif-id="${escapeHtml(item.id)}" onclick="markNotifRead('${escapeHtml(item.id)}', event, this, '${safeLink}')">
-                                    <div class="d-flex align-items-center justify-content-center rounded-circle ${bgClass} bg-opacity-10 ${textClass} flex-shrink-0" style="width: 38px; height: 38px;">
-                                        <i class="bi ${icon} fs-5"></i>
+                                    <div class="d-flex align-items-center justify-content-center rounded-circle ${bgClass} bg-opacity-10 ${textClass} notif-icon-box flex-shrink-0">
+                                        <i class="bi ${icon}"></i>
                                     </div>
-                                    <div class="flex-grow-1 pe-1">
-                                        <h6 class="mb-1 ${titleWeight}" style="font-size: 0.875rem;">${safeTitle}</h6>
-                                        <p class="mb-1 text-secondary" style="font-size: 0.78rem; line-height: 1.35;">${safeMessage}</p>
-                                        <small class="text-muted" style="font-size: 0.7rem;"><i class="bi bi-clock me-1"></i>${safeTime}</small>
+                                    <div class="flex-grow-1 pe-1 overflow-hidden">
+                                        <h6 class="notif-title ${titleWeight}">${safeTitle}</h6>
+                                        <p class="notif-desc">${safeMessage}</p>
+                                        <small class="notif-time d-flex align-items-center gap-1"><i class="bi bi-clock"></i> ${safeTime}</small>
                                     </div>
-                                    <div class="align-self-center ps-1">
+                                    <div class="align-self-center ps-1 flex-shrink-0">
                                         ${unreadDotHtml}
                                     </div>
                                 </a>
