@@ -22,8 +22,8 @@ Sistem menggunakan *Role-Based Access Control (RBAC)* dengan 10 varian peran akt
    - Memiliki kendali penuh ke seluruh modul sistem (`users`, `settings`, `audit-logs`, `master-data/*`, `remunerasi`, `monitoring`, `kepegawaian`).
    - Memiliki hak pembatalan persetujuan target (`cancelApprove`) dan izin revisi laporan harian (`bukaKunci`).
 2. **Pimpinan Eksekutif (`direktur`, `wadir`)**:
-   - Akses penuh ke Dashboard Command Center, Rekap Kepegawaian, Monitoring Kinerja Seluruh Unit, dan Modul Akreditasi ECC.
-   - Auto-approve target mandiri (Direktur) dan evaluasi berjenjang untuk Wadir.
+   - **Direktur (`direktur`)**: Pimpinan tertinggi dengan akses penuh ke Dashboard Command Center, Rekap Kepegawaian, auto-approve target mandiri, serta hak persetujuan target dan penilaian kinerja staf institusi.
+   - **Wakil Direktur (`wadir`)**: Pimpinan Eksekutif Pengawas/Monitoring dengan akses ke Dashboard Command Center, Rekap Kepegawaian, Monitoring Kinerja, dan Instrumen Akreditasi ECC. **Wadir secara eksplisit tidak memiliki akses/wewenang untuk merevisi target staf, menyetujui target staf, ataupun memberikan penilaian kinerja kepada staf** (hanya mengelola target dan capaian personal "Target Saya").
 3. **Kepala Bagian & Struktural (`kabag`, `kabag_aak`, `kabag_kuk`, `manajemen`, `spm`)**:
    - Akses ke Dashboard Admin, Rekap Kepegawaian Institusi, Kelola Tim, dan Penilaian Kinerja Staf Bawahan.
    - Verifikasi bukti dan simulasi skor Akreditasi LED ECC.
@@ -42,10 +42,13 @@ Sistem menggunakan *Role-Based Access Control (RBAC)* dengan 10 varian peran akt
 
 ---
 
-## 5. UI/UX & Interaction Design Standards ("UI UX Pro Max")
-- **Bento Card Architecture**: Selalu gunakan kartu elevasi modern `class="card border-0 shadow-sm rounded-4"`.
+## 5. UI/UX & Interaction Design Standards ("UI UX Pro Max & 8-Point Grid")
+- **8-Point Grid System**: Seluruh spacing (`padding`, `margin`, `gap`), ukuran elemen, dan aset grafis wajib mematuhi kelipatan 8px: `4px` (0.5x micro), `8px` (1x base), `12px` (1.5x), `16px` (2x), `24px` (3x), `32px` (4x), `40px` (5x), `48px` (6x), `64px` (8x), `80px` (10x). Dilarang keras menggunakan angka sembarang tak sejajar grid (`7px`, `13px`, `62px`, `95px`).
+- **Bento Card Architecture**: Selalu gunakan kartu elevasi modern `class="card border-0 shadow-sm rounded-4"` dengan `padding: 24px` (desktop) / `16px` (mobile).
+- **Standar Ukuran Aset & Ikon**: Swatch legenda `16px × 16px`, tombol compact `height: 32px`, kontrol form `height: 36px`–`40px`, tombol CTA utama `min-height: 40px`, ikon header modal `40px × 40px`, avatar `40px`/`64px`/`80px`, sel kalender desktop `min-height: 64px` (mobile `48px`).
+- **Format Numerik Tabular**: Seluruh angka desimal, target, realisasi, dan skor wajib menggunakan `font-variant-numeric: tabular-nums; font-feature-settings: "tnum";`.
 - **Aksesibilitas Tinggi**: Wajib menyematkan atribut `aria-label` pada tombol ekspor, filter toolbar, dan input pencarian live.
-- **Ergonomi Sentuh Seluler**: Target sentuh tombol minimal 44px, dukungan *iOS Zoom Prevention* (`font-size: 16px !important` pada input select di layar <768px), dan *touch segmented tabs*.
+- **Ergonomi Sentuh Seluler**: Target sentuh tombol minimal 40px–44px, dukungan *iOS Zoom Prevention* (`font-size: 16px !important` pada input select di layar <768px), dan *touch segmented tabs*.
 - **SweetAlert2 & Native Fallback**: Setiap tombol aksi dialog wajib memeriksa `typeof Swal !== 'undefined'` dan menyediakan fallback `confirm()` agar UI tetap berfungsi normal tanpa hambatan koneksi CDN.
 
 ---
@@ -56,22 +59,35 @@ Sistem menggunakan *Role-Based Access Control (RBAC)* dengan 10 varian peran akt
 1. **Target Kinerja Bulanan (Hulu - `/laporan-harian`)**:
    - Model: `TargetKinerjaBulanan` (Tabel: `target_kinerja_bulanan`).
    - Staf menyusun sasaran program, indikator kinerja, dan target bulanan kuantitatif (`DECIMAL(10,4)`).
-   - Mendukung simpan draf sementara, simpan & kirim, auto-approve Direktur, serta persetujuan berjenjang atasan langsung (`approve` & `approveAll`).
+   - Mendukung simpan draf sementara, simpan & kirim, auto-approve Direktur (dapat diedit/direvisi mandiri), serta persetujuan berjenjang atasan langsung (`approve` & `approveAll`).
 2. **Lapor Kegiatan Harian (Eksekusi - `/log-kegiatan`)**:
    - Model: `LaporanHarian` (Tabel: `log_kegiatan_harian`) & `LogTugasTambahan` (Tabel: `log_tugas_tambahan`).
    - Pencatatan log kegiatan terikat dengan `target_id`. Dilengkapi pencatatan tugas tambahan institusi, tautan bukti digital, dan deteksi hari kerja/hari libur nasional (`is_working_day()`).
+   - **Datepicker Flatpickr Terintegrasi**: Tanggal merah/akhir pekan masa depan (`.flatpickr-disabled`) berpenampilan redup pudar (`#fca5a5`, opacity 0.35), sedangkan tanggal yang sudah tiba/aktif berpenampilan merah cerah tegas (`#ef4444`, font-weight 700, opacity 1).
    - Dilengkapi fitur Izin Revisi (`bukaKunci`) oleh Atasan Langsung & Superadmin.
 3. **Rekap & Penilaian Kinerja (Evaluasi - `/penilaian-kinerja`)**:
    - Controller: `PenilaianKinerjaController.php`.
-   - Mengagregasi data capaian riil vs target. Atasan memberikan skor kualitas, disiplin, dan capaian pada rentang skala **0 - 150%** untuk diterbitkan (`status_penilaian = 'terbit'`).
+   - **Prasyarat Penilaian**: Atasan Langsung HANYA DAPAT memberi nilai jika seluruh target kinerja bulanan staf pada periode terkait sudah berstatus `disetujui`.
+   - **Standar Predikat Kinerja**: Sangat Baik (`>100% - 150%`), Baik (`>=90% - 100%`), Butuh Perbaikan (`>75% - <90%`), Kurang (`>25% - 75%`), Sangat Kurang (`<=25%`), Belum Dinilai (`0%` atau RHK dinilai = 0).
+   - **Mekanisme Reset**: Tombol Reset Nilai langsung mengosongkan nilai (`nilai_capaian = NULL`) dan menyetel flag `status_penilaian = NULL` di database (seperti belum pernah dinilai), serta mencatat audit log `RESET_PENILAIAN_KINERJA`.
 
-### B. Modul Rekap Kinerja Kepegawaian (`/kepegawaian`):
-- **Controller**: `app/Controllers/Kepegawaian/DashboardKepegawaian.php`.
-- **Otorisasi Multi-Peran**: Terbuka untuk `['kepegawaian', 'admin', 'direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'spm']`.
-- **Default Periode Bulan**: Menu awal yang terbuka selalu otomatis memuat **Bulan Sekarang (`date('n')`)**. Pengguna dapat memilih bulan lampau (misal: *Agustus*) atau *Sepanjang Tahun* (`'all'`) melalui filter dropdown.
-- **Ultra-Fast 2-Query Batch Fetching**: Memuat ratusan data target RHK dan tugas tambahan institusi dalam 2 query SQL terindeks tanpa beban N+1 query loop.
-- **Hierarki Jabatan 13-Tier**: Pengurutan otomatis dari Direktur, Wadir, Kabag, Kapus, Kanit, Kaprodi, Dosen, hingga Staf Pelaksana dan Tugas Belajar.
-- **Ekspor Dokumen**: Excel Multi-Sheet numerik murni & PDF Landscape berstandar dinas resmi.
+### B. Modul Kepegawaian (`/kepegawaian`):
+Menu tree Kepegawaian di sidebar memiliki 2 submodul terpadu untuk Tim Kepegawaian, Pimpinan, dan Manajemen:
+1. **Monitoring Target Kinerja Bulanan (`/kepegawaian/target-kinerja`)**:
+   - Controller: `app/Controllers/Kepegawaian/MonitoringTargetController.php`.
+   - Pemantauan status hulu penyusunan dan persetujuan target seluruh pegawai (Sudah Mengirim, Draf, Belum Mengisi, Sudah Disetujui, Menunggu Persetujuan).
+   - Dialog Modal Rincian Target (Zero-Reload AJAX).
+   - Ekspor Excel Multi-Sheet numerik murni & PDF Landscape kedinasan.
+2. **Monitoring Penilaian Kinerja (`/kepegawaian` & `/kepegawaian/monitoring-penilaian`)**:
+   - Controller: `app/Controllers/Kepegawaian/DashboardKepegawaian.php`.
+   - Mengagregasi capaian riil kinerja vs target, skor kualitas/disiplin, dan status terbit SKP.
+   - Ultra-Fast 2-Query Batch Fetching (tanpa N+1 query problem).
+   - Ekspor Excel & PDF rekapitulasi penilaian.
+
+- **Hierarki Jabatan Resmi Institusi**:
+  Pengurutan otomatis berdasarkan struktur organisasi: Direktur $\rightarrow$ Wakil Direktur $\rightarrow$ Kepala Bagian (Kabag AAK/KUK) $\rightarrow$ Ketua Tim (Katim) & Koordinator $\rightarrow$ Kepala Pusat (Kapus) $\rightarrow$ Kepala Unit (Kanit) $\rightarrow$ Ketua/Sekretaris Program Studi (Kaprodi/Sekprodi) $\rightarrow$ Ketua Pokja $\rightarrow$ Tenaga Pendidik / Dosen $\rightarrow$ Jabatan Fungsional Tertentu (JFT) $\rightarrow$ Staf Pelaksana $\rightarrow$ Pegawai Tugas Belajar.
+- **Otorisasi Menu Kepegawaian**: Menu tree dan endpoint dibatasi khusus untuk: `['kepegawaian', 'admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk']`.
+- **Default Periode Bulan**: Menu awal selalu otomatis memuat **Bulan Sekarang (`date('n')`)**. Tersedia pilihan bulan lampau atau *Sepanjang Tahun* (`'all'`).
 
 ### C. Log Keamanan Aktivitas (Audit Trail - `/admin/audit-logs`):
 - Helper: `app/Helpers/audit_helper.php` (`log_audit()`).

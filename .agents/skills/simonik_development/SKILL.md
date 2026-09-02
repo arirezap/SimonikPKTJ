@@ -10,20 +10,22 @@ Panduan ini berisi pedoman lengkap arsitektur sistem, peta modul, basis data, da
 ---
 
 ## 1. Spesifikasi Tech Stack
-- **Framework Utama:** CodeIgniter 4 (PHP 8.0+)
+- **Framework Utama:** CodeIgniter 4 (PHP 8.1+)
 - **Basis Data:** MySQL
-- **Desain UI:** Bootstrap 5 (Vanilla CSS/JS, hindari TailwindCSS kecuali diminta secara eksplisit)
+- **Desain UI:** Bootstrap 5.3 (Vanilla CSS/JS, hindari TailwindCSS kecuali diminta secara eksplisit)
 - **Library Frontend:**
   - **jQuery:** Digunakan untuk manipulasi DOM dan request AJAX dasar.
+  - **Flatpickr:** Digunakan untuk custom calendar datepicker harian dengan indikator titik status aktivitas kerja.
   - **Select2:** Digunakan untuk *Searchable Dropdown* (pencarian nama pegawai / unit kerja).
   - **Chart.js:** Digunakan untuk merender grafik analisis performa individu dan dashboard unit eksekutif.
+  - **SweetAlert2:** Digunakan untuk interaksi dialog konfirmasi (selalu sertakan *native browser fallback*).
 
 ---
 
 ## 2. Struktur Proyek & Konvensi MVC
 - **Controllers (`app/Controllers/`):**
   - Gunakan penamaan file PascalCase.
-  - Pisahkan area admin di subfolder `app/Controllers/Admin/` (misal: `UserController.php`, `MasterDataController.php`) dan area pengguna di `app/Controllers/User/` (misal: `PenilaianKinerjaController.php`, `LogKegiatanController.php`, `LaporanHarianController.php`).
+  - Pisahkan area admin di `app/Controllers/Admin/` (misal: `UserController.php`, `MasterDataController.php`), area kepegawaian di `app/Controllers/Kepegawaian/` (misal: `DashboardKepegawaian.php`, `MonitoringTargetController.php`), dan area pengguna di `app/Controllers/User/` (misal: `PenilaianKinerjaController.php`, `LogKegiatanController.php`, `LaporanHarianController.php`).
 - **Models (`app/Models/`):**
   - Pastikan setiap model mendefinisikan `$table`, `$primaryKey`, dan `$allowedFields` agar query builder CI4 berjalan optimal dan aman.
 - **Views (`app/Views/`):**
@@ -32,70 +34,68 @@ Panduan ini berisi pedoman lengkap arsitektur sistem, peta modul, basis data, da
   - Selalu bersihkan output menggunakan `esc()` untuk mencegah kerentanan XSS.
 - **Routing (`app/Config/Routes.php`):**
   - Semua route **WAJIB** terdaftar secara eksplisit di dalam grup filter otentikasi `auth` (seperti `$routes->group('', ['filter' => 'auth'], ...)`).
-  - Sertakan rute POST untuk semua endpoint AJAX (misal: `log-kegiatan/storeTugasTambahan`, `log-kegiatan/hapusTugasTambahan`, `laporan-harian/approve`). Jangan pernah mengandalkan auto-routing di cPanel.
+  - Sertakan rute POST untuk semua endpoint AJAX (misal: `log-kegiatan/storeTugasTambahan`, `log-kegiatan/hapusTugasTambahan`, `laporan-harian/approve`, `penilaian-kinerja/store`). Jangan pernah mengandalkan auto-routing di cPanel.
 
 ---
 
 ## 3. Peta Modul Utama Aplikasi
-### A. Modul Kinerja Pegawai & Log Kegiatan
-- **Target Kinerja Bulanan (`app/Models/LaporanHarian.php` & `User\LaporanHarianController`):** Tempat staf menetapkan target bulanan. Menggunakan *single loop* validasi, sanitasi desimal koma (`str_replace(',', '.', ...)`), serta *try-catch DB error handling*.
-- **Laporan Harian & Log Kegiatan (`app/Models/LogKegiatanHarian.php`, `LogTugasTambahan` & `User\LogKegiatanController`):** Tempat pegawai mencatat aktivitas harian (Tugas Pokok & Tugas Tambahan). Mewajibkan `jumlah_capaian` diisi angka (minimal `0`). Fitur hapus draf tugas tambahan menggunakan sinkronisasi ID otomatis (`allTambahanIds`) dan token CSRF dinamis.
-- **SKP & Target Kerja (`app/Models/SkpModel.php` & `User\Skp`):** Pengelolaan Sasaran Kerja Pegawai tahunan/semesteran.
 
-### B. Modul Penilaian & Dashboard Analisis
-- **Penilaian Kinerja (`User\PenilaianKinerjaController`):**
-  - Atasan memberikan penilaian harian terhadap input kegiatan harian stafnya berdasarkan indikator **Disiplin** dan **Kerjasama** yang otomatis dihitung nilai rata-rata hariannya.
-  - **Tab Analisis Kinerja (Individu):** Grafik tren 6 bulan terakhir, kualitas/ketepatan waktu, dan produktivitas pegawai bersangkutan.
-  - **Tab Analisis Keseluruhan (Agregat/Eksekutif):** Menampilkan perbandingan performa antar unit kerja, tingkat kedisiplinan per unit, status penilaian unit (Dinilai vs Belum Dinilai), serta menampilkan daftar Top 5 Performers.
-  - Data analitik dimuat secara dinamis via AJAX lewat rute API `penilaian-kinerja/api-chart`.
+### A. Modul Target Kinerja Bulanan & Auto-Approval Direktur
+- **Target Kinerja Bulanan (`app/Models/TargetKinerja.php` & `User\LaporanHarianController`):**
+  - Tempat pegawai menyusun Rencana Hasil Kerja (RHK) dan target kuantitas bulanan.
+  - **Khusus Akun Direktur:** Target yang dibuat otomatis berstatus `disetujui` (`status_approval = 'disetujui'`, `status = 'terkirim'`) dan dapat direvisi secara mandiri kapan saja tanpa memerlukan approval pihak lain.
+  - **Pegawai Non-Direktur:** Target berstatus `menunggu_persetujuan` dan harus disetujui Atasan Langsung sebelum dapat dinilai.
 
-### C. Modul Evaluasi Standar & Simulasi (ECC & LED)
-- **Kriteria LED (`app/Models/LedCriteria.php` & `Admin\MasterDataController::led`):** Pengelolaan kriteria Evaluasi Diri.
-- **ECC & Simulasi (`app/Controllers/EccController`):** Modul simulasi Evaluasi Capaian Kinerja (LKPS dan Standar LED) untuk keperluan akreditasi kampus politeknik.
+### B. Modul Laporan Harian & Log Kegiatan (`/log-kegiatan`)
+- **Pencatatan Aktivitas Harian (`app/Models/LogKegiatanHarian.php`, `LogTugasTambahan` & `User\LogKegiatanController`):**
+  - Mencatat realisasi harian tugas pokok & tugas tambahan beserta link bukti.
+  - **Datepicker Flatpickr Terintegrasi:** Menampilkan titik status (Hijau = Terkirim, Kuning = Draf, Merah = Belum Diisi).
+  - **Styling Tanggal Merah & Weekend:** Tanggal merah/akhir pekan yang berstatus masa depan (`.flatpickr-disabled`) berpenampilan redup pudar (`#fca5a5`, opacity 0.35, normal weight), sedangkan tanggal yang sudah tiba/aktif berpenampilan merah cerah tegas (`#ef4444`, font-weight 700, opacity 1).
 
-### D. Modul Autentikasi & Keamanan Sesi (OWASP Compliant)
-- **Pencegahan User Enumeration (`app/Controllers/Auth.php`):** Pesan kesalahan login diseragamkan (*"Nama pengguna atau kata sandi yang Anda masukkan salah."*) baik untuk akun tidak terdaftar maupun kata sandi salah.
-- **Pencatatan Audit Trail `FAILED_LOGIN`:** Merekam kegagalan login dengan alasan `user_not_found` atau `invalid_password` beserta IP Address.
-- **Hardened Logout (`app/Controllers/Auth.php` & `app/Views/layouts/main.php`):** Eksekusi logout via form POST terlindungi CSRF (`#logoutPostForm`) untuk mencegah serangan *Forced Logout CSRF*, pencatatan audit log `LOGOUT` sebelum pemusnahan sesi, penghapusan cookie otentikasi `remember_me`, dan injeksi header `Cache-Control: no-store` untuk mencegah kebocoran data via tombol *Back* browser.
+### C. Modul Rekap & Penilaian Kinerja (`/penilaian-kinerja`)
+- **Penilaian Kinerja Staf (`User\PenilaianKinerjaController`):**
+  - Atasan Langsung HANYA DAPAT memberi nilai jika seluruh target kinerja bulanan staf pada periode terkait sudah disetujui.
+  - **Formula Standar Predikat Kinerja:**
+    - Sangat Baik: `> 100%` s.d. `150%`
+    - Baik: `>= 90%` s.d. `100%`
+    - Butuh Perbaikan: `> 75%` s.d. `< 90%`
+    - Kurang: `> 25%` s.d. `75%`
+    - Sangat Kurang: `<= 25%`
+    - Belum Dinilai: `0%` (atau belum ada penilaian / RHK dinilai = 0)
+  - **Fitur Reset Penilaian Kinerja:**
+    - Tombol Reset Nilai langsung mengosongkan nilai (`nilai_capaian = NULL`) dan menyetel flag `status_penilaian = NULL` di database, mengembalikan status menjadi "Belum Dinilai" murni (bukan berstatus `terbit` dengan nilai 0).
 
-### E. Modul Profil Pengguna & Keamanan Kredensial (`/profile`)
-- **Penyederhanaan Unggah Avatar (`app/Views/profile.php`):** Interaksi 1-klik langsung pada foto avatar / tombol kamera badge tanpa kotak input ganda yang redundan.
-- **Pratinjau Asinkron Lokal:** Pembacaan gambar via `FileReader`, validasi berkas instan (< 2MB, MIME JPG/PNG), dan inisial cerdas 2-huruf otomatis sebagai fallback.
-- **Hardening Kredensial (`app/Controllers/Profile.php`):** Pengecekan keunikan Email & NIP/NIK terhadap akun lain (`where('id !=', $userId)`), tombol intip password (`.btn-toggle-pw`), indikator kecocokan password real-time (`match-pop-anim`), *Dirty Form Guard* (`beforeunload`), *Double-Submit Lock*, *Mobile Floating Action Bar*, dan sinkronisasi otomatis role `'spm'`.
+### D. Modul Monitoring Kepegawaian (`/kepegawaian/target-kinerja` & `/kepegawaian`)
+- **Akses Terbatas (Role-Restricted):**
+  - Menu tree dan endpoint modul ini HANYA diizinkan untuk role: `direktur`, `wadir`, `kabag` (`kabag_aak`, `kabag_kuk`), `kepegawaian`, dan `admin`.
+  - **Monitoring Target Kinerja:** Pemantauan status penyusunan target seluruh unit kerja instansi.
+  - **Monitoring Penilaian Kinerja:** Rekapitulasi nilai dan capaian kinerja seluruh pegawai institusi dengan ekspor Excel Multi-Sheet dan PDF A4 Landscape berstandar resmi.
+  - Menggunakan *selective column querying* (`select('id, nama_lengkap, nip, unit, jabatan, role, atasan_id, foto')`) untuk efisiensi memori tingkat tinggi.
 
-### F. Modul Pengendalian Superadmin (Unlock & Cancel Approval)
-- **Buka Kunci Laporan Harian Staf (`POST log-kegiatan/buka-kunci`):** Superadmin (`hasRole('admin')`) dapat membuka kunci laporan harian & tugas tambahan staf yang berstatus `terkirim` pada tanggal tertentu. Mengubah status ke `draft`, mencatat audit log `UNLOCK_LAPORAN`, dan mengirim notifikasi *in-app*. Terkunci otomatis saat staf menyimpan ulang.
-- **Pembatalan Persetujuan Target Bulanan (`POST laporan-harian/batal-approve`):** Superadmin dapat membatalkan persetujuan Target Bulanan yang sudah disetujui (`status_approval = 'disetujui'`). Mengubah status ke `draft` (`status_approval = 'menunggu_persetujuan'`), dibungkus transaksi DB (`$db->transStart()` & `$db->transComplete()`), mencatat audit log `CANCEL_APPROVE_TARGET`, dan mengirim notifikasi *in-app*. Seluruh laporan harian terdahulu TETAP UTUH & AMAN.
-- **Diferensiasi Badge Status:** Status `Disetujui` (hijau), `Menunggu Persetujuan` (kuning - saat `status === 'terkirim'`), dan `Draf (Perlu Revisi)` (kuning perbaikan - saat `status === 'draft'`) ditampilkan secara akurat di tabel pegawai & atasan.
+### E. Modul Autentikasi & Keamanan Sesi (OWASP Compliant)
+- **Pencegahan User Enumeration (`app/Controllers/Auth.php`):** Pesan kesalahan login seragam (*"Nama pengguna atau kata sandi yang Anda masukkan salah."*).
+- **Pencatatan Audit Trail `FAILED_LOGIN`:** Merekam kegagalan login dengan IP Address dan alasan.
+- **Hardened Logout:** Logout via form POST terlindungi CSRF (`#logoutPostForm`), audit log `LOGOUT`, dan header `Cache-Control: no-store`.
 
----
-
-## 4. Logika Wewenang & Otorisasi Pengguna (Roles)
-Aplikasi membagi wewenang berdasarkan peran jabatan:
-1. **Pegawai Biasa (Staf):** Hanya dapat menginput Rencana, Realisasi, Laporan Harian, SKP, serta melihat visualisasi grafik performa pribadinya sendiri di Tab *Analisis Kinerja*.
-2. **Atasan Menengah (Kabag/Kepala Unit):** Memiliki wewenang untuk melihat, menilai, dan memantau rekap data staf yang berada *di dalam unit kerjanya saja*.
-3. **Direksi (Direktur/Wakil Direktur) & Superadmin:** Memiliki otoritas penuh untuk memantau performa *seluruh unit kerja* dan *seluruh pegawai* di kampus Politeknik, serta mengakses tab agregat eksekutif. Superadmin memiliki tombol khusus untuk **Buka Kunci Laporan Harian** dan **Batalkan Persetujuan Target Bulanan** untuk tujuan perbaikan/revisi staf.
-
----
-
-## 5. Standarisasi UI/UX & Kualitas Grafik
-- **UI/UX Pro Max:** Seluruh pengembangan UI wajib mematuhi standar desain dari skill `ui-ux-pro-max` (estetika kaya, tipografi modern, micro-animations, dan komponen premium di atas MVP standar Bootstrap).
-- **Layout Rapi & Rata:** Pastikan tombol aksi (seperti tombol Reset Filter) berukuran proporsional, sejajar tinggi elemennya dengan Select2 dropdown, dan menggunakan variasi outline/icon yang intuitif bagi pengguna senior.
-- **Grafik Bebas Tumpukan (Anti-Overlap):**
-  - Jangan gunakan *Radar Chart* jika data label sumbu berjumlah banyak (misal menampilkan nama pegawai individu). Radar chart sebaiknya digunakan maksimal untuk 6-8 label (misalnya memetakan rata-rata unit kerja).
-  - Untuk data berskala besar (seperti ranking seluruh pegawai), gunakan **Horizontal Bar Chart** yang dibungkus di dalam wadah div scrollable (`max-height: 450px; overflow-y: auto;`) agar tidak merusak layout halaman.
-  - Untuk grafik status (seperti laporan Dinilai vs Belum), gunakan **Stacked Horizontal Bar Chart** dengan warna kontras yang ramah mata.
+### F. Modul Pengendalian Superadmin
+- **Buka Kunci Laporan Harian Staf (`POST log-kegiatan/buka-kunci`):** Superadmin dapat membuka kunci laporan harian yang terkunci, mencatat audit log `UNLOCK_LAPORAN`.
+- **Pembatalan Persetujuan Target Bulanan (`POST laporan-harian/batal-approve`):** Superadmin dapat membatalkan persetujuan target bulanan staf untuk revisi, mencatat audit log `CANCEL_APPROVE_TARGET`.
 
 ---
 
-## 6. Aturan Penulisan Kode & Keamanan
-- **CSRF Protection:** Semua elemen `<form>` wajib menyertakan token CSRF (`<?= csrf_field() ?>`). Request POST AJAX wajib mengirimkan token CSRF (`<?= csrf_token() ?>`) dan menangkap `csrf_hash` dari respons JSON untuk memperbarui DOM.
-- **Database Operation Try-Catch & Transaction Safety:** Semua operasi penyimpanan massal (`insert`, `updateBatch`, `delete`) di Controller wajib dibungkus dalam blok `try...catch (\Exception $e)` dan Database Transaction (`$db->transStart()` & `$db->transComplete()`) untuk menangkap kegagalan database secara elegan tanpa melempar Error 500 (*white screen*).
-- **Sanitasi Desimal (Bahasa Indonesia):** Nilai desimal wajib dikonversi menggunakan `str_replace(',', '.', trim((string)$val))` sebelum dimasukkan ke kolom `DECIMAL(10,2)` basis data.
-- **Explicit Route Registration:** Dilarang menggunakan endpoint AJAX tanpa mendaftarkannya secara eksplisit di `app/Config/Routes.php`.
-- **Cache-Control & Deployment:** Pastikan layout utama (`main.php`) mempertahankan meta tag HTTP `Cache-Control` (`no-cache, no-store, must-revalidate`) serta `?v=filemtime(...)` pada file CSS/JS agar pengguna tidak perlu *clear cache* manual setelah deployment.
-- **SweetAlert2 & JS Fallback Safety:** Setiap tombol aksi berbasis AJAX yang memanfaatkan SweetAlert2 **WAJIB** memuat script CSS/JS SweetAlert2 di View, mengecek `typeof Swal !== 'undefined'`, serta menyediakan *native fallback confirmation* (`confirm()`) agar aksi tombol tetap 100% berfungsi jika library CDN mengalami kendala jaringan.
-- **XSS Prevention:** Hindari pencetakan data mentah database langsung ke View. Selalu gunakan `esc($var)` untuk menjaga sanitasi output HTML.
-- **Error Handling & API JSON:** Endpoint AJAX/API harus selalu mengembalikan format JSON yang valid (`return $this->response->setJSON(...)`) beserta status code HTTP yang sesuai jika terjadi error.
-- **Refactoring & Modifikasi:** Sebelum mengubah alur data, selalu periksa parameter filter yang terkirim dari form pencarian (`bulan`, `tahun`, `unit_kerja`, `user_id`) agar data yang ditampilkan selalu sinkron dengan filter terpilih.
+## 4. Standarisasi UI/UX, 8-Point Grid System & Kualitas Visual
+- **8-Point Grid System (Strict Spacing & Asset Scale):**
+  - Seluruh layout, jarak elemen (`margin`, `padding`, `gap`), tinggi tombol, dan wadah aset wajib mematuhi kelipatan 8px: `4px` (0.5x micro), `8px` (1x base), `12px` (1.5x), `16px` (2x), `24px` (3x), `32px` (4x), `40px` (5x), `48px` (6x), `64px` (8x), `80px` (10x).
+  - Standar ukuran aset: Swatch `16px × 16px`, tombol compact `height: 32px`, kontrol form `height: 36px`–`40px`, tombol aksi CTA `min-height: 40px`, box icon header modal `40px × 40px`, sel kalender desktop `min-height: 64px` (mobile `48px`), avatar profil `40px`/`64px`/`80px`.
+- **Tabular Numbers:** Selalu gunakan `font-variant-numeric: tabular-nums; font-feature-settings: "tnum";` pada angka capaian, nilai persen, tanggal, dan NIP.
+- **Sanitasi URL Bukti XSS:** Selalu validasi bahwa link bukti berawalan skema `http://` atau `https://` sebelum dirender ke tag `<a>`.
 
+---
+
+## 5. Aturan Penulisan Kode & Keamanan
+- **CSRF Protection:** Semua elemen `<form>` wajib menyertakan `<?= csrf_field() ?>`. Request AJAX POST wajib mengirim token CSRF dan memperbarui `csrf_hash`.
+- **Database Transactions:** Semua mutasi batch wajib dibungkus dalam blok `try...catch (\Exception $e)` dan `$db->transStart()` / `$db->transComplete()`.
+- **Sanitasi Desimal:** Selalu gunakan `str_replace(',', '.', trim((string)$val))` sebelum parsing numerik.
+- **SweetAlert2 Fallback:** Selalu sediakan *native browser fallback* (`confirm()`) jika library SweetAlert2 belum selesai termuat.
+- **XSS Prevention:** Selalu gunakan `esc($var)` saat mencetak variabel ke View HTML.
+- **Standardized Audit Logging:** Selalu gunakan `log_audit()` untuk merekam mutasi data penting.

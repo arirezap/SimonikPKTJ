@@ -21,17 +21,20 @@ $isKepegawaian = hasRole('kepegawaian');
 
 
 <div class="sidebar bg-white offcanvas-lg offcanvas-start border-end" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarOffcanvasLabel">
-    <i class="bi bi-list sidebar-toggle d-none d-lg-block btn-tactile" id="sidebarToggle" title="Ciutkan / Lebarkan Navigasi"></i>
+    <i class="bi bi-list sidebar-toggle d-none d-lg-flex btn-tactile" id="sidebarToggle" title="Ciutkan / Lebarkan Navigasi" aria-label="Toggle Sidebar Navigation"></i>
 
-    <div class="sidebar-header d-none d-lg-block">
-        <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ Tegal" class="sidebar-logo" width="45" height="45" loading="eager">
+    <div class="sidebar-header d-none d-lg-flex">
+        <a href="<?= site_url('dashboard') ?>" title="Evidence Command Center (ECC) PKTJ" class="text-decoration-none">
+            <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ Tegal" class="sidebar-logo" width="48" height="48" style="width: 48px; height: 48px; object-fit: contain;" loading="eager">
+        </a>
     </div>
     
     <!-- Header Sidebar Mobile (Offcanvas) -->
-    <div class="offcanvas-header d-lg-none border-bottom px-4 py-3">
-        <h5 class="offcanvas-title" id="sidebarOffcanvasLabel">
-            <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ Tegal" class="sidebar-logo" style="height: 45px; width: auto;" width="45" height="45" loading="eager">
-        </h5>
+    <div class="offcanvas-header d-lg-none border-bottom px-3 py-2.5">
+        <div class="d-flex align-items-center gap-2">
+            <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ Tegal" class="sidebar-logo" width="40" height="40" style="width: 40px; height: 40px; object-fit: contain;" loading="eager">
+            <span class="fw-bold text-dark fs-6" id="sidebarOffcanvasLabel">ECC PKTJ</span>
+        </div>
         <button type="button" class="btn-close text-reset btn-tactile" data-bs-dismiss="offcanvas" data-bs-target="#sidebarOffcanvas" aria-label="Tutup navigasi"></button>
     </div>
 
@@ -51,7 +54,7 @@ $isKepegawaian = hasRole('kepegawaian');
                     <i class="bi bi-chevron-down sidebar-toggle-icon ms-auto"></i>
                 </a>
                 <div class="collapse <?= $isEccActive ? 'show' : '' ?>" id="eccSubmenu">
-                    <ul class="nav flex-column ps-4">
+                    <ul class="nav flex-column ps-3 mb-1">
                         <li class="nav-item"><a href="<?= site_url('ecc/led') ?>" class="nav-link sub-link <?= ($segment2 == 'led') ? 'active' : '' ?>"><span>LED</span></a></li>
 
                         <?php if (hasAnyRole(['spm', 'admin'])): ?>
@@ -78,6 +81,30 @@ $isKepegawaian = hasRole('kepegawaian');
                     <i class="bi bi-star-fill"></i><span>Rekap & Penilaian Kinerja</span>
                 </a>
             </li>
+
+            <?php if (hasAnyRole(['kepegawaian', 'admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk'])): ?>
+                <?php $isKepegawaianActive = str_starts_with($current_uri, 'kepegawaian'); ?>
+                <li class="nav-item">
+                    <a class="nav-link <?= $isKepegawaianActive ? 'active' : 'collapsed' ?>" href="#kepegawaianSubmenu" role="button" data-bs-toggle="collapse" aria-expanded="<?= $isKepegawaianActive ? 'true' : 'false' ?>" aria-controls="kepegawaianSubmenu">
+                        <i class="bi bi-briefcase-fill"></i><span>Kepegawaian</span>
+                        <i class="bi bi-chevron-down sidebar-toggle-icon ms-auto"></i>
+                    </a>
+                    <div class="collapse <?= $isKepegawaianActive ? 'show' : '' ?>" id="kepegawaianSubmenu">
+                        <ul class="nav flex-column ps-3 mb-1">
+                            <li class="nav-item">
+                                <a href="<?= site_url('kepegawaian/target-kinerja') ?>" class="nav-link sub-link <?= (str_starts_with($current_uri, 'kepegawaian/target-kinerja')) ? 'active' : '' ?>">
+                                    <span>Monitoring Target Kinerja</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="<?= site_url('kepegawaian') ?>" class="nav-link sub-link <?= ($current_uri === 'kepegawaian' || str_starts_with($current_uri, 'kepegawaian/monitoring-penilaian') || (str_starts_with($current_uri, 'kepegawaian') && !str_starts_with($current_uri, 'kepegawaian/target-kinerja'))) ? 'active' : '' ?>">
+                                    <span>Monitoring Penilaian Kinerja</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+            <?php endif; ?>
 
             <li class="nav-item">
                 <a class="nav-link <?= str_starts_with($current_uri, 'kontrak') ? 'active' : '' ?>" href="<?= site_url('kontrak') ?>">
@@ -112,7 +139,7 @@ $isKepegawaian = hasRole('kepegawaian');
                         <i class="bi bi-chevron-down sidebar-toggle-icon ms-auto"></i>
                     </a>
                     <div class="collapse <?= $isMasterDataActive ? 'show' : '' ?>" id="masterDataSubmenu">
-                        <ul class="nav flex-column ps-4">
+                        <ul class="nav flex-column ps-3 mb-1">
                             <li class="nav-item"><a href="<?= site_url('master-data/sasaran') ?>" class="nav-link sub-link <?= str_starts_with($current_uri, 'master-data/sasaran') ? 'active' : '' ?>"><span>Sasaran Program</span></a></li>
                             <li class="nav-item"><a href="<?= site_url('master-data/indikator') ?>" class="nav-link sub-link <?= str_starts_with($current_uri, 'master-data/indikator') ? 'active' : '' ?>"><span>Indikator Kinerja</span></a></li>
                             <li class="nav-item"><a href="<?= site_url('master-data/satuan') ?>" class="nav-link sub-link <?= str_starts_with($current_uri, 'master-data/satuan') ? 'active' : '' ?>"><span>Satuan</span></a></li>
@@ -135,14 +162,6 @@ $isKepegawaian = hasRole('kepegawaian');
             <?php if ($isAdmin): ?>
                 <li class="nav-item"><a href="<?= site_url('admin/audit-logs') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/audit-logs')) ? 'active' : '' ?>"><i class="bi bi-shield-check"></i><span>Log Aktivitas Sistem</span></a></li>
                 <li class="nav-item"><a href="<?= site_url('settings') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/settings') || str_starts_with($current_uri, 'settings')) ? 'active' : '' ?>"><i class="bi bi-gear-fill"></i><span>Pengaturan Sistem</span></a></li>
-            <?php endif; ?> 
-
-            <?php if (hasAnyRole(['kepegawaian', 'admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk'])): ?>
-                <li class="nav-item">
-                    <a class="nav-link <?= str_starts_with($current_uri, 'kepegawaian') ? 'active' : '' ?>" href="<?= site_url('kepegawaian') ?>">
-                        <i class="bi bi-clipboard2-data-fill"></i><span>Rekap Kepegawaian</span>
-                    </a>
-                </li>
             <?php endif; ?>
 
         </ul>

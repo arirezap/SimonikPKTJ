@@ -176,7 +176,7 @@
 
         .badge-sangat-baik { background-color: #d1fae5; color: #065f46; border: 0.5px solid #a7f3d0; }
         .badge-baik { background-color: #dbeafe; color: #1e40af; border: 0.5px solid #bfdbfe; }
-        .badge-butuh-perbaikan { background-color: #f1f5f9; color: #334155; border: 0.5px solid #cbd5e1; }
+        .badge-butuh-perbaikan { background-color: #e0f2fe; color: #0369a1; border: 0.5px solid #bae6fd; }
         .badge-kurang { background-color: #fef3c7; color: #92400e; border: 0.5px solid #fde68a; }
         .badge-sangat-kurang { background-color: #fee2e2; color: #991b1b; border: 0.5px solid #fecaca; }
         .badge-belum { background-color: #f1f5f9; color: #64748b; border: 0.5px solid #e2e8f0; }
@@ -306,45 +306,48 @@
             <?php if ($bulan_terpilih === 'all'): ?>
                 <tr>
                     <th rowspan="2" style="width: 3%;">No</th>
-                    <th rowspan="2" style="width: 17%;">Nama Pegawai / NIP</th>
-                    <th rowspan="2" style="width: 13%;">Jabatan</th>
+                    <th rowspan="2" style="width: 16%;">Nama Pegawai / NIP</th>
+                    <th rowspan="2" style="width: 12%;">Jabatan</th>
                     <th rowspan="2" style="width: 11%;">Unit Kerja</th>
-                    <th colspan="12" style="width: 36%;">Nilai Capaian Kinerja Bulanan (%)</th>
-                    <th rowspan="2" style="width: 5%;">Total Komp.</th>
-                    <th rowspan="2" style="width: 7%;">Rata-Rata Tahunan</th>
-                    <th rowspan="2" style="width: 8%;">Predikat</th>
+                    <th colspan="12" style="width: 34%;">Nilai Capaian Kinerja Bulanan (%)</th>
+                    <th rowspan="2" style="width: 5%;">T. Pokok</th>
+                    <th rowspan="2" style="width: 5%;">T. Tambahan</th>
+                    <th rowspan="2" style="width: 7%;">Rata-Rata</th>
+                    <th rowspan="2" style="width: 7%;">Predikat</th>
                 </tr>
                 <tr>
-                    <th style="width: 3%;">Jan</th>
-                    <th style="width: 3%;">Feb</th>
-                    <th style="width: 3%;">Mar</th>
-                    <th style="width: 3%;">Apr</th>
-                    <th style="width: 3%;">Mei</th>
-                    <th style="width: 3%;">Jun</th>
-                    <th style="width: 3%;">Jul</th>
-                    <th style="width: 3%;">Agu</th>
-                    <th style="width: 3%;">Sep</th>
-                    <th style="width: 3%;">Okt</th>
-                    <th style="width: 3%;">Nov</th>
-                    <th style="width: 3%;">Des</th>
+                    <th style="width: 2.8%;">Jan</th>
+                    <th style="width: 2.8%;">Feb</th>
+                    <th style="width: 2.8%;">Mar</th>
+                    <th style="width: 2.8%;">Apr</th>
+                    <th style="width: 2.8%;">Mei</th>
+                    <th style="width: 2.8%;">Jun</th>
+                    <th style="width: 2.8%;">Jul</th>
+                    <th style="width: 2.8%;">Agu</th>
+                    <th style="width: 2.8%;">Sep</th>
+                    <th style="width: 2.8%;">Okt</th>
+                    <th style="width: 2.8%;">Nov</th>
+                    <th style="width: 2.8%;">Des</th>
                 </tr>
             <?php else: ?>
                 <tr>
-                    <th style="width: 4%;">No</th>
-                    <th style="width: 22%;">Nama Lengkap & NIP</th>
-                    <th style="width: 16%;">Jabatan</th>
-                    <th style="width: 15%;">Unit Kerja</th>
-                    <th style="width: 18%;">Atasan Penilai</th>
-                    <th style="width: 7%;">Komponen</th>
-                    <th style="width: 8%;">Nilai (%)</th>
-                    <th style="width: 10%;">Predikat</th>
+                    <th style="width: 3.5%;">No</th>
+                    <th style="width: 20%;">Nama Lengkap & NIP</th>
+                    <th style="width: 14%;">Jabatan</th>
+                    <th style="width: 14%;">Unit Kerja</th>
+                    <th style="width: 15%;">Atasan Penilai</th>
+                    <th style="width: 7%;">T. Pokok</th>
+                    <th style="width: 7%;">T. Tambahan</th>
+                    <th style="width: 7.5%;">Dinilai</th>
+                    <th style="width: 7.5%;">Nilai (%)</th>
+                    <th style="width: 9.5%;">Predikat</th>
                 </tr>
             <?php endif; ?>
         </thead>
         <tbody>
             <?php if (empty($rekap_kinerja)): ?>
                 <tr>
-                    <td colspan="<?= ($bulan_terpilih === 'all') ? '21' : '8' ?>" class="text-center" style="padding: 15px; color: #64748b;">
+                    <td colspan="<?= ($bulan_terpilih === 'all') ? '22' : '10' ?>" class="text-center" style="padding: 15px; color: #64748b;">
                         Tidak ada data kinerja pegawai yang sesuai dengan kriteria filter.
                     </td>
                 </tr>
@@ -359,16 +362,16 @@
                     if ($row['rhk_dinilai'] == 0 && $score == 0) {
                         $predikatText = 'Belum Dinilai';
                         $badgeClass = 'badge-belum';
-                    } elseif ($score >= 100) {
+                    } elseif ($score > 100) {
                         $predikatText = 'Sangat Baik';
                         $badgeClass = 'badge-sangat-baik';
-                    } elseif ($score >= 80) {
+                    } elseif ($score > 90) {
                         $predikatText = 'Baik';
                         $badgeClass = 'badge-baik';
-                    } elseif ($score >= 60) {
+                    } elseif ($score > 75) {
                         $predikatText = 'Butuh Perbaikan';
                         $badgeClass = 'badge-butuh-perbaikan';
-                    } elseif ($score >= 50) {
+                    } elseif ($score > 25) {
                         $predikatText = 'Kurang';
                         $badgeClass = 'badge-kurang';
                     } else {
@@ -394,7 +397,8 @@
                                 </td>
                             <?php endfor; ?>
                             
-                            <td class="text-center"><?= $row['jumlah_komponen'] ?></td>
+                            <td class="text-center fw-bold" style="color: #1e40af;"><?= $row['jumlah_pokok'] ?? $row['jumlah_rhk'] ?></td>
+                            <td class="text-center fw-bold" style="color: #065f46;"><?= $row['jumlah_tambahan'] ?? 0 ?></td>
                             <td class="text-center fw-bold" style="color: #1e3a8a;">
                                 <?= ($score > 0) ? str_replace('.', ',', round($score, 2)) : '-' ?>
                             </td>
@@ -412,6 +416,12 @@
                             <td><?= esc($p['jabatan'] ?? '-') ?></td>
                             <td><?= esc($p['unit'] ?? '-') ?></td>
                             <td><?= esc($p['atasan_nama'] ?? '-') ?></td>
+                            <td class="text-center fw-bold" style="color: #1e40af;">
+                                <?= $row['jumlah_pokok'] ?? $row['jumlah_rhk'] ?>
+                            </td>
+                            <td class="text-center fw-bold" style="color: #065f46;">
+                                <?= $row['jumlah_tambahan'] ?? 0 ?>
+                            </td>
                             <td class="text-center">
                                 <?= $row['rhk_dinilai'] ?> / <?= $row['jumlah_komponen'] ?>
                             </td>

@@ -6,16 +6,16 @@
 
 <?= $this->section('content') ?>
 
-<!-- 0. TOP FILTER TOOLBAR (ALIGNED LEFT & PROPER PADDING) -->
+<!-- 0. TOP FILTER TOOLBAR (8pt Grid System) -->
 <div class="d-flex justify-content-start align-items-center flex-wrap gap-2 mb-4 bento-stagger bento-stagger-1">
     <form id="formKinerja" class="m-0 d-flex flex-wrap gap-2 align-items-center">
-        <select class="form-select form-select-sm filter-select fw-semibold text-dark bg-white shadow-xs rounded-pill border py-1.5 ps-3 pe-4" id="bulan_kinerja" name="bulan_kinerja" aria-label="Pilih Bulan Kinerja" style="width: auto; min-width: 140px; cursor:pointer;" onchange="updateKinerjaData()">
+        <select class="form-select form-select-sm filter-select fw-semibold text-dark bg-white shadow-xs rounded-pill border" id="bulan_kinerja" name="bulan_kinerja" aria-label="Pilih Bulan Kinerja" style="height: 36px; padding: 0 32px 0 16px; width: auto; min-width: 160px; cursor: pointer; font-size: 0.82rem;" onchange="updateKinerjaData()">
             <option value="all" <?= ($bulan_kinerja === 'all') ? 'selected' : '' ?>>Semua Bulan (Setahun)</option>
             <?php for ($i = 1; $i <= 12; $i++): ?>
                 <option value="<?= $i; ?>" <?= ((string)$bulan_kinerja === (string)$i) ? 'selected' : ''; ?>><?= bulan_indo($i) ?></option>
             <?php endfor; ?>
         </select>
-        <select name="tahun_kinerja" id="tahun_kinerja" class="form-select form-select-sm filter-select fw-semibold text-dark bg-white shadow-xs rounded-pill border py-1.5 ps-3 pe-4" aria-label="Pilih Tahun Kinerja" style="width: auto; min-width: 130px; cursor:pointer;" onchange="updateKinerjaData()">
+        <select name="tahun_kinerja" id="tahun_kinerja" class="form-select form-select-sm filter-select fw-semibold text-dark bg-white shadow-xs rounded-pill border" aria-label="Pilih Tahun Kinerja" style="height: 36px; padding: 0 32px 0 16px; width: auto; min-width: 140px; cursor: pointer; font-size: 0.82rem;" onchange="updateKinerjaData()">
             <?php foreach ($daftar_tahun as $tahun_item): ?>
                 <option value="<?= esc($tahun_item) ?>" <?= ($tahun_kinerja == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
             <?php endforeach; ?>
@@ -23,24 +23,24 @@
     </form>
 </div>
 
-<!-- 1. ECC DASHBOARD (TOP SECTION AS REQUESTED) -->
+<!-- 1. ECC DASHBOARD (TOP HERO SECTION - 8pt Grid) -->
 <div class="row g-4 mb-5 bento-stagger bento-stagger-1">
     <div class="col-lg-8 d-flex flex-column">
-        <div class="bento-card border-primary border-top border-4 flex-fill">
-            <div class="bento-header d-flex flex-column flex-md-row justify-content-between align-items-md-center border-bottom pb-2 mb-2 gap-2">
-                <div class="d-flex align-items-center">
-                    <div class="bg-primary-bento text-white rounded p-1 me-2 shadow-sm d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+        <div class="bento-card border-top border-4 border-primary flex-fill rounded-4 shadow-sm">
+            <div class="bento-header d-flex flex-column flex-md-row justify-content-between align-items-md-center border-bottom pb-3 mb-2 gap-2" style="padding: 16px 24px;">
+                <div class="d-flex align-items-center" style="gap: 12px;">
+                    <div class="bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 32px; height: 32px; border-radius: 8px;">
                         <i class="bi bi-shield-check fs-6"></i>
                     </div>
                     <div>
-                        <div class="mb-0 fw-bold text-dark fs-6">Evidence Command Center (ECC)</div>
-                        <div class="text-muted" style="font-size: 0.75rem;">Monitoring Pemenuhan Standar Mutu</div>
+                        <div class="mb-0 fw-bold text-dark" style="font-size: 0.95rem; line-height: 1.3;">Evidence Command Center (ECC)</div>
+                        <div class="text-muted" style="font-size: 0.75rem; margin-top: 2px;">Monitoring Pemenuhan Standar Mutu</div>
                     </div>
                 </div>
                 
                 <!-- Filter Tahun ECC -->
                 <form id="formEcc" class="m-0 d-flex gap-2">
-                    <select name="tahun_ecc" id="tahun_ecc" aria-label="Pilih Tahun ECC" class="form-select form-select-sm filter-select fw-bold text-primary-bento" style="width: auto; cursor:pointer;" onchange="updateEccData()">
+                    <select name="tahun_ecc" id="tahun_ecc" aria-label="Pilih Tahun ECC" class="form-select form-select-sm filter-select fw-semibold text-primary rounded-pill border" style="height: 32px; padding: 0 28px 0 12px; width: auto; cursor: pointer; font-size: 0.78rem;" onchange="updateEccData()">
                         <?php foreach ($daftar_tahun as $tahun_item): ?>
                             <option value="<?= esc($tahun_item) ?>" <?= ($tahun_ecc == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
                         <?php endforeach; ?>
@@ -48,11 +48,11 @@
                 </form>
             </div>
             
-            <div class="bento-body pt-2">
-                <ul class="nav nav-pills ecc-tabs mb-4" id="prodiTab" role="tablist">
+            <div class="bento-body pt-2" style="padding: 24px;">
+                <ul class="nav nav-pills ecc-tabs mb-4 gap-1" id="prodiTab" role="tablist">
                     <?php $tabIdx = 0; foreach($prodiData as $prodi): ?>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link py-1 px-3 <?= $tabIdx === 0 ? 'active' : '' ?>" style="font-size: 0.85rem;" id="tab-<?= esc($prodi['id_prodi']) ?>" data-bs-toggle="tab" data-bs-target="#content-<?= esc($prodi['id_prodi']) ?>" type="button" role="tab"><?= esc($prodi['nama_prodi']) ?></button>
+                            <button class="nav-link rounded-pill py-1.5 px-3 <?= $tabIdx === 0 ? 'active' : '' ?>" style="font-size: 0.82rem; font-weight: 600;" id="tab-<?= esc($prodi['id_prodi']) ?>" data-bs-toggle="tab" data-bs-target="#content-<?= esc($prodi['id_prodi']) ?>" type="button" role="tab"><?= esc($prodi['nama_prodi']) ?></button>
                         </li>
                     <?php $tabIdx++; endforeach; ?>
                 </ul>
@@ -63,18 +63,18 @@
                             <div class="row justify-content-center">
                                 <div class="col-12 px-0 px-md-3">
                                     <div class="text-center mb-3">
-                                        <span class="badge bg-light text-dark border px-2 py-1 rounded-pill shadow-sm" style="font-size: 0.75rem;">
-                                             Rangkuman Skor LED: <strong class="text-primary-bento"><?= esc($prodi['nama_prodi']) ?></strong>
+                                        <span class="badge bg-light text-dark border px-3 py-1.5 rounded-pill shadow-sm" style="font-size: 0.75rem;">
+                                             Rangkuman Skor LED: <strong class="text-primary"><?= esc($prodi['nama_prodi']) ?></strong>
                                         </span>
                                     </div>
                                     <?php if (empty($prodi['chart_labels'])): ?>
-                                        <div class="alert alert-light text-center border py-4 text-muted rounded-3 shadow-none">
+                                        <div class="alert alert-light text-center border py-4 text-muted rounded-4 shadow-none" style="padding: 32px 16px;">
                                             <i class="bi bi-inbox fs-3 d-block mb-2 text-secondary opacity-75"></i>
                                             Belum ada data Kategori LED untuk tahun ini.
                                         </div>
                                     <?php else: ?>
                                         <div class="radar-chart-container"><canvas id="radarChart-<?= esc($prodi['id_prodi']) ?>" role="img" aria-label="Grafik Radar Pemenuhan Standar Mutu <?= esc($prodi['nama_prodi']) ?>"></canvas></div>
-                                        <p class="text-center text-muted small mt-2"><i class="bi bi-info-circle me-1"></i> Klik pada nama standar (label) di grafik untuk melihat detail.</p>
+                                        <p class="text-center text-muted small mt-2 mb-0"><i class="bi bi-info-circle me-1"></i> Klik pada nama standar (label) di grafik untuk melihat detail.</p>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -86,39 +86,42 @@
     </div>
     
     <div class="col-lg-4 d-flex flex-column gap-4">
-        <!-- Rata-rata Kinerja -->
-        <div class="bento-card bg-primary-bento text-white flex-fill shadow-sm" style="min-height:150px;">
-            <div class="bento-body p-4 d-flex flex-column justify-content-center h-100">
-                <div class="stat-label text-white-50 mb-1">Rata-Rata Kinerja Bulanan</div>
-                <div class="stat-value text-white mb-2" id="valRataRataKinerja" aria-live="polite" aria-atomic="true">
+        <!-- Rata-rata Kinerja (8pt Grid) -->
+        <div class="bento-card bg-primary text-white flex-fill shadow-sm rounded-4" style="min-height: 160px; padding: 24px;">
+            <div class="d-flex flex-column justify-content-center h-100">
+                <div class="text-white-50 fw-semibold text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px; margin-bottom: 6px;">Rata-Rata Kinerja Bulanan</div>
+                <div class="stat-value text-white num-tabular" id="valRataRataKinerja" aria-live="polite" aria-atomic="true" style="font-size: 2.25rem; font-weight: 700; line-height: 1.1; margin-bottom: 8px;">
                     <?= number_format((float)($rataRataValue ?? 0), 2, ',', '.') ?>
                 </div>
-                <div class="text-white-50 small"><i class="bi bi-graph-up-arrow me-1"></i> Skor Agregat Seluruh Pegawai</div>
+                <div class="text-white-50 small d-flex align-items-center" style="font-size: 0.75rem; gap: 6px;"><i class="bi bi-graph-up-arrow"></i> Skor Agregat Seluruh Pegawai</div>
             </div>
         </div>
         
-        <!-- Partisipasi Pegawai Aktif -->
-        <div class="bento-card flex-fill shadow-sm border-top border-4 border-primary" style="min-height:150px;">
-            <div class="bento-body p-4 d-flex flex-column justify-content-center h-100">
-                <div class="stat-label mb-1">Tingkat Partisipasi Aktif</div>
-                <div class="stat-value text-dark mb-2" id="valPartisipasi" aria-live="polite" aria-atomic="true">
+        <!-- Partisipasi Pegawai Aktif (8pt Grid) -->
+        <div class="bento-card flex-fill shadow-sm border-top border-4 border-primary rounded-4" style="min-height: 160px; padding: 24px;">
+            <div class="d-flex flex-column justify-content-center h-100">
+                <div class="text-muted fw-semibold text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px; margin-bottom: 6px;">Tingkat Partisipasi Aktif</div>
+                <div class="stat-value text-dark num-tabular" id="valPartisipasi" aria-live="polite" aria-atomic="true" style="font-size: 2.25rem; font-weight: 700; line-height: 1.1; margin-bottom: 8px;">
                     <?php 
                         $pctPart = ($totalPegawai > 0) ? round(($partisipasiAktif / $totalPegawai) * 100, 1) : 0;
                         echo esc($pctPart);
                     ?><span class="fs-4">%</span>
                 </div>
-                <div class="text-primary small fw-bold"><i class="bi bi-people-fill me-1"></i> <span id="valPartisipasiCount"><?= esc($partisipasiAktif) ?></span> dari <span id="valTotalPegawai"><?= esc($totalPegawai) ?></span> Pegawai Aktif</div>
+                <div class="text-primary small fw-bold d-flex align-items-center" style="font-size: 0.75rem; gap: 6px;">
+                    <i class="bi bi-people-fill"></i> 
+                    <span><strong id="valPartisipasiCount" class="num-tabular"><?= esc($partisipasiAktif) ?></strong> dari <strong id="valTotalPegawai" class="num-tabular"><?= esc($totalPegawai) ?></strong> Pegawai Aktif</span>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- 2. ANALISIS KINERJA UNIT -->
+<!-- 2. ANALISIS KINERJA UNIT (8pt Grid) -->
 <div class="bento-stagger bento-stagger-2">
-    <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-4 mt-2">
         <div>
-            <h4 class="mb-0 fw-bold text-dark">Analitik Kinerja Unit</h4>
-            <p class="text-muted mb-0 small">Ringkasan performa seluruh unit berdasarkan laporan harian yang dinilai pada periode terpilih</p>
+            <h5 class="mb-0 fw-bold text-dark" style="font-size: 1.1rem;">Analitik Kinerja Unit</h5>
+            <p class="text-muted mb-0 small" style="font-size: 0.78rem; margin-top: 2px;">Ringkasan performa seluruh unit berdasarkan laporan harian yang dinilai pada periode terpilih</p>
         </div>
     </div>
 
@@ -126,9 +129,9 @@
     <div class="row g-4 mb-5">
         <!-- Sebaran Kinerja Doughnut Chart -->
         <div class="col-lg-4">
-            <div class="bento-card h-100">
-                <div class="bento-header">Sebaran Predikat Kinerja</div>
-                <div class="bento-body pt-0">
+            <div class="bento-card h-100 rounded-4 shadow-sm">
+                <div class="bento-header fw-bold text-dark border-bottom" style="padding: 16px 24px; font-size: 0.88rem; min-height: 56px; display: flex; align-items: center;">Sebaran Predikat Kinerja</div>
+                <div class="bento-body pt-0" style="padding: 24px;">
                     <div class="chart-container">
                         <canvas id="sebaranChart" role="img" aria-label="Grafik Sebaran Predikat Kinerja Organisasi"></canvas>
                     </div>
@@ -138,9 +141,9 @@
         
         <!-- Trend Line Chart -->
         <div class="col-lg-8">
-            <div class="bento-card h-100">
-                <div class="bento-header">Tren Kinerja Bulanan Organisasi</div>
-                <div class="bento-body pt-0">
+            <div class="bento-card h-100 rounded-4 shadow-sm">
+                <div class="bento-header fw-bold text-dark border-bottom" style="padding: 16px 24px; font-size: 0.88rem; min-height: 56px; display: flex; align-items: center;">Tren Kinerja Bulanan Organisasi</div>
+                <div class="bento-body pt-0" style="padding: 24px;">
                     <div class="chart-container">
                         <canvas id="trendChart" role="img" aria-label="Grafik Tren Kinerja Bulanan Organisasi"></canvas>
                     </div>
@@ -150,70 +153,41 @@
     </div>
 </div>
 
-<!-- 3. LEADERBOARD UNIT & PEGAWAI -->
+<!-- 3. LEADERBOARD UNIT & PEGAWAI (8pt Grid) -->
 <div class="row g-4 mb-5 bento-stagger bento-stagger-3">
     <!-- Kolom Kiri: Top 5 Unit -->
     <div class="col-lg-4">
-        <div class="bento-card h-100 d-flex flex-column">
-            <div class="bento-header d-flex justify-content-between align-items-center border-bottom pb-2 mb-2" style="height: 42px;">
-                <div style="font-size: 0.85rem;" class="fw-bold"><i class="bi bi-building-up text-primary me-2"></i>Top 5 Unit Kerja</div>
-                <a href="#unitPerformanceChart" class="btn btn-light rounded-pill px-2 py-0 text-primary fw-bold d-flex align-items-center" style="text-decoration: none; font-size: 0.7rem; height: 24px;">Selengkapnya <i class="bi bi-arrow-down-short fs-6"></i></a>
+        <div class="bento-card h-100 d-flex flex-column rounded-4 shadow-sm">
+            <div class="bento-header d-flex justify-content-between align-items-center border-bottom" style="padding: 16px 24px; min-height: 56px;">
+                <div style="font-size: 0.88rem;" class="fw-bold text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-building-up text-primary fs-6"></i>
+                    <span>Top 5 Unit Kerja</span>
+                </div>
+                <a href="#unitPerformanceChart" class="btn btn-sm btn-light rounded-pill px-2.5 text-primary fw-semibold d-flex align-items-center" style="text-decoration: none; font-size: 0.72rem; height: 28px; gap: 4px;">
+                    <span>Selengkapnya</span>
+                    <i class="bi bi-arrow-down-short fs-6"></i>
+                </a>
             </div>
             <div class="bento-body p-0 flex-fill d-flex flex-column justify-content-center">
                 <div class="table-responsive">
                     <table class="table table-borderless table-hover align-middle mb-0">
                         <tbody id="tbodyTop5Unit">
                             <?php if(empty($top5Unit)): ?>
-                                <tr><td class="text-center text-muted py-4">Belum ada data</td></tr>
+                                <tr><td class="text-center text-muted py-4 small">Belum ada data</td></tr>
                             <?php else: ?>
                                 <?php foreach($top5Unit as $i => $u): ?>
                                 <tr style="height: 56px;">
-                                    <td style="width: 50px;" class="text-center align-middle py-2 border-bottom border-light">
-                                        <?php if($i == 0): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-warning text-dark p-0 shadow-sm" style="width:24px;height:24px;font-size:11px;">1</div>
-                                        <?php elseif($i == 1): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-secondary text-white p-0 shadow-sm" style="width:24px;height:24px;font-size:11px;">2</div>
-                                        <?php elseif($i == 2): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle text-white p-0 shadow-sm" style="background-color: #cd7f32; width:24px;height:24px;font-size:11px;">3</div>
-                                        <?php else: ?><div class="d-flex justify-content-center align-items-center mx-auto fw-bold text-muted" style="width:24px;height:24px;font-size:13px;"><?= $i+1 ?></div><?php endif; ?>
+                                    <td style="width: 50px; padding: 12px 16px;" class="text-center align-middle border-bottom border-light">
+                                        <?php if($i == 0): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-warning text-dark p-0 shadow-sm" style="width: 24px; height: 24px; font-size: 0.75rem; font-weight: 700;">1</div>
+                                        <?php elseif($i == 1): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-secondary text-white p-0 shadow-sm" style="width: 24px; height: 24px; font-size: 0.75rem; font-weight: 700;">2</div>
+                                        <?php elseif($i == 2): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle text-white p-0 shadow-sm" style="background-color: #cd7f32; width: 24px; height: 24px; font-size: 0.75rem; font-weight: 700;">3</div>
+                                        <?php else: ?><div class="d-flex justify-content-center align-items-center mx-auto fw-bold text-muted" style="width: 24px; height: 24px; font-size: 0.8rem;"><?= $i+1 ?></div><?php endif; ?>
                                     </td>
-                                    <td class="py-2 border-bottom border-light" style="max-width: 0; width: 100%;">
-                                        <div class="fw-bold text-dark text-truncate" style="font-size: 0.85rem;" title="<?= esc($u['nama']) ?>"><?= esc($u['nama']) ?></div>
+                                    <td class="border-bottom border-light" style="padding: 12px 16px; max-width: 0; width: 100%;">
+                                        <div class="fw-bold text-dark text-truncate" style="font-size: 0.82rem;" title="<?= esc($u['nama']) ?>"><?= esc($u['nama']) ?></div>
                                     </td>
-                                    <td class="text-end pe-4 py-2 border-bottom border-light">
-                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 shadow-sm border border-success"><?= $u['rata'] > 0 ? number_format((float)$u['rata'], 2, ',', '.') : '-' ?></span>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- Top 5 -->
-    <div class="col-lg-4">
-        <div class="bento-card h-100">
-            <div class="bento-header d-flex align-items-center text-dark border-bottom pb-2 mb-2 fw-bold" style="font-size: 0.85rem; height: 42px;"><i class="bi bi-trophy-fill text-warning me-2"></i>Top 5 Pegawai Berkinerja Terbaik</div>
-            <div class="bento-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-borderless table-hover align-middle mb-0">
-                        <tbody id="tbodyTop5">
-                            <?php if(empty($top5)): ?>
-                                <tr><td class="text-center text-muted py-4">Belum ada data</td></tr>
-                            <?php else: ?>
-                                <?php foreach($top5 as $i => $t): ?>
-                                <tr style="height: 56px;">
-                                    <td style="width: 50px;" class="text-center align-middle py-2 border-bottom border-light">
-                                        <?php if($i == 0): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-warning text-dark p-0 shadow-sm" style="width:24px;height:24px;font-size:11px;">1</div>
-                                        <?php elseif($i == 1): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-secondary text-white p-0 shadow-sm" style="width:24px;height:24px;font-size:11px;">2</div>
-                                        <?php elseif($i == 2): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle text-white p-0 shadow-sm" style="background-color: #cd7f32; width:24px;height:24px;font-size:11px;">3</div>
-                                        <?php else: ?><div class="d-flex justify-content-center align-items-center mx-auto fw-bold text-muted" style="width:24px;height:24px;font-size:13px;"><?= $i+1 ?></div><?php endif; ?>
-                                    </td>
-                                    <td class="py-2 border-bottom border-light" style="max-width: 0; width: 100%;">
-                                        <div class="fw-bold text-dark text-truncate" style="font-size: 0.85rem;" title="<?= esc($t['staf']['nama_lengkap']) ?>"><?= esc($t['staf']['nama_lengkap']) ?></div>
-                                        <div class="text-muted text-truncate" style="font-size: 0.75rem;" title="<?= esc(trim($t['staf']['jabatan'] ?? '') ?: '-') ?>"><?= esc(trim($t['staf']['jabatan'] ?? '') ?: '-') ?></div>
-                                    </td>
-                                    <td class="text-end pe-3 py-2 border-bottom border-light">
-                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 shadow-sm border border-success" style="font-size: 0.8rem;"><?= number_format((float)$t['rata_rata'], 2, ',', '.') ?></span>
+                                    <td class="text-end border-bottom border-light" style="padding: 12px 16px;">
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1 shadow-sm border border-success num-tabular" style="font-size: 0.78rem; font-weight: 700;"><?= $u['rata'] > 0 ? number_format((float)$u['rata'], 2, ',', '.') : '-' ?></span>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -225,28 +199,70 @@
         </div>
     </div>
     
-    <!-- Bottom 5 -->
+    <!-- Top 5 Pegawai -->
     <div class="col-lg-4">
-        <div class="bento-card h-100">
-            <div class="bento-header d-flex align-items-center text-dark border-bottom pb-2 mb-2 fw-bold" style="font-size: 0.85rem; height: 42px;"><i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Perlu Perhatian Khusus</div>
+        <div class="bento-card h-100 rounded-4 shadow-sm">
+            <div class="bento-header d-flex align-items-center text-dark border-bottom fw-bold" style="padding: 16px 24px; font-size: 0.88rem; min-height: 56px; gap: 8px;">
+                <i class="bi bi-trophy-fill text-warning fs-6"></i>
+                <span>Top 5 Pegawai Berkinerja Terbaik</span>
+            </div>
+            <div class="bento-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-borderless table-hover align-middle mb-0">
+                        <tbody id="tbodyTop5">
+                            <?php if(empty($top5)): ?>
+                                <tr><td class="text-center text-muted py-4 small">Belum ada data</td></tr>
+                            <?php else: ?>
+                                <?php foreach($top5 as $i => $t): ?>
+                                <tr style="height: 56px;">
+                                    <td style="width: 50px; padding: 12px 16px;" class="text-center align-middle border-bottom border-light">
+                                        <?php if($i == 0): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-warning text-dark p-0 shadow-sm" style="width: 24px; height: 24px; font-size: 0.75rem; font-weight: 700;">1</div>
+                                        <?php elseif($i == 1): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle bg-secondary text-white p-0 shadow-sm" style="width: 24px; height: 24px; font-size: 0.75rem; font-weight: 700;">2</div>
+                                        <?php elseif($i == 2): ?><div class="d-flex justify-content-center align-items-center mx-auto badge rounded-circle text-white p-0 shadow-sm" style="background-color: #cd7f32; width: 24px; height: 24px; font-size: 0.75rem; font-weight: 700;">3</div>
+                                        <?php else: ?><div class="d-flex justify-content-center align-items-center mx-auto fw-bold text-muted" style="width: 24px; height: 24px; font-size: 0.8rem;"><?= $i+1 ?></div><?php endif; ?>
+                                    </td>
+                                    <td class="border-bottom border-light" style="padding: 12px 16px; max-width: 0; width: 100%;">
+                                        <div class="fw-bold text-dark text-truncate" style="font-size: 0.82rem;" title="<?= esc($t['staf']['nama_lengkap']) ?>"><?= esc($t['staf']['nama_lengkap']) ?></div>
+                                        <div class="text-muted text-truncate" style="font-size: 0.72rem; margin-top: 1px;" title="<?= esc(trim($t['staf']['jabatan'] ?? '') ?: '-') ?>"><?= esc(trim($t['staf']['jabatan'] ?? '') ?: '-') ?></div>
+                                    </td>
+                                    <td class="text-end border-bottom border-light" style="padding: 12px 16px;">
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1 shadow-sm border border-success num-tabular" style="font-size: 0.78rem; font-weight: 700;"><?= number_format((float)$t['rata_rata'], 2, ',', '.') ?></span>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bottom 5 / Perlu Perhatian Khusus -->
+    <div class="col-lg-4">
+        <div class="bento-card h-100 rounded-4 shadow-sm">
+            <div class="bento-header d-flex align-items-center text-dark border-bottom fw-bold" style="padding: 16px 24px; font-size: 0.88rem; min-height: 56px; gap: 8px;">
+                <i class="bi bi-exclamation-triangle-fill text-danger fs-6"></i>
+                <span>Perlu Perhatian Khusus</span>
+            </div>
             <div class="bento-body p-0">
                 <div class="table-responsive">
                     <table class="table table-borderless table-hover align-middle mb-0">
                         <tbody id="tbodyBottom5">
                             <?php if(empty($bottom5)): ?>
-                                <tr><td class="text-center text-muted py-4">Belum ada data</td></tr>
+                                <tr><td class="text-center text-muted py-4 small"><i class="bi bi-check-circle-fill text-success me-1"></i> Tidak ada pegawai yang perlu perhatian khusus</td></tr>
                             <?php else: ?>
                                 <?php foreach($bottom5 as $i => $b): ?>
                                 <tr style="height: 56px;">
-                                    <td style="width: 50px;" class="text-center align-middle py-2 border-bottom border-light">
-                                        <div class="d-flex justify-content-center align-items-center mx-auto fw-bold text-danger" style="width:24px;height:24px;font-size:13px;"><?= $i+1 ?></div>
+                                    <td style="width: 50px; padding: 12px 16px;" class="text-center align-middle border-bottom border-light">
+                                        <div class="d-flex justify-content-center align-items-center mx-auto fw-bold text-danger bg-danger bg-opacity-10 rounded-circle" style="width: 24px; height: 24px; font-size: 0.75rem;"><?= $i+1 ?></div>
                                     </td>
-                                    <td class="py-2 border-bottom border-light" style="max-width: 0; width: 100%;">
-                                        <div class="fw-bold text-dark text-truncate" style="font-size: 0.85rem;" title="<?= esc($b['staf']['nama_lengkap']) ?>"><?= esc($b['staf']['nama_lengkap']) ?></div>
-                                        <div class="text-muted text-truncate" style="font-size: 0.75rem;" title="<?= esc(trim($b['staf']['jabatan'] ?? '') ?: '-') ?>"><?= esc(trim($b['staf']['jabatan'] ?? '') ?: '-') ?></div>
+                                    <td class="border-bottom border-light" style="padding: 12px 16px; max-width: 0; width: 100%;">
+                                        <div class="fw-bold text-dark text-truncate" style="font-size: 0.82rem;" title="<?= esc($b['staf']['nama_lengkap']) ?>"><?= esc($b['staf']['nama_lengkap']) ?></div>
+                                        <div class="text-muted text-truncate" style="font-size: 0.72rem; margin-top: 1px;" title="<?= esc(trim($b['staf']['jabatan'] ?? '') ?: '-') ?>"><?= esc(trim($b['staf']['jabatan'] ?? '') ?: '-') ?></div>
                                     </td>
-                                    <td class="text-end pe-3 py-2 border-bottom border-light">
-                                        <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2 py-1 shadow-sm border border-danger" style="font-size: 0.8rem;"><?= number_format((float)$b['rata_rata'], 2, ',', '.') ?></span>
+                                    <td class="text-end border-bottom border-light" style="padding: 12px 16px;">
+                                        <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2.5 py-1 shadow-sm border border-danger num-tabular" style="font-size: 0.78rem; font-weight: 700;"><?= number_format((float)$b['rata_rata'], 2, ',', '.') ?></span>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -259,23 +275,23 @@
     </div>
 </div>
 
-<!-- 4. GRAFIK KINERJA UNIT -->
+<!-- 4. GRAFIK KINERJA UNIT (8pt Grid) -->
 <div class="bento-stagger bento-stagger-4">
     <div class="d-flex align-items-center mb-3">
-        <h5 class="fw-bold text-secondary mb-0"><i class="bi bi-building me-2"></i> Grafik Kinerja Unit</h5>
+        <h5 class="fw-bold text-secondary mb-0 d-flex align-items-center gap-2" style="font-size: 1rem;"><i class="bi bi-building"></i> Grafik Kinerja Unit</h5>
     </div>
 
     <div class="row g-4 mb-5">
         <div class="col-12">
-            <div class="bento-card border-top border-4 border-info">
-                <div class="bento-body p-4">
+            <div class="bento-card border-top border-4 border-info rounded-4 shadow-sm">
+                <div class="bento-body" style="padding: 24px;">
                     <?php if (empty($chartPegawaiUnitLabels)): ?>
-                        <div class="alert alert-light border text-center text-muted mb-0 shadow-sm"><i class="bi bi-info-circle me-2"></i> Belum ada data rekap kinerja staf.</div>
+                        <div class="alert alert-light border text-center text-muted mb-0 shadow-sm rounded-3"><i class="bi bi-info-circle me-2"></i> Belum ada data rekap kinerja staf.</div>
                     <?php else: ?>
                         <div class="performance-chart-container">
                             <canvas id="unitPerformanceChart" role="img" aria-label="Grafik Batang Kinerja Seluruh Unit Kerja Organisasi"></canvas>
                         </div>
-                        <p class="text-center text-muted small mt-3 mb-0"><i class="bi bi-info-circle me-1"></i> Klik pada grafik batang untuk melihat detail anggota unit kerja.</p>
+                        <p class="text-center text-muted small mt-3 mb-0" style="font-size: 0.75rem;"><i class="bi bi-info-circle me-1"></i> Klik pada grafik batang untuk melihat detail anggota unit kerja.</p>
                     <?php endif; ?>
                 </div>
             </div>
@@ -283,22 +299,33 @@
     </div>
 </div>
 
-<!-- Modal Detail Unit -->
-<div class="modal fade" id="unitDetailModal" tabindex="-1" aria-hidden="true">
+<!-- Modal Detail Unit (Bento Popup - 8pt Grid System) -->
+<div class="modal fade" id="unitDetailModal" tabindex="-1" aria-labelledby="unitDetailModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content rounded-4 border-0 shadow-lg">
-            <div class="modal-header border-bottom-0 pb-0">
-                <h5 class="modal-title fw-bold d-flex align-items-center flex-wrap gap-2" id="unitDetailModalLabel">Detail Pegawai: <span id="modalUnitName" class="text-primary-bento"></span> <span id="modalPeriodBadge" class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill fs-7 fw-semibold"></span></h5>
+        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden" style="border-top: 4px solid #0d6efd !important;">
+            <div class="modal-header bg-light border-bottom" style="padding: 16px 24px;">
+                <div class="d-flex align-items-center" style="gap: 12px;">
+                    <div class="bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 40px; height: 40px; border-radius: 12px;">
+                        <i class="bi bi-building-check fs-5"></i>
+                    </div>
+                    <div>
+                        <h6 class="modal-title fw-bold text-dark mb-0 d-flex align-items-center flex-wrap gap-2" id="unitDetailModalLabel" style="font-size: 1rem; line-height: 1.3;">
+                            <span>Detail Pegawai:</span>
+                            <span id="modalUnitName" class="text-primary"></span>
+                            <span id="modalPeriodBadge" class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-0.5" style="font-size: 0.72rem;"></span>
+                        </h6>
+                    </div>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body pt-3 pb-4">
-                <div class="table-responsive">
-                    <table class="table table-hover table-borderless align-middle mb-0">
-                        <thead class="bg-light text-muted small text-uppercase">
+            <div class="modal-body" style="padding: 24px;">
+                <div class="table-responsive bg-white border rounded-3 shadow-sm overflow-hidden">
+                    <table class="table table-hover align-middle mb-0 table-bento" style="font-size: 0.8rem;">
+                        <thead class="bg-light text-muted small text-uppercase" style="background-color: #f8fafc;">
                             <tr>
-                                <th class="ps-3 rounded-start">Nama Pegawai</th>
-                                <th class="text-center">Target Dinilai</th>
-                                <th class="text-center rounded-end">Rata-rata Nilai</th>
+                                <th class="ps-3" style="padding: 12px 16px;">Nama Pegawai</th>
+                                <th class="text-center" style="padding: 12px 16px;">Target & Tambahan</th>
+                                <th class="text-center pe-3" style="padding: 12px 16px;">Rata-rata Nilai</th>
                             </tr>
                         </thead>
                         <tbody id="unitDetailTbody" class="border-top-0">
@@ -306,6 +333,9 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+            <div class="modal-footer bg-light border-top" style="padding: 12px 24px;">
+                <button type="button" class="btn btn-sm btn-secondary rounded-pill px-4 fw-semibold" style="height: 32px; font-size: 0.78rem;" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
@@ -463,7 +493,11 @@ async function updateKinerjaData() {
 
             // Top 5 / Bottom 5 Tables
             const renderTable = (arr, isTop) => {
-                if(!arr || arr.length === 0) return '<tr><td class="text-center text-muted py-4">Belum ada data</td></tr>';
+                if(!arr || arr.length === 0) {
+                    return isTop 
+                        ? '<tr><td class="text-center text-muted py-4 small">Belum ada data</td></tr>' 
+                        : '<tr><td class="text-center text-muted py-4 small"><i class="bi bi-check-circle-fill text-success me-1"></i> Tidak ada pegawai yang perlu perhatian khusus</td></tr>';
+                }
                 let html = '';
                 arr.forEach((item, i) => {
                     let badge = '';
@@ -740,7 +774,14 @@ document.addEventListener('DOMContentLoaded', function () {
                                             <div class="small text-muted">${escapeHtml(item.jabatan || '-')}</div>
                                         </td>
                                         <td class="text-center py-3 border-bottom border-light">
-                                            <span class="badge bg-light text-dark border shadow-sm">${escapeHtml(item.dinilai)} / ${escapeHtml(item.total_laporan)}</span>
+                                            <div class="d-flex flex-column align-items-center justify-content-center gap-1">
+                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5" style="font-size: 0.72rem;">
+                                                    ${escapeHtml(item.total_pokok !== undefined ? item.total_pokok : item.total_laporan)} Pokok
+                                                </span>
+                                                <span class="badge ${(item.total_tambahan || 0) > 0 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-light text-muted border'} rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">
+                                                    ${escapeHtml(item.total_tambahan || 0)} Tambahan
+                                                </span>
+                                            </div>
                                         </td>
                                         <td class="text-center py-3 border-bottom border-light pe-3">
                                             <span class="badge ${badgeClass} fs-6 rounded-pill px-3 shadow-sm">${scoreItemStr}</span>
@@ -774,7 +815,7 @@ document.addEventListener('DOMContentLoaded', function () {
         window.pageCharts['sebaranChart'] = new Chart(ctxSebaran, {
             type: 'doughnut',
             data: {
-                labels: ['Sangat Baik (>100%)', 'Baik (>90-100%)', 'Butuh Perbaikan (>75-90%)', 'Kurang (>25-75%)', 'Sangat Kurang (≤25%)'],
+                labels: ['Sangat Baik (> 100% - 150%)', 'Baik (> 90% - 100%)', 'Butuh Perbaikan (> 75% - 90%)', 'Kurang (> 25% - 75%)', 'Sangat Kurang (≤ 25%)'],
                 datasets: [{
                     data: [
                         <?= esc($sebaranKinerja['sangat_baik']) ?>, 

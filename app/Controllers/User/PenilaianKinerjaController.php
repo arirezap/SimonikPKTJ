@@ -4,6 +4,7 @@ namespace App\Controllers\User;
 
 use App\Controllers\BaseController;
 use App\Controllers\Traits\KinerjaBatchTrait;
+use App\Models\HolidayModel;
 use App\Models\LogKegiatanHarian;
 use App\Models\LogTugasTambahan;
 use App\Models\SettingModel;
@@ -74,9 +75,10 @@ class PenilaianKinerjaController extends BaseController
         $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
         $role = session()->get('role');
-        $isSuper = hasAnyRole(['admin', 'direktur', 'wadir']);
+        // Catatan: Role Wadir tidak memiliki akses menilai kinerja staf
+        $isSuper = hasAnyRole(['admin', 'direktur']);
 
-        // Ambil daftar unit kerja untuk filter (Hanya untuk Admin Utama)
+        // Ambil daftar unit kerja untuk filter (Hanya untuk Admin Utama dan Direktur)
         $daftarUnit = [];
         if ($isSuper) {
             $units = $userModel->select('unit')->distinct()->where('unit !=', null)->where('unit !=', '')->orderBy('unit', 'ASC')->findAll();
@@ -93,6 +95,11 @@ class PenilaianKinerjaController extends BaseController
             }
             $daftarStaf = $builder->orderBy('nama_lengkap', 'ASC')->findAll();
             $isAtasan = true;
+        } elseif (hasRole('wadir')) {
+            // Role Wakil Direktur tidak menilai staf (hanya mengelola rekap Target Saya)
+            $daftarStaf = [];
+            $daftarUnit = [];
+            $isAtasan = false;
         } else {
             $daftarStaf = $userModel->getStaf($userId);
             // Jika user punya role kepegawaian, sertakan seluruh pegawai Tugas Belajar
@@ -148,12 +155,44 @@ class PenilaianKinerjaController extends BaseController
         $rekapDataStaf = [];
         $logHarianStaf = [];
         $tugasTambahanStaf = [];
+        $isTargetStafDisetujui = true;
+        $targetStafBelumDisetujuiCount = 0;
+
         if ($isPenilai) {
             $rekapDataStaf = $laporanModel->getTargetWithRealization($stafIdTerpilih, $bulanTerpilih, $tahunTerpilih, true);
             $rawLogHarian = $logModel->getLogByMonth($stafIdTerpilih, $bulanTerpilih, $tahunTerpilih, true);
             $tugasTambahanStaf = $logTambahanModel->getLogByMonth($stafIdTerpilih, $bulanTerpilih, $tahunTerpilih, true);
             $logHarianStaf = $this->combineAndSortLogs($rawLogHarian, $tugasTambahanStaf);
+
+            // Validasi apakah seluruh target staf pada periode ini sudah disetujui atasan
+            $stafUserSelected = $userModel->find($stafIdTerpilih);
+            $stafHasAtasan = $stafUserSelected && !empty($stafUserSelected['atasan_id']) && $stafUserSelected['role'] !== 'direktur';
+
+            if (!empty($rekapDataStaf) && $stafHasAtasan) {
+                foreach ($rekapDataStaf as $targetRow) {
+                    if (($targetRow['status_approval'] ?? '') !== 'disetujui') {
+                        $isTargetStafDisetujui = false;
+                        $targetStafBelumDisetujuiCount++;
+                    }
+                }
+            }
         }
+
+        // Ambil data hari libur nasional untuk kalender heatmap
+        $holidayModel = new HolidayModel();
+        $startDate = sprintf('%04d-%02d-01', $tahunTerpilih, $bulanTerpilih);
+        $endDate = date('Y-m-t', strtotime($startDate));
+        $holidaysList = $holidayModel->where('holiday_date >=', $startDate)
+                                     ->where('holiday_date <=', $endDate)
+                                     ->findAll();
+        $holidayMap = [];
+        foreach ($holidaysList as $h) {
+            $holidayMap[$h['holiday_date']] = $h['holiday_name'];
+        }
+
+        // Bangun data kalender heatmap untuk diri sendiri dan staf
+        $heatmapSendiri = $this->buildCalendarHeatmap($bulanTerpilih, $tahunTerpilih, $logHarianSendiri, $holidayMap, $bulanIndo);
+        $heatmapStaf = $isPenilai ? $this->buildCalendarHeatmap($bulanTerpilih, $tahunTerpilih, $logHarianStaf, $holidayMap, $bulanIndo) : null;
 
         $data = [
             'title' => 'Rekap & Penilaian Kinerja',
@@ -170,13 +209,122 @@ class PenilaianKinerjaController extends BaseController
             'rekap_data_staf' => $rekapDataStaf,
             'log_harian_staf' => $logHarianStaf,
             'tugas_tambahan_staf' => $tugasTambahanStaf,
+            'heatmap_sendiri' => $heatmapSendiri,
+            'heatmap_staf' => $heatmapStaf,
             'rekap_dashboard' => $rekapDashboard,
             'is_super' => $isSuper,
             'daftar_unit' => $daftarUnit,
-            'unit_kerja_terpilih' => $unitKerjaTerpilih
+            'unit_kerja_terpilih' => $unitKerjaTerpilih,
+            'is_target_staf_disetujui' => $isTargetStafDisetujui,
+            'target_staf_unapproved_count' => $targetStafBelumDisetujuiCount
         ];
 
         return view('user/penilaian_kinerja/index', $data);
+    }
+
+    /**
+     * Membangun dataset kalender heatmap bulanan untuk visualisasi aktivitas harian
+     */
+    private function buildCalendarHeatmap($bulan, $tahun, array $logList, array $holidayMap, array $bulanIndo): array
+    {
+        $startDate = sprintf('%04d-%02d-01', $tahun, $bulan);
+        $totalDays = (int)date('t', strtotime($startDate));
+        $firstDayOfWeek = (int)date('N', strtotime($startDate)); // 1 (Senin) .. 7 (Minggu)
+        
+        // Group logs by date
+        $logsByDate = [];
+        foreach ($logList as $item) {
+            $tgl = !empty($item['tanggal_kegiatan']) ? $item['tanggal_kegiatan'] : (!empty($item['tanggal']) ? $item['tanggal'] : null);
+            if ($tgl) {
+                $logsByDate[$tgl][] = $item;
+            }
+        }
+
+        $hariIndoArr = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+
+        $days = [];
+        $totalHariTerisi = 0;
+        $totalLogItems = 0;
+
+        for ($d = 1; $d <= $totalDays; $d++) {
+            $dateStr = sprintf('%04d-%02d-%02d', $tahun, $bulan, $d);
+            $dayOfWeek = (int)date('N', strtotime($dateStr)); // 1 (Sen) .. 7 (Min)
+            $isWeekend = ($dayOfWeek >= 6);
+            $isHoliday = isset($holidayMap[$dateStr]);
+            $holidayName = $isHoliday ? $holidayMap[$dateStr] : null;
+            $isTanggalMerah = ($isWeekend || $isHoliday);
+
+            $dayLogs = $logsByDate[$dateStr] ?? [];
+            $countLogs = count($dayLogs);
+            $totalLogItems += $countLogs;
+
+            if ($countLogs > 0) {
+                $totalHariTerisi++;
+            }
+
+            // Hitung level intensitas berdasarkan aktivitas riil (berlaku untuk semua unit kerja & shift):
+            // 0: 0 log (netral)
+            // 1: 1-2 log
+            // 2: 3-4 log
+            // 3: 5-6 log
+            // 4: >6 log
+            $level = 0;
+            if ($countLogs === 0) {
+                $level = 0;
+            } elseif ($countLogs <= 2) {
+                $level = 1;
+            } elseif ($countLogs <= 4) {
+                $level = 2;
+            } elseif ($countLogs <= 6) {
+                $level = 3;
+            } else {
+                $level = 4;
+            }
+
+            $wIdx = (int)date('w', strtotime($dateStr));
+            $namaHari = $hariIndoArr[$wIdx] ?? '';
+            $tglFormatted = $namaHari . ', ' . $d . ' ' . ($bulanIndo[$bulan - 1] ?? '') . ' ' . $tahun;
+
+            $hasDraft = false;
+            $hasTerkirim = false;
+            foreach ($dayLogs as $dl) {
+                $st = $dl['status'] ?? 'draft';
+                if ($st === 'terkirim' || $st === 'disetujui') {
+                    $hasTerkirim = true;
+                } else {
+                    $hasDraft = true;
+                }
+            }
+
+            $days[] = [
+                'day_num'          => $d,
+                'date_str'         => $dateStr,
+                'date_formatted'   => $tglFormatted,
+                'day_of_week'      => $dayOfWeek, // 1 = Senin .. 7 = Minggu
+                'is_weekend'       => $isWeekend,
+                'is_holiday'       => $isHoliday,
+                'is_tanggal_merah' => $isTanggalMerah,
+                'holiday_name'     => $holidayName,
+                'count_logs'       => $countLogs,
+                'level'            => $level,
+                'has_draft'        => $hasDraft,
+                'has_terkirim'     => $hasTerkirim,
+                'logs'             => $dayLogs,
+            ];
+        }
+
+        $rataRataPerHariAktif = $totalHariTerisi > 0 ? round($totalLogItems / $totalHariTerisi, 1) : 0;
+
+        return [
+            'total_days'        => $totalDays,
+            'first_day_of_week' => $firstDayOfWeek, // 1 (Senin) s/d 7 (Minggu)
+            'days'              => $days,
+            'summary'           => [
+                'total_hari_terisi'        => $totalHariTerisi,
+                'total_log_items'          => $totalLogItems,
+                'rata_rata_per_hari_aktif' => $rataRataPerHariAktif,
+            ],
+        ];
     }
 
     public function store()
@@ -198,7 +346,13 @@ class PenilaianKinerjaController extends BaseController
 
         $laporanModel = new TargetKinerja();
         $action = $this->request->getPost('action');
-        $statusPenilaian = ($action === 'submit') ? 'terbit' : 'draft';
+        if ($action === 'submit') {
+            $statusPenilaian = 'terbit';
+        } elseif ($action === 'draft') {
+            $statusPenilaian = 'draft';
+        } else {
+            $statusPenilaian = null; // Reset action
+        }
 
         $stafPostId = $this->request->getPost('staf_id');
         $bulanPost  = $this->request->getPost('bulan');
@@ -216,17 +370,43 @@ class PenilaianKinerjaController extends BaseController
             $targetUserId = $userId;
             $targetUserRecord = $currentUser;
         } else {
-            // Otorisasi: Pastikan penilai adalah Atasan Langsung dari staf atau Pimpinan/Superadmin/Kepegawaian
+            // Otorisasi: Pastikan penilai adalah Atasan Langsung dari staf atau Pimpinan/Superadmin/Kepegawaian (Wadir tidak diizinkan)
+            if (hasRole('wadir')) {
+                return redirect()->back()->with('error', 'Akses ditolak. Role Wakil Direktur tidak memiliki wewenang memberikan penilaian kinerja staf.');
+            }
             $stafUser = $userModel->find($stafPostId);
             if (!$stafUser) {
                 return redirect()->back()->with('error', 'Staf tidak ditemukan.');
             }
             $isAtasan = !empty($stafUser['atasan_id']) && ($stafUser['atasan_id'] == $userId);
-            if (!hasAnyRole(['admin', 'direktur', 'wadir', 'kepegawaian']) && !$isAtasan) {
+            if (!hasAnyRole(['admin', 'direktur', 'kepegawaian']) && !$isAtasan) {
                 return redirect()->back()->with('error', 'Akses ditolak. Anda tidak memiliki izin menilai kinerja staf ini.');
             }
             $targetUserId = $stafPostId;
             $targetUserRecord = $stafUser;
+        }
+
+        // Validasi: Atasan hanya dapat memberikan penilaian jika seluruh Target Kinerja Bulanan staf sudah disetujui (kecuali reset)
+        if (!$isSelfEval && !empty($targetUserId) && $action !== 'reset') {
+            $targetUserHasAtasan = $targetUserRecord && !empty($targetUserRecord['atasan_id']) && $targetUserRecord['role'] !== 'direktur';
+            if ($targetUserHasAtasan) {
+                $evalMonthCheck = !empty($bulanPost) ? (int)$bulanPost : (int)(session()->get('penilaian_bulan') ?? date('n'));
+                $evalYearCheck  = !empty($tahunPost) ? (int)$tahunPost : (int)(session()->get('penilaian_tahun') ?? date('Y'));
+                
+                $checkTargets = $laporanModel->where('user_id', $targetUserId)
+                                             ->where('bulan', $evalMonthCheck)
+                                             ->where('tahun', $evalYearCheck)
+                                             ->where('status', 'terkirim')
+                                             ->findAll();
+                if (empty($checkTargets)) {
+                    return redirect()->back()->with('error', 'Gagal: Staf belum memiliki Target Kinerja Bulanan untuk periode ini.');
+                }
+                foreach ($checkTargets as $ct) {
+                    if (($ct['status_approval'] ?? '') !== 'disetujui') {
+                        return redirect()->back()->with('error', 'Gagal menyimpan penilaian: Target Kinerja Bulanan staf untuk periode ini belum disetujui oleh Atasan Langsung. Harap setujui target terlebih dahulu pada menu Target Kinerja.');
+                    }
+                }
+            }
         }
 
         // Cek Batas Waktu Penilaian jika Saklar Batas Waktu Penilaian Aktif
@@ -235,7 +415,7 @@ class PenilaianKinerjaController extends BaseController
         $evalYear  = !empty($tahunPost) ? (int)$tahunPost : (int)(session()->get('penilaian_tahun') ?? date('Y'));
         $evalMonth = !empty($bulanPost) ? (int)$bulanPost : (int)(session()->get('penilaian_bulan') ?? date('n'));
 
-        if ($isDeadlineActive && !hasRole('admin')) {
+        if ($isDeadlineActive && !hasRole('admin') && $action !== 'reset') {
             $batasPenilaian = (int) $settingModel->getValue('batas_penilaian_kinerja', 10);
             $evalMonthStart = new \DateTime(sprintf('%04d-%02d-01', $evalYear, $evalMonth));
             $currentMonthStart = new \DateTime(date('Y-m-01'));
@@ -272,20 +452,23 @@ class PenilaianKinerjaController extends BaseController
 
                 $valRaw = isset($nilai_capaian_arr[$index]) ? trim((string)$nilai_capaian_arr[$index]) : '';
                 $valScore = null;
-                if ($valRaw !== '') {
+                $rowStatusPenilaian = $statusPenilaian;
+
+                if ($action !== 'reset' && $valRaw !== '') {
                     $valClean = str_replace(',', '.', $valRaw);
                     if (is_numeric($valClean)) {
                         $valScore = min(150.0, max(0.0, (float)$valClean));
                     }
-                } elseif ($statusPenilaian === 'terbit') {
-                    // Jika diterbitkan tapi nilai kosong, atasan telah mengonfirmasi untuk menghitung dengan nilai 0
-                    $valScore = 0.0;
+                } else {
+                    // Nilai kosong atau action reset: kosongkan nilai dan status penilaian seperti belum pernah dinilai
+                    $valScore = null;
+                    $rowStatusPenilaian = null;
                 }
 
                 $rowUpdate = [
                     'id' => $idLaporan,
                     'nilai_capaian' => $valScore,
-                    'status_penilaian' => $statusPenilaian,
+                    'status_penilaian' => $rowStatusPenilaian,
                 ];
 
                 $dataToUpdate[] = $rowUpdate;
@@ -297,6 +480,10 @@ class PenilaianKinerjaController extends BaseController
             $targetIds = array_column($dataToUpdate, 'id');
             $oldTargets = $laporanModel->whereIn('id', $targetIds)->findAll();
             foreach ($oldTargets as $ot) {
+                // Validasi ownership: pastikan laporan_id yang dikirim memang milik targetUserId
+                if ((int)$ot['user_id'] !== (int)$targetUserId) {
+                    return redirect()->back()->with('error', 'Akses ditolak. Terdapat data penilaian yang tidak sesuai kepemilikan staf.');
+                }
                 $oldTargetValues[$ot['id']] = [
                     'id' => $ot['id'],
                     'nilai_capaian' => $ot['nilai_capaian'],
@@ -324,21 +511,28 @@ class PenilaianKinerjaController extends BaseController
                     $rawScoreTmb = trim((string)$nilai_tambahan_arr[$index]);
                 }
 
-                if ($rawScoreTmb !== null && $rawScoreTmb !== '') {
+                $rowTmbStatus = $statusPenilaian;
+                $rowTmbAppr = 'menunggu_persetujuan';
+
+                if ($action !== 'reset' && $rawScoreTmb !== null && $rawScoreTmb !== '') {
                     $cleanedTmb = str_replace(',', '.', $rawScoreTmb);
                     if (is_numeric($cleanedTmb)) {
                         $valScore = min(150.0, max(0.0, (float)$cleanedTmb));
                     }
-                } elseif ($statusPenilaian === 'terbit') {
-                    // Jika diterbitkan tapi nilai tugas tambahan kosong, dihitung dengan nilai 0
-                    $valScore = 0.0;
+                    $rowTmbStatus = $statusPenilaian;
+                    $rowTmbAppr = ($statusPenilaian === 'terbit') ? 'disetujui' : 'menunggu_persetujuan';
+                } else {
+                    // Nilai tugas tambahan kosong atau reset: kosongkan nilai dan status_penilaian
+                    $valScore = null;
+                    $rowTmbStatus = null;
+                    $rowTmbAppr = 'menunggu_persetujuan';
                 }
 
                 $rowUpdate = [
                     'id' => $idTambahan,
                     'nilai_capaian' => $valScore,
-                    'status_penilaian' => $statusPenilaian,
-                    'status_approval' => ($statusPenilaian === 'terbit') ? 'disetujui' : 'menunggu_persetujuan'
+                    'status_penilaian' => $rowTmbStatus,
+                    'status_approval' => $rowTmbAppr
                 ];
                 $dataTambahanToUpdate[] = $rowUpdate;
             }
@@ -349,6 +543,10 @@ class PenilaianKinerjaController extends BaseController
             $tambahanIds = array_column($dataTambahanToUpdate, 'id');
             $oldTambahans = $logTambahanModel->whereIn('id', $tambahanIds)->findAll();
             foreach ($oldTambahans as $otm) {
+                // Validasi ownership: pastikan log_tambahan_id yang dikirim memang milik targetUserId
+                if ((int)$otm['user_id'] !== (int)$targetUserId) {
+                    return redirect()->back()->with('error', 'Akses ditolak. Terdapat data tugas tambahan yang tidak sesuai kepemilikan staf.');
+                }
                 $oldTambahanValues[$otm['id']] = [
                     'id' => $otm['id'],
                     'nilai_capaian' => $otm['nilai_capaian'],
@@ -371,17 +569,38 @@ class PenilaianKinerjaController extends BaseController
             $db->transComplete();
         } catch (\Throwable $e) {
             try { @$db->transRollback(); } catch (\Throwable $t) {}
+            log_message('error', '[PenilaianKinerja::store] Transaksi gagal: ' . $e->getMessage() . ' | Staf: ' . $targetUserId . ' | Bulan: ' . $evalMonth . '/' . $evalYear);
             return redirect()->back()->with('error', 'Gagal menyimpan penilaian kinerja ke database: ' . $e->getMessage());
         }
 
         if ($db->transStatus() === false) {
+            try { @$db->transRollback(); } catch (\Throwable $t) {}
+            log_message('error', '[PenilaianKinerja::store] transStatus false | Staf: ' . $targetUserId . ' | Bulan: ' . $evalMonth . '/' . $evalYear);
             return redirect()->back()->with('error', 'Gagal menyimpan penilaian kinerja karena kesalahan basis data.');
         }
 
         $stafName = $targetUserRecord['nama_lengkap'] ?? $targetUserRecord['nama'] ?? 'Pegawai';
 
         // Audit log & Notifikasi
-        if ($statusPenilaian === 'terbit' && (!empty($dataToUpdate) || !empty($dataTambahanToUpdate))) {
+        if ($action === 'reset') {
+            if (function_exists('log_audit') && (!empty($dataToUpdate) || !empty($dataTambahanToUpdate))) {
+                log_audit(
+                    'RESET_PENILAIAN_KINERJA',
+                    'target_kinerja_bulanan',
+                    $targetUserId,
+                    ['target' => $oldTargetValues, 'tambahan' => $oldTambahanValues],
+                    [
+                        'staf'  => $stafName,
+                        'bulan' => $evalMonth,
+                        'tahun' => $evalYear,
+                        'action'=> 'reset'
+                    ]
+                );
+            }
+            $pesan = $isSelfEval 
+                ? 'Nilai kinerja mandiri berhasil dikosongkan (di-reset kembali ke status belum dinilai).' 
+                : 'Penilaian kinerja staf berhasil dikosongkan (di-reset kembali ke status belum dinilai).';
+        } elseif ($statusPenilaian === 'terbit' && (!empty($dataToUpdate) || !empty($dataTambahanToUpdate))) {
             if (function_exists('log_audit')) {
                 log_audit(
                     'APPROVE_PENILAIAN_KINERJA',
@@ -467,11 +686,22 @@ class PenilaianKinerjaController extends BaseController
             return $this->response->setStatusCode(400)->setJSON(['error' => 'Parameter tidak lengkap']);
         }
 
-        // Proteksi IDOR: Pastikan user hanya dapat mengakses datanya sendiri, atau requester adalah atasan langsung/manajemen
-        if ($userId != $currentUserId && !hasAnyRole(['admin', 'direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'kepegawaian'])) {
-            $daftarStaf = $userModel->getAllStaf($currentUserId);
-            $allowedIds = array_column($daftarStaf, 'id');
-            if (!in_array($userId, $allowedIds)) {
+        // Proteksi IDOR: Batasi akses sesuai hierarki jabatan
+        // - Admin, Direktur, Kepegawaian: bypass penuh
+        // - Manajemen/Kabag: hanya ke staf langsung di bawahnya
+        // - Wadir, SPM, dan role lain: TIDAK boleh akses data pegawai lain
+        if ($userId != $currentUserId) {
+            if (hasAnyRole(['admin', 'direktur', 'kepegawaian'])) {
+                // Bypass penuh — diizinkan
+            } elseif (hasAnyRole(['manajemen', 'kabag', 'kabag_aak', 'kabag_kuk'])) {
+                // Hanya bisa lihat staf langsung di bawahnya
+                $daftarStaf = $userModel->getStaf($currentUserId);
+                $allowedIds = array_column($daftarStaf, 'id');
+                if (!in_array($userId, $allowedIds)) {
+                    return $this->response->setStatusCode(403)->setJSON(['error' => 'Akses ditolak. Anda tidak berhak melihat data kinerja pegawai ini.']);
+                }
+            } else {
+                // Wadir, SPM, staf biasa, dan role lain tidak bisa melihat data pegawai lain
                 return $this->response->setStatusCode(403)->setJSON(['error' => 'Akses ditolak. Anda tidak berhak melihat data kinerja pegawai ini.']);
             }
         }

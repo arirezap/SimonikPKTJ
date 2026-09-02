@@ -19,8 +19,8 @@ class DashboardKepegawaian extends BaseController
 {
     public function index()
     {
-        // Role yang diizinkan: Kepegawaian, Admin, Direktur, Wadir, Manajemen, Kabag, dan SPM
-        if (!hasAnyRole(['kepegawaian', 'admin', 'direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'spm'])) {
+        // Role yang diizinkan: Kepegawaian, Admin, Direktur, Wadir, Kabag
+        if (!hasAnyRole(['kepegawaian', 'admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk'])) {
             return redirect()->to('/dashboard');
         }
 
@@ -42,8 +42,9 @@ class DashboardKepegawaian extends BaseController
         $units = $userModel->select('unit')->distinct()->where('unit !=', null)->where('unit !=', '')->orderBy('unit', 'ASC')->findAll();
         $daftarUnit = array_column($units, 'unit');
 
-        // Ambil semua user (kecuali admin)
-        $builder = $userModel->where('role !=', 'admin');
+        // Ambil semua user (kecuali admin) dengan selective columns untuk efisiensi memori
+        $builder = $userModel->select('id, nama_lengkap, nip, unit, jabatan, role, atasan_id, foto')
+                             ->where('role !=', 'admin');
         if (!empty($unitFilter)) {
             $builder = $builder->where('unit', $unitFilter);
         }
@@ -51,7 +52,7 @@ class DashboardKepegawaian extends BaseController
             if ($roleFilter === 'pimpinan') {
                 $builder = $builder->whereIn('role', ['direktur', 'wadir']);
             } elseif ($roleFilter === 'manajemen' || $roleFilter === 'struktural') {
-                $builder = $builder->whereIn('role', ['kabag', 'kabag_aak', 'kabag_kuk', 'manajemen']);
+                $builder = $builder->whereIn('role', ['kabag', 'kabag_aak', 'kabag_kuk', 'manajemen', 'katim', 'kapus', 'kanit']);
             } elseif ($roleFilter === 'kepegawaian') {
                 $builder = $builder->where('role', 'kepegawaian');
             } elseif ($roleFilter === 'tugas_belajar') {
@@ -113,7 +114,7 @@ class DashboardKepegawaian extends BaseController
     }
 
     /**
-     * Helper untuk menentukan predikat kinerja
+     * Helper untuk menentukan predikat kinerja standar ECC
      */
     private function getPredikatKinerja($dinilaiCount, $score)
     {
@@ -121,13 +122,13 @@ class DashboardKepegawaian extends BaseController
             return ['text' => 'Belum Dinilai', 'fill' => 'F1F5F9', 'color' => '475569'];
         }
         $score = (float)$score;
-        if ($score >= 100) {
+        if ($score > 100) {
             return ['text' => 'Sangat Baik', 'fill' => 'D1FAE5', 'color' => '065F46'];
-        } elseif ($score >= 80) {
+        } elseif ($score > 90) {
             return ['text' => 'Baik', 'fill' => 'DBEAFE', 'color' => '1E40AF'];
-        } elseif ($score >= 60) {
-            return ['text' => 'Butuh Perbaikan', 'fill' => 'F1F5F9', 'color' => '334155'];
-        } elseif ($score >= 50) {
+        } elseif ($score > 75) {
+            return ['text' => 'Butuh Perbaikan', 'fill' => 'E0F2FE', 'color' => '0369A1'];
+        } elseif ($score > 25) {
             return ['text' => 'Kurang', 'fill' => 'FEF3C7', 'color' => '92400E'];
         } else {
             return ['text' => 'Sangat Kurang', 'fill' => 'FEE2E2', 'color' => '991B1B'];
@@ -209,7 +210,12 @@ class DashboardKepegawaian extends BaseController
             return 1200;
         }
 
-        // Tier 13: Staf Pelaksana & Fungsional Umum
+        // Tier 13: Pegawai Tugas Belajar
+        if ($role === 'tugas_belajar' || strpos($jabatan, 'tugas belajar') !== false || strpos($unit, 'tugas belajar') !== false) {
+            return 1400;
+        }
+
+        // Tier 14: Staf Pelaksana & Fungsional Umum
         return 1300;
     }
 
@@ -296,10 +302,11 @@ class DashboardKepegawaian extends BaseController
             $userTargets = $targetsByUser[$uId] ?? [];
             $jmlDinilai = 0;
             $totalNilai = 0;
-            $jmlTarget  = count($userTargets);
-            $rataRataPerBulan = array_fill(1, 12, null);
+            $jmlPokok = count($userTargets);
+            $jmlTugasTambahan = 0;
             $hasTugasTambahan = false;
             $scoreTambahan = null;
+            $rataRataPerBulan = array_fill(1, 12, null);
 
             if ($bulanTerpilih === 'all') {
                 $targetsPerBulan = array_fill(1, 12, 0);
@@ -347,6 +354,8 @@ class DashboardKepegawaian extends BaseController
                 for ($m = 1; $m <= 12; $m++) {
                     $tmbBulan = $tmbByUser[$uId][$m] ?? [];
                     if (!empty($tmbBulan)) {
+                        $jmlTugasTambahan += count($tmbBulan);
+                        $hasTugasTambahan = true;
                         $targetsPerBulan[$m]++;
                         $scoreM = null;
                         foreach ($tmbBulan as $tmb) {
@@ -432,6 +441,7 @@ class DashboardKepegawaian extends BaseController
                 $tugasTambahan = $tmbByUser[$uId][(int)$bulanTerpilih] ?? [];
                 if (!empty($tugasTambahan)) {
                     $hasTugasTambahan = true;
+                    $jmlTugasTambahan = count($tugasTambahan);
                     foreach ($tugasTambahan as $tmb) {
                         if (($tmb['status_penilaian'] ?? '') === 'terbit' && $tmb['nilai_capaian'] !== null && $scoreTambahan === null) {
                             $scoreTambahan = (float)$tmb['nilai_capaian'];
@@ -464,13 +474,15 @@ class DashboardKepegawaian extends BaseController
                     }
                 }
 
-                $jmlTotalKomponen = $jmlTarget + ($hasTugasTambahan ? 1 : 0);
+                $jmlTotalKomponen = $jmlPokok + ($hasTugasTambahan ? 1 : 0);
                 $rataRata = $jmlDinilai > 0 ? round($totalNilai / $jmlDinilai, 2) : 0;
             }
 
             $rekapKinerja[] = [
                 'pegawai'             => $pegawai,
-                'jumlah_rhk'          => $jmlTarget,
+                'jumlah_rhk'          => $jmlPokok,
+                'jumlah_pokok'        => $jmlPokok,
+                'jumlah_tambahan'     => $jmlTugasTambahan,
                 'jumlah_komponen'     => $jmlTotalKomponen,
                 'rhk_dinilai'         => $jmlDinilai,
                 'has_tugas_tambahan'  => $hasTugasTambahan,
@@ -501,7 +513,7 @@ class DashboardKepegawaian extends BaseController
      */
     public function exportExcel()
     {
-        if (!hasAnyRole(['kepegawaian', 'admin', 'direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'spm'])) {
+        if (!hasAnyRole(['kepegawaian', 'admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk'])) {
             return redirect()->to('/dashboard');
         }
 
@@ -522,8 +534,9 @@ class DashboardKepegawaian extends BaseController
             $userMap[$u['id']] = $u;
         }
 
-        // Ambil semua user (kecuali admin)
-        $builder = $userModel->where('role !=', 'admin');
+        // Ambil semua user (kecuali admin) dengan selective columns
+        $builder = $userModel->select('id, nama_lengkap, nip, unit, jabatan, role, atasan_id, foto')
+                             ->where('role !=', 'admin');
         if (!empty($unitFilter)) {
             $builder = $builder->where('unit', $unitFilter);
         }
@@ -531,7 +544,7 @@ class DashboardKepegawaian extends BaseController
             if ($roleFilter === 'pimpinan') {
                 $builder = $builder->whereIn('role', ['direktur', 'wadir']);
             } elseif ($roleFilter === 'manajemen' || $roleFilter === 'struktural') {
-                $builder = $builder->whereIn('role', ['kabag', 'kabag_aak', 'kabag_kuk', 'manajemen']);
+                $builder = $builder->whereIn('role', ['kabag', 'kabag_aak', 'kabag_kuk', 'manajemen', 'katim', 'kapus', 'kanit']);
             } elseif ($roleFilter === 'kepegawaian') {
                 $builder = $builder->where('role', 'kepegawaian');
             } elseif ($roleFilter === 'tugas_belajar') {
@@ -634,12 +647,12 @@ class DashboardKepegawaian extends BaseController
             $headers = [
                 'No', 'Nama Lengkap Pegawai', 'NIP', 'Jabatan', 'Unit Kerja', 'Nama Atasan Penilai',
                 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
-                'Total Komponen', 'Komponen Dinilai', 'Nilai Akhir Tahunan (%)', 'Predikat Kinerja'
+                'Total Tugas Pokok', 'Total Tugas Tambahan', 'Total Komponen', 'Komponen Dinilai', 'Nilai Akhir Tahunan (%)', 'Predikat Kinerja'
             ];
         } else {
             $headers = [
                 'No', 'Nama Lengkap Pegawai', 'NIP', 'Jabatan', 'Unit Kerja', 'Nama Atasan Penilai',
-                'Jumlah Target RHK', 'Komponen Dinilai', 'Tugas Tambahan', 'Nilai Kinerja (%)', 'Predikat Kinerja', 'Status Evaluasi'
+                'Jumlah Tugas Pokok (RHK)', 'Jumlah Tugas Tambahan', 'Komponen Dinilai', 'Nilai Kinerja (%)', 'Predikat Kinerja', 'Status Evaluasi'
             ];
         }
 
@@ -692,15 +705,17 @@ class DashboardKepegawaian extends BaseController
                     $sheet1->getStyle("{$mCol}{$rowNum}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 }
 
-                $sheet1->setCellValue("S{$rowNum}", $row['jumlah_komponen']);
-                $sheet1->setCellValue("T{$rowNum}", $row['rhk_dinilai']);
-                $sheet1->setCellValue("U{$rowNum}", $score);
-                $sheet1->setCellValue("V{$rowNum}", $pred['text']);
+                $sheet1->setCellValue("S{$rowNum}", $row['jumlah_pokok'] ?? $row['jumlah_rhk']);
+                $sheet1->setCellValue("T{$rowNum}", $row['jumlah_tambahan'] ?? 0);
+                $sheet1->setCellValue("U{$rowNum}", $row['jumlah_komponen']);
+                $sheet1->setCellValue("V{$rowNum}", $row['rhk_dinilai']);
+                $sheet1->setCellValue("W{$rowNum}", $score);
+                $sheet1->setCellValue("X{$rowNum}", $pred['text']);
 
-                $sheet1->getStyle("U{$rowNum}")->getNumberFormat()->setFormatCode('#,##0.00');
-                $sheet1->getStyle("V{$rowNum}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB($pred['fill']);
-                $sheet1->getStyle("V{$rowNum}")->getFont()->setBold(true)->getColor()->setRGB($pred['color']);
-                $sheet1->getStyle("S{$rowNum}:V{$rowNum}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet1->getStyle("W{$rowNum}")->getNumberFormat()->setFormatCode('#,##0.00');
+                $sheet1->getStyle("X{$rowNum}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB($pred['fill']);
+                $sheet1->getStyle("X{$rowNum}")->getFont()->setBold(true)->getColor()->setRGB($pred['color']);
+                $sheet1->getStyle("S{$rowNum}:X{$rowNum}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             } else {
                 $statusEval = ($row['rhk_dinilai'] > 0) ? 'Selesai Dinilai' : 'Belum Dinilai';
 
@@ -710,9 +725,9 @@ class DashboardKepegawaian extends BaseController
                 $sheet1->setCellValue("D{$rowNum}", $p['jabatan'] ?? '-');
                 $sheet1->setCellValue("E{$rowNum}", $p['unit'] ?? '-');
                 $sheet1->setCellValue("F{$rowNum}", $p['atasan_nama'] ?? '-');
-                $sheet1->setCellValue("G{$rowNum}", $row['jumlah_rhk']);
-                $sheet1->setCellValue("H{$rowNum}", $row['rhk_dinilai']);
-                $sheet1->setCellValue("I{$rowNum}", $row['has_tugas_tambahan'] ? 'Ada' : 'Tidak');
+                $sheet1->setCellValue("G{$rowNum}", $row['jumlah_pokok'] ?? $row['jumlah_rhk']);
+                $sheet1->setCellValue("H{$rowNum}", $row['jumlah_tambahan'] ?? 0);
+                $sheet1->setCellValue("I{$rowNum}", "{$row['rhk_dinilai']} / {$row['jumlah_komponen']}");
                 $sheet1->setCellValue("J{$rowNum}", $score);
                 $sheet1->setCellValue("K{$rowNum}", $pred['text']);
                 $sheet1->setCellValue("L{$rowNum}", $statusEval);
@@ -856,10 +871,11 @@ class DashboardKepegawaian extends BaseController
 
         // Catat ke Audit Log
         if (function_exists('log_audit')) {
+            $exportUserId = session()->get('id') ?? session()->get('user_id') ?? 0;
             log_audit(
-                'EXPORT_EXCEL_KEPEGAWAIAN',
+                'EXPORT_EXCEL_REKAP_KINERJA',
                 'rekap_kinerja_kepegawaian',
-                session()->get('id') ?? session()->get('user_id'),
+                $exportUserId,
                 null,
                 [
                     'bulan'         => $bulanTerpilih,
@@ -887,7 +903,7 @@ class DashboardKepegawaian extends BaseController
      */
     public function exportPdf()
     {
-        if (!hasAnyRole(['kepegawaian', 'admin', 'direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'spm'])) {
+        if (!hasAnyRole(['kepegawaian', 'admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk'])) {
             return redirect()->to('/dashboard');
         }
 
@@ -908,8 +924,9 @@ class DashboardKepegawaian extends BaseController
             $userMap[$u['id']] = $u;
         }
 
-        // Ambil semua user (kecuali admin)
-        $builder = $userModel->where('role !=', 'admin');
+        // Ambil semua user (kecuali admin) dengan selective columns
+        $builder = $userModel->select('id, nama_lengkap, nip, unit, jabatan, role, atasan_id, foto')
+                             ->where('role !=', 'admin');
         if (!empty($unitFilter)) {
             $builder = $builder->where('unit', $unitFilter);
         }
@@ -917,7 +934,7 @@ class DashboardKepegawaian extends BaseController
             if ($roleFilter === 'pimpinan') {
                 $builder = $builder->whereIn('role', ['direktur', 'wadir']);
             } elseif ($roleFilter === 'manajemen' || $roleFilter === 'struktural') {
-                $builder = $builder->whereIn('role', ['kabag', 'kabag_aak', 'kabag_kuk', 'manajemen']);
+                $builder = $builder->whereIn('role', ['kabag', 'kabag_aak', 'kabag_kuk', 'manajemen', 'katim', 'kapus', 'kanit']);
             } elseif ($roleFilter === 'kepegawaian') {
                 $builder = $builder->where('role', 'kepegawaian');
             } elseif ($roleFilter === 'tugas_belajar') {
@@ -983,10 +1000,11 @@ class DashboardKepegawaian extends BaseController
 
         // Catat ke Audit Log
         if (function_exists('log_audit')) {
+            $exportPdfUserId = session()->get('id') ?? session()->get('user_id') ?? 0;
             log_audit(
-                'EXPORT_PDF_KEPEGAWAIAN',
+                'EXPORT_PDF_REKAP_KINERJA',
                 'rekap_kinerja_kepegawaian',
-                session()->get('id') ?? session()->get('user_id'),
+                $exportPdfUserId,
                 null,
                 [
                     'bulan'         => $bulanTerpilih,
@@ -1009,16 +1027,16 @@ class DashboardKepegawaian extends BaseController
      */
     public function getDetailPegawai()
     {
-        if (!hasAnyRole(['kepegawaian', 'admin', 'direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'spm'])) {
+        if (!hasAnyRole(['kepegawaian', 'admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk'])) {
             return $this->response->setJSON(['status' => 'error', 'message' => 'Akses ditolak'])->setStatusCode(403);
         }
 
-        $userId = $this->request->getGet('user_id');
-        $bulan = $this->request->getGet('bulan') ?? date('n');
-        $tahun = $this->request->getGet('tahun') ?? date('Y');
+        $userId = (int)$this->request->getGet('user_id');
+        $bulan = $this->request->getGet('bulan') ?? (string)date('n');
+        $tahun = $this->request->getGet('tahun') ?? (string)date('Y');
 
-        if (empty($userId)) {
-            return $this->response->setJSON(['status' => 'error', 'message' => 'Parameter pegawai tidak valid']);
+        if (empty($userId) || $userId <= 0) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Parameter pegawai tidak valid'])->setStatusCode(400);
         }
 
         $userModel = new User();
@@ -1053,7 +1071,7 @@ class DashboardKepegawaian extends BaseController
                 ->findAll();
         }
 
-        // Hitung rata-rata & predikat
+        // Hitung rata-rata & predikat (Hanya hitung jika status_penilaian = 'terbit')
         $totalNilai = 0;
         $jmlDinilai = 0;
         $formattedRhk = [];
@@ -1061,7 +1079,8 @@ class DashboardKepegawaian extends BaseController
             $target = round((float)$rhk['target_bulanan'], 4);
             $realisasi = round((float)$rhk['total_realisasi'], 4);
             $selisih = round($realisasi - $target, 4);
-            $nilai = ($rhk['nilai_capaian'] !== null && $rhk['nilai_capaian'] !== '') ? round((float)$rhk['nilai_capaian'], 2) : null;
+            $isTerbit = ($rhk['status_penilaian'] ?? '') === 'terbit';
+            $nilai = ($isTerbit && $rhk['nilai_capaian'] !== null && $rhk['nilai_capaian'] !== '') ? round((float)$rhk['nilai_capaian'], 2) : null;
 
             if ($nilai !== null) {
                 $totalNilai += $nilai;
@@ -1084,7 +1103,8 @@ class DashboardKepegawaian extends BaseController
         $formattedTambahan = [];
         if (!empty($tugasTambahan)) {
             foreach ($tugasTambahan as $tmb) {
-                if ($tmb['nilai_capaian'] !== null && $scoreTambahan === null) {
+                $isTmbTerbit = ($tmb['status_penilaian'] ?? '') === 'terbit';
+                if ($isTmbTerbit && $tmb['nilai_capaian'] !== null && $scoreTambahan === null) {
                     $scoreTambahan = (float)$tmb['nilai_capaian'];
                 }
                 $formattedTambahan[] = [
@@ -1108,16 +1128,16 @@ class DashboardKepegawaian extends BaseController
         $predikatLabel = 'Belum Dinilai';
         $badgeClass = 'bg-secondary';
         if ($jmlDinilai > 0) {
-            if ($rataRata >= 100) {
+            if ($rataRata > 100) {
                 $predikatLabel = 'Sangat Baik';
                 $badgeClass = 'bg-success';
-            } elseif ($rataRata >= 80) {
+            } elseif ($rataRata > 90) {
                 $predikatLabel = 'Baik';
                 $badgeClass = 'bg-primary';
-            } elseif ($rataRata >= 60) {
+            } elseif ($rataRata > 75) {
                 $predikatLabel = 'Butuh Perbaikan';
-                $badgeClass = 'bg-secondary';
-            } elseif ($rataRata >= 50) {
+                $badgeClass = 'bg-info text-dark';
+            } elseif ($rataRata > 25) {
                 $predikatLabel = 'Kurang';
                 $badgeClass = 'bg-warning text-dark';
             } else {
@@ -1145,6 +1165,8 @@ class DashboardKepegawaian extends BaseController
             'tugas_tambahan' => $formattedTambahan,
             'score_tambahan' => $scoreTambahan,
             'total_rhk' => count($formattedRhk),
+            'total_pokok' => count($formattedRhk),
+            'total_tambahan' => count($formattedTambahan),
             'jml_dinilai' => $jmlDinilai,
             'total_komponen' => $totalKomponen,
             'rata_rata' => $rataRata,

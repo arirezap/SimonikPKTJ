@@ -190,7 +190,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
 
     // --- Laporan Kinerja Harian ---
     $routes->match(['get', 'post'], 'laporan-harian', 'User\LaporanHarianController::index');
-    $routes->match(['get', 'post'], 'laporan-harian/get-previous-targets', 'User\LaporanHarianController::getPreviousTargets');
+    $routes->post('laporan-harian/get-previous-targets', 'User\LaporanHarianController::getPreviousTargets');
     $routes->post('laporan-harian/store', 'User\LaporanHarianController::store');
     $routes->post('laporan-harian/hapus', 'User\LaporanHarianController::hapus');
     $routes->post('laporan-harian/approve', 'User\LaporanHarianController::approve');
@@ -207,7 +207,6 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
 
     // --- Rekap & Penilaian Kinerja ---
     $routes->match(['get', 'post'], 'penilaian-kinerja', 'User\PenilaianKinerjaController::index');
-    $routes->match(['get', 'post'], 'penilaian-staf', 'User\PenilaianKinerjaController::index');
     $routes->post('penilaian-kinerja/store', 'User\PenilaianKinerjaController::store');
     $routes->get('penilaian-kinerja/api-chart', 'User\PenilaianKinerjaController::getChartDataApi');
 
@@ -228,9 +227,17 @@ $routes->group('ecc', ['filter' => 'auth'], function ($routes) {
     $routes->get('lkps', 'EccController::lkps');
 });
 
-// Kepegawaian Routes (Multi-Role: kepegawaian, admin, direktur, wadir, kabag)
+// Kepegawaian Routes (Role-Restricted: kepegawaian, admin, direktur, wadir, kabag, kabag_aak, kabag_kuk)
 $routes->group('kepegawaian', ['filter' => 'auth'], function ($routes) {
-    $routes->get('/', 'Kepegawaian\DashboardKepegawaian::index');
+    // Submenu 1: Monitoring Target Kinerja Bulanan
+    $routes->match(['get', 'post'], 'target-kinerja', 'Kepegawaian\MonitoringTargetController::index');
+    $routes->get('target-kinerja/detail-pegawai', 'Kepegawaian\MonitoringTargetController::getDetailTarget');
+    $routes->get('target-kinerja/export-excel', 'Kepegawaian\MonitoringTargetController::exportExcel');
+    $routes->get('target-kinerja/export-pdf', 'Kepegawaian\MonitoringTargetController::exportPdf');
+
+    // Submenu 2: Monitoring Penilaian Kinerja
+    $routes->match(['get', 'post'], '/', 'Kepegawaian\DashboardKepegawaian::index');
+    $routes->match(['get', 'post'], 'monitoring-penilaian', 'Kepegawaian\DashboardKepegawaian::index');
     $routes->get('export-excel', 'Kepegawaian\DashboardKepegawaian::exportExcel');
     $routes->get('export-pdf', 'Kepegawaian\DashboardKepegawaian::exportPdf');
     $routes->get('detail-pegawai', 'Kepegawaian\DashboardKepegawaian::getDetailPegawai');

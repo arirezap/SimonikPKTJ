@@ -33,11 +33,12 @@ The Evidence Command Center (ECC) UI/UX is built to deliver a **world-class, hig
 ### 2.2 Semantic & Status Colors
 | Semantic State | Base Hex | Soft Background | Border / Accent | Usage in ECC |
 | :--- | :--- | :--- | :--- | :--- |
-| **Success (Baik / Disetujui)** | `#198754` | `#dcfce7` (`bg-success-subtle`) | `#bbf7d0` | Approved targets, score $\ge 90$, submitted reports, CREATE action |
-| **Info (Standar / Terkirim)** | `#0284c7` | `#e0f2fe` (`bg-info-subtle`) | `#bae6fd` | Standard score ($75 - 89.9$), LOGIN/LOGOUT logs, Cuti Bersama, Modal Info |
-| **Warning (Perhatian / Menunggu)** | `#d97706` | `#fef3c7` (`bg-warning-subtle`) | `#fde68a` | Needs attention score ($60 - 74.9$), pending approval, UPDATE action, Duplicate Warning |
-| **Danger (Kurang / Ditolak)** | `#dc2626` | `#fee2e2` (`bg-danger-subtle`) | `#fecaca` | Score $< 60$, rejected status, delete actions, `.table-danger` highlight |
-| **Secondary / Muted** | `#64748b` | `#f1f5f9` (`bg-secondary-subtle`) | `#e2e8f0` | Draft status, unrated logs, neutral badges, system logs |
+| **Sangat Baik (> 100% - 150%)** | `#10b981` | `#dcfce7` (`bg-success-subtle`) | `#bbf7d0` | Exceeding targets, outstanding performance |
+| **Baik (>= 90% - 100%)** | `#2563eb` | `#dbeafe` (`bg-primary-subtle`) | `#bfdbfe` | Target fully achieved according to standard plan |
+| **Butuh Perbaikan (> 75% - < 90%)** | `#0284c7` | `#e0f2fe` (`bg-info-subtle`) | `#bae6fd` | Standard acceptable performance, needs minor improvement |
+| **Kurang (> 25% - 75%)** | `#d97706` | `#fef3c7` (`bg-warning-subtle`) | `#fde68a` | Suboptimal achievement, needs supervisory guidance |
+| **Sangat Kurang (<= 25%)** | `#dc2626` | `#fee2e2` (`bg-danger-subtle`) | `#fecaca` | Critical low performance, rejected target |
+| **Belum Dinilai (0% / Null)** | `#64748b` | `#f1f5f9` (`bg-secondary-subtle`) | `#e2e8f0` | Unrated target, draft state, reset evaluation state |
 
 ### 2.3 Surface & Canvas Tokens
 - **App Background**: `#f8fafc` (Cool Slate Canvas)
@@ -45,6 +46,44 @@ The Evidence Command Center (ECC) UI/UX is built to deliver a **world-class, hig
 - **Subtle Surface Tint**: `#f1f5f9` (Used for `.date-group-odd` zebra striping and off-canvas panels)
 - **Card Border**: `1px solid rgba(0, 0, 0, 0.05)`
 - **Divider Line**: `1px solid #e2e8f0`
+
+### 2.4 📐 8-Point Grid System & Spacing Scale Tokens
+To maintain absolute mathematical harmony, visual rhythm, and cognitive scannability across all enterprise modules, ECC strictly adheres to the **8-Point Grid System** (with a `4px` half-step for micro tags and badges). Arbitrary non-grid numbers (e.g. `7px`, `13px`, `62px`, `95px`) are strictly forbidden.
+
+| Spacing Token | CSS Value | Rem Eq. | Multiplier | Standard Application in ECC |
+| :--- | :--- | :--- | :--- | :--- |
+| `--ecc-space-0-5` | `4px` | `0.25rem` | `0.5x` | Micro gaps, status dot offsets, mobile grid gap (`4px`), tag inner padding |
+| `--ecc-space-1` | `8px` | `0.5rem` | `1.0x` (Base) | Element gap, calendar day cell padding, calendar grid gap, header cell bottom padding |
+| `--ecc-space-1-5` | `12px` | `0.75rem` | `1.5x` | Table header/cell vertical padding, guidance banner vertical padding, modal title gap |
+| `--ecc-space-2` | `16px` | `1.0rem` | `2.0x` | Bento card mobile padding, filter toolbar padding, table horizontal padding, legend gaps |
+| `--ecc-space-3` | `24px` | `1.5rem` | `3.0x` | Bento card desktop padding (`p-3 p-md-4`), modal body padding, executive score card padding |
+| `--ecc-space-4` | `32px` | `2.0rem` | `4.0x` | Section header top margin (`mt-4`), page content bottom margin |
+| `--ecc-space-5` | `40px` | `2.5rem` | `5.0x` | Primary form action button height, standard avatar box size, modal close button height |
+| `--ecc-space-6` | `48px` | `3.0rem` | `6.0x` | Mobile calendar day cell min-height, feature icon box size, primary FAB touch height |
+| `--ecc-space-8` | `64px` | `4.0rem` | `8.0x` | Desktop calendar day cell min-height, medium profile avatar container |
+| `--ecc-space-10` | `80px` | `5.0rem` | `10.0x` | Large profile photo avatar container |
+
+### 2.5 📦 Asset, Icon Box & Control Sizing Architecture
+All graphical assets, icon containers, buttons, and interactive affordances must follow standardized box dimensions:
+
+| Asset / Component Type | Dimensions | Border Radius | Padding / Specs | Usage in ECC |
+| :--- | :--- | :--- | :--- | :--- |
+| **Micro Status Dot** | `8px × 8px` | `50% (Circle)` | N/A | Online status, unread notification indicator |
+| **Heatmap Legend Swatch** | `16px × 16px` | `4px` (`rounded-1`) | Border `1px solid` | Activity intensity swatches on calendar footer |
+| **Compact Action Button** | Height `32px` | `50rem` (`pill`) | `4px 12px` | In-table Bukti links, Revisi triggers, compact filters |
+| **Form Control / Select** | Height `36px`–`40px` | `8px` (`rounded-3`) | `8px 12px` | Bulan/Tahun selects, number inputs, text fields |
+| **Standard CTA Button** | Height `40px` | `50rem` (`pill`) | `8px 24px` | Simpan Draf, Simpan & Terbitkan, Reset Nilai |
+| **Modal Header Icon Box** | `40px × 40px` | `12px` (`rounded-3`) | Center flex | Header icons on detail modals (e.g. Calendar detail) |
+| **Feature Feature Icon** | `48px × 48px` | `16px` (`rounded-4`) | Center flex | KPI feature icons, Dashboard summary category icons |
+| **Profile Photo Avatar (SM)** | `40px × 40px` | `50% (Circle)` | Object-fit cover | Topbar profile menu, table inline user avatar |
+| **Profile Photo Avatar (MD)** | `64px × 64px` | `50% (Circle)` | Object-fit cover | Team management card, evaluation subordinate header |
+| **Profile Photo Avatar (LG)** | `80px × 80px` | `50% (Circle)` | Object-fit cover | Profile page focal avatar with floating camera badge |
+| **Calendar Day Cell (Desktop)**| Min-Height `64px` | `8px` (`rounded-2`) | `8px` | 7-column calendar activity heatmap matrix |
+| **Calendar Day Cell (Mobile)** | Min-Height `48px` | `6px` (`rounded-2`) | `4px` | Mobile calendar matrix on viewports $<576\text{px}$ |
+| **Sidebar Container (Desktop)**| Width `256px` | Border `1px solid` | `16px 8px 32px 8px` | Enterprise primary navigation sidebar |
+| **Sidebar Mini (Collapsed)**  | Width `72px` | Border `1px solid` | `16px 8px 24px 8px` | Compact icon-first sidebar mode |
+| **Sidebar Nav Link Item**      | Min-Height `40px` | `8px` (`rounded-3`) | `8px 12px` | Touch-friendly primary navigation link |
+| **Sidebar Sub-Link Item**     | Min-Height `32px` | `6px` (`rounded-2`) | `6px 12px 6px 20px` | Nested collapsible submenu link |
 
 ---
 
@@ -215,7 +254,7 @@ Coupled with HTTP no-cache headers in `main.php`:
 - **Segmented Tab Cross-Fade (`.tab-content > .tab-pane`)**: `transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s` with `translateY(4px) -> translateY(0)` on active state.
 
 ### 7.5 Global Shell, Topbar, Footer & Notification Motion Tokens
-- **Compact Single-Line Navigation**: `--sidebar-width: 250px;`, `.sidebar .nav-link` font size `0.8125rem (13px)` with `white-space: nowrap;` and `text-overflow: ellipsis;` ensuring all navigation items (e.g. *"Rekap & Penilaian Kinerja"*, *"Target Kinerja Bulanan"*) strictly sit on **1 single line** in both normal and active states.
+- **Compact Single-Line Navigation**: `--sidebar-width: 256px;` ($32 \times 8\text{px}$), `--sidebar-mini-width: 72px;` ($9 \times 8\text{px}$), `.sidebar .nav-link` font size `0.8125rem (13px)` with `white-space: nowrap;` and `text-overflow: ellipsis;` ensuring all navigation items (e.g. *"Rekap & Penilaian Kinerja"*, *"Target Kinerja Bulanan"*) strictly sit on **1 single line** in both normal and active states.
 - **Sidebar Active Glow (`.sidebar .nav-link.active`)**: `background: linear-gradient(90deg, rgba(13, 110, 253, 0.12), rgba(13, 110, 253, 0.03)); border-left: 3px solid var(--ecc-primary); box-shadow: inset 3px 0 0 var(--ecc-primary);`
 - **Sidebar Nav Hover Slide (`.sidebar .nav-link:hover`)**: `transform: translateX(4px)` with icon scale `transform: scale(1.14)` in $220\text{ms}$ `cubic-bezier(0.16, 1, 0.3, 1)`.
 - **Desktop Flyout Reveal (`@keyframes fadeInFlyout`)**: `opacity: 0 -> 1; transform: translateX(-8px) scale(0.98) -> translateX(0) scale(1)` in $200\text{ms}$.
@@ -227,11 +266,17 @@ Coupled with HTTP no-cache headers in `main.php`:
 - **Notification Empty State Float (`@keyframes emptyFloat`)**: `translateY(0) -> translateY(-5px) -> translateY(0)` in $3\text{s}$ infinite cycle.
 - **Footer Version Badge Hover (`.version-badge:hover`)**: `transform: translateY(-1.5px)` with elevation shadow in $200\text{ms}$.
 
-### 7.6 Kepegawaian Remuneration & Performance Rekap Motion Tokens
-- **Cascading Bento Stagger**: Header (`.bento-stagger-1`), KPI & Filter Grid (`.bento-stagger-2`), and Main Employee Table Card (`.bento-stagger-3`) entrance in $550\text{ms}$ `cubic-bezier(0.16, 1, 0.3, 1)`.
-- **KPI Summary & Modal Count-Up Tickers**: `animateValue()` using `easeOutExpo` ($700\text{ms} - 850\text{ms}$) on `#statTotalPegawai`, `#statSudahDinilai`, `#statBelumDinilai`, `#statRataRataInstansi`, and modal `#modalDetailScore`.
-- **Pill Filter Tactile Tap**: `.filter-pill` with `scale(0.95)` tap response and `scale(1.02)` active elevated chip state.
-- **Live Search & Filter Fade Transition (`@keyframes rowFadeIn`)**: Smooth $250\text{ms}$ `translateY(4px) -> translateY(0)` entrance for filtered employee rows.
+### 7.6 Kepegawaian Monitoring & Remuneration View Standards (`Monitoring Target` & `Monitoring Penilaian`)
+- **Visual Uniformity**: Identical Bento architecture across `monitoring_target.php` and `rekap_kinerja.php`:
+  - **Filter Card & KPI Card**: Symmetrical $6 / 6$ grid column split (`col-lg-6 col-xl-6`).
+  - **Filter Controls**: `height: 36px`, `border-radius: 8px`, `border-color: #cbd5e1`.
+  - **Quick Filter Pills**: `#pillFilterGroup` with `height: 28px`, `padding: 0 12px`, `border-radius: 16px`, `gap: 8px`.
+  - **Unit Kerja Column**: Standardized badge pill `<span class="badge bg-light text-dark border rounded-pill px-2.5 py-1 text-wrap text-start" style="font-size: 0.74rem;">` across all desktop tables and mobile cards.
+  - **Table Bento Cells**: `thead th` & `tbody td` with `padding: 12px 16px;`.
+  - **Mobile Touch Cards**: `.mobile-pegawai-card` with `padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0;`.
+- **Cascading Bento Stagger**: Header (`.bento-stagger-1`), KPI & Filter Grid (`.bento-stagger-2`), and Main Employee Table Card (`.bento-stagger-3`) entrance in $500\text{ms}$ `cubic-bezier(0.16, 1, 0.3, 1)`.
+- **KPI Summary & Modal Count-Up Tickers**: `animateValue()` using `easeOutExpo` ($700\text{ms} - 850\text{ms}$) on `#statTotalPegawai`, `#statSudahDinilai`, `#statBelumDinilai`, `#statRataRataDinilai`, `#statRataRataTotal`, and modal `#modalDetailScore`.
+- **Pill Filter Tactile Tap**: `.filter-pill` with `scale(0.96)` tap response and `active` elevated chip state.
 ### 7.7 Profile Management & Security UI & Motion Tokens
 - **Interactive Avatar Focal Sequence**:
   - Hover & Focus: `.avatar-wrapper` scale transition (`scale(1.04)`) with `.avatar-overlay` backdrop blur `2px` in $200\text{ms}$ `cubic-bezier(0.16, 1, 0.3, 1)`.
@@ -459,6 +504,11 @@ To ensure fast and error-free daily logging across various display sizes:
 - **Date Button Affordance (`.btn-flatpickr-ecc`)**:
   - Always uses crisp white background (`#ffffff`), solid border (`1px solid #cbd5e1`), and dark slate text (`#334155`) to clearly indicate that the element is an interactive button, not static text.
   - Height standardized to `35px` with font size `0.76rem` to prevent long Indonesian date strings (e.g., *"Senin, 31 Agustus 2026"*) from wrapping or truncating.
+- **Flatpickr Datepicker Weekend & Holiday Visual Tokens**:
+  - **Active / Arrived Dates (Today & Past - `dateStr <= todayStr`)**:
+    - Renders in vibrant bold red (`#ef4444`, `font-weight: 700`, `opacity: 1`, `cursor: pointer`).
+  - **Disabled / Future Dates (`.flatpickr-disabled` - `dateStr > todayStr`)**:
+    - Renders in soft muted red (`#fca5a5`, `opacity: 0.35`, `font-weight: 400`, `cursor: not-allowed`, `transform: none`). Does not look like an active clickable button.
 - **Calendar Status Dots**:
   - 🟢 **Terkirim (`.dot-terkirim` / `#10b981`)**: Indicates daily log has been finalized and submitted to supervisor.
   - 🟡 **Draf (`.dot-draft` / `#f59e0b`)**: Indicates report is saved as draft and requires submission.
@@ -537,12 +587,15 @@ In compliance with modern enterprise web accessibility:
 ## 17. 🛡️ Multi-Role Authorization UX & Dynamic Navigation States
 
 - **Role-Aware Navigation Badges (`render_role_badge()`)**:
-  - Consistent visual pills representing the 10 system roles (`Superadmin`, `Direktur`, `Wakil Direktur`, `Kabag`, `Manajemen`, `SPM`, `Kepegawaian`, `Pegawai / Staf`, `Tugas Belajar`).
-- **Contextual Action Visibility**:
-  - Supervisor actions (Persetujuan, Terbitkan Nilai) only appear when the authenticated user possesses valid subordinate assignment.
-  - Superadmin controls (`bukaKunci`, `batalApprove`) are highlighted with distinct administrative badges and warning dialogs.
-- **Dynamic Active Route Highlighting**:
-  - Active sidebar navigation pills dynamically reflect current route paths without layout jumping.
+  - Consistent visual pills representing the system roles (`Superadmin`, `Direktur`, `Wakil Direktur`, `Kabag`, `Manajemen`, `SPM`, `Kepegawaian`, `Pegawai / Staf`, `Tugas Belajar`).
+- **Restricted Kepegawaian Menu Tree**:
+  - The **Kepegawaian** menu tree on the sidebar (Monitoring Target & Monitoring Penilaian Kinerja) is strictly restricted to: `direktur`, `wadir`, `kabag` (`kabag_aak`, `kabag_kuk`), `kepegawaian`, and `admin`.
+- **Target Approval Prerequisite Guard**:
+  - Supervisors cannot input performance scores until the subordinate's monthly targets are fully approved (`status_approval = 'disetujui'`). Inputs are rendered locked with an alert notification.
+- **Direktur Auto-Approval UX**:
+  - Targets created under the `direktur` role are automatically approved and retain self-revision capabilities at all times.
+- **Reset Evaluation Mechanism**:
+  - The "Reset Nilai" action prompts a SweetAlert2 confirmation dialog and immediately resets all scores to `NULL` (reverting status to "Belum Dinilai").
 
 ---
 

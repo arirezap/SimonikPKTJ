@@ -110,22 +110,29 @@ class LogKegiatanController extends BaseController
             }
         }
 
-        // DATA STATUS HARIAN UNTUK DOT DATEPICKER (Tahun Terpilih)
+        // DATA STATUS HARIAN UNTUK DOT DATEPICKER (Tahun Terpilih - SARGable Date Range Query)
         $holidayModel = new HolidayModel();
-        $holidays = $holidayModel->where('YEAR(holiday_date)', $tahunTerpilih)->findAll();
+        $startDateYear = sprintf('%04d-01-01', $tahunTerpilih);
+        $endDateYear   = sprintf('%04d-12-31', $tahunTerpilih);
+
+        $holidays = $holidayModel->where('holiday_date >=', $startDateYear)
+                                 ->where('holiday_date <=', $endDateYear)
+                                 ->findAll();
         $holidayMap = [];
         foreach ($holidays as $h) {
             $holidayMap[$h['holiday_date']] = $h['holiday_name'];
         }
 
-        // Ambil semua log kegiatan harian & tugas tambahan user pada tahun ini
+        // Ambil semua log kegiatan harian & tugas tambahan user pada tahun ini (memanfaatkan index idx_user_tgl)
         $yearlyLogs = $logModel->select('tanggal_kegiatan, status')
                                ->where('user_id', $userId)
-                               ->where('YEAR(tanggal_kegiatan)', $tahunTerpilih)
+                               ->where('tanggal_kegiatan >=', $startDateYear)
+                               ->where('tanggal_kegiatan <=', $endDateYear)
                                ->findAll();
         $yearlyLogsTambahan = $logTambahanModel->select('tanggal_kegiatan, status')
                                               ->where('user_id', $userId)
-                                              ->where('YEAR(tanggal_kegiatan)', $tahunTerpilih)
+                                              ->where('tanggal_kegiatan >=', $startDateYear)
+                                              ->where('tanggal_kegiatan <=', $endDateYear)
                                               ->findAll();
 
         $dateStatusMap = [];
@@ -196,8 +203,6 @@ class LogKegiatanController extends BaseController
                                   ->where('tahun', $tahunTerpilih)
                                   ->findAll();
 
-        $userModel = new User();
-        $currentUser = $userModel->find($userId);
         $hasAtasan = $currentUser && !empty($currentUser['atasan_id']) && $currentUser['role'] !== 'direktur';
 
         if (empty($allTargets)) {
@@ -294,25 +299,39 @@ class LogKegiatanController extends BaseController
 
         // Untuk submit "Simpan & Kirim" jika tidak ada data baru (hanya mengupdate draf -> terkirim)
         if (!$isDraft && !$hasPokokInput && !$hasTambahanInput && (!empty($existingData) || !empty($existingTambahanData))) {
-            $logModel->where('user_id', $userId)
-                     ->where('tanggal_kegiatan', $tanggal)
-                     ->set(['status' => 'terkirim'])
-                     ->update();
+            $db = \Config\Database::connect();
+            $db->transStart();
+            try {
+                $logModel->where('user_id', $userId)
+                         ->where('tanggal_kegiatan', $tanggal)
+                         ->set(['status' => 'terkirim'])
+                         ->update();
 
-            $logTambahanModel = new LogTugasTambahan();
-            $logTambahanModel->where('user_id', $userId)
-                             ->where('tanggal_kegiatan', $tanggal)
-                             ->set(['status' => 'terkirim'])
-                             ->update();
+                $logTambahanModel = new LogTugasTambahan();
+                $logTambahanModel->where('user_id', $userId)
+                                 ->where('tanggal_kegiatan', $tanggal)
+                                 ->set(['status' => 'terkirim'])
+                                 ->update();
+
+                $db->transComplete();
+            } catch (\Throwable $e) {
+                try { @$db->transRollback(); } catch (\Throwable $t) {}
+                log_message('error', '[LogKegiatanController::store:draft_to_sent] ' . $e->getMessage() . ' | User: ' . $userId);
+                return redirect()->back()->with('error', 'Gagal mengirim laporan harian.');
+            }
+
+            if ($db->transStatus() === false) {
+                try { @$db->transRollback(); } catch (\Throwable $t) {}
+                return redirect()->back()->with('error', 'Gagal mengirim laporan harian karena gangguan basis data.');
+            }
                      
-            $user = (new User())->find($userId);
-            if ($user && !empty($user['atasan_id'])) {
+            if ($currentUser && !empty($currentUser['atasan_id']) && $currentUser['role'] !== 'direktur') {
                 helper('notification');
                 send_notification(
-                    $user['atasan_id'], 
+                    $currentUser['atasan_id'], 
                     'Laporan Harian Baru', 
-                    $user['nama_lengkap'] . " mengirimkan Laporan Harian untuk tanggal $tanggal.",
-                    site_url('penilaian-staf')
+                    $currentUser['nama_lengkap'] . " mengirimkan Laporan Harian untuk tanggal $tanggal.",
+                    site_url('penilaian-kinerja')
                 );
             }
             
@@ -338,6 +357,24 @@ class LogKegiatanController extends BaseController
         $jumlah_capaian_arr = $this->request->getPost('jumlah_capaian');
         $link_bukti_arr = $this->request->getPost('link_bukti');
 
+        // Validasi IDOR Kepemilikan Record Tugas Pokok
+        $validTargetIds = array_map('intval', array_column($allTargets, 'id'));
+        if (!empty($log_ids) && is_array($log_ids)) {
+            $cleanLogIds = array_filter(array_map('intval', $log_ids));
+            if (!empty($cleanLogIds)) {
+                $checkPokokRows = $logModel->whereIn('id', $cleanLogIds)->findAll();
+                foreach ($checkPokokRows as $cRow) {
+                    if ((int)$cRow['user_id'] !== (int)$userId || $cRow['tanggal_kegiatan'] !== $tanggal) {
+                        $msg = 'Akses ditolak. Terdapat data kegiatan harian yang tidak sesuai kepemilikan Anda.';
+                        if ($this->request->isAJAX()) {
+                            return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+                        }
+                        return redirect()->back()->with('error', $msg);
+                    }
+                }
+            }
+        }
+
         $dataToUpdate = [];
         $dataToInsert = [];
         $allPokokIds = []; // Semua ID tugas pokok (existing + baru) untuk sinkronisasi UI
@@ -345,6 +382,15 @@ class LogKegiatanController extends BaseController
         if ($target_id_arr) {
             foreach ($target_id_arr as $index => $targetId) {
                 if (empty($targetId)) continue;
+
+                // Validasi IDOR Target RHK: pastikan target_id milik user
+                if (!in_array((int)$targetId, $validTargetIds, true)) {
+                    $msg = 'Akses ditolak. Target RHK yang dipilih tidak sesuai atau bukan milik Anda.';
+                    if ($this->request->isAJAX()) {
+                        return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+                    }
+                    return redirect()->back()->with('error', $msg);
+                }
 
                 $capaianStr = trim((string)($jumlah_capaian_arr[$index] ?? ''));
                 $capaianValNum = str_replace(',', '.', $capaianStr);
@@ -368,13 +414,15 @@ class LogKegiatanController extends BaseController
                 }
 
                 $linkBukti = !empty($link_bukti_arr[$index]) ? trim((string)$link_bukti_arr[$index]) : null;
-                if ($linkBukti === 'https://...' || $linkBukti === '') {
+                if ($linkBukti === 'https://...' || $linkBukti === 'http://...' || $linkBukti === '') {
                     $linkBukti = null;
+                } elseif ($linkBukti !== null && !preg_match('/^https?:\/\//i', $linkBukti)) {
+                    $linkBukti = 'https://' . $linkBukti;
                 }
 
                 $rowData = [
                     'user_id'            => $userId,
-                    'target_id'          => $targetId,
+                    'target_id'          => (int)$targetId,
                     'tanggal_kegiatan'   => $tanggal,
                     'deskripsi_kegiatan' => $deskripsi_kegiatan_arr[$index] ?? '',
                     'jumlah_capaian'     => (float)$capaianValNum,
@@ -383,9 +431,9 @@ class LogKegiatanController extends BaseController
                 ];
 
                 if (!empty($log_ids[$index])) {
-                    $rowData['id'] = $log_ids[$index];
+                    $rowData['id'] = (int)$log_ids[$index];
                     $dataToUpdate[] = $rowData;
-                    $allPokokIds[$index] = $log_ids[$index];
+                    $allPokokIds[$index] = (int)$log_ids[$index];
                 } else {
                     $dataToInsert[$index] = $rowData;
                 }
@@ -400,6 +448,23 @@ class LogKegiatanController extends BaseController
         $satuan_tambahan_arr = $this->request->getPost('satuan_tambahan');
         $link_bukti_tambahan_arr = $this->request->getPost('link_bukti_tambahan');
 
+        // Validasi IDOR Kepemilikan Record Tugas Tambahan
+        if (!empty($log_tambahan_ids) && is_array($log_tambahan_ids)) {
+            $cleanTambahanIds = array_filter(array_map('intval', $log_tambahan_ids));
+            if (!empty($cleanTambahanIds)) {
+                $checkTmbRows = $logTambahanModel->whereIn('id', $cleanTambahanIds)->findAll();
+                foreach ($checkTmbRows as $cTmb) {
+                    if ((int)$cTmb['user_id'] !== (int)$userId || $cTmb['tanggal_kegiatan'] !== $tanggal) {
+                        $msg = 'Akses ditolak. Terdapat data tugas tambahan yang tidak sesuai kepemilikan Anda.';
+                        if ($this->request->isAJAX()) {
+                            return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+                        }
+                        return redirect()->back()->with('error', $msg);
+                    }
+                }
+            }
+        }
+
         $dataTambahanToUpdate = [];
         $dataTambahanToInsert = [];
         $allTambahanIds = []; // Semua ID tugas tambahan (existing + baru) untuk sinkronisasi UI
@@ -408,10 +473,10 @@ class LogKegiatanController extends BaseController
             foreach ($deskripsi_kegiatan_tambahan_arr as $index => $deskripsiTmb) {
                 if (empty($deskripsiTmb)) continue;
 
-                $existingTambahanId = !empty($log_tambahan_ids[$index]) ? $log_tambahan_ids[$index] : null;
+                $existingTambahanId = !empty($log_tambahan_ids[$index]) ? (int)$log_tambahan_ids[$index] : null;
 
                 // Skip Tambahan yang sudah terkirim — tidak boleh diubah
-                if ($existingTambahanId && in_array($existingTambahanId, $lockedTambahanIds)) {
+                if ($existingTambahanId && in_array($existingTambahanId, $lockedTambahanIds, true)) {
                     continue;
                 }
                 
@@ -442,8 +507,10 @@ class LogKegiatanController extends BaseController
                 }
 
                 $linkBuktiTmb = !empty($link_bukti_tambahan_arr[$index]) ? trim((string)$link_bukti_tambahan_arr[$index]) : null;
-                if ($linkBuktiTmb === 'https://...' || $linkBuktiTmb === '') {
+                if ($linkBuktiTmb === 'https://...' || $linkBuktiTmb === 'http://...' || $linkBuktiTmb === '') {
                     $linkBuktiTmb = null;
+                } elseif ($linkBuktiTmb !== null && !preg_match('/^https?:\/\//i', $linkBuktiTmb)) {
+                    $linkBuktiTmb = 'https://' . $linkBuktiTmb;
                 }
 
                 $rowTmbData = [
@@ -493,44 +560,47 @@ class LogKegiatanController extends BaseController
                 }
             }
 
+            // Jika submit normal (Simpan & Kirim), ubah status semua log tanggal ini menjadi terkirim di dalam transaksi atomik
+            if (!$isDraft) {
+                $logModel->where('user_id', $userId)
+                         ->where('tanggal_kegiatan', $tanggal)
+                         ->set(['status' => 'terkirim'])
+                         ->update();
+
+                $logTambahanModel->where('user_id', $userId)
+                                 ->where('tanggal_kegiatan', $tanggal)
+                                 ->set(['status' => 'terkirim'])
+                                 ->update();
+            }
+
             $db->transComplete();
         } catch (\Throwable $e) {
             try { @$db->transRollback(); } catch (\Throwable $t) {}
+            log_message('error', '[LogKegiatanController::store] ' . $e->getMessage() . ' | User: ' . $userId . ' | Tanggal: ' . $tanggal);
             if ($this->request->isAJAX()) {
                 return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan ke database. Coba lagi atau hubungi admin.', 'csrf_hash' => csrf_hash()]);
             }
-            return redirect()->back()->with('error', 'Gagal menyimpan data ke database.');
+            return redirect()->back()->with('error', 'Gagal menyimpan data ke database: ' . $e->getMessage());
         }
 
         if ($db->transStatus() === false) {
+            try { @$db->transRollback(); } catch (\Throwable $t) {}
+            log_message('error', '[LogKegiatanController::store] transStatus false | User: ' . $userId . ' | Tanggal: ' . $tanggal);
             if ($this->request->isAJAX()) {
                 return $this->response->setJSON(['success' => false, 'message' => 'Gagal terhubung ke database. Coba lagi.', 'csrf_hash' => csrf_hash()]);
             }
             return redirect()->back()->with('error', 'Gagal menyimpan data ke database.');
         }
 
-        // Jika submit normal (Simpan & Kirim), ubah status semua log tanggal ini menjadi terkirim
-        if (!$this->request->isAJAX()) {
-            $logModel->where('user_id', $userId)
-                     ->where('tanggal_kegiatan', $tanggal)
-                     ->set(['status' => 'terkirim'])
-                     ->update();
-
-            $logTambahanModel->where('user_id', $userId)
-                             ->where('tanggal_kegiatan', $tanggal)
-                             ->set(['status' => 'terkirim'])
-                             ->update();
-                     
-            $user = (new User())->find($userId);
-            if ($user && !empty($user['atasan_id'])) {
-                helper('notification');
-                send_notification(
-                    $user['atasan_id'], 
-                    'Laporan Harian Baru', 
-                    $user['nama_lengkap'] . " mengirimkan Laporan Harian untuk tanggal $tanggal.",
-                    site_url('penilaian-staf')
-                );
-            }
+        // Kirim notifikasi ke atasan jika laporan resmi dikirim (bukan draf)
+        if (!$isDraft && $currentUser && !empty($currentUser['atasan_id']) && $currentUser['role'] !== 'direktur') {
+            helper('notification');
+            send_notification(
+                $currentUser['atasan_id'], 
+                'Laporan Harian Baru', 
+                $currentUser['nama_lengkap'] . " mengirimkan Laporan Harian untuk tanggal $tanggal.",
+                site_url('penilaian-kinerja')
+            );
         }
 
         if ($this->request->isAJAX()) {
@@ -678,6 +748,9 @@ class LogKegiatanController extends BaseController
         }
 
         $insertedIds = [];
+        $db = \Config\Database::connect();
+        $db->transStart();
+
         try {
             if (!empty($dataToUpdate)) {
                 $logTambahanModel->updateBatch($dataToUpdate, 'id');
@@ -688,9 +761,21 @@ class LogKegiatanController extends BaseController
                     $insertedIds[$origIndex] = $logTambahanModel->getInsertID();
                 }
             }
-        } catch (\Exception $e) {
+
+            $db->transComplete();
+        } catch (\Throwable $e) {
+            try { @$db->transRollback(); } catch (\Throwable $t) {}
+            log_message('error', '[LogKegiatanController::storeTugasTambahan] ' . $e->getMessage());
             if ($this->request->isAJAX()) {
                 return $this->response->setJSON(['success' => false, 'message' => 'Gagal terhubung ke database. Coba lagi atau hubungi admin.', 'csrf_hash' => csrf_hash()]);
+            }
+            return redirect()->back()->with('error', 'Gagal menyimpan data ke database.');
+        }
+
+        if ($db->transStatus() === false) {
+            try { @$db->transRollback(); } catch (\Throwable $t) {}
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan data ke database.', 'csrf_hash' => csrf_hash()]);
             }
             return redirect()->back()->with('error', 'Gagal menyimpan data ke database.');
         }
@@ -830,7 +915,7 @@ class LogKegiatanController extends BaseController
                     'status_baru' => 'draft',
                     'dibuka_oleh' => session()->get('nama') ?? session()->get('nama_lengkap')
                 ];
-                log_audit('REVISI_LAPORAN', 'log_kegiatan_harian', $targetUserId, $oldValues, $newValues);
+                log_audit('UNLOCK_LAPORAN', 'log_kegiatan_harian', $targetUserId, $oldValues, $newValues);
             }
 
             // Kirim notifikasi ke staf bersangkutan
@@ -850,8 +935,9 @@ class LogKegiatanController extends BaseController
                 'csrf_hash' => csrf_hash()
             ]);
 
-        } catch (\Exception $e) {
-            $db->transRollback();
+        } catch (\Throwable $e) {
+            try { @$db->transRollback(); } catch (\Throwable $t) {}
+            log_message('error', '[LogKegiatanController::bukaKunci] ' . $e->getMessage() . ' | TargetUser: ' . $targetUserId . ' | Tanggal: ' . $tanggal);
             return $this->response->setJSON([
                 'success' => false,
                 'message' => 'Gagal memberikan izin revisi: ' . $e->getMessage(),

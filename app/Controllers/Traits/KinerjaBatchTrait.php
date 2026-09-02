@@ -77,12 +77,15 @@ trait KinerjaBatchTrait
         if ($bulan === 'all' || $bulan === '' || $bulan === null) {
             $rataRataPerBulan = array_fill(1, 12, null);
             $targetsPerBulan = array_fill(1, 12, 0);
+            $pokokPerBulan = array_fill(1, 12, 0);
+            $tambahanPerBulan = array_fill(1, 12, 0);
             $dinilaiPerBulan = array_fill(1, 12, 0);
             $nilaiPerBulan = array_fill(1, 12, 0);
 
             for ($m = 1; $m <= 12; $m++) {
                 $userRhkMonth = $batchTargets[$userId][$m] ?? [];
                 foreach ($userRhkMonth as $rd) {
+                    $pokokPerBulan[$m]++;
                     $targetsPerBulan[$m]++;
                     if (($rd['status_penilaian'] ?? '') === 'terbit' && $rd['nilai_capaian'] !== null && trim((string)$rd['nilai_capaian']) !== '') {
                         $dinilaiPerBulan[$m]++;
@@ -92,6 +95,7 @@ trait KinerjaBatchTrait
 
                 $userTmbMonth = $batchTambahan[$userId][$m] ?? [];
                 if (!empty($userTmbMonth)) {
+                    $tambahanPerBulan[$m] += count($userTmbMonth);
                     $targetsPerBulan[$m]++;
                     $scoreM = null;
                     foreach ($userTmbMonth as $tmb) {
@@ -114,10 +118,14 @@ trait KinerjaBatchTrait
             $validMonths = array_filter($rataRataPerBulan, fn($v) => $v !== null && $v > 0);
             $rataRata = count($validMonths) > 0 ? round(array_sum($validMonths) / count($validMonths), 2) : 0;
             $totalLaporan = array_sum($targetsPerBulan);
+            $totalPokok = array_sum($pokokPerBulan);
+            $totalTambahan = array_sum($tambahanPerBulan);
             $totalDinilai = array_sum($dinilaiPerBulan);
 
             return [
                 'rata_rata' => $rataRata,
+                'total_pokok' => $totalPokok,
+                'total_tambahan' => $totalTambahan,
                 'total_laporan' => $totalLaporan,
                 'dinilai' => $totalDinilai,
                 'monthly_averages' => $rataRataPerBulan
@@ -139,6 +147,7 @@ trait KinerjaBatchTrait
 
             $userTmbMonth = $batchTambahan[$userId][$m] ?? [];
             $hasTambahan = !empty($userTmbMonth);
+            $totalTambahan = count($userTmbMonth);
             $scoreTambahan = null;
             if ($hasTambahan) {
                 foreach ($userTmbMonth as $tmb) {
@@ -159,6 +168,8 @@ trait KinerjaBatchTrait
 
             return [
                 'rata_rata' => $rataRata,
+                'total_pokok' => $totalRhk,
+                'total_tambahan' => $totalTambahan,
                 'total_laporan' => $totalKomponen,
                 'dinilai' => $dinilai
             ];

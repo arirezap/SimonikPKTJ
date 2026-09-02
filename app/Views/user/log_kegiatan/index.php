@@ -262,23 +262,46 @@
     .fp-dot-missing {
         background-color: #ef4444; /* Merah Belum Diisi */
     }
-    .flatpickr-day.is-holiday,
-    .flatpickr-day.is-weekend {
+    .flatpickr-day.flatpickr-disabled,
+    .flatpickr-day.flatpickr-disabled:hover {
+        transform: none !important;
+        background-color: transparent !important;
+        cursor: not-allowed !important;
+    }
+    .flatpickr-day.is-holiday:not(.flatpickr-disabled):not(.prevMonthDay):not(.nextMonthDay),
+    .flatpickr-day.is-weekend:not(.flatpickr-disabled):not(.prevMonthDay):not(.nextMonthDay) {
         color: #ef4444 !important;
         font-weight: 700;
+        opacity: 1;
+    }
+    .flatpickr-day.flatpickr-disabled.is-holiday,
+    .flatpickr-day.flatpickr-disabled.is-weekend,
+    .flatpickr-day.flatpickr-disabled.is-holiday:hover,
+    .flatpickr-day.flatpickr-disabled.is-weekend:hover,
+    .flatpickr-day.notAllowed.is-holiday,
+    .flatpickr-day.notAllowed.is-weekend {
+        color: #fca5a5 !important;
+        opacity: 0.35 !important;
+        font-weight: 400 !important;
+        cursor: not-allowed !important;
+        background: transparent !important;
+        transform: none !important;
     }
     .flatpickr-day.is-holiday.prevMonthDay,
     .flatpickr-day.is-holiday.nextMonthDay,
     .flatpickr-day.is-weekend.prevMonthDay,
     .flatpickr-day.is-weekend.nextMonthDay {
         color: #fca5a5 !important;
-        opacity: 0.6;
+        opacity: 0.3 !important;
+        font-weight: 400 !important;
     }
     .flatpickr-day.selected.is-holiday,
     .flatpickr-day.selected.is-weekend {
         background: #0d6efd !important;
         border-color: #0d6efd !important;
         color: #ffffff !important;
+        opacity: 1 !important;
+        font-weight: 700;
     }
     .flatpickr-weekday:nth-child(6),
     .flatpickr-weekday:nth-child(7) {
@@ -461,14 +484,14 @@
 
     <?php if (session()->getFlashdata('success')) : ?>
         <div class="alert alert-success alert-dismissible fade show shadow-sm py-2 px-3 small mb-3 rounded-3 bento-stagger bento-stagger-1" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i> <?= session()->getFlashdata('success') ?>
+            <i class="bi bi-check-circle-fill me-2"></i> <?= esc(session()->getFlashdata('success')) ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
 
     <?php if (session()->getFlashdata('error')) : ?>
         <div class="alert alert-danger alert-dismissible fade show shadow-sm py-2 px-3 small mb-3 rounded-3 bento-stagger bento-stagger-1" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i> <?= session()->getFlashdata('error') ?>
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> <?= esc(session()->getFlashdata('error')) ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
@@ -844,6 +867,8 @@
 
 <?= $this->section('scripts') ?>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     $(document).ready(function() {
@@ -921,7 +946,7 @@
                     </td>
                     <td class="col-capaian-log">
                         <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
-                            <input type="number" step="0.01" name="jumlah_capaian[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-primary" placeholder="0" aria-label="Jumlah Capaian Pokok baris">
+                            <input type="number" step="any" min="0.0001" name="jumlah_capaian[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-primary" placeholder="0" aria-label="Jumlah Capaian Pokok baris">
                             <span class="input-group-text badge-capaian-satuan bg-light">-</span>
                         </div>
                     </td>
@@ -990,20 +1015,32 @@
                                 }
                                 if (response.success) {
                                     animateRemoveRow();
-                                    Swal.fire({
-                                        icon: 'success',
-                                        title: 'Terhapus',
-                                        text: 'Catatan kegiatan harian berhasil dihapus.',
-                                        timer: 1500,
-                                        showConfirmButton: false
-                                    });
+                                    if (typeof Swal !== 'undefined') {
+                                        Swal.fire({
+                                            icon: 'success',
+                                            title: 'Terhapus',
+                                            text: 'Catatan kegiatan harian berhasil dihapus.',
+                                            timer: 1500,
+                                            showConfirmButton: false
+                                        });
+                                    } else {
+                                        alert('Catatan kegiatan harian berhasil dihapus.');
+                                    }
                                 } else {
-                                    Swal.fire('Gagal', response.message || 'Gagal menghapus data.', 'error');
+                                    if (typeof Swal !== 'undefined') {
+                                        Swal.fire('Gagal', response.message || 'Gagal menghapus data.', 'error');
+                                    } else {
+                                        alert('Gagal: ' + (response.message || 'Gagal menghapus data.'));
+                                    }
                                 }
                             },
                             error: function(xhr, status, error) {
                                 console.error('Hapus Log Error:', xhr.responseText);
-                                Swal.fire('Error', 'Terjadi kesalahan saat menghapus data. Silakan coba lagi.', 'error');
+                                if (typeof Swal !== 'undefined') {
+                                    Swal.fire('Error', 'Terjadi kesalahan saat menghapus data. Silakan coba lagi.', 'error');
+                                } else {
+                                    alert('Terjadi kesalahan saat menghapus data.');
+                                }
                             }
                         });
                     };
@@ -1070,7 +1107,7 @@
                     </td>
                     <td class="col-capaian-log">
                         <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
-                            <input type="number" step="0.01" name="jumlah_capaian_tambahan[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-success" placeholder="0" aria-label="Jumlah Capaian Tambahan baris">
+                            <input type="number" step="any" min="0.0001" name="jumlah_capaian_tambahan[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-success" placeholder="0" aria-label="Jumlah Capaian Tambahan baris">
                             <input type="text" name="satuan_tambahan[]" class="form-control input-satuan-val text-center" placeholder="Satuan" list="daftarSatuanStandar" aria-label="Satuan Capaian Tambahan baris">
                         </div>
                     </td>
@@ -1289,11 +1326,15 @@
 
             if (!hasPokok && !hasTambahan) {
                 e.preventDefault();
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Laporan Masih Kosong',
-                    text: 'Silakan isi minimal satu kegiatan pada Tugas Pokok atau Tugas Tambahan sebelum mengirim ke atasan langsung.'
-                });
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Laporan Masih Kosong',
+                        text: 'Silakan isi minimal satu kegiatan pada Tugas Pokok atau Tugas Tambahan sebelum mengirim ke atasan langsung.'
+                    });
+                } else {
+                    alert('Silakan isi minimal satu kegiatan pada Tugas Pokok atau Tugas Tambahan sebelum mengirim ke atasan langsung.');
+                }
                 return false;
             }
 
@@ -1303,12 +1344,16 @@
                                errorHints.map(h => `<li class="mb-1">${h}</li>`).join('') +
                                `</ul><p class="mt-2 text-muted mb-0" style="font-size:0.8rem;">💡 <i>Tips: Jika belum selesai diisi, Anda dapat menekan tombol <b>Simpan Sementara</b> terlebih dahulu.</i></p></div>`;
                 
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Data Belum Lengkap',
-                    html: hintHtml,
-                    confirmButtonText: 'Saya Mengerti'
-                });
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Data Belum Lengkap',
+                        html: hintHtml,
+                        confirmButtonText: 'Saya Mengerti'
+                    });
+                } else {
+                    alert('Data belum lengkap. Silakan lengkapi kolom yang wajib diisi.');
+                }
                 return false;
             }
 
@@ -1361,25 +1406,37 @@
                             });
                         }
                         
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Tersimpan Draf',
-                            text: response.message || 'Laporan harian & tugas tambahan berhasil disimpan sementara.',
-                            timer: 2000,
-                            showConfirmButton: false
-                        });
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Tersimpan Draf',
+                                text: response.message || 'Laporan harian & tugas tambahan berhasil disimpan sementara.',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                        } else {
+                            alert(response.message || 'Laporan harian & tugas tambahan berhasil disimpan sementara.');
+                        }
 
                         setTimeout(() => {
                             btn.html(originalText).removeClass('btn-outline-success').addClass('btn-outline-primary').prop('disabled', false);
                         }, 2500);
                     } else {
-                        Swal.fire('Gagal', response.message || 'Gagal menyimpan.', 'error');
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire('Gagal', response.message || 'Gagal menyimpan.', 'error');
+                        } else {
+                            alert('Gagal: ' + (response.message || 'Gagal menyimpan.'));
+                        }
                         btn.html(originalText).prop('disabled', false);
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error(error);
-                    Swal.fire('Error', 'Terjadi kesalahan jaringan atau server. Silakan coba lagi.', 'error');
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire('Error', 'Terjadi kesalahan jaringan atau server. Silakan coba lagi.', 'error');
+                    } else {
+                        alert('Terjadi kesalahan jaringan atau server. Silakan coba lagi.');
+                    }
                     btn.html(originalText).prop('disabled', false);
                 }
             });
@@ -1443,6 +1500,4 @@
         }
     });
 </script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
 <?= $this->endSection() ?>

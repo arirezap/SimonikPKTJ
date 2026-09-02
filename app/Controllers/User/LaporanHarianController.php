@@ -81,8 +81,9 @@ class LaporanHarianController extends BaseController
                                   ->where('tahun', $tahunTerpilih)
                                   ->findAll();
 
-        // Cek apakah user punya staf atau akses pimpinan eksekutif (Admin, Direktur, Wadir)
-        $isSuper = hasAnyRole(['admin', 'direktur', 'wadir']);
+        // Cek apakah user punya staf atau akses pimpinan eksekutif (Admin, Direktur)
+        // Catatan: Role Wadir tidak memiliki akses menyetujui / merevisi target staf
+        $isSuper = hasAnyRole(['admin', 'direktur']);
         $daftarUnit = [];
         if ($isSuper) {
             $units = $userModel->select('unit')->distinct()->where('unit !=', null)->where('unit !=', '')->orderBy('unit', 'ASC')->findAll();
@@ -96,6 +97,10 @@ class LaporanHarianController extends BaseController
             }
             $daftarStaf = $builder->orderBy('nama_lengkap', 'ASC')->findAll();
             $isAtasan = true;
+        } elseif (hasRole('wadir')) {
+            // Role Wakil Direktur tidak mengelola / menyetujui target staf (hanya mengelola Target Saya)
+            $daftarStaf = [];
+            $isAtasan = false;
         } else {
             $daftarStaf = $userModel->getStaf($userId);
             // Jika user punya role kepegawaian, sertakan seluruh pegawai Tugas Belajar
@@ -147,7 +152,7 @@ class LaporanHarianController extends BaseController
         $batasTarget = (int) $settingModel->getValue('batas_input_target', 5);
         $isLocked = false;
 
-        if ($isDeadlineActive && !hasRole('admin')) {
+        if ($isDeadlineActive && !hasRole('admin') && !hasRole('direktur')) {
             $now = new \DateTime();
             $targetMonth = new \DateTime(sprintf('%04d-%02d-01', $tahunTerpilih, $bulanTerpilih));
             $currentMonth = new \DateTime(date('Y-m-01'));
@@ -198,11 +203,18 @@ class LaporanHarianController extends BaseController
         $isEditingStaf = $this->request->getPost('is_editing_staf') == '1';
         $targetUserId = $isEditingStaf ? $this->request->getPost('staf_id') : $userId;
 
-        // Otorisasi: Jika menyunting target milik staf lain, pastikan user adalah Atasan Langsung, Admin, Direktur, Wadir, atau Kepegawaian
+        // Otorisasi: Jika menyunting target milik staf lain, pastikan user adalah Atasan Langsung, Admin, Direktur, atau Kepegawaian (Wadir tidak diizinkan)
         if ($isEditingStaf && $targetUserId != $userId) {
+            if (hasRole('wadir')) {
+                $msg = 'Akses ditolak. Role Wakil Direktur tidak memiliki wewenang merevisi target staf.';
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+                }
+                return redirect()->back()->with('error', $msg);
+            }
             $targetUser = (new User())->find($targetUserId);
             $isAtasan = $targetUser && !empty($targetUser['atasan_id']) && ($targetUser['atasan_id'] == $userId);
-            if (!hasAnyRole(['admin', 'direktur', 'wadir', 'kepegawaian']) && !$isAtasan) {
+            if (!hasAnyRole(['admin', 'direktur', 'kepegawaian']) && !$isAtasan) {
                 if ($this->request->isAJAX()) {
                     return $this->response->setJSON(['success' => false, 'message' => 'Akses ditolak. Anda tidak memiliki izin menyunting target staf ini.', 'csrf_hash' => csrf_hash()]);
                 }
@@ -218,7 +230,7 @@ class LaporanHarianController extends BaseController
         $isDeadlineActive = $settingModel->getValue('enable_target_deadline', '0') === '1';
         $batasTarget = (int) $settingModel->getValue('batas_input_target', 5);
 
-        if ($isDeadlineActive && !hasRole('admin') && !$isEditingStaf) {
+        if ($isDeadlineActive && !hasRole('admin') && !hasRole('direktur') && !$isEditingStaf) {
             $now = new \DateTime();
             $targetMonth = new \DateTime(sprintf('%04d-%02d-01', $tahun, $bulan));
             $currentMonth = new \DateTime(date('Y-m-01'));
@@ -416,6 +428,7 @@ class LaporanHarianController extends BaseController
             $db->transComplete();
         } catch (\Throwable $e) {
             try { @$db->transRollback(); } catch (\Throwable $t) {}
+            log_message('error', 'LaporanHarianController::store failed for user #' . $targetUserId . ': ' . $e->getMessage());
             if ($this->request->isAJAX()) {
                 return $this->response->setJSON([
                     'success' => false,
@@ -440,7 +453,6 @@ class LaporanHarianController extends BaseController
         }
 
         // Catat Audit Trail aktivitas penetapan / pembaruan target
-        $targetUser = (new User())->find($targetUserId);
         $targetUserName = $targetUser['nama_lengkap'] ?? "User #{$targetUserId}";
         $actionType = $isEditingStaf ? 'UPDATE_TARGET_STAF' : ($isDraft ? 'DRAFT_TARGET' : 'SUBMIT_TARGET');
 
@@ -479,7 +491,7 @@ class LaporanHarianController extends BaseController
                 "Target Kinerja Bulanan Anda ({$namaBulan} {$tahun}) telah diperbarui dan disetujui oleh {$currentUserName}.",
                 site_url('laporan-harian?bulan=' . $bulan . '&tahun=' . $tahun)
             );
-        } elseif (!$isEditingStaf && !$isDraft) {
+        } elseif (!$isEditingStaf && !$isDraft && !$isDirektur) {
             // Notifikasi ke atasan langsung jika staf mengajukan target
             if ($targetUser && !empty($targetUser['atasan_id'])) {
                 send_notification(
@@ -492,7 +504,7 @@ class LaporanHarianController extends BaseController
         }
 
         return redirect()->to('/laporan-harian')
-                         ->with('success', $isDraft ? 'Target Bulanan berhasil disimpan sementara.' : ($isEditingStaf ? 'Target Bulanan staf berhasil diperbarui dan disetujui.' : 'Target Bulanan berhasil dikirim ke atasan langsung.'));
+                         ->with('success', $isDraft ? 'Target Bulanan berhasil disimpan sementara.' : ($isEditingStaf ? 'Target Bulanan staf berhasil diperbarui dan disetujui.' : ($isDirektur ? 'Target Bulanan berhasil disimpan dan disetujui.' : 'Target Bulanan berhasil dikirim ke atasan langsung.')));
     }
     
     public function approve()
@@ -504,9 +516,25 @@ class LaporanHarianController extends BaseController
             $laporanModel = new TargetKinerja();
             $laporan = $laporanModel->find($id);
             if ($laporan) {
+                // Prevent self-approval (Conflict of Interest) except for Direktur
+                if ($laporan['user_id'] == $currentUserId && !hasRole('direktur')) {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'Akses ditolak. Anda tidak dapat menyetujui target kinerja milik Anda sendiri.',
+                        'csrf_hash' => csrf_hash()
+                    ]);
+                }
+
+                if (hasRole('wadir')) {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'Akses ditolak. Role Wakil Direktur tidak memiliki wewenang menyetujui target staf.',
+                        'csrf_hash' => csrf_hash()
+                    ]);
+                }
                 $targetUser = (new User())->find($laporan['user_id']);
                 $isAtasan = $targetUser && !empty($targetUser['atasan_id']) && ($targetUser['atasan_id'] == $currentUserId);
-                if (!hasAnyRole(['admin', 'direktur', 'wadir', 'kepegawaian']) && !$isAtasan) {
+                if (!hasAnyRole(['admin', 'direktur', 'kepegawaian']) && !$isAtasan) {
                     return $this->response->setJSON([
                         'success' => false,
                         'message' => 'Akses ditolak. Anda tidak memiliki izin menyetujui target ini.',
@@ -520,10 +548,13 @@ class LaporanHarianController extends BaseController
 
                 log_audit('APPROVE', 'target_kinerja_bulanan', $id, $laporan, [
                     'approved_by' => session()->get('nama_lengkap'),
-                    'approver_id' => $currentUserId
+                    'approver_id' => $currentUserId,
+                    'bulan'       => $laporan['bulan'],
+                    'tahun'       => $laporan['tahun'],
+                    'target_user' => $targetUser['nama_lengkap'] ?? "User #{$laporan['user_id']}"
                 ]);
 
-                // Kirim notifikasi ke staf bahwa targetnya telah disetujui
+                // Kirim notifikasi ke staf bahwa targetnya telah disetujui (jika bukan akun sendiri)
                 if ($laporan['user_id'] != $currentUserId) {
                     helper('notification');
                     $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -548,34 +579,69 @@ class LaporanHarianController extends BaseController
     public function approveAll()
     {
         $staf_id = $this->request->getPost('staf_id');
-        $bulan = $this->request->getPost('bulan');
-        $tahun = $this->request->getPost('tahun');
+        $bulan = (int)$this->request->getPost('bulan');
+        $tahun = (int)$this->request->getPost('tahun');
         $currentUserId = session()->get('id') ?? session()->get('user_id');
 
         if ($staf_id && $bulan && $tahun) {
-            // Otorisasi: Pastikan penilai adalah Atasan Langsung dari staf, Superadmin, Direktur, Wadir, atau Kepegawaian
+            // Prevent self-approval (Conflict of Interest) except for Direktur
+            if ($staf_id == $currentUserId && !hasRole('direktur')) {
+                return redirect()->back()->with('error', 'Akses ditolak. Anda tidak dapat menyetujui target kinerja milik Anda sendiri.');
+            }
+
+            // Otorisasi: Pastikan penilai adalah Atasan Langsung dari staf, Superadmin, Direktur, atau Kepegawaian (Wadir tidak diizinkan)
+            if (hasRole('wadir')) {
+                return redirect()->back()->with('error', 'Akses ditolak. Role Wakil Direktur tidak memiliki wewenang menyetujui target staf.');
+            }
             $targetUser = (new User())->find($staf_id);
             $isAtasan = $targetUser && !empty($targetUser['atasan_id']) && ($targetUser['atasan_id'] == $currentUserId);
-            if (!hasAnyRole(['admin', 'direktur', 'wadir', 'kepegawaian']) && !$isAtasan) {
+            if (!hasAnyRole(['admin', 'direktur', 'kepegawaian']) && !$isAtasan) {
                 return redirect()->back()->with('error', 'Akses ditolak. Anda tidak memiliki izin menyetujui target staf ini.');
             }
 
             $laporanModel = new TargetKinerja();
-            $laporanModel->where('user_id', $staf_id)
-                         ->where('bulan', $bulan)
-                         ->where('tahun', $tahun)
-                         ->set([
-                             'status_approval' => 'disetujui',
-                             'status'          => 'terkirim'
-                         ])
-                         ->update();
+            $targetsToApprove = $laporanModel->where('user_id', $staf_id)
+                                             ->where('bulan', $bulan)
+                                             ->where('tahun', $tahun)
+                                             ->where('status', 'terkirim')
+                                             ->findAll();
+
+            if (empty($targetsToApprove)) {
+                return redirect()->back()->with('error', 'Tidak ada target kinerja berstatus diajukan yang menunggu persetujuan pada periode ini.');
+            }
+
+            $db = \Config\Database::connect();
+            $db->transStart();
+
+            try {
+                $laporanModel->where('user_id', $staf_id)
+                             ->where('bulan', $bulan)
+                             ->where('tahun', $tahun)
+                             ->where('status', 'terkirim')
+                             ->set([
+                                 'status_approval' => 'disetujui'
+                             ])
+                             ->update();
+
+                $db->transComplete();
+
+                if ($db->transStatus() === false) {
+                    log_message('error', "approveAll transaction failed for staf_id: {$staf_id}, periode: {$bulan}/{$tahun}");
+                    return redirect()->back()->with('error', 'Gagal menyetujui target staf. Terjadi kesalahan database.');
+                }
+            } catch (\Throwable $e) {
+                try { @$db->transRollback(); } catch (\Throwable $t) {}
+                log_message('error', "approveAll exception: " . $e->getMessage());
+                return redirect()->back()->with('error', 'Gagal menyetujui target staf.');
+            }
 
             log_audit('APPROVE_ALL', 'target_kinerja_bulanan', $staf_id, null, [
-                'bulan'       => $bulan,
-                'tahun'       => $tahun,
-                'staf'        => $targetUser['nama_lengkap'] ?? "User #{$staf_id}",
-                'approved_by' => session()->get('nama_lengkap'),
-                'approver_id' => $currentUserId
+                'bulan'            => $bulan,
+                'tahun'            => $tahun,
+                'staf'             => $targetUser['nama_lengkap'] ?? "User #{$staf_id}",
+                'jumlah_disetujui' => count($targetsToApprove),
+                'approved_by'      => session()->get('nama_lengkap'),
+                'approver_id'      => $currentUserId
             ]);
             
             helper('notification');
@@ -586,11 +652,11 @@ class LaporanHarianController extends BaseController
             send_notification(
                 $staf_id,
                 'Target Kinerja Disetujui',
-                "Seluruh Target Kinerja Bulanan Anda ({$namaBulan} {$tahun}) telah disetujui oleh {$atasanName}.",
+                "Seluruh Target Kinerja Bulanan Anda (" . count($targetsToApprove) . " target pada {$namaBulan} {$tahun}) telah disetujui oleh {$atasanName}.",
                 site_url('laporan-harian?bulan=' . $bulan . '&tahun=' . $tahun)
             );
 
-            return redirect()->to('/laporan-harian')->with('success', 'Semua target milik staf berhasil disetujui.');
+            return redirect()->to('/laporan-harian')->with('success', 'Semua target milik staf berhasil disetujui (' . count($targetsToApprove) . ' target).');
         }
         return redirect()->back()->with('error', 'Data tidak valid.');
     }
@@ -607,8 +673,15 @@ class LaporanHarianController extends BaseController
                 $targetUser = (new User())->find($laporan['user_id']);
                 $isAtasan = $targetUser && !empty($targetUser['atasan_id']) && ($targetUser['atasan_id'] == $currentUserId);
 
-                // Otorisasi: Pastikan target milik user bersangkutan atau user adalah Admin / Direktur / Wadir / Kepegawaian / Atasan Langsung
-                if ($laporan['user_id'] != $currentUserId && !hasAnyRole(['admin', 'kepegawaian', 'direktur', 'wadir']) && !$isAtasan) {
+                // Otorisasi: Pastikan target milik user bersangkutan atau user adalah Admin / Direktur / Kepegawaian / Atasan Langsung (Wadir dilarang)
+                if ($laporan['user_id'] != $currentUserId && hasRole('wadir')) {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'Akses ditolak. Role Wakil Direktur tidak memiliki izin menghapus atau merevisi target staf.',
+                        'csrf_hash' => csrf_hash()
+                    ]);
+                }
+                if ($laporan['user_id'] != $currentUserId && !hasAnyRole(['admin', 'kepegawaian', 'direktur']) && !$isAtasan) {
                     return $this->response->setJSON([
                         'success' => false,
                         'message' => 'Akses ditolak. Anda tidak memiliki izin menghapus target ini.',
@@ -651,6 +724,7 @@ class LaporanHarianController extends BaseController
                 $db->transComplete();
 
                 if ($db->transStatus() === false) {
+                    log_message('error', "hapus target failed for target_id: {$id}");
                     return $this->response->setJSON([
                         'success' => false,
                         'message' => 'Gagal menghapus data target.',
@@ -758,9 +832,28 @@ class LaporanHarianController extends BaseController
                          ])
                          ->update();
 
+            // Cascade: Revert semua Log Kegiatan Harian terkait yang berstatus 'terkirim' kembali ke 'draft'
+            $targetIds = array_column($existingTargets, 'id');
+            $affectedLogs = 0;
+            if (!empty($targetIds)) {
+                $logModel = new LogKegiatanHarian();
+                $affectedLogs = $logModel->where('user_id', $stafId)
+                                         ->whereIn('target_id', $targetIds)
+                                         ->where('status', 'terkirim')
+                                         ->countAllResults();
+                if ($affectedLogs > 0) {
+                    $logModel->where('user_id', $stafId)
+                             ->whereIn('target_id', $targetIds)
+                             ->where('status', 'terkirim')
+                             ->set(['status' => 'draft'])
+                             ->update();
+                }
+            }
+
             $db->transComplete();
 
             if ($db->transStatus() === false) {
+                log_message('error', "cancelApprove transaction failed for stafId: {$stafId}, {$bulan}/{$tahun}");
                 return $this->response->setJSON([
                     'success' => false,
                     'message' => 'Gagal membatalkan persetujuan target. Terjadi kesalahan database.',
@@ -770,33 +863,43 @@ class LaporanHarianController extends BaseController
 
             // Audit log
             log_audit('CANCEL_APPROVE_TARGET', 'target_kinerja_bulanan', $stafId, null, [
-                'bulan'        => $bulan,
-                'tahun'        => $tahun,
-                'staf'         => $targetUser['nama_lengkap'],
-                'dibatal_oleh' => session()->get('nama_lengkap')
+                'bulan'                  => $bulan,
+                'tahun'                  => $tahun,
+                'staf'                   => $targetUser['nama_lengkap'],
+                'target_count'           => count($existingTargets),
+                'affected_logs_to_draft' => $affectedLogs,
+                'dibatal_oleh'           => session()->get('nama_lengkap')
             ]);
 
             // Kirim notifikasi ke staf
             if (function_exists('send_notification')) {
                 $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
                 $namaBulan = $bulanIndo[(int)$bulan - 1] ?? $bulan;
+                $logInfo = ($affectedLogs > 0) ? " Sebanyak {$affectedLogs} catatan log kegiatan harian juga telah dikembalikan ke status draf untuk disesuaikan." : "";
 
                 send_notification(
                     $stafId,
                     'Persetujuan Target Dibatalkan',
-                    "Persetujuan Target Bulanan ({$namaBulan} {$tahun}) Anda telah dibatalkan oleh Superadmin. Silakan lakukan revisi dan ajukan kembali ke atasan langsung.",
+                    "Persetujuan Target Bulanan ({$namaBulan} {$tahun}) Anda telah dibatalkan oleh Superadmin.{$logInfo} Silakan lakukan revisi dan ajukan kembali ke atasan langsung.",
                     site_url('laporan-harian')
                 );
             }
 
+            $msg = "Persetujuan Target Bulanan {$targetUser['nama_lengkap']} berhasil dibatalkan. Target kini berstatus draf.";
+            if ($affectedLogs > 0) {
+                $msg .= " Sebanyak {$affectedLogs} log kegiatan terkait dikembalikan ke status draf.";
+            }
+
             return $this->response->setJSON([
                 'success' => true,
-                'message' => "Persetujuan Target Bulanan {$targetUser['nama_lengkap']} berhasil dibatalkan. Target kini berstatus draf.",
+                'message' => $msg,
+                'affected_logs' => $affectedLogs,
                 'csrf_hash' => csrf_hash()
             ]);
 
-        } catch (\Exception $e) {
-            $db->transRollback();
+        } catch (\Throwable $e) {
+            try { @$db->transRollback(); } catch (\Throwable $t) {}
+            log_message('error', "cancelApprove exception: " . $e->getMessage());
             return $this->response->setJSON([
                 'success' => false,
                 'message' => 'Gagal membatalkan persetujuan: ' . $e->getMessage(),
@@ -823,7 +926,7 @@ class LaporanHarianController extends BaseController
             $userModel = new User();
             $targetUser = $userModel->find($targetUserId);
             $isAtasan = $targetUser && !empty($targetUser['atasan_id']) && ($targetUser['atasan_id'] == $userId);
-            if (!hasAnyRole(['admin', 'direktur', 'wadir', 'kepegawaian']) && !$isAtasan) {
+            if (!hasAnyRole(['admin', 'direktur', 'kepegawaian']) && !$isAtasan) {
                 return $this->response->setJSON([
                     'status' => 'error',
                     'message' => 'Akses ditolak: Anda tidak memiliki wewenang untuk mengambil data target staf ini.',

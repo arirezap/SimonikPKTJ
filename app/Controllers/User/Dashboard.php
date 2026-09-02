@@ -72,10 +72,12 @@ class Dashboard extends BaseController
                     $statStaf = $this->hitungKinerjaPegawai($staf['id'], $bulanTerpilih, $tahun_kinerja, $batchTargets, $batchTambahan);
                     
                     $rekapDashboard[] = [
-                        'staf' => $staf,
-                        'total_laporan' => $statStaf['total_laporan'],
-                        'dinilai' => $statStaf['dinilai'],
-                        'rata_rata' => $statStaf['rata_rata']
+                        'staf'           => $staf,
+                        'total_pokok'    => $statStaf['total_pokok'],
+                        'total_tambahan' => $statStaf['total_tambahan'],
+                        'total_laporan'  => $statStaf['total_laporan'],
+                        'dinilai'        => $statStaf['dinilai'],
+                        'rata_rata'      => $statStaf['rata_rata']
                     ];
                 }
             }
@@ -95,11 +97,13 @@ class Dashboard extends BaseController
                     $unitStats[$unitName]['total_rata'] += $rekap['rata_rata'];
                     $unitStats[$unitName]['count']++;
                     $unitStats[$unitName]['anggota'][] = [
-                        'nama' => $rekap['staf']['nama_lengkap'],
-                        'jabatan' => $rekap['staf']['jabatan'] ?? '-',
-                        'rata_rata' => $rekap['rata_rata'],
-                        'dinilai' => $rekap['dinilai'],
-                        'total_laporan' => $rekap['total_laporan']
+                        'nama'           => $rekap['staf']['nama_lengkap'],
+                        'jabatan'        => $rekap['staf']['jabatan'] ?? '-',
+                        'total_pokok'    => $rekap['total_pokok'],
+                        'total_tambahan' => $rekap['total_tambahan'],
+                        'rata_rata'      => $rekap['rata_rata'],
+                        'dinilai'        => $rekap['dinilai'],
+                        'total_laporan'  => $rekap['total_laporan']
                     ];
                 }
                 

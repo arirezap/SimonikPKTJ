@@ -10,10 +10,10 @@ Dashboard
 
 <?= $this->section('content') ?>
 
-<!-- 0. TOP FILTER TOOLBAR (ALIGNED LEFT & PROPER PADDING) -->
+<!-- 0. TOP FILTER TOOLBAR (8pt Grid System) -->
 <div class="d-flex justify-content-start align-items-center flex-wrap gap-2 mb-4 bento-stagger bento-stagger-1">
     <form id="formKinerja" class="m-0 d-flex flex-wrap gap-2 align-items-center">
-        <select name="tahun_kinerja" id="tahun_kinerja" class="form-select form-select-sm filter-select fw-semibold text-dark bg-white shadow-xs rounded-pill border py-1.5 ps-3 pe-4" aria-label="Pilih Tahun Kinerja" style="width: auto; min-width: 130px; cursor:pointer;" onchange="updateKinerjaData()">
+        <select name="tahun_kinerja" id="tahun_kinerja" class="form-select form-select-sm filter-select fw-semibold text-dark bg-white shadow-xs rounded-pill border" aria-label="Pilih Tahun Kinerja" style="height: 36px; padding: 0 32px 0 16px; width: auto; min-width: 140px; cursor: pointer; font-size: 0.82rem;" onchange="updateKinerjaData()">
             <?php foreach ($daftar_tahun as $tahun_item): ?>
                 <option value="<?= esc($tahun_item) ?>" <?= ($tahun_kinerja == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
             <?php endforeach; ?>
@@ -21,24 +21,24 @@ Dashboard
     </form>
 </div>
 
-<!-- 1. ECC DASHBOARD (TOP SECTION AS REQUESTED) -->
+<!-- 1. ECC DASHBOARD (TOP HERO SECTION - 8pt Grid) -->
 <div class="row g-4 mb-5 bento-stagger bento-stagger-1">
     <div class="col-lg-8 d-flex flex-column">
-        <div class="bento-card border-primary border-top border-4 flex-fill">
-            <div class="bento-header d-flex flex-column flex-md-row justify-content-between align-items-md-center border-bottom pb-2 mb-2 gap-2">
-                <div class="d-flex align-items-center">
-                    <div class="bg-primary-bento text-white rounded p-1 me-2 shadow-sm d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+        <div class="bento-card border-top border-4 border-primary flex-fill rounded-4 shadow-sm">
+            <div class="bento-header d-flex flex-column flex-md-row justify-content-between align-items-md-center border-bottom pb-3 mb-2 gap-2" style="padding: 16px 24px;">
+                <div class="d-flex align-items-center" style="gap: 12px;">
+                    <div class="bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 32px; height: 32px; border-radius: 8px;">
                         <i class="bi bi-shield-check fs-6"></i>
                     </div>
                     <div>
-                        <div class="mb-0 fw-bold text-dark fs-6">Evidence Command Center (ECC)</div>
-                        <div class="text-muted" style="font-size: 0.75rem;">Monitoring Pemenuhan Standar Mutu</div>
+                        <div class="mb-0 fw-bold text-dark" style="font-size: 0.95rem; line-height: 1.3;">Evidence Command Center (ECC)</div>
+                        <div class="text-muted" style="font-size: 0.75rem; margin-top: 2px;">Monitoring Pemenuhan Standar Mutu</div>
                     </div>
                 </div>
                 
                 <!-- Filter Tahun ECC -->
                 <form id="formEcc" class="m-0 d-flex gap-2">
-                    <select name="tahun_ecc" id="tahun_ecc" aria-label="Pilih Tahun ECC" class="form-select form-select-sm filter-select fw-bold text-primary-bento" style="width: auto; cursor:pointer;" onchange="updateEccData()">
+                    <select name="tahun_ecc" id="tahun_ecc" aria-label="Pilih Tahun ECC" class="form-select form-select-sm filter-select fw-semibold text-primary rounded-pill border" style="height: 32px; padding: 0 28px 0 12px; width: auto; cursor: pointer; font-size: 0.78rem;" onchange="updateEccData()">
                         <?php foreach ($daftar_tahun as $tahun_item): ?>
                             <option value="<?= esc($tahun_item) ?>" <?= ($tahun_ecc == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
                         <?php endforeach; ?>
@@ -46,11 +46,11 @@ Dashboard
                 </form>
             </div>
             
-            <div class="bento-body pt-2">
-                <ul class="nav nav-pills ecc-tabs mb-4" id="prodiTab" role="tablist">
+            <div class="bento-body pt-2" style="padding: 24px;">
+                <ul class="nav nav-pills ecc-tabs mb-4 gap-1" id="prodiTab" role="tablist">
                     <?php $tabIdx = 0; foreach($prodiData as $prodi): ?>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link py-1 px-3 <?= $tabIdx === 0 ? 'active' : '' ?>" style="font-size: 0.85rem;" id="tab-<?= esc($prodi['id_prodi']) ?>" data-bs-toggle="tab" data-bs-target="#content-<?= esc($prodi['id_prodi']) ?>" type="button" role="tab"><?= esc($prodi['nama_prodi']) ?></button>
+                            <button class="nav-link rounded-pill py-1.5 px-3 <?= $tabIdx === 0 ? 'active' : '' ?>" style="font-size: 0.82rem; font-weight: 600;" id="tab-<?= esc($prodi['id_prodi']) ?>" data-bs-toggle="tab" data-bs-target="#content-<?= esc($prodi['id_prodi']) ?>" type="button" role="tab"><?= esc($prodi['nama_prodi']) ?></button>
                         </li>
                     <?php $tabIdx++; endforeach; ?>
                 </ul>
@@ -61,18 +61,18 @@ Dashboard
                             <div class="row justify-content-center">
                                 <div class="col-12 px-0 px-md-3">
                                     <div class="text-center mb-3">
-                                        <span class="badge bg-light text-dark border px-2 py-1 rounded-pill shadow-sm" style="font-size: 0.75rem;">
-                                             Rangkuman Skor LED: <strong class="text-primary-bento"><?= esc($prodi['nama_prodi']) ?></strong>
+                                        <span class="badge bg-light text-dark border px-3 py-1.5 rounded-pill shadow-sm" style="font-size: 0.75rem;">
+                                             Rangkuman Skor LED: <strong class="text-primary"><?= esc($prodi['nama_prodi']) ?></strong>
                                         </span>
                                     </div>
                                     <?php if (empty($prodi['chart_labels'])): ?>
-                                        <div class="alert alert-light text-center border py-4 text-muted rounded-3 shadow-none">
+                                        <div class="alert alert-light text-center border py-4 text-muted rounded-4 shadow-none" style="padding: 32px 16px;">
                                             <i class="bi bi-inbox fs-3 d-block mb-2 text-secondary opacity-75"></i>
                                             Belum ada data Kategori LED untuk tahun ini.
                                         </div>
                                     <?php else: ?>
                                         <div class="radar-chart-container"><canvas id="radarChart-<?= esc($prodi['id_prodi']) ?>" role="img" aria-label="Grafik Radar Pemenuhan Standar Mutu <?= esc($prodi['nama_prodi']) ?>"></canvas></div>
-                                        <p class="text-center text-muted small mt-2"><i class="bi bi-info-circle me-1"></i> Klik pada nama standar (label) di grafik untuk melihat detail.</p>
+                                        <p class="text-center text-muted small mt-2 mb-0"><i class="bi bi-info-circle me-1"></i> Klik pada nama standar (label) di grafik untuk melihat detail.</p>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -84,26 +84,26 @@ Dashboard
     </div>
     
     <div class="col-lg-4 d-flex flex-column gap-4">
-        <!-- Rata-rata Capaian -->
-        <div class="bento-card bg-primary-bento text-white flex-fill shadow-sm" style="min-height: 150px;">
-            <div class="bento-body d-flex flex-column justify-content-center align-items-center text-center py-4 h-100">
-                <div class="stat-label text-white-50 mb-2">Nilai Rata-Rata Kinerja</div>
-                <div class="stat-value text-white mb-2" id="valRataRataCapaian" aria-live="polite" aria-atomic="true"><?= number_format($rataRataCapaian, 2, ',', '.') ?></div>
-                <div class="progress w-75 bg-white bg-opacity-25 mt-2 rounded-pill" style="height: 6px;">
-                    <div class="progress-bar bg-warning" id="barRataRataCapaian" style="width: <?= min(100, $rataRataCapaian) ?>%; transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);"></div>
+        <!-- Rata-rata Capaian (8pt Grid) -->
+        <div class="bento-card bg-primary text-white flex-fill shadow-sm rounded-4" style="min-height: 160px; padding: 24px;">
+            <div class="d-flex flex-column justify-content-center align-items-center text-center h-100">
+                <div class="text-white-50 fw-semibold text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px; margin-bottom: 6px;">Nilai Rata-Rata Kinerja</div>
+                <div class="stat-value text-white num-tabular" id="valRataRataCapaian" aria-live="polite" aria-atomic="true" style="font-size: 2.25rem; font-weight: 700; line-height: 1.1; margin-bottom: 8px;"><?= number_format($rataRataCapaian, 2, ',', '.') ?></div>
+                <div class="progress w-75 bg-white bg-opacity-25 rounded-pill" style="height: 8px;">
+                    <div class="progress-bar bg-warning rounded-pill" id="barRataRataCapaian" style="width: <?= min(100, $rataRataCapaian) ?>%; transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);"></div>
                 </div>
             </div>
         </div>
         
-        <!-- Total Komponen Dinilai -->
-        <div class="bento-card flex-fill shadow-sm border-top border-4 border-primary" style="min-height: 150px;">
-            <div class="bento-body d-flex align-items-center justify-content-center h-100">
-                <div class="bg-light rounded-circle p-3 me-3 text-primary-bento shadow-sm">
-                    <i class="bi bi-layers-fill fs-3"></i>
+        <!-- Total Komponen Dinilai (8pt Grid) -->
+        <div class="bento-card flex-fill shadow-sm border-top border-4 border-primary rounded-4" style="min-height: 160px; padding: 24px;">
+            <div class="d-flex align-items-center justify-content-center h-100" style="gap: 16px;">
+                <div class="bg-primary-subtle text-primary d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 48px; height: 48px; border-radius: 16px;">
+                    <i class="bi bi-layers-fill fs-4"></i>
                 </div>
                 <div>
-                    <div class="stat-value fs-2" id="valTotalIndikator" aria-live="polite" aria-atomic="true"><?= $totalIndikator ?></div>
-                    <div class="stat-label text-uppercase" style="letter-spacing: 0.5px; font-size: 0.82rem;">Komponen Dinilai</div>
+                    <div class="stat-value num-tabular" id="valTotalIndikator" aria-live="polite" aria-atomic="true" style="font-size: 2.25rem; font-weight: 700; line-height: 1.1; margin-bottom: 2px;"><?= $totalIndikator ?></div>
+                    <div class="fw-bold text-dark text-uppercase" style="letter-spacing: 0.5px; font-size: 0.78rem;">Komponen Dinilai</div>
                     <div class="text-muted small" style="font-size: 0.72rem;">RHK Utama & Tugas Tambahan</div>
                 </div>
             </div>
@@ -111,19 +111,19 @@ Dashboard
     </div>
 </div>
 
-<!-- 2. ANALISIS KINERJA PRIBADI -->
+<!-- 2. ANALISIS KINERJA PRIBADI (8pt Grid) -->
 <div class="bento-stagger bento-stagger-2">
-    <div class="d-flex justify-content-between align-items-center mb-3 mt-3">
-        <h5 class="fw-bold text-secondary mb-0"><i class="bi bi-person-workspace me-2"></i> Kinerja Pribadi</h5>
+    <div class="d-flex justify-content-between align-items-center mb-3 mt-2">
+        <h5 class="fw-bold text-secondary mb-0 d-flex align-items-center gap-2" style="font-size: 1rem;"><i class="bi bi-person-workspace"></i> Kinerja Pribadi</h5>
     </div>
     <div class="row g-4 mb-5">
         <!-- Tren Kumulatif Chart -->
         <div class="col-12">
-            <div class="bento-card">
-                <div class="bento-header">
+            <div class="bento-card rounded-4 shadow-sm">
+                <div class="bento-header fw-bold text-dark border-bottom" style="padding: 16px 24px; font-size: 0.88rem; min-height: 56px; display: flex; align-items: center;">
                     Tren Nilai Rata-Rata Kinerja Bulanan
                 </div>
-                <div class="bento-body pt-0">
+                <div class="bento-body pt-0" style="padding: 24px;">
                     <div class="line-chart-container">
                         <canvas id="kumulatifChart" role="img" aria-label="Grafik Tren Nilai Rata-Rata Kinerja Bulanan Pribadi"></canvas>
                     </div>
@@ -133,28 +133,28 @@ Dashboard
     </div>
 </div>
 
-<!-- 3. ANALISIS KINERJA STAF / REKAN SATU UNIT -->
+<!-- 3. ANALISIS KINERJA STAF / REKAN SATU UNIT (8pt Grid) -->
 <?php if (((isset($isAtasan) && $isAtasan) || (isset($isUnitPeers) && $isUnitPeers)) && !empty($rekapDashboard)): ?>
 <div class="bento-stagger bento-stagger-3">
-    <h5 class="fw-bold text-secondary mb-3" id="tabelRekapTitle">
+    <h5 class="fw-bold text-secondary mb-3 d-flex align-items-center gap-2" id="tabelRekapTitle" style="font-size: 1rem;">
         <?php if (isset($isAtasan) && $isAtasan): ?>
-            <i class="bi bi-people-fill me-2"></i> Monitoring Kinerja Staf Saya
+            <i class="bi bi-people-fill"></i> Monitoring Kinerja Staf Saya
         <?php else: ?>
-            <i class="bi bi-diagram-3-fill me-2"></i> Kinerja Rekan 1 Unit Kerja
+            <i class="bi bi-diagram-3-fill"></i> Kinerja Rekan 1 Unit Kerja
         <?php endif; ?>
     </h5>
     <div class="row g-4 mb-5" id="tabelRekapContainer">
         <div class="col-12">
-            <div class="bento-card">
+            <div class="bento-card rounded-4 shadow-sm">
                 <div class="bento-body p-0">
                     <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0 border-0">
-                        <thead class="bg-light-bento text-muted small text-uppercase" style="letter-spacing: 0.5px;">
+                    <table class="table table-hover align-middle mb-0 border-0 table-bento" style="font-size: 0.8rem;">
+                        <thead class="bg-light text-muted small text-uppercase" style="letter-spacing: 0.5px; background-color: #f8fafc;">
                             <tr>
-                                <th class="ps-4 py-3 border-0 rounded-top-start">Nama Pegawai</th>
-                                <th class="text-center py-3 border-0">Jabatan</th>
-                                <th class="text-center py-3 border-0">Target Dinilai</th>
-                                <th class="text-center py-3 border-0 rounded-top-end">Rata-rata Nilai</th>
+                                <th class="ps-4 border-0 rounded-top-start" style="padding: 12px 16px;">Nama Pegawai</th>
+                                <th class="text-center border-0" style="padding: 12px 16px;">Jabatan</th>
+                                <th class="text-center border-0" style="padding: 12px 16px;">Target & Tambahan</th>
+                                <th class="text-center border-0 rounded-top-end" style="padding: 12px 16px;">Rata-rata Nilai</th>
                             </tr>
                         </thead>
                         <tbody class="border-top-0" id="tbodyKinerjaStaf">
@@ -171,27 +171,32 @@ Dashboard
                                     }
                                 ?>
                                 <tr>
-                                    <td class="ps-4 py-3 border-bottom-0 border-bottom border-light">
-                                        <div class="d-flex align-items-center">
-                                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3 fw-bold shadow-sm" style="width: 42px; height: 42px;">
+                                    <td class="ps-4 border-bottom border-light" style="padding: 12px 16px;">
+                                        <div class="d-flex align-items-center" style="gap: 12px;">
+                                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm flex-shrink-0" style="width: 40px; height: 40px; font-size: 0.95rem;">
                                                 <?= strtoupper(substr(trim($rekap['staf']['nama_lengkap']), 0, 1)) ?>
                                             </div>
-                                            <div>
-                                                <div class="fw-bold text-dark"><?= esc($rekap['staf']['nama_lengkap']) ?></div>
-                                                <small class="text-muted"><?= esc($rekap['staf']['nip']) ?></small>
+                                            <div style="min-width: 0;">
+                                                <div class="fw-bold text-dark text-truncate" style="font-size: 0.82rem;"><?= esc($rekap['staf']['nama_lengkap']) ?></div>
+                                                <div class="text-muted small num-tabular" style="font-size: 0.72rem; margin-top: 1px;"><?= esc($rekap['staf']['nip'] ?: '-') ?></div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="text-center py-3 text-muted border-bottom-0 border-bottom border-light">
-                                        <?= esc($rekap['staf']['jabatan'] ?: '-') ?>
+                                    <td class="text-center text-muted border-bottom border-light" style="padding: 12px 16px;">
+                                        <span class="badge bg-light text-dark border rounded-pill px-2.5 py-1 text-wrap" style="font-size: 0.74rem;"><?= esc($rekap['staf']['jabatan'] ?: '-') ?></span>
                                     </td>
-                                    <td class="text-center py-3 border-bottom-0 border-bottom border-light">
-                                        <span class="badge bg-light text-dark border px-2 py-1 shadow-sm">
-                                            <?= $rekap['dinilai'] ?> / <?= $rekap['total_laporan'] ?> laporan
-                                        </span>
+                                    <td class="text-center border-bottom border-light" style="padding: 12px 16px;">
+                                        <div class="d-flex flex-column align-items-center justify-content-center gap-1">
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5 num-tabular" style="font-size: 0.68rem;">
+                                                <?= $rekap['total_pokok'] ?? $rekap['total_laporan'] ?> Pokok
+                                            </span>
+                                            <span class="badge <?= ($rekap['total_tambahan'] ?? 0) > 0 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-light text-muted border' ?> rounded-pill px-2 py-0.5 num-tabular" style="font-size: 0.68rem;">
+                                                <?= ($rekap['total_tambahan'] ?? 0) ?> Tambahan
+                                            </span>
+                                        </div>
                                     </td>
-                                    <td class="text-center py-3 border-bottom-0 border-bottom border-light">
-                                        <span class="badge <?= $warnaBadge ?> fs-6 rounded-pill px-3 py-2 shadow-sm">
+                                    <td class="text-center border-bottom border-light" style="padding: 12px 16px;">
+                                        <span class="badge <?= $warnaBadge ?> rounded-pill px-3 py-1.5 shadow-sm num-tabular" style="font-size: 0.82rem; font-weight: 700;">
                                             <?= number_format($rata, 2, ',', '.') ?>
                                         </span>
                                     </td>
@@ -206,46 +211,57 @@ Dashboard
 </div>
 <?php endif; ?>
 
-<!-- 4. ANALISIS KINERJA UNIT (Khusus Super/Admin/Direktur/Wadir) -->
+<!-- 4. ANALISIS KINERJA UNIT (Khusus Super/Admin/Direktur/Wadir - 8pt Grid) -->
 <?php if (isset($isSuper) && $isSuper): ?>
 <div class="d-flex align-items-center mb-3">
-    <h5 class="fw-bold text-secondary mb-0"><i class="bi bi-building me-2"></i> Kinerja Seluruh Pegawai (Per Unit)</h5>
-    <span class="badge bg-primary bg-opacity-10 text-primary fs-7 ms-3 rounded-pill shadow-sm">Direktur / Wadir</span>
+    <h5 class="fw-bold text-secondary mb-0 d-flex align-items-center gap-2" style="font-size: 1rem;"><i class="bi bi-building"></i> Kinerja Seluruh Pegawai (Per Unit)</h5>
+    <span class="badge bg-primary bg-opacity-10 text-primary ms-3 rounded-pill shadow-sm" style="font-size: 0.72rem; padding: 4px 10px;">Direktur / Wadir</span>
 </div>
 
 <div class="row g-4 mb-5">
     <div class="col-12">
-        <div class="bento-card border-top border-4 border-info">
-            <div class="bento-body p-4">
+        <div class="bento-card border-top border-4 border-info rounded-4 shadow-sm">
+            <div class="bento-body" style="padding: 24px;">
                 <?php if (empty($chartPegawaiUnitLabels)): ?>
-                    <div class="alert alert-light border text-center text-muted mb-0 shadow-sm"><i class="bi bi-info-circle me-2"></i> Belum ada data rekap kinerja staf.</div>
+                    <div class="alert alert-light border text-center text-muted mb-0 shadow-sm rounded-3"><i class="bi bi-info-circle me-2"></i> Belum ada data rekap kinerja staf.</div>
                 <?php else: ?>
                     <div class="performance-chart-container">
                         <canvas id="unitPerformanceChart" role="img" aria-label="Grafik Batang Kinerja Pegawai Per Unit Kerja"></canvas>
                     </div>
-                    <p class="text-center text-muted small mt-3 mb-0"><i class="bi bi-info-circle me-1"></i> Klik pada grafik batang untuk melihat detail anggota unit kerja.</p>
+                    <p class="text-center text-muted small mt-3 mb-0" style="font-size: 0.75rem;"><i class="bi bi-info-circle me-1"></i> Klik pada grafik batang untuk melihat detail anggota unit kerja.</p>
                 <?php endif; ?>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modal Detail Unit -->
-<div class="modal fade" id="unitDetailModal" tabindex="-1" aria-hidden="true">
+<!-- Modal Detail Unit (Bento Popup - 8pt Grid System) -->
+<div class="modal fade" id="unitDetailModal" tabindex="-1" aria-labelledby="unitDetailModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content rounded-4 border-0 shadow-lg">
-            <div class="modal-header border-bottom-0 pb-0">
-                <h5 class="modal-title fw-bold d-flex align-items-center flex-wrap gap-2" id="unitDetailModalLabel">Detail Pegawai: <span id="modalUnitName" class="text-primary-bento"></span> <span id="modalPeriodBadge" class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill fs-7 fw-semibold"></span></h5>
+        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden" style="border-top: 4px solid #0d6efd !important;">
+            <div class="modal-header bg-light border-bottom" style="padding: 16px 24px;">
+                <div class="d-flex align-items-center" style="gap: 12px;">
+                    <div class="bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 40px; height: 40px; border-radius: 12px;">
+                        <i class="bi bi-building-check fs-5"></i>
+                    </div>
+                    <div>
+                        <h6 class="modal-title fw-bold text-dark mb-0 d-flex align-items-center flex-wrap gap-2" id="unitDetailModalLabel" style="font-size: 1rem; line-height: 1.3;">
+                            <span>Detail Pegawai:</span>
+                            <span id="modalUnitName" class="text-primary"></span>
+                            <span id="modalPeriodBadge" class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-0.5" style="font-size: 0.72rem;"></span>
+                        </h6>
+                    </div>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body pt-3 pb-4">
-                <div class="table-responsive">
-                    <table class="table table-hover table-borderless align-middle mb-0">
-                        <thead class="bg-light text-muted small text-uppercase">
+            <div class="modal-body" style="padding: 24px;">
+                <div class="table-responsive bg-white border rounded-3 shadow-sm overflow-hidden">
+                    <table class="table table-hover align-middle mb-0 table-bento" style="font-size: 0.8rem;">
+                        <thead class="bg-light text-muted small text-uppercase" style="background-color: #f8fafc;">
                             <tr>
-                                <th class="ps-3 rounded-start">Nama Pegawai</th>
-                                <th class="text-center">Laporan Dinilai</th>
-                                <th class="text-center rounded-end">Rata-rata Nilai</th>
+                                <th class="ps-3" style="padding: 12px 16px;">Nama Pegawai</th>
+                                <th class="text-center" style="padding: 12px 16px;">Target & Tambahan</th>
+                                <th class="text-center pe-3" style="padding: 12px 16px;">Rata-rata Nilai</th>
                             </tr>
                         </thead>
                         <tbody id="unitDetailTbody" class="border-top-0">
@@ -253,6 +269,9 @@ Dashboard
                         </tbody>
                     </table>
                 </div>
+            </div>
+            <div class="modal-footer bg-light border-top" style="padding: 12px 24px;">
+                <button type="button" class="btn btn-sm btn-secondary rounded-pill px-4 fw-semibold" style="height: 32px; font-size: 0.78rem;" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
@@ -407,30 +426,38 @@ async function updateKinerjaData() {
                             else warnaBadge = 'bg-danger';
                         }
                         
-                        let fotoVal = rekap.staf.foto || rekap.staf.avatar;
-                        let avatar = fotoVal ? `<?= base_url('assets/uploads/profile/') ?>${fotoVal}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(rekap.staf.nama_lengkap)}&background=random`;
+                        let inisial = (rekap.staf.nama_lengkap || '').trim().charAt(0).toUpperCase();
                         let jabatan = rekap.staf.jabatan || '-';
                         let rataStr = rata.toFixed(2);
                         
                         htmlStaf += `
                         <tr>
-                            <td class="ps-4 py-3 border-bottom border-light">
-                                <div class="d-flex align-items-center">
-                                    <img src="${avatar}" alt="Avatar" class="rounded-circle shadow-sm me-3" width="40" height="40" style="object-fit: cover;" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(rekap.staf.nama_lengkap)}&background=random';">
-                                    <div>
-                                        <div class="fw-bold text-dark text-truncate" style="max-width:200px;">${escapeHtml(rekap.staf.nama_lengkap)}</div>
-                                        <div class="small text-muted">${escapeHtml(rekap.staf.nip || '')}</div>
+                            <td class="ps-4 border-bottom border-light" style="padding: 12px 16px;">
+                                <div class="d-flex align-items-center" style="gap: 12px;">
+                                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm flex-shrink-0" style="width: 40px; height: 40px; font-size: 0.95rem;">
+                                        ${escapeHtml(inisial)}
+                                    </div>
+                                    <div style="min-width: 0;">
+                                        <div class="fw-bold text-dark text-truncate" style="font-size: 0.82rem;">${escapeHtml(rekap.staf.nama_lengkap)}</div>
+                                        <div class="text-muted small num-tabular" style="font-size: 0.72rem; margin-top: 1px;">${escapeHtml(rekap.staf.nip || '-')}</div>
                                     </div>
                                 </div>
                             </td>
-                            <td class="text-center py-3 border-bottom border-light">
-                                <span class="badge bg-light text-secondary border px-2 py-1 text-wrap" style="max-width:150px;">${escapeHtml(jabatan)}</span>
+                            <td class="text-center text-muted border-bottom border-light" style="padding: 12px 16px;">
+                                <span class="badge bg-light text-dark border rounded-pill px-2.5 py-1 text-wrap" style="font-size: 0.74rem;">${escapeHtml(jabatan)}</span>
                             </td>
-                            <td class="text-center py-3 border-bottom border-light">
-                                <span class="badge bg-light text-secondary border px-2 py-1">${escapeHtml(rekap.dinilai)} / ${escapeHtml(rekap.total_laporan)}</span>
+                            <td class="text-center border-bottom border-light" style="padding: 12px 16px;">
+                                <div class="d-flex flex-column align-items-center justify-content-center gap-1">
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5 num-tabular" style="font-size: 0.68rem;">
+                                        ${escapeHtml(rekap.total_pokok !== undefined ? rekap.total_pokok : rekap.total_laporan)} Pokok
+                                    </span>
+                                    <span class="badge ${(rekap.total_tambahan || 0) > 0 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-light text-muted border'} rounded-pill px-2 py-0.5 num-tabular" style="font-size: 0.68rem;">
+                                        ${escapeHtml(rekap.total_tambahan || 0)} Tambahan
+                                    </span>
+                                </div>
                             </td>
-                            <td class="text-center py-3 border-bottom border-light pe-4">
-                                <span class="badge ${warnaBadge} fs-6 rounded-pill px-3 py-2 shadow-sm">${rataStr}</span>
+                            <td class="text-center border-bottom border-light" style="padding: 12px 16px;">
+                                <span class="badge ${warnaBadge} rounded-pill px-3 py-1.5 shadow-sm num-tabular" style="font-size: 0.82rem; font-weight: 700;">${rataStr}</span>
                             </td>
                         </tr>`;
                     });
@@ -721,7 +748,14 @@ document.addEventListener('DOMContentLoaded', function () {
                                             <div class="small text-muted">${escapeHtml(item.jabatan || '-')}</div>
                                         </td>
                                         <td class="text-center py-3 border-bottom border-light">
-                                            <span class="badge bg-light text-dark border shadow-sm">${escapeHtml(item.dinilai)} / ${escapeHtml(item.total_laporan)}</span>
+                                            <div class="d-flex flex-column align-items-center justify-content-center gap-1">
+                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5" style="font-size: 0.72rem;">
+                                                    ${escapeHtml(item.total_pokok !== undefined ? item.total_pokok : item.total_laporan)} Pokok
+                                                </span>
+                                                <span class="badge ${(item.total_tambahan || 0) > 0 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-light text-muted border'} rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">
+                                                    ${escapeHtml(item.total_tambahan || 0)} Tambahan
+                                                </span>
+                                            </div>
                                         </td>
                                         <td class="text-center py-3 border-bottom border-light pe-3">
                                             <span class="badge ${badgeClass} fs-6 rounded-pill px-3 shadow-sm">${modalRataStr}</span>

@@ -241,14 +241,14 @@
 
     <?php if (session()->getFlashdata('success')) : ?>
         <div class="alert alert-success alert-dismissible fade show shadow-sm py-2 px-3 small mb-3 rounded-3 bento-stagger bento-stagger-1" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i> <?= session()->getFlashdata('success') ?>
+            <i class="bi bi-check-circle-fill me-2"></i> <?= esc(session()->getFlashdata('success')) ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
 
     <?php if (session()->getFlashdata('error')) : ?>
         <div class="alert alert-danger alert-dismissible fade show shadow-sm py-2 px-3 small mb-3 rounded-3 bento-stagger bento-stagger-1" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i> <?= session()->getFlashdata('error') ?>
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> <?= esc(session()->getFlashdata('error')) ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
@@ -303,7 +303,7 @@
                         </div>
                         <div class="col-sm-6 col-md-2">
                             <label class="form-label fw-bold text-dark small mb-1" style="font-size: 0.72rem; letter-spacing: 0.3px;"><i class="bi bi-calendar-date text-primary me-1"></i> Tahun</label>
-                            <input type="number" name="tahun" class="form-control form-select-sm shadow-sm filter-select num-tabular" aria-label="Input Tahun Target Kinerja" value="<?= esc($tahun_terpilih) ?>" min="2020" max="2099" onchange="this.form.submit()">
+                            <input type="number" name="tahun" class="form-control form-select-sm shadow-sm filter-select num-tabular input-filter-tahun" aria-label="Input Tahun Target Kinerja" value="<?= esc($tahun_terpilih) ?>" min="2020" max="2099">
                         </div>
                         <div class="col-md-7 text-muted pt-sm-3 small">
                             <i class="bi bi-info-circle text-primary me-1"></i> Rancang dan kelola target kinerja bulanan Anda pada tabel di bawah.
@@ -327,6 +327,7 @@
                     <input type="hidden" name="is_editing_staf" value="0">
 
                     <?php
+                        $isDirektur = (session()->get('role') === 'direktur');
                         $allApproved = !empty($rekap_data_sendiri);
                         $hasDraft = false;
                         $hasTerkirim = false;
@@ -345,7 +346,14 @@
                         }
                     ?>
 
-                    <?php if ($hasDraft && !$allApproved): ?>
+                    <?php if ($isDirektur): ?>
+                        <div class="alert alert-success mb-3 shadow-sm py-2.5 px-3 border border-success-subtle small rounded-4 d-flex align-items-center gap-2">
+                            <i class="bi bi-shield-check fs-5 text-success flex-shrink-0"></i>
+                            <div>
+                                <strong>Akun Direktur:</strong> Target Kinerja Bulanan Anda otomatis berstatus <strong>Disetujui</strong> dan dapat Anda ubah/revisi sendiri sewaktu-waktu.
+                            </div>
+                        </div>
+                    <?php elseif ($hasDraft && !$allApproved): ?>
                         <div class="alert alert-warning mb-3 shadow-sm py-2.5 px-3 border border-warning-subtle small rounded-4 d-flex align-items-center gap-2">
                             <i class="bi bi-pencil-square fs-5 text-warning-emphasis flex-shrink-0"></i>
                             <div>
@@ -369,7 +377,7 @@
                                 <span>Rincian Target <?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?></span>
                             </span>
                         </div>
-                        <?php if (!$is_locked && !$allApproved): ?>
+                        <?php if (!$is_locked && (!$allApproved || $isDirektur)): ?>
                         <div>
                             <button type="button" class="btn btn-outline-primary btn-tactile rounded-pill fw-semibold shadow-none d-inline-flex align-items-center" style="height: 32px; padding: 0 16px; font-size: 0.78rem; gap: 8px; border-radius: 16px;" data-bs-toggle="modal" data-bs-target="#modalSalinTarget" title="Salin target dan sasaran kinerja dari periode bulan sebelumnya atau periode lainnya">
                                 <i class="bi bi-copy text-primary"></i>
@@ -395,7 +403,7 @@
                             <tbody>
                                  <?php if (!empty($rekap_data_sendiri)): ?>
                                     <?php foreach ($rekap_data_sendiri as $index => $row): ?>
-                                        <?php $isRowLocked = ($is_locked || $row['status_approval'] === 'disetujui'); ?>
+                                        <?php $isRowLocked = ($is_locked || ($row['status_approval'] === 'disetujui' && !$isDirektur)); ?>
                                         <tr>
                                             <input type="hidden" name="laporan_id[]" value="<?= esc($row['id']) ?>">
                                             <td class="nomor-baris text-center fw-bold text-muted"><?= $index + 1 ?></td>
@@ -448,15 +456,21 @@
                         </table>
                     </div>
 
-                    <?php if (!$is_locked && !$allApproved): ?>
+                    <?php if (!$is_locked && (!$allApproved || $isDirektur)): ?>
                     <div class="d-flex justify-content-between align-items-center mt-4 btn-action-container flex-wrap gap-2 bento-stagger bento-stagger-3">
                         <button type="button" class="btn btn-primary btn-tambah-baris btn-tactile rounded-pill shadow-sm px-4 py-2 fw-semibold"><i class="bi bi-plus-circle me-1.5"></i> Tambah Target</button>
                         <div class="d-flex gap-2 btn-group-mobile">
                             <button type="button" id="btnSimpanSementara" class="btn btn-outline-primary btn-tactile rounded-pill shadow-sm px-4 py-2 fw-semibold"><i class="bi bi-cloud-arrow-up me-1.5"></i> Simpan Draf</button>
-                            <button type="submit" class="btn btn-success btn-tactile rounded-pill shadow-sm px-4 py-2 fw-bold"><i class="bi bi-send me-1.5"></i> Ajukan Target</button>
+                            <button type="submit" class="btn btn-success btn-tactile rounded-pill shadow-sm px-4 py-2 fw-bold">
+                                <?php if ($isDirektur): ?>
+                                    <i class="bi bi-check-circle me-1.5"></i> Simpan Target
+                                <?php else: ?>
+                                    <i class="bi bi-send me-1.5"></i> Ajukan Target
+                                <?php endif; ?>
+                            </button>
                         </div>
                     </div>
-                    <?php elseif ($allApproved): ?>
+                    <?php elseif ($allApproved && !$isDirektur): ?>
                     <div class="alert alert-success mt-4 mb-0 d-flex justify-content-between align-items-center flex-wrap gap-2 py-2.5 px-3 small rounded-4 shadow-sm bento-stagger bento-stagger-3">
                         <div class="d-flex align-items-center gap-2">
                             <i class="bi bi-check-circle-fill text-success fs-5 flex-shrink-0"></i>
@@ -522,7 +536,7 @@
                         </div>
                         <div class="col-sm-6 col-md-2">
                             <label class="form-label fw-bold text-dark small mb-1" style="font-size: 0.72rem; letter-spacing: 0.3px;"><i class="bi bi-calendar-date text-primary me-1"></i> Tahun</label>
-                            <input type="number" name="tahun" class="form-control form-select-sm shadow-sm filter-select num-tabular" aria-label="Input Tahun Target Staf" value="<?= esc($tahun_terpilih) ?>" min="2020" max="2099" onchange="this.form.submit()">
+                            <input type="number" name="tahun" class="form-control form-select-sm shadow-sm filter-select num-tabular input-filter-tahun" aria-label="Input Tahun Target Staf" value="<?= esc($tahun_terpilih) ?>" min="2020" max="2099">
                         </div>
                     </div>
                 </form>
@@ -765,6 +779,27 @@
             $('meta[name="csrf-token"]').attr('content', newHash);
         }
 
+        // Debounce submit untuk input filter tahun agar tidak memicu submit berulang saat mengetik 4 digit
+        let filterTahunDebounceTimer = null;
+        $(document).on('input', '.input-filter-tahun', function() {
+            const form = $(this).closest('form');
+            const val = $(this).val();
+            clearTimeout(filterTahunDebounceTimer);
+            if (val && val.length === 4 && parseInt(val) >= 2020 && parseInt(val) <= 2099) {
+                filterTahunDebounceTimer = setTimeout(function() {
+                    form.submit();
+                }, 600);
+            }
+        });
+        $(document).on('change blur', '.input-filter-tahun', function() {
+            const form = $(this).closest('form');
+            const val = $(this).val();
+            if (val && parseInt(val) >= 2020 && parseInt(val) <= 2099) {
+                clearTimeout(filterTahunDebounceTimer);
+                form.submit();
+            }
+        });
+
         // Cegah perubahan nilai angka secara tidak sengaja saat pengguna scrolling halaman dengan mouse wheel
         $(document).on('wheel', 'input[type="number"]', function (e) {
             $(this).blur();
@@ -986,8 +1021,8 @@
             formEl.find('.tabel-target tbody tr').removeClass('table-danger');
 
             formEl.find('.tabel-target tbody tr').each(function(idx) {
-                let sasaran = ($(this).find('textarea[name="sasaran_program[]"]').val() || '').trim();
-                let indikator = ($(this).find('textarea[name="indikator_kinerja[]"]').val() || '').trim();
+                let sasaran = ($(this).find('textarea[name="sasaran_program[]"]').val() || '').trim().replace(/\s+/g, ' ');
+                let indikator = ($(this).find('textarea[name="indikator_kinerja[]"]').val() || '').trim().replace(/\s+/g, ' ');
 
                 if (sasaran !== '' || indikator !== '') {
                     let key = (sasaran + '|||' + indikator).toLowerCase();
@@ -1101,15 +1136,27 @@
 
             e.preventDefault();
 
+            const isDirektur = <?= (session()->get('role') === 'direktur') ? 'true' : 'false' ?>;
+            const confirmTitle = isDirektur ? 'Simpan Target Kinerja?' : 'Ajukan Target Kinerja?';
+            const confirmHtml = isDirektur 
+                ? `Rincian target kinerja untuk periode <strong><?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?></strong> akan langsung disimpan dan disetujui.`
+                : `Rincian target kinerja untuk periode <strong><?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?></strong> akan diajukan ke atasan langsung untuk diperiksa dan disetujui.`;
+            const confirmBtnText = isDirektur 
+                ? '<i class="bi bi-check-circle-fill me-1"></i> Ya, Simpan Sekarang' 
+                : '<i class="bi bi-send-fill me-1"></i> Ya, Ajukan Sekarang';
+            const loadingText = isDirektur
+                ? '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menyimpan...'
+                : '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Mengajukan...';
+
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
-                    title: 'Ajukan Target Kinerja?',
-                    html: `Rincian target kinerja untuk periode <strong><?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?></strong> akan diajukan ke atasan langsung untuk diperiksa dan disetujui.`,
+                    title: confirmTitle,
+                    html: confirmHtml,
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonColor: '#198754',
                     cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="bi bi-send-fill me-1"></i> Ya, Ajukan Sekarang',
+                    confirmButtonText: confirmBtnText,
                     cancelButtonText: 'Periksa Kembali',
                     reverseButtons: true
                 }).then((result) => {
@@ -1117,14 +1164,15 @@
                         isTargetSubmitConfirmed = true;
                         const submitBtn = formEl.find('button[type="submit"]');
                         if (submitBtn.length) {
-                            submitBtn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Mengajukan...').prop('disabled', true);
+                            submitBtn.html(loadingText).prop('disabled', true);
                         }
                         $('#btnSimpanSementara').prop('disabled', true);
                         formEl[0].submit();
                     }
                 });
             } else {
-                if (confirm('Ajukan target kinerja bulanan ini ke atasan langsung?')) {
+                const promptMsg = isDirektur ? 'Simpan target kinerja bulanan ini?' : 'Ajukan target kinerja bulanan ini ke atasan langsung?';
+                if (confirm(promptMsg)) {
                     isTargetSubmitConfirmed = true;
                     const submitBtn = formEl.find('button[type="submit"]');
                     if (submitBtn.length) {
@@ -1438,7 +1486,7 @@
                                         <textarea name="indikator_kinerja[]" class="form-control form-control-sm" rows="2" placeholder="Indikator / RHK..." aria-label="Indikator Kinerja Individu baris ${insertedCount}">${safeIndikator}</textarea>
                                     </td>
                                     <td>
-                                        <input type="number" step="0.01" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary input-target-val" placeholder="Target" aria-label="Target Kuantitatif baris ${insertedCount}" value="${valTarget}">
+                                        <input type="number" step="any" min="0.0001" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary input-target-val" placeholder="Target" aria-label="Target Kuantitatif baris ${insertedCount}" value="${valTarget}">
                                     </td>
                                     <td>
                                         <input type="text" name="satuan[]" class="form-control form-control-sm text-center input-satuan-val" placeholder="Satuan" list="daftarSatuanStandar" aria-label="Satuan Target baris ${insertedCount}" value="${safeSatuan}" title="${safeSatuan}">

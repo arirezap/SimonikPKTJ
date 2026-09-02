@@ -54,12 +54,17 @@ class User extends Model
     // Helper untuk mengambil semua staf secara rekursif (hierarki)
     public function getAllStaf($userId, $role = null)
     {
-        // Admin, direktur, dan wadir melihat semua orang
-        if (in_array($role, ['admin', 'direktur', 'wadir'])) {
+        // Admin dan direktur melihat semua staf
+        if (in_array($role, ['admin', 'direktur'])) {
             return $this->where('id !=', $userId)
                         ->whereNotIn('role', ['admin', 'direktur'])
                         ->orderBy('nama_lengkap', 'ASC')
                         ->findAll();
+        }
+
+        // Wakil direktur adalah peran eksekutif pengamat/monitoring, tidak membawahi staf secara operasional
+        if ($role === 'wadir') {
+            return [];
         }
 
         $allStaf = [];

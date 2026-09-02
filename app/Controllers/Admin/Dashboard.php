@@ -234,10 +234,12 @@ class Dashboard extends BaseController
             $globalTotalDinilai += $statPegawai['dinilai'];
             
             $rekapDashboard[] = [
-                'staf' => $staf,
-                'total_laporan' => $statPegawai['total_laporan'],
-                'dinilai' => $statPegawai['dinilai'],
-                'rata_rata' => $statPegawai['rata_rata'],
+                'staf'           => $staf,
+                'total_pokok'    => $statPegawai['total_pokok'],
+                'total_tambahan' => $statPegawai['total_tambahan'],
+                'total_laporan'  => $statPegawai['total_laporan'],
+                'dinilai'        => $statPegawai['dinilai'],
+                'rata_rata'      => $statPegawai['rata_rata'],
             ];
         }
 
@@ -308,7 +310,10 @@ class Dashboard extends BaseController
         // Sort for Bottom 5 / Perlu Perhatian Khusus:
         // Pegawai yang tidak ikut mengerjakan (tidak buat target, tidak melapor harian, rata_rata = 0)
         // menjadi prioritas paling utama (Nomor 1), disusul pegawai dengan rata_rata terendah.
-        $bottom5Data = $rekapDashboard;
+        // DIBATASI: Pegawai dengan nilai Baik ke atas (>= 90% s.d. 150%) TIDAK dimasukkan ke Perlu Perhatian Khusus.
+        $bottom5Data = array_values(array_filter($rekapDashboard, function($r) {
+            return (float)$r['rata_rata'] < 90;
+        }));
         usort($bottom5Data, function($a, $b) {
             if ($a['rata_rata'] != $b['rata_rata']) {
                 return $a['rata_rata'] <=> $b['rata_rata'];
@@ -339,12 +344,14 @@ class Dashboard extends BaseController
             $unitStats[$uName]['total_rata'] += $statPegawai['rata_rata'];
             $unitStats[$uName]['count']++;
             $unitStats[$uName]['anggota'][] = [
-                'nama' => $u['nama_lengkap'],
-                'jabatan' => $u['jabatan'] ?? '-',
-                'unit' => $uName,
-                'dinilai' => $statPegawai['dinilai'],
-                'total_laporan' => $statPegawai['total_laporan'],
-                'rata_rata' => $statPegawai['rata_rata']
+                'nama'           => $u['nama_lengkap'],
+                'jabatan'        => $u['jabatan'] ?? '-',
+                'unit'           => $uName,
+                'total_pokok'    => $statPegawai['total_pokok'],
+                'total_tambahan' => $statPegawai['total_tambahan'],
+                'dinilai'        => $statPegawai['dinilai'],
+                'total_laporan'  => $statPegawai['total_laporan'],
+                'rata_rata'      => $statPegawai['rata_rata']
             ];
         }
 

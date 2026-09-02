@@ -30,12 +30,14 @@ Aplikasi berbasis web yang diakses setiap hari kerja melalui laptop, komputer ka
 - **Invisible Audit Trail**: Perekaman otomatis setiap aksi `CREATE`, `UPDATE`, `DELETE`, `APPROVE`, `UNLOCK_LAPORAN`, `CANCEL_APPROVE_TARGET` dengan data *before-after* format JSON.
 - **Dynamic CSRF & Throttling**: Regenerasi token CSRF pada setiap interaksi AJAX dan pembatasan brute-force login 10x/menit.
 - **Dual-View Mobile First**: Tampilan tabel desktop dengan sticky header yang otomatis beralih ke *Touch Card List* pada layar smartphone (<768px) dengan touch target minimal 44px.
+- **Otorisasi Terpisah Wakil Direktur**: Role Wakil Direktur (`wadir`) berfungsi sebagai pimpinan pengawas/pengamat eksekutif dengan akses analitik institusi, tetapi tanpa hak operasional untuk menyetujui target staf, merevisi target staf, maupun memberikan penilaian kinerja staf.
 - **Standar Istilah Mutlak**: Menggunakan istilah baku **"staf"** (tidak menggunakan "staf") dan nama resmi **"Evidence Command Center (ECC)"**.
 
 ## Brand Commitments
 
 - **Official Name**: Evidence Command Center (ECC).
 - **Visual Identity**: Modern Enterprise Bento Grid (Clean White surfaces, 16px border-radius, soft elevation shadow, high-contrast Slate backgrounds `#f8fafc`).
+- **8-Point Grid Scale**: Standar ritme spasial kelipatan 8px (`4px`, `8px`, `12px`, `16px`, `24px`, `32px`, `40px`, `48px`, `64px`, `80px`) pada seluruh margin, padding, tinggi kontrol, sel kalender harian, dan wadah aset ikon.
 - **Brand Colors**: Deep Navy `#0f172a`, Royal Blue `#0d6efd`, Success Emerald `#198754`, Amber Warning `#d97706`, Crimson Danger `#dc2626`.
 - **Single Icon Family**: Bootstrap Icons (`bi bi-...`) eksklusif pada 100% tampilan antarmuka.
 
