@@ -220,6 +220,10 @@ class EccController extends BaseController
     // --- FITUR HAPUS LINK & RESET APPROVAL (DIPERBARUI) ---
     public function deleteLedLink($id)
     {
+        if (strtolower($this->request->getMethod()) !== 'post') {
+            return redirect()->back()->with('error', 'Metode permintaan tidak diizinkan.');
+        }
+
         $submissionModel = new LedSubmission();
         $submission = $submissionModel->find($id);
 

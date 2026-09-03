@@ -62,11 +62,12 @@ Daftar Sasaran Kinerja Pegawai
                                 </a>
                                 
                                 <?php if($skp['status'] == 'Draft'): ?>
-                                    <a href="<?= site_url('skp/delete/' . $skp['id']) ?>" 
-                                       class="btn btn-outline-danger btn-sm"
-                                       onclick="return confirm('Apakah Anda yakin ingin menghapus SKP Periode <?= $skp['tahun'] ?> ini? Data yang dihapus tidak dapat dikembalikan.');">
-                                        <i class="bi bi-trash"></i> Hapus
-                                    </a>
+                                    <form action="<?= site_url('skp/delete/' . $skp['id']) ?>" method="POST" class="d-inline">
+                                        <?= csrf_field() ?>
+                                        <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Apakah Anda yakin ingin menghapus SKP Periode <?= $skp['tahun'] ?> ini? Data yang dihapus tidak dapat dikembalikan.');">
+                                            <i class="bi bi-trash"></i> Hapus
+                                        </button>
+                                    </form>
                                 <?php endif; ?>
                             </div>
                         </div>

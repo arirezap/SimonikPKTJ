@@ -50,7 +50,7 @@ class Dashboard extends BaseController
             }
 
             $role = session()->get('role');
-            $isSuper = hasAnyRole(['admin', 'direktur', 'wadir', 'manajemen']);
+            $isSuper = hasAnyRole(['admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk', 'manajemen', 'kepegawaian']);
             $daftarStaf = $userModel->getAllStaf($user_id, $role);
             $isAtasan = !empty($daftarStaf);
             

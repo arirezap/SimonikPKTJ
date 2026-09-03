@@ -183,7 +183,7 @@
             <!-- Footer Aplikasi -->
             <footer class="footer-promax py-3 mt-auto d-flex justify-content-between px-3 px-md-4 align-items-center">
                 <span class="footer-text">&copy; <?= date('Y') ?> Evidence Command Center (ECC) - PKTJ Tegal</span>
-                <span class="badge bg-light text-secondary border rounded-pill version-badge px-2 py-1" style="font-size: 0.75rem; font-variant-numeric: tabular-nums;">v1.3</span>
+                <span class="badge bg-light text-secondary border rounded-pill version-badge px-2 py-1" style="font-size: 0.75rem; font-variant-numeric: tabular-nums;">v1.4</span>
             </footer>
 
             <?= $this->renderSection('footer_bar') ?>

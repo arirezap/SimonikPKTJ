@@ -434,12 +434,32 @@ document.addEventListener('DOMContentLoaded', function() {
     const ledForm = document.getElementById('ledForm');
     const submitButton = document.getElementById('submitLedForm');
 
-    // Handler Hapus Link Bukti
+    // Handler Hapus Link Bukti (POST dengan CSRF)
     document.querySelectorAll('.btn-delete-link').forEach(button => {
         button.addEventListener('click', function(e) {
             e.preventDefault();
             const deleteUrl = this.getAttribute('data-url');
             
+            function doDelete() {
+                let form = document.getElementById('formHapusLedLink');
+                if (!form) {
+                    form = document.createElement('form');
+                    form.id = 'formHapusLedLink';
+                    form.method = 'POST';
+                    form.style.display = 'none';
+
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = '<?= csrf_token() ?>';
+                    csrfInput.value = '<?= csrf_hash() ?>';
+                    form.appendChild(csrfInput);
+
+                    document.body.appendChild(form);
+                }
+                form.action = deleteUrl;
+                form.submit();
+            }
+
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     title: 'Hapus Link Bukti?',
@@ -448,16 +468,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     showCancelButton: true,
                     confirmButtonColor: '#dc2626',
                     cancelButtonColor: '#64748b',
-                    confirmButtonText: 'Ya, Hapus!',
-                    cancelButtonText: 'Batal'
+                    confirmButtonText: '<i class="bi bi-trash-fill me-1"></i> Ya, Hapus!',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true,
+                    customClass: { popup: 'rounded-4' }
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        window.location.href = deleteUrl;
+                        doDelete();
                     }
                 });
             } else {
                 if (confirm('Yakin ingin menghapus link ini? Status persetujuan Kabag dan Wadir akan di-reset.')) {
-                    window.location.href = deleteUrl;
+                    doDelete();
                 }
             }
         });

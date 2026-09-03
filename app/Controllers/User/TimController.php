@@ -25,12 +25,13 @@ class TimController extends BaseController
             return redirect()->to('dashboard')->with('error', 'Anda tidak memiliki hak akses ke modul Kelola Tim.');
         }
 
-        $userId = session()->get('id');
+        $userId = $this->getNormalizedCurrentUserId();
         $me = $this->userModel->find($userId);
         $myUnit = $me['unit'] ?? null;
         
-        // Ambil staf: yang secara eksplisit atasan_id-nya = $userId ATAU unit-nya sama dengan unit manajer
-        $stafQuery = $this->userModel->where('id !=', $userId);
+        // Ambil staf dengan selective columns: yang atasan_id-nya = $userId ATAU unit-nya sama dengan unit manajer
+        $stafQuery = $this->userModel->select('id, nama_lengkap, nip, unit, unit_id, jabatan, role, atasan_id, foto')
+                                     ->where('id !=', $userId);
         
         if (!empty($myUnit)) {
             $stafQuery->groupStart()
@@ -44,11 +45,10 @@ class TimController extends BaseController
 
         $stafIds = array_column($staf, 'id');
         $stafIds[] = $userId; // Tambahkan diri sendiri agar tidak muncul di dropdown
-
-        $userModel2 = new \App\Models\User();
         
-        // Ambil semua pegawai kecuali admin dan direktur
-        $semuaPegawaiDb = $userModel2
+        // Ambil semua pegawai kecuali admin dan direktur dengan selective columns untuk efisiensi RAM
+        $semuaPegawaiDb = $this->userModel
+            ->select('id, nama_lengkap, nip, unit, unit_id, jabatan, role, atasan_id, foto')
             ->whereNotIn('role', ['admin', 'direktur'])
             ->orderBy('nama_lengkap', 'ASC')
             ->findAll();
@@ -60,12 +60,16 @@ class TimController extends BaseController
             }
         }
 
+        $unitKerjaList = $this->unitKerjaModel->orderBy('nama_unit', 'ASC')->findAll();
+
         $data = [
-            'page_title' => 'Kelola Tim Saya',
-            'staf' => $staf,
-            'semua_pegawai' => $semua_pegawai,
-            'unit_kerja_list' => $this->unitKerjaModel->orderBy('nama_unit', 'ASC')->findAll(),
-            'my_unit' => $myUnit // Untuk indikasi di view
+            'page_title'      => 'Kelola Tim Saya',
+            'staf'            => $staf,
+            'semua_pegawai'   => $semua_pegawai,
+            'unit_kerja_list' => $unitKerjaList,
+            'my_unit'         => $myUnit,
+            'me'              => $me,
+            'total_staf'      => count($staf)
         ];
 
         return view('user/tim_saya', $data);
@@ -74,9 +78,18 @@ class TimController extends BaseController
     public function addStaf()
     {
         $stafId = $this->request->getPost('staf_id');
-        $myId = session()->get('id') ?? session()->get('user_id');
+        $myId = $this->getNormalizedCurrentUserId();
         $me = $this->userModel->find($myId);
         $myUnit = $me['unit'] ?? '';
+        $myUnitId = $me['unit_id'] ?? null;
+
+        // Lookup unit_id jika belum terisi di profil pimpinan
+        if (empty($myUnitId) && !empty($myUnit)) {
+            $uDb = $this->unitKerjaModel->where('nama_unit', $myUnit)->first();
+            if ($uDb) {
+                $myUnitId = $uDb['id'];
+            }
+        }
 
         if (empty($stafId) || (int)$stafId === (int)$myId) {
             return redirect()->back()->with('error', 'Silakan pilih pegawai yang valid.');
@@ -89,31 +102,33 @@ class TimController extends BaseController
 
         $this->userModel->update($stafId, [
             'atasan_id' => $myId,
-            'unit' => $myUnit
+            'unit'      => $myUnit,
+            'unit_id'   => $myUnitId
         ]);
-        log_audit('UPDATE', 'users', $stafId, null, ['action' => 'ADD_TO_TEAM', 'atasan_id' => $myId, 'unit' => $myUnit]);
+        log_audit('UPDATE', 'users', $stafId, null, ['action' => 'ADD_TO_TEAM', 'atasan_id' => $myId, 'unit' => $myUnit, 'unit_id' => $myUnitId]);
         return redirect()->back()->with('success', 'Pegawai berhasil ditambahkan ke tim Anda.');
     }
 
     public function removeStaf()
     {
         $stafId = $this->request->getPost('staf_id');
-        $myId = session()->get('id');
+        $myId = $this->getNormalizedCurrentUserId();
         $me = $this->userModel->find($myId);
         $myUnit = $me['unit'] ?? null;
 
         // Pastikan yang dihapus benar-benar stafnya
         $staf = $this->userModel->find($stafId);
-        $isStaf = ($staf['atasan_id'] == $myId) || (!empty($myUnit) && $staf['unit'] === $myUnit);
+        $isStaf = ($staf && (($staf['atasan_id'] == $myId) || (!empty($myUnit) && $staf['unit'] === $myUnit)));
         
         if ($staf && $isStaf) {
-            // Kita kosongkan atasan_id (set ke 0) dan unitnya (string kosong) jika dia dihapus dari tim
+            // Kosongkan atasan_id (set ke 0), unit (''), dan unit_id (null)
             $this->userModel->update($stafId, [
                 'atasan_id' => 0, 
-                'unit' => ''
+                'unit'      => '',
+                'unit_id'   => null
             ]);
             log_audit('UPDATE', 'users', $stafId, null, ['action' => 'REMOVE_FROM_TEAM', 'old_atasan_id' => $myId]);
-            return redirect()->back()->with('success', 'Pegawai berhasil dihapus dari tim Anda.');
+            return redirect()->back()->with('success', 'Pegawai berhasil dikeluarkan dari tim Anda.');
         }
         
         return redirect()->back()->with('error', 'Pegawai tidak ditemukan atau bukan staf Anda.');
@@ -127,7 +142,7 @@ class TimController extends BaseController
 
         $userId = $this->request->getPost('user_id');
         $unitInput = $this->request->getPost('unit_id') ?? $this->request->getPost('unit');
-        $myId = session()->get('id');
+        $myId = $this->getNormalizedCurrentUserId();
         $me = $this->userModel->find($myId);
         $myUnit = $me['unit'] ?? null;
 
@@ -140,16 +155,15 @@ class TimController extends BaseController
         $unitId = null;
         $unitNama = '';
         if (!empty($unitInput)) {
-            $unitKerjaModel = new \App\Models\UnitKerja();
             if (is_numeric($unitInput)) {
-                $unitDb = $unitKerjaModel->find($unitInput);
+                $unitDb = $this->unitKerjaModel->find($unitInput);
                 if ($unitDb) {
                     $unitId = $unitDb['id'];
                     $unitNama = $unitDb['nama_unit'];
                 }
             } else {
                 $unitNama = trim((string)$unitInput);
-                $unitDb = $unitKerjaModel->where('nama_unit', $unitNama)->first();
+                $unitDb = $this->unitKerjaModel->where('nama_unit', $unitNama)->first();
                 if ($unitDb) {
                     $unitId = $unitDb['id'];
                 }
@@ -168,7 +182,7 @@ class TimController extends BaseController
         // Sinkronisasi otomatis atasan berdasarkan unit yang baru
         if (!empty($unitNama)) {
             $pimpinan = $this->userModel->where('unit', $unitNama)
-                                        ->whereIn('role', ['manajemen', 'kabag_aak', 'kabag_kuk', 'kabag'])
+                                        ->whereIn('role', ['manajemen', 'kabag_aak', 'kabag_kuk', 'kabag', 'kanit', 'katim', 'kapokja'])
                                         ->first();
             if ($pimpinan) {
                 $updateData['atasan_id'] = $pimpinan['id'];
@@ -189,5 +203,23 @@ class TimController extends BaseController
         }
 
         return $this->response->setJSON(['success' => false, 'message' => 'Gagal memperbarui unit kerja.', csrf_token() => csrf_hash()])->setStatusCode(500);
+    }
+
+    /**
+     * Helper privat: Normalisasi ID Sesi Pengguna
+     */
+    private function getNormalizedCurrentUserId(): int
+    {
+        $currentUserId = session()->get('id') ?? session()->get('user_id');
+        if (!is_numeric($currentUserId) || strlen((string)$currentUserId) > 10) {
+            $userDb = $this->userModel->where('username', $currentUserId)
+                                      ->orWhere('nip', $currentUserId)
+                                      ->orWhere('id', $currentUserId)
+                                      ->first();
+            if ($userDb) {
+                return (int)$userDb['id'];
+            }
+        }
+        return (int)$currentUserId;
     }
 }

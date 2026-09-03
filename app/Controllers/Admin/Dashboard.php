@@ -49,7 +49,7 @@ class Dashboard extends BaseController
 
         $user_id = session()->get('id') ?? session()->get('user_id');
         $role = session()->get('role');
-        $canSeeAll = hasAnyRole(['admin', 'direktur', 'wadir']);
+        $canSeeAll = hasAnyRole(['admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk', 'kepegawaian']);
 
         // --- 1. PROSES DATA ECC ---
         $eccData = null;
@@ -489,7 +489,7 @@ class Dashboard extends BaseController
             return $this->response->setStatusCode(403)->setJSON(['status' => 'error', 'message' => 'Akses ditolak']);
         }
 
-        if (!hasAnyRole(['admin', 'direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'spm'])) {
+        if (!hasAnyRole(['admin', 'direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'spm', 'kepegawaian'])) {
             return $this->response->setStatusCode(403)->setJSON(['status' => 'error', 'message' => 'Akses ditolak. Anda tidak memiliki wewenang untuk melihat data ini.']);
         }
 

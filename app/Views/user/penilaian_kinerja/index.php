@@ -868,35 +868,35 @@
 
                         <!-- Legend Footer (8-Point Grid Standard) -->
                         <div class="heatmap-legend-container mt-3 pt-3">
-                            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-2.5">
+                            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
                                 <!-- Sisi Kiri: Keterangan & Swatch Skala Intensitas -->
-                                <div class="d-flex align-items-center flex-wrap gap-2">
-                                    <span class="badge bg-light text-secondary border px-2.5 py-1.5 fw-bold text-uppercase" style="font-size: 0.6875rem; letter-spacing: 0.05em; border-radius: 6px;">Keterangan</span>
+                                <div class="d-flex align-items-center flex-wrap gap-2.5">
+                                    <span class="badge bg-light text-secondary border px-3 py-2 fw-bold text-uppercase d-inline-flex align-items-center" style="font-size: 0.6875rem; letter-spacing: 0.05em; border-radius: 8px; min-height: 32px;">Keterangan</span>
                                     
-                                    <div class="d-inline-flex align-items-center gap-1.5 py-1 px-2.5 bg-danger-subtle text-danger border border-danger-subtle rounded-pill" style="font-size: 0.72rem; font-weight: 600; height: 28px;">
-                                        <i class="bi bi-calendar-x-fill" style="font-size: 0.7rem;"></i>
+                                    <div class="d-inline-flex align-items-center bg-danger-subtle text-danger border border-danger-subtle rounded-pill shadow-xs" style="font-size: 0.75rem; font-weight: 600; min-height: 32px; padding: 6px 14px; gap: 8px;">
+                                        <i class="bi bi-calendar-x-fill" style="font-size: 0.75rem;"></i>
                                         <span>Tgl Merah / Libur</span>
                                     </div>
 
                                     <!-- Strip Swatch Skala Intensitas (Bento Capsule) -->
-                                    <div class="d-inline-flex align-items-center gap-2.5 py-1 px-3 bg-light rounded-pill border border-light-subtle flex-wrap" style="height: 32px;">
-                                        <div class="d-flex align-items-center gap-1.5" style="font-size: 0.75rem;">
+                                    <div class="d-inline-flex align-items-center bg-light rounded-pill border border-light-subtle flex-wrap shadow-xs" style="min-height: 32px; padding: 6px 16px; gap: 16px;">
+                                        <div class="d-flex align-items-center" style="font-size: 0.75rem; gap: 8px;">
                                             <span class="heatmap-legend-swatch" style="background-color: #ffffff; border: 1px solid #cbd5e1;"></span>
                                             <span class="text-secondary fw-medium">0 Log</span>
                                         </div>
-                                        <div class="d-flex align-items-center gap-1.5" style="font-size: 0.75rem;">
+                                        <div class="d-flex align-items-center" style="font-size: 0.75rem; gap: 8px;">
                                             <span class="heatmap-legend-swatch" style="background-color: #f0fdf4; border: 1px solid #bbf7d0;"></span>
                                             <span class="text-dark fw-medium">1 - 2</span>
                                         </div>
-                                        <div class="d-flex align-items-center gap-1.5" style="font-size: 0.75rem;">
+                                        <div class="d-flex align-items-center" style="font-size: 0.75rem; gap: 8px;">
                                             <span class="heatmap-legend-swatch" style="background-color: #dcfce7; border: 1px solid #86efac;"></span>
                                             <span class="text-dark fw-medium">3 - 4</span>
                                         </div>
-                                        <div class="d-flex align-items-center gap-1.5" style="font-size: 0.75rem;">
+                                        <div class="d-flex align-items-center" style="font-size: 0.75rem; gap: 8px;">
                                             <span class="heatmap-legend-swatch" style="background-color: #22c55e; border: 1px solid #16a34a;"></span>
                                             <span class="text-dark fw-medium">5 - 6</span>
                                         </div>
-                                        <div class="d-flex align-items-center gap-1.5" style="font-size: 0.75rem;">
+                                        <div class="d-flex align-items-center" style="font-size: 0.75rem; gap: 8px;">
                                             <span class="heatmap-legend-swatch" style="background-color: #15803d; border: 1px solid #14532d;"></span>
                                             <span class="text-dark fw-medium">&gt; 6 Log</span>
                                         </div>
@@ -904,7 +904,7 @@
                                 </div>
 
                                 <!-- Sisi Kanan: Hint Interaksi Kalender -->
-                                <div class="d-inline-flex align-items-center text-primary py-1 px-3 bg-primary-subtle rounded-pill border border-primary-subtle shadow-xs" style="font-size: 0.75rem; font-weight: 600; height: 32px; gap: 8px;">
+                                <div class="d-inline-flex align-items-center text-primary bg-primary-subtle rounded-pill border border-primary-subtle shadow-xs" style="font-size: 0.75rem; font-weight: 600; min-height: 32px; padding: 6px 16px; gap: 8px;">
                                     <i class="bi bi-cursor-fill" style="font-size: 0.75rem;"></i>
                                     <span>Klik tanggal pada kalender untuk melihat rincian pekerjaan</span>
                                 </div>
@@ -1356,35 +1356,35 @@
 
                             <!-- Legend Footer (8-Point Grid Standard) -->
                             <div class="heatmap-legend-container mt-3 pt-3">
-                                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-2.5">
+                                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
                                     <!-- Sisi Kiri: Keterangan & Swatch Skala Intensitas -->
-                                    <div class="d-flex align-items-center flex-wrap gap-2">
-                                        <span class="badge bg-light text-secondary border px-2.5 py-1.5 fw-bold text-uppercase" style="font-size: 0.6875rem; letter-spacing: 0.05em; border-radius: 6px;">Keterangan</span>
+                                    <div class="d-flex align-items-center flex-wrap gap-2.5">
+                                        <span class="badge bg-light text-secondary border px-3 py-2 fw-bold text-uppercase d-inline-flex align-items-center" style="font-size: 0.6875rem; letter-spacing: 0.05em; border-radius: 8px; min-height: 32px;">Keterangan</span>
                                         
-                                        <div class="d-inline-flex align-items-center gap-1.5 py-1 px-2.5 bg-danger-subtle text-danger border border-danger-subtle rounded-pill" style="font-size: 0.72rem; font-weight: 600; height: 28px;">
-                                            <i class="bi bi-calendar-x-fill" style="font-size: 0.7rem;"></i>
+                                        <div class="d-inline-flex align-items-center bg-danger-subtle text-danger border border-danger-subtle rounded-pill shadow-xs" style="font-size: 0.75rem; font-weight: 600; min-height: 32px; padding: 6px 14px; gap: 8px;">
+                                            <i class="bi bi-calendar-x-fill" style="font-size: 0.75rem;"></i>
                                             <span>Tgl Merah / Libur</span>
                                         </div>
 
                                         <!-- Strip Swatch Skala Intensitas (Bento Capsule) -->
-                                        <div class="d-inline-flex align-items-center gap-2.5 py-1 px-3 bg-light rounded-pill border border-light-subtle flex-wrap" style="height: 32px;">
-                                            <div class="d-flex align-items-center gap-1.5" style="font-size: 0.75rem;">
+                                        <div class="d-inline-flex align-items-center bg-light rounded-pill border border-light-subtle flex-wrap shadow-xs" style="min-height: 32px; padding: 6px 16px; gap: 16px;">
+                                            <div class="d-flex align-items-center" style="font-size: 0.75rem; gap: 8px;">
                                                 <span class="heatmap-legend-swatch" style="background-color: #ffffff; border: 1px solid #cbd5e1;"></span>
                                                 <span class="text-secondary fw-medium">0 Log</span>
                                             </div>
-                                            <div class="d-flex align-items-center gap-1.5" style="font-size: 0.75rem;">
+                                            <div class="d-flex align-items-center" style="font-size: 0.75rem; gap: 8px;">
                                                 <span class="heatmap-legend-swatch" style="background-color: #f0fdf4; border: 1px solid #bbf7d0;"></span>
                                                 <span class="text-dark fw-medium">1 - 2</span>
                                             </div>
-                                            <div class="d-flex align-items-center gap-1.5" style="font-size: 0.75rem;">
+                                            <div class="d-flex align-items-center" style="font-size: 0.75rem; gap: 8px;">
                                                 <span class="heatmap-legend-swatch" style="background-color: #dcfce7; border: 1px solid #86efac;"></span>
                                                 <span class="text-dark fw-medium">3 - 4</span>
                                             </div>
-                                            <div class="d-flex align-items-center gap-1.5" style="font-size: 0.75rem;">
+                                            <div class="d-flex align-items-center" style="font-size: 0.75rem; gap: 8px;">
                                                 <span class="heatmap-legend-swatch" style="background-color: #22c55e; border: 1px solid #16a34a;"></span>
                                                 <span class="text-dark fw-medium">5 - 6</span>
                                             </div>
-                                            <div class="d-flex align-items-center gap-1.5" style="font-size: 0.75rem;">
+                                            <div class="d-flex align-items-center" style="font-size: 0.75rem; gap: 8px;">
                                                 <span class="heatmap-legend-swatch" style="background-color: #15803d; border: 1px solid #14532d;"></span>
                                                 <span class="text-dark fw-medium">&gt; 6 Log</span>
                                             </div>
@@ -1392,7 +1392,7 @@
                                     </div>
 
                                     <!-- Sisi Kanan: Hint Interaksi Kalender -->
-                                    <div class="d-inline-flex align-items-center text-primary py-1 px-3 bg-primary-subtle rounded-pill border border-primary-subtle shadow-xs" style="font-size: 0.75rem; font-weight: 600; height: 32px; gap: 8px;">
+                                    <div class="d-inline-flex align-items-center text-primary bg-primary-subtle rounded-pill border border-primary-subtle shadow-xs" style="font-size: 0.75rem; font-weight: 600; min-height: 32px; padding: 6px 16px; gap: 8px;">
                                         <i class="bi bi-cursor-fill" style="font-size: 0.75rem;"></i>
                                         <span>Klik tanggal pada kalender untuk melihat rincian pekerjaan</span>
                                     </div>

@@ -11,8 +11,7 @@ class Auth extends BaseController
     {
         // Cek jika user sudah login
         if (session()->get('isLoggedIn')) {
-            $role = (string) session()->get('role');
-            return redirect()->to('dashboard');
+            return redirect()->to(site_url('dashboard'));
         }
 
         helper('cookie');
@@ -33,7 +32,7 @@ class Auth extends BaseController
         // Validasi input awal
         if (empty($username) || empty($password)) {
             $session->setFlashdata('error', 'Nama pengguna dan kata sandi wajib diisi.');
-            return redirect()->to('/login')->withInput();
+            return redirect()->to(site_url('login'))->withInput();
         }
         
         // --- PROTEKSI BRUTE FORCE ATTACK (THROTTLING) ---
@@ -46,7 +45,7 @@ class Auth extends BaseController
                 'reason'   => 'brute_force_throttled'
             ]);
             $session->setFlashdata('error', 'Terlalu banyak percobaan login yang gagal dari perangkat Anda. Silakan tunggu 1 menit.');
-            return redirect()->to('/login')->withInput();
+            return redirect()->to(site_url('login'))->withInput();
         }
 
         $data = $model->where('username', $username)->first();
@@ -91,8 +90,8 @@ class Auth extends BaseController
                     $allRoles[] = strtolower($role_aplikasi);
                 }
 
-                // Regenerasi Session ID untuk Mencegah Serangan Session Fixation
-                $session->regenerate();
+                // Regenerasi Session ID untuk Mencegah Serangan Session Fixation (dengan penghancuran sesi lama)
+                $session->regenerate(true);
 
                 // Simpan Session Lengkap
                 $ses_data = [
@@ -130,7 +129,7 @@ class Auth extends BaseController
                 // Catat Log Audit Login
                 log_audit('LOGIN', 'users', $data['id']);
 
-                return redirect()->to('/dashboard');
+                return redirect()->to(site_url('dashboard'));
                 
             } else {
                 // Catat Log Percobaan Login Gagal (Password Salah)
@@ -140,7 +139,7 @@ class Auth extends BaseController
                 ]);
 
                 $session->setFlashdata('error', 'Nama pengguna atau kata sandi yang Anda masukkan salah.');
-                return redirect()->to('/login')->withInput();
+                return redirect()->to(site_url('login'))->withInput();
             }
         } else {
             // Catat Log Percobaan Login Gagal (User Tidak Ditemukan)
@@ -150,7 +149,7 @@ class Auth extends BaseController
             ]);
 
             $session->setFlashdata('error', 'Nama pengguna atau kata sandi yang Anda masukkan salah.');
-            return redirect()->to('/login')->withInput();
+            return redirect()->to(site_url('login'))->withInput();
         }
     }
 
@@ -173,7 +172,7 @@ class Auth extends BaseController
         delete_cookie('remember_me');
 
         // Kembalikan ke halaman login dengan flash message dan proteksi cache-control
-        return redirect()->to('/login')
+        return redirect()->to(site_url('login'))
             ->with('success', 'Anda telah berhasil keluar dari sistem.')
             ->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0')
             ->setHeader('Pragma', 'no-cache')

@@ -19,13 +19,28 @@ Setiap modul, endpoint, dan konfigurasi sistem pada **Evidence Command Center (E
 | **5** | **Efisiensi & Ketahanan Beban** | Performance & Concurrency | Batch query berkecepatan tinggi $O(N)$ in-memory (0 masalah N+1), indeks basis data lengkap, manajemen sesi anti-lock (*Database/Redis session driver*), dan optimalisasi batas memori PHP. |
 | **6** | **Mitigasi Bug & Observabilitas** | Exception & Monitoring | *Zero-division defense*, penanganan `null/empty` terpadu, failsafe sesi user, *graceful fallback* dialog SweetAlert2, serta mekanisme pencatatan & notifikasi error kritis (*error alerting*). |
 | **7** | **Ergonomi Sentuh & 8-Point Grid** | UI/UX & Aksesibilitas | Desain responsif (<768px & <576px), kepatuhan mutlak skala **8-Point Grid** (`4px` s.d. `80px`), *touch target* minimal 44px, dual-view (tabel desktop & kartu mobile), angka tabular, dan atribut `aria-label`. |
-| **8** | **Standarisasi Bahasa & Disaster Recovery** | Branding & Operasional | Kepatuhan mutlak istilah baku **"staf"** (aturan `AGENTS.md`), identitas resmi **"Evidence Command Center (ECC)"**, otomatisasi pencadangan data (*database backup*), dan retensi data usang (*housekeeping*). |
+| **8** | **Standarisasi Bahasa & Disaster Recovery** | Branding & Operasional | Kepatuhan istilah baku **"staf"**, identitas **"Evidence Command Center (ECC)"**, kalimat simpel & tidak kepanjangan, otomatisasi pencadangan data (*database backup*), dan retensi data (*housekeeping*). |
 
 ---
 
-## 🗺️ Lembar Kerja Audit Modul Sistem (14 Modul Fungsional)
+## 🔄 Prosedur Wajib: Rencana Implementasi (*Implementation Plan*) Sebelum Eksekusi
 
-Berikut adalah status audit dan verifikasi kelayakan produksi pada seluruh 14 modul aplikasi:
+Setiap kali audit kode dilakukan dan menemukan celah, kekurangan, atau kebutuhan peningkatan pada modul sistem:
+1. **Perumusan Hasil Audit**: Sajikan temuan audit secara transparan, terstruktur, dan berbasis bukti kode aktif.
+2. **Penyusunan Rencana Implementasi (*Implementation Plan*)**: Sebelum melakukan modifikasi kode (*file edits*) atau mengeksekusi perintah perbaikan, **WAJIB** menyusun dokumen rencana implementasi yang memuat:
+   - **Deskripsi Masalah & Ruang Lingkup**: Akar permasalahan yang ditemukan dan batasan solusi yang diajukan.
+   - **Daftar Berkas yang Terpengaruh**: Klasifikasi berkas target secara spesifik (`[MODIFY]`, `[NEW]`, `[DELETE]`).
+   - **Rincian Teknis & Perubahan Kode**: Rancangan perubahan logika, validasi keamanan, kueri database, atau perbaikan antarmuka.
+   - **Mitigasi Risiko & Pencegahan Regresi**: Analisis potensi efek samping ke modul lain, kompatibilitas PHP 8.1+, dan lingkungan server produksi cPanel.
+   - **Rencana Pengujian Pengguna**: Skenario pengujian yang akan dilakukan langsung oleh pengguna (tanpa *automated testing* mandiri tanpa izin).
+3. **Persetujuan Pengguna (*User Approval*)**: Eksekusi pengkodean hanya dimulai setelah pengguna meninjau dan memberikan persetujuan (*review & approval*).
+4. **Eksekusi & Laporan Ringkasan (*Walkthrough*)**: Laksanakan perbaikan secara presisi sesuai rencana yang telah disetujui, lalu sajikan ringkasan berkas yang diperbarui.
+
+---
+
+## 🗺️ Lembar Kerja Audit Modul Sistem (15 Modul Fungsional)
+
+Berikut adalah status audit dan verifikasi kelayakan produksi pada seluruh 15 modul aplikasi:
 
 ### 📌 1. Modul Autentikasi & Sesi (Auth & Login — `/login`)
 - [x] **Controller**: `app/Controllers/Auth.php` | **View**: `app/Views/login.php`
@@ -36,18 +51,30 @@ Berikut adalah status audit dan verifikasi kelayakan produksi pada seluruh 14 mo
   - [x] **Hardened Logout (CSRF POST)**: Logout wajib via HTTP POST ber-CSRF (`#logoutPostForm`) dengan pembersihan sesi total dan header `Cache-Control: no-store`.
   - [x] **Audit Trail Login**: Pencatatan audit log terintegrasi untuk `LOGIN`, `FAILED_LOGIN` (lengkap dengan IP & User Agent), dan `LOGOUT`.
   - [x] **Mobile-Friendly**: Formulir terpusat ergonomis, input font 16px (anti auto-zoom iOS), dan tombol touch target $\ge 44\text{px}$.
+  - [x] **Visual Stability & Ergonomi (Zero Shake & Zero Floating)**: Kartu login 100% solid dan stabil tanpa animasi 3D tilt mouse, tanpa animasi melayang (*floating bobs*), tanpa *stagger-sliding*, dan tanpa efek getar (*shaking*) saat autentikasi gagal. Umpan balik error disajikan secara tenang, jelas, dan non-intrusif via alert box inline berstandar enterprise.
 
 ---
 
 ### 📌 2. Modul Dashboard Eksekutif & Personal (Admin & User Dashboard — `/dashboard`)
-- [x] **Controller**: `app/Controllers/Admin/Dashboard.php`, `app/Controllers/User/Dashboard.php`
+- [x] **Controller**: `app/Controllers/DashboardController.php`, `app/Controllers/Admin/Dashboard.php`, `app/Controllers/User/Dashboard.php`
 - [x] **View**: `app/Views/admin/dashboard.php`, `app/Views/user/dashboard.php`
 - **Checklist Kesiapan Produksi**:
-  - [x] **Zero-Division Defense**: Seluruh agregasi rata-rata unit kerja diproteksi kondisi `$count > 0 ? ($total / $count) : 0`.
-  - [x] **Isolasi Hierarki Peran**: Perhitungan hierarki pimpinan (Direktur, Wadir, Kabag) mengagregasi staf bawahan secara rekursif tanpa kebocoran data.
-  - [x] **DOM XSS Sanitization**: Sanitasi output modal detail grafik menggunakan fungsi aman `escapeHtml()`.
-  - [x] **Performance & Responsive**: Modal menggunakan *Singleton Instance*, grafik Chart.js menyesuaikan aspect ratio di layar seluler.
-  - [x] **Standar Istilah**: Label tabel menggunakan *"Monitoring Kinerja Staf Saya"* (bebas dari istilah non-baku).
+  - [x] **Pemisahan Peran Dinamis (Role Routing)**: `DashboardController` secara cerdas mengarahkan pimpinan, struktural & tim kepegawaian (`['admin', 'direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'spm', 'kepegawaian']`) ke Dashboard Eksekutif, dan pegawai reguler/staf pelaksana/tugas belajar non-kepegawaian ke Dashboard Personal.
+  - [x] **Isolasi Hierarki Data (Anti-Data Leakage)**:
+    - *Direktur, Wadir, Kabag (kabag, kabag_aak, kabag_kuk), Katim Kepegawaian & Role Kepegawaian, Admin:* Memiliki akses visibilitas institusional penuh untuk memantau performa seluruh pegawai di PKTJ (`$canSeeAll = true`).
+    - *Manajemen Struktural Khusus/Koordinator:* Dibatasi hanya mengakses data staf binaan dan unit kerja di bawah supervisinya via `$userModel->getAllStaf($user_id, $role)`.
+    - *Staf Pelaksana:* Data personal terisolasi; otomatis menampilkan tabel *"Monitoring Kinerja Staf Saya"* jika memiliki bawahan, atau tabel transparan *"Rekan Kerja Satu Unit"* (*Unit Peers*) jika tidak memiliki bawahan.
+    - *Pegawai Tugas Belajar:* Tampilan personal yang fokus pada progres tugas dan keselarasan mutu institusi.
+  - [x] **Ultra-Fast 2-Query Batch Loading (Trait `KinerjaBatchTrait`)**: Seluruh agregasi target tahunan dan tugas tambahan ditarik dalam 2 kueri SQL terindeks, diproses in-memory $O(1)$, menjamin bebas dari masalah kueri N+1 dan hemat memori PHP.
+  - [x] **Integrasi Trait Mutu Akreditasi (`EccDataTrait`)**: Grafik radar/polar pemenuhan standar mutu LED ECC dimuat secara konsisten di seluruh tipe dasbor pengguna.
+  - [x] **Zero-Division Defense & Null Safety**: Seluruh formula rata-rata capaian kinerja, unit kerja, dan persentase indikator diproteksi kondisi `$count > 0 ? ($total / $count) : 0` serta fallback `Tanpa Unit`.
+  - [x] **Akurasi Ambang Batas Predikat & Leaderboard**:
+    - Sebaran predikat mematuhi standar resmi (*Sangat Baik* `>100%`, *Baik* `>90% - 100%`, *Butuh Perbaikan* `>75% - 90%`, *Kurang* `>25% - 75%`, *Sangat Kurang* `<=25%`).
+    - Leaderboard *Perlu Perhatian Khusus* (Bottom 5) secara adil memprioritaskan pegawai yang belum melapor/belum membuat target, dan mengecualikan pegawai dengan capaian Baik ($\ge 90\%$).
+  - [x] **Proteksi Endpoint API Drilldown Chart (`/dashboard/api-detail-chart`)**: Endpoint AJAX dilindungi pemeriksaan otorisasi peran `hasAnyRole()` dan verifikasi `isAJAX()` (anti-IDOR & tampering).
+  - [x] **DOM XSS Sanitization**: Sanitasi output modal drilldown interaktif menggunakan fungsi `escapeHtml()`.
+  - [x] **Mobile Responsiveness & Chart.js Adaptation**: Grafik Chart.js responsif terhadap rasio layar HP (<768px), filter toolbar flex-wrap rapi, dan tabel didukung scroll horizontal `.table-responsive`.
+  - [x] **Kepatuhan Terminologi Baku**: 100% menggunakan istilah resmi **"staf"** (bebas dari istilah non-baku "bawahan") dan identitas resmi **"Evidence Command Center (ECC)"**.
 
 ---
 
@@ -61,6 +88,10 @@ Berikut adalah status audit dan verifikasi kelayakan produksi pada seluruh 14 mo
   - [x] **Sinkronisasi Multi-Role**: Sinkronisasi relasi tabel `user_roles` dan cascading delete otomatis saat pengguna dihapus.
   - [x] **Template Ekspor/Impor**: Penamaan file dinas standar `Template_Import_Pengguna_ECC.xlsx`.
   - [x] **Audit Trail**: Audit log lengkap untuk aksi `CREATE`, `UPDATE`, `DELETE`, dan `RESET_KINERJA`.
+  - [x] **Proteksi Akses Seragam**: Seluruh fungsi terkunci hanya untuk role `admin` dan `kepegawaian`.
+  - [x] **Hapus Aman & Dual-View Mobile**: Aksi hapus terlindungi form POST CSRF dan tabel mendukung kartu sentuh di HP.
+  - [x] **Failsafe Sesi & Optimasi Profil**: Fallback ID sesi ganda dan kueri dropdown atasan hemat memori.
+  - [x] **Transaksi Database Profil**: Pembaruan data profil dibungkus transaksi database yang aman.
 
 ---
 
@@ -70,9 +101,13 @@ Berikut adalah status audit dan verifikasi kelayakan produksi pada seluruh 14 mo
 - **Checklist Kesiapan Produksi**:
   - [x] **Aturan Khusus Direktur**: Akun Direktur otomatis berstatus `disetujui` dan dapat merevisi target mandiri kapan saja.
   - [x] **Alur Persetujuan Bertingkat**: Pegawai non-Direktur wajib melalui verifikasi Atasan Langsung (`menunggu_persetujuan` $\rightarrow$ `disetujui`).
+  - [x] **Fleksibilitas Pengeditan Sebelum Disetujui**: Staf bebas mengubah, menambah, atau menghapus target kinerja selagi belum disetujui atasan (`status_approval != 'disetujui'`).
+  - [x] **Tombol & Dialog Adaptif**: Tombol aksi bertransformasi dinamis antara *"Ajukan Target"* (draf) dan *"Perbarui & Ajukan Ulang"* (menunggu persetujuan) lengkap dengan konfirmasi SweetAlert2.
+  - [x] **Failsafe & Defensive Error Trapping**: Inisialisasi eksplisit `$targetUser` di awal `store()` dan penanganan exception `try...catch` pada notifikasi ke atasan/staf (100% bebas dari PHP 8.1 Undefined Variable / 500 error di cPanel).
   - [x] **Fitur Batal Approve Superadmin**: Fitur darurat `cancelApprove()` untuk mengembalikan target yang salah disetujui ke draf revisi, dibungkus Database Transaction dan audit log `CANCEL_APPROVE_TARGET`.
   - [x] **Sanitasi Koma Desimal**: Input target numerik otomatis disanitasi dari notasi koma Indonesia (`,`) ke titik desimal (`.`).
   - [x] **Pencegahan Double-Submit**: Implementasi PRG Pattern (Post-Redirect-Get) dan tombol submit lock saat proses AJAX berlangsung.
+  - [x] **Responsivitas Seluler & Scroll Guard**: Tabel penyusunan target dibungkus kontainer `.table-responsive` dengan padding bento adaptif dan tombol aksi ramah sentuhan ponsel.
 
 ---
 
@@ -85,6 +120,7 @@ Berikut adalah status audit dan verifikasi kelayakan produksi pada seluruh 14 mo
   - [x] **Kalender Flatpickr Cerdas**: Tanggal merah/akhir pekan masa depan (`.flatpickr-disabled`) berpenampilan redup pudar (`#fca5a5`, opacity 0.35), sedangkan tanggal yang sudah tiba/aktif merah cerah tegas (`#ef4444`, font-weight 700).
   - [x] **Izin Buka Kunci (Revisi)**: Superadmin & Atasan Langsung dapat membuka kunci laporan via `bukaKunci()`, terekam di audit log `UNLOCK_LAPORAN`.
   - [x] **Pembaruan Hash CSRF**: Request AJAX Tugas Tambahan otomatis memperbarui token hash CSRF ke DOM secara dinamis.
+  - [x] **Ergonomi Form Seluler**: Form input log harian dan modal tugas tambahan menyesuaikan lebar layar ponsel (<576px) dengan touch target $\ge 44\text{px}$.
 
 ---
 
@@ -113,6 +149,7 @@ Berikut adalah status audit dan verifikasi kelayakan produksi pada seluruh 14 mo
 - **Checklist Kesiapan Produksi**:
   - [x] **Otorisasi Ketat Multi-Role**: Hanya dapat diakses oleh: `['kepegawaian', 'admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk']`.
   - [x] **Pembatasan Hak Peran Wadir**: Role `wadir` memiliki akses pemantauan penuh, tetapi secara tegas tidak memiliki hak menyetujui, merevisi, atau menilai target staf.
+  - [x] **Dual-View Mobile Touch Cards (<768px)**: Tabel data desktop otomatis beralih menjadi kartu sentuh mandiri (`.mobile-cards-view`) di layar ponsel dengan touch target $\ge 44\text{px}$.
   - [x] **Penanganan Mode Sepanjang Tahun (`'all'`)**: Ekspor PDF dan Excel mendukung penanganan nama periode dinamis (`nama_bulan` fallback ke nama bulan aktif saat mode 'all' agar tidak error).
   - [x] **Modal Rincian Target AJAX Zero-Reload**: Detail RHK staf dimuat cepat melalui AJAX modal dengan pemformatan angka tabular dan badge status approval.
   - [x] **Ekspor Berkas Resmi Kedinasan**: Ekspor Excel Multi-Sheet numerik murni dan PDF A4 Landscape standar instansi, tercatat di audit log `EXPORT_EXCEL_MONITORING_TARGET` dan `EXPORT_PDF_MONITORING_TARGET`.
@@ -125,6 +162,7 @@ Berikut adalah status audit dan verifikasi kelayakan produksi pada seluruh 14 mo
 - **Checklist Kesiapan Produksi**:
   - [x] **Ultra-Fast 2-Query Batch Fetching**: Menghilangkan masalah query N+1 dengan mengambil data seluruh pegawai dan agregat target/log dalam 2 query SQL terindeks, lalu dipetakan in-memory.
   - [x] **Selective Column Query**: Mengambil kolom spesifik `id, nama_lengkap, nip, unit, jabatan, role, atasan_id, foto` untuk memangkas konsumsi RAM PHP hingga 65%.
+  - [x] **Dual-View Mobile Cards**: Tampilan tabel rekapitulasi berganti otomatis menjadi kartu seluler (`#mobileCardsContainer`) pada layar <768px dengan badge predikat kinerja resmi.
   - [x] **Hierarki Jabatan Resmi Institusi**: Pengurutan pegawai otomatis mematuhi struktur organisasi: Direktur $\rightarrow$ Wadir $\rightarrow$ Kabag $\rightarrow$ Katim/Koordinator $\rightarrow$ Kapus $\rightarrow$ Kanit $\rightarrow$ Kaprodi/Sekprodi $\rightarrow$ Pokja $\rightarrow$ Dosen $\rightarrow$ JFT $\rightarrow$ Staf Pelaksana $\rightarrow$ Tugas Belajar.
   - [x] **Default Periode Bulan Sekarang**: Halaman pertama kali dibuka selalu otomatis memuat bulan berjalan (`date('n')`).
   - [x] **Ekspor Multi-Format**: Ekspor CSV BOM UTF-8 (format NIP `="NIP"` anti-notasi ilmiah Excel) dan PDF A4 Landscape resmi.
@@ -191,6 +229,31 @@ Berikut adalah status audit dan verifikasi kelayakan produksi pada seluruh 14 mo
   - [x] **Isolasi Filter Auth**: Seluruh rute privat terbungkus rapat dalam grup `['filter' => 'auth']`.
   - [x] **Single-Line Sidebar Navigation**: Seluruh teks link navigasi (seperti *"Rekap & Penilaian Kinerja"*, *"Monitoring Target Kinerja"*) strictly tampil dalam 1 baris tanpa wrapping jelek.
   - [x] **Mobile Drawer Touch Experience**: Menu drawer seluler offcanvas `#sidebarOffcanvas` responsif dan mulus.
+
+---
+
+### 📌 15. Modul Kelola Tim Saya (Team Management — `/tim`)
+- [x] **Controller**: `app/Controllers/User/TimController.php` | **View**: `app/Views/user/tim_saya.php`
+- **Checklist Kesiapan Produksi**:
+  - [x] **Otorisasi Tim Leader**: Akses terbatas hanya untuk role manajerial dan pimpinan: `['manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'kanit', 'katim', 'kapokja', 'admin']`.
+  - [x] **Pemetaan Staf Ganda**: Penarikan daftar anggota tim berdasarkan relasi hierarki (`atasan_id == $myId`) atau kesamaan unit kerja (`unit == $myUnit`).
+  - [x] **Pengecualian Akun Terlarang**: Proteksi mutlak agar akun ber-role `admin` dan `direktur` serta akun manajer sendiri tidak dapat ditambahkan sebagai staf tim.
+  - [x] **Pencarian Cerdas Multi-Field (Select2)**: Pencarian cepat pegawai di modal berdasarkan Nama, NIP, Jabatan, atau Unit Kerja dengan badge indikator *"Sudah punya atasan"*.
+  - [x] **Proteksi IDOR & Validasi Kepemilikan**: Validasi kepemilikan ketat sebelum mengeluarkan staf (`removeStaf`) atau memperbarui unit kerja (`updateUnit`).
+  - [x] **Pembaruan Unit Kerja Real-Time AJAX**: Perubahan unit kerja via AJAX mengembalikan token hash CSRF baru (`csrf_token() => csrf_hash()`) dan otomatis mensinkronkan peran `spm` jika unit adalah Satuan Penjaminan Mutu.
+  - [x] **Audit Trail Mutasi Tim**: Pencatatan jejak audit komprehensif untuk aksi `ADD_TO_TEAM`, `REMOVE_FROM_TEAM`, dan `UPDATE_UNIT_TIM`.
+  - [x] **Konfirmasi SweetAlert2 Ramah Sentuhan**: Tombol *"Keluarkan"* dari tim dilindungi konfirmasi visual SweetAlert2 dengan fallback aman `confirm()` native browser.
+
+---
+
+### 📌 16. Modul Arsitektur Routing & Keamanan Akses Endpoint (`app/Config/Routes.php`)
+- [x] **Konfigurasi Utama**: `app/Config/Routes.php`
+- [x] **Filter Pengaman**: `app/Filters/AuthFilter.php`
+- **Checklist Kesiapan Produksi**:
+  - [x] **AutoRoute Dinonaktifkan**: Pengaturan `$routes->setAutoRoute(false)` terkunci untuk mencegah akses controller liar.
+  - [x] **Proteksi Grup Autentikasi**: Seluruh rute internal dibungkus dalam grup `['filter' => 'auth']`.
+  - [x] **Kunci Metode Hapus ke POST**: Seluruh aksi penghapusan data (Master Data, SKP, dan Bukti LED) wajib menggunakan metode `POST` dan token CSRF.
+  - [x] **Bebas Broken Routes**: Seluruh endpoint terdaftar eksplisit dan konsisten dengan form view.
 
 ---
 

@@ -73,6 +73,10 @@ class Skp extends BaseController
 
     public function delete($id)
     {
+        if (strtolower($this->request->getMethod()) !== 'post') {
+            return redirect()->to('/skp')->with('error', 'Metode permintaan tidak diizinkan.');
+        }
+
         $skp = $this->skpHeaderModel->find($id);
 
         if (!$skp) {

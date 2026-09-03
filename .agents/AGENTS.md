@@ -54,9 +54,27 @@ Seluruh modul perhitungan predikat (Controller, Modal AJAX, Desktop Table, Mobil
   - Flag status penilaian diset ke `NULL` (bukan menjadi `terbit` dengan nilai 0).
   - Status kembali menjadi **"Belum Dinilai"** persis seperti saat belum pernah diisi.
 
-### E. Otorisasi Menu & Modul Kepegawaian
+### E. Otorisasi Menu, Modul Kepegawaian & Visibilitas Dashboard
 - Menu tree **Kepegawaian** (Monitoring Target Kinerja & Monitoring Penilaian Kinerja) pada sidebar dan endpoint controllernya **HANYA** muncul dan dapat diakses oleh akun dengan role: `direktur`, `wadir`, `kabag` (`kabag_aak`, `kabag_kuk`), `kepegawaian`, dan `admin`.
 - Role `wadir` memiliki akses monitoring luas tetapi secara eksplisit **tidak memiliki wewenang menilai atau merevisi target staf** (hanya mengelola "Target Saya").
+- **Visibilitas Dashboard Institusi Penuh**: Khusus akun dengan role `direktur`, `wadir`, `kabag` (`kabag_aak`, `kabag_kuk`), dan `kepegawaian` (termasuk Katim Kepegawaian), dasbor eksekutif membuka hak visibilitas penuh (`$canSeeAll = true`) untuk memantau performa seluruh pegawai di lingkungan PKTJ (bukan terbatas hanya pada unit binaannya).
+
+### F. Fleksibilitas Pengeditan Target Kinerja Bulanan (Sebelum Disetujui)
+- **Staf berhak mengedit, menambah, atau menghapus target kinerja selagi belum disetujui atasan langsung**:
+  - Selama `status_approval != 'disetujui'`, baris input tidak dikunci dan tombol submit formulir beradaptasi secara kontekstual:
+    - Status Draf/Baru: Berlabel `<i class="bi bi-send"></i> Ajukan Target`.
+    - Status Menunggu Persetujuan: Berlabel `<i class="bi bi-arrow-repeat"></i> Perbarui & Ajukan Ulang`.
+  - **Notifikasi Bertahap ke Atasan Langsung**:
+    - Pengajuan awal: *"Persetujuan Target Bulanan: [Nama Staf] mengirimkan Target Bulanan..."*
+    - Pengajuan pembaruan: *"Pembaruan Target Bulanan: [Nama Staf] memperbarui Target Bulanan..."*
+  - **Inisialisasi Defensif & Failsafe Notifikasi**:
+    - Variabel `$targetUser` wajib diinisialisasi secara eksplisit di awal method `store()` sebelum pengecekan alur (mencegah `Undefined variable $targetUser` / Error 500 pada PHP 8.1+ / production).
+    - Seluruh pemanggilan helper notifikasi (`send_notification`) wajib dibungkus dalam blok `try...catch (\Throwable $e)` agar kendala jaringan/database notifikasi tidak pernah menggagalkan penyimpanan target utama.
+  - Penguncian permanen formulir target (*readonly*) hanya terjadi setelah disetujui oleh atasan langsung (`status_approval = 'disetujui'`), kecuali akun role `direktur` yang memiliki hak revisi mandiri sewaktu-waktu.
+
+### G. Standar Prosedur Audit & Rencana Implementasi (Implementation Plan)
+- Setiap kali audit kode selesai dilakukan dan menemukan celah atau kebutuhan perbaikan, agen **WAJIB menyusun Rencana Implementasi (*Implementation Plan*)** terlebih dahulu sebelum mengeksekusi perubahan kode pada berkas manapun.
+- **Larangan Testing Otomatis Mandiri Tanpa Izin**: Agen tidak diizinkan menjalankan *browser testing*, *subagent testing*, atau *automated testing* mandiri. Seluruh verifikasi tampilan dan fungsi diserahkan sepenuhnya kepada pengguna untuk diuji secara langsung.
 
 ---
 
@@ -93,3 +111,12 @@ Seluruh modul perhitungan predikat (Controller, Modal AJAX, Desktop Table, Mobil
   - Motion: Natural deceleration `cubic-bezier(0.16, 1, 0.3, 1)` with full `@media (prefers-reduced-motion: reduce)` support.
 - **SweetAlert2 & JS Fallback**:
   - Always verify `typeof Swal !== 'undefined'` before invoking `Swal.fire()` and provide native browser dialog fallback (`confirm()`) so the UI functions seamlessly even if CDN assets fail to load.
+
+---
+
+## 6. Gaya Bahasa & Komunikasi (Tone & Simplicity)
+- **Kalimat Sederhana & Ringkas**: Dalam berkas dokumentasi (`AGENTS.md`, `design.md`, `audit_code.md`), label UI antarmuka, dan komunikasi respons ke pengguna:
+  - Gunakan kalimat yang singkat, padat, jelas, dan langsung pada intinya.
+  - Hindari kalimat yang terlalu teknis, bertele-tele, atau kepanjangan.
+  - Prioritaskan bahasa yang ramah, mudah dipahami pengguna, dan tidak berbelit-belit.
+

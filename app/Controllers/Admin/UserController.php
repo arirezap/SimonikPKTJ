@@ -18,10 +18,18 @@ class UserController extends BaseController
         $this->userModel = new User();
     }
 
-    public function index()
+    private function checkAdminOrKepegawaian(): ?\CodeIgniter\HTTP\RedirectResponse
     {
         if (!hasAnyRole(['admin', 'kepegawaian'])) {
-            return redirect()->to(site_url('daftar-pegawai'));
+            return redirect()->to(site_url('daftar-pegawai'))->with('error', 'Anda tidak memiliki hak akses ke modul Kelola Pengguna.');
+        }
+        return null;
+    }
+
+    public function index()
+    {
+        if ($redirect = $this->checkAdminOrKepegawaian()) {
+            return $redirect;
         }
 
         $data = [
@@ -66,7 +74,23 @@ class UserController extends BaseController
             }
         }
 
-        $query = $query->orderBy($sortBy, $sortOrder);
+        $allowedSorts = [
+            'users.id'            => 'users.id',
+            'id'                  => 'users.id',
+            'users.nama_lengkap'  => 'users.nama_lengkap',
+            'nama_lengkap'        => 'users.nama_lengkap',
+            'users.jabatan'       => 'users.jabatan',
+            'jabatan'             => 'users.jabatan',
+            'users.unit'          => 'users.unit',
+            'unit'                => 'users.unit',
+            'users.role'          => 'users.role',
+            'role'                => 'users.role',
+            'atasan.nama_lengkap' => 'atasan.nama_lengkap',
+            'nama_atasan'         => 'atasan.nama_lengkap',
+        ];
+        $sortColumn = $allowedSorts[$sortBy] ?? 'users.nama_lengkap';
+        $sortOrder = (strtolower($sortOrder) === 'desc') ? 'desc' : 'asc';
+        $query = $query->orderBy($sortColumn, $sortOrder);
         
         // Load all data for client-side infinite scroll
         $data['users'] = $query->findAll();
@@ -116,6 +140,10 @@ class UserController extends BaseController
     // --- FITUR BARU: CREATE ---
     public function create()
     {
+        if ($redirect = $this->checkAdminOrKepegawaian()) {
+            return $redirect;
+        }
+
         // Ambil list semua user untuk dropdown "Pilih Atasan" (Termasuk Katim & Staf Kepegawaian)
         $bossRoles = ['direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'kanit', 'katim', 'kapokja', 'kepegawaian'];
         $potentialBosses = $this->userModel->whereIn('role', $bossRoles)->orderBy('nama_lengkap', 'ASC')->findAll();
@@ -132,6 +160,10 @@ class UserController extends BaseController
 
     public function store()
     {
+        if ($redirect = $this->checkAdminOrKepegawaian()) {
+            return $redirect;
+        }
+
         // Validasi input dasar
         // PERBAIKAN: min_length(4) diubah menjadi min_length[4]
         if (!$this->validate([
@@ -242,6 +274,10 @@ class UserController extends BaseController
 
     public function edit($id)
     {
+        if ($redirect = $this->checkAdminOrKepegawaian()) {
+            return $redirect;
+        }
+
         $user = $this->userModel->find($id);
 
         if (!$user) {
@@ -275,6 +311,10 @@ class UserController extends BaseController
 
     public function update()
     {
+        if ($redirect = $this->checkAdminOrKepegawaian()) {
+            return $redirect;
+        }
+
         $id = $this->request->getPost('id');
 
         if (!$this->validate([
@@ -408,6 +448,10 @@ class UserController extends BaseController
             return $this->response->setStatusCode(403, 'Forbidden');
         }
 
+        if (!hasAnyRole(['admin', 'kepegawaian'])) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Anda tidak memiliki hak akses.'])->setStatusCode(403);
+        }
+
         $userId = $this->request->getPost('user_id');
         $unitInput = $this->request->getPost('unit_id') ?? $this->request->getPost('unit');
 
@@ -473,6 +517,10 @@ class UserController extends BaseController
 
     public function batch_update()
     {
+        if ($redirect = $this->checkAdminOrKepegawaian()) {
+            return $redirect;
+        }
+
         $userIds = $this->request->getPost('user_ids');
         $atasanId = $this->request->getPost('atasan_id');
 
@@ -523,6 +571,14 @@ class UserController extends BaseController
     
     public function delete($id)
     {
+        if ($redirect = $this->checkAdminOrKepegawaian()) {
+            return $redirect;
+        }
+
+        if (strtolower($this->request->getMethod()) !== 'post') {
+            return redirect()->to('users')->with('error', 'Metode permintaan tidak diizinkan.');
+        }
+
         $user = $this->userModel->find($id);
         if (!$user) {
             return redirect()->to('users')->with('error', 'Pengguna tidak ditemukan.');
@@ -558,6 +614,10 @@ class UserController extends BaseController
      */
     public function exportExcel()
     {
+        if ($redirect = $this->checkAdminOrKepegawaian()) {
+            return $redirect;
+        }
+
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Template Import');
@@ -632,6 +692,10 @@ class UserController extends BaseController
      */
     public function importExcel()
     {
+        if ($redirect = $this->checkAdminOrKepegawaian()) {
+            return $redirect;
+        }
+
         $file = $this->request->getFile('file_excel');
 
         if (!$file || !$file->isValid()) {

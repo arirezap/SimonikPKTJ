@@ -17,6 +17,7 @@ The Evidence Command Center (ECC) UI/UX is built to deliver a **world-class, hig
 4. **3-Tier Protection & Data Guarding**: Visual highlight feedback on frontend (e.g. `.table-danger` on duplicate rows), instant client-side validation, and server-side atomic validation.
 5. **Mobile-First & Touch-Friendly**: Dual-view paradigm where wide desktop tables seamlessly collapse into touch cards on smartphones (<768px), maintaining minimum 44px touch targets.
 6. **Corporate Tone & Strict Terminology**: Strictly use **"staf"** across all UI labels, buttons, documentation, and variables (never use "staf").
+7. **Simplicity & Clear Microcopy**: Gunakan kalimat yang ringkas, simpel, padat, tidak berbelit-belit, dan hindari bahasa teknis yang kepanjangan baik pada UI labels maupun dokumentasi.
 
 ---
 

@@ -72,7 +72,7 @@ $routes->post('notifications/read-all', 'NotificationController::markAllAsRead')
     $routes->post('settings/store', 'Admin\SettingsController::store');
     $routes->post('users/update', 'Admin\UserController::update');
     $routes->post('users/reset-kinerja', 'Admin\UserController::resetKinerja');
-    $routes->match(['get', 'post'], 'users/delete/(:num)', 'Admin\UserController::delete/$1');
+    $routes->post('users/delete/(:num)', 'Admin\UserController::delete/$1');
     $routes->get('users/export', 'Admin\UserController::exportExcel'); // Rute untuk Export
     $routes->post('users/import', 'Admin\UserController::importExcel'); // Rute untuk Import
     $routes->post('users/ajax_update_unit', 'Admin\UserController::ajaxUpdateUnit'); // Rute untuk AJAX update unit kerja
@@ -88,37 +88,37 @@ $routes->post('notifications/read-all', 'NotificationController::markAllAsRead')
         $routes->get('holidays', 'Admin\MasterDataController::holidays');
         $routes->post('holidays/sync', 'Admin\MasterDataController::syncHolidays');
         $routes->post('holidays/store', 'Admin\MasterDataController::storeHoliday');
-        $routes->match(['get', 'post'], 'holidays/delete/(:num)', 'Admin\MasterDataController::deleteHoliday/$1');
+        $routes->post('holidays/delete/(:num)', 'Admin\MasterDataController::deleteHoliday/$1');
 
         // Rute untuk Sasaran Program
         $routes->get('sasaran', 'Admin\MasterDataController::sasaran');
         $routes->post('sasaran/store', 'Admin\MasterDataController::storeSasaran');
         $routes->post('sasaran/update/(:num)', 'Admin\MasterDataController::updateSasaran/$1');
-        $routes->match(['get', 'post'], 'sasaran/delete/(:num)', 'Admin\MasterDataController::deleteSasaran/$1');
+        $routes->post('sasaran/delete/(:num)', 'Admin\MasterDataController::deleteSasaran/$1');
 
         // Rute untuk Indikator Kinerja
         $routes->get('indikator', 'Admin\MasterDataController::indikator');
         $routes->post('indikator/store', 'Admin\MasterDataController::storeIndikator');
         $routes->post('indikator/update/(:num)', 'Admin\MasterDataController::updateIndikator/$1');
-        $routes->match(['get', 'post'], 'indikator/delete/(:num)', 'Admin\MasterDataController::deleteIndikator/$1');
+        $routes->post('indikator/delete/(:num)', 'Admin\MasterDataController::deleteIndikator/$1');
 
         // Rute untuk Satuan
         $routes->get('satuan', 'Admin\MasterDataController::satuan');
         $routes->post('satuan/store', 'Admin\MasterDataController::storeSatuan');
         $routes->post('satuan/update/(:num)', 'Admin\MasterDataController::updateSatuan/$1');
-        $routes->match(['get', 'post'], 'satuan/delete/(:num)', 'Admin\MasterDataController::deleteSatuan/$1');
+        $routes->post('satuan/delete/(:num)', 'Admin\MasterDataController::deleteSatuan/$1');
 
         // Rute untuk Unit Kerja
         $routes->get('unit-kerja', 'Admin\MasterDataController::unitKerja');
         $routes->post('unit-kerja/store', 'Admin\MasterDataController::storeUnitKerja');
         $routes->post('unit-kerja/update/(:num)', 'Admin\MasterDataController::updateUnitKerja/$1');
-        $routes->match(['get', 'post'], 'unit-kerja/delete/(:num)', 'Admin\MasterDataController::deleteUnitKerja/$1');
+        $routes->post('unit-kerja/delete/(:num)', 'Admin\MasterDataController::deleteUnitKerja/$1');
         
         // Rute untuk Kriteria LED
         $routes->get('led', 'Admin\MasterDataController::led');
         $routes->post('led/store', 'Admin\MasterDataController::storeLed');
         $routes->post('led/update/(:num)', 'Admin\MasterDataController::updateLed/$1');
-        $routes->match(['get', 'post'], 'led/delete/(:num)', 'Admin\MasterDataController::deleteLed/$1');
+        $routes->post('led/delete/(:num)', 'Admin\MasterDataController::deleteLed/$1');
         $routes->post('led/deleteBatch', 'Admin\MasterDataController::deleteLedBatch');
         $routes->post('led/delete-batch', 'Admin\MasterDataController::deleteLedBatch');
         $routes->post('led/batchUpdate', 'Admin\MasterDataController::batchUpdateLed');
@@ -132,7 +132,7 @@ $routes->post('notifications/read-all', 'NotificationController::markAllAsRead')
         // Rute untuk Aksi (Store, Update, Delete) Standar LED
         $routes->post('led-standar/store', 'Admin\MasterDataController::storeStandar');
         $routes->post('led-standar/update/(:num)', 'Admin\MasterDataController::updateStandar/$1');
-        $routes->match(['get', 'post'], 'led-standar/delete/(:num)', 'Admin\MasterDataController::deleteStandar/$1');
+        $routes->post('led-standar/delete/(:num)', 'Admin\MasterDataController::deleteStandar/$1');
     });
 });
 
@@ -181,7 +181,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('skp/detail/(:num)', 'User\Skp::detail/$1');
     // Di dalam $routes->group('user' ...
     $routes->post('skp/target/store', 'User\Skp::storeTarget');
-    $routes->match(['get', 'post'], 'skp/delete/(:num)', 'User\Skp::delete/$1');
+    $routes->post('skp/delete/(:num)', 'User\Skp::delete/$1');
     // --- Kelola Tim ---
     $routes->get('tim', 'User\TimController::index');
     $routes->post('tim/add', 'User\TimController::addStaf');
@@ -219,7 +219,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
 $routes->group('ecc', ['filter' => 'auth'], function ($routes) {
     $routes->get('led', 'Admin\MasterDataController::eccLed');
     $routes->post('led/store', 'EccController::storeLed');
-    $routes->match(['get', 'post'], 'deleteLedLink/(:num)', 'EccController::deleteLedLink/$1');
+    $routes->post('deleteLedLink/(:num)', 'EccController::deleteLedLink/$1');
 
     $routes->get('simulasi', 'EccController::simulasi');
     $routes->post('simulasi/store', 'EccController::storeSimulasi');

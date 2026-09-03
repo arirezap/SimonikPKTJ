@@ -323,7 +323,7 @@
                     </div>
                     
                     <h4 class="fw-bold text-dark mb-1 user-profile-heading" style="letter-spacing: -0.5px;"><?= esc(ucwords(strtolower($mainName))) ?></h4>
-                    <p class="text-muted small fw-medium mb-3 user-profile-heading"><?= esc($user['jabatan'] ?? '-') ?> • <?= esc($user['nip']) ?></p>
+                    <p class="text-muted small fw-medium mb-3 user-profile-heading"><?= esc(!empty(trim((string)($user['jabatan'] ?? ''))) ? $user['jabatan'] : 'Staf Pelaksana') ?> • <?= esc($user['nip'] ?: '-') ?></p>
                     
                     <div class="d-flex flex-wrap gap-2 justify-content-center mb-4">
                         <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-1.5 rounded-pill fw-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.75rem;">
@@ -480,7 +480,7 @@
                                     <option value="">-- Pilih Atasan Langsung --</option>
                                     <?php foreach ($potential_bosses as $boss): ?>
                                         <option value="<?= $boss['id'] ?>" <?= ($user['atasan_id'] == $boss['id']) ? 'selected' : '' ?>>
-                                            <?= esc($boss['nama_lengkap']) ?> - <?= esc($boss['jabatan']) ?>
+                                            <?= esc($boss['nama_lengkap']) ?> - <?= esc(!empty(trim((string)($boss['jabatan'] ?? ''))) ? $boss['jabatan'] : 'Pimpinan / Pejabat') ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>

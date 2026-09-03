@@ -236,3 +236,20 @@ Dokumen ini berisi riwayat fitur, perbaikan (*bug fixes*), dan peningkatan antar
 - **Pembaruan Graphify Knowledge Graph ECC:**
   - Pembaruan penuh basis pengetahuan struktural sistem: 662 berkas, 7.334 nodes, 17.633 edges, dan 393 communities pada `graphify-out/`.
 
+## 18. Rilis Resmi Versi 1.4: Penyelesaian Audit 8-Pilar Modul Kelola Tim, Kelola Pengguna, Profil Saya, dan Pengerasan Rute (3 September 2026)
+- **Modul Kelola Tim Saya (`/tim`):**
+  - Desain ulang Bento 8-Point Grid dengan 3 kartu KPI, pencarian langsung di tabel, dan kartu sentuh mobile.
+  - Penambahan failsafe ID sesi dan optimasi kueri memori.
+- **Modul Kelola Pengguna (`/users`):**
+  - Pembatasan otorisasi penuh hanya untuk role `admin` dan `kepegawaian`.
+  - Pemolesan antarmuka Bento dengan tombol kapsul modern, 3 kartu ringkasan KPI, pelebaran nama atasan agar tidak terpotong, dan fitur Click-to-Sort pada seluruh kolom header tabel.
+  - Pengubahan tombol hapus menjadi form `POST` dengan CSRF token dan konfirmasi SweetAlert2.
+- **Modul Profil Saya (`/profile`):**
+  - Failsafe sesi ganda (`id` dan `user_id`), pembatasan kolom kueri dropdown atasan, dan transaksi database.
+  - Perapihan label cadangan jika data jabatan masih kosong.
+- **Pengerasan Modul Routes (`app/Config/Routes.php`):**
+  - Mengunci seluruh aksi hapus (Master Data, SKP, dan Bukti LED) ke metode `POST` dengan token CSRF.
+  - Penyesuaian form submit pada antarmuka SKP dan Bukti LED agar selalu aman.
+- **Pembaruan Versi Aplikasi v1.4:**
+  - Peningkatan label versi resmi menjadi **`v1.4`** pada footer tata letak, header CSS, dan dokumentasi sistem.
+

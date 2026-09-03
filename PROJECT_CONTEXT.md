@@ -59,7 +59,11 @@ Sistem menggunakan *Role-Based Access Control (RBAC)* dengan 10 varian peran akt
 1. **Target Kinerja Bulanan (Hulu - `/laporan-harian`)**:
    - Model: `TargetKinerjaBulanan` (Tabel: `target_kinerja_bulanan`).
    - Staf menyusun sasaran program, indikator kinerja, dan target bulanan kuantitatif (`DECIMAL(10,4)`).
-   - Mendukung simpan draf sementara, simpan & kirim, auto-approve Direktur (dapat diedit/direvisi mandiri), serta persetujuan berjenjang atasan langsung (`approve` & `approveAll`).
+   - **Fleksibilitas Pengeditan Sebelum Disetujui**: Staf bebas mengubah angka target, mengedit teks, menambah baris, maupun menghapus target selagi status belum `disetujui` oleh atasan langsung (saat masih berstatus `menunggu_persetujuan`).
+   - **Tombol Aksi Kontekstual**: Tombol submit beradaptasi dinamis: berlabel *"Ajukan Target"* jika status draf/baru, dan otomatis berubah menjadi *"Perbarui & Ajukan Ulang"* jika target sudah pernah diajukan sebelumnya.
+   - **Notifikasi Bertahap ke Atasan**: Membedakan pengajuan baru (*"Persetujuan Target Bulanan"*) vs pembaruan (*"Pembaruan Target Bulanan"*).
+   - **Defensive Engineering & Fault-Tolerant**: Inisialisasi eksplisit `$targetUser` di awal `store()` dan penanganan exception pada pengiriman notifikasi (`try...catch`) untuk menjamin zero 500 error di PHP 8.1+ produksi cPanel.
+   - Mendukung simpan draf sementara, simpan & kirim, auto-approve Direktur (dapat diedit/direvisi mandiri kapan saja), serta persetujuan berjenjang atasan langsung (`approve` & `approveAll`). Penguncian permanen hanya aktif setelah disetujui atasan.
 2. **Lapor Kegiatan Harian (Eksekusi - `/log-kegiatan`)**:
    - Model: `LaporanHarian` (Tabel: `log_kegiatan_harian`) & `LogTugasTambahan` (Tabel: `log_tugas_tambahan`).
    - Pencatatan log kegiatan terikat dengan `target_id`. Dilengkapi pencatatan tugas tambahan institusi, tautan bukti digital, dan deteksi hari kerja/hari libur nasional (`is_working_day()`).
@@ -77,7 +81,12 @@ Sistem menggunakan *Role-Based Access Control (RBAC)* dengan 10 varian peran akt
      - Penutupan celah IDOR kepemilikan tugas tambahan pada `store()`.
    - **Prasyarat Penilaian**: Atasan Langsung HANYA DAPAT memberi nilai jika seluruh target kinerja bulanan staf pada periode terkait sudah berstatus `disetujui`.
    - **Standar Predikat Kinerja**: Sangat Baik (`>100% - 150%`), Baik (`>90% - 100%`), Butuh Perbaikan (`>75% - 90%`), Kurang (`>25% - 75%`), Sangat Kurang (`<=25%`), Belum Dinilai (`0%` atau RHK dinilai = 0 / NULL).
-   - **Mekanisme Reset**: Tombol Reset Nilai mengosongkan nilai (`nilai_capaian = NULL`) dan menyetel flag `status_penilaian = NULL` di database (kembali ke status "Belum Dinilai"), serta mencatat audit log `RESET_PENILAIAN_KINERJA`.
+    - **Mekanisme Reset**: Tombol Reset Nilai mengosongkan nilai (`nilai_capaian = NULL`) dan menyetel flag `status_penilaian = NULL` di database (kembali ke status "Belum Dinilai"), serta mencatat audit log `RESET_PENILAIAN_KINERJA`.
+4. **Kelola Tim Saya (Manajemen Tim - `/tim`)**:
+   - Controller: `app/Controllers/User/TimController.php` | View: `app/Views/user/tim_saya.php`.
+   - Otorisasi pimpinan & manajerial: `['manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'kanit', 'katim', 'kapokja', 'admin']`.
+   - Penambahan staf dengan pencarian multi-field Select2 (Nama, NIP, Jabatan, Unit) dan pencegahan menambahkan akun admin/direktur/diri sendiri.
+   - Proteksi IDOR ketat pada saat mengeluarkan staf atau mengubah unit kerja staf secara real-time via AJAX dengan token CSRF dinamis.
 
 ### B. Modul Kepegawaian (`/kepegawaian`):
 Menu tree Kepegawaian di sidebar memiliki 2 submodul terpadu untuk Tim Kepegawaian, Pimpinan, dan Manajemen:
@@ -95,6 +104,7 @@ Menu tree Kepegawaian di sidebar memiliki 2 submodul terpadu untuk Tim Kepegawai
 - **Hierarki Jabatan Resmi Institusi**:
   Pengurutan otomatis berdasarkan struktur organisasi: Direktur $\rightarrow$ Wakil Direktur $\rightarrow$ Kepala Bagian (Kabag AAK/KUK) $\rightarrow$ Ketua Tim (Katim) & Koordinator $\rightarrow$ Kepala Pusat (Kapus) $\rightarrow$ Kepala Unit (Kanit) $\rightarrow$ Ketua/Sekretaris Program Studi (Kaprodi/Sekprodi) $\rightarrow$ Ketua Pokja $\rightarrow$ Tenaga Pendidik / Dosen $\rightarrow$ Jabatan Fungsional Tertentu (JFT) $\rightarrow$ Staf Pelaksana $\rightarrow$ Pegawai Tugas Belajar.
 - **Otorisasi Menu Kepegawaian**: Menu tree dan endpoint dibatasi khusus untuk: `['kepegawaian', 'admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk']`.
+- **Visibilitas Dashboard Institusi**: Khusus akun dengan role `direktur`, `wadir`, `kabag` (`kabag_aak`, `kabag_kuk`), dan `kepegawaian` (termasuk Katim Kepegawaian), dasbor eksekutif membuka hak pantau seluruh pegawai di lingkungan PKTJ (`$canSeeAll = true`).
 - **Default Periode Bulan**: Menu awal selalu otomatis memuat **Bulan Sekarang (`date('n')`)**. Tersedia pilihan bulan lampau atau *Sepanjang Tahun* (`'all'`).
 
 ### C. Log Keamanan Aktivitas (Audit Trail - `/admin/audit-logs`):

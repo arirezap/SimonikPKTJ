@@ -16,7 +16,7 @@ class Profile extends BaseController
 
     public function index()
     {
-        $userId = session()->get('id');
+        $userId = session()->get('id') ?? session()->get('user_id');
         
         // AMBIL DATA FRESH DARI DB (Solusi Error Undefined Index)
         $user = $this->userModel->find($userId);
@@ -29,7 +29,8 @@ class Profile extends BaseController
         $unit_kerja_list = $unitKerjaModel->orderBy('nama_unit', 'ASC')->findAll();
         
         $bossRoles = ['direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'kanit', 'katim', 'kapokja'];
-        $potential_bosses = $this->userModel->where('id !=', $userId)
+        $potential_bosses = $this->userModel->select('id, nama_lengkap, nip, unit, jabatan, role')
+                                            ->where('id !=', $userId)
                                             ->whereIn('role', $bossRoles)
                                             ->orderBy('nama_lengkap', 'ASC')
                                             ->findAll();
@@ -47,7 +48,7 @@ class Profile extends BaseController
 
     public function update()
     {
-        $userId = session()->get('id');
+        $userId = session()->get('id') ?? session()->get('user_id');
         
         // 1. Validasi Input Dasar
         $rules = [
@@ -179,9 +180,22 @@ class Profile extends BaseController
             $data['role'] = 'spm';
         }
 
-        // 5. Eksekusi Update ke Database
-        $this->userModel->update($userId, $data);
-        log_audit('UPDATE', 'users', $userId, $user, $data);
+        // 5. Eksekusi Update ke Database dengan Transaksi
+        $db = \Config\Database::connect();
+        $db->transStart();
+        try {
+            $this->userModel->update($userId, $data);
+            log_audit('UPDATE', 'users', $userId, $user, $data);
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                return redirect()->back()->withInput()->with('errors', ['db' => 'Gagal memperbarui profil di basis data.']);
+            }
+        } catch (\Throwable $e) {
+            $db->transRollback();
+            log_message('error', 'Gagal update profil pengguna ID ' . $userId . ': ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('errors', ['db' => 'Terjadi kesalahan sistem saat menyimpan data profil.']);
+        }
 
         // 6. Update Session Data (Agar nama, unit, role & FOTO di header langsung berubah)
         $sessionData = [

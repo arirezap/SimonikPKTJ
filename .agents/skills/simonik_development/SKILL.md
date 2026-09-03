@@ -44,7 +44,8 @@ Panduan ini berisi pedoman lengkap arsitektur sistem, peta modul, basis data, da
 - **Target Kinerja Bulanan (`app/Models/TargetKinerja.php` & `User\LaporanHarianController`):**
   - Tempat pegawai menyusun Rencana Hasil Kerja (RHK) dan target kuantitas bulanan.
   - **Khusus Akun Direktur:** Target yang dibuat otomatis berstatus `disetujui` (`status_approval = 'disetujui'`, `status = 'terkirim'`) dan dapat direvisi secara mandiri kapan saja tanpa memerlukan approval pihak lain.
-  - **Pegawai Non-Direktur:** Target berstatus `menunggu_persetujuan` dan harus disetujui Atasan Langsung sebelum dapat dinilai.
+  - **Pegawai Non-Direktur (Fleksibilitas Revisi Staf):** Target berstatus `menunggu_persetujuan` dan staf berhak mengedit, menambah, atau menghapus target kapan saja selagi belum disetujui Atasan Langsung. Tombol aksi beradaptasi dinamis: *"Ajukan Target"* (draf) dan *"Perbarui & Ajukan Ulang"* (menunggu persetujuan). Notifikasi ke atasan otomatis membedakan pengajuan awal vs pembaruan target.
+  - **Prinsip Failsafe Notifikasi:** Variabel `$targetUser` diinisialisasi secara defensif di awal `store()` dan fungsi `send_notification()` dibungkus dalam blok `try...catch` agar kendala notifikasi tidak menggagalkan penyimpanan target utama. Penguncian penuh hanya berlaku setelah target disetujui atasan (`status_approval = 'disetujui'`).
 
 ### B. Modul Laporan Harian & Log Kegiatan (`/log-kegiatan`)
 - **Pencatatan Aktivitas Harian (`app/Models/LogKegiatanHarian.php`, `LogTugasTambahan` & `User\LogKegiatanController`):**
