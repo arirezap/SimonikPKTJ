@@ -76,7 +76,7 @@ Sistem menerapkan konsep pemisahan tugas menggunakan arsitektur **Tabel Pivot (M
 - [x] Modul Kepegawaian (Rekap Nilai Remunerasi) & Export Excel.
 - [x] Log Aktivitas Sistem (Audit Trail) dengan Live Search, Date Range Filter, & JSON Viewer Modal.
 - [x] Normalisasi Relasi Unit Kerja (`users.unit_id`) & Cascading Sync.
-- [x] Smart Indexing & Optimasi Database v1.3.
+- [x] Smart Indexing & Optimasi Database v1.4.
 - [x] Refactoring & Optimalisasi Modul Laporan Kinerja & Log Kegiatan Harian.
 - [x] Modul Evidence Command Center (ECC LED & Simulasi Penilaian).
 - [x] Modul Notifikasi Auto-Sync Hari Libur Nasional API & History Retention.

@@ -119,9 +119,9 @@ Menu tree Kepegawaian di sidebar memiliki 2 submodul terpadu untuk Tim Kepegawai
 
 ## 7. Arsitektur Perutean (Routing Rules - `app/Config/Routes.php`)
 - **Auto-Routing Dimatikan**: `$routes->setAutoRoute(false);` wajib aktif demi keamanan endpoint.
-- **117 Rute Terdaftar Eksplisit**: Seluruh 117 rute sistem terverifikasi 100% memetakan ke Controller dan Method aktif.
+- **Rute Terdaftar Eksplisit**: Seluruh rute sistem terverifikasi 100% memetakan ke Controller dan Method aktif tanpa rute rusak.
 - **Filter Guard `auth`**: Seluruh rute internal dibungkus dalam grup `['filter' => 'auth']`.
-- **Rute Delete Konsisten**: Seluruh endpoint hapus master data menggunakan `$routes->match(['get', 'post'], ...)` untuk mendukung form CSRF dialog modal SweetAlert2.
+- **Rute Delete Terkunci ke POST**: Seluruh endpoint hapus data (Master Data, SKP, dan Bukti LED) wajib menggunakan metode `POST` berpelindung token CSRF.
 
 ---
 
@@ -133,6 +133,6 @@ Menu tree Kepegawaian di sidebar memiliki 2 submodul terpadu untuk Tim Kepegawai
 ---
 
 ## 9. Status Graphify Knowledge Graph
-- Korpus Terindeks: 662 berkas (~1.119.885 kata).
-- Simpul & Relasi: 7.350 nodes, 17.589 edges, 397 communities.
+- Korpus Terindeks: 636 berkas (~1.147.824 kata).
+- Simpul & Relasi: 9.611 nodes, 19.933 edges, 554 communities.
 - Berkas Artefak: `graphify-out/graph.json`, `graphify-out/graph.html`, dan `graphify-out/GRAPH_REPORT.md`.

@@ -299,7 +299,7 @@
                 </form>
 
                 <div class="text-center mt-3 pt-1">
-                    <p class="text-muted mb-0" style="font-size: 0.75rem; color: #64748b;">&copy; <?= date("Y"); ?> Evidence Command Center (ECC) &bull; PKTJ Tegal</p>
+                    <p class="text-muted mb-0" style="font-size: 0.75rem; color: #64748b;">&copy; <?= date("Y"); ?> Evidence Command Center (ECC) &bull; PKTJ Tegal &bull; <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5" style="font-size: 0.7rem; font-variant-numeric: tabular-nums;">v 1.4</span></p>
                 </div>
             </div>
             
