@@ -203,6 +203,16 @@ class LaporanHarianController extends BaseController
         $isEditingStaf = $this->request->getPost('is_editing_staf') == '1';
         $targetUserId = $isEditingStaf ? $this->request->getPost('staf_id') : $userId;
 
+        $userModel = new User();
+        $targetUser = $userModel->find($targetUserId);
+        if (!$targetUser) {
+            $msg = 'Pengguna target tidak ditemukan.';
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+            }
+            return redirect()->back()->with('error', $msg);
+        }
+
         // Otorisasi: Jika menyunting target milik staf lain, pastikan user adalah Atasan Langsung, Admin, Direktur, atau Kepegawaian (Wadir tidak diizinkan)
         if ($isEditingStaf && $targetUserId != $userId) {
             if (hasRole('wadir')) {
@@ -212,8 +222,7 @@ class LaporanHarianController extends BaseController
                 }
                 return redirect()->back()->with('error', $msg);
             }
-            $targetUser = (new User())->find($targetUserId);
-            $isAtasan = $targetUser && !empty($targetUser['atasan_id']) && ($targetUser['atasan_id'] == $userId);
+            $isAtasan = !empty($targetUser['atasan_id']) && ($targetUser['atasan_id'] == $userId);
             if (!hasAnyRole(['admin', 'direktur', 'kepegawaian']) && !$isAtasan) {
                 if ($this->request->isAJAX()) {
                     return $this->response->setJSON(['success' => false, 'message' => 'Akses ditolak. Anda tidak memiliki izin menyunting target staf ini.', 'csrf_hash' => csrf_hash()]);
@@ -398,6 +407,14 @@ class LaporanHarianController extends BaseController
             $updateIds = array_column($dataToUpdate, 'id');
             $oldTargets = $laporanModel->whereIn('id', $updateIds)->findAll();
             foreach ($oldTargets as $ot) {
+                // Validasi kepemilikan anti-IDOR
+                if ((int)$ot['user_id'] !== (int)$targetUserId) {
+                    $msg = 'Akses ditolak. Terdeteksi manipulasi ID target kinerja.';
+                    if ($this->request->isAJAX()) {
+                        return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+                    }
+                    return redirect()->back()->with('error', $msg);
+                }
                 $oldTargetValues[$ot['id']] = [
                     'id' => $ot['id'],
                     'sasaran_program' => $ot['sasaran_program'],
@@ -485,26 +502,47 @@ class LaporanHarianController extends BaseController
 
         if ($isEditingStaf && $targetUserId != $userId) {
             // Notifikasi ke staf jika targetnya disunting/disetujui langsung oleh atasan
-            send_notification(
-                $targetUserId,
-                'Target Kinerja Diperbarui Atasan',
-                "Target Kinerja Bulanan Anda ({$namaBulan} {$tahun}) telah diperbarui dan disetujui oleh {$currentUserName}.",
-                site_url('laporan-harian?bulan=' . $bulan . '&tahun=' . $tahun)
-            );
-        } elseif (!$isEditingStaf && !$isDraft && !$isDirektur) {
-            // Notifikasi ke atasan langsung jika staf mengajukan target
-            if ($targetUser && !empty($targetUser['atasan_id'])) {
+            try {
                 send_notification(
-                    $targetUser['atasan_id'], 
-                    'Persetujuan Target Bulanan', 
-                    $targetUser['nama_lengkap'] . " mengirimkan Target Bulanan ({$namaBulan} {$tahun}) untuk diperiksa.",
-                    site_url('laporan-harian?source_tab=staf&staf_id=' . $targetUserId)
+                    $targetUserId,
+                    'Target Kinerja Diperbarui Atasan',
+                    "Target Kinerja Bulanan Anda ({$namaBulan} {$tahun}) telah diperbarui dan disetujui oleh {$currentUserName}.",
+                    site_url('laporan-harian?bulan=' . $bulan . '&tahun=' . $tahun)
                 );
+            } catch (\Throwable $e) {
+                log_message('error', 'Gagal mengirim notifikasi target ke staf #' . $targetUserId . ': ' . $e->getMessage());
+            }
+        } elseif (!$isEditingStaf && !$isDraft && !$isDirektur) {
+            // Notifikasi ke atasan langsung jika staf mengajukan atau memperbarui target
+            if (!empty($targetUser['atasan_id'])) {
+                try {
+                    $notifJudul = !empty($oldTargetValues) ? 'Pembaruan Target Bulanan' : 'Persetujuan Target Bulanan';
+                    $notifPesan = !empty($oldTargetValues)
+                        ? ($targetUser['nama_lengkap'] ?? 'Staf') . " memperbarui Target Bulanan ({$namaBulan} {$tahun}) untuk diperiksa."
+                        : ($targetUser['nama_lengkap'] ?? 'Staf') . " mengirimkan Target Bulanan ({$namaBulan} {$tahun}) untuk diperiksa.";
+
+                    send_notification(
+                        $targetUser['atasan_id'], 
+                        $notifJudul, 
+                        $notifPesan,
+                        site_url('laporan-harian?source_tab=staf&staf_id=' . $targetUserId)
+                    );
+                } catch (\Throwable $e) {
+                    log_message('error', 'Gagal mengirim notifikasi target ke atasan #' . $targetUser['atasan_id'] . ': ' . $e->getMessage());
+                }
             }
         }
 
-        return redirect()->to('/laporan-harian')
-                         ->with('success', $isDraft ? 'Target Bulanan berhasil disimpan sementara.' : ($isEditingStaf ? 'Target Bulanan staf berhasil diperbarui dan disetujui.' : ($isDirektur ? 'Target Bulanan berhasil disimpan dan disetujui.' : 'Target Bulanan berhasil dikirim ke atasan langsung.')));
+        $successMsg = $isDraft 
+            ? 'Target Bulanan berhasil disimpan sementara.' 
+            : ($isEditingStaf 
+                ? 'Target Bulanan staf berhasil diperbarui dan disetujui.' 
+                : ($isDirektur 
+                    ? 'Target Bulanan berhasil disimpan dan disetujui.' 
+                    : (!empty($oldTargetValues) ? 'Target Bulanan berhasil diperbarui dan dikirim kembali ke atasan langsung.' : 'Target Bulanan berhasil dikirim ke atasan langsung.')));
+
+        return redirect()->to(site_url('laporan-harian'))
+                         ->with('success', $successMsg);
     }
     
     public function approve()
@@ -656,7 +694,7 @@ class LaporanHarianController extends BaseController
                 site_url('laporan-harian?bulan=' . $bulan . '&tahun=' . $tahun)
             );
 
-            return redirect()->to('/laporan-harian')->with('success', 'Semua target milik staf berhasil disetujui (' . count($targetsToApprove) . ' target).');
+            return redirect()->to(site_url('laporan-harian'))->with('success', 'Semua target milik staf berhasil disetujui (' . count($targetsToApprove) . ' target).');
         }
         return redirect()->back()->with('error', 'Data tidak valid.');
     }

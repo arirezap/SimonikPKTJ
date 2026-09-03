@@ -22,7 +22,7 @@ Sistem menggunakan *Role-Based Access Control (RBAC)* dengan 10 varian peran akt
    - Memiliki kendali penuh ke seluruh modul sistem (`users`, `settings`, `audit-logs`, `master-data/*`, `remunerasi`, `monitoring`, `kepegawaian`).
    - Memiliki hak pembatalan persetujuan target (`cancelApprove`) dan izin revisi laporan harian (`bukaKunci`).
 2. **Pimpinan Eksekutif (`direktur`, `wadir`)**:
-   - **Direktur (`direktur`)**: Pimpinan tertinggi dengan akses penuh ke Dashboard Command Center, Rekap Kepegawaian, auto-approve target mandiri, serta hak persetujuan target dan penilaian kinerja staf institusi.
+   - **Direktur (`direktur`)**: Pimpinan tertinggi dengan akses penuh ke Dashboard Command Center, Rekap Kepegawaian, auto-approve target mandiri (dapat merevisi mandiri kapan saja), serta hak persetujuan target dan penilaian kinerja staf institusi.
    - **Wakil Direktur (`wadir`)**: Pimpinan Eksekutif Pengawas/Monitoring dengan akses ke Dashboard Command Center, Rekap Kepegawaian, Monitoring Kinerja, dan Instrumen Akreditasi ECC. **Wadir secara eksplisit tidak memiliki akses/wewenang untuk merevisi target staf, menyetujui target staf, ataupun memberikan penilaian kinerja kepada staf** (hanya mengelola target dan capaian personal "Target Saya").
 3. **Kepala Bagian & Struktural (`kabag`, `kabag_aak`, `kabag_kuk`, `manajemen`, `spm`)**:
    - Akses ke Dashboard Admin, Rekap Kepegawaian Institusi, Kelola Tim, dan Penilaian Kinerja Staf Bawahan.
@@ -37,7 +37,7 @@ Sistem menggunakan *Role-Based Access Control (RBAC)* dengan 10 varian peran akt
 ---
 
 ## 4. Standar Terminologi & Branding ECC (CRITICAL RULES)
-1. **Wajib Istilah "staf"**: Selalu gunakan kata baku **"staf"** (bukan "staf") di seluruh label antarmuka, pesan notifikasi, variabel kode (`$stafIdTerpilih`, `getAllStaf()`), dan dokumen teknis (kepatuhan mutlak `.agents/AGENTS.md`).
+1. **Wajib Istilah "staf"**: Selalu gunakan kata baku **"staf"** (bukan "bawahan" atau "staff") di seluruh label antarmuka, pesan notifikasi, variabel kode (`$stafIdTerpilih`, `getAllStaf()`), dan dokumen teknis (kepatuhan mutlak `.agents/AGENTS.md`).
 2. **Wajib Nama "Evidence Command Center (ECC)"**: Seluruh judul halaman, logo topbar, header laporan, footer sistem, dan respons asisten **WAJIB** menyebut **Evidence Command Center (ECC)** atau **ECC** (bukan "Simonik").
 
 ---
@@ -67,9 +67,17 @@ Sistem menggunakan *Role-Based Access Control (RBAC)* dengan 10 varian peran akt
    - Dilengkapi fitur Izin Revisi (`bukaKunci`) oleh Atasan Langsung & Superadmin.
 3. **Rekap & Penilaian Kinerja (Evaluasi - `/penilaian-kinerja`)**:
    - Controller: `PenilaianKinerjaController.php`.
+   - **Kalender Heatmap Matriks Aktivitas**:
+     - 100% bebas emoji, matriks 7 kolom (Senin–Minggu).
+     - Dimensi sel: Desktop `min-height: 64px`, `border-radius: 8px`, `padding: 8px 10px`; Mobile `min-height: 48px`, `border-radius: 6px`.
+     - Footer Keterangan: Bento Capsule Bar (`height: 32px`), swatches `16px × 16px` (`border-radius: 4px`), Pill interaktif callout `height: 32px`.
+   - **Pop-up Modal Rincian Pekerjaan (`#modalDetailLogTanggal`)**:
+     - Header icon `40px × 40px`, tombol navigasi tanggal (`<` `>`) `width: 32px; height: 32px;`, banner info tanggal bersih tanpa label redundan "Tanggal Terpilih" dan "Hari Reguler" (badge cerdas hanya muncul untuk Libur Nasional dan Akhir Pekan), tabel `.table-bento` `padding: 12px 16px` dengan batas `max-height: 440px`.
+   - **Keamanan & Ownership Validation**:
+     - Penutupan celah IDOR kepemilikan tugas tambahan pada `store()`.
    - **Prasyarat Penilaian**: Atasan Langsung HANYA DAPAT memberi nilai jika seluruh target kinerja bulanan staf pada periode terkait sudah berstatus `disetujui`.
-   - **Standar Predikat Kinerja**: Sangat Baik (`>100% - 150%`), Baik (`>=90% - 100%`), Butuh Perbaikan (`>75% - <90%`), Kurang (`>25% - 75%`), Sangat Kurang (`<=25%`), Belum Dinilai (`0%` atau RHK dinilai = 0).
-   - **Mekanisme Reset**: Tombol Reset Nilai langsung mengosongkan nilai (`nilai_capaian = NULL`) dan menyetel flag `status_penilaian = NULL` di database (seperti belum pernah dinilai), serta mencatat audit log `RESET_PENILAIAN_KINERJA`.
+   - **Standar Predikat Kinerja**: Sangat Baik (`>100% - 150%`), Baik (`>90% - 100%`), Butuh Perbaikan (`>75% - 90%`), Kurang (`>25% - 75%`), Sangat Kurang (`<=25%`), Belum Dinilai (`0%` atau RHK dinilai = 0 / NULL).
+   - **Mekanisme Reset**: Tombol Reset Nilai mengosongkan nilai (`nilai_capaian = NULL`) dan menyetel flag `status_penilaian = NULL` di database (kembali ke status "Belum Dinilai"), serta mencatat audit log `RESET_PENILAIAN_KINERJA`.
 
 ### B. Modul Kepegawaian (`/kepegawaian`):
 Menu tree Kepegawaian di sidebar memiliki 2 submodul terpadu untuk Tim Kepegawaian, Pimpinan, dan Manajemen:
@@ -77,7 +85,7 @@ Menu tree Kepegawaian di sidebar memiliki 2 submodul terpadu untuk Tim Kepegawai
    - Controller: `app/Controllers/Kepegawaian/MonitoringTargetController.php`.
    - Pemantauan status hulu penyusunan dan persetujuan target seluruh pegawai (Sudah Mengirim, Draf, Belum Mengisi, Sudah Disetujui, Menunggu Persetujuan).
    - Dialog Modal Rincian Target (Zero-Reload AJAX).
-   - Ekspor Excel Multi-Sheet numerik murni & PDF Landscape kedinasan.
+   - Ekspor Excel Multi-Sheet numerik murni & PDF Landscape kedinasan dengan penanganan mode "Sepanjang Tahun" (`nama_bulan`).
 2. **Monitoring Penilaian Kinerja (`/kepegawaian` & `/kepegawaian/monitoring-penilaian`)**:
    - Controller: `app/Controllers/Kepegawaian/DashboardKepegawaian.php`.
    - Mengagregasi capaian riil kinerja vs target, skor kualitas/disiplin, dan status terbit SKP.
@@ -91,7 +99,7 @@ Menu tree Kepegawaian di sidebar memiliki 2 submodul terpadu untuk Tim Kepegawai
 
 ### C. Log Keamanan Aktivitas (Audit Trail - `/admin/audit-logs`):
 - Helper: `app/Helpers/audit_helper.php` (`log_audit()`).
-- Mencatat mutasi data krusial (`CREATE`, `UPDATE`, `DELETE`, `LOGIN`, `LOGOUT`, `APPROVE`, `UNLOCK_LAPORAN`, `CANCEL_APPROVE_TARGET`, `EXPORT_EXCEL_KEPEGAWAIAN`, `EXPORT_PDF_KEPEGAWAIAN`) lengkap dengan rekaman JSON *before-after*, IP address, dan User Agent.
+- Mencatat mutasi data krusial (`CREATE`, `UPDATE`, `DELETE`, `LOGIN`, `LOGOUT`, `APPROVE`, `UNLOCK_LAPORAN`, `CANCEL_APPROVE_TARGET`, `RESET_PENILAIAN_KINERJA`, `EXPORT_EXCEL_KEPEGAWAIAN`, `EXPORT_PDF_KEPEGAWAIAN`) lengkap dengan rekaman JSON *before-after*, IP address, dan User Agent.
 
 ### D. Mode Pemeliharaan Mandiri (Maintenance Mode - `/settings`):
 - Filter: `app/Filters/MaintenanceFilter.php`.
@@ -116,5 +124,5 @@ Menu tree Kepegawaian di sidebar memiliki 2 submodul terpadu untuk Tim Kepegawai
 
 ## 9. Status Graphify Knowledge Graph
 - Korpus Terindeks: 662 berkas (~1.119.885 kata).
-- Simpul & Relasi: 7.334 nodes, 17.633 edges, 393 communities.
+- Simpul & Relasi: 7.350 nodes, 17.589 edges, 397 communities.
 - Berkas Artefak: `graphify-out/graph.json`, `graphify-out/graph.html`, dan `graphify-out/GRAPH_REPORT.md`.

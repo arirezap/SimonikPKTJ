@@ -364,7 +364,7 @@
                         <div class="alert alert-info mb-3 shadow-sm py-2.5 px-3 border border-info-subtle small rounded-4 d-flex align-items-center gap-2">
                             <i class="bi bi-hourglass-split fs-5 text-primary flex-shrink-0"></i>
                             <div>
-                                <strong>Menunggu Persetujuan.</strong> Target kinerja telah dikirim ke atasan langsung dan menunggu persetujuan.
+                                <strong>Menunggu Persetujuan.</strong> Target kinerja telah dikirim ke atasan langsung. Anda masih dapat mengedit atau menambah target sebelum disetujui oleh atasan.
                             </div>
                         </div>
                     <?php endif; ?>
@@ -464,6 +464,8 @@
                             <button type="submit" class="btn btn-success btn-tactile rounded-pill shadow-sm px-4 py-2 fw-bold">
                                 <?php if ($isDirektur): ?>
                                     <i class="bi bi-check-circle me-1.5"></i> Simpan Target
+                                <?php elseif ($hasTerkirim && !$hasDraft): ?>
+                                    <i class="bi bi-arrow-repeat me-1.5"></i> Perbarui & Ajukan Ulang
                                 <?php else: ?>
                                     <i class="bi bi-send me-1.5"></i> Ajukan Target
                                 <?php endif; ?>
@@ -1137,16 +1139,23 @@
             e.preventDefault();
 
             const isDirektur = <?= (session()->get('role') === 'direktur') ? 'true' : 'false' ?>;
-            const confirmTitle = isDirektur ? 'Simpan Target Kinerja?' : 'Ajukan Target Kinerja?';
+            const isAlreadySubmitted = <?= ($hasTerkirim && !$hasDraft && !$isDirektur) ? 'true' : 'false' ?>;
+            const confirmTitle = isDirektur ? 'Simpan Target Kinerja?' : (isAlreadySubmitted ? 'Perbarui & Ajukan Ulang?' : 'Ajukan Target Kinerja?');
             const confirmHtml = isDirektur 
                 ? `Rincian target kinerja untuk periode <strong><?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?></strong> akan langsung disimpan dan disetujui.`
-                : `Rincian target kinerja untuk periode <strong><?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?></strong> akan diajukan ke atasan langsung untuk diperiksa dan disetujui.`;
+                : (isAlreadySubmitted
+                    ? `Perubahan rincian target kinerja periode <strong><?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?></strong> akan diperbarui dan diajukan ulang ke atasan langsung.`
+                    : `Rincian target kinerja untuk periode <strong><?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?></strong> akan diajukan ke atasan langsung untuk diperiksa dan disetujui.`);
             const confirmBtnText = isDirektur 
                 ? '<i class="bi bi-check-circle-fill me-1"></i> Ya, Simpan Sekarang' 
-                : '<i class="bi bi-send-fill me-1"></i> Ya, Ajukan Sekarang';
+                : (isAlreadySubmitted
+                    ? '<i class="bi bi-arrow-repeat me-1"></i> Ya, Perbarui & Ajukan'
+                    : '<i class="bi bi-send-fill me-1"></i> Ya, Ajukan Sekarang');
             const loadingText = isDirektur
                 ? '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menyimpan...'
-                : '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Mengajukan...';
+                : (isAlreadySubmitted
+                    ? '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Memperbarui...'
+                    : '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Mengajukan...');
 
             if (typeof Swal !== 'undefined') {
                 Swal.fire({

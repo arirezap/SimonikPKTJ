@@ -53,11 +53,11 @@ To maintain absolute mathematical harmony, visual rhythm, and cognitive scannabi
 | Spacing Token | CSS Value | Rem Eq. | Multiplier | Standard Application in ECC |
 | :--- | :--- | :--- | :--- | :--- |
 | `--ecc-space-0-5` | `4px` | `0.25rem` | `0.5x` | Micro gaps, status dot offsets, mobile grid gap (`4px`), tag inner padding |
-| `--ecc-space-1` | `8px` | `0.5rem` | `1.0x` (Base) | Element gap, calendar day cell padding, calendar grid gap, header cell bottom padding |
+| `--ecc-space-1` | `8px` | `0.5rem` | `1.0x` (Base) | Element gap, calendar day cell padding, calendar grid gap (`8px`), header cell bottom padding |
 | `--ecc-space-1-5` | `12px` | `0.75rem` | `1.5x` | Table header/cell vertical padding, guidance banner vertical padding, modal title gap |
 | `--ecc-space-2` | `16px` | `1.0rem` | `2.0x` | Bento card mobile padding, filter toolbar padding, table horizontal padding, legend gaps |
 | `--ecc-space-3` | `24px` | `1.5rem` | `3.0x` | Bento card desktop padding (`p-3 p-md-4`), modal body padding, executive score card padding |
-| `--ecc-space-4` | `32px` | `2.0rem` | `4.0x` | Section header top margin (`mt-4`), page content bottom margin |
+| `--ecc-space-4` | `32px` | `2.0rem` | `4.0x` | Section header top margin (`mt-4`), page content bottom margin, legend capsule height (`32px`) |
 | `--ecc-space-5` | `40px` | `2.5rem` | `5.0x` | Primary form action button height, standard avatar box size, modal close button height |
 | `--ecc-space-6` | `48px` | `3.0rem` | `6.0x` | Mobile calendar day cell min-height, feature icon box size, primary FAB touch height |
 | `--ecc-space-8` | `64px` | `4.0rem` | `8.0x` | Desktop calendar day cell min-height, medium profile avatar container |
@@ -70,16 +70,19 @@ All graphical assets, icon containers, buttons, and interactive affordances must
 | :--- | :--- | :--- | :--- | :--- |
 | **Micro Status Dot** | `8px × 8px` | `50% (Circle)` | N/A | Online status, unread notification indicator |
 | **Heatmap Legend Swatch** | `16px × 16px` | `4px` (`rounded-1`) | Border `1px solid` | Activity intensity swatches on calendar footer |
+| **Heatmap Legend Bento Capsule** | Height `32px` | `50rem` (`pill`) | `4px 12px; gap: 10px;` | Cohesive background pill container for 5-tier swatches |
+| **Interactive Callout Hint** | Height `32px` | `50rem` (`pill`) | `4px 14px; gap: 8px;` | "Klik tanggal pada kalender untuk melihat rincian" |
 | **Compact Action Button** | Height `32px` | `50rem` (`pill`) | `4px 12px` | In-table Bukti links, Revisi triggers, compact filters |
-| **Form Control / Select** | Height `36px`–`40px` | `8px` (`rounded-3`) | `8px 12px` | Bulan/Tahun selects, number inputs, text fields |
+| **Form Control / Select2 Dropdown** | Height `36px`–`40px` | `8px` (`rounded-3`) | `8px 12px` | Bulan/Tahun selects, Select2 Staf, number inputs |
 | **Standard CTA Button** | Height `40px` | `50rem` (`pill`) | `8px 24px` | Simpan Draf, Simpan & Terbitkan, Reset Nilai |
 | **Modal Header Icon Box** | `40px × 40px` | `12px` (`rounded-3`) | Center flex | Header icons on detail modals (e.g. Calendar detail) |
+| **Modal Date Navigation Buttons** | `32px × 32px` | `8px` (`rounded-2`) | Center flex | Fast date navigation (`<` `>`) on detail modal |
 | **Feature Feature Icon** | `48px × 48px` | `16px` (`rounded-4`) | Center flex | KPI feature icons, Dashboard summary category icons |
 | **Profile Photo Avatar (SM)** | `40px × 40px` | `50% (Circle)` | Object-fit cover | Topbar profile menu, table inline user avatar |
 | **Profile Photo Avatar (MD)** | `64px × 64px` | `50% (Circle)` | Object-fit cover | Team management card, evaluation subordinate header |
 | **Profile Photo Avatar (LG)** | `80px × 80px` | `50% (Circle)` | Object-fit cover | Profile page focal avatar with floating camera badge |
-| **Calendar Day Cell (Desktop)**| Min-Height `64px` | `8px` (`rounded-2`) | `8px` | 7-column calendar activity heatmap matrix |
-| **Calendar Day Cell (Mobile)** | Min-Height `48px` | `6px` (`rounded-2`) | `4px` | Mobile calendar matrix on viewports $<576\text{px}$ |
+| **Calendar Day Cell (Desktop)**| Min-Height `64px` | `8px` (`rounded-2`) | `8px 10px; gap: 8px;` | 7-column calendar activity heatmap matrix |
+| **Calendar Day Cell (Mobile)** | Min-Height `48px` | `6px` (`rounded-2`) | `4px 6px; gap: 4px;` | Mobile calendar matrix on viewports $<576\text{px}$ |
 | **Sidebar Container (Desktop)**| Width `256px` | Border `1px solid` | `16px 8px 32px 8px` | Enterprise primary navigation sidebar |
 | **Sidebar Mini (Collapsed)**  | Width `72px` | Border `1px solid` | `16px 8px 24px 8px` | Compact icon-first sidebar mode |
 | **Sidebar Nav Link Item**      | Min-Height `40px` | `8px` (`rounded-3`) | `8px 12px` | Touch-friendly primary navigation link |
@@ -252,6 +255,18 @@ Coupled with HTTP no-cache headers in `main.php`:
 - **Real-Time Predikat Badge Pop (`.badge-predikat-pop`)**: `transform: scale(1.08)` and smooth transition during live scoring calculation for instantaneous qualitative feedback.
 - **Executive Score Card Transition (`.score-card-transition`)**: `transition: border-color 0.3s ease, color 0.3s ease, background-color 0.3s ease` providing continuous visual feedback when typing employee scores.
 - **Segmented Tab Cross-Fade (`.tab-content > .tab-pane`)**: `transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s` with `translateY(4px) -> translateY(0)` on active state.
+- **Activity Calendar Heatmap Matrix (100% Emoji-Free 8-Point Grid)**:
+  - **Desktop Day Cells**: `min-height: 64px;` ($8 \times 8\text{px}$), `padding: 8px 10px; border-radius: 8px;` grid `gap: 8px;`.
+  - **Mobile Day Cells**: `min-height: 48px;` ($6 \times 8\text{px}$), `padding: 4px 6px; border-radius: 6px;` grid `gap: 4px;`.
+  - **5-Tier Intensity Levels**: Level 0 (`#ffffff`), Level 1 (`#f0fdf4`), Level 2 (`#dcfce7`), Level 3 (`#22c55e`), Level 4 (`#15803d`).
+  - **Bento Capsule Legend Bar**: `height: 32px; padding: 4px 12px; border-radius: 50rem; gap: 10px; background: #f8fafc; border: 1px solid #e2e8f0;`, Swatches `16px × 16px` (`border-radius: 4px`).
+  - **Interactive Hint Callout**: `height: 32px; padding: 4px 14px; border-radius: 50rem; background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; font-size: 0.75rem; font-weight: 600;`.
+- **Pop-Up Modal Rincian Pekerjaan (`#modalDetailLogTanggal`)**:
+  - **Header Icon Box**: `40px × 40px`, `border-radius: 12px`, background `#0d6efd`, text white.
+  - **Date Navigation Buttons (`<` `>`)**: `width: 32px; height: 32px; border-radius: 8px;` with active tactile press response.
+  - **Clean Date Info Banner**: Pure minimal layout without redundant labels *"Tanggal Terpilih"* or *"Hari Reguler"*. Contextual pill badges only appear for National Holidays & Weekends.
+  - **Bento Table Container**: `padding: 12px 16px; max-height: 440px;` ($55 \times 8\text{px}$) with smooth custom scrollbar.
+  - **Action Footer Buttons**: Pill buttons (`height: 36px`).
 
 ### 7.5 Global Shell, Topbar, Footer & Notification Motion Tokens
 - **Compact Single-Line Navigation**: `--sidebar-width: 256px;` ($32 \times 8\text{px}$), `--sidebar-mini-width: 72px;` ($9 \times 8\text{px}$), `.sidebar .nav-link` font size `0.8125rem (13px)` with `white-space: nowrap;` and `text-overflow: ellipsis;` ensuring all navigation items (e.g. *"Rekap & Penilaian Kinerja"*, *"Target Kinerja Bulanan"*) strictly sit on **1 single line** in both normal and active states.
@@ -600,10 +615,3 @@ In compliance with modern enterprise web accessibility:
 ---
 
 *Evidence Command Center (ECC) Design System — Maintained for 100% visual consistency, ergonomic excellence, and enterprise-grade user experience.*
-
-
-
-
-
-
-
