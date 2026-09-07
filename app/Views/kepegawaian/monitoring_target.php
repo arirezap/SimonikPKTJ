@@ -659,12 +659,21 @@
                                     
                                     <!-- Pegawai & Jabatan (Hover Hint Link) -->
                                     <td>
-                                        <div class="d-flex align-items-center gap-2.5">
-                                            <?php if (!empty($user['foto'])): ?>
-                                                <img src="<?= base_url('uploads/foto_profil/' . $user['foto']) ?>" alt="Foto" class="object-fit-cover shadow-xs flex-shrink-0" width="40" height="40" style="border-radius: 12px;">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <?php
+                                                $fotoUser = $user['foto'] ?? '';
+                                                $fotoPathTgt = !empty($fotoUser) ? 'assets/uploads/profile/' . $fotoUser : '';
+                                                $hasPhotoTgt = (!empty($fotoPathTgt) && file_exists(FCPATH . $fotoPathTgt));
+                                                $initialTgt = strtoupper(substr(trim($user['nama_lengkap'] ?? 'P'), 0, 1));
+                                            ?>
+                                            <?php if ($hasPhotoTgt): ?>
+                                                <img src="<?= base_url($fotoPathTgt) ?>" alt="<?= esc($user['nama_lengkap']) ?>" class="object-fit-cover shadow-xs flex-shrink-0" width="40" height="40" style="border-radius: 12px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                <div class="bg-primary-subtle text-primary fw-bold align-items-center justify-content-center flex-shrink-0 shadow-xs" style="display: none; width: 40px; height: 40px; border-radius: 12px; font-size: 0.875rem;">
+                                                    <?= $initialTgt ?>
+                                                </div>
                                             <?php else: ?>
                                                 <div class="bg-primary-subtle text-primary fw-bold d-flex align-items-center justify-content-center flex-shrink-0 shadow-xs" style="width: 40px; height: 40px; border-radius: 12px; font-size: 0.875rem;">
-                                                    <?= strtoupper(substr($user['nama_lengkap'], 0, 1)) ?>
+                                                    <?= $initialTgt ?>
                                                 </div>
                                             <?php endif; ?>
                                             <div class="lh-sm flex-grow-1">
@@ -808,12 +817,21 @@
                                 </span>
                             </div>
 
-                            <div class="d-flex align-items-center gap-2.5 mb-2.5">
-                                <?php if (!empty($user['foto'])): ?>
-                                    <img src="<?= base_url('uploads/foto_profil/' . $user['foto']) ?>" alt="Foto" class="object-fit-cover shadow-xs flex-shrink-0" width="40" height="40" style="border-radius: 12px;">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <?php
+                                    $fotoUserMob = $user['foto'] ?? '';
+                                    $fotoPathTgtMob = !empty($fotoUserMob) ? 'assets/uploads/profile/' . $fotoUserMob : '';
+                                    $hasPhotoTgtMob = (!empty($fotoPathTgtMob) && file_exists(FCPATH . $fotoPathTgtMob));
+                                    $initialTgtMob = strtoupper(substr(trim($user['nama_lengkap'] ?? 'P'), 0, 1));
+                                ?>
+                                <?php if ($hasPhotoTgtMob): ?>
+                                    <img src="<?= base_url($fotoPathTgtMob) ?>" alt="<?= esc($user['nama_lengkap']) ?>" class="object-fit-cover shadow-xs flex-shrink-0" width="40" height="40" style="border-radius: 12px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <div class="bg-primary-subtle text-primary fw-bold align-items-center justify-content-center flex-shrink-0 shadow-xs" style="display: none; width: 40px; height: 40px; border-radius: 12px; font-size: 0.95rem;">
+                                        <?= $initialTgtMob ?>
+                                    </div>
                                 <?php else: ?>
                                     <div class="bg-primary-subtle text-primary fw-bold d-flex align-items-center justify-content-center flex-shrink-0 shadow-xs" style="width: 40px; height: 40px; border-radius: 12px; font-size: 0.95rem;">
-                                        <?= strtoupper(substr($user['nama_lengkap'], 0, 1)) ?>
+                                        <?= $initialTgtMob ?>
                                     </div>
                                 <?php endif; ?>
                                 <div class="lh-sm flex-grow-1">
@@ -865,7 +883,7 @@
             
             <!-- Modal Header -->
             <div class="modal-header bg-light border-bottom px-3 px-md-4 py-3">
-                <div class="d-flex align-items-center gap-2.5">
+                <div class="d-flex align-items-center gap-3">
                     <div class="bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0 shadow-xs" style="width: 40px; height: 40px; border-radius: 12px;">
                         <i class="bi bi-card-checklist fs-5"></i>
                     </div>
@@ -1181,10 +1199,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Avatar
                 const avatarContainer = document.getElementById('modalUserAvatarContainer');
+                const initial = (data.user.nama_lengkap || 'P').charAt(0).toUpperCase();
                 if (data.user.foto) {
-                    avatarContainer.innerHTML = `<img src="${data.user.foto}" alt="Foto" class="object-fit-cover shadow-xs" width="48" height="48" style="border-radius: 14px;">`;
+                    avatarContainer.innerHTML = `
+                        <img src="${data.user.foto}" alt="Foto" class="object-fit-cover shadow-xs" width="48" height="48" style="border-radius: 14px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="bg-primary-subtle text-primary fw-bold align-items-center justify-content-center shadow-xs" style="display: none; width: 48px; height: 48px; border-radius: 14px; font-size: 1.1rem;">${initial}</div>
+                    `;
                 } else {
-                    const initial = data.user.nama_lengkap.charAt(0).toUpperCase();
                     avatarContainer.innerHTML = `<div class="bg-primary-subtle text-primary fw-bold d-flex align-items-center justify-content-center shadow-xs" style="width: 48px; height: 48px; border-radius: 14px; font-size: 1.1rem;">${initial}</div>`;
                 }
 

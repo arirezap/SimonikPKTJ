@@ -32,12 +32,6 @@ if (!function_exists('render_user_avatar')) {
         $fotoPath = !empty($fotoName) ? 'assets/uploads/profile/' . $fotoName : '';
         $hasPhoto = (!empty($fotoPath) && file_exists(FCPATH . $fotoPath));
 
-        if ($hasPhoto) {
-            $imgUrl = base_url($fotoPath);
-            $escNama = esc($namaLengkap);
-            return '<img src="' . $imgUrl . '" class="avatar-circle-sm rounded-circle border shadow-sm me-2 ' . esc($extraClass) . '" style="width: ' . $size . 'px; height: ' . $size . 'px; object-fit: cover; flex-shrink: 0;" alt="' . $escNama . '">';
-        }
-
         $initials = 'P';
         if (!empty(trim($namaLengkap))) {
             $words = explode(' ', trim($namaLengkap));
@@ -49,6 +43,14 @@ if (!function_exists('render_user_avatar')) {
         }
 
         $fontSizePx = max(10, round($size * 0.4));
+
+        if ($hasPhoto) {
+            $imgUrl = base_url($fotoPath);
+            $escNama = esc($namaLengkap);
+            return '<img src="' . $imgUrl . '" class="avatar-circle-sm rounded-circle border shadow-sm me-2 ' . esc($extraClass) . '" style="width: ' . $size . 'px; height: ' . $size . 'px; object-fit: cover; flex-shrink: 0;" alt="' . $escNama . '" onerror="this.style.display=\'none\'; if(this.nextElementSibling){this.nextElementSibling.style.display=\'flex\';}">' .
+                   '<div class="avatar-circle-sm me-2 bg-primary-subtle text-primary fw-bold align-items-center justify-content-center rounded-circle ' . esc($extraClass) . '" style="display: none; width: ' . $size . 'px; height: ' . $size . 'px; font-size: ' . $fontSizePx . 'px; flex-shrink: 0;">' . $initials . '</div>';
+        }
+
         return '<div class="avatar-circle-sm me-2 bg-primary-subtle text-primary fw-bold d-flex align-items-center justify-content-center rounded-circle ' . esc($extraClass) . '" style="width: ' . $size . 'px; height: ' . $size . 'px; font-size: ' . $fontSizePx . 'px; flex-shrink: 0;">' . $initials . '</div>';
     }
 }

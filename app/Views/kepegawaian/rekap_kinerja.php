@@ -665,12 +665,21 @@
 
                                     <!-- Pegawai & Jabatan -->
                                     <td>
-                                        <div class="d-flex align-items-center gap-2.5">
-                                            <?php if (!empty($item['pegawai']['foto'])): ?>
-                                                <img src="<?= base_url('uploads/foto_profil/' . $item['pegawai']['foto']) ?>" alt="Foto" class="rounded-circle object-fit-cover shadow-sm flex-shrink-0" width="38" height="38">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <?php
+                                                $fotoPegawai = $item['pegawai']['foto'] ?? '';
+                                                $fotoPath = !empty($fotoPegawai) ? 'assets/uploads/profile/' . $fotoPegawai : '';
+                                                $hasPhoto = (!empty($fotoPath) && file_exists(FCPATH . $fotoPath));
+                                                $initial = strtoupper(substr(trim($item['pegawai']['nama_lengkap'] ?? 'P'), 0, 1));
+                                            ?>
+                                            <?php if ($hasPhoto): ?>
+                                                <img src="<?= base_url($fotoPath) ?>" alt="<?= esc($item['pegawai']['nama_lengkap']) ?>" class="rounded-circle object-fit-cover shadow-sm flex-shrink-0" width="40" height="40" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                <div class="rounded-circle bg-primary-subtle text-primary fw-bold align-items-center justify-content-center flex-shrink-0 shadow-sm" style="display: none; width: 40px; height: 40px; font-size: 0.95rem;">
+                                                    <?= $initial ?>
+                                                </div>
                                             <?php else: ?>
-                                                <div class="rounded-circle bg-primary-subtle text-primary fw-bold d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 38px; height: 38px; font-size: 0.9rem;">
-                                                    <?= strtoupper(substr($item['pegawai']['nama_lengkap'], 0, 1)) ?>
+                                                <div class="rounded-circle bg-primary-subtle text-primary fw-bold d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 40px; height: 40px; font-size: 0.95rem;">
+                                                    <?= $initial ?>
                                                 </div>
                                             <?php endif; ?>
                                             <div class="lh-sm" style="min-width: 0;">
@@ -839,12 +848,21 @@
                                     </span>
                                 </div>
 
-                                <div class="d-flex align-items-center gap-2.5 mb-2.5">
-                                    <?php if (!empty($item['pegawai']['foto'])): ?>
-                                        <img src="<?= base_url('uploads/foto_profil/' . $item['pegawai']['foto']) ?>" alt="Foto" class="rounded-circle object-fit-cover shadow-sm flex-shrink-0" width="40" height="40">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <?php
+                                        $fotoPegawaiMob = $item['pegawai']['foto'] ?? '';
+                                        $fotoPathMob = !empty($fotoPegawaiMob) ? 'assets/uploads/profile/' . $fotoPegawaiMob : '';
+                                        $hasPhotoMob = (!empty($fotoPathMob) && file_exists(FCPATH . $fotoPathMob));
+                                        $initialMob = strtoupper(substr(trim($item['pegawai']['nama_lengkap'] ?? 'P'), 0, 1));
+                                    ?>
+                                    <?php if ($hasPhotoMob): ?>
+                                        <img src="<?= base_url($fotoPathMob) ?>" alt="<?= esc($item['pegawai']['nama_lengkap']) ?>" class="rounded-circle object-fit-cover shadow-sm flex-shrink-0" width="40" height="40" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                        <div class="rounded-circle bg-primary-subtle text-primary fw-bold align-items-center justify-content-center flex-shrink-0 shadow-sm" style="display: none; width: 40px; height: 40px; font-size: 0.95rem;">
+                                            <?= $initialMob ?>
+                                        </div>
                                     <?php else: ?>
                                         <div class="rounded-circle bg-primary-subtle text-primary fw-bold d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 40px; height: 40px; font-size: 0.95rem;">
-                                            <?= strtoupper(substr($item['pegawai']['nama_lengkap'], 0, 1)) ?>
+                                            <?= $initialMob ?>
                                         </div>
                                     <?php endif; ?>
                                     <div class="lh-sm flex-grow-1" style="min-width: 0;">

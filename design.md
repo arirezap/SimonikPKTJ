@@ -615,4 +615,28 @@ In compliance with modern enterprise web accessibility:
 
 ---
 
+## 18. ✍️ Standar Bahasa, Notifikasi & Mikro-Kopi (Simplicity, Tone & Microcopy Standards)
+
+Seluruh komponen teks antarmuka ECC wajib mematuhi standar komunikasi sederhana, singkat, padat, jelas, ramah pengguna, dan **100% bebas dari istilah teknis**:
+
+1. **Prinsip Utama**:
+   - Teks antarmuka bukan tempat menampilkan proses teknis database atau server.
+   - Sampaikan pesan yang fokus pada status data dan tindakan yang perlu dilakukan pengguna.
+2. **Larangan Istilah Teknis**:
+   - Dilarang keras memunculkan kata: *"database"*, *"basis data"*, *"server"*, *"jaringan"*, *"SQL"*, *"query"*, *"+ toleransi X hari"*, *"exception"*, *"permanen"*, *"full table scan"*, atau kode error internal.
+   - Alternatif pesan ramah pengguna:
+     - ❌ *"Gagal mengirim laporan harian karena gangguan basis data."* $\rightarrow$ ✅ *"Gagal mengirim laporan. Silakan coba lagi."*
+     - ❌ *"Pengisian laporan periode Agustus 2026 ditutup sejak 05 September (Batas akhir + toleransi 5 hari)."* $\rightarrow$ ✅ *"Pengisian laporan periode Agustus 2026 telah ditutup sejak 05 September 2026."*
+     - ❌ *"Silakan isi minimal satu kegiatan pada Tugas Pokok atau Tugas Tambahan sebelum mengirim ke atasan."* $\rightarrow$ ✅ *"Isi minimal 1 kegiatan pokok atau tugas tambahan."*
+3. **Standar Dialog Konfirmasi & SweetAlert2**:
+   - **Judul Dialog**: Cukup 2–4 kata (*"Hapus Kegiatan?"*, *"Hapus Tugas Tambahan?"*, *"Kirim Laporan?"*).
+   - **Teks Dialog**: 1 kalimat pendek dan tenang (*"Kegiatan ini akan dihapus."*, bukan *"Apakah Anda yakin ingin menghapus catatan kegiatan ini?"*).
+   - **Tombol Aksi**: Kata kerja singkat dan tegas (*"Ya, Hapus"*, *"Kirim"*, *"Batal"*).
+   - **Umpan Balik Sukses**: Judul *"Terhapus"* / *"Tersimpan"*, teks *"Kegiatan berhasil dihapus."* / *"Draf berhasil disimpan."*
+4. **Kepatuhan Baku Istilah & Identitas**:
+   - Wajib mutlak menggunakan istilah resmi **"staf"** (tidak boleh menggunakan "bawahan" atau "staff").
+   - Wajib mutlak menggunakan nama resmi **"Evidence Command Center (ECC)"** (tidak boleh menggunakan nama lama).
+
+---
+
 *Evidence Command Center (ECC) Design System — Maintained for 100% visual consistency, ergonomic excellence, and enterprise-grade user experience.*

@@ -2013,3 +2013,14 @@ body.login-page {
         transform: none !important;
     }
 }
+
+/* ==========================================================================
+   8-Point Grid Spacing Failsafe Utilities (Strict Spacing Scale)
+   Memastikan layout tetap proporsional dan tidak menempel pada class desimal
+   ========================================================================== */
+.gap-12px { gap: 12px !important; }
+.gap-16px { gap: 16px !important; }
+.gap-2\.5 { gap: 16px !important; }
+.mb-2\.5 { margin-bottom: 16px !important; }
+.px-2\.5 { padding-left: 10px !important; padding-right: 10px !important; }
+.py-2\.5 { padding-top: 10px !important; padding-bottom: 10px !important; }

@@ -900,8 +900,8 @@
                                 if (typeof Swal !== 'undefined') {
                                     Swal.fire({
                                         icon: 'success',
-                                        title: 'Target Terhapus',
-                                        text: response.message || 'Target RHK berhasil dihapus.',
+                                        title: 'Terhapus',
+                                        text: response.message || 'Target berhasil dihapus.',
                                         timer: (response.affected_logs && response.affected_logs > 0) ? 3500 : 1500,
                                         showConfirmButton: (response.affected_logs && response.affected_logs > 0)
                                     });
@@ -927,13 +927,13 @@
 
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
-                        title: 'Hapus Target Bulanan?',
-                        html: '<p class="mb-2">Target RHK ini akan dihapus dari sistem.</p><p class="small text-muted mb-0"><i class="bi bi-info-circle text-primary me-1"></i> Jika target ini pernah digunakan pada laporan harian, pilihan target kegiatan tersebut akan dikosongkan dan statusnya kembali menjadi <strong>Draf</strong> agar targetnya dapat disesuaikan kembali.</p>',
+                        title: 'Hapus Target?',
+                        html: 'Target ini akan dihapus. Laporan harian terkait akan kembali menjadi Draf.',
                         icon: 'warning',
                         showCancelButton: true,
                         confirmButtonColor: '#dc3545',
                         cancelButtonColor: '#6c757d',
-                        confirmButtonText: '<i class="bi bi-trash3-fill me-1"></i> Ya, Hapus Target',
+                        confirmButtonText: 'Ya, Hapus',
                         cancelButtonText: 'Batal'
                     }).then((result) => {
                         if (result.isConfirmed) {
@@ -941,7 +941,7 @@
                         }
                     });
                 } else {
-                    if (confirm('Hapus target bulanan ini?\n\nJika target ini pernah digunakan pada laporan harian, status laporan tersebut akan kembali menjadi draf.')) {
+                    if (confirm('Target ini akan dihapus. Laporan harian terkait akan kembali menjadi Draf.')) {
                         doDelete();
                     }
                 }
@@ -1089,18 +1089,18 @@
             if (!hasAtLeastOne) {
                 e.preventDefault();
                 if (typeof Swal !== 'undefined') {
-                    Swal.fire('Target Kosong', 'Silakan isi minimal satu rincian target kinerja sebelum mengajukan ke atasan.', 'warning');
+                    Swal.fire('Target Kosong', 'Isi minimal 1 target kinerja.', 'warning');
                 } else {
-                    alert('Silakan isi minimal satu rincian target kinerja sebelum mengajukan ke atasan.');
+                    alert('Isi minimal 1 target kinerja.');
                 }
                 return false;
             }
 
             if (!isTargetPositive) {
                 e.preventDefault();
-                let errMsg = invalidRow ? `Nilai Target Bulanan pada Baris ke-${invalidRow} harus lebih besar dari 0 (tidak boleh 0 atau negatif).` : 'Nilai Target Bulanan harus lebih besar dari 0 (tidak boleh 0 atau negatif).';
+                let errMsg = invalidRow ? `Baris ${invalidRow}: Target harus lebih dari 0.` : 'Target harus lebih dari 0.';
                 if (typeof Swal !== 'undefined') {
-                    Swal.fire('Nilai Target Tidak Valid', errMsg, 'warning');
+                    Swal.fire('Target Tidak Sesuai', errMsg, 'warning');
                 } else {
                     alert(errMsg);
                 }
@@ -1110,9 +1110,9 @@
             if (!isValid) {
                 e.preventDefault();
                 if (typeof Swal !== 'undefined') {
-                    Swal.fire('Data Belum Lengkap', 'Pastikan semua kolom (Sasaran, Indikator, Target, Satuan) terisi dengan benar sebelum diajukan.', 'warning');
+                    Swal.fire('Data Belum Lengkap', 'Lengkapi seluruh kolom sasaran, indikator, target, dan satuan.', 'warning');
                 } else {
-                    alert('Pastikan semua kolom (Sasaran, Indikator, Target, Satuan) terisi dengan benar sebelum diajukan.');
+                    alert('Lengkapi seluruh kolom sasaran, indikator, target, dan satuan.');
                 }
                 return false;
             }
@@ -1140,17 +1140,17 @@
 
             const isDirektur = <?= (session()->get('role') === 'direktur') ? 'true' : 'false' ?>;
             const isAlreadySubmitted = <?= ($hasTerkirim && !$hasDraft && !$isDirektur) ? 'true' : 'false' ?>;
-            const confirmTitle = isDirektur ? 'Simpan Target Kinerja?' : (isAlreadySubmitted ? 'Perbarui & Ajukan Ulang?' : 'Ajukan Target Kinerja?');
+            const confirmTitle = isDirektur ? 'Simpan Target?' : (isAlreadySubmitted ? 'Ajukan Ulang Target?' : 'Ajukan Target?');
             const confirmHtml = isDirektur 
-                ? `Rincian target kinerja untuk periode <strong><?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?></strong> akan langsung disimpan dan disetujui.`
+                ? `Target periode <strong><?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?></strong> akan disimpan dan disetujui.`
                 : (isAlreadySubmitted
-                    ? `Perubahan rincian target kinerja periode <strong><?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?></strong> akan diperbarui dan diajukan ulang ke atasan langsung.`
-                    : `Rincian target kinerja untuk periode <strong><?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?></strong> akan diajukan ke atasan langsung untuk diperiksa dan disetujui.`);
+                    ? `Target periode <strong><?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?></strong> akan diajukan ulang ke atasan.`
+                    : `Target periode <strong><?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?></strong> akan diajukan ke atasan.`);
             const confirmBtnText = isDirektur 
-                ? '<i class="bi bi-check-circle-fill me-1"></i> Ya, Simpan Sekarang' 
+                ? 'Simpan' 
                 : (isAlreadySubmitted
-                    ? '<i class="bi bi-arrow-repeat me-1"></i> Ya, Perbarui & Ajukan'
-                    : '<i class="bi bi-send-fill me-1"></i> Ya, Ajukan Sekarang');
+                    ? 'Ajukan Ulang'
+                    : 'Ajukan');
             const loadingText = isDirektur
                 ? '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menyimpan...'
                 : (isAlreadySubmitted
@@ -1166,7 +1166,7 @@
                     confirmButtonColor: '#198754',
                     cancelButtonColor: '#6c757d',
                     confirmButtonText: confirmBtnText,
-                    cancelButtonText: 'Periksa Kembali',
+                    cancelButtonText: 'Batal',
                     reverseButtons: true
                 }).then((result) => {
                     if (result.isConfirmed) {
@@ -1180,7 +1180,7 @@
                     }
                 });
             } else {
-                const promptMsg = isDirektur ? 'Simpan target kinerja bulanan ini?' : 'Ajukan target kinerja bulanan ini ke atasan langsung?';
+                const promptMsg = isDirektur ? 'Simpan target kinerja bulanan ini?' : 'Ajukan target kinerja bulanan ini ke atasan?';
                 if (confirm(promptMsg)) {
                     isTargetSubmitConfirmed = true;
                     const submitBtn = formEl.find('button[type="submit"]');
@@ -1277,9 +1277,9 @@
                 error: function(xhr, status, error) {
                     console.error(error);
                     if (typeof Swal !== 'undefined') {
-                        Swal.fire('Error', 'Terjadi kesalahan jaringan atau server. Silakan coba lagi.', 'error');
+                        Swal.fire('Error', 'Gagal menyimpan. Silakan coba lagi.', 'error');
                     } else {
-                        alert('Terjadi kesalahan jaringan atau server. Silakan coba lagi.');
+                        alert('Gagal menyimpan. Silakan coba lagi.');
                     }
                     btn.html(originalText).prop('disabled', false);
                 }
@@ -1321,7 +1321,7 @@
                             if (typeof Swal !== 'undefined') {
                                 Swal.fire({
                                     icon: 'success',
-                                    title: 'Berhasil!',
+                                    title: 'Berhasil',
                                     text: response.message,
                                     timer: 2500,
                                     showConfirmButton: false
@@ -1332,7 +1332,7 @@
                             }
                         } else {
                             if (typeof Swal !== 'undefined') {
-                                Swal.fire('Gagal!', response.message || 'Terjadi kesalahan.', 'error');
+                                Swal.fire('Gagal', response.message || 'Terjadi kesalahan.', 'error');
                             } else {
                                 alert('Gagal: ' + (response.message || 'Terjadi kesalahan.'));
                             }
@@ -1341,9 +1341,9 @@
                     error: function(xhr, status, error) {
                         console.error(xhr.responseText || error);
                         if (typeof Swal !== 'undefined') {
-                            Swal.fire('Error', 'Terjadi kesalahan jaringan atau server.', 'error');
+                            Swal.fire('Error', 'Gagal memproses data. Silakan coba lagi.', 'error');
                         } else {
-                            alert('Terjadi kesalahan jaringan atau server.');
+                            alert('Gagal memproses data. Silakan coba lagi.');
                         }
                     }
                 });
@@ -1351,13 +1351,13 @@
 
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
-                    title: 'Batalkan Persetujuan Target?',
-                    html: `Persetujuan target bulanan staf akan dibatalkan agar staf dapat merevisi target.`,
+                    title: 'Batalkan Persetujuan?',
+                    html: `Persetujuan target bulanan staf akan dibatalkan agar dapat direvisi.`,
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#dc3545',
                     cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="bi bi-x-circle-fill me-1"></i> Ya, Batalkan Persetujuan',
+                    confirmButtonText: 'Ya, Batalkan',
                     cancelButtonText: 'Batal'
                 }).then((result) => {
                     if (result.isConfirmed) {
@@ -1365,7 +1365,7 @@
                     }
                 });
             } else {
-                if (confirm('Batalkan persetujuan target bulanan ini?')) {
+                if (confirm('Batalkan persetujuan target bulanan staf ini?')) {
                     executeCancel();
                 }
             }
@@ -1518,23 +1518,23 @@
                             if (insertedCount > 0 && skippedDuplicates === 0) {
                                 Swal.fire({
                                     icon: 'success',
-                                    title: 'Target Berhasil Disalin!',
-                                    text: `${insertedCount} target dari ${response.nama_bulan_sumber} ${response.tahun_sumber} berhasil disalin ke tabel. Silakan sesuaikan angka target jika diperlukan, lalu simpan draf atau ajukan.`,
-                                    confirmButtonText: '<i class="bi bi-check2 me-1"></i> Siap, Periksa Target'
+                                    title: 'Target Disalin',
+                                    text: `${insertedCount} target berhasil disalin ke tabel.`,
+                                    confirmButtonText: 'Periksa Target'
                                 });
                             } else if (insertedCount > 0 && skippedDuplicates > 0) {
                                 Swal.fire({
                                     icon: 'info',
-                                    title: 'Target Berhasil Ditambahkan',
-                                    text: `${insertedCount} target baru berhasil ditambahkan (${skippedDuplicates} target dilewati karena sudah ada di tabel).`,
-                                    confirmButtonText: '<i class="bi bi-check2 me-1"></i> Mengerti'
+                                    title: 'Target Ditambahkan',
+                                    text: `${insertedCount} target ditambahkan (${skippedDuplicates} target dilewati karena sudah ada).`,
+                                    confirmButtonText: 'Mengerti'
                                 });
                             } else if (insertedCount === 0 && skippedDuplicates > 0) {
                                 Swal.fire({
                                     icon: 'warning',
-                                    title: 'Semua Target Sudah Ada',
-                                    text: `Seluruh ${skippedDuplicates} target dari ${response.nama_bulan_sumber} ${response.tahun_sumber} sudah ada di tabel saat ini (tidak ada baris duplikat yang ditambahkan).`,
-                                    confirmButtonText: '<i class="bi bi-check2 me-1"></i> Baik'
+                                    title: 'Target Sudah Ada',
+                                    text: `Semua ${skippedDuplicates} target sudah ada di tabel saat ini.`,
+                                    confirmButtonText: 'Baik'
                                 });
                             }
                         } else {
@@ -1546,7 +1546,7 @@
                         }
                     } else {
                         if (typeof Swal !== 'undefined') {
-                            Swal.fire('Gagal', response.message || 'Gagal memuat target dari periode tersebut.', 'error');
+                            Swal.fire('Gagal', response.message || 'Gagal memuat target.', 'error');
                         } else {
                             alert('Gagal: ' + (response.message || 'Terjadi kesalahan.'));
                         }
@@ -1556,9 +1556,9 @@
                     btn.html(originalText).prop('disabled', false);
                     console.error('Salin Target Error:', xhr.responseText || error);
                     if (typeof Swal !== 'undefined') {
-                        Swal.fire('Error', 'Terjadi kesalahan jaringan atau server saat mengambil data.', 'error');
+                        Swal.fire('Error', 'Gagal memuat target. Silakan coba lagi.', 'error');
                     } else {
-                        alert('Terjadi kesalahan jaringan atau server.');
+                        alert('Gagal memuat target. Silakan coba lagi.');
                     }
                 }
             });

@@ -69,42 +69,51 @@ class LogKegiatanController extends BaseController
         $logTambahanModel = new LogTugasTambahan();
         $rekapDataTambahan = $logTambahanModel->getLogByDate($userId, $tanggalTerpilih);
 
+        $today = date('Y-m-d');
+        $tomorrow = date('Y-m-d', strtotime('+1 day'));
+        $endOfMonth = date('Y-m-t', strtotime($today));
+        $maxAllowedDate = ($endOfMonth > $tomorrow) ? $endOfMonth : $tomorrow;
+
+        $isFutureDate = ($tanggalTerpilih > $today);
+        $isTomorrow = ($tanggalTerpilih === $tomorrow);
+
         $isLocked = false;
         $lockReason = '';
-        $today = date('Y-m-d');
 
-        // Aturan Khusus: Tanggal di masa depan DILARANG KERAS
-        if ($tanggalTerpilih > $today) {
+        // 1. Aturan Khusus: Tanggal di luar batas masa depan bulan berjalan DILARANG KERAS
+        if ($tanggalTerpilih > $maxAllowedDate) {
             $isLocked = true;
-            $lockReason = 'Tanggal kegiatan di masa depan tidak dapat diisi atau dilaporkan.';
-        } elseif ($targetStatus !== 'disetujui') {
-            $isLocked = true;
-            $lockReason = ($targetStatus === 'belum_ada') 
-                ? 'Target Kinerja Bulanan untuk bulan ini belum dibuat.' 
-                : 'Target Kinerja Bulanan untuk bulan ini belum disetujui atasan.';
+            $lockReason = 'Laporan kegiatan hanya dapat diisi untuk tanggal di bulan ini.';
         } else {
-            // Cek pembatasan deadline masa lalu (Kunci Akhir Bulan atau Toleransi Harian)
-            $lockCheck = $this->checkDateLockStatus($tanggalTerpilih, $currentUser);
+            // 2. Cek pembatasan deadline masa lalu / bulan sebelumnya dari Pengaturan Sistem Admin
+            $lockCheck = $this->checkDateLockStatus($tanggalTerpilih, $currentUser, $isFutureDate);
             if ($lockCheck['is_locked']) {
                 $isLocked = true;
                 $lockReason = $lockCheck['reason'];
-            }
-
-            if (!$isLocked && !empty($rekapData)) {
-                foreach ($rekapData as $row) {
-                    if (isset($row['status']) && $row['status'] === 'terkirim') {
-                        $isLocked = true;
-                        $lockReason = 'Laporan kegiatan pada tanggal ini telah dikirim ke atasan dan berada dalam status terkunci.';
-                        break;
+            } elseif ($targetStatus !== 'disetujui') {
+                // 3. Cek persetujuan target bulanan (pengguna harus sudah memiliki target yang disetujui)
+                $isLocked = true;
+                $lockReason = ($targetStatus === 'belum_ada') 
+                    ? 'Target Kinerja Bulanan untuk bulan ini belum dibuat.' 
+                    : 'Target Kinerja Bulanan untuk bulan ini belum disetujui atasan.';
+            } else {
+                // 4. Cek apakah laporan pada tanggal terpilih sudah pernah dikirim ke atasan
+                if (!empty($rekapData)) {
+                    foreach ($rekapData as $row) {
+                        if (isset($row['status']) && $row['status'] === 'terkirim') {
+                            $isLocked = true;
+                            $lockReason = 'Laporan tanggal ini sudah dikirim dan terkunci.';
+                            break;
+                        }
                     }
                 }
-            }
-            if (!$isLocked && !empty($rekapDataTambahan)) {
-                foreach ($rekapDataTambahan as $rowTmb) {
-                    if (isset($rowTmb['status']) && $rowTmb['status'] === 'terkirim') {
-                        $isLocked = true;
-                        $lockReason = 'Laporan tugas tambahan pada tanggal ini telah dikirim ke atasan dan berada dalam status terkunci.';
-                        break;
+                if (!$isLocked && !empty($rekapDataTambahan)) {
+                    foreach ($rekapDataTambahan as $rowTmb) {
+                        if (isset($rowTmb['status']) && $rowTmb['status'] === 'terkirim') {
+                            $isLocked = true;
+                            $lockReason = 'Laporan tugas tambahan tanggal ini sudah dikirim dan terkunci.';
+                            break;
+                        }
                     }
                 }
             }
@@ -162,6 +171,11 @@ class LogKegiatanController extends BaseController
         $data = [
             'title'               => 'Lapor Kegiatan Harian',
             'tanggal_terpilih'    => $tanggalTerpilih,
+            'today'               => $today,
+            'tomorrow'            => $tomorrow,
+            'max_future_date'     => $maxAllowedDate,
+            'is_future_date'      => $isFutureDate,
+            'is_tomorrow'         => $isTomorrow,
             'daftar_target'       => $daftarTarget,
             'rekap_data'          => $rekapData,
             'rekap_data_tambahan' => $rekapDataTambahan,
@@ -183,9 +197,12 @@ class LogKegiatanController extends BaseController
         $currentUser = $userModel->find($userId);
         $isDirektur = ($currentUser && $currentUser['role'] === 'direktur');
 
-        // 1. Cek apakah tanggal kegiatan terkunci oleh kebijakan batas waktu sistem
-        $lockCheck = $this->checkDateLockStatus($tanggal, $currentUser);
-        if ($lockCheck['is_locked'] && !hasRole('admin')) {
+        $isDraft = $this->request->isAJAX() || $this->request->getPost('action') === 'draft';
+        $status = $isDraft ? 'draft' : 'terkirim';
+
+        // 1. Cek apakah tanggal kegiatan terkunci oleh kebijakan batas waktu sistem (Pengaturan Admin & Masa Depan)
+        $lockCheck = $this->checkDateLockStatus($tanggal, $currentUser, $isDraft);
+        if ($lockCheck['is_locked']) {
             $msg = 'Gagal menyimpan: ' . $lockCheck['reason'];
             if ($this->request->isAJAX()) {
                 return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
@@ -207,24 +224,21 @@ class LogKegiatanController extends BaseController
 
         if (empty($allTargets)) {
             if ($this->request->isAJAX()) {
-                return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Anda belum membuat Target Kinerja Bulanan untuk bulan ini.', 'csrf_hash' => csrf_hash()]);
+                return $this->response->setJSON(['success' => false, 'message' => 'Target Kinerja Bulanan bulan ini belum dibuat.', 'csrf_hash' => csrf_hash()]);
             }
-            return redirect()->back()->with('error', 'Gagal menyimpan. Anda belum membuat Target Kinerja Bulanan untuk bulan ini.');
+            return redirect()->back()->with('error', 'Target Kinerja Bulanan bulan ini belum dibuat.');
         }
 
         if ($hasAtasan) {
             foreach ($allTargets as $t) {
                 if ($t['status_approval'] !== 'disetujui') {
                     if ($this->request->isAJAX()) {
-                        return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Target Kinerja Bulanan Anda untuk bulan ini belum disetujui oleh atasan langsung.', 'csrf_hash' => csrf_hash()]);
+                        return $this->response->setJSON(['success' => false, 'message' => 'Target Kinerja Bulanan bulan ini belum disetujui atasan.', 'csrf_hash' => csrf_hash()]);
                     }
-                    return redirect()->back()->with('error', 'Gagal menyimpan. Target Kinerja Bulanan Anda untuk bulan ini belum disetujui oleh atasan langsung.');
+                    return redirect()->back()->with('error', 'Target Kinerja Bulanan bulan ini belum disetujui atasan.');
                 }
             }
         }
-
-        $isDraft = $this->request->isAJAX() || $this->request->getPost('action') === 'draft';
-        $status = $isDraft ? 'draft' : 'terkirim';
 
         // Validation: Pastikan minimal ada 1 Tugas Pokok ATAU 1 Tugas Tambahan yang terisi
         $target_id_check = $this->request->getPost('target_id');
@@ -262,11 +276,11 @@ class LogKegiatanController extends BaseController
             if ($this->request->isAJAX()) {
                 return $this->response->setJSON([
                     'success' => false,
-                    'message' => 'Gagal menyimpan. Silakan isi minimal 1 Kegiatan Utama (Tugas Pokok) ATAU 1 Tugas Tambahan hari ini.',
+                    'message' => 'Isi minimal 1 kegiatan pokok atau tugas tambahan.',
                     'csrf_hash' => csrf_hash()
                 ]);
             }
-            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan. Silakan isi minimal 1 Kegiatan Utama (Tugas Pokok) ATAU 1 Tugas Tambahan hari ini.');
+            return redirect()->back()->withInput()->with('error', 'Isi minimal 1 kegiatan pokok atau tugas tambahan.');
         }
 
         // Pengecekan keamanan: Apakah laporan hari ini telah dikunci?
@@ -274,17 +288,17 @@ class LogKegiatanController extends BaseController
             foreach ($existingData as $row) {
                 if (isset($row['status']) && $row['status'] === 'terkirim') {
                     if ($this->request->isAJAX()) {
-                        return $this->response->setJSON(['success' => false, 'message' => 'Laporan hari ini telah dikunci.', 'csrf_hash' => csrf_hash()]);
+                        return $this->response->setJSON(['success' => false, 'message' => 'Laporan tanggal ini sudah dikunci.', 'csrf_hash' => csrf_hash()]);
                     }
-                    return redirect()->back()->with('error', 'Laporan hari ini telah dikunci dan tidak dapat diedit.');
+                    return redirect()->back()->with('error', 'Laporan tanggal ini sudah dikunci.');
                 }
             }
             foreach ($existingTambahanData as $rowTmb) {
                 if (isset($rowTmb['status']) && $rowTmb['status'] === 'terkirim') {
                     if ($this->request->isAJAX()) {
-                        return $this->response->setJSON(['success' => false, 'message' => 'Laporan hari ini telah dikunci.', 'csrf_hash' => csrf_hash()]);
+                        return $this->response->setJSON(['success' => false, 'message' => 'Laporan tanggal ini sudah dikunci.', 'csrf_hash' => csrf_hash()]);
                     }
-                    return redirect()->back()->with('error', 'Laporan hari ini telah dikunci dan tidak dapat diedit.');
+                    return redirect()->back()->with('error', 'Laporan tanggal ini sudah dikunci.');
                 }
             }
         }
@@ -322,30 +336,43 @@ class LogKegiatanController extends BaseController
 
             if ($db->transStatus() === false) {
                 try { @$db->transRollback(); } catch (\Throwable $t) {}
-                return redirect()->back()->with('error', 'Gagal mengirim laporan harian karena gangguan basis data.');
+                return redirect()->back()->with('error', 'Gagal mengirim laporan. Silakan coba lagi.');
             }
                      
             if ($currentUser && !empty($currentUser['atasan_id']) && $currentUser['role'] !== 'direktur') {
-                helper('notification');
-                send_notification(
-                    $currentUser['atasan_id'], 
-                    'Laporan Harian Baru', 
-                    $currentUser['nama_lengkap'] . " mengirimkan Laporan Harian untuk tanggal $tanggal.",
-                    site_url('penilaian-kinerja')
-                );
+                try {
+                    helper('notification');
+                    send_notification(
+                        $currentUser['atasan_id'], 
+                        'Laporan Harian Baru', 
+                        $currentUser['nama_lengkap'] . " mengirimkan Laporan Harian untuk tanggal $tanggal.",
+                        site_url('penilaian-kinerja')
+                    );
+                } catch (\Throwable $e) {
+                    log_message('error', '[LogKegiatanController::store:draft_to_sent:notification] ' . $e->getMessage() . ' | User: ' . $userId);
+                }
             }
             
-            return redirect()->to('/log-kegiatan')->with('success', 'Kegiatan harian berhasil dikirim.');
+            return redirect()->to('/log-kegiatan')->with('success', 'Laporan kegiatan berhasil dikirim.');
         }
 
-        $tanggalTerpilihObj = new \DateTime($tanggal);
-        $todayObj = new \DateTime(date('Y-m-d'));
-        
-        if ($tanggalTerpilihObj > $todayObj) {
+        $today = date('Y-m-d');
+        $endOfMonth = date('Y-m-t', strtotime($today));
+        $tomorrow = date('Y-m-d', strtotime('+1 day'));
+        $maxAllowedDate = ($endOfMonth > $tomorrow) ? $endOfMonth : $tomorrow;
+
+        if ($tanggal > $maxAllowedDate) {
+            $msg = 'Laporan kegiatan hanya dapat diisi untuk tanggal di bulan ini.';
             if ($this->request->isAJAX()) {
-                return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Tidak dapat melaporkan kegiatan untuk tanggal di masa depan.', 'csrf_hash' => csrf_hash()]);
+                return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
             }
-            return redirect()->back()->with('error', 'Gagal menyimpan. Anda tidak dapat melaporkan kegiatan untuk tanggal di masa depan.');
+            return redirect()->back()->with('error', $msg);
+        } elseif ($tanggal > $today && !$isDraft) {
+            $msg = 'Kegiatan tanggal mendatang hanya dapat disimpan sebagai draf.';
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+            }
+            return redirect()->back()->with('error', $msg);
         }
 
         // Fitur batas pelaporan masa lalu dihapus atas permintaan user
@@ -365,7 +392,7 @@ class LogKegiatanController extends BaseController
                 $checkPokokRows = $logModel->whereIn('id', $cleanLogIds)->findAll();
                 foreach ($checkPokokRows as $cRow) {
                     if ((int)$cRow['user_id'] !== (int)$userId || $cRow['tanggal_kegiatan'] !== $tanggal) {
-                        $msg = 'Akses ditolak. Terdapat data kegiatan harian yang tidak sesuai kepemilikan Anda.';
+                        $msg = 'Akses ditolak. Data kegiatan tidak sesuai akun Anda.';
                         if ($this->request->isAJAX()) {
                             return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
                         }
@@ -385,7 +412,7 @@ class LogKegiatanController extends BaseController
 
                 // Validasi IDOR Target RHK: pastikan target_id milik user
                 if (!in_array((int)$targetId, $validTargetIds, true)) {
-                    $msg = 'Akses ditolak. Target RHK yang dipilih tidak sesuai atau bukan milik Anda.';
+                    $msg = 'Akses ditolak. Target tidak sesuai akun Anda.';
                     if ($this->request->isAJAX()) {
                         return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
                     }
@@ -397,15 +424,15 @@ class LogKegiatanController extends BaseController
                 if ($capaianStr === '' || !is_numeric($capaianValNum) || (float)$capaianValNum <= 0) {
                     if (!$isDraft) {
                         if ($this->request->isAJAX()) {
-                            return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Pokok harus diisi angka lebih dari 0 (tidak boleh 0 atau bernilai negatif).', 'csrf_hash' => csrf_hash()]);
+                            return $this->response->setJSON(['success' => false, 'message' => 'Jumlah capaian harus lebih dari 0.', 'csrf_hash' => csrf_hash()]);
                         }
-                        return redirect()->back()->with('error', 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Pokok harus diisi angka lebih dari 0 (tidak boleh 0 atau bernilai negatif).');
+                        return redirect()->back()->with('error', 'Jumlah capaian harus lebih dari 0.');
                     }
                     if ($capaianStr !== '' && (float)$capaianValNum <= 0) {
                         if ($this->request->isAJAX()) {
-                            return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Pokok harus lebih besar dari 0 (tidak boleh 0 atau negatif).', 'csrf_hash' => csrf_hash()]);
+                            return $this->response->setJSON(['success' => false, 'message' => 'Jumlah capaian harus lebih dari 0.', 'csrf_hash' => csrf_hash()]);
                         }
-                        return redirect()->back()->with('error', 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Pokok harus lebih besar dari 0 (tidak boleh 0 atau negatif).');
+                        return redirect()->back()->with('error', 'Jumlah capaian harus lebih dari 0.');
                     }
                     $capaianValNum = null;
                 }
@@ -455,7 +482,7 @@ class LogKegiatanController extends BaseController
                 $checkTmbRows = $logTambahanModel->whereIn('id', $cleanTambahanIds)->findAll();
                 foreach ($checkTmbRows as $cTmb) {
                     if ((int)$cTmb['user_id'] !== (int)$userId || $cTmb['tanggal_kegiatan'] !== $tanggal) {
-                        $msg = 'Akses ditolak. Terdapat data tugas tambahan yang tidak sesuai kepemilikan Anda.';
+                        $msg = 'Akses ditolak. Data tugas tambahan tidak sesuai akun Anda.';
                         if ($this->request->isAJAX()) {
                             return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
                         }
@@ -485,15 +512,15 @@ class LogKegiatanController extends BaseController
                 if ($capaianStrTmb === '' || !is_numeric($capaianValNumTmb) || (float)$capaianValNumTmb <= 0) {
                     if (!$isDraft) {
                         if ($this->request->isAJAX()) {
-                            return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Tambahan harus diisi angka lebih dari 0 (tidak boleh 0 atau bernilai negatif).', 'csrf_hash' => csrf_hash()]);
+                            return $this->response->setJSON(['success' => false, 'message' => 'Jumlah capaian tugas tambahan harus lebih dari 0.', 'csrf_hash' => csrf_hash()]);
                         }
-                        return redirect()->back()->with('error', 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Tambahan harus diisi angka lebih dari 0 (tidak boleh 0 atau bernilai negatif).');
+                        return redirect()->back()->with('error', 'Jumlah capaian tugas tambahan harus lebih dari 0.');
                     }
                     if ($capaianStrTmb !== '' && (float)$capaianValNumTmb <= 0) {
                         if ($this->request->isAJAX()) {
-                            return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Tambahan harus lebih besar dari 0 (tidak boleh 0 atau negatif).', 'csrf_hash' => csrf_hash()]);
+                            return $this->response->setJSON(['success' => false, 'message' => 'Jumlah capaian tugas tambahan harus lebih dari 0.', 'csrf_hash' => csrf_hash()]);
                         }
-                        return redirect()->back()->with('error', 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Tambahan harus lebih besar dari 0 (tidak boleh 0 atau negatif).');
+                        return redirect()->back()->with('error', 'Jumlah capaian tugas tambahan harus lebih dari 0.');
                     }
                     $capaianValNumTmb = null;
                 }
@@ -578,29 +605,33 @@ class LogKegiatanController extends BaseController
             try { @$db->transRollback(); } catch (\Throwable $t) {}
             log_message('error', '[LogKegiatanController::store] ' . $e->getMessage() . ' | User: ' . $userId . ' | Tanggal: ' . $tanggal);
             if ($this->request->isAJAX()) {
-                return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan ke database. Coba lagi atau hubungi admin.', 'csrf_hash' => csrf_hash()]);
+                return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan data. Silakan coba lagi.', 'csrf_hash' => csrf_hash()]);
             }
-            return redirect()->back()->with('error', 'Gagal menyimpan data ke database: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal menyimpan data. Silakan coba lagi.');
         }
 
         if ($db->transStatus() === false) {
             try { @$db->transRollback(); } catch (\Throwable $t) {}
             log_message('error', '[LogKegiatanController::store] transStatus false | User: ' . $userId . ' | Tanggal: ' . $tanggal);
             if ($this->request->isAJAX()) {
-                return $this->response->setJSON(['success' => false, 'message' => 'Gagal terhubung ke database. Coba lagi.', 'csrf_hash' => csrf_hash()]);
+                return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan data. Silakan coba lagi.', 'csrf_hash' => csrf_hash()]);
             }
-            return redirect()->back()->with('error', 'Gagal menyimpan data ke database.');
+            return redirect()->back()->with('error', 'Gagal menyimpan data. Silakan coba lagi.');
         }
 
         // Kirim notifikasi ke atasan jika laporan resmi dikirim (bukan draf)
         if (!$isDraft && $currentUser && !empty($currentUser['atasan_id']) && $currentUser['role'] !== 'direktur') {
-            helper('notification');
-            send_notification(
-                $currentUser['atasan_id'], 
-                'Laporan Harian Baru', 
-                $currentUser['nama_lengkap'] . " mengirimkan Laporan Harian untuk tanggal $tanggal.",
-                site_url('penilaian-kinerja')
-            );
+            try {
+                helper('notification');
+                send_notification(
+                    $currentUser['atasan_id'], 
+                    'Laporan Harian Baru', 
+                    $currentUser['nama_lengkap'] . " mengirimkan Laporan Harian untuk tanggal $tanggal.",
+                    site_url('penilaian-kinerja')
+                );
+            } catch (\Throwable $e) {
+                log_message('error', '[LogKegiatanController::store:notification] ' . $e->getMessage() . ' | User: ' . $userId);
+            }
         }
 
         if ($this->request->isAJAX()) {
@@ -620,7 +651,7 @@ class LogKegiatanController extends BaseController
             }
             return $this->response->setJSON([
                 'success' => true,
-                'message' => 'Laporan harian & tugas tambahan berhasil disimpan sementara.',
+                'message' => 'Draf kegiatan berhasil disimpan.',
                 'new_ids' => $allPokokIds ?? [],
                 'new_tambahan_ids' => $allTambahanIds ?? [],
                 'csrf_hash' => csrf_hash()
@@ -643,7 +674,7 @@ class LogKegiatanController extends BaseController
         }
 
         return redirect()->to('/log-kegiatan')
-                         ->with('success', 'Laporan harian dan tugas tambahan berhasil dikirim.');
+                         ->with('success', 'Laporan kegiatan berhasil dikirim.');
     }
     
     public function hapus()
@@ -654,8 +685,14 @@ class LogKegiatanController extends BaseController
             $userId = session()->get('id') ?? session()->get('user_id');
             $row = $logModel->find($id);
             if ($row && ($row['user_id'] == $userId || hasRole('admin'))) {
+                $userModel = new User();
+                $currentUser = $userModel->find($userId);
+                $lockCheck = $this->checkDateLockStatus($row['tanggal_kegiatan'], $currentUser);
+                if ($lockCheck['is_locked']) {
+                    return $this->response->setJSON(['success' => false, 'message' => 'Laporan terkunci: ' . $lockCheck['reason'], 'csrf_hash' => csrf_hash()]);
+                }
                 if (!hasRole('admin') && isset($row['status']) && $row['status'] === 'terkirim') {
-                    return $this->response->setJSON(['success' => false, 'message' => 'Laporan yang telah terkirim/dikunci tidak dapat dihapus.', 'csrf_hash' => csrf_hash()]);
+                    return $this->response->setJSON(['success' => false, 'message' => 'Laporan yang sudah terkirim tidak dapat dihapus.', 'csrf_hash' => csrf_hash()]);
                 }
                 $logModel->delete($id);
                 if (function_exists('log_audit')) {
@@ -681,11 +718,11 @@ class LogKegiatanController extends BaseController
             if ($this->request->isAJAX()) {
                 return $this->response->setJSON([
                     'success' => false,
-                    'message' => 'Gagal menyimpan. Pastikan semua form tugas tambahan terisi dengan benar (URL Bukti Pekerjaan harus valid).',
+                    'message' => 'Form tugas tambahan belum lengkap atau tautan bukti belum benar.',
                     'csrf_hash' => csrf_hash()
                 ]);
             }
-            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan. Pastikan semua form tugas tambahan terisi dengan benar (URL Bukti Pekerjaan harus valid).');
+            return redirect()->back()->withInput()->with('error', 'Form tugas tambahan belum lengkap atau tautan bukti belum benar.');
         }
 
         $logTambahanModel = new LogTugasTambahan();
@@ -694,9 +731,12 @@ class LogKegiatanController extends BaseController
         $currentUser = $userModel->find($userId);
         $isDirektur = ($currentUser && $currentUser['role'] === 'direktur');
 
-        // Cek apakah tanggal kegiatan terkunci oleh kebijakan batas waktu sistem
-        $lockCheck = $this->checkDateLockStatus($tanggal, $currentUser);
-        if ($lockCheck['is_locked'] && !hasRole('admin')) {
+        $isDraft = $this->request->isAJAX() || $this->request->getPost('action') === 'draft';
+        $status = $isDraft ? 'draft' : 'terkirim';
+
+        // Cek apakah tanggal kegiatan terkunci oleh kebijakan batas waktu sistem (Pengaturan Admin & Masa Depan)
+        $lockCheck = $this->checkDateLockStatus($tanggal, $currentUser, $isDraft);
+        if ($lockCheck['is_locked']) {
             $msg = 'Gagal menyimpan: ' . $lockCheck['reason'];
             if ($this->request->isAJAX()) {
                 return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
@@ -704,13 +744,57 @@ class LogKegiatanController extends BaseController
             return redirect()->back()->with('error', $msg);
         }
 
-        $status = $this->request->isAJAX() ? 'draft' : 'terkirim';
+        $bulanTerpilih = date('n', strtotime($tanggal));
+        $tahunTerpilih = date('Y', strtotime($tanggal));
+
+        // Cek persetujuan target bulanan
+        $targetModel = new TargetKinerja();
+        $allTargets = $targetModel->where('user_id', $userId)
+                                  ->where('bulan', $bulanTerpilih)
+                                  ->where('tahun', $tahunTerpilih)
+                                  ->findAll();
+
+        $hasAtasan = $currentUser && !empty($currentUser['atasan_id']) && $currentUser['role'] !== 'direktur';
+
+        if (empty($allTargets)) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['success' => false, 'message' => 'Target Kinerja Bulanan bulan ini belum dibuat.', 'csrf_hash' => csrf_hash()]);
+            }
+            return redirect()->back()->with('error', 'Target Kinerja Bulanan bulan ini belum dibuat.');
+        }
+
+        if ($hasAtasan) {
+            foreach ($allTargets as $t) {
+                if ($t['status_approval'] !== 'disetujui') {
+                    if ($this->request->isAJAX()) {
+                        return $this->response->setJSON(['success' => false, 'message' => 'Target Kinerja Bulanan bulan ini belum disetujui atasan.', 'csrf_hash' => csrf_hash()]);
+                    }
+                    return redirect()->back()->with('error', 'Target Kinerja Bulanan bulan ini belum disetujui atasan.');
+                }
+            }
+        }
 
         $log_ids = $this->request->getPost('log_tambahan_id');
         $deskripsi_kegiatan_arr = $this->request->getPost('deskripsi_kegiatan_tambahan');
         $link_bukti_arr = $this->request->getPost('link_bukti_tambahan');
-
         $jumlah_capaian_tambahan_arr = $this->request->getPost('jumlah_capaian_tambahan');
+
+        // Validasi IDOR Kepemilikan Record Tugas Tambahan
+        if (!empty($log_ids) && is_array($log_ids)) {
+            $cleanTambahanIds = array_filter(array_map('intval', $log_ids));
+            if (!empty($cleanTambahanIds)) {
+                $checkTmbRows = $logTambahanModel->whereIn('id', $cleanTambahanIds)->findAll();
+                foreach ($checkTmbRows as $cTmb) {
+                    if ((int)$cTmb['user_id'] !== (int)$userId || $cTmb['tanggal_kegiatan'] !== $tanggal) {
+                        $msg = 'Akses ditolak. Data tugas tambahan tidak sesuai akun Anda.';
+                        if ($this->request->isAJAX()) {
+                            return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+                        }
+                        return redirect()->back()->with('error', $msg);
+                    }
+                }
+            }
+        }
 
         $dataToUpdate = [];
         $dataToInsert = [];
@@ -723,9 +807,16 @@ class LogKegiatanController extends BaseController
                 $capaianValNumTmb = str_replace(',', '.', $capaianStrTmb);
                 if ($capaianStrTmb === '' || !is_numeric($capaianValNumTmb) || (float)$capaianValNumTmb <= 0) {
                     if ($this->request->isAJAX()) {
-                        return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Tambahan harus diisi angka lebih dari 0 (tidak boleh 0 atau bernilai negatif).', 'csrf_hash' => csrf_hash()]);
+                        return $this->response->setJSON(['success' => false, 'message' => 'Jumlah capaian tugas tambahan harus lebih dari 0.', 'csrf_hash' => csrf_hash()]);
                     }
-                    return redirect()->back()->with('error', 'Gagal menyimpan. Kolom Jumlah Capaian pada Tugas Tambahan harus diisi angka lebih dari 0 (tidak boleh 0 atau bernilai negatif).');
+                    return redirect()->back()->with('error', 'Jumlah capaian tugas tambahan harus lebih dari 0.');
+                }
+
+                $linkBuktiTmb = !empty($link_bukti_arr[$index]) ? trim((string)$link_bukti_arr[$index]) : null;
+                if ($linkBuktiTmb === 'https://...' || $linkBuktiTmb === 'http://...' || $linkBuktiTmb === '') {
+                    $linkBuktiTmb = null;
+                } elseif ($linkBuktiTmb !== null && !preg_match('/^https?:\/\//i', $linkBuktiTmb)) {
+                    $linkBuktiTmb = 'https://' . $linkBuktiTmb;
                 }
 
                 $rowData = [
@@ -733,13 +824,13 @@ class LogKegiatanController extends BaseController
                     'tanggal_kegiatan'   => $tanggal,
                     'deskripsi_kegiatan' => $deskripsi,
                     'jumlah_capaian'     => (float)$capaianValNumTmb,
-                    'link_bukti'         => $link_bukti_arr[$index] ?? '',
+                    'link_bukti'         => $linkBuktiTmb,
                     'status'             => $status,
                     'status_approval'    => 'menunggu_persetujuan'
                 ];
 
                 if (!empty($log_ids[$index])) {
-                    $rowData['id'] = $log_ids[$index];
+                    $rowData['id'] = (int)$log_ids[$index];
                     $dataToUpdate[] = $rowData;
                 } else {
                     $dataToInsert[$index] = $rowData;
@@ -767,29 +858,43 @@ class LogKegiatanController extends BaseController
             try { @$db->transRollback(); } catch (\Throwable $t) {}
             log_message('error', '[LogKegiatanController::storeTugasTambahan] ' . $e->getMessage());
             if ($this->request->isAJAX()) {
-                return $this->response->setJSON(['success' => false, 'message' => 'Gagal terhubung ke database. Coba lagi atau hubungi admin.', 'csrf_hash' => csrf_hash()]);
+                return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan data. Silakan coba lagi.', 'csrf_hash' => csrf_hash()]);
             }
-            return redirect()->back()->with('error', 'Gagal menyimpan data ke database.');
+            return redirect()->back()->with('error', 'Gagal menyimpan data. Silakan coba lagi.');
         }
 
         if ($db->transStatus() === false) {
             try { @$db->transRollback(); } catch (\Throwable $t) {}
             if ($this->request->isAJAX()) {
-                return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan data ke database.', 'csrf_hash' => csrf_hash()]);
+                return $this->response->setJSON(['success' => false, 'message' => 'Gagal menyimpan data. Silakan coba lagi.', 'csrf_hash' => csrf_hash()]);
             }
-            return redirect()->back()->with('error', 'Gagal menyimpan data ke database.');
+            return redirect()->back()->with('error', 'Gagal menyimpan data. Silakan coba lagi.');
+        }
+
+        if (function_exists('log_audit')) {
+            log_audit(
+                $isDraft ? 'DRAFT_TUGAS_TAMBAHAN' : 'SUBMIT_TUGAS_TAMBAHAN',
+                'log_tugas_tambahan',
+                $userId,
+                null,
+                [
+                    'tanggal'      => $tanggal,
+                    'jumlah_tugas' => count($dataToUpdate) + count($dataToInsert),
+                    'mode'         => $status
+                ]
+            );
         }
 
         if ($this->request->isAJAX()) {
             return $this->response->setJSON([
                 'success' => true,
-                'message' => 'Data tugas tambahan berhasil disimpan sementara.',
+                'message' => 'Draf tugas tambahan berhasil disimpan.',
                 'new_ids' => $insertedIds,
                 'csrf_hash' => csrf_hash()
             ]);
         }
 
-        return redirect()->to('/log-kegiatan')->with('success', 'Tugas Tambahan berhasil disimpan dan dikirim.');
+        return redirect()->to('/log-kegiatan')->with('success', 'Tugas tambahan berhasil dikirim.');
     }
 
     public function hapusTugasTambahan()
@@ -800,8 +905,14 @@ class LogKegiatanController extends BaseController
             $userId = session()->get('id') ?? session()->get('user_id');
             $row = $logTambahanModel->find($id);
             if ($row && ($row['user_id'] == $userId || hasRole('admin'))) {
+                $userModel = new User();
+                $currentUser = $userModel->find($userId);
+                $lockCheck = $this->checkDateLockStatus($row['tanggal_kegiatan'], $currentUser);
+                if ($lockCheck['is_locked']) {
+                    return $this->response->setJSON(['success' => false, 'message' => 'Laporan terkunci: ' . $lockCheck['reason'], 'csrf_hash' => csrf_hash()]);
+                }
                 if (!hasRole('admin') && isset($row['status']) && $row['status'] === 'terkirim') {
-                    return $this->response->setJSON(['success' => false, 'message' => 'Tugas tambahan yang telah terkirim/dikunci tidak dapat dihapus.', 'csrf_hash' => csrf_hash()]);
+                    return $this->response->setJSON(['success' => false, 'message' => 'Tugas tambahan yang sudah terkirim tidak dapat dihapus.', 'csrf_hash' => csrf_hash()]);
                 }
                 $logTambahanModel->delete($id);
                 if (function_exists('log_audit')) {
@@ -850,7 +961,7 @@ class LogKegiatanController extends BaseController
         if (!hasAnyRole(['admin', 'kepegawaian']) && !$isAtasanLangsung) {
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Akses ditolak. Fitur izin revisi laporan ini hanya dapat dilakukan oleh Superadmin, Kepegawaian, atau Atasan Langsung dari staf bersangkutan.',
+                'message' => 'Akses ditolak. Izin revisi hanya untuk atasan atau admin.',
                 'csrf_hash' => csrf_hash()
             ]);
         }
@@ -866,7 +977,7 @@ class LogKegiatanController extends BaseController
         if (empty($existingData) && empty($existingTambahan)) {
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Tidak ada laporan (tugas pokok maupun tugas tambahan) untuk tanggal dan staf tersebut.',
+                'message' => 'Tidak ada laporan pada tanggal ini.',
                 'csrf_hash' => csrf_hash()
             ]);
         }
@@ -893,7 +1004,7 @@ class LogKegiatanController extends BaseController
             if ($db->transStatus() === false) {
                 return $this->response->setJSON([
                     'success' => false,
-                    'message' => 'Gagal memberikan izin revisi. Terjadi kesalahan saat memperbarui database.',
+                    'message' => 'Gagal memberikan izin revisi. Silakan coba lagi.',
                     'csrf_hash' => csrf_hash()
                 ]);
             }
@@ -920,18 +1031,22 @@ class LogKegiatanController extends BaseController
 
             // Kirim notifikasi ke staf bersangkutan
             if (function_exists('send_notification')) {
-                $tanggalFormatted = date('d M Y', strtotime($tanggal));
-                send_notification(
-                    $targetUserId,
-                    'Laporan Dibuka untuk Revisi',
-                    "Laporan harian Anda untuk tanggal {$tanggalFormatted} telah dibuka kembali untuk direvisi. Silakan perbarui dan kirim ulang laporan Anda.",
-                    site_url('log-kegiatan')
-                );
+                try {
+                    $tanggalFormatted = date('d M Y', strtotime($tanggal));
+                    send_notification(
+                        $targetUserId,
+                        'Laporan Dibuka untuk Revisi',
+                        "Laporan harian Anda untuk tanggal {$tanggalFormatted} telah dibuka kembali untuk direvisi. Silakan perbarui dan kirim ulang laporan Anda.",
+                        site_url('log-kegiatan')
+                    );
+                } catch (\Throwable $e) {
+                    log_message('error', '[LogKegiatanController::bukaKunci:notification] ' . $e->getMessage() . ' | TargetUser: ' . $targetUserId);
+                }
             }
 
             return $this->response->setJSON([
                 'success' => true,
-                'message' => "Izin revisi laporan {$stafNama} tanggal " . date('d M Y', strtotime($tanggal)) . " berhasil diberikan.",
+                'message' => "Izin revisi laporan {$stafNama} tanggal " . date('d M Y', strtotime($tanggal)) . " berhasil dibuka.",
                 'csrf_hash' => csrf_hash()
             ]);
 
@@ -940,7 +1055,7 @@ class LogKegiatanController extends BaseController
             log_message('error', '[LogKegiatanController::bukaKunci] ' . $e->getMessage() . ' | TargetUser: ' . $targetUserId . ' | Tanggal: ' . $tanggal);
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Gagal memberikan izin revisi: ' . $e->getMessage(),
+                'message' => 'Gagal memberikan izin revisi. Silakan coba lagi.',
                 'csrf_hash' => csrf_hash()
             ]);
         }
@@ -950,26 +1065,32 @@ class LogKegiatanController extends BaseController
      * Helper untuk mengecek apakah tanggal kegiatan terkunci oleh kebijakan batas waktu sistem
      * @return array ['is_locked' => bool, 'reason' => string]
      */
-    private function checkDateLockStatus(string $tanggal, ?array $currentUser = null): array
+    private function checkDateLockStatus(string $tanggal, ?array $currentUser = null, bool $isDraft = false): array
     {
         $today = date('Y-m-d');
+        $endOfMonth = date('Y-m-t', strtotime($today));
+        $tomorrow = date('Y-m-d', strtotime('+1 day'));
+        $maxAllowedDate = ($endOfMonth > $tomorrow) ? $endOfMonth : $tomorrow;
 
-        // 1. Tanggal kegiatan di masa depan DILARANG KERAS
-        if ($tanggal > $today) {
+        // 1. Tanggal kegiatan melebihi batas bulan berjalan DILARANG KERAS
+        if ($tanggal > $maxAllowedDate) {
             return [
                 'is_locked' => true,
-                'reason'    => 'Tanggal kegiatan di masa depan tidak dapat diisi atau dilaporkan.'
+                'reason'    => 'Laporan kegiatan hanya dapat diisi untuk tanggal di bulan ini.'
             ];
         }
 
-        // Superadmin dibebaskan dari batas waktu pengisian operasional untuk keperluan darurat/pemeliharaan
-        if ($currentUser && ($currentUser['role'] ?? '') === 'admin') {
-            return ['is_locked' => false, 'reason' => ''];
+        // 2. Tanggal di masa depan (tanggal > today) HANYA boleh disimpan sebagai draf, TIDAK boleh dikirim resmi
+        if ($tanggal > $today && !$isDraft) {
+            return [
+                'is_locked' => true,
+                'reason'    => 'Kegiatan tanggal mendatang hanya dapat disimpan sebagai draf.'
+            ];
         }
 
         $settingModel = new SettingModel();
 
-        // 2. Kunci Pengisian Bulan Lalu (End-of-Month Cutoff Deadline)
+        // 3. Kunci Pengisian Bulan Lalu (End-of-Month Cutoff Deadline) dari Pengaturan Sistem Admin
         $isMonthlyDeadlineActive = $settingModel->getValue('enable_monthly_log_deadline', '1') === '1';
         if ($isMonthlyDeadlineActive) {
             $toleransiDays = (int) $settingModel->getValue('toleransi_hari_bulan_lalu', 0);
@@ -985,12 +1106,12 @@ class LogKegiatanController extends BaseController
 
                 return [
                     'is_locked' => true,
-                    'reason'    => "Pengisian laporan kegiatan untuk periode {$namaBulan} telah ditutup sejak tanggal {$tglBatasIndo} (Batas akhir bulan + toleransi {$toleransiDays} hari)."
+                    'reason'    => "Pengisian laporan periode {$namaBulan} telah ditutup sejak {$tglBatasIndo}."
                 ];
             }
         }
 
-        // 3. Toleransi Harian Berjalan (Rolling Daily Limit)
+        // 4. Toleransi Harian Berjalan (Rolling Daily Limit) dari Pengaturan Sistem Admin
         $isDailyDeadlineActive = $settingModel->getValue('enable_log_deadline', '0') === '1';
         if ($isDailyDeadlineActive) {
             $batasLogDays = (int) $settingModel->getValue('batas_input_log', 3);
@@ -998,7 +1119,7 @@ class LogKegiatanController extends BaseController
             if ($diffDays > $batasLogDays) {
                 return [
                     'is_locked' => true,
-                    'reason'    => "Batas waktu pengisian laporan kegiatan harian adalah maksimal {$batasLogDays} hari setelah tanggal kegiatan."
+                    'reason'    => "Batas pengisian laporan adalah maksimal {$batasLogDays} hari dari tanggal kegiatan."
                 ];
             }
         }

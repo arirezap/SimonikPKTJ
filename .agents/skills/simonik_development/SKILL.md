@@ -100,3 +100,23 @@ Panduan ini berisi pedoman lengkap arsitektur sistem, peta modul, basis data, da
 - **SweetAlert2 Fallback:** Selalu sediakan *native browser fallback* (`confirm()`) jika library SweetAlert2 belum selesai termuat.
 - **XSS Prevention:** Selalu gunakan `esc($var)` saat mencetak variabel ke View HTML.
 - **Standardized Audit Logging:** Selalu gunakan `log_audit()` untuk merekam mutasi data penting.
+
+---
+
+## 6. Standar Gaya Bahasa, Notifikasi & Mikro-Kopi (Tone, Simplicity & Microcopy)
+- **Prinsip Utama: Singkat, Padat, Jelas & Ramah Pengguna**:
+  - Seluruh teks antarmuka (label form, tombol aksi, tooltip, alert banner, modal pop-up, SweetAlert2, toast notifikasi, pesan validasi/error) wajib menggunakan kalimat ringkas dan langsung pada intinya.
+- **Larangan Istilah Teknis pada Teks Pengguna**:
+  - Dilarang keras menampilkan istilah teknis sistem/server/database kepada pengguna, seperti: *"database"*, *"basis data"*, *"server/jaringan"*, *"SQL"*, *"query"*, *"+ toleransi X hari"*, *"exception"*, *"permanen"*, dsb.
+  - Berikan pesan yang tenang dan berorientasi solusi, contoh:
+    - ❌ *"Gagal mengirim laporan harian karena gangguan basis data."* $\rightarrow$ ✅ *"Gagal mengirim laporan. Silakan coba lagi."*
+    - ❌ *"Pengisian laporan periode Agustus 2026 telah ditutup sejak 05 September (Batas akhir + toleransi 5 hari)."* $\rightarrow$ ✅ *"Pengisian laporan periode Agustus 2026 telah ditutup sejak 05 September 2026."*
+    - ❌ *"Silakan isi minimal satu kegiatan pada Tugas Pokok atau Tugas Tambahan sebelum mengirim ke atasan."* $\rightarrow$ ✅ *"Isi minimal 1 kegiatan pokok atau tugas tambahan."*
+- **Standar Dialog Konfirmasi SweetAlert2**:
+  - **Judul Dialog**: 2–4 kata (*"Hapus Kegiatan?"*, *"Hapus Tugas Tambahan?"*, *"Kirim Laporan?"*).
+  - **Teks Dialog**: 1 kalimat pendek dan tenang (*"Kegiatan ini akan dihapus."*).
+  - **Tombol Aksi**: Kata kerja singkat dan tegas (*"Ya, Hapus"*, *"Kirim"*, *"Batal"*).
+  - **Umpan Balik Sukses**: Judul *"Terhapus"* / *"Tersimpan"*, teks *"Kegiatan berhasil dihapus."* / *"Draf berhasil disimpan."*
+- **Kepatuhan Mutlak Terminologi & Branding**:
+  - Wajib 100% menggunakan istilah resmi **"staf"** (tidak boleh menggunakan "bawahan" atau "staff").
+  - Wajib 100% menggunakan identitas resmi **"Evidence Command Center (ECC)"** (tidak boleh menggunakan "Simonik").

@@ -1711,13 +1711,13 @@
 
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
-                    title: 'Reset & Kosongkan Penilaian?',
-                    text: "Seluruh nilai capaian staf pada periode ini akan dikosongkan dan di-reset seperti belum pernah dinilai.",
+                    title: 'Reset Penilaian?',
+                    text: "Nilai kinerja staf pada periode ini akan dikosongkan.",
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#dc3545',
                     cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="bi bi-arrow-counterclockwise me-1"></i> Ya, Reset Penilaian',
+                    confirmButtonText: '<i class="bi bi-arrow-counterclockwise me-1"></i> Ya, Reset',
                     cancelButtonText: 'Batal',
                     reverseButtons: true
                 }).then((result) => {
@@ -1778,15 +1778,13 @@
             if (lastClickedAction === 'submit' && stats.totalUnfilled > 0 && !isPublishConfirmed) {
                 e.preventDefault();
                 Swal.fire({
-                    title: 'Ada Nilai Belum Diisi',
-                    html: `Terdapat <strong>${stats.totalUnfilled} komponen penilaian</strong> yang belum diisi nilainya.<br><br>` +
-                          `Jika Anda tetap melanjutkan penerbitan, seluruh komponen yang kosong akan <strong>diberi nilai 0 (Nol)</strong> dan dihitung ke dalam nilai akhir kinerja staf.<br><br>` +
-                          `Apakah Anda ingin tetap menerbitkan penilaian?`,
+                    title: 'Terbitkan Nilai?',
+                    html: `Terdapat <strong>${stats.totalUnfilled} komponen</strong> belum diisi dan akan diberi nilai 0. Tetap terbitkan?`,
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#198754',
                     cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="bi bi-check-circle-fill me-1"></i> Ya, Tetap Terbitkan (Nilai 0)',
+                    confirmButtonText: '<i class="bi bi-check-circle-fill me-1"></i> Ya, Terbitkan',
                     cancelButtonText: 'Periksa Kembali',
                     reverseButtons: true
                 }).then((result) => {
@@ -2109,16 +2107,16 @@
                             if (typeof Swal !== 'undefined') {
                                 Swal.fire('Gagal!', response.message || 'Terjadi kesalahan.', 'error');
                             } else {
-                                alert('Gagal: ' + (response.message || 'Terjadi kesalahan.'));
+                                alert('Maaf, permintaan tidak dapat diproses. Silakan coba kembali.');
                             }
                         }
                     },
                     error: function(xhr, status, error) {
                         console.error(xhr.responseText || error);
                         if (typeof Swal !== 'undefined') {
-                            Swal.fire('Error', 'Terjadi kesalahan jaringan atau server.', 'error');
+                            Swal.fire('Error', 'Gagal memproses izin revisi. Silakan coba lagi.', 'error');
                         } else {
-                            alert('Terjadi kesalahan jaringan atau server.');
+                            alert('Gagal memproses izin revisi. Silakan coba lagi.');
                         }
                     }
                 });
@@ -2126,13 +2124,13 @@
 
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
-                    title: 'Izinkan Revisi Laporan?',
-                    html: `Laporan harian staf tanggal <strong>${tglFormatted}</strong> akan dibuka untuk direvisi.<br>Staf dapat memperbarui dan mengirim kembali laporan tersebut.<br><br><span class='text-dark fw-semibold'>Setelah dikirim ulang, laporan akan terkunci kembali otomatis.</span>`,
+                    title: 'Izinkan Revisi?',
+                    html: `Laporan tanggal <strong>${tglFormatted}</strong> akan dibuka untuk direvisi staf.`,
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonColor: '#ffc107',
                     cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="bi bi-pencil-square me-1"></i> Ya, Izinkan Revisi',
+                    confirmButtonText: '<i class="bi bi-pencil-square me-1"></i> Ya, Buka Revisi',
                     cancelButtonText: 'Batal'
                 }).then((result) => {
                     if (result.isConfirmed) {
@@ -2140,7 +2138,7 @@
                     }
                 });
             } else {
-                if (confirm(`Izinkan Revisi Laporan harian staf tanggal ${tglFormatted}?\n\nStaf dapat memperbarui dan mengirim kembali laporan tersebut.`)) {
+                if (confirm(`Izinkan Revisi Laporan harian staf tanggal ${tglFormatted}?`)) {
                     executeBukaKunciStaf();
                 }
             }
@@ -2219,9 +2217,9 @@
                     error: function(xhr, status, error) {
                         console.error(xhr.responseText || error);
                         if (typeof Swal !== 'undefined') {
-                            Swal.fire('Error', 'Terjadi kesalahan jaringan atau server.', 'error');
+                            Swal.fire('Error', 'Gagal memproses data. Silakan coba lagi.', 'error');
                         } else {
-                            alert('Terjadi kesalahan jaringan atau server.');
+                            alert('Gagal memproses data. Silakan coba lagi.');
                         }
                     }
                 });
@@ -2229,13 +2227,13 @@
 
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
-                    title: 'Batalkan Persetujuan Target?',
-                    html: `Persetujuan target bulanan staf akan dibatalkan.<br>Staf akan dapat merevisi dan mengajukan kembali ke atasan.`,
+                    title: 'Batalkan Persetujuan?',
+                    html: `Persetujuan target bulanan staf akan dibatalkan agar dapat direvisi.`,
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#dc3545',
                     cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="bi bi-x-circle-fill me-1"></i> Ya, Batalkan Persetujuan',
+                    confirmButtonText: '<i class="bi bi-x-circle-fill me-1"></i> Ya, Batalkan',
                     cancelButtonText: 'Batal'
                 }).then((result) => {
                     if (result.isConfirmed) {

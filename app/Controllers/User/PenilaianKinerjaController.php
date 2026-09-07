@@ -570,13 +570,13 @@ class PenilaianKinerjaController extends BaseController
         } catch (\Throwable $e) {
             try { @$db->transRollback(); } catch (\Throwable $t) {}
             log_message('error', '[PenilaianKinerja::store] Transaksi gagal: ' . $e->getMessage() . ' | Staf: ' . $targetUserId . ' | Bulan: ' . $evalMonth . '/' . $evalYear);
-            return redirect()->back()->with('error', 'Gagal menyimpan penilaian kinerja ke database: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal menyimpan penilaian kinerja. Silakan coba lagi.');
         }
 
         if ($db->transStatus() === false) {
             try { @$db->transRollback(); } catch (\Throwable $t) {}
             log_message('error', '[PenilaianKinerja::store] transStatus false | Staf: ' . $targetUserId . ' | Bulan: ' . $evalMonth . '/' . $evalYear);
-            return redirect()->back()->with('error', 'Gagal menyimpan penilaian kinerja karena kesalahan basis data.');
+            return redirect()->back()->with('error', 'Gagal menyimpan penilaian kinerja. Silakan coba lagi.');
         }
 
         $stafName = $targetUserRecord['nama_lengkap'] ?? $targetUserRecord['nama'] ?? 'Pegawai';

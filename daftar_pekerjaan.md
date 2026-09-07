@@ -69,6 +69,14 @@ Dokumen ini adalah lembar kerja resmi pelacakan pekerjaan pengembangan, perbaika
     - Standarisasi istilah **"staf"** pada seluruh label UI & variabel.
   - **Status**: Selesai ✅ *(18 Agustus 2026)*
 
+- [x] **TUGAS 3.2: Standarisasi 8 Pilar Kesiapan Produksi & Mikro-Kopi Bebas Istilah Teknis (`LaporanHarianController.php` & `laporan_harian/index.php`)**
+  - **Uraian Pekerjaan**:
+    - Audit menyeluruh terhadap 8 Pilar: Arsitektur MVC, Logika Bisnis & Persetujuan Bertingkat, Reusable Code, Keamanan & IDOR, Efisiensi Batch & Memori, Mitigasi Bug, Ergonomi 8-Point Grid, dan Integritas Transaksi/Audit Trail.
+    - Eliminasi 100% istilah teknis internal (*"database"*, *"kesalahan database"*, *"jaringan atau server"*) pada seluruh respons backend dan callback AJAX frontend.
+    - Penyederhanaan dialog modal SweetAlert2 (Hapus Target, Ajukan Target, Batal Approve, Salin Target) ke standar judul 2–4 kata, 1 kalimat tenang, dan tombol aksi tegas.
+    - Sinkronisasi dokumentasi kesiapan produksi 8 pilar ke `audit_code.md`.
+  - **Status**: Selesai ✅ *(7 September 2026)*
+
 ---
 
 ### 📌 HALAMAN 4: LAPOR KEGIATAN HARIAN (`/log-kegiatan`)
@@ -81,6 +89,31 @@ Dokumen ini adalah lembar kerja resmi pelacakan pekerjaan pengembangan, perbaika
     - Periksa alignment kolom input capaian `.col-capaian` agar tidak terpotong di layar HP.
   - **Status**: Selesai ✅ *(18 Agustus 2026)*
 
+- [x] **TUGAS 4.2: Fitur Penyusunan Draf Lapor Kegiatan Harian untuk Hari Mendatang di Bulan Berjalan (Draf Saja & Penegakan Kunci Pengaturan Sistem)**
+  - **Uraian Pekerjaan**:
+    - Membuka akses tanggal hari-hari mendatang di bulan berjalan (`$tanggal > $today && $tanggal <= date('Y-m-t')`) pada tombol panah (`>`) dan kalender Flatpickr (`maxDate: max_future_date`).
+    - Prasyarat: Pengguna wajib sudah memiliki Target Kinerja Bulanan yang telah disetujui atasan (`status_approval = 'disetujui'`). Jika target belum dibuat/disetujui, formulir tanggal mendatang tetap terkunci.
+    - Pembatasan ketat draf: Tanggal masa depan hanya dapat disimpan sebagai draf sementara (`status = 'draft'`), tombol "Kirim Laporan" dinonaktifkan hingga hari H tiba.
+    - Penegakan konsisten Kunci Pengaturan Sistem Admin (`enable_monthly_log_deadline`, `toleransi_hari_bulan_lalu`, `enable_log_deadline`, `batas_input_log`): Tanggal masa lalu atau bulan-bulan sebelumnya yang melewati batas deadline terkunci rapat tanpa celah bypass.
+    - Guard keamanan backend: Validasi ketat pada `store()` dan `storeTugasTambahan()` menolak pengiriman resmi untuk tanggal mendatang dan menolak perubahan data pada tanggal yang terkunci oleh sistem.
+  - **Status**: Selesai ✅ *(7 September 2026)*
+
+- [x] **TUGAS 4.3: Audit 8 Pilar Standar Produksi & Hardening Keamanan (`LogKegiatanController.php`)**
+  - **Uraian Pekerjaan**:
+    - Audit menyeluruh terhadap 8 Pilar: Arsitektur MVC, Logika Bisnis & Draf Masa Depan, Reusable Code, Keamanan Komprehensif, Branding & Istilah, Mitigasi Bug, Ergonomi 8-Point Grid, dan Integritas Transaksi/Audit Trail.
+    - Mitigasi celah IDOR pada method `storeTugasTambahan()`: Validasi ketat `user_id` dan `tanggal_kegiatan` sebelum batch update record.
+    - Sanitasi otomatis skema URL aman (`https://`) pada input bukti tugas tambahan.
+    - Failsafe defensif notifikasi: Seluruh pemanggilan `send_notification()` dibungkus dalam blok `try...catch (\Throwable $e)` mandiri agar kendala notifikasi tidak menggagalkan penyimpanan data.
+    - Integrasi pencatatan audit log `DRAFT_TUGAS_TAMBAHAN` dan `SUBMIT_TUGAS_TAMBAHAN` pada `storeTugasTambahan()`.
+  - **Status**: Selesai ✅ *(7 September 2026)*
+
+- [x] **TUGAS 4.4: Standarisasi Gaya Bahasa, Notifikasi, Hint, & Modal Dialog Bebas Istilah Teknis (`log_kegiatan/index.php` & `LogKegiatanController.php`)**
+  - **Uraian Pekerjaan**:
+    - Penyederhanaan seluruh teks antarmuka: alert banner tanggal terkunci, hint target bulanan, dialog konfirmasi SweetAlert2 (Hapus Kegiatan & Hapus Tugas Tambahan), validasi error input, dan toast sukses.
+    - Eliminasi 100% istilah teknis sistem/server/database (*"database"*, *"basis data"*, *"server/jaringan"*, *"+ toleransi X hari"*, dsb.) dari pandangan pengguna.
+    - Dokumentasi permanen aturan mikro-kopi di `.agents/AGENTS.md` (Bagian 6), `design.md` (Bagian 18), dan `.agents/skills/simonik_development/SKILL.md` (Bagian 6).
+  - **Status**: Selesai ✅ *(7 September 2026)*
+
 ---
 
 ### 📌 HALAMAN 5: REKAP & PENILAIAN KINERJA (`/penilaian-kinerja`)
@@ -92,6 +125,14 @@ Dokumen ini adalah lembar kerja resmi pelacakan pekerjaan pengembangan, perbaika
     - Uji fitur Simpan Sementara (Draf) vs Terbitkan Nilai oleh Atasan.
     - Verifikasi API Chart data tren 6 bulan (`penilaian-kinerja/api-chart`).
   - **Status**: Selesai ✅ *(18 Agustus 2026)*
+
+- [x] **TUGAS 5.2: Audit 8 Pilar Standar Produksi & Standarisasi Mikro-Kopi Non-Teknis (`PenilaianKinerjaController.php` & `penilaian_kinerja/index.php`)**
+  - **Uraian Pekerjaan**:
+    - Audit menyeluruh 8 Pilar Kesiapan Produksi (Arsitektur MVC, Logika Bisnis & Predikat, Reusable Code, Keamanan CSRF/XSS/IDOR, Efisiensi Transaksi Batch $O(N)$, Mitigasi Clamping Skor 0–150%, Kalender Heatmap 8-Point Grid, Integritas Audit Trail).
+    - Eliminasi 100% istilah teknis (*"database"*, *"basis data"*, *"jaringan atau server"*) pada pesan backend dan respon AJAX.
+    - Standarisasi SweetAlert2: Judul ringkas 2–4 kata (*"Reset Penilaian?"*, *"Terbitkan Nilai?"*, *"Izinkan Revisi?"*, *"Batalkan Persetujuan?"*), teks penjelasan 1 kalimat tenang, dan tombol aksi tegas.
+    - Penyelarasan format dokumentasi kesiapan produksi pada `audit_code.md` (Bagian 6).
+  - **Status**: Selesai ✅ *(7 September 2026)*
 
 ---
 
@@ -142,6 +183,15 @@ Dokumen ini adalah lembar kerja resmi pelacakan pekerjaan pengembangan, perbaika
     - Proteksi otorisasi multi-role `hasAnyRole(['kepegawaian', 'admin'])`.
     - Bento Card layout, Quick Filter Pills, Live Client-Side Search, dan Mobile Card view.
   - **Status**: Selesai ✅ *(19 Agustus 2026)*
+
+- [x] **TUGAS 9.2: Standarisasi 8-Point Grid Spacing Foto & Nama Pegawai (`monitoring_target.php`, `rekap_kinerja.php`, & `style.css`)**
+  - **Uraian Pekerjaan**:
+    - Audit 8 Pilar dan penyelarasan tata letak foto profil terhadap nama pegawai pada modul tree Kepegawaian (Monitoring Target Kinerja & Monitoring Penilaian Kinerja).
+    - Eliminasi class non-standar desimal Bootstrap (`gap-2.5` dan `mb-2.5`) yang menyebabkan jarak 0px (menempel total).
+    - Penerapan jarak resmi 8-Point Grid `gap-3` (16px = $2 \times 8\text{px}$) dan `mb-3` ($16\text{px}$) pada tabel desktop dan kartu seluler.
+    - Standardisasi ukuran avatar di `rekap_kinerja.php` dari 38px menjadi skala resmi `40px × 40px` ($5 \times 8\text{px}$).
+    - Penambahan aturan CSS failsafe 8-Point Grid di `public/assets/css/style.css` (`.gap-12px`, `.gap-16px`, `.gap-2\.5`, `.mb-2\.5`).
+  - **Status**: Selesai ✅ *(7 September 2026)*
 
 ---
 

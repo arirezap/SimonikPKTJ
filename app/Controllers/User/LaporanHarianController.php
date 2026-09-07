@@ -449,11 +449,11 @@ class LaporanHarianController extends BaseController
             if ($this->request->isAJAX()) {
                 return $this->response->setJSON([
                     'success' => false,
-                    'message' => 'Gagal terhubung ke database. Coba lagi atau hubungi admin.',
+                    'message' => 'Gagal menyimpan data. Silakan coba lagi.',
                     'csrf_hash' => csrf_hash()
                 ]);
             }
-            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan data ke database.');
+            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan data. Silakan coba lagi.');
         }
 
         // Jika Simpan & Kirim, update semua target bulan ini yang sebelumnya draf menjadi terkirim
@@ -665,7 +665,7 @@ class LaporanHarianController extends BaseController
 
                 if ($db->transStatus() === false) {
                     log_message('error', "approveAll transaction failed for staf_id: {$staf_id}, periode: {$bulan}/{$tahun}");
-                    return redirect()->back()->with('error', 'Gagal menyetujui target staf. Terjadi kesalahan database.');
+                    return redirect()->back()->with('error', 'Gagal menyetujui target staf. Silakan coba lagi.');
                 }
             } catch (\Throwable $e) {
                 try { @$db->transRollback(); } catch (\Throwable $t) {}
@@ -894,7 +894,7 @@ class LaporanHarianController extends BaseController
                 log_message('error', "cancelApprove transaction failed for stafId: {$stafId}, {$bulan}/{$tahun}");
                 return $this->response->setJSON([
                     'success' => false,
-                    'message' => 'Gagal membatalkan persetujuan target. Terjadi kesalahan database.',
+                    'message' => 'Gagal membatalkan persetujuan target. Silakan coba lagi.',
                     'csrf_hash' => csrf_hash()
                 ]);
             }

@@ -293,7 +293,7 @@ class MonitoringTargetController extends BaseController
                 'jabatan'      => $user['jabatan'] ?? '-',
                 'unit'         => $user['unit'] ?? '-',
                 'role'         => $user['role'],
-                'foto'         => !empty($user['foto']) ? base_url('uploads/foto_profil/' . $user['foto']) : null
+                'foto'         => (!empty($user['foto']) && file_exists(FCPATH . 'assets/uploads/profile/' . $user['foto'])) ? base_url('assets/uploads/profile/' . $user['foto']) : null
             ],
             'atasan'     => $atasan,
             'periode'    => [

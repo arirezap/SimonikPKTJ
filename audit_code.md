@@ -98,74 +98,178 @@ Berikut adalah status audit dan verifikasi kelayakan produksi pada seluruh 15 mo
 ### 📌 4. Modul Target Kinerja Bulanan (Hulu Kinerja — `/laporan-harian`)
 - [x] **Controller**: `app/Controllers/User/LaporanHarianController.php`
 - [x] **View**: `app/Views/user/laporan_harian/index.php`
-- **Checklist Kesiapan Produksi**:
-  - [x] **Aturan Khusus Direktur**: Akun Direktur otomatis berstatus `disetujui` dan dapat merevisi target mandiri kapan saja.
-  - [x] **Alur Persetujuan Bertingkat**: Pegawai non-Direktur wajib melalui verifikasi Atasan Langsung (`menunggu_persetujuan` $\rightarrow$ `disetujui`).
-  - [x] **Fleksibilitas Pengeditan Sebelum Disetujui**: Staf bebas mengubah, menambah, atau menghapus target kinerja selagi belum disetujui atasan (`status_approval != 'disetujui'`).
-  - [x] **Tombol & Dialog Adaptif**: Tombol aksi bertransformasi dinamis antara *"Ajukan Target"* (draf) dan *"Perbarui & Ajukan Ulang"* (menunggu persetujuan) lengkap dengan konfirmasi SweetAlert2.
-  - [x] **Failsafe & Defensive Error Trapping**: Inisialisasi eksplisit `$targetUser` di awal `store()` dan penanganan exception `try...catch` pada notifikasi ke atasan/staf (100% bebas dari PHP 8.1 Undefined Variable / 500 error di cPanel).
-  - [x] **Fitur Batal Approve Superadmin**: Fitur darurat `cancelApprove()` untuk mengembalikan target yang salah disetujui ke draf revisi, dibungkus Database Transaction dan audit log `CANCEL_APPROVE_TARGET`.
-  - [x] **Sanitasi Koma Desimal**: Input target numerik otomatis disanitasi dari notasi koma Indonesia (`,`) ke titik desimal (`.`).
-  - [x] **Pencegahan Double-Submit**: Implementasi PRG Pattern (Post-Redirect-Get) dan tombol submit lock saat proses AJAX berlangsung.
-  - [x] **Responsivitas Seluler & Scroll Guard**: Tabel penyusunan target dibungkus kontainer `.table-responsive` dengan padding bento adaptif dan tombol aksi ramah sentuhan ponsel.
+- **Checklist Kesiapan Produksi (8 Pilar)**:
+  - [x] **Code Integrity & Sintaks (Pilar 1)**: `php -l` 0 syntax error, standar arsitektur MVC CodeIgniter 4 dipatuhi dengan baik, isolasi logika controller, model, dan view bersih tanpa kueri SQL di template tampilan.
+  - [x] **Logika Bisnis & Konkurensi (Pilar 2)**:
+    - Akun Direktur otomatis berstatus `disetujui` (`status_approval = 'disetujui'`) dan dapat merevisi target mandiri sewaktu-waktu tanpa memerlukan approval pihak lain.
+    - Alur persetujuan bertingkat staf non-Direktur (`menunggu_persetujuan` $\rightarrow$ `disetujui`).
+    - Fleksibilitas pengeditan sebelum disetujui: Staf bebas mengubah, menambah, atau menghapus target kinerja selagi belum disetujui atasan (`status_approval != 'disetujui'`).
+    - Pembatasan ketat wewenang role Wadir: Dilarang menyetujui, mengedit, atau menghapus target staf (hanya mengelola Target Saya).
+    - Pencegahan *self-approval* (conflict of interest) pada tab Persetujuan Target Staf.
+    - Penegakan kunci batas waktu sistem admin (`enable_target_deadline`, `batas_input_target`).
+    - Fitur salin target antar-periode (`getPreviousTargets`) dengan opsi *replace* atau *append*.
+    - Fitur pembatalan persetujuan Superadmin (`cancelApprove()`) yang secara cerdas mengembalikan log kegiatan harian terkait kembali ke status draf.
+  - [x] **Reusable Code & Ketahanan Aset (Pilar 3)**: Pemanfaatan helper terpusat (`role_helper`, `notification`, `audit_helper`), sinkronisasi token hash CSRF pada seluruh request AJAX (`store`, `approve`, `approveAll`, `hapus`, `cancelApprove`, `getPreviousTargets`), dan penanganan fallback dialog visual SweetAlert2 ke native browser (`confirm()` / `alert()`).
+  - [x] **Keamanan Komprehensif (Pilar 4)**:
+    - Terproteksi di bawah filter grup `['filter' => 'auth']` dengan `$routes->setAutoRoute(false);`.
+    - Proteksi CSRF penuh pada form POST dan seluruh endpoint AJAX.
+    - Sanitasi XSS `esc()` pada seluruh variabel dinamis di view.
+    - Mitigasi IDOR ketat: Validasi kepemilikan target (`user_id == targetUserId`) pada method `store()`, `hapus()`, `approve()`, dan `getPreviousTargets()`.
+  - [x] **Efisiensi & Ketahanan Beban (Pilar 5)**:
+    - Mutasi data efisien menggunakan transaksi batch (`updateBatch` / `insertBatch`).
+    - Eliminasi masalah kueri N+1: Data staf, satuan, dan target ditarik secara efisien dengan kueri terindeks.
+    - Kuota batas maksimal baris target (`MAX_TARGET_ROWS = 30`) untuk menjaga batas aman memori PHP.
+  - [x] **Mitigasi Bug & Observabilitas (Pilar 6)**:
+    - Sanitasi koma desimal Indonesia: `str_replace(',', '.', $val)` dan validasi target numerik `target > 0`.
+    - Inisialisasi defensif `$targetUser` di awal `store()` (100% bebas dari PHP 8.1 Undefined Variable / 500 error di cPanel).
+    - Failsafe notifikasi defensif: Pemanggilan `send_notification()` dibungkus dalam blok `try...catch (\Throwable $e)` mandiri agar kendala notifikasi tidak menggagalkan penyimpanan target.
+    - Proteksi mouse wheel scroll pada input number (`$(this).blur()`) dan pencegahan *double-submit*.
+  - [x] **Ergonomi Sentuh & 8-Point Grid (Pilar 7)**:
+    - Desain responsif mobile dengan kontainer `.table-responsive` (scroll sentuh horizontal lancar).
+    - Input font seluler 16px (anti auto-zoom iOS Safari).
+    - Kepatuhan skala 8-Point Grid pada padding tabel (`12px 16px`) dan tinggi tombol aksi (`32px` untuk compact, `40px` untuk CTA utama).
+    - Format numerik tabular `.num-tabular` dan segmented control nav tabs (*Target Saya* vs *Persetujuan Target Staf*).
+  - [x] **Standarisasi Bahasa, Disaster Recovery & Audit Trail (Pilar 8)**:
+    - 100% konsisten menggunakan istilah resmi **"staf"** (bebas dari kata "bawahan" atau "staff") dan identitas resmi **"Evidence Command Center (ECC)"**.
+    - Teks antarmuka, dialog, alert banner, dan pesan backend ringkas, tenang, ramah pengguna, dan **100% bebas dari istilah teknis** sistem/server/database (*"database"*, *"basis data"*, *"server/jaringan"*).
+    - Modal konfirmasi SweetAlert2 mengadopsi judul 2–4 kata (*"Hapus Target?"*, *"Ajukan Target?"*, *"Batalkan Persetujuan?"*), teks 1 kalimat tenang, dan tombol aksi tegas.
+    - Penyimpanan dan persetujuan massal dibungkus transaksi database atomik `$db->transStart()` dan `$db->transComplete()`.
+    - Rekam jejak audit trail lengkap via `log_audit()`: `DRAFT_TARGET`, `SUBMIT_TARGET`, `UPDATE_TARGET_STAF`, `APPROVE`, `APPROVE_ALL`, `DELETE`, dan `CANCEL_APPROVE_TARGET`.
 
 ---
 
 ### 📌 5. Modul Log Kegiatan Harian & Tugas Tambahan (Eksekusi Kinerja — `/log-kegiatan`)
 - [x] **Controller**: `app/Controllers/User/LogKegiatanController.php`
 - [x] **View**: `app/Views/user/log_kegiatan/index.php`
-- **Checklist Kesiapan Produksi**:
-  - [x] **Formulir Terpadu & Transaksi DB**: Penyimpanan tugas pokok & tugas tambahan simultan dalam `$db->transStart()` dan `$db->transComplete()`.
-  - [x] **Sanitasi Tautan Bukti Digital**: Link bukti diverifikasi wajib berawalan skema protokol `http://` atau `https://` sebelum dirender ke tag `<a>`.
-  - [x] **Kalender Flatpickr Cerdas**: Tanggal merah/akhir pekan masa depan (`.flatpickr-disabled`) berpenampilan redup pudar (`#fca5a5`, opacity 0.35), sedangkan tanggal yang sudah tiba/aktif merah cerah tegas (`#ef4444`, font-weight 700).
-  - [x] **Izin Buka Kunci (Revisi)**: Superadmin & Atasan Langsung dapat membuka kunci laporan via `bukaKunci()`, terekam di audit log `UNLOCK_LAPORAN`.
-  - [x] **Pembaruan Hash CSRF**: Request AJAX Tugas Tambahan otomatis memperbarui token hash CSRF ke DOM secara dinamis.
-  - [x] **Ergonomi Form Seluler**: Form input log harian dan modal tugas tambahan menyesuaikan lebar layar ponsel (<576px) dengan touch target $\ge 44\text{px}$.
+- **Checklist Kesiapan Produksi (8 Pilar)**:
+  - [x] **Code Integrity & Sintaks (Pilar 1)**: `php -l` 0 syntax error, arsitektur MVC CI4 dipatuhi dengan baik, isolasi fungsi controller, model, dan view bersih tanpa kueri SQL di template tampilan.
+  - [x] **Logika Bisnis & Konkurensi (Pilar 2)**:
+    - Prasyarat persetujuan target bulanan sebelum mengisi laporan harian.
+    - Fleksibilitas pengisian draf tanggal mendatang hingga akhir bulan berjalan (`$tanggal <= date('Y-m-t')`), pembatasan status ke draf sementara, dan tombol pengiriman resmi tersembunyi hingga hari H.
+    - Penegakan kunci batas waktu sistem admin (`enable_monthly_log_deadline`, `toleransi_hari_bulan_lalu`, `enable_log_deadline`, `batas_input_log`).
+    - Izin revisi laporan terkirim melalui `bukaKunci()` oleh Superadmin, Kepegawaian, dan Atasan Langsung.
+  - [x] **Reusable Code & Ketahanan Aset (Pilar 3)**: Pemanfaatan helper terpusat (`role_helper`, `notification`, `audit_helper`), sinkronisasi token hash CSRF pada seluruh request AJAX, dan penanganan fallback dialog visual.
+  - [x] **Keamanan Komprehensif (Pilar 4)**:
+    - Terproteksi di bawah filter grup `['filter' => 'auth']` dengan `$routes->setAutoRoute(false);`.
+    - Proteksi CSRF penuh pada form POST dan seluruh endpoint AJAX.
+    - Sanitasi XSS `esc()` pada seluruh variabel dinamis.
+    - Sanitasi URL tautan bukti wajib menggunakan skema protokol aman `http://` atau `https://`.
+    - Mitigasi IDOR ketat: Validasi kepemilikan record tugas pokok dan tugas tambahan (`(int)$row['user_id'] === (int)$userId` dan `tanggal_kegiatan === $tanggal`) pada seluruh method mutasi (`store`, `storeTugasTambahan`, `hapus`, `hapusTugasTambahan`).
+  - [x] **Efisiensi & Ketahanan Beban (Pilar 5)**:
+    - Kueri kalender kegiatan satu tahun terindeks SARGable (`idx_user_tgl` dan `idx_ltt_user_tgl`) untuk mencegah *full table scan*.
+    - Eliminasi masalah kueri N+1: Penarikan status log harian sepanjang tahun diproses dalam 2 kueri SQL terindeks dan dipetakan in-memory $O(N)$ secara ultra-cepat dan hemat memori PHP.
+    - Mutasi data efisien menggunakan transaksi batch (`updateBatch` / `insertBatch`).
+  - [x] **Mitigasi Bug & Observabilitas (Pilar 6)**:
+    - Sanitasi koma desimal Indonesia `str_replace(',', '.', $val)` dan penanganan `null/empty` terpadu.
+    - Failsafe defensif notifikasi: Pemanggilan `send_notification()` dibungkus dalam blok `try...catch (\Throwable $e)` mandiri agar kendala notifikasi tidak menggagalkan penyimpanan laporan.
+    - Proteksi mouse wheel scroll pada input number (`$(this).blur()`) dan pencegahan *double-submit*.
+  - [x] **Ergonomi Sentuh & 8-Point Grid (Pilar 7)**:
+    - Desain responsif mobile dengan kontainer `.table-responsive` (scroll sentuh horizontal lancar).
+    - Input font seluler 16px (anti auto-zoom iOS Safari).
+    - Kalender Flatpickr cerdas dengan indikator status dot warna-warni (Terkirim, Draf, Belum Diisi) dan penanda hari libur pudar untuk tanggal masa depan.
+    - Format numerik tabular `.num-tabular` dan tombol bento touch target $\ge 35\text{px}-44\text{px}$.
+  - [x] **Standarisasi Bahasa, Disaster Recovery & Audit Trail (Pilar 8)**:
+    - 100% konsisten menggunakan istilah resmi **"staf"** (bebas dari kata "bawahan" atau "staff") dan identitas resmi **"Evidence Command Center (ECC)"**.
+    - Kalimat panduan antarmuka ringkas, padat, ramah pengguna, dan **100% bebas dari istilah teknis** sistem/server/database (sesuai aturan mikro-kopi di `.agents/AGENTS.md`, `design.md`, dan `.agents/skills/simonik_development/SKILL.md`).
+    - Modal konfirmasi SweetAlert2 mengadopsi judul 2–4 kata (*"Hapus Kegiatan?"*), teks 1 kalimat tenang, dan tombol aksi tegas.
+    - Penyimpanan tugas pokok dan tugas tambahan simultan dibungkus transaksi database atomik `$db->transStart()` dan `$db->transComplete()`.
+    - Rekam jejak audit trail lengkap via `log_audit()`: `DRAFT_LOG_HARIAN`, `SUBMIT_LOG_HARIAN`, `DRAFT_TUGAS_TAMBAHAN`, `SUBMIT_TUGAS_TAMBAHAN`, `DELETE_LOG_HARIAN`, `DELETE_TUGAS_TAMBAHAN`, dan `UNLOCK_LAPORAN`.
 
 ---
 
 ### 📌 6. Modul Rekap & Penilaian Kinerja Staf (Evaluasi Kinerja — `/penilaian-kinerja`)
 - [x] **Controller**: `app/Controllers/User/PenilaianKinerjaController.php`
 - [x] **View**: `app/Views/user/penilaian_kinerja/index.php`
-- **Checklist Kesiapan Produksi**:
-  - [x] **Prasyarat Mutlak Penilaian**: Atasan Langsung HANYA DAPAT memberi nilai jika seluruh target kinerja staf periode tersebut sudah berstatus `disetujui`. Jika belum, form nilai terkunci dengan banner instruksi yang jelas.
-  - [x] **Formula Standar Predikat Kinerja**:
-    - *Sangat Baik:* `> 100%` s.d. `150%`
-    - *Baik:* `> 90%` s.d. `100%`
-    - *Butuh Perbaikan:* `> 75%` s.d. `90%`
-    - *Kurang:* `> 25%` s.d. `75%`
-    - *Sangat Kurang:* `<= 25%`
-    - *Belum Dinilai:* `0%` / NULL
-  - [x] **Mekanisme Reset Nilai**: Tombol Reset Nilai mengosongkan nilai ke `NULL` dan status ke `NULL` di database (bukan nilai 0 terbit), terekam di audit log `RESET_PENILAIAN_KINERJA`.
-  - [x] **Proteksi IDOR Tugas Tambahan**: Validasi kepemilikan ketat `(int)$record['user_id'] === (int)$targetUserId` pada saat update nilai capaian.
-  - [x] **Kalender Heatmap 8-Point Grid**: Matriks 7 kolom (Senin-Minggu) 100% bebas emoji, sel desktop `min-height: 64px`, mobile `min-height: 48px`, legenda bento capsule `height: 32px`, swatches `16px × 16px`.
-  - [x] **Modal Detail Log Harian**: Header icon `40px × 40px`, navigasi `<` `>` `32px × 32px`, info banner bersih tanpa teks redundan, tabel bento `max-height: 440px`.
+- **Checklist Kesiapan Produksi (8 Pilar)**:
+  - [x] **Code Integrity & Sintaks (Pilar 1)**: `php -l` 0 syntax error, arsitektur MVC CI4 dipatuhi dengan baik, isolasi logika controller, model, dan view bersih tanpa kueri SQL di template tampilan. Logika manipulasi batch nilai dan status RHK dikelola secara terstruktur via `KinerjaBatchTrait`.
+  - [x] **Logika Bisnis & Konkurensi (Pilar 2)**:
+    - Prasyarat mutlak: Atasan Langsung HANYA DAPAT memberi nilai jika seluruh target kinerja staf periode tersebut sudah berstatus `disetujui`. Jika belum, form nilai terkunci otomatis dengan banner instruksi yang jelas.
+    - Penegakan formula resmi predikat kinerja:
+      - *Sangat Baik:* `> 100%` s.d. `150%`
+      - *Baik:* `> 90%` s.d. `100%`
+      - *Butuh Perbaikan:* `> 75%` s.d. `90%`
+      - *Kurang:* `> 25%` s.d. `75%`
+      - *Sangat Kurang:* `<= 25%`
+      - *Belum Dinilai:* `0%` / NULL
+    - Mekanisme Reset Nilai murni: Mengosongkan nilai ke `NULL` dan status ke `NULL` di database (bukan nilai 0 terbit), mengembalikan status ke "Belum Dinilai".
+    - Penegakan tenggat penilaian admin (`enable_eval_deadline`, `batas_input_eval`).
+    - Pembatasan hak peran `wadir`: Dapat memantau capaian institusi tetapi tidak memiliki hak memberi nilai atau merevisi target staf.
+  - [x] **Reusable Code & Ketahanan Aset (Pilar 3)**: Pemanfaatan helper terpusat (`role_helper`, `notification`, `audit_helper`), sinkronisasi token hash CSRF pada seluruh request AJAX (`store`, `bukaKunciLogStaf`, `cancelApproveTargetStaf`), dan penanganan fallback dialog visual SweetAlert2 ke native browser (`confirm()` / `alert()`).
+  - [x] **Keamanan Komprehensif (Pilar 4)**:
+    - Terproteksi di bawah filter grup `['filter' => 'auth']` dengan `$routes->setAutoRoute(false);`.
+    - Proteksi CSRF penuh pada form POST dan seluruh endpoint AJAX.
+    - Sanitasi XSS `esc()` pada seluruh output dinamis di view dan modal JavaScript (`escHtml`).
+    - Mitigasi IDOR ketat: Validasi kepemilikan target RHK dan tugas tambahan `(int)$record['user_id'] === (int)$targetUserId` pada saat update nilai capaian maupun penarikan data via API modal/grafik tren.
+  - [x] **Efisiensi & Ketahanan Beban (Pilar 5)**:
+    - Mutasi data efisien menggunakan transaksi atomik `$db->transStart()` dan `updateBatch()`.
+    - Eliminasi masalah kueri N+1: Penarikan log harian satu bulan, rekap tugas tambahan, dan tren capaian staf diproses dalam kueri SQL terindeks dan diagregasi in-memory $O(N)$ secara cepat dan hemat memori PHP.
+    - Kueri data pegawai selektif meminimalisir overhead memori pada dataset staf besar.
+  - [x] **Mitigasi Bug & Observabilitas (Pilar 6)**:
+    - Sanitasi koma desimal Indonesia `str_replace(',', '.', $val)` dan penanganan `null/empty` terpadu.
+    - Score clamping: Nilai capaian dibatasi 0%–150% untuk mencegah nilai di luar batas kewajaran.
+    - Konfirmasi cerdas sebelum penerbitan jika terdapat komponen kosong (diberi nilai 0 otomatis setelah konfirmasi atasan).
+    - Failsafe sesi: Pengecekan username/NIP pada pemrosesan penilaian dan pembatalan target.
+    - Failsafe defensif notifikasi: Pemanggilan `send_notification()` dibungkus dalam blok `try...catch (\Throwable $e)` mandiri.
+  - [x] **Ergonomi Sentuh & 8-Point Grid (Pilar 7)**:
+    - Kalender Heatmap 8-Point Grid: Matriks 7 kolom (Senin-Minggu) 100% bebas emoji, sel desktop `min-height: 64px`, sel mobile `min-height: 48px`, strip legenda bento capsule `height: 32px`, swatches indikator `16px × 16px`.
+    - Modal Pop-up Rincian Pekerjaan (`#modalDetailLogTanggal`): Header icon `40px × 40px`, navigasi tanggal `<` `>` `32px × 32px`, banner tanggal bersih tanpa label redundan, tabel bento `max-height: 440px`, footer pill buttons `height: 36px`.
+    - Bento card elevation: `.card-bento-ecc`, padding desktop `24px` dan mobile `16px`.
+    - Tabular numerics: `font-variant-numeric: tabular-nums` pada seluruh skor, persentase, dan tanggal.
+  - [x] **Standarisasi Bahasa, Disaster Recovery & Audit Trail (Pilar 8)**:
+    - 100% konsisten menggunakan istilah resmi **"staf"** (bebas dari kata "bawahan" atau "staff") dan identitas resmi **"Evidence Command Center (ECC)"**.
+    - Teks antarmuka, dialog konfirmasi, banner informasi, dan pesan backend ramah pengguna, ringkas, padat, dan **100% bebas dari istilah teknis** sistem/server/database (*"database"*, *"basis data"*, *"jaringan atau server"*).
+    - Modal konfirmasi SweetAlert2 mengadopsi judul 2–4 kata (*"Reset Penilaian?"*, *"Terbitkan Nilai?"*, *"Izinkan Revisi?"*, *"Batalkan Persetujuan?"*), teks 1 kalimat tenang, dan tombol aksi singkat.
+    - Penyimpanan nilai capaian dan status terbit dibungkus transaksi database atomik `$db->transStart()` dan `$db->transComplete()`.
+    - Rekam jejak audit trail lengkap via `log_audit()`: `DRAFT_PENILAIAN_KINERJA`, `APPROVE_PENILAIAN_KINERJA`, `RESET_PENILAIAN_KINERJA`, `UNLOCK_LAPORAN_BY_ATASAN`, dan `CANCEL_APPROVE_TARGET`.
 
 ---
 
 ### 📌 7. Modul Monitoring Target Kinerja Bulanan Kepegawaian (`/kepegawaian/target-kinerja`)
 - [x] **Controller**: `app/Controllers/Kepegawaian/MonitoringTargetController.php`
 - [x] **View**: `app/Views/kepegawaian/monitoring_target.php`, `monitoring_target_pdf.php`
-- **Checklist Kesiapan Produksi**:
-  - [x] **Otorisasi Ketat Multi-Role**: Hanya dapat diakses oleh: `['kepegawaian', 'admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk']`.
-  - [x] **Pembatasan Hak Peran Wadir**: Role `wadir` memiliki akses pemantauan penuh, tetapi secara tegas tidak memiliki hak menyetujui, merevisi, atau menilai target staf.
-  - [x] **Dual-View Mobile Touch Cards (<768px)**: Tabel data desktop otomatis beralih menjadi kartu sentuh mandiri (`.mobile-cards-view`) di layar ponsel dengan touch target $\ge 44\text{px}$.
-  - [x] **Penanganan Mode Sepanjang Tahun (`'all'`)**: Ekspor PDF dan Excel mendukung penanganan nama periode dinamis (`nama_bulan` fallback ke nama bulan aktif saat mode 'all' agar tidak error).
-  - [x] **Modal Rincian Target AJAX Zero-Reload**: Detail RHK staf dimuat cepat melalui AJAX modal dengan pemformatan angka tabular dan badge status approval.
-  - [x] **Ekspor Berkas Resmi Kedinasan**: Ekspor Excel Multi-Sheet numerik murni dan PDF A4 Landscape standar instansi, tercatat di audit log `EXPORT_EXCEL_MONITORING_TARGET` dan `EXPORT_PDF_MONITORING_TARGET`.
+- **Checklist Kesiapan Produksi (8 Pilar)**:
+  - [x] **Code Integrity & Sintaks (Pilar 1)**: `php -l` 0 syntax error, arsitektur MVC CI4 dipatuhi dengan baik, isolasi fungsi controller, model, dan view bersih tanpa kueri SQL di template tampilan.
+  - [x] **Logika Bisnis & Konkurensi (Pilar 2)**:
+    - Otorisasi multi-role ketat: Hanya dapat diakses oleh `['kepegawaian', 'admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk']`.
+    - Pembatasan peran wadir: Role `wadir` memiliki hak pemantauan luas institusi namun secara tegas tidak memiliki hak menyetujui, merevisi, atau menilai target staf.
+    - Penanganan mode tahunan dinamis (`'all'`): `nama_bulan` fallback ke nama bulan aktif saat mode sepanjang tahun dipilih sehingga ekspor berkas kedinasan tidak error.
+  - [x] **Reusable Code & Ketahanan Aset (Pilar 3)**: Pemanfaatan helper terpusat (`role_helper`, `notification`, `audit_helper`), sinkronisasi token CSRF pada modal AJAX, dan fallback native alert/confirm.
+  - [x] **Keamanan Komprehensif (Pilar 4)**: Filter `auth`, proteksi CSRF, sanitasi XSS `esc()` pada seluruh output dinamis, dan mitigasi IDOR pada penarikan data RHK via modal AJAX.
+  - [x] **Efisiensi & Ketahanan Beban (Pilar 5)**: Penarikan data target seluruh pegawai efisien dalam kueri SQL terindeks dengan eliminasi masalah kueri N+1.
+  - [x] **Mitigasi Bug & Observabilitas (Pilar 6)**: Failsafe data kosong, filter unit kerja dan status approval dinamis, serta perlindungan penarikan modal zero-reload.
+  - [x] **Ergonomi Sentuh & 8-Point Grid (Pilar 7)**:
+    - Kepatuhan skala 8-Point Grid: Penyelarasan container avatar dan teks nama pegawai menggunakan jarak resmi `gap-3` (16px = $2 \times 8\text{px}$) pada tabel desktop dan mobile card (mengeliminasi class non-standar `gap-2.5` dan `mb-2.5`).
+    - Standardisasi ukuran avatar: Squircle icon $40\text{px} \times 40\text{px}$ dengan `border-radius: 12px` dan bayangan lembut `shadow-xs`.
+    - Modal Pop-up Rincian Target: Header icon $40\text{px} \times 40\text{px}$ dengan jarak `gap-3` (16px) ke judul modal, kartu profil pegawai berjarak `gap-3` (16px), dan touch target $\ge 44\text{px}$.
+    - Dual-view responsif: Tabel desktop otomatis beralih menjadi kartu sentuh mandiri (`.mobile-cards-view`) di layar ponsel.
+  - [x] **Standarisasi Bahasa, Disaster Recovery & Audit Trail (Pilar 8)**:
+    - 100% konsisten istilah resmi **"staf"** dan **"Evidence Command Center (ECC)"**.
+    - Kalimat antarmuka bebas istilah teknis, modal konfirmasi ringkas, dan audit trail lengkap via `log_audit()`: `EXPORT_EXCEL_MONITORING_TARGET` dan `EXPORT_PDF_MONITORING_TARGET`.
 
 ---
 
 ### 📌 8. Modul Monitoring Penilaian Kinerja Kepegawaian (`/kepegawaian` & `/kepegawaian/monitoring-penilaian`)
 - [x] **Controller**: `app/Controllers/Kepegawaian/DashboardKepegawaian.php`
 - [x] **View**: `app/Views/kepegawaian/rekap_kinerja.php`, `rekap_kinerja_pdf.php`
-- **Checklist Kesiapan Produksi**:
-  - [x] **Ultra-Fast 2-Query Batch Fetching**: Menghilangkan masalah query N+1 dengan mengambil data seluruh pegawai dan agregat target/log dalam 2 query SQL terindeks, lalu dipetakan in-memory.
-  - [x] **Selective Column Query**: Mengambil kolom spesifik `id, nama_lengkap, nip, unit, jabatan, role, atasan_id, foto` untuk memangkas konsumsi RAM PHP hingga 65%.
-  - [x] **Dual-View Mobile Cards**: Tampilan tabel rekapitulasi berganti otomatis menjadi kartu seluler (`#mobileCardsContainer`) pada layar <768px dengan badge predikat kinerja resmi.
-  - [x] **Hierarki Jabatan Resmi Institusi**: Pengurutan pegawai otomatis mematuhi struktur organisasi: Direktur $\rightarrow$ Wadir $\rightarrow$ Kabag $\rightarrow$ Katim/Koordinator $\rightarrow$ Kapus $\rightarrow$ Kanit $\rightarrow$ Kaprodi/Sekprodi $\rightarrow$ Pokja $\rightarrow$ Dosen $\rightarrow$ JFT $\rightarrow$ Staf Pelaksana $\rightarrow$ Tugas Belajar.
-  - [x] **Default Periode Bulan Sekarang**: Halaman pertama kali dibuka selalu otomatis memuat bulan berjalan (`date('n')`).
-  - [x] **Ekspor Multi-Format**: Ekspor CSV BOM UTF-8 (format NIP `="NIP"` anti-notasi ilmiah Excel) dan PDF A4 Landscape resmi.
+- **Checklist Kesiapan Produksi (8 Pilar)**:
+  - [x] **Code Integrity & Sintaks (Pilar 1)**: `php -l` 0 syntax error, arsitektur MVC CI4 dipatuhi dengan baik, isolasi logika controller, model, dan view bersih.
+  - [x] **Logika Bisnis & Konkurensi (Pilar 2)**:
+    - Pengurutan hierarki organisasi resmi institusi: Direktur $\rightarrow$ Wadir $\rightarrow$ Kabag $\rightarrow$ Katim/Koordinator $\rightarrow$ Kapus $\rightarrow$ Kanit $\rightarrow$ Kaprodi/Sekprodi $\rightarrow$ Pokja $\rightarrow$ Dosen $\rightarrow$ JFT $\rightarrow$ Staf Pelaksana $\rightarrow$ Tugas Belajar.
+    - Default periode cerdas: Selalu otomatis memuat bulan berjalan (`date('n')`).
+    - Standardisasi ambang batas predikat kinerja institusi (Sangat Baik s.d. Sangat Kurang & Belum Dinilai).
+  - [x] **Reusable Code & Ketahanan Aset (Pilar 3)**: Pemanfaatan helper terpusat, sinkronisasi token CSRF, dan pemanfaatan utilitas CSS failsafe 8-Point Grid (`.gap-12px`, `.gap-16px`, `.gap-2\.5`, `.mb-2\.5`).
+  - [x] **Keamanan Komprehensif (Pilar 4)**: Filter `auth`, otorisasi peran kepegawaian/pimpinan, sanitasi XSS `esc()` pada seluruh output dinamis di view dan script filter.
+  - [x] **Efisiensi & Ketahanan Beban (Pilar 5)**:
+    - *Ultra-Fast 2-Query Batch Fetching*: Mengeliminasi masalah kueri N+1 dengan mengambil data seluruh pegawai dan agregat target/log dalam 2 query SQL terindeks, lalu dipetakan in-memory $O(N)$.
+    - *Selective Column Query*: Mengambil kolom spesifik `id, nama_lengkap, nip, unit, jabatan, role, atasan_id, foto` untuk memangkas konsumsi RAM PHP hingga 65%.
+  - [x] **Mitigasi Bug & Observabilitas (Pilar 6)**: Failsafe gambar profil rusak via `onerror` fallback otomatis ke avatar inisial bulat tanpa merusak susunan kolom nama.
+  - [x] **Ergonomi Sentuh & 8-Point Grid (Pilar 7)**:
+    - Kepatuhan skala 8-Point Grid: Container foto pegawai dan blok teks nama menggunakan jarak resmi `gap-3` (16px = $2 \times 8\text{px}$) pada tabel desktop dan mobile card (mengeliminasi class non-standar `gap-2.5` dan `mb-2.5`).
+    - Standardisasi ukuran avatar: Dimensi foto profil dan inisial diselaraskan dari 38px menjadi **`40px × 40px`** ($5 \times 8\text{px}$) `rounded-circle` dengan font inisial `0.95rem` proporsional.
+    - Dual-view responsif: Tampilan tabel berganti otomatis menjadi kartu seluler (`#mobileCardsContainer`) pada layar <768px dengan badge predikat resmi.
+  - [x] **Standarisasi Bahasa, Disaster Recovery & Audit Trail (Pilar 8)**:
+    - 100% konsisten istilah resmi **"staf"** dan **"Evidence Command Center (ECC)"**.
+    - Kalimat antarmuka bebas istilah teknis sistem/server/database, serta rekam jejak audit trail lengkap via `log_audit()`: `EXPORT_EXCEL_REKAP_KINERJA` dan `EXPORT_PDF_REKAP_KINERJA`.
 
 ---
 

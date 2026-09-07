@@ -114,9 +114,25 @@ Seluruh modul perhitungan predikat (Controller, Modal AJAX, Desktop Table, Mobil
 
 ---
 
-## 6. Gaya Bahasa & Komunikasi (Tone & Simplicity)
-- **Kalimat Sederhana & Ringkas**: Dalam berkas dokumentasi (`AGENTS.md`, `design.md`, `audit_code.md`), label UI antarmuka, dan komunikasi respons ke pengguna:
-  - Gunakan kalimat yang singkat, padat, jelas, dan langsung pada intinya.
-  - Hindari kalimat yang terlalu teknis, bertele-tele, atau kepanjangan.
-  - Prioritaskan bahasa yang ramah, mudah dipahami pengguna, dan tidak berbelit-belit.
+## 6. Gaya Bahasa, Notifikasi & Mikro-Kopi (Tone, Simplicity & Microcopy)
+- **Prinsip Utama: Singkat, Padat, Jelas & Non-Teknis**:
+  - Seluruh teks pada antarmuka pengguna (UI label, tombol, tooltip, alert banner, hint form, modal pop-up, SweetAlert2, notifikasi sistem, pesan error) dan berkas dokumentasi (`AGENTS.md`, `design.md`, `audit_code.md`) **WAJIB** menggunakan bahasa yang singkat, padat, langsung pada intinya, dan ramah pengguna.
+- **Larangan Istilah Teknis pada Teks Pengguna**:
+  - Jangan pernah menampilkan istilah teknis sistem/server/database kepada pengguna, seperti: *"database"*, *"gangguan basis data"*, *"server/jaringan"*, *"SQL"*, *"query"*, *"+ toleransi X hari"*, *"exception"*, *"permanen"*, *"full table scan"*, atau kode error teknis.
+  - Gunakan kalimat yang berorientasi pada aksi solutif pengguna. Contoh:
+    - ❌ *"Gagal mengirim laporan harian karena gangguan basis data."*
+    - ✅ *"Gagal mengirim laporan. Silakan coba lagi."*
+    - ❌ *"Pengisian laporan kegiatan untuk periode Agustus 2026 telah ditutup sejak tanggal 05 September 2026 (Batas akhir bulan + toleransi 5 hari)."*
+    - ✅ *"Pengisian laporan periode Agustus 2026 telah ditutup sejak 05 September 2026."*
+    - ❌ *"Silakan isi minimal satu kegiatan pada Tugas Pokok atau Tugas Tambahan sebelum mengirim ke atasan langsung."*
+    - ✅ *"Isi minimal 1 kegiatan pokok atau tugas tambahan."*
+- **Standar Dialog Konfirmasi & Modal Pop-Up (SweetAlert2)**:
+  - **Judul Dialog**: Cukup 2–4 kata (*"Hapus Kegiatan?"*, *"Hapus Tugas Tambahan?"*, *"Kirim Laporan?"*).
+  - **Teks Dialog**: 1 kalimat pendek dan tenang (*"Kegiatan ini akan dihapus."*, bukan *"Apakah Anda yakin ingin menghapus catatan kegiatan ini?"*).
+  - **Tombol Aksi**: Kata kerja singkat dan tegas (*"Ya, Hapus"*, *"Kirim"*, *"Batal"*).
+  - **Umpan Balik Sukses**: Judul *"Terhapus"* / *"Tersimpan"*, teks *"Kegiatan berhasil dihapus."* / *"Draf berhasil disimpan."*
+- **Kepatuhan Mutlak Terminologi & Branding**:
+  - Tetap konsisten 100% menggunakan istilah resmi **"staf"** (tidak boleh menggunakan "bawahan" atau "staff").
+  - Tetap konsisten 100% menggunakan identitas resmi **"Evidence Command Center (ECC)"** (tidak boleh menggunakan "Simonik").
+
 

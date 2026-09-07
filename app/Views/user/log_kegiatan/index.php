@@ -478,6 +478,13 @@
         <div>
             <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1.5 small fw-semibold">
                 <i class="bi bi-calendar-date me-1"></i> <?= date('d M Y', strtotime($tanggal_terpilih)) ?>
+                <?php if ($tanggal_terpilih === ($today ?? date('Y-m-d'))): ?>
+                    <span class="badge bg-primary text-white ms-1 rounded-pill fw-bold">Hari Ini</span>
+                <?php elseif (!empty($is_tomorrow)): ?>
+                    <span class="badge bg-info text-white ms-1 rounded-pill fw-bold">Besok</span>
+                <?php elseif (!empty($is_future_date)): ?>
+                    <span class="badge bg-info text-white ms-1 rounded-pill fw-bold">Rencana Mendatang</span>
+                <?php endif; ?>
             </span>
         </div>
     </div>
@@ -510,9 +517,10 @@
                         
                         <div class="d-flex align-items-center gap-2 flex-wrap">
                             <?php
-                                $prevDay = date('Y-m-d', strtotime($tanggal_terpilih . ' -1 day'));
-                                $nextDay = date('Y-m-d', strtotime($tanggal_terpilih . ' +1 day'));
-                                $today   = date('Y-m-d');
+                                $prevDay        = date('Y-m-d', strtotime($tanggal_terpilih . ' -1 day'));
+                                $nextDay        = date('Y-m-d', strtotime($tanggal_terpilih . ' +1 day'));
+                                $today          = $today ?? date('Y-m-d');
+                                $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
                             ?>
                             <!-- Prev Day Button (Left) -->
                             <a href="<?= site_url('log-kegiatan') ?>?tanggal=<?= $prevDay ?>" class="date-nav-btn btn-tactile shadow-xs" title="Hari Sebelumnya (<?= date('d/m/Y', strtotime($prevDay)) ?>)" aria-label="Hari Sebelumnya">
@@ -533,7 +541,7 @@
                             </div>
 
                             <!-- Next Day Button (Right) -->
-                            <a href="<?= ($nextDay <= $today) ? site_url('log-kegiatan') . '?tanggal=' . $nextDay : 'javascript:void(0)' ?>" class="date-nav-btn btn-tactile shadow-xs <?= ($nextDay > $today) ? 'disabled opacity-50 pe-none' : '' ?>" title="Hari Berikutnya (<?= date('d/m/Y', strtotime($nextDay)) ?>)" aria-label="Hari Berikutnya">
+                            <a href="<?= ($nextDay <= $maxAllowedDate) ? site_url('log-kegiatan') . '?tanggal=' . $nextDay : 'javascript:void(0)' ?>" class="date-nav-btn btn-tactile shadow-xs <?= ($nextDay > $maxAllowedDate) ? 'disabled opacity-50 pe-none' : '' ?>" title="Hari Berikutnya (<?= date('d/m/Y', strtotime($nextDay)) ?>)" aria-label="Hari Berikutnya">
                                 <i class="bi bi-chevron-right"></i>
                             </a>
 
@@ -568,27 +576,34 @@
             </div>
 
             <!-- SINGLE UNIFIED TOP ALERT NOTIFICATION -->
-            <?php if (isset($target_status) && $target_status === 'belum_ada'): ?>
+            <?php if ($is_locked): ?>
+                <div class="alert alert-warning mb-3 shadow-sm py-2.5 px-3 d-flex align-items-center justify-content-between flex-wrap gap-2 small rounded-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-lock-fill text-warning-emphasis fs-5 flex-shrink-0"></i>
+                        <div>
+                            <strong>Laporan Terkunci.</strong> <?= esc(!empty($lock_reason) ? $lock_reason : 'Laporan tanggal ini sudah dikirim dan tidak dapat diubah.') ?>
+                        </div>
+                    </div>
+                </div>
+            <?php elseif (!empty($is_future_date)): ?>
+                <div class="alert alert-info border-info-subtle bg-info-subtle text-info-emphasis mb-3 shadow-sm py-2 px-3 d-flex align-items-center gap-2 small rounded-4">
+                    <i class="bi bi-info-circle-fill text-info fs-5 flex-shrink-0"></i>
+                    <div>
+                        <strong>Rencana Kegiatan:</strong> Simpan sebagai draf terlebih dahulu. Laporan baru bisa dikirim saat hari kegiatan tiba.
+                    </div>
+                </div>
+            <?php elseif (isset($target_status) && $target_status === 'belum_ada'): ?>
                 <div class="alert alert-danger mb-3 shadow-sm py-2.5 px-3 small rounded-4 d-flex align-items-center gap-2">
                     <i class="bi bi-exclamation-triangle-fill fs-5 text-danger flex-shrink-0"></i>
                     <div>
-                        <strong>Target Belum Ada.</strong> Silakan susun target pada menu <strong>Target Kinerja Bulanan</strong> terlebih dahulu.
+                        <strong>Target Belum Ada.</strong> Buat target di menu <strong>Target Kinerja Bulanan</strong> terlebih dahulu.
                     </div>
                 </div>
             <?php elseif (isset($target_status) && $target_status === 'belum_disetujui'): ?>
                 <div class="alert alert-warning mb-3 shadow-sm py-2.5 px-3 small rounded-4 d-flex align-items-center gap-2">
                     <i class="bi bi-clock-history fs-5 text-warning-emphasis flex-shrink-0"></i>
                     <div>
-                        <strong>Target Belum Disetujui.</strong> Menunggu persetujuan atasan langsung sebelum dapat mengisi laporan kegiatan harian.
-                    </div>
-                </div>
-            <?php elseif ($is_locked): ?>
-                <div class="alert alert-warning mb-3 shadow-sm py-2.5 px-3 d-flex align-items-center justify-content-between flex-wrap gap-2 small rounded-4">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-lock-fill text-warning-emphasis fs-5 flex-shrink-0"></i>
-                        <div>
-                            <strong>Laporan Terkunci.</strong> <?= esc(!empty($lock_reason) ? $lock_reason : 'Laporan pada tanggal ini telah dikirim ke atasan dan berada dalam status terkunci.') ?>
-                        </div>
+                        <strong>Target Belum Disetujui.</strong> Menunggu persetujuan atasan sebelum dapat mengisi laporan.
                     </div>
                 </div>
             <?php endif; ?>
@@ -851,12 +866,14 @@
             <!-- SINGLE UNIFIED BUTTON TOOLBAR AT BOTTOM -->
             <?php if (!$is_locked): ?>
             <div class="d-flex justify-content-end align-items-center mt-4 gap-2 btn-action-container bento-stagger bento-stagger-3">
-                <button type="button" id="btnSimpanSementara" class="btn btn-outline-primary btn-tactile rounded-pill shadow-sm px-4 py-2 fw-semibold">
+                <button type="button" id="btnSimpanSementara" class="btn <?= empty($is_future_date) ? 'btn-outline-primary fw-semibold' : 'btn-primary fw-bold' ?> btn-tactile rounded-pill shadow-sm px-4 py-2">
                     <i class="bi bi-cloud-arrow-up me-1.5"></i> Simpan Draf
                 </button>
-                <button type="submit" class="btn btn-primary btn-tactile rounded-pill shadow-sm px-4 py-2 fw-bold">
-                    <i class="bi bi-send me-1.5"></i> Kirim Laporan
-                </button>
+                <?php if (empty($is_future_date)): ?>
+                    <button type="submit" class="btn btn-primary btn-tactile rounded-pill shadow-sm px-4 py-2 fw-bold">
+                        <i class="bi bi-send me-1.5"></i> Kirim Laporan
+                    </button>
+                <?php endif; ?>
             </div>
             <?php endif; ?>
         </form>
@@ -1019,27 +1036,27 @@
                                         Swal.fire({
                                             icon: 'success',
                                             title: 'Terhapus',
-                                            text: 'Catatan kegiatan harian berhasil dihapus.',
+                                            text: 'Kegiatan berhasil dihapus.',
                                             timer: 1500,
                                             showConfirmButton: false
                                         });
                                     } else {
-                                        alert('Catatan kegiatan harian berhasil dihapus.');
+                                        alert('Kegiatan berhasil dihapus.');
                                     }
                                 } else {
                                     if (typeof Swal !== 'undefined') {
-                                        Swal.fire('Gagal', response.message || 'Gagal menghapus data.', 'error');
+                                        Swal.fire('Gagal', response.message || 'Gagal menghapus.', 'error');
                                     } else {
-                                        alert('Gagal: ' + (response.message || 'Gagal menghapus data.'));
+                                        alert('Gagal: ' + (response.message || 'Gagal menghapus.'));
                                     }
                                 }
                             },
                             error: function(xhr, status, error) {
                                 console.error('Hapus Log Error:', xhr.responseText);
                                 if (typeof Swal !== 'undefined') {
-                                    Swal.fire('Error', 'Terjadi kesalahan saat menghapus data. Silakan coba lagi.', 'error');
+                                    Swal.fire('Gagal', 'Terjadi kendala. Silakan coba lagi.', 'error');
                                 } else {
-                                    alert('Terjadi kesalahan saat menghapus data.');
+                                    alert('Terjadi kendala saat menghapus data.');
                                 }
                             }
                         });
@@ -1047,13 +1064,13 @@
 
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
-                            title: 'Hapus Kegiatan Harian?',
-                            text: 'Apakah Anda yakin ingin menghapus catatan kegiatan ini?',
+                            title: 'Hapus Kegiatan?',
+                            text: 'Kegiatan ini akan dihapus.',
                             icon: 'warning',
                             showCancelButton: true,
                             confirmButtonColor: '#dc3545',
                             cancelButtonColor: '#6c757d',
-                            confirmButtonText: '<i class="bi bi-trash3-fill me-1"></i> Ya, Hapus Kegiatan',
+                            confirmButtonText: '<i class="bi bi-trash3-fill me-1"></i> Ya, Hapus',
                             cancelButtonText: 'Batal'
                         }).then((result) => {
                             if (result.isConfirmed) {
@@ -1061,7 +1078,7 @@
                             }
                         });
                     } else {
-                        if (confirm('Apakah Anda yakin ingin menghapus catatan kegiatan ini?')) {
+                        if (confirm('Kegiatan ini akan dihapus. Lanjutkan?')) {
                             doDeletePokok();
                         }
                     }
@@ -1070,9 +1087,9 @@
                 }
             } else {
                 if (typeof Swal !== 'undefined') {
-                    Swal.fire('Pemberitahuan', 'Minimal harus ada 1 kegiatan (Tugas Pokok atau Tugas Tambahan) yang dilaporkan.', 'info');
+                    Swal.fire('Pemberitahuan', 'Isi minimal 1 kegiatan pokok atau tugas tambahan.', 'info');
                 } else {
-                    alert('Minimal harus ada 1 kegiatan (Tugas Pokok atau Tugas Tambahan) yang dilaporkan.');
+                    alert('Isi minimal 1 kegiatan pokok atau tugas tambahan.');
                 }
             }
         });
@@ -1165,17 +1182,17 @@
                                 if (typeof Swal !== 'undefined') {
                                     Swal.fire({
                                         icon: 'success',
-                                        title: 'Terhapus!',
-                                        text: 'Data tugas tambahan berhasil dihapus.',
+                                        title: 'Terhapus',
+                                        text: 'Tugas tambahan berhasil dihapus.',
                                         timer: 1500,
                                         showConfirmButton: false
                                     });
                                 } else {
-                                    alert('Data tugas tambahan berhasil dihapus.');
+                                    alert('Tugas tambahan berhasil dihapus.');
                                 }
                             } else {
                                 if (typeof Swal !== 'undefined') {
-                                    Swal.fire('Gagal!', response.message || 'Gagal menghapus.', 'error');
+                                    Swal.fire('Gagal', response.message || 'Gagal menghapus.', 'error');
                                 } else {
                                     alert('Gagal: ' + (response.message || 'Gagal menghapus.'));
                                 }
@@ -1183,9 +1200,9 @@
                         },
                         error: function() {
                             if (typeof Swal !== 'undefined') {
-                                Swal.fire('Error', 'Terjadi kesalahan sistem.', 'error');
+                                Swal.fire('Gagal', 'Terjadi kendala. Silakan coba lagi.', 'error');
                             } else {
-                                alert('Terjadi kesalahan sistem.');
+                                alert('Terjadi kendala sistem.');
                             }
                         }
                     });
@@ -1194,12 +1211,12 @@
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
                         title: 'Hapus Tugas Tambahan?',
-                        text: "Data yang sudah disimpan akan dihapus permanen.",
+                        text: 'Tugas tambahan ini akan dihapus.',
                         icon: 'warning',
                         showCancelButton: true,
                         confirmButtonColor: '#dc3545',
                         cancelButtonColor: '#6c757d',
-                        confirmButtonText: '<i class="bi bi-trash3-fill me-1"></i> Ya, Hapus Tugas',
+                        confirmButtonText: '<i class="bi bi-trash3-fill me-1"></i> Ya, Hapus',
                         cancelButtonText: 'Batal'
                     }).then((result) => {
                         if (result.isConfirmed) {
@@ -1207,7 +1224,7 @@
                         }
                     });
                 } else {
-                    if (confirm('Hapus Tugas Tambahan? Data yang sudah disimpan akan dihapus permanen.')) {
+                    if (confirm('Tugas tambahan ini akan dihapus. Lanjutkan?')) {
                         doDeleteTambahan();
                     }
                 }
@@ -1237,6 +1254,23 @@
 
         // Validasi Form saat klik "Simpan & Kirim Laporan Harian" (Form Submit Normal)
         $('#formLog').on('submit', function(e) {
+            const isFutureDatePage = <?= !empty($is_future_date) ? 'true' : 'false' ?>;
+            if (isFutureDatePage) {
+                e.preventDefault();
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Rencana Kegiatan',
+                        text: 'Rencana kegiatan hanya dapat disimpan sebagai draf.',
+                        confirmButtonColor: '#0d6efd',
+                        confirmButtonText: 'Saya Mengerti'
+                    });
+                } else {
+                    alert('Rencana kegiatan hanya dapat disimpan sebagai draf.');
+                }
+                return false;
+            }
+
             // Bersihkan semua hint highlight merah sebelumnya
             $('#formLog .is-invalid').removeClass('is-invalid');
 
@@ -1269,21 +1303,21 @@
                     }
                     if (!deskripsi) {
                         deskripsiElem.addClass('is-invalid');
-                        missingCols.push('Deskripsi Kegiatan');
+                        missingCols.push('Deskripsi');
                     }
                     let capaianVal = parseFloat(capaian.replace(',', '.'));
                     if (capaian === '' || isNaN(capaianVal) || capaianVal <= 0) {
                         capaianElem.addClass('is-invalid');
-                        missingCols.push(capaianVal <= 0 ? 'Jumlah Capaian (> 0)' : 'Jumlah Capaian');
+                        missingCols.push(capaianVal <= 0 ? 'Capaian (> 0)' : 'Capaian');
                     }
                     if (!link || link === 'https://...') {
                         linkElem.addClass('is-invalid');
-                        missingCols.push('Link Bukti Pekerjaan');
+                        missingCols.push('Tautan Bukti');
                     }
 
                     if (missingCols.length > 0) {
                         isValid = false;
-                        errorHints.push(`<b>Tugas Pokok Baris ke-${rowNum}</b>: Kolom <i>${missingCols.join(', ')}</i> belum terisi.`);
+                        errorHints.push(`<b>Tugas Pokok Baris ${rowNum}</b>: ${missingCols.join(', ')} belum diisi.`);
                     }
                 }
             });
@@ -1305,21 +1339,21 @@
 
                     if (!deskripsiTmb) {
                         deskripsiElem.addClass('is-invalid');
-                        missingCols.push('Deskripsi Kegiatan');
+                        missingCols.push('Deskripsi');
                     }
                     let capaianValTmb = parseFloat(capaianTmb.replace(',', '.'));
                     if (capaianTmb === '' || isNaN(capaianValTmb) || capaianValTmb <= 0) {
                         capaianElem.addClass('is-invalid');
-                        missingCols.push(capaianValTmb <= 0 ? 'Jumlah Capaian (> 0)' : 'Jumlah Capaian');
+                        missingCols.push(capaianValTmb <= 0 ? 'Capaian (> 0)' : 'Capaian');
                     }
                     if (!linkTmb || linkTmb === 'https://...') {
                         linkElem.addClass('is-invalid');
-                        missingCols.push('Link Bukti Pekerjaan');
+                        missingCols.push('Tautan Bukti');
                     }
 
                     if (missingCols.length > 0) {
                         isValid = false;
-                        errorHints.push(`<b>Tugas Tambahan Baris ke-${rowNum}</b>: Kolom <i>${missingCols.join(', ')}</i> belum terisi.`);
+                        errorHints.push(`<b>Tugas Tambahan Baris ${rowNum}</b>: ${missingCols.join(', ')} belum diisi.`);
                     }
                 }
             });
@@ -1330,19 +1364,19 @@
                     Swal.fire({
                         icon: 'warning',
                         title: 'Laporan Masih Kosong',
-                        text: 'Silakan isi minimal satu kegiatan pada Tugas Pokok atau Tugas Tambahan sebelum mengirim ke atasan langsung.'
+                        text: 'Isi minimal 1 kegiatan pokok atau tugas tambahan.'
                     });
                 } else {
-                    alert('Silakan isi minimal satu kegiatan pada Tugas Pokok atau Tugas Tambahan sebelum mengirim ke atasan langsung.');
+                    alert('Isi minimal 1 kegiatan pokok atau tugas tambahan.');
                 }
                 return false;
             }
 
             if (!isValid) {
                 e.preventDefault();
-                let hintHtml = `<div class="text-start small mt-2"><p class="mb-2 text-danger fw-bold">Beberapa kolom belum lengkap sebelum pengiriman:</p><ul class="ps-3 mb-0">` +
+                let hintHtml = `<div class="text-start small mt-2"><p class="mb-2 text-danger fw-bold">Kolom berikut wajib dilengkapi:</p><ul class="ps-3 mb-0">` +
                                errorHints.map(h => `<li class="mb-1">${h}</li>`).join('') +
-                               `</ul><p class="mt-2 text-muted mb-0" style="font-size:0.8rem;">💡 <i>Tips: Jika belum selesai diisi, Anda dapat menekan tombol <b>Simpan Sementara</b> terlebih dahulu.</i></p></div>`;
+                               `</ul><p class="mt-2 text-muted mb-0" style="font-size:0.8rem;">💡 <i>Gunakan tombol <b>Simpan Draf</b> jika belum selesai.</i></p></div>`;
                 
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
@@ -1382,7 +1416,7 @@
                     }
 
                     if (response.success) {
-                        btn.html('<i class="bi bi-check-lg me-2"></i> Tersimpan Draf').removeClass('btn-outline-primary').addClass('btn-outline-success');
+                        btn.html('<i class="bi bi-check-lg me-2"></i> Tersimpan').removeClass('btn-outline-primary').addClass('btn-outline-success');
                         
                         if (response.new_ids) {
                             tabelLog.find('tr.row-tugas-pokok').each(function(idx) {
@@ -1409,13 +1443,13 @@
                         if (typeof Swal !== 'undefined') {
                             Swal.fire({
                                 icon: 'success',
-                                title: 'Tersimpan Draf',
-                                text: response.message || 'Laporan harian & tugas tambahan berhasil disimpan sementara.',
+                                title: 'Tersimpan',
+                                text: response.message || 'Draf kegiatan berhasil disimpan.',
                                 timer: 2000,
                                 showConfirmButton: false
                             });
                         } else {
-                            alert(response.message || 'Laporan harian & tugas tambahan berhasil disimpan sementara.');
+                            alert(response.message || 'Draf kegiatan berhasil disimpan.');
                         }
 
                         setTimeout(() => {
@@ -1433,9 +1467,9 @@
                 error: function(xhr, status, error) {
                     console.error(error);
                     if (typeof Swal !== 'undefined') {
-                        Swal.fire('Error', 'Terjadi kesalahan jaringan atau server. Silakan coba lagi.', 'error');
+                        Swal.fire('Gagal', 'Terjadi kendala jaringan. Silakan coba lagi.', 'error');
                     } else {
-                        alert('Terjadi kesalahan jaringan atau server. Silakan coba lagi.');
+                        alert('Terjadi kendala jaringan. Silakan coba lagi.');
                     }
                     btn.html(originalText).prop('disabled', false);
                 }
@@ -1456,7 +1490,7 @@
                 altFormat: "l, j F Y",
                 altInputClass: "form-control border-0 fw-bold date-btn-input shadow-none",
                 defaultDate: "<?= esc($tanggal_terpilih) ?>",
-                maxDate: "today",
+                maxDate: "<?= esc($max_future_date ?? date('Y-m-t', strtotime($today ?? date('Y-m-d')))) ?>",
                 locale: "id",
                 disableMobile: true,
                 onDayCreate: function(dObj, dStr, fp, dayElem) {
