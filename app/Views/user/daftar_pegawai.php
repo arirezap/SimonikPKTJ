@@ -42,7 +42,7 @@
     <div class="d-flex justify-content-between flex-wrap align-items-center pt-2 pb-2 mb-3 border-bottom gap-2">
         <div class="d-flex align-items-center gap-2">
             <h1 class="h4 mb-0 fw-bold text-dark"><i class="bi bi-person-lines-fill text-primary me-2"></i>Daftar Pegawai</h1>
-            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 small">
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 small">
                 Total <?= count($users) ?> Pegawai
             </span>
         </div>
@@ -90,7 +90,7 @@
                     </select>
                 </div>
                 <div class="col-12 col-md-2">
-                    <button type="submit" class="btn btn-sm btn-primary w-100 fw-bold shadow-sm px-3" style="min-height: 31px;">
+                    <button type="submit" class="btn btn-sm btn-primary w-100 fw-bold shadow-sm px-3" style="min-height: 32px;">
                         <i class="bi bi-funnel-fill me-1"></i> Filter
                     </button>
                 </div>

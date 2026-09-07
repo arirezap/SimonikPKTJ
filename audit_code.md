@@ -42,16 +42,49 @@ Setiap kali audit kode dilakukan dan menemukan celah, kekurangan, atau kebutuhan
 
 Berikut adalah status audit dan verifikasi kelayakan produksi pada seluruh 15 modul aplikasi:
 
-### 📌 1. Modul Autentikasi & Sesi (Auth & Login — `/login`)
-- [x] **Controller**: `app/Controllers/Auth.php` | **View**: `app/Views/login.php`
-- **Checklist Kesiapan Produksi**:
-  - [x] **Brute-force Throttling**: Layanan `Throttler` CI4 membatasi maksimal 10 percobaan login per menit per IP.
-  - [x] **Pencegahan User Enumeration**: Pesan kesalahan login seragam (*"Nama pengguna atau kata sandi yang Anda masukkan salah."*).
-  - [x] **Auto Password Upgrade**: Upgrade otomatis password hash warisan (MD5/Plain) ke algoritma `BCRYPT` saat login sukses.
-  - [x] **Hardened Logout (CSRF POST)**: Logout wajib via HTTP POST ber-CSRF (`#logoutPostForm`) dengan pembersihan sesi total dan header `Cache-Control: no-store`.
-  - [x] **Audit Trail Login**: Pencatatan audit log terintegrasi untuk `LOGIN`, `FAILED_LOGIN` (lengkap dengan IP & User Agent), dan `LOGOUT`.
-  - [x] **Mobile-Friendly**: Formulir terpusat ergonomis, input font 16px (anti auto-zoom iOS), dan tombol touch target $\ge 44\text{px}$.
-  - [x] **Visual Stability & Ergonomi (Zero Shake & Zero Floating)**: Kartu login 100% solid dan stabil tanpa animasi 3D tilt mouse, tanpa animasi melayang (*floating bobs*), tanpa *stagger-sliding*, dan tanpa efek getar (*shaking*) saat autentikasi gagal. Umpan balik error disajikan secara tenang, jelas, dan non-intrusif via alert box inline berstandar enterprise.
+### 📌 1. Modul Autentikasi & Sesi (Auth, Login & Logout — `/login` & `/logout`)
+- [x] **Controller**: `app/Controllers/Auth.php`
+- [x] **View**: `app/Views/login.php`, `app/Views/layouts/main.php`
+- **Checklist Kesiapan Produksi (8 Pilar)**:
+  - [x] **Code Integrity & Sintaks (Pilar 1)**: `php -l` 0 syntax error, standar arsitektur MVC CI4 dipatuhi dengan baik, isolasi logika controller `Auth.php` dan tampilan antarmuka (`login.php` & `layouts/main.php`) bersih tanpa kueri SQL di view.
+  - [x] **Logika Bisnis & Konkurensi (Pilar 2)**:
+    - Pengalihan otomatis: Pengguna yang telah memiliki sesi aktif (`isLoggedIn`) langsung dialihkan ke dashboard (`/dashboard`).
+    - Proteksi brute force berbasis waktu via Throttler CI4 (`10 attempt/menit` per IP dengan `md5($ipAddress . '_login')`).
+    - Verifikasi kata sandi aman: Menggunakan `password_verify()` dan auto rehash password hash lama/warisan ke algoritma `BCRYPT` (`PASSWORD_DEFAULT`).
+    - Pemetaan multi-role: Mendukung penarikan seluruh peran pengguna dari tabel pivot `user_roles` dan disimpan ke `$allRoles` sesi.
+    - Pertahanan *Session Fixation*: Menjalankan `session()->regenerate(true)` saat login berhasil untuk menghancurkan session ID lama.
+    - Fitur *Remember Me* persisten: Token terenkripsi tersimpan dalam kuki aman selama 30 hari.
+    - Prosedur Logout bersih & aman: Pembersihan sesi total via `session()->destroy()`, penghapusan kuki token `remember_me`, dan penerapan HTTP Headers anti-cache (`Cache-Control: no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0`) untuk mencegah tombol "Back" peramban menampilkan data terotentikasi.
+  - [x] **Reusable Code & Ketahanan Aset (Pilar 3)**: Pemanfaatan helper terpusat `cookie` dan `audit_helper` (`log_audit`). Penanganan fallback dialog visual SweetAlert2 ke dialog native browser (`alert()` & `confirm()`) anti kegagalan CDN.
+  - [x] **Keamanan Komprehensif (Pilar 4)**:
+    - Proteksi CSRF penuh pada form POST login dan logout (`#logoutPostForm`) dengan `<?= csrf_field() ?>`.
+    - Sanitasi XSS `esc()` pada seluruh nilai masukan lama dan flashdata.
+    - Mitigasi *User Enumeration*: Pesan kesalahan seragam baik saat akun tidak terdaftar maupun kata sandi salah (*"Nama pengguna atau kata sandi yang Anda masukkan salah."*).
+    - Kuki sesi dan token dilindungi dengan flag `HttpOnly=true`.
+  - [x] **Efisiensi & Ketahanan Beban (Pilar 5)**:
+    - Kueri pencarian akun pengguna tunggal terindeks berdasarkan kolom `username`.
+    - Kueri peran sekunder tunggal pada tabel pivot `user_roles` berindeks `user_id` (0 masalah kueri N+1).
+    - Eksekusi logout instan tanpa kueri berat.
+  - [x] **Mitigasi Bug & Observabilitas (Pilar 6)**:
+    - Pencatatan jejak audit komprehensif via `log_audit()`:
+      - `LOGIN`: saat berhasil masuk
+      - `FAILED_LOGIN`: saat gagal masuk (mencatat alasan dan IP)
+      - `RATE_LIMIT_LOGIN`: saat melewati batas percobaan login
+      - `LOGOUT`: saat pengguna keluar sistem (lengkap dengan user_id, username, IP, dan User Agent)
+    - Penanganan sanitasi `trim()` pada nama pengguna untuk mencegah kegagalan akibat spasi tidak sengaja.
+    - Indikator spinner dan penonaktifan tombol login saat pengiriman formulir valid untuk mencegah pengiriman ganda (*double-submit*).
+  - [x] **Ergonomi Sentuh & 8-Point Grid (Pilar 7)**:
+    - Desain kartu login bento `.fit-card` stabil, solid, dan *zero-motion* (tanpa animasi getar atau melayang yang mengganggu).
+    - Tombol masuk dan item menu logout memiliki touch target nyaman $\ge 44\text{px}$ dengan umpan balik taktil `.btn-tactile`.
+    - Masukan formulir `height: 42px;` dengan font 16px untuk mencegah *auto-zoom* pada iOS Safari.
+    - Tombol toggle lihat/sembunyikan kata sandi interaktif lengkap dengan atribut aksesibilitas `aria-label`.
+    - Fokus cerdas (*autofocus*): otomatis memindahkan kursor ke kolom kata sandi jika nama pengguna sudah tersimpan di peramban.
+    - Penataan layout dan dialog konfirmasi mematuhi skala 8-Point Grid (`mb-3` = 16px, `mb-4` = 24px, pill buttons `px-4 py-2`).
+  - [x] **Standarisasi Bahasa, Disaster Recovery & Audit Trail (Pilar 8)**:
+    - 100% patuh identitas resmi institusi **"Evidence Command Center (ECC) • PKTJ Tegal"**.
+    - Bebas dari istilah teknis sistem/server/database. Seluruh pesan error dan konfirmasi ramah pengguna, ringkas, dan tenang.
+    - Penyelarasan mikro-kopi 100% konsisten bahasa Indonesia baku: label dropdown profil **"Keluar"**, dialog konfirmasi SweetAlert2 judul **"Keluar dari Sistem?"**, teks *"Sesi Anda saat ini akan diakhiri."*, dan tombol **"Ya, Keluar"**.
+    - Audit trail komprehensif mencatat setiap siklus autentikasi (masuk dan keluar) ke basis data.
 
 ---
 
@@ -358,6 +391,72 @@ Berikut adalah status audit dan verifikasi kelayakan produksi pada seluruh 15 mo
   - [x] **Proteksi Grup Autentikasi**: Seluruh rute internal dibungkus dalam grup `['filter' => 'auth']`.
   - [x] **Kunci Metode Hapus ke POST**: Seluruh aksi penghapusan data (Master Data, SKP, dan Bukti LED) wajib menggunakan metode `POST` dan token CSRF.
   - [x] **Bebas Broken Routes**: Seluruh endpoint terdaftar eksplisit dan konsisten dengan form view.
+
+---
+
+### 📌 17. Modul Direktori Daftar Pegawai (Employee Directory — `/daftar-pegawai`)
+- [x] **Controller**: `app/Controllers/User/DaftarPegawaiController.php`
+- [x] **View**: `app/Views/user/daftar_pegawai.php`
+- **Checklist Kesiapan Produksi (8 Pilar)**:
+  - [x] **Code Integrity & Sintaks (Pilar 1)**: `php -l` 0 syntax error, arsitektur MVC CI4 dipatuhi dengan baik, isolasi logika query controller dan view bersih tanpa kueri database di template tampilan.
+  - [x] **Logika Bisnis & Konkurensi (Pilar 2)**:
+    - Pengecualian akun Superadmin: Akun dengan `role = 'admin'` atau `username = 'admin'`, serta user yang memiliki peran admin di tabel pivot `user_roles`, disembunyikan secara aman dari direktori pegawai.
+    - Pencarian fleksibel: Multi-field search mencakup Nama Lengkap, NIP, dan Username.
+    - Filter dropdown dinamis: Filter Unit Kerja (sinkron dengan data master) dan filter Peran/Role (Staf, Kanit, Katim, Kabag, Wadir, Direktur, Kepegawaian, SPM).
+    - Kolom pengurutan dinamis: Mendukung sort Nama, Jabatan, Unit Kerja, dan Atasan Langsung (ASC/DESC) dengan whitelist column mapping `$validSortColumns` yang aman dari SQL Injection.
+  - [x] **Reusable Code & Ketahanan Aset (Pilar 3)**: Pemanfaatan helper terpusat `render_user_avatar()` untuk konsistensi avatar, serta model `UnitKerja` untuk penarikan data unit.
+  - [x] **Keamanan Komprehensif (Pilar 4)**:
+    - Terproteksi di bawah filter grup `['filter' => 'auth']`.
+    - Sanitasi XSS `esc()` pada seluruh parameter masukan dan data keluaran tabel.
+    - Kueri kolom selektif (*Selective Columns*): Menarik hanya kolom publik yang diperlukan (`id, nama_lengkap, nip, username, jabatan, pangkat, unit, role, foto, atasan_id`) tanpa mengekspos hash kata sandi pengguna ke view.
+  - [x] **Efisiensi & Ketahanan Beban (Pilar 5)**:
+    - Kueri tunggal terindeks `users` join `users as atasan` (0 masalah kueri N+1).
+    - Penggunaan kolom selektif memangkas konsumsi RAM PHP pada dataset ratusan pegawai.
+  - [x] **Mitigasi Bug & Observabilitas (Pilar 6)**: Penanganan `null/empty` terpadu pada NIP, Jabatan, Pangkat, Unit Kerja, dan Atasan Langsung dengan tampilan empty state yang informatif jika data pencarian nihil.
+  - [x] **Ergonomi Sentuh & 8-Point Grid (Pilar 7)**:
+    - Skala 8-Point Grid: Avatar pegawai kompak `32px` ($4 \times 8\text{px}$) dengan margin `me-2` (8px).
+    - Tombol filter berukuran standar `min-height: 32px;` ($4 \times 8\text{px}$) dan badge padding `px-3 py-1`.
+    - Tabel responsif seluler `.table-responsive-smooth` dengan scroll horizontal sentuh lancar di ponsel.
+  - [x] **Standarisasi Bahasa, Disaster Recovery & Audit Trail (Pilar 8)**:
+    - 100% konsisten istilah resmi **"staf"** (`Pegawai (Staf)`), bebas dari kata "bawahan".
+    - Bebas dari istilah teknis sistem/server/database.
+
+---
+
+### 📌 18. Modul Profil Saya (My Profile — `/profile`)
+- [x] **Controller**: `app/Controllers/Profile.php`
+- [x] **View**: `app/Views/profile.php`
+- **Checklist Kesiapan Produksi (8 Pilar)**:
+  - [x] **Code Integrity & Sintaks (Pilar 1)**: `php -l` 0 syntax error, standar arsitektur MVC CI4 dipatuhi dengan baik, isolasi fungsi pengontrol dan view bersih tanpa kueri database langsung di template tampilan.
+  - [x] **Logika Bisnis & Konkurensi (Pilar 2)**:
+    - Normalisasi Relasi Unit Kerja: Mekanisme *Dual-Sync* menyelaraskan string `users.unit` dan integer foreign key `users.unit_id` secara otomatis via model `UnitKerja`.
+    - Proteksi Self-Atasan Loop: Mencegah pengguna memilih ID dirinya sendiri sebagai atasan langsung (`atasan_id`).
+    - Otomasi Penetapan Peran SPM: Pengguna yang memindahkan unit kerjanya ke Satuan Penjaminan Mutu otomatis mendapatkan hak peran `spm`.
+    - Validasi Keunikan Unik: Pemeriksaan keunikan email dan NIP mencegah tabrakan data (*collision*) dengan akun pegawai lain.
+    - Pembaruan Sesi Komprehensif: Nilai nama lengkap, unit kerja, `unit_id`, role, dan nama file foto langsung diperbarui pada sesi aktif tanpa perlu login ulang.
+  - [x] **Reusable Code & Ketahanan Aset (Pilar 3)**: Pemanfaatan model `User` dan `UnitKerja`, helper `audit_helper` (`log_audit()`), serta fallback dialog native peramban jika CDN SweetAlert2 offline.
+  - [x] **Keamanan Komprehensif (Pilar 4)**:
+    - Proteksi CSRF penuh via `<?= csrf_field() ?>`.
+    - Sanitasi XSS menyeluruh dengan `esc()` pada seluruh parameter tampilan dan atribut formulir.
+    - Pengamanan Password Hashing: BCRYPT default (`password_hash($password, PASSWORD_DEFAULT)`).
+    - Proteksi Path Traversal: Penggunaan `basename()` dan verifikasi `FCPATH` saat menghapus berkas foto lama.
+    - Validasi Berkas Berlapis: Pembatasan ekstensi gambar (JPG, JPEG, PNG) dan ukuran maksimal 2MB di sisi klien (JavaScript FileReader) dan sisi server (`is_image`, `mime_in`, `max_size`).
+    - Proteksi Username Terkunci: Username bersifat *readonly* dan tidak dapat diubah melalui payload POST.
+  - [x] **Efisiensi & Ketahanan Beban (Pilar 5)**:
+    - Kueri atasan potensial selektif (`id, nama_lengkap, nip, unit, jabatan, role`) tanpa mengekspos hash kata sandi dan menghemat memori PHP.
+    - Transaksi basis data atomik (`transStart()`, `transComplete()`, dan `transRollback()`) mencegah data setengah tersimpan.
+  - [x] **Mitigasi Bug & Observabilitas (Pilar 6)**:
+    - Form State Repopulation: Penggunaan `old('field', $user['field'])` menjamin input pengguna tidak hilang saat terjadi kesalahan validasi.
+    - Anti Double-Submit: Tombol simpan terkunci dan menampilkan indikator memuat saat proses pengiriman berlangsung.
+    - Jejak Audit: Pencatatan jejak audit `UPDATE` ke tabel `audit_logs` dengan membandingkan data lama dan baru.
+  - [x] **Ergonomi Sentuh & 8-Point Grid (Pilar 7)**:
+    - Skala 8-Point Grid: Kontainer ikon header kartu terstandarisasi `40px × 40px` ($5 \times 8\text{px}$) `border-radius: 12px`, padding badge `px-3 py-1`, dan tinggi tombol toggle kata sandi `min-height: 36px`.
+    - Touch Target Ramah Seluler: Tombol kamera avatar dan toggle kata sandi memiliki area sentuh $\ge 44\text{px}$.
+    - Mobile Floating Action Bar: Tombol simpan melayang (*sticky*) memudahkan penyimpanan satu tangan pada layar ponsel.
+  - [x] **Standarisasi Bahasa & Disaster Recovery (Pilar 8)**:
+    - Bahasa 100% baku Indonesia: Label `"Alamat Email"` dan pembakuan istilah `"Kata Sandi"` (bukan Password).
+    - Bebas istilah teknis: Pesan kesalahan dialihkan ke kalimat solutif ramah pengguna (*"Gagal memperbarui profil. Silakan coba lagi."*).
+    - Dialog Konfirmasi SweetAlert2: Judul ringkas 2–4 kata (*"Hapus Foto Profil?"*), teks 1 kalimat tenang (*"Foto profil akan dihapus."*), dan tombol aksi tegas (*"Ya, Hapus Foto"*).
 
 ---
 

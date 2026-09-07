@@ -27,7 +27,15 @@
   - Wrap multi-step mutations in Database Transactions (`$db->transStart()` and `$db->transComplete()`) and `try...catch (\Exception $e)`.
   - Every new database table column must be declared in `$allowedFields` of the corresponding Model class.
   - Always sanitize decimal inputs with `str_replace(',', '.', trim((string)$val))` to support Indonesian comma notation.
-  - Use selective column queries (e.g. `select('id, nama_lengkap, nip, unit, jabatan, role, atasan_id, foto')`) on large User queries to optimize PHP memory usage.
+  - **Selective Column Queries in Directory & Large Datasets**: Always use selective column queries (e.g. `select('users.id, users.nama_lengkap, users.nip, users.username, users.jabatan, users.pangkat, users.unit, users.role, users.foto, users.atasan_id')`) and never expose `users.*` (password hash) to view templates.
+  - **Dual-Sync `unit_id` & `unit`**: When updating employee units, always perform dual-sync between the unit name string (`users.unit`) and integer foreign key (`users.unit_id`) mapped to `unit_kerja.id`.
+  - **Form State Preservation (`old()`)**: Every form field must be repopulated with `old('field_name', $fallback)` to guarantee user input is preserved across validation errors.
+- **Upload Security & Defense-in-Depth (`public/assets/uploads/`)**:
+  - **Dual-Layer 2MB Limit**: Enforce 2MB maximum file size on client-side (JavaScript FileReader `2 * 1024 * 1024` bytes) and server-side (`max_size[foto,2048]`).
+  - **Magic Bytes & MIME Validation**: Always inspect image binary structure using `is_image[foto]` and strict MIME types (`mime_in[foto,image/jpg,image/jpeg,image/png]`).
+  - **Cryptographic Random Renaming**: Never preserve original client filenames. Always use `$file->getRandomName()` to completely neutralize path traversal, null-byte injection, and filename collision attacks.
+  - **Script Execution Barrier (`.htaccess`)**: Ensure `public/assets/uploads/.htaccess` disables PHP execution (`php_flag engine off`), blocks all executable script extensions (`.php`, `.phtml`, `.cgi`, `.sh`), and disables directory indexing (`Options -Indexes -ExecCGI`).
+  - **Safe Unlinking**: Use `basename()` and check `file_exists(FCPATH . $oldFile)` when removing old photos, strictly guarding against deleting system assets (e.g. `default.png`).
 
 ---
 
@@ -76,6 +84,9 @@ Seluruh modul perhitungan predikat (Controller, Modal AJAX, Desktop Table, Mobil
 - Setiap kali audit kode selesai dilakukan dan menemukan celah atau kebutuhan perbaikan, agen **WAJIB menyusun Rencana Implementasi (*Implementation Plan*)** terlebih dahulu sebelum mengeksekusi perubahan kode pada berkas manapun.
 - **Larangan Testing Otomatis Mandiri Tanpa Izin**: Agen tidak diizinkan menjalankan *browser testing*, *subagent testing*, atau *automated testing* mandiri. Seluruh verifikasi tampilan dan fungsi diserahkan sepenuhnya kepada pengguna untuk diuji secara langsung.
 
+### H. Proteksi Self-Atasan Loop
+- Pengguna tidak diperbolehkan memilih akun dirinya sendiri sebagai Atasan Langsung (`atasan_id !== userId`). Logika pengontrol wajib memvalidasi dan menganulir relasi atasan jika terjadi manipulasi input pemilihan diri sendiri.
+
 ---
 
 ## 5. UI/UX, 8-Point Grid & Interaction Design Standards
@@ -86,10 +97,13 @@ Seluruh modul perhitungan predikat (Controller, Modal AJAX, Desktop Table, Mobil
   - **Asset & Icon Container Sizing**:
     - Micro Swatches & Indicators: `16px × 16px` (`border-radius: 4px`).
     - Compact Table Action Buttons / Bukti: `height: 32px; padding: 4px 12px; border-radius: 50rem;`.
+    - Compact Filter Buttons: `min-height: 32px; padding: 4px 12px; border-radius: 6px;`.
     - Form Controls & Select2 Dropdowns: `height: 36px`–`40px; border-radius: 8px;`.
-    - Standard Avatars & Modal Header Icons: `40px × 40px` (`border-radius: 12px`).
+    - Password Toggle Action Buttons: `min-height: 36px; min-width: 44px;`.
+    - Standard Avatars & Modal/Card Header Icons: `40px × 40px` (`border-radius: 12px` / `rounded-3`).
     - Prominent Feature Icons & Badges: `48px × 48px` (`border-radius: 16px`).
     - Profile Photos & Large Avatars: `64px × 64px` or `80px × 80px`.
+    - Standard Status Badges & Pills: `padding: 4px 12px;` (`px-3 py-1`).
   - **Calendar Heatmap Matrix & Datepicker**:
     - Desktop Day Cells: `min-height: 64px` ($8 \times 8\text{px}$), `padding: 8px 10px`, `border-radius: 8px`, grid `gap: 8px`.
     - Mobile Day Cells: `min-height: 48px` ($6 \times 8\text{px}$), `padding: 4px 6px`, `border-radius: 6px`, grid `gap: 4px`.
@@ -134,5 +148,11 @@ Seluruh modul perhitungan predikat (Controller, Modal AJAX, Desktop Table, Mobil
 - **Kepatuhan Mutlak Terminologi & Branding**:
   - Tetap konsisten 100% menggunakan istilah resmi **"staf"** (tidak boleh menggunakan "bawahan" atau "staff").
   - Tetap konsisten 100% menggunakan identitas resmi **"Evidence Command Center (ECC)"** (tidak boleh menggunakan "Simonik").
+  - **Pembakuan Istilah Bahasa Indonesia Resmi**:
+    - Selalu gunakan **"Kata Sandi"** (dilarang menggunakan "Password").
+    - Selalu gunakan **"Lupa Kata Sandi?"** (bukan "Forgot Password").
+    - Selalu gunakan **"Alamat Email"** (dilarang menggunakan "Email Address").
+    - Selalu gunakan **"Keluar"** pada navigasi/dropdown profil (dilarang menggunakan "Logout").
+    - Selalu gunakan **"Simpan Profil"** pada formulir profil (bukan "Simpan Perubahan").
 
 

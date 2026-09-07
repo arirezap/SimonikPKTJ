@@ -74,9 +74,12 @@ All graphical assets, icon containers, buttons, and interactive affordances must
 | **Heatmap Legend Bento Capsule** | Height `32px` | `50rem` (`pill`) | `4px 12px; gap: 10px;` | Cohesive background pill container for 5-tier swatches |
 | **Interactive Callout Hint** | Height `32px` | `50rem` (`pill`) | `4px 14px; gap: 8px;` | "Klik tanggal pada kalender untuk melihat rincian" |
 | **Compact Action Button** | Height `32px` | `50rem` (`pill`) | `4px 12px` | In-table Bukti links, Revisi triggers, compact filters |
+| **Compact Filter Button** | Height `32px` | `6px` (`rounded-2`) | `min-height: 32px; padding: 4px 12px;` | Quick filter buttons in employee directory |
 | **Form Control / Select2 Dropdown** | Height `36px`–`40px` | `8px` (`rounded-3`) | `8px 12px` | Bulan/Tahun selects, Select2 Staf, number inputs |
-| **Standard CTA Button** | Height `40px` | `50rem` (`pill`) | `8px 24px` | Simpan Draf, Simpan & Terbitkan, Reset Nilai |
-| **Modal Header Icon Box** | `40px × 40px` | `12px` (`rounded-3`) | Center flex | Header icons on detail modals (e.g. Calendar detail) |
+| **Password Toggle Action Button** | Height `36px` | `6px` (`rounded-2`) | `min-height: 36px; min-width: 44px;` | Eye visibility toggler on password fields |
+| **Standard CTA Button** | Height `40px` | `50rem` (`pill`) | `8px 24px` | Simpan Draf, Simpan & Terbitkan, Simpan Profil |
+| **Modal & Card Header Icon Box** | `40px × 40px` | `12px` (`rounded-3`) | Center flex | Header icons on detail modals and profile bento cards |
+| **Standard Status Badges & Pills** | Height `24px`–`28px` | `50rem` (`pill`) | `padding: 4px 12px;` (`px-3 py-1`) | Role badges, unit badges, count indicators |
 | **Modal Date Navigation Buttons** | `32px × 32px` | `8px` (`rounded-2`) | Center flex | Fast date navigation (`<` `>`) on detail modal |
 | **Feature Feature Icon** | `48px × 48px` | `16px` (`rounded-4`) | Center flex | KPI feature icons, Dashboard summary category icons |
 | **Profile Photo Avatar (SM)** | `40px × 40px` | `50% (Circle)` | Object-fit cover | Topbar profile menu, table inline user avatar |
@@ -636,6 +639,38 @@ Seluruh komponen teks antarmuka ECC wajib mematuhi standar komunikasi sederhana,
 4. **Kepatuhan Baku Istilah & Identitas**:
    - Wajib mutlak menggunakan istilah resmi **"staf"** (tidak boleh menggunakan "bawahan" atau "staff").
    - Wajib mutlak menggunakan nama resmi **"Evidence Command Center (ECC)"** (tidak boleh menggunakan nama lama).
+   - **Tabel Pembakuan Istilah Resmi**:
+     | Istilah Tidak Baku (Dilarang) | Istilah Baku ECC (Wajib) | Penempatan |
+     | :--- | :--- | :--- |
+     | `Password` / `Kata sandi` | **Kata Sandi** | Form login, form profil, modal ubah sandi |
+     | `Forgot Password` | **Lupa Kata Sandi?** | Halaman login |
+     | `Email Address` | **Alamat Email** | Form profil, form kelola pegawai |
+     | `Logout` | **Keluar** | Menu dropdown profil topbar |
+     | `Simpan Perubahan` | **Simpan Profil** | Tombol CTA utama form profil |
+     | `Bawahan` / `Staff` | **Staf** | Seluruh modul, label, dan dokumentasi |
+
+---
+
+## 19. 🛡️ Upload Security, File Validation & Web Server Hardening
+
+Untuk menjamin keamanan berkas yang diunggah pegawai pada modul Profil Saya (`/profile`) dan seluruh modul ECC:
+
+1. **Dual-Layer 2MB File Size Barrier**:
+   - **Client-Side (JavaScript FileReader)**: Pengecekan `file.size > 2 * 1024 * 1024` (2MB). Jika melebihi batas, input langsung dikosongkan dan muncul dialog ramah: *"Ukuran foto maksimal 2MB."*.
+   - **Server-Side (CodeIgniter 4 Rule)**: Validasi `max_size[foto,2048]` menolak secara mutlak muatan di atas 2.048 KB.
+2. **Binary Header & Magic Bytes Inspection**:
+   - Penggunaan aturan `is_image[foto]` membaca *binary header* berkas secara mendalam menggunakan fungsi bawaan PHP (`exif_imagetype`), menggagalkan usaha pemalsuan file skrip berbahaya yang berkedok ekstensi `.jpg`/`.png`.
+   - Validasi `mime_in[foto,image/jpg,image/jpeg,image/png]` memastikan MIME type resmi.
+3. **Cryptographic Random Renaming**:
+   - Berkas yang lolos validasi otomatis dinamai ulang menggunakan `$fileFoto->getRandomName()` sebelum dipindahkan ke direktori fisik.
+   - Nama asli dibuang untuk menangkis *Path Traversal*, *Null-Byte Injection*, dan *File Collision*.
+4. **Script Execution Barrier via Web Server (`public/assets/uploads/.htaccess`)**:
+   - Folder unggahan diproteksi oleh berkas `.htaccess` independen yang:
+     - Mematikan modul interpretasi skrip PHP: `php_flag engine off`.
+     - Memblokir akses ke ekstensi executable: `<FilesMatch "\.(php|phtml|php3|php4|php5|php7|php8|phar|inc|pl|py|cgi|sh|bash)$"> Require all denied </FilesMatch>`.
+     - Menonaktifkan penelusuran direktori: `Options -Indexes -ExecCGI`.
+5. **Form State Preservation (`old()`)**:
+   - Seluruh input profil dibungkus `old('field', $user['field'])` sehingga masukan tidak pernah hilang ketika terjadi kegagalan validasi.
 
 ---
 

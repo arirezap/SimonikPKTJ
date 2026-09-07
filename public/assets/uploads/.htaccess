@@ -1,0 +1,20 @@
+# ----------------------------------------------------------------------
+# EVIDENCE COMMAND CENTER (ECC) - UPLOAD FOLDER SECURITY HARDENING
+# Mencegah eksekusi skrip berbahaya di dalam direktori unggahan
+# ----------------------------------------------------------------------
+
+# 1. Matikan eksekusi skrip PHP
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+
+# 2. Blokir akses langsung ke ekstensi skrip executable
+<FilesMatch "\.(php|phtml|php3|php4|php5|php7|php8|phar|inc|pl|py|cgi|sh|bash)$">
+    Require all denied
+</FilesMatch>
+
+# 3. Larang directory browsing
+Options -Indexes -ExecCGI

@@ -158,7 +158,7 @@
                                 </li>
                                 <li>
                                     <a class="dropdown-item text-danger btn-tactile" href="<?= site_url('logout') ?>" onclick="confirmLogout(event)">
-                                        <i class="bi bi-box-arrow-right me-2"></i> Logout
+                                        <i class="bi bi-box-arrow-right me-2"></i> Keluar
                                     </a>
                                 </li>
                             </ul>
@@ -511,8 +511,8 @@
 
         if (typeof Swal !== 'undefined') {
             Swal.fire({
-                title: 'Konfirmasi Keluar',
-                text: 'Apakah Anda yakin ingin mengakhiri sesi dan keluar dari sistem?',
+                title: 'Keluar dari Sistem?',
+                text: 'Sesi Anda saat ini akan diakhiri.',
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonText: '<i class="bi bi-box-arrow-right me-1.5"></i> Ya, Keluar',
@@ -532,7 +532,7 @@
                     executeLogout();
                 }
             });
-        } else if (confirm('Apakah Anda yakin ingin keluar dari sistem?')) {
+        } else if (confirm('Keluar dari sistem?')) {
             executeLogout();
         }
     }

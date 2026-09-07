@@ -253,3 +253,23 @@ Dokumen ini berisi riwayat fitur, perbaikan (*bug fixes*), dan peningkatan antar
 - **Pembaruan Versi Aplikasi v1.4:**
   - Peningkatan label versi resmi menjadi **`v1.4`** pada footer tata letak, header CSS, dan dokumentasi sistem.
 
+## 19. Penyempurnaan Modul Direktori Pegawai & Profil Saya, Pengamanan Berkas Ganda 2MB, Web Server Hardening, dan Pembakuan Istilah (7 September 2026)
+- **Modul Direktori Pegawai (`/daftar-pegawai` & `User\DaftarPegawaiController`):**
+  - Penyelesaian audit kode komprehensif pada antarmuka direktori pegawai.
+  - Implementasi *selective column querying* (`select('id, nama_lengkap, nip, unit, jabatan, role, atasan_id, foto')`) yang secara eksplisit tidak mengambil hash kata sandi pengguna demi privasi dan keamanan data.
+  - Standardisasi 8-Point Grid pada elemen kartu profil: penataan tombol filter `min-height: 32px`, margin avatar `me-3` (12px/16px), dan modal pop-up rincian pegawai tanpa muat ulang halaman (Zero-Reload AJAX).
+- **Modul Profil Saya (`/profile` & `Profile.php`):**
+  - **Mekanisme Dual-Sync Unit Kerja:** Pembaruan unit kerja otomatis memperbarui `unit_id` sekaligus kolom teks `unit` untuk menjaga integritas data institusional.
+  - **Failsafe Sesi Ganda & Proteksi Self-Atasan Loop:** Sistem mencegah pegawai memilih dirinya sendiri sebagai atasan langsung (`$atasanId !== $userId`).
+  - **Preservasi Nilai Formulir (*Form State Preservation*):** Menggunakan `old()` pada input nomor telepon, unit kerja, dan atasan langsung agar input pengguna tidak hilang saat terjadi kesalahan validasi kata sandi.
+  - **Standardisasi 8-Point Grid & Konsistensi Visual:** Tombol toggle lihat/sembunyikan kata sandi diselaraskan ke `min-height: 36px` dan wadah ikon header kartu diselaraskan ke `40px × 40px` (`rounded-3`).
+- **Pengamanan Unggah Berkas & Web Server Hardening (Upload Hardening):**
+  - **Validasi Ganda 2MB:** Validasi ketat di Controller (`uploaded[foto]|max_size[foto,2048]`) dan atribut `accept="image/*"` di form HTML.
+  - **Inspeksi MIME Type & Magic Bytes:** Validasi integritas berkas via `is_image[foto]|mime_in[foto,image/jpg,image/jpeg,image/png,image/webp]` untuk memastikan file gambar asli.
+  - **Cryptographic Random Renaming:** Penamaan berkas acak otomatis via `$file->getRandomName()` sebelum disimpan ke `public/assets/uploads/users/`.
+  - **Script Execution Barrier (`public/assets/uploads/.htaccess`):** Melumpuhkan engine eksekusi skrip PHP (`php_flag engine off`) dan menolak akses terhadap seluruh berkas skrip yang dapat dieksekusi (`.php`, `.phtml`, `.cgi`, `.sh`, `.exe`, dll.).
+  - **Penghapusan Berkas Aman:** Sanitasi nama file via `basename()` dan verifikasi `file_exists(FCPATH . ...)` sebelum eksekusi `unlink()`.
+- **Standar Bahasa Non-Teknis & Pembakuan Istilah Resmi ECC:**
+  - Pembersihan seluruh istilah teknis sistem/database dari notifikasi, alert, dan dialog pengguna.
+  - Pembakuan istilah antarmuka resmi: *"Kata Sandi"* (bukan Password), *"Alamat Email"* (bukan Email Address), *"Keluar"* (bukan Logout), *"Simpan Profil"* (bukan Simpan Perubahan), dan *"Perbarui Kata Sandi"* (bukan Ubah Password).
+

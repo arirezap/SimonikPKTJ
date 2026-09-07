@@ -286,7 +286,7 @@
                             </label>
                         </div>
                         <button type="button" class="btn btn-link p-0 text-decoration-none fw-medium fit-link border-0 align-baseline" onclick="forgotPassword();" style="font-size: 0.825rem;">
-                            Lupa Password?
+                            Lupa Kata Sandi?
                         </button>
                     </div>
 

@@ -39,7 +39,7 @@ class DaftarPegawaiController extends BaseController
         );
 
         // Query dasar: Sembunyikan akun Superadmin (role = 'admin' atau username = 'admin')
-        $query = $userModel->select('users.*, atasan.nama_lengkap as nama_atasan')
+        $query = $userModel->select('users.id, users.nama_lengkap, users.nip, users.username, users.jabatan, users.pangkat, users.unit, users.role, users.foto, users.atasan_id, atasan.nama_lengkap as nama_atasan')
                            ->join('users as atasan', 'atasan.id = users.atasan_id', 'left')
                            ->where('users.role !=', 'admin')
                            ->where('users.username !=', 'admin');

@@ -82,12 +82,35 @@ Panduan ini berisi pedoman lengkap arsitektur sistem, peta modul, basis data, da
 - **Buka Kunci Laporan Harian Staf (`POST log-kegiatan/buka-kunci`):** Superadmin dapat membuka kunci laporan harian yang terkunci, mencatat audit log `UNLOCK_LAPORAN`.
 - **Pembatalan Persetujuan Target Bulanan (`POST laporan-harian/batal-approve`):** Superadmin dapat membatalkan persetujuan target bulanan staf untuk revisi, mencatat audit log `CANCEL_APPROVE_TARGET`.
 
+### G. Modul Direktori Pegawai (`/daftar-pegawai`)
+- **Katalog Kontak Pegawai (`User\DaftarPegawaiController` & `app/Views/user/daftar_pegawai.php`):**
+  - Menyediakan direktori seluruh pegawai terdaftar di lingkungan PKTJ dengan pencarian instan nama/NIP/jabatan dan filter unit kerja dinamis.
+  - Menggunakan *selective column querying* (`select('id, nama_lengkap, nip, unit, jabatan, role, atasan_id, foto')`) tanpa mengambil hash kata sandi untuk perlindungan privasi dan efisiensi memori.
+  - Penataan antarmuka kartu profil responsif berbasis 8-Point Grid, modal dialog rincian profil tanpa reload (AJAX), dan tombol filter `min-height: 32px`.
+
+### H. Modul Profil Saya (`/profile`)
+- **Pengelolaan Data Diri Mandiri (`Profile.php` & `app/Views/profile.php`):**
+  - Pegawai dapat memperbarui nomor handphone, memilih unit kerja, mengatur atasan langsung, dan mengganti Kata Sandi mandiri.
+  - **Mekanisme Dual-Sync Unit Kerja:** Saat pegawai memilih unit kerja, sistem otomatis menyinkronkan `unit_id` sekaligus teks nama `unit` untuk menjamin konsistensi data institusional.
+  - **Failsafe Identitas Sesi & Proteksi Self-Atasan Loop:** Sistem memvalidasi ganda sesi (`id` dan `user_id`) serta secara defensif memblokir pemilihan diri sendiri sebagai atasan langsung (`$atasanId !== $userId`).
+  - **Preservasi Formulir (*Form State Preservation*):** Menggunakan `old()` pada seluruh field input agar data yang baru diketik pengguna tidak hilang saat terjadi galat validasi kata sandi.
+
 ---
 
 ## 4. Standarisasi UI/UX, 8-Point Grid System & Kualitas Visual
 - **8-Point Grid System (Strict Spacing & Asset Scale):**
   - Seluruh layout, jarak elemen (`margin`, `padding`, `gap`), tinggi tombol, dan wadah aset wajib mematuhi kelipatan 8px: `4px` (0.5x micro), `8px` (1x base), `12px` (1.5x), `16px` (2x), `24px` (3x), `32px` (4x), `40px` (5x), `48px` (6x), `64px` (8x), `80px` (10x).
-  - Standar ukuran aset: Swatch `16px × 16px`, tombol compact `height: 32px`, kontrol form `height: 36px`–`40px`, tombol aksi CTA `min-height: 40px`, box icon header modal `40px × 40px`, sel kalender desktop `min-height: 64px` (mobile `48px`), avatar profil `40px`/`64px`/`80px`.
+  - Standar ukuran aset:
+    - Swatch legenda: `16px × 16px` (`border-radius: 4px`).
+    - Compact Table Action Buttons / Filter Buttons: `min-height: 32px; padding: 4px 12px; border-radius: 50rem;`.
+    - Password Toggle Action Buttons: `min-height: 36px; padding: 4px 12px; border-radius: 8px;`.
+    - Kontrol form & dropdown Select2: `height: 36px`–`40px; border-radius: 8px;`.
+    - Tombol aksi CTA utama: `min-height: 40px; border-radius: 8px;`.
+    - Box icon header modal / Card header icon container: `40px × 40px` (`border-radius: 12px` / `rounded-3`).
+    - Prominent Feature Icons: `48px × 48px` (`border-radius: 16px`).
+    - Avatar profil: `40px`/`64px`/`80px`.
+    - Sel kalender desktop: `min-height: 64px` (mobile `48px`).
+    - Status badges: `padding: 4px 12px; border-radius: 50rem;` (`px-3 py-1`).
 - **Tabular Numbers:** Selalu gunakan `font-variant-numeric: tabular-nums; font-feature-settings: "tnum";` pada angka capaian, nilai persen, tanggal, dan NIP.
 - **Sanitasi URL Bukti XSS:** Selalu validasi bahwa link bukti berawalan skema `http://` atau `https://` sebelum dirender ke tag `<a>`.
 
@@ -95,6 +118,12 @@ Panduan ini berisi pedoman lengkap arsitektur sistem, peta modul, basis data, da
 
 ## 5. Aturan Penulisan Kode & Keamanan
 - **CSRF Protection:** Semua elemen `<form>` wajib menyertakan `<?= csrf_field() ?>`. Request AJAX POST wajib mengirim token CSRF dan memperbarui `csrf_hash`.
+- **Pengamanan Unggah Berkas (Upload Hardening & Defense in Depth):**
+  - **Validasi Ukuran Maksimal 2MB:** Wajib menerapkan aturan CI4 `uploaded[foto]|max_size[foto,2048]` di sisi server dan atribut `accept="image/*"` di form HTML.
+  - **Pemeriksaan MIME Type & Magic Bytes:** Wajib menggunakan aturan `is_image[foto]|mime_in[foto,image/jpg,image/jpeg,image/png,image/webp]` untuk memastikan file yang diunggah benar-benar berkas gambar asli, bukan skrip berbahaya dengan ekstensi palsu.
+  - **Cryptographic Random Renaming:** Seluruh berkas yang diunggah wajib diubah namanya secara acak menggunakan `$file->getRandomName()` sebelum disimpan ke direktori publik (`public/assets/uploads/users/`) untuk mencegah serangan *path traversal* dan penimpaan file.
+  - **Script Execution Barrier (`.htaccess`):** Direktori penyimpanan unggahan (`public/assets/uploads/`) wajib diproteksi dengan file `.htaccess` yang mematikan mesin eksekusi PHP (`php_flag engine off`) dan menolak seluruh akses ke file berkas skrip yang dapat dieksekusi (`.php`, `.phtml`, `.cgi`, `.sh`, `.exe`, dll.).
+  - **Penghapusan Berkas Lama yang Aman:** Saat mengganti atau menghapus foto profil, nama berkas wajib dibersihkan menggunakan `basename()` dan diverifikasi keberadaannya melalui `file_exists(FCPATH . ...)` sebelum dieksekusi dengan `unlink()`.
 - **Database Transactions:** Semua mutasi batch wajib dibungkus dalam blok `try...catch (\Exception $e)` dan `$db->transStart()` / `$db->transComplete()`.
 - **Sanitasi Desimal:** Selalu gunakan `str_replace(',', '.', trim((string)$val))` sebelum parsing numerik.
 - **SweetAlert2 Fallback:** Selalu sediakan *native browser fallback* (`confirm()`) jika library SweetAlert2 belum selesai termuat.
@@ -117,6 +146,12 @@ Panduan ini berisi pedoman lengkap arsitektur sistem, peta modul, basis data, da
   - **Teks Dialog**: 1 kalimat pendek dan tenang (*"Kegiatan ini akan dihapus."*).
   - **Tombol Aksi**: Kata kerja singkat dan tegas (*"Ya, Hapus"*, *"Kirim"*, *"Batal"*).
   - **Umpan Balik Sukses**: Judul *"Terhapus"* / *"Tersimpan"*, teks *"Kegiatan berhasil dihapus."* / *"Draf berhasil disimpan."*
+- **Pembakuan Istilah Resmi ECC**:
+  - *"Kata Sandi"* (bukan Password)
+  - *"Alamat Email"* (bukan Email Address)
+  - *"Keluar"* (bukan Logout)
+  - *"Simpan Profil"* (bukan Simpan Perubahan / Update)
+  - *"Perbarui Kata Sandi"* (bukan Ubah Password)
 - **Kepatuhan Mutlak Terminologi & Branding**:
   - Wajib 100% menggunakan istilah resmi **"staf"** (tidak boleh menggunakan "bawahan" atau "staff").
   - Wajib 100% menggunakan identitas resmi **"Evidence Command Center (ECC)"** (tidak boleh menggunakan "Simonik").

@@ -54,18 +54,18 @@ class Profile extends BaseController
         $rules = [
             'nama_lengkap' => [
                 'rules'  => 'required',
-                'errors' => ['required' => 'Nama Lengkap wajib diisi.']
+                'errors' => ['required' => 'Nama lengkap wajib diisi.']
             ],
             'email' => [
                 'rules'  => 'required|valid_email',
                 'errors' => [
-                    'required'    => 'Email wajib diisi.',
-                    'valid_email' => 'Format email tidak valid.'
+                    'required'    => 'Alamat email wajib diisi.',
+                    'valid_email' => 'Format email tidak sesuai.'
                 ]
             ],
             'nip' => [
                 'rules'  => 'required',
-                'errors' => ['required' => 'NIP / NIK wajib diisi.']
+                'errors' => ['required' => 'NIP atau NIK wajib diisi.']
             ],
             'jabatan' => [
                 'rules'  => 'required',
@@ -73,7 +73,7 @@ class Profile extends BaseController
             ],
             'unit' => [
                 'rules'  => 'required',
-                'errors' => ['required' => 'Unit Kerja wajib dipilih.']
+                'errors' => ['required' => 'Pilih unit kerja.']
             ]
         ];
 
@@ -83,9 +83,9 @@ class Profile extends BaseController
             $rules['foto'] = [
                 'rules'  => 'is_image[foto]|mime_in[foto,image/jpg,image/jpeg,image/png]|max_size[foto,2048]',
                 'errors' => [
-                    'is_image'  => 'Berkas yang diunggah harus berupa gambar.',
-                    'mime_in'   => 'Format foto harus JPG, JPEG, atau PNG.',
-                    'max_size'  => 'Ukuran foto maksimal adalah 2MB.'
+                    'is_image'  => 'Pilih berkas foto.',
+                    'mime_in'   => 'Format foto harus JPG atau PNG.',
+                    'max_size'  => 'Ukuran foto maksimal 2MB.'
                 ]
             ];
         }
@@ -111,14 +111,28 @@ class Profile extends BaseController
         // Validasi Keunikan Email (Mencegah collision dengan akun lain)
         $existingEmail = $this->userModel->where('email', $emailPost)->where('id !=', $userId)->first();
         if ($existingEmail) {
-            return redirect()->back()->withInput()->with('errors', ['email' => 'Email ini sudah digunakan oleh akun lain.']);
+            return redirect()->back()->withInput()->with('errors', ['email' => 'Alamat email sudah digunakan.']);
         }
 
         // Validasi Keunikan NIP / NIK (Mencegah collision dengan akun lain)
         $existingNip = $this->userModel->where('nip', $nipPost)->where('id !=', $userId)->first();
         if ($existingNip) {
-            return redirect()->back()->withInput()->with('errors', ['nip' => 'NIP / NIK ini sudah terdaftar pada akun lain.']);
+            return redirect()->back()->withInput()->with('errors', ['nip' => 'NIP atau NIK sudah terdaftar.']);
         }
+
+        // Dual-Sync unit_id berdasarkan kecocokan nama_unit
+        $unitKerjaModel = new \App\Models\UnitKerja();
+        $unitId = null;
+        if (!empty($unitPost)) {
+            $unitDb = $unitKerjaModel->where('nama_unit', $unitPost)->first();
+            if ($unitDb) {
+                $unitId = (int)$unitDb['id'];
+            }
+        }
+
+        // Proteksi Self-Atasan Loop: Pengguna tidak boleh menjadi atasan bagi dirinya sendiri
+        $atasanIdPost = $this->request->getPost('atasan_id');
+        $atasanId = (!empty($atasanIdPost) && (int)$atasanIdPost !== (int)$userId) ? (int)$atasanIdPost : null;
 
         $data = [
             'nama_lengkap' => $namaPost,
@@ -126,7 +140,8 @@ class Profile extends BaseController
             'jabatan'      => $jabatanPost,
             'pangkat'      => $pangkatPost,
             'unit'         => $unitPost,
-            'atasan_id'    => $this->request->getPost('atasan_id') ?: null,
+            'unit_id'      => $unitId,
+            'atasan_id'    => $atasanId,
             'no_hp'        => $noHpPost,
             'email'        => $emailPost,
             'username'     => $user['username'], // Proteksi: Username tidak dapat diubah via POST payload
@@ -137,10 +152,10 @@ class Profile extends BaseController
         $passwordConfirm = $this->request->getPost('password_confirm');
         if (!empty($password)) {
             if (strlen($password) < 6) {
-                return redirect()->back()->withInput()->with('errors', ['password' => 'Password baru minimal harus 6 karakter.']);
+                return redirect()->back()->withInput()->with('errors', ['password' => 'Kata sandi minimal 6 karakter.']);
             }
             if ($password !== $passwordConfirm) {
-                return redirect()->back()->withInput()->with('errors', ['password_confirm' => 'Konfirmasi password tidak cocok dengan password baru.']);
+                return redirect()->back()->withInput()->with('errors', ['password_confirm' => 'Konfirmasi kata sandi tidak cocok.']);
             }
             $data['password'] = password_hash($password, PASSWORD_DEFAULT);
         }
@@ -154,6 +169,8 @@ class Profile extends BaseController
                 $oldFile = 'assets/uploads/profile/' . basename($user['foto']);
                 if (file_exists($oldFile)) {
                     @unlink($oldFile);
+                } elseif (file_exists(FCPATH . $oldFile)) {
+                    @unlink(FCPATH . $oldFile);
                 }
             }
             $data['foto'] = null; // Set ke null di DB
@@ -165,6 +182,8 @@ class Profile extends BaseController
                 $oldFile = 'assets/uploads/profile/' . basename($user['foto']);
                 if (file_exists($oldFile)) {
                     @unlink($oldFile);
+                } elseif (file_exists(FCPATH . $oldFile)) {
+                    @unlink(FCPATH . $oldFile);
                 }
             }
 
@@ -189,12 +208,12 @@ class Profile extends BaseController
             $db->transComplete();
 
             if ($db->transStatus() === false) {
-                return redirect()->back()->withInput()->with('errors', ['db' => 'Gagal memperbarui profil di basis data.']);
+                return redirect()->back()->withInput()->with('errors', ['db' => 'Gagal memperbarui profil. Silakan coba lagi.']);
             }
         } catch (\Throwable $e) {
             $db->transRollback();
             log_message('error', 'Gagal update profil pengguna ID ' . $userId . ': ' . $e->getMessage());
-            return redirect()->back()->withInput()->with('errors', ['db' => 'Terjadi kesalahan sistem saat menyimpan data profil.']);
+            return redirect()->back()->withInput()->with('errors', ['db' => 'Gagal menyimpan profil. Silakan coba lagi.']);
         }
 
         // 6. Update Session Data (Agar nama, unit, role & FOTO di header langsung berubah)
@@ -202,6 +221,7 @@ class Profile extends BaseController
             'nama'         => $data['nama_lengkap'],
             'nama_lengkap' => $data['nama_lengkap'],
             'unit'         => $data['unit'],
+            'unit_id'      => $unitId,
             'role'         => $role_aplikasi
         ];
         if (array_key_exists('foto', $data)) {
@@ -209,6 +229,6 @@ class Profile extends BaseController
         }
         session()->set($sessionData);
 
-        return redirect()->to('profile')->with('success', 'Profil dan kredensial akun berhasil diperbarui.');
+        return redirect()->to('profile')->with('success', 'Profil berhasil diperbarui.');
     }
 }

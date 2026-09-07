@@ -25,16 +25,24 @@ Dokumen ini adalah lembar kerja resmi pelacakan pekerjaan pengembangan, perbaika
 
 - [x] **TUGAS 1.1: Audit & Perbaikan Halaman Login (`app/Views/login.php` & `app/Controllers/Auth.php`)**
   - **Uraian Pekerjaan**:
-    - **Pilar 1 (Sintaks & MVC)**: Validasi kepatuhan CI4, sanitasi input `trim()`, dan `php -l` clean.
-    - **Pilar 2 (Fungsi & Alur)**: Pengujian login valid/invalid, *Remember Me* persistent session, dan auto password upgrade BCRYPT.
-    - **Pilar 3 (Reusable Code)**: Sinkronisasi token CSS cache-busting `?v=1.1.filemtime(...)` sesuai `design.md`.
-    - **Pilar 4 (Keamanan)**: Proteksi brute-force login throttler (10x/menit), CSRF token field, dan sanitasi XSS pada Flashdata.
-    - **Pilar 5 (Clean Code & Istilah)**: Penyelarasan judul dan branding *"Evidence Command Center (ECC)"*.
-    - **Pilar 6 (Potensi Bug & Edge Cases)**:
-      - Tambahkan pengecekan `loginForm.checkValidity()` sebelum me-lock tombol login agar tombol tidak macet jika form belum lengkap.
-      - Tambahkan *native fallback* (`if (typeof Swal !== 'undefined')`) pada `forgotPassword()` dan notifikasi Flashdata jika CDN SweetAlert2 lambat/offline.
-    - **Pilar 7 (Mobile-Friendly)**: Pengujian touch target tombol login (min 44px) dan layout Bento card responsif pada layar ponsel (<576px).
-  - **Status**: ✅ **100% Selesai & Lulus Audit 7-Pilar**
+    - **Pilar 1 (Code Integrity & Sintaks)**: Validasi kepatuhan arsitektur MVC CI4, sanitasi input `trim()`, dan `php -l` 0 syntax error.
+    - **Pilar 2 (Logika Bisnis & Alur)**: Pengujian login valid/invalid, brute-force throttler (10x/menit per IP), *Remember Me* persistent session (30 hari HttpOnly), regenerasi ID sesi anti-fixation, dan auto password upgrade BCRYPT.
+    - **Pilar 3 (Reusable Code & Ketahanan Aset)**: Pemanfaatan helper `cookie`, `audit_helper`, dan fallback dialog native browser jika CDN SweetAlert2 offline.
+    - **Pilar 4 (Keamanan Komprehensif)**: Proteksi CSRF penuh, mitigasi user enumeration (pesan kesalahan seragam), dan sanitasi XSS pada seluruh masukan & flashdata.
+    - **Pilar 5 (Efisiensi & Ketahanan Beban)**: Kueri pencarian user tunggal dan pivot `user_roles` berindeks (0 kueri berulang / N+1).
+    - **Pilar 6 (Mitigasi Bug & Observabilitas)**: Pencatatan jejak audit komprehensif (`LOGIN`, `FAILED_LOGIN`, `RATE_LIMIT_LOGIN`), penanganan `loginForm.checkValidity()`, dan spinner button anti-double-submit.
+    - **Pilar 7 (Ergonomi Sentuh & 8-Point Grid)**: Touch target tombol login min 44px, masukan 42px font 16px (anti auto-zoom iOS), autofocus cerdas, toggle lihat/sembunyikan kata sandi dengan `aria-label`, dan layout bento solid zero-motion.
+    - **Pilar 8 (Standarisasi Bahasa & Mikro-Kopi)**: Penyelarasan identitas resmi *"Evidence Command Center (ECC) • PKTJ Tegal"*, bebas istilah teknis, dan konsistensi istilah baku *"Kata Sandi"* serta *"Lupa Kata Sandi?"*.
+  - **Status**: ✅ **100% Selesai & Lulus Audit 8-Pilar** *(7 September 2026)*
+
+- [x] **TUGAS 1.2: Audit 8 Pilar Mekanisme Logout & Standarisasi Mikro-Kopi Dialog Keluar (`Auth.php`, `main.php`, & `login.php`)**
+  - **Uraian Pekerjaan**:
+    - Evaluasi 8 Pilar Kesiapan Produksi pada modul Logout (pembersihan sesi total `session()->destroy()`, penghapusan kuki token `remember_me`, dan header HTTP `Cache-Control: no-store, no-cache, must-revalidate`).
+    - Proteksi CSRF penuh via formulir POST tersembunyi (`#logoutPostForm`) dengan `<?= csrf_field() ?>`.
+    - Pencatatan jejak audit komprehensif `LOGOUT` ke tabel `audit_logs` dengan konteks user_id, username, IP, dan User Agent.
+    - Penyelarasan mikro-kopi: Ganti label menu dropdown profil dari `"Logout"` menjadi **`"Keluar"`**.
+    - Standarisasi dialog konfirmasi SweetAlert2: Judul **`"Keluar dari Sistem?"`**, teks 1 kalimat tenang **`"Sesi Anda saat ini akan diakhiri."`**, tombol aksi tegas **`"Ya, Keluar"`**, dan fallback dialog peramban native `confirm('Keluar dari sistem?')`.
+  - **Status**: ✅ **100% Selesai & Lulus Audit 8-Pilar** *(7 September 2026)*
 
 ---
 
@@ -146,6 +154,25 @@ Dokumen ini adalah lembar kerja resmi pelacakan pekerjaan pengembangan, perbaika
     - Penggunaan helper `render_user_avatar()`, `render_role_badge()`, dan `render_unit_kabag_badge()`.
     - Penyelarasan istilah "staf" (aturan `AGENTS.md`) dan upgrade dialog alert batch edit ke SweetAlert2.
   - **Status**: Selesai ✅ *(19 Agustus 2026)*
+
+- [x] **TUGAS 6.2: Audit 8 Pilar Modul Direktori Daftar Pegawai (`DaftarPegawaiController.php` & `daftar_pegawai.php`)**
+  - **Uraian Pekerjaan**:
+    - Evaluasi 8 Pilar Kesiapan Produksi pada modul Direktori Daftar Pegawai non-admin (`/daftar-pegawai`).
+    - Hardening keamanan kueri: Eliminasi `users.*` menjadi selective columns tanpa mengekspos hash password ke memori template.
+    - Penyelarasan skala 8-Point Grid pada tombol filter (`min-height: 32px;`) dan badge padding (`px-3 py-1`).
+    - Penambahan instrumen audit Bagian 17 pada `audit_code.md`.
+  - **Status**: Selesai ✅ *(7 September 2026)*
+
+- [x] **TUGAS 6.3: Audit 8 Pilar Modul Profil Saya (`Profile.php` & `profile.php`)**
+  - **Uraian Pekerjaan**:
+    - Evaluasi 8 Pilar Kesiapan Produksi pada modul Profil Saya (`/profile`).
+    - Mekanisme *Dual-Sync* sinkronisasi `users.unit` dan integer foreign key `users.unit_id` dengan model `UnitKerja`.
+    - Proteksi self-atasan loop: Mencegah pengguna memilih akun dirinya sendiri sebagai atasan langsung (`atasan_id`).
+    - Preservasi state form: Integrasi helper `old()` pada seluruh field input agar input pengguna tidak ter-reset saat gagal validasi.
+    - Penyelarasan skala 8-Point Grid pada ikon header card (`40px × 40px`), padding badge (`px-3 py-1`), dan tinggi tombol toggle kata sandi (`min-height: 36px;`).
+    - Standarisasi bahasa & mikro-kopi ramah pengguna: Penyederhanaan seluruh teks antarmuka, hint upload foto, hint kata sandi, label *"Alamat Email"*, pembakuan istilah *"Kata Sandi"*, dialog modal SweetAlert2 (judul 2–4 kata, 1 kalimat tenang, tombol tegas), dan eliminasi total kata teknis internal ("basis data", "kredensial", "permanen").
+    - Penambahan instrumen audit Bagian 18 pada `audit_code.md`.
+  - **Status**: Selesai ✅ *(7 September 2026)*
 
 ---
 

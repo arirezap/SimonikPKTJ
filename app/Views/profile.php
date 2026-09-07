@@ -158,7 +158,7 @@
         border-color: #dee2e6;
         color: #64748b;
         min-width: 44px;
-        min-height: 38px;
+        min-height: 36px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -248,10 +248,10 @@
     <div class="d-flex justify-content-between flex-wrap align-items-center pt-2 pb-2 mb-3 border-bottom gap-2 bento-stagger bento-stagger-1">
         <div>
             <h1 class="h4 mb-0 fw-bold text-dark"><i class="bi bi-person-badge text-primary me-2"></i>Profil Saya</h1>
-            <p class="text-muted small mb-0">Kelola kredensial akun, data kepegawaian, dan informasi kontak Anda.</p>
+            <p class="text-muted small mb-0">Kelola data profil, akun, dan kontak Anda.</p>
         </div>
         <div>
-            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1.5 small fw-semibold">
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 small fw-semibold">
                 <i class="bi bi-shield-check me-1"></i> Akun Terverifikasi
             </span>
         </div>
@@ -269,7 +269,7 @@
             <div class="d-flex align-items-start">
                 <i class="bi bi-exclamation-triangle-fill me-2 mt-0.5 fs-6 flex-shrink-0"></i>
                 <div class="flex-grow-1">
-                    <strong class="d-block mb-1">Periksa kembali data yang Anda masukkan:</strong>
+                    <strong class="d-block mb-1">Periksa kembali isian berikut:</strong>
                     <ul class="mb-0 ps-3">
                         <?php foreach (session()->getFlashdata('errors') as $error) : ?>
                             <li><?= esc($error) ?></li>
@@ -303,7 +303,7 @@
                     ?>
                     
                     <!-- Single Streamlined Avatar Interaction (Klik untuk Unggah) -->
-                    <div class="avatar-wrapper mb-3" id="avatarWrapper" title="Klik untuk mengganti foto profil" role="button" tabindex="0" aria-label="Ganti foto profil">
+                    <div class="avatar-wrapper mb-3" id="avatarWrapper" title="Pilih foto profil" role="button" tabindex="0" aria-label="Pilih foto profil">
                         <img src="<?= $foto_url ?>" id="profilePreview" class="img-profile rounded-circle shadow-sm <?= $hasPhoto ? '' : 'd-none' ?>" alt="Foto Profil" style="width: 150px; height: 150px; object-fit: cover; border: 4px solid #ffffff; box-shadow: 0 10px 24px rgba(0,0,0,0.06);">
                         
                         <div id="profilePreviewInitials" class="bg-primary bg-opacity-10 text-primary rounded-circle align-items-center justify-content-center shadow-sm <?= $hasPhoto ? 'd-none' : 'd-flex' ?>" style="width: 150px; height: 150px; border: 4px solid #ffffff; font-size: 3.5rem; font-weight: bold; box-shadow: 0 10px 24px rgba(0,0,0,0.06);">
@@ -317,7 +317,7 @@
                         </div>
 
                         <!-- Camera Badge Button (44px touch target) -->
-                        <div class="avatar-badge-btn btn-tactile" id="avatarBadgeBtn" title="Klik untuk mengganti foto">
+                        <div class="avatar-badge-btn btn-tactile" id="avatarBadgeBtn" title="Pilih foto">
                             <i class="bi bi-camera-fill" style="font-size: 1.05rem;"></i>
                         </div>
                     </div>
@@ -326,11 +326,11 @@
                     <p class="text-muted small fw-medium mb-3 user-profile-heading"><?= esc(!empty(trim((string)($user['jabatan'] ?? ''))) ? $user['jabatan'] : 'Staf Pelaksana') ?> • <?= esc($user['nip'] ?: '-') ?></p>
                     
                     <div class="d-flex flex-wrap gap-2 justify-content-center mb-4">
-                        <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-1.5 rounded-pill fw-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.75rem;">
+                        <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-1 rounded-pill fw-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.75rem;">
                             <i class="bi bi-person-gear me-1"></i> <?= esc(str_replace('_', ' ', $user['role'])) ?>
                         </span>
                         <?php if (!empty($user['unit'])): ?>
-                        <span class="badge bg-light text-secondary border px-3 py-1.5 rounded-pill fw-semibold" style="font-size: 0.75rem;">
+                        <span class="badge bg-light text-secondary border px-3 py-1 rounded-pill fw-semibold" style="font-size: 0.75rem;">
                             <i class="bi bi-building me-1"></i> <?= esc($user['unit']) ?>
                         </span>
                         <?php endif; ?>
@@ -341,13 +341,13 @@
 
                     <!-- Actions & Helper Toolbar -->
                     <div class="w-100 pt-3 border-top border-light-subtle d-flex flex-column align-items-center">
-                        <button form="profileForm" type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1.5 btn-tactile <?= $hasPhoto ? '' : 'd-none' ?>" id="hapusFotoBtn" title="Hapus foto profil saat ini">
+                        <button form="profileForm" type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1 btn-tactile <?= $hasPhoto ? '' : 'd-none' ?>" id="hapusFotoBtn" title="Hapus foto">
                             <i class="bi bi-trash3-fill me-1"></i> Hapus Foto
                         </button>
                         
                         <div class="form-text text-center text-muted mt-2" style="font-size: 0.73rem; line-height: 1.4;">
-                            <i class="bi bi-camera me-1 text-primary"></i> Klik foto di atas untuk memilih gambar baru.<br>
-                            <span class="text-secondary" style="font-size: 0.7rem;">Format: JPG, PNG. Maksimal: 2MB.</span>
+                            <i class="bi bi-camera me-1 text-primary"></i> Klik foto untuk mengganti.<br>
+                            <span class="text-secondary" style="font-size: 0.7rem;">Format JPG atau PNG, maksimal 2MB.</span>
                         </div>
                     </div>
                 </div>
@@ -360,53 +360,53 @@
                 <?= csrf_field() ?>
                 <input type="hidden" name="hapus_foto" id="hapusFotoFlag" value="0">
                 
-                <!-- BENTO 2: KREDENSIAL & KEAMANAN -->
+                <!-- BENTO 2: AKUN & KATA SANDI -->
                 <div class="card card-bento-ecc">
                     <div class="card-header bg-white border-bottom border-light-subtle p-3 p-md-4 d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center">
-                            <div class="bg-warning bg-opacity-10 rounded-circle p-2 d-flex align-items-center justify-content-center me-3" style="width: 42px; height: 42px;">
+                            <div class="bg-warning bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center me-3 flex-shrink-0" style="width: 40px; height: 40px;">
                                 <i class="bi bi-shield-lock-fill fs-5 text-warning"></i>
                             </div>
                             <div>
-                                <h6 class="m-0 fw-bold text-dark fs-5">Kredensial & Keamanan</h6>
-                                <p class="text-muted small mb-0" style="font-size: 0.75rem;">Kelola username akses dan pembaruan kata sandi akun.</p>
+                                <h6 class="m-0 fw-bold text-dark fs-5">Akun & Kata Sandi</h6>
+                                <p class="text-muted small mb-0" style="font-size: 0.75rem;">Nama pengguna dan pengaturan kata sandi.</p>
                             </div>
                         </div>
                     </div>
                     <div class="card-body p-3 p-md-4">
                         <div class="row g-3">
                             <div class="col-md-12">
-                                <label class="form-label text-muted small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.3px;">Username Akun</label>
+                                <label class="form-label text-muted small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.3px;">Username</label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-person-fill"></i></span>
                                     <input type="text" name="username" class="form-control bg-light fw-bold text-dark border-start-0" value="<?= esc($user['username']) ?>" readonly>
                                     <span class="input-group-text bg-light text-muted small"><i class="bi bi-lock-fill me-1"></i> Terkunci</span>
                                 </div>
-                                <div class="form-text small mt-1" style="font-size: 0.72rem;">Username terikat permanen pada identitas akun dan tidak dapat diubah.</div>
+                                <div class="form-text small mt-1" style="font-size: 0.72rem;">Username terdaftar tidak dapat diubah.</div>
                             </div>
                             
                             <div class="col-md-6">
                                 <label class="form-label text-muted small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.3px;">
-                                    Ganti Password Baru <span class="text-secondary fw-normal text-lowercase">(opsional)</span>
+                                    Kata Sandi Baru <span class="text-secondary fw-normal text-lowercase">(opsional)</span>
                                 </label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-white text-muted"><i class="bi bi-key-fill"></i></span>
-                                    <input type="password" name="password" id="passwordInput" class="form-control border-end-0" placeholder="Kosongkan jika tidak diganti..." autocomplete="new-password" minlength="6" maxlength="100">
-                                    <button type="button" class="btn btn-outline-secondary btn-toggle-pw border-start-0" data-target="passwordInput" title="Tampilkan / Sembunyikan Password" aria-label="Tampilkan atau sembunyikan kata sandi">
+                                    <input type="password" name="password" id="passwordInput" class="form-control border-end-0" placeholder="Kosongkan jika tidak diganti" autocomplete="new-password" minlength="6" maxlength="100">
+                                    <button type="button" class="btn btn-outline-secondary btn-toggle-pw border-start-0" data-target="passwordInput" title="Tampilkan / Sembunyikan Kata Sandi" aria-label="Tampilkan atau sembunyikan kata sandi">
                                         <i class="bi bi-eye"></i>
                                     </button>
                                 </div>
-                                <div class="form-text small mt-1" style="font-size: 0.72rem;">Minimal 6 karakter jika ingin mengganti kata sandi.</div>
+                                <div class="form-text small mt-1" style="font-size: 0.72rem;">Minimal 6 karakter.</div>
                             </div>
 
                             <div class="col-md-6">
                                 <label class="form-label text-muted small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.3px;">
-                                    Konfirmasi Password Baru <span class="text-secondary fw-normal text-lowercase">(opsional)</span>
+                                    Konfirmasi Kata Sandi <span class="text-secondary fw-normal text-lowercase">(opsional)</span>
                                 </label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-white text-muted"><i class="bi bi-shield-check"></i></span>
-                                    <input type="password" name="password_confirm" id="passwordConfirmInput" class="form-control border-end-0" placeholder="Ulangi password baru..." autocomplete="new-password" minlength="6" maxlength="100">
-                                    <button type="button" class="btn btn-outline-secondary btn-toggle-pw border-start-0" data-target="passwordConfirmInput" title="Tampilkan / Sembunyikan Password" aria-label="Tampilkan atau sembunyikan konfirmasi kata sandi">
+                                    <input type="password" name="password_confirm" id="passwordConfirmInput" class="form-control border-end-0" placeholder="Ulangi kata sandi baru" autocomplete="new-password" minlength="6" maxlength="100">
+                                    <button type="button" class="btn btn-outline-secondary btn-toggle-pw border-start-0" data-target="passwordConfirmInput" title="Tampilkan / Sembunyikan Kata Sandi" aria-label="Tampilkan atau sembunyikan konfirmasi kata sandi">
                                         <i class="bi bi-eye"></i>
                                     </button>
                                 </div>
@@ -419,54 +419,55 @@
                 <!-- BENTO 3: DATA KEPEGAWAIAN & KONTAK -->
                 <div class="card card-bento-ecc flex-grow-1">
                     <div class="card-header bg-white border-bottom border-light-subtle p-3 p-md-4 d-flex align-items-center">
-                        <div class="bg-info bg-opacity-10 rounded-circle p-2 d-flex align-items-center justify-content-center me-3" style="width: 42px; height: 42px;">
+                        <div class="bg-info bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center me-3 flex-shrink-0" style="width: 40px; height: 40px;">
                             <i class="bi bi-person-vcard-fill fs-5 text-info"></i>
                         </div>
                         <div>
                             <h6 class="m-0 fw-bold text-dark fs-5">Informasi Pegawai & Kontak</h6>
-                            <p class="text-muted small mb-0" style="font-size: 0.75rem;">Data profil dinas yang tertera pada laporan dan rekapitulasi kinerja.</p>
+                            <p class="text-muted small mb-0" style="font-size: 0.75rem;">Data pegawai untuk laporan dan penilaian kinerja.</p>
                         </div>
                     </div>
                     <div class="card-body p-3 p-md-4">
                         <div class="row g-3">
                             <div class="col-md-12">
                                 <label class="form-label text-muted small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.3px;">
-                                    Nama Lengkap (Beserta Gelar) <span class="text-danger">*</span>
+                                    Nama Lengkap & Gelar <span class="text-danger">*</span>
                                 </label>
-                                <input type="text" name="nama_lengkap" id="inputNamaLengkap" class="form-control form-control-sm fw-semibold" value="<?= esc($user['nama_lengkap']) ?>" required maxlength="100">
+                                <input type="text" name="nama_lengkap" id="inputNamaLengkap" class="form-control form-control-sm fw-semibold" value="<?= esc(old('nama_lengkap', $user['nama_lengkap'])) ?>" required maxlength="100">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label text-muted small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.3px;">
-                                    Email Address <span class="text-danger">*</span>
+                                    Alamat Email <span class="text-danger">*</span>
                                 </label>
-                                <input type="email" name="email" id="inputEmail" class="form-control form-control-sm" value="<?= esc($user['email']) ?>" required maxlength="100" inputmode="email">
+                                <input type="email" name="email" id="inputEmail" class="form-control form-control-sm" value="<?= esc(old('email', $user['email'])) ?>" required maxlength="100" inputmode="email">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label text-muted small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.3px;">
-                                    No. Handphone / WhatsApp <span class="text-secondary fw-normal text-lowercase">(opsional)</span>
+                                    Nomor Telepon / WhatsApp <span class="text-secondary fw-normal text-lowercase">(opsional)</span>
                                 </label>
-                                <input type="tel" name="no_hp" id="inputNoHp" class="form-control form-control-sm" value="<?= esc($user['no_hp'] ?? '') ?>" placeholder="Misal: 081234567890" maxlength="20" inputmode="tel">
+                                <input type="tel" name="no_hp" id="inputNoHp" class="form-control form-control-sm" value="<?= esc(old('no_hp', $user['no_hp'] ?? '')) ?>" placeholder="Contoh: 081234567890" maxlength="20" inputmode="tel">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label text-muted small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.3px;">
                                     NIP / NIK <span class="text-danger">*</span>
                                 </label>
-                                <input type="text" name="nip" id="inputNip" class="form-control form-control-sm" value="<?= esc($user['nip']) ?>" required maxlength="50">
+                                <input type="text" name="nip" id="inputNip" class="form-control form-control-sm" value="<?= esc(old('nip', $user['nip'])) ?>" required maxlength="50">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label text-muted small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.3px;">
-                                    Jabatan Kedinasan <span class="text-danger">*</span>
+                                    Jabatan <span class="text-danger">*</span>
                                 </label>
-                                <input type="text" name="jabatan" id="inputJabatan" class="form-control form-control-sm" value="<?= esc($user['jabatan']) ?>" required maxlength="100">
+                                <input type="text" name="jabatan" id="inputJabatan" class="form-control form-control-sm" value="<?= esc(old('jabatan', $user['jabatan'])) ?>" required maxlength="100">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label text-muted small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.3px;">
                                     Unit Kerja <span class="text-danger">*</span>
                                 </label>
+                                <?php $selectedUnit = old('unit', $user['unit']); ?>
                                 <select name="unit" id="selectUnitKerja" class="form-select form-select-sm select2" required>
                                     <option value="">-- Pilih Unit Kerja --</option>
                                     <?php foreach ($unit_kerja_list as $uk): ?>
-                                        <option value="<?= esc($uk['nama_unit']) ?>" <?= ($user['unit'] == $uk['nama_unit']) ? 'selected' : '' ?>>
+                                        <option value="<?= esc($uk['nama_unit']) ?>" <?= ($selectedUnit == $uk['nama_unit']) ? 'selected' : '' ?>>
                                             <?= esc($uk['nama_unit']) ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -476,10 +477,11 @@
                                 <label class="form-label text-muted small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.3px;">
                                     Atasan Langsung <span class="text-secondary fw-normal text-lowercase">(opsional)</span>
                                 </label>
+                                <?php $selectedAtasan = old('atasan_id', $user['atasan_id']); ?>
                                 <select name="atasan_id" id="selectAtasan" class="form-select form-select-sm select2">
                                     <option value="">-- Pilih Atasan Langsung --</option>
                                     <?php foreach ($potential_bosses as $boss): ?>
-                                        <option value="<?= $boss['id'] ?>" <?= ($user['atasan_id'] == $boss['id']) ? 'selected' : '' ?>>
+                                        <option value="<?= $boss['id'] ?>" <?= ($selectedAtasan == $boss['id']) ? 'selected' : '' ?>>
                                             <?= esc($boss['nama_lengkap']) ?> - <?= esc(!empty(trim((string)($boss['jabatan'] ?? ''))) ? $boss['jabatan'] : 'Pimpinan / Pejabat') ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -489,14 +491,14 @@
                                 <label class="form-label text-muted small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.3px;">
                                     Pangkat / Golongan <span class="text-secondary fw-normal text-lowercase">(opsional)</span>
                                 </label>
-                                <input type="text" name="pangkat" id="inputPangkat" class="form-control form-control-sm" value="<?= esc($user['pangkat']) ?>" placeholder="Misal: Penata Muda / III/a" maxlength="50">
+                                <input type="text" name="pangkat" id="inputPangkat" class="form-control form-control-sm" value="<?= esc(old('pangkat', $user['pangkat'])) ?>" placeholder="Contoh: Penata Muda / III/a" maxlength="50">
                             </div>
                         </div>
 
                         <!-- Desktop Submit Action Container -->
                         <div class="desktop-submit-container d-flex justify-content-end mt-4 pt-3 border-top border-light-subtle">
                             <button type="submit" id="btnSubmitProfile" class="btn btn-primary btn-tactile px-4 py-2 rounded-pill shadow-sm d-flex align-items-center gap-2 fw-bold">
-                                <i class="bi bi-save2-fill"></i> <span id="btnSubmitText">Simpan Perubahan</span>
+                                <i class="bi bi-save2-fill"></i> <span id="btnSubmitText">Simpan Profil</span>
                             </button>
                         </div>
                     </div>
@@ -577,13 +579,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const maxSizeBytes = 2 * 1024 * 1024;
         if (file.size > maxSizeBytes) {
             fotoInput.value = "";
-            const msg = 'Ukuran berkas foto terlalu besar (' + (file.size / (1024 * 1024)).toFixed(2) + 'MB). Maksimal ukuran yang diperbolehkan adalah 2MB.';
+            const msg = 'Ukuran foto maksimal 2MB.';
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
-                    icon: 'error',
-                    title: 'Ukuran Foto Terlalu Besar',
+                    icon: 'warning',
+                    title: 'Ukuran Terlalu Besar',
                     text: msg,
                     confirmButtonColor: '#0d6efd',
+                    confirmButtonText: 'Tutup',
                     customClass: { confirmButton: 'btn btn-primary rounded-pill px-4' },
                     buttonsStyling: false
                 });
@@ -597,13 +600,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png'];
         if (!allowedMimes.includes(file.type.toLowerCase())) {
             fotoInput.value = "";
-            const msg = 'Format berkas tidak didukung. Harap unggah foto dengan format JPG, JPEG, atau PNG.';
+            const msg = 'Format foto harus JPG atau PNG.';
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
-                    icon: 'error',
-                    title: 'Format Tidak Valid',
+                    icon: 'warning',
+                    title: 'Format Tidak Sesuai',
                     text: msg,
                     confirmButtonColor: '#0d6efd',
+                    confirmButtonText: 'Tutup',
                     customClass: { confirmButton: 'btn btn-primary rounded-pill px-4' },
                     buttonsStyling: false
                 });
@@ -632,11 +636,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (typeof Swal !== 'undefined') {
                 Swal.fire({ 
                     icon: 'error', 
-                    title: 'Gagal Membaca File', 
-                    text: 'Terjadi kesalahan saat memproses gambar.',
+                    title: 'Gagal Memuat Foto', 
+                    text: 'Pilih berkas foto lainnya.',
+                    confirmButtonText: 'Tutup',
                     customClass: { confirmButton: 'btn btn-primary rounded-pill px-4' },
                     buttonsStyling: false
                 });
+            } else {
+                alert('Gagal memuat foto. Pilih berkas lainnya.');
             }
         };
         reader.readAsDataURL(file);
@@ -659,13 +666,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
-                    title: 'Hapus Foto Profil?',
-                    text: 'Foto profil akan dihapus dan digantikan dengan inisial nama Anda.',
+                    title: 'Hapus Foto?',
+                    text: 'Foto profil saat ini akan dihapus.',
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#dc3545',
                     cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="bi bi-trash3-fill me-1"></i> Ya, Hapus Foto',
+                    confirmButtonText: 'Ya, Hapus',
                     cancelButtonText: 'Batal',
                     customClass: {
                         confirmButton: 'btn btn-danger rounded-pill px-4',
@@ -677,7 +684,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         doHapusFoto();
                     }
                 });
-            } else if (confirm('Apakah Anda yakin ingin menghapus foto profil?')) {
+            } else if (confirm('Hapus foto profil?')) {
                 doHapusFoto();
             }
         });
@@ -715,15 +722,15 @@ document.addEventListener('DOMContentLoaded', function() {
         pwFeedback.style.display = 'block';
         if (val1 && val2 && val1 === val2) {
             pwFeedback.className = 'small mt-1 text-success fw-semibold match-pop-anim';
-            pwFeedback.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Password cocok.';
+            pwFeedback.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Kata sandi cocok.';
             return true;
         } else if (val2) {
             pwFeedback.className = 'small mt-1 text-danger fw-semibold match-pop-anim';
-            pwFeedback.innerHTML = '<i class="bi bi-x-circle-fill me-1"></i> Konfirmasi password tidak cocok.';
+            pwFeedback.innerHTML = '<i class="bi bi-x-circle-fill me-1"></i> Konfirmasi kata sandi tidak cocok.';
             return false;
         } else {
             pwFeedback.className = 'small mt-1 text-muted match-pop-anim';
-            pwFeedback.innerHTML = 'Masukkan ulang password baru untuk konfirmasi.';
+            pwFeedback.innerHTML = 'Ketik ulang kata sandi baru untuk konfirmasi.';
             return false;
         }
     }
@@ -743,13 +750,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({ 
                         icon: 'warning', 
-                        title: 'Password Terlalu Pendek', 
-                        text: 'Password baru minimal harus 6 karakter.',
+                        title: 'Kata Sandi Terlalu Pendek', 
+                        text: 'Kata sandi minimal 6 karakter.',
+                        confirmButtonText: 'Mengerti',
                         customClass: { confirmButton: 'btn btn-primary rounded-pill px-4' },
                         buttonsStyling: false
                     });
                 } else {
-                    alert('Password baru minimal harus 6 karakter.');
+                    alert('Kata sandi minimal 6 karakter.');
                 }
                 return false;
             }
@@ -760,13 +768,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({ 
                         icon: 'error', 
-                        title: 'Password Tidak Cocok', 
-                        text: 'Konfirmasi password tidak cocok dengan password baru.',
+                        title: 'Kata Sandi Tidak Cocok', 
+                        text: 'Konfirmasi kata sandi tidak cocok.',
+                        confirmButtonText: 'Mengerti',
                         customClass: { confirmButton: 'btn btn-primary rounded-pill px-4' },
                         buttonsStyling: false
                     });
                 } else {
-                    alert('Konfirmasi password tidak cocok dengan password baru.');
+                    alert('Konfirmasi kata sandi tidak cocok.');
                 }
                 return false;
             }

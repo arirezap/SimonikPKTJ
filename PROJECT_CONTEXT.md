@@ -39,13 +39,29 @@ Sistem menggunakan *Role-Based Access Control (RBAC)* dengan 10 varian peran akt
 ## 4. Standar Terminologi & Branding ECC (CRITICAL RULES)
 1. **Wajib Istilah "staf"**: Selalu gunakan kata baku **"staf"** (bukan "bawahan" atau "staff") di seluruh label antarmuka, pesan notifikasi, variabel kode (`$stafIdTerpilih`, `getAllStaf()`), dan dokumen teknis (kepatuhan mutlak `.agents/AGENTS.md`).
 2. **Wajib Nama "Evidence Command Center (ECC)"**: Seluruh judul halaman, logo topbar, header laporan, footer sistem, dan respons asisten **WAJIB** menyebut **Evidence Command Center (ECC)** atau **ECC** (bukan "Simonik").
+3. **Pembakuan Istilah Resmi ECC**:
+   - *"Kata Sandi"* (bukan Password)
+   - *"Alamat Email"* (bukan Email Address)
+   - *"Keluar"* (bukan Logout)
+   - *"Simpan Profil"* (bukan Simpan Perubahan / Update)
+   - *"Perbarui Kata Sandi"* (bukan Ubah Password)
 
 ---
 
 ## 5. UI/UX & Interaction Design Standards ("UI UX Pro Max & 8-Point Grid")
 - **8-Point Grid System**: Seluruh spacing (`padding`, `margin`, `gap`), ukuran elemen, dan aset grafis wajib mematuhi kelipatan 8px: `4px` (0.5x micro), `8px` (1x base), `12px` (1.5x), `16px` (2x), `24px` (3x), `32px` (4x), `40px` (5x), `48px` (6x), `64px` (8x), `80px` (10x). Dilarang keras menggunakan angka sembarang tak sejajar grid (`7px`, `13px`, `62px`, `95px`).
 - **Bento Card Architecture**: Selalu gunakan kartu elevasi modern `class="card border-0 shadow-sm rounded-4"` dengan `padding: 24px` (desktop) / `16px` (mobile).
-- **Standar Ukuran Aset & Ikon**: Swatch legenda `16px × 16px`, tombol compact `height: 32px`, kontrol form `height: 36px`–`40px`, tombol CTA utama `min-height: 40px`, ikon header modal `40px × 40px`, avatar `40px`/`64px`/`80px`, sel kalender desktop `min-height: 64px` (mobile `48px`).
+- **Standar Ukuran Aset & Ikon**:
+  - Swatch legenda: `16px × 16px` (`border-radius: 4px`).
+  - Tombol compact & Filter Toolbar: `min-height: 32px; padding: 4px 12px; border-radius: 50rem;`.
+  - Tombol Toggle Kata Sandi: `min-height: 36px; padding: 4px 12px; border-radius: 8px;`.
+  - Kontrol form & dropdown Select2: `height: 36px`–`40px; border-radius: 8px;`.
+  - Tombol CTA utama: `min-height: 40px; border-radius: 8px;`.
+  - Wadah Ikon Header Kartu / Modal: `40px × 40px` (`border-radius: 12px` / `rounded-3`).
+  - Feature Icons Utama: `48px × 48px` (`border-radius: 16px`).
+  - Avatar profil: `40px`/`64px`/`80px`.
+  - Sel kalender desktop: `min-height: 64px` (mobile `48px`).
+  - Status Badges: `padding: 4px 12px; border-radius: 50rem;` (`px-3 py-1`).
 - **Format Numerik Tabular**: Seluruh angka desimal, target, realisasi, dan skor wajib menggunakan `font-variant-numeric: tabular-nums; font-feature-settings: "tnum";`.
 - **Aksesibilitas Tinggi**: Wajib menyematkan atribut `aria-label` pada tombol ekspor, filter toolbar, dan input pencarian live.
 - **Ergonomi Sentuh Seluler**: Target sentuh tombol minimal 40px–44px, dukungan *iOS Zoom Prevention* (`font-size: 16px !important` pada input select di layar <768px), dan *touch segmented tabs*.
@@ -115,6 +131,26 @@ Menu tree Kepegawaian di sidebar memiliki 2 submodul terpadu untuk Tim Kepegawai
 - Filter: `app/Filters/MaintenanceFilter.php`.
 - Saklar switch 1-klik di menu Pengaturan Sistem mengalihkan seluruh pengguna non-admin ke halaman `public/maintenance.html` (HTTP 503) dengan auto-refresh 30 detik. Administrator tetap memiliki akses 100%.
 
+### E. Modul Direktori Pegawai (`/daftar-pegawai`):
+- Controller: `app/Controllers/User/DaftarPegawaiController.php` | View: `app/Views/user/daftar_pegawai.php`.
+- Menampilkan direktori seluruh pegawai terdaftar di lingkungan PKTJ dengan pencarian instan nama/NIP/jabatan dan filter unit kerja dinamis.
+- Menggunakan *selective column querying* (`select('id, nama_lengkap, nip, unit, jabatan, role, atasan_id, foto')`) tanpa mengekspos hash kata sandi untuk privasi data dan efisiensi memori.
+- Penataan kartu profil responsif berbasis 8-Point Grid, modal dialog rincian pegawai tanpa reload halaman (AJAX), dan tombol filter `min-height: 32px`.
+
+### F. Modul Profil Saya (`/profile`):
+- Controller: `app/Controllers/Profile.php` | View: `app/Views/profile.php`.
+- Pegawai dapat memperbarui nomor handphone, memilih unit kerja, mengatur atasan langsung, dan mengganti Kata Sandi secara mandiri.
+- **Mekanisme Dual-Sync Unit Kerja**: Saat unit kerja diperbarui, sistem otomatis menyinkronkan `unit_id` sekaligus teks nama `unit` untuk konsistensi data institusional.
+- **Failsafe Sesi Ganda & Proteksi Self-Atasan Loop**: Validasi sesi (`id` dan `user_id`) serta pencegahan pegawai memilih dirinya sendiri sebagai atasan langsung (`$atasanId !== $userId`).
+- **Preservasi Formulir (*Form State Preservation*)**: Menggunakan `old()` pada seluruh field input agar data yang baru diketik pengguna tidak hilang saat terjadi kegagalan validasi kata sandi.
+
+### G. Standar Pengamanan Unggah Berkas & Hardening Direktori:
+- **Validasi Ukuran Ganda 2MB**: Batas ukuran `uploaded[foto]|max_size[foto,2048]` di controller dan `accept="image/*"` di form.
+- **Magic Bytes & MIME Type Inspection**: Validasi integritas berkas `is_image[foto]|mime_in[foto,image/jpg,image/jpeg,image/png,image/webp]`.
+- **Cryptographic Random Renaming**: Seluruh nama file yang diunggah dienkripsi acak via `$file->getRandomName()`.
+- **Script Execution Barrier (`public/assets/uploads/.htaccess`)**: Mematikan parser PHP (`php_flag engine off`) dan menolak eksekusi seluruh skrip web (`.php`, `.phtml`, `.cgi`, `.sh`, `.exe`, dll.).
+- **Penghapusan Berkas Aman**: Membersihkan nama file dengan `basename()` dan verifikasi `file_exists(FCPATH . ...)` sebelum `unlink()`.
+
 ---
 
 ## 7. Arsitektur Perutean (Routing Rules - `app/Config/Routes.php`)
@@ -133,6 +169,7 @@ Menu tree Kepegawaian di sidebar memiliki 2 submodul terpadu untuk Tim Kepegawai
 ---
 
 ## 9. Status Graphify Knowledge Graph
-- Korpus Terindeks: 636 berkas (~1.147.824 kata).
-- Simpul & Relasi: 9.611 nodes, 19.933 edges, 554 communities.
+- Tanggal Pembaruan: 7 September 2026.
+- Korpus Terindeks: 636 berkas (~1.155.113 kata).
+- Simpul & Relasi: 9.624 nodes, 19.948 edges, 555 communities.
 - Berkas Artefak: `graphify-out/graph.json`, `graphify-out/graph.html`, dan `graphify-out/GRAPH_REPORT.md`.

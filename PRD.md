@@ -56,6 +56,15 @@ Modul ini merupakan *core engine* untuk evaluasi bulanan yang terdiri dari dua s
 - **Presisi Desimal 4 Digit (`DECIMAL(10,4)`):** Mendukung perhitungan target dan realisasi pecahan halus (contoh: `0.3333`, `0.1250`) tanpa pemotongan atau pembulatan paksa.
 - **Standardisasi Skala Tugas Tambahan:** Skala penilaian tugas tambahan diselaraskan menjadi `0 - 150%` setara dengan Target RHK bulanan.
 
+#### 3.8. Modul Direktori Pegawai & Profil Mandiri
+- **Direktori Pegawai Seluruh Institusi (`/daftar-pegawai`):** Menyediakan daftar kontak dan profil seluruh pegawai PKTJ dengan pencarian instan nama/NIP/jabatan dan filter unit kerja dinamis. Menggunakan kueri selektif tanpa hash kata sandi demi privasi dan performa.
+- **Profil Mandiri Pegawai (`/profile`):** Pegawai dapat memperbarui nomor telepon, memilih unit kerja (tersinkron ganda `unit_id` & `unit`), mengatur atasan langsung (dengan proteksi self-atasan loop), dan memperbarui Kata Sandi dengan form state preservation (`old()`).
+
+#### 3.9. Pengamanan Unggah Berkas (Upload Hardening & Security Layer)
+- **Validasi Berlapis Server-Side:** Batas ukuran 2MB (`max_size[foto,2048]`), inspeksi *magic bytes* MIME (`is_image[foto]|mime_in[...]`), dan penamaan acak kriptografis (`$file->getRandomName()`).
+- **Web Server Hardening (`.htaccess`):** Melumpuhkan mesin PHP (`php_flag engine off`) dan memblokir eksekusi seluruh skrip web pada direktori berkas publik (`public/assets/uploads/`).
+- **Penghapusan Berkas Terproteksi:** Sanitasi nama berkas via `basename()` dan verifikasi `file_exists(FCPATH . ...)` sebelum penghapusan.
+
 ### 4. Pedoman Desain (UI/UX Guidelines)
 Aplikasi ini dikembangkan dengan berpegang teguh pada prinsip **ui-ux-pro-max**:
 - **Pendekatan Bento / Card:** Semua tabel, *form*, dan *widget* dibungkus ke dalam *card* membulat (`rounded`, `shadow-sm`) dengan latar belakang putih.
@@ -88,4 +97,5 @@ Sistem menerapkan konsep pemisahan tugas menggunakan arsitektur **Tabel Pivot (M
 - [x] Presisi Desimal 4 Digit (`DECIMAL(10,4)`) & Standardisasi Penilaian Tugas Tambahan 0 - 150%.
 - [x] Engine Ekspor Rekap Kepegawaian Multi-Sheet Excel & PDF Landscape A4 dengan Pengurutan Hierarki 13-Tier Jabatan.
 - [x] Rilis Resmi Versi 1.4: Penyelesaian Audit 8-Pilar Modul Kelola Tim, Kelola Pengguna, Profil Saya, dan Pengerasan Rute POST (3 September 2026).
+- [x] Audit & Pemolesan 8-Point Grid Modul Direktori Pegawai & Profil Saya, Pengamanan Berkas Ganda 2MB, Script Execution Barrier `.htaccess`, dan Pembakuan Istilah Non-Teknis (7 September 2026).
 
