@@ -23,7 +23,31 @@ if (!function_exists('hasRole')) {
             return true;
         }
 
-        // Cek dari array roles yang di-load saat login
+        // Lazy-loading fallback: jika all_roles belum tersimpan di session pengguna aktif
+        if (!session()->has('all_roles')) {
+            $userId = session()->get('id') ?? session()->get('user_id');
+            if ($userId) {
+                try {
+                    $db = \Config\Database::connect();
+                    $secondaryRoles = $db->table('user_roles')
+                        ->select('role')
+                        ->where('user_id', $userId)
+                        ->get()
+                        ->getResultArray();
+                    $roles = array_column($secondaryRoles, 'role');
+                    $primaryRole = (string)session()->get('role');
+                    if ($primaryRole !== '') {
+                        array_unshift($roles, $primaryRole);
+                    }
+                    $allRoles = array_values(array_unique(array_filter($roles)));
+                    session()->set('all_roles', $allRoles);
+                } catch (\Throwable $e) {
+                    // Fallback tenang jika basis data belum siap
+                }
+            }
+        }
+
+        // Cek dari array roles yang di-load saat login atau lazy-loaded
         $allRoles = session()->get('all_roles') ?? [];
         return in_array(strtolower($roleName), array_map('strtolower', $allRoles));
     }
@@ -55,6 +79,10 @@ if (!function_exists('getUserRoles')) {
      */
     function getUserRoles(): array
     {
+        if (!session()->has('all_roles')) {
+            // Trigger lazy-loading via hasRole check
+            hasRole('dummy_trigger');
+        }
         return session()->get('all_roles') ?? [session()->get('role')];
     }
 }

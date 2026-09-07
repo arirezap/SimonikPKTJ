@@ -1514,6 +1514,14 @@ document.addEventListener('DOMContentLoaded', function() {
                             throw new Error('Gagal menyiapkan berkas dari server');
                         }
 
+                        // Cek jika server mengembalikan halaman HTML (misal redirect atau auth)
+                        const contentType = response.headers.get('Content-Type') || '';
+                        if (contentType.includes('text/html') || response.redirected) {
+                            Swal.close();
+                            window.location.href = response.url || url;
+                            return;
+                        }
+
                         let filename = defaultFilename;
                         const disposition = response.headers.get('Content-Disposition');
                         if (disposition && disposition.includes('filename=')) {
@@ -1547,11 +1555,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             showConfirmButton: false
                         });
                     } catch (err) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Gagal Mengunduh',
-                            text: 'Terjadi kendala saat mengompilasi berkas. Silakan coba beberapa saat lagi.'
-                        });
+                        // Fallback cerdas: alihkan langsung ke URL agar browser mendownload secara native
+                        Swal.close();
+                        window.location.href = url;
                     }
                 }
             });

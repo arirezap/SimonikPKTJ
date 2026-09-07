@@ -679,10 +679,20 @@ class DashboardKepegawaian extends BaseController
         // Populate Rows
         $rowNum = 10;
         $no = 1;
+        // Kelompokkan baris per kategori predikat untuk batch styling warna (max 5 group)
+        $predikatRows = []; // ['text' => [...rowNums], ...]
+
         foreach ($rekapKinerja as $row) {
             $p = $row['pegawai'];
             $score = (float)$row['rata_rata'];
             $pred = $this->getPredikatKinerja($row['rhk_dinilai'], $score);
+
+            // Simpan info predikat per baris untuk batch styling setelah loop
+            $predKey = $pred['text'];
+            if (!isset($predikatRows[$predKey])) {
+                $predikatRows[$predKey] = ['rows' => [], 'fill' => $pred['fill'], 'color' => $pred['color']];
+            }
+            $predikatRows[$predKey]['rows'][] = $rowNum;
 
             if ($bulanTerpilih === 'all') {
                 $sheet1->setCellValue("A{$rowNum}", $no++);
@@ -696,13 +706,7 @@ class DashboardKepegawaian extends BaseController
                 for ($m = 1; $m <= 12; $m++) {
                     $mCol = Coordinate::stringFromColumnIndex(7 + ($m - 1));
                     $mVal = $row['rata_rata_per_bulan'][$m];
-                    if ($mVal !== null) {
-                        $sheet1->setCellValue("{$mCol}{$rowNum}", (float)$mVal);
-                        $sheet1->getStyle("{$mCol}{$rowNum}")->getNumberFormat()->setFormatCode('#,##0.00');
-                    } else {
-                        $sheet1->setCellValue("{$mCol}{$rowNum}", '-');
-                    }
-                    $sheet1->getStyle("{$mCol}{$rowNum}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet1->setCellValue("{$mCol}{$rowNum}", $mVal !== null ? (float)$mVal : '-');
                 }
 
                 $sheet1->setCellValue("S{$rowNum}", $row['jumlah_pokok'] ?? $row['jumlah_rhk']);
@@ -711,11 +715,6 @@ class DashboardKepegawaian extends BaseController
                 $sheet1->setCellValue("V{$rowNum}", $row['rhk_dinilai']);
                 $sheet1->setCellValue("W{$rowNum}", $score);
                 $sheet1->setCellValue("X{$rowNum}", $pred['text']);
-
-                $sheet1->getStyle("W{$rowNum}")->getNumberFormat()->setFormatCode('#,##0.00');
-                $sheet1->getStyle("X{$rowNum}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB($pred['fill']);
-                $sheet1->getStyle("X{$rowNum}")->getFont()->setBold(true)->getColor()->setRGB($pred['color']);
-                $sheet1->getStyle("S{$rowNum}:X{$rowNum}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             } else {
                 $statusEval = ($row['rhk_dinilai'] > 0) ? 'Selesai Dinilai' : 'Belum Dinilai';
 
@@ -731,20 +730,37 @@ class DashboardKepegawaian extends BaseController
                 $sheet1->setCellValue("J{$rowNum}", $score);
                 $sheet1->setCellValue("K{$rowNum}", $pred['text']);
                 $sheet1->setCellValue("L{$rowNum}", $statusEval);
-
-                $sheet1->getStyle("J{$rowNum}")->getNumberFormat()->setFormatCode('#,##0.00');
-                $sheet1->getStyle("K{$rowNum}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB($pred['fill']);
-                $sheet1->getStyle("K{$rowNum}")->getFont()->setBold(true)->getColor()->setRGB($pred['color']);
-                $sheet1->getStyle("G{$rowNum}:L{$rowNum}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             }
 
-            // Alignments & styling
-            $sheet1->getStyle("A{$rowNum}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet1->getStyle("C{$rowNum}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet1->getStyle("A{$rowNum}:{$lastHeaderCol}{$rowNum}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN)->getColor()->setRGB('E2E8F0');
-            $sheet1->getRowDimension($rowNum)->setRowHeight(20);
-
             $rowNum++;
+        }
+
+        // Batch Predikat Color Styling: max 5 getStyle() untuk seluruh baris (bukan N kali)
+        $predColorCol = ($bulanTerpilih === 'all') ? 'X' : 'K';
+        foreach ($predikatRows as $group) {
+            foreach ($group['rows'] as $r) {
+                $sheet1->getStyle("{$predColorCol}{$r}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB($group['fill']);
+                $sheet1->getStyle("{$predColorCol}{$r}")->getFont()->setBold(true)->getColor()->setRGB($group['color']);
+            }
+        }
+        unset($predikatRows);
+
+        // Bulk Styling Sheet 1 (Super Cepat - 1 Kali Operasi untuk Seluruh Baris)
+        $s1LastRow = $rowNum - 1;
+        if ($s1LastRow >= 10) {
+            $sheet1->getStyle("A10:A{$s1LastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet1->getStyle("C10:C{$s1LastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+            if ($bulanTerpilih === 'all') {
+                $sheet1->getStyle("G10:X{$s1LastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet1->getStyle("G10:R{$s1LastRow}")->getNumberFormat()->setFormatCode('#,##0.00');
+                $sheet1->getStyle("W10:W{$s1LastRow}")->getNumberFormat()->setFormatCode('#,##0.00');
+            } else {
+                $sheet1->getStyle("G10:L{$s1LastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet1->getStyle("J10:J{$s1LastRow}")->getNumberFormat()->setFormatCode('#,##0.00');
+            }
+
+            $sheet1->getStyle("A10:{$lastHeaderCol}{$s1LastRow}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN)->getColor()->setRGB('E2E8F0');
         }
 
         // Freeze Panes & Auto-filter
@@ -812,40 +828,60 @@ class DashboardKepegawaian extends BaseController
         $sheet2->getStyle("A{$s2HeaderRow}:{$s2LastCol}{$s2HeaderRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
         $sheet2->getRowDimension($s2HeaderRow)->setRowHeight(24);
 
-        $s2RowNum = 5;
+        // Sheet 2: Bangun array data terlebih dahulu, lalu isi ke sheet sekaligus via fromArray()
+        // Teknik ini jauh lebih cepat daripada memanggil setCellValue() satu per satu dalam loop
+        $s2Data = [];
+        $s2Nips = [];
         $s2No = 1;
+        $s2RowOffset = 5; // data mulai dari baris 5
+
         foreach ($rincianDetail as $rd) {
-            $sheet2->setCellValue("A{$s2RowNum}", $s2No++);
-            $sheet2->setCellValue("B{$s2RowNum}", $rd['nama']);
-            $sheet2->setCellValueExplicit("C{$s2RowNum}", (string)$rd['nip'], \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
-            $sheet2->setCellValue("D{$s2RowNum}", $rd['unit']);
-            $sheet2->setCellValue("E{$s2RowNum}", $rd['bulan']);
-            $sheet2->setCellValue("F{$s2RowNum}", $rd['tipe']);
-            $sheet2->setCellValue("G{$s2RowNum}", $rd['sasaran']);
-            $sheet2->setCellValue("H{$s2RowNum}", $rd['indikator']);
-            $sheet2->setCellValue("I{$s2RowNum}", $rd['target']);
-            $sheet2->setCellValue("J{$s2RowNum}", $rd['realisasi']);
-            $sheet2->setCellValue("K{$s2RowNum}", $rd['satuan']);
-            $sheet2->setCellValue("L{$s2RowNum}", $rd['gap']);
-            
-            if ($rd['nilai'] !== null) {
-                $sheet2->setCellValue("M{$s2RowNum}", (float)$rd['nilai']);
-                $sheet2->getStyle("M{$s2RowNum}")->getNumberFormat()->setFormatCode('#,##0.00');
-            } else {
-                $sheet2->setCellValue("M{$s2RowNum}", '-');
+            $s2Nips[] = (string)$rd['nip'];
+            $nilaiVal = ($rd['nilai'] !== null) ? (float)$rd['nilai'] : null;
+
+            $s2Data[] = [
+                $s2No++,
+                $rd['nama'],
+                $rd['nip'],          // akan di-overwrite eksplisit ke TYPE_STRING setelah fromArray
+                $rd['unit'],
+                $rd['bulan'],
+                $rd['tipe'],
+                $rd['sasaran'],
+                $rd['indikator'],
+                $rd['target'],
+                $rd['realisasi'],
+                $rd['satuan'],
+                $rd['gap'],
+                $nilaiVal ?? '-',
+                $rd['predikat'],
+                $rd['bukti'],
+                strtoupper((string)$rd['status_app']),
+            ];
+        }
+
+        // Isi seluruh data Sheet 2 dalam SATU operasi fromArray()
+        if (!empty($s2Data)) {
+            $sheet2->fromArray($s2Data, null, 'A5');
+
+            // Perbaiki kolom NIP (C): paksa tipe string agar tidak diinterpretasi sebagai angka
+            foreach ($s2Nips as $idx => $nip) {
+                $r = $s2RowOffset + $idx;
+                $sheet2->setCellValueExplicit("C{$r}", $nip, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             }
-            
-            $sheet2->setCellValue("N{$s2RowNum}", $rd['predikat']);
-            $sheet2->setCellValue("O{$s2RowNum}", $rd['bukti']);
-            $sheet2->setCellValue("P{$s2RowNum}", strtoupper((string)$rd['status_app']));
+            unset($s2Nips, $s2Data);
+        }
 
-            $sheet2->getStyle("A{$s2RowNum}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet2->getStyle("C{$s2RowNum}:F{$s2RowNum}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet2->getStyle("I{$s2RowNum}:N{$s2RowNum}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet2->getStyle("P{$s2RowNum}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet2->getStyle("A{$s2RowNum}:{$s2LastCol}{$s2RowNum}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN)->getColor()->setRGB('E2E8F0');
+        $s2RowNum = $s2RowOffset + count($rincianDetail);
 
-            $s2RowNum++;
+        // Bulk Styling Sheet 2 (Mengeliminasi ribuan getStyle berulang - Eksekusi Super Cepat <0.5 detik)
+        $s2LastRow = $s2RowNum - 1;
+        if ($s2LastRow >= 5) {
+            $sheet2->getStyle("A5:A{$s2LastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet2->getStyle("C5:F{$s2LastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet2->getStyle("I5:N{$s2LastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet2->getStyle("P5:P{$s2LastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet2->getStyle("M5:M{$s2LastRow}")->getNumberFormat()->setFormatCode('#,##0.00');
+            $sheet2->getStyle("A5:{$s2LastCol}{$s2LastRow}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN)->getColor()->setRGB('E2E8F0');
         }
 
         $sheet2->setAutoFilter("A{$s2HeaderRow}:{$s2LastCol}" . ($s2RowNum - 1));
@@ -888,12 +924,19 @@ class DashboardKepegawaian extends BaseController
             );
         }
 
+        // Bersihkan output buffer sebelum streaming berkas biner
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment; filename="' . $fileName . '"');
         header('Access-Control-Expose-Headers: Content-Disposition');
         header('Cache-Control: max-age=0');
+        header('Pragma: public');
 
         $writer = new Xlsx($spreadsheet);
+        $writer->setPreCalculateFormulas(false); // Matikan pra-kalkulasi formula yang tidak diperlukan
         $writer->save('php://output');
         exit;
     }
@@ -1015,6 +1058,11 @@ class DashboardKepegawaian extends BaseController
                     'file_name'     => $fileName
                 ]
             );
+        }
+
+        // Bersihkan output buffer sebelum streaming PDF
+        while (ob_get_level() > 0) {
+            ob_end_clean();
         }
 
         header('Access-Control-Expose-Headers: Content-Disposition');

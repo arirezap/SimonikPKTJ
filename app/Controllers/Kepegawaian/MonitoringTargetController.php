@@ -480,11 +480,6 @@ class MonitoringTargetController extends BaseController
             $sheet1->setCellValue('H' . $rowNum, $stKirimTxt);
             $sheet1->setCellValue('I' . $rowNum, $stApprTxt);
 
-            $sheet1->getStyle('A' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet1->getStyle('G' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet1->getStyle('H' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet1->getStyle('I' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
             $rowNum++;
         }
 
@@ -496,10 +491,17 @@ class MonitoringTargetController extends BaseController
                 ],
             ],
         ];
-        $sheet1->getStyle('A5:I' . ($rowNum - 1))->applyFromArray($styleBorder1);
 
-        foreach (range('A', 'I') as $c) {
-            $sheet1->getColumnDimension($c)->setAutoSize(true);
+        // Bulk Styling Sheet 1 (Cepat & Ringan)
+        if ($rowNum > 5) {
+            $sheet1->getStyle('A5:A' . ($rowNum - 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet1->getStyle('G5:I' . ($rowNum - 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet1->getStyle('A5:I' . ($rowNum - 1))->applyFromArray($styleBorder1);
+        }
+
+        $s1Widths = ['A' => 6, 'B' => 28, 'C' => 22, 'D' => 24, 'E' => 22, 'F' => 26, 'G' => 14, 'H' => 18, 'I' => 20];
+        foreach ($s1Widths as $c => $w) {
+            $sheet1->getColumnDimension($c)->setWidth($w);
         }
 
         // SHEET 2: RINCIAN TARGET RHK PER PEGAWAI
@@ -545,12 +547,6 @@ class MonitoringTargetController extends BaseController
                 $sheet2->setCellValue('I' . $rowNum2, $rItem['satuan']);
                 $sheet2->setCellValue('J' . $rowNum2, $rItem['status_kirim']);
                 $sheet2->setCellValue('K' . $rowNum2, $rItem['status_appr']);
-
-                $sheet2->getStyle('E' . $rowNum2)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $sheet2->getStyle('H' . $rowNum2)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $sheet2->getStyle('I' . $rowNum2)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $sheet2->getStyle('J' . $rowNum2)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $sheet2->getStyle('K' . $rowNum2)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             } else {
                 $sheet2->setCellValue('E' . $rowNum2, $rItem['sasaran']);
                 $sheet2->setCellValue('F' . $rowNum2, $rItem['indikator']);
@@ -558,22 +554,30 @@ class MonitoringTargetController extends BaseController
                 $sheet2->setCellValue('H' . $rowNum2, $rItem['satuan']);
                 $sheet2->setCellValue('I' . $rowNum2, $rItem['status_kirim']);
                 $sheet2->setCellValue('J' . $rowNum2, $rItem['status_appr']);
-
-                $sheet2->getStyle('G' . $rowNum2)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $sheet2->getStyle('H' . $rowNum2)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $sheet2->getStyle('I' . $rowNum2)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $sheet2->getStyle('J' . $rowNum2)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             }
 
-            $sheet2->getStyle('A' . $rowNum2)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $rowNum2++;
         }
 
+        // Bulk Styling Sheet 2 (Mengeliminasi ribuan getStyle per-baris)
         if ($rowNum2 > 5) {
+            $sheet2->getStyle('A5:A' . ($rowNum2 - 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            if ($isAllMonth) {
+                $sheet2->getStyle('E5:E' . ($rowNum2 - 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet2->getStyle('H5:K' . ($rowNum2 - 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            } else {
+                $sheet2->getStyle('G5:J' . ($rowNum2 - 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            }
             $sheet2->getStyle("A4:{$lastCol2}" . ($rowNum2 - 1))->applyFromArray($styleBorder1);
         }
+
+        $s2Widths = [
+            'A' => 6, 'B' => 28, 'C' => 22, 'D' => 22,
+            'E' => 14, 'F' => 30, 'G' => 30, 'H' => 14,
+            'I' => 14, 'J' => 18, 'K' => 18
+        ];
         foreach (range('A', $lastCol2) as $c2) {
-            $sheet2->getColumnDimension($c2)->setAutoSize(true);
+            $sheet2->getColumnDimension($c2)->setWidth($s2Widths[$c2] ?? 16);
         }
 
         // Set active sheet ke sheet pertama
@@ -581,9 +585,16 @@ class MonitoringTargetController extends BaseController
 
         $filename = "Monitoring_Target_Kinerja_" . str_replace(' ', '_', $namaBulan) . "_{$tahunTerpilih}.xlsx";
 
+        // Bersihkan output buffer sebelum streaming berkas biner Excel
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Access-Control-Expose-Headers: Content-Disposition');
         header('Cache-Control: max-age=0');
+        header('Pragma: public');
 
         // Audit trail export Excel
         if (function_exists('log_audit')) {
@@ -774,6 +785,12 @@ class MonitoringTargetController extends BaseController
             );
         }
 
+        // Bersihkan output buffer sebelum streaming PDF
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        header('Access-Control-Expose-Headers: Content-Disposition');
         $filename = "Monitoring_Target_Kinerja_" . str_replace(' ', '_', $namaBulan) . "_{$tahunTerpilih}.pdf";
         $dompdf->stream($filename, ['Attachment' => false]);
         exit;
