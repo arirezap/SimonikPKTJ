@@ -152,7 +152,7 @@ Panduan Penggunaan ECC Laporan Kinerja
 
                                 <div class="card border border-success-subtle bg-light-subtle mb-3 p-3 rounded-3 shadow-sm">
                                     <h6 class="fw-bold text-success mb-2"><i class="bi bi-people-fill me-2"></i> B. Tab "Penilaian Staf" (Khusus Atasan Langsung)</h6>
-                                    <p class="small text-muted mb-2">Tab khusus ini otomatis aktif bagi pegawai yang memiliki bawahan langsung untuk melakukan evaluasi bulanan.</p>
+                                    <p class="small text-muted mb-2">Tab khusus ini otomatis aktif bagi pegawai yang memiliki staf langsung untuk melakukan evaluasi bulanan.</p>
 
                                     <div class="step-title mt-2"><span class="step-number" style="background-color:#198754;">1</span> Pemilihan Staf & Filter Bulan</div>
                                     <div class="step-content">

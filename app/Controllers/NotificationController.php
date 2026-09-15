@@ -95,8 +95,8 @@ class NotificationController extends BaseController
                 if (!$hasLog) {
                     $virtualNotifications[] = [
                         'id' => 'virtual_reminder',
-                        'title' => 'Pengingat Laporan Harian',
-                        'message' => 'Anda belum mengisi laporan kegiatan harian untuk hari ini.',
+                        'title' => 'Laporan Harian Belum Terisi',
+                        'message' => 'Isi laporan kegiatan harian Anda untuk hari ini.',
                         'link' => site_url('log-kegiatan'),
                         'is_read' => 0,
                         'time_ago' => 'Hari ini',
@@ -133,11 +133,11 @@ class NotificationController extends BaseController
                     if ($isTargetDeadlineActive && $currentDay >= max(1, $batasTarget - 2) && $currentDay <= $batasTarget) {
                         $sisaHari = $batasTarget - $currentDay;
                         $pesanTarget = ($sisaHari == 0) 
-                            ? "Hari ini adalah batas akhir pengisian target kinerja bulanan periode {$namaBulanIni} {$currentYear} (Maksimal tanggal {$batasTarget})." 
-                            : "Batas pengisian target kinerja bulanan {$namaBulanIni} {$currentYear} tersisa {$sisaHari} hari lagi (Maksimal tanggal {$batasTarget}).";
+                            ? "Hari ini batas akhir pengisian target kinerja {$namaBulanIni}." 
+                            : "Batas pengisian target kinerja {$namaBulanIni} tersisa {$sisaHari} hari.";
                         $timeAgoLabel = 'Mendesak';
                     } else {
-                        $pesanTarget = "Periode {$namaBulanIni} {$currentYear} telah dimulai. Anda belum menyusun Target Kinerja Bulanan. Silakan susun dan ajukan ke atasan langsung.";
+                        $pesanTarget = "Susun dan ajukan target kinerja bulanan ke atasan langsung.";
                         $timeAgoLabel = ($currentDay <= 5) ? 'Awal Bulan' : 'Penting';
                     }
 
@@ -145,7 +145,7 @@ class NotificationController extends BaseController
                     if ($currentDay <= 10 || $isTargetDeadlineActive) {
                         $virtualNotifications[] = [
                             'id' => 'virtual_target_awal_bulan',
-                            'title' => "Pengingat Target Kinerja {$namaBulanIni}",
+                            'title' => "Target Kinerja {$namaBulanIni}",
                             'message' => $pesanTarget,
                             'link' => site_url('laporan-harian'),
                             'is_read' => 0,
@@ -166,8 +166,8 @@ class NotificationController extends BaseController
                     if ($hasOnlyDraft && $currentDay <= 10) {
                         $virtualNotifications[] = [
                             'id' => 'virtual_target_draft_reminder',
-                            'title' => "Target Kinerja {$namaBulanIni} Masih Draf",
-                            'message' => "Target Kinerja Bulanan Anda untuk periode {$namaBulanIni} {$currentYear} masih berstatus Draf. Jangan lupa untuk mengajukannya ke atasan langsung.",
+                            'title' => "Target Kinerja Masih Draf",
+                            'message' => "Target kinerja masih draf. Ajukan ke atasan Anda.",
                             'link' => site_url('laporan-harian'),
                             'is_read' => 0,
                             'time_ago' => 'Perlu Dikirim',
@@ -197,8 +197,8 @@ class NotificationController extends BaseController
 
                     $virtualNotifications[] = [
                         'id' => 'virtual_target_approval_needed',
-                        'title' => 'Persetujuan Target Staf Menunggu',
-                        'message' => "Terdapat {$totalStafPending} staf yang telah mengajukan Target Kinerja Bulanan ({$namaBulanIni} {$currentYear}) dan menunggu persetujuan Anda.",
+                        'title' => 'Persetujuan Target Staf',
+                        'message' => "{$totalStafPending} staf mengajukan target bulanan. Klik untuk menyetujui.",
                         'link' => site_url('laporan-harian?source_tab=staf'),
                         'is_read' => 0,
                         'time_ago' => 'Perlu Tindakan',
@@ -214,7 +214,7 @@ class NotificationController extends BaseController
                 $tahunBulanLalu = ($currentMonth == 1) ? ($currentYear - 1) : $currentYear;
                 $namaBulanLalu = function_exists('bulan_indo') ? bulan_indo($bulanLalu) : date('F', mktime(0, 0, 0, $bulanLalu, 10));
 
-                // Periksa staf bawahan yang belum selesai dinilai / diterbitkan nilainya untuk periode bulan kemarin
+                // Periksa staf yang belum selesai dinilai / diterbitkan nilainya untuk periode bulan kemarin
                 $stafIds = array_column($daftarStaf, 'id');
                 $laporanModel = new \App\Models\LaporanHarian();
                 $targetBulanLalu = $laporanModel->whereIn('user_id', $stafIds)
@@ -237,11 +237,11 @@ class NotificationController extends BaseController
                     if ($isPenilaianDeadlineActive && $currentDay >= max(1, $batasPenilaian - 2) && $currentDay <= $batasPenilaian) {
                         $sisaHariPenilaian = $batasPenilaian - $currentDay;
                         $pesanPenilaian = ($sisaHariPenilaian == 0)
-                            ? "Hari ini adalah batas akhir penilaian kinerja staf periode {$namaBulanLalu} {$tahunBulanLalu} ({$totalStafPerluDinilai} staf belum dinilai, maksimal tanggal {$batasPenilaian})."
-                            : "Batas penilaian kinerja staf periode {$namaBulanLalu} {$tahunBulanLalu} tersisa {$sisaHariPenilaian} hari lagi ({$totalStafPerluDinilai} staf belum dinilai).";
+                            ? "Hari ini batas penilaian kinerja staf ({$totalStafPerluDinilai} staf belum dinilai)."
+                            : "Batas penilaian kinerja staf sisa {$sisaHariPenilaian} hari ({$totalStafPerluDinilai} staf).";
                         $timeAgoPenilaian = 'Mendesak';
                     } else {
-                        $pesanPenilaian = "Bulan baru telah dimulai. Silakan lakukan Penilaian Kinerja staf untuk periode {$namaBulanLalu} {$tahunBulanLalu} ({$totalStafPerluDinilai} staf menunggu penilaian).";
+                        $pesanPenilaian = "{$totalStafPerluDinilai} staf menunggu penilaian kinerja periode {$namaBulanLalu}.";
                         $timeAgoPenilaian = ($currentDay <= 5) ? 'Awal Bulan' : 'Penting';
                     }
 
@@ -249,7 +249,7 @@ class NotificationController extends BaseController
                     if ($currentDay <= 15 || $isPenilaianDeadlineActive) {
                         $virtualNotifications[] = [
                             'id' => 'virtual_penilaian_bulan_lalu',
-                            'title' => "Pengingat Penilaian Kinerja {$namaBulanLalu}",
+                            'title' => 'Penilaian Kinerja Staf',
                             'message' => $pesanPenilaian,
                             'link' => site_url("penilaian-kinerja?bulan={$bulanLalu}&tahun={$tahunBulanLalu}&active_tab=staf"),
                             'is_read' => 0,

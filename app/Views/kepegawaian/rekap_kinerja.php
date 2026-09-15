@@ -339,6 +339,20 @@
         </div>
     </div>
 
+    <?php if (session()->getFlashdata('success')) : ?>
+        <div class="alert alert-success alert-dismissible fade show shadow-sm py-2 px-3 small mb-3 rounded-3 bento-stagger bento-stagger-1" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> <?= esc(session()->getFlashdata('success')) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <?php endif; ?>
+
+    <?php if (session()->getFlashdata('error')) : ?>
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm py-2 px-3 small mb-3 rounded-3 bento-stagger bento-stagger-1" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> <?= esc(session()->getFlashdata('error')) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <?php endif; ?>
+
     <!-- FILTER & KPI SUMMARY ROW -->
     <div class="row g-3 mb-3 bento-stagger bento-stagger-2">
         <!-- FILTER CARD (LEFT) -->
@@ -1495,7 +1509,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 html: `
                     <div class="d-flex flex-column align-items-center gap-2 my-2">
                         <div class="ecc-loading-spinner-wrapper">
-                            <div class="ecc-loading-spinner"></div>
+                            <div class="ecc-loading-spinner spinner-border text-primary" role="status" style="width: 2.75rem; height: 2.75rem; border-width: 3.5px;"></div>
                         </div>
                         <div class="ecc-loading-title">Sedang mengompilasi data instansi...</div>
                         <span class="ecc-loading-desc">Sistem sedang merekap data target, capaian realisasi, dan tugas tambahan. File akan langsung terunduh begitu proses selesai.</span>

@@ -81,6 +81,7 @@ class Filters extends BaseFilters
         ],
         'after' => [
             'toolbar',
+            'secureheaders', // Proteksi Header Keamanan OWASP (Clickjacking, MIME Sniffing, Referrer)
             // 'honeypot',
         ],
     ];

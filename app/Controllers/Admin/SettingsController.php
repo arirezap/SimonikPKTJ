@@ -85,11 +85,14 @@ class SettingsController extends BaseController
         $settingModel = new SettingModel();
         $this->ensureDefaultSettings($settingModel);
         
-        $settingsRaw = $settingModel->findAll();
-        $settingsMap = [];
-        foreach ($settingsRaw as $s) {
-            $settingsMap[$s['setting_key']] = $s;
-        }
+        $settingsMap = $settingModel->getAllSettings();
+
+        $db = \Config\Database::connect();
+        $dbName = $db->getDatabase();
+        $tables = $db->listTables();
+
+        $totalAuditLogs = $db->table('audit_logs')->countAllResults();
+        $totalNotifications = $db->table('notifications')->countAllResults();
 
         $data = [
             'title'                      => 'Pengaturan Sistem',
@@ -100,6 +103,10 @@ class SettingsController extends BaseController
             'isPenilaianDeadlineActive'  => ($settingsMap['enable_penilaian_deadline']['setting_value'] ?? '0') === '1',
             'isMaintenanceActive'        => ($settingsMap['enable_maintenance_mode']['setting_value'] ?? '0') === '1',
             'maintenanceMessage'         => $settingsMap['maintenance_message']['setting_value'] ?? 'Sistem sedang melakukan sinkronisasi pembaruan performa dan peningkatan fitur terbaru. Layanan akan kembali normal dalam beberapa saat.',
+            'databaseName'               => $dbName,
+            'totalTables'                => count($tables),
+            'totalAuditLogs'             => $totalAuditLogs,
+            'totalNotifications'         => $totalNotifications,
         ];
         
         return view('admin/settings/index', $data);
@@ -156,6 +163,9 @@ class SettingsController extends BaseController
             }
         }
 
+        // Invalidate in-memory cache seketika
+        SettingModel::clearCache();
+
         log_audit('UPDATE', 'settings', 'system_and_deadlines', null, [
             'toggles' => $toggles,
             'values'  => $settings
@@ -164,6 +174,212 @@ class SettingsController extends BaseController
         $msg = $toggles['enable_maintenance_mode'] === '1'
             ? 'Pengaturan berhasil diperbarui. MODE PEMELIHARAAN AKTIF untuk seluruh pengguna non-admin.'
             : 'Pengaturan sistem berhasil diperbarui.';
+
+        return redirect()->back()->with('success', $msg);
+    }
+
+    /**
+     * Pencadangan Basis Data 1-Klik untuk Superadmin (Pure PHP Stream Writer)
+     * Menghasilkan berkas .sql standar yang 100% kompatibel dengan phpMyAdmin / MySQL
+     */
+    public function backupDatabase()
+    {
+        if (!hasRole('admin')) {
+            return redirect()->to('dashboard')->with('error', 'Akses ditolak. Hanya administrator yang dapat mencadangkan basis data.');
+        }
+
+        // Batasi frekuensi pencadangan (maksimal 3 kali per menit)
+        if (!$this->checkExportRateLimit('BACKUP_DATABASE', 3, 60)) {
+            $this->session->setFlashdata('error', 'Pencadangan basis data dibatasi. Silakan tunggu beberapa saat sebelum mencoba kembali.');
+            $referer = $this->request->getServer('HTTP_REFERER');
+            return !empty($referer) ? redirect()->back() : redirect()->to(site_url('settings'));
+        }
+
+        $db = \Config\Database::connect();
+        $dbName = $db->getDatabase();
+        $tables = $db->listTables();
+
+        // Audit Trail Pencatatan Backup
+        helper('audit');
+        if (function_exists('log_audit')) {
+            $currentUserId = session()->get('id') ?? session()->get('user_id');
+            log_audit(
+                'BACKUP_DATABASE',
+                'database',
+                $currentUserId,
+                null,
+                [
+                    'database'     => $dbName,
+                    'total_tables' => count($tables),
+                    'ip'           => $this->request->getIPAddress()
+                ]
+            );
+        }
+
+        $timestamp = date('Ymd_His');
+        $fileName = 'backup_' . $dbName . '_' . $timestamp . '.sql';
+
+        // Bersihkan output buffer sebelum streaming berkas SQL
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        header('Content-Type: application/sql; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $fileName . '"');
+        header('Access-Control-Expose-Headers: Content-Disposition');
+        header('Cache-Control: max-age=0, must-revalidate, post-check=0, pre-check=0');
+        header('Pragma: public');
+        header('Expires: 0');
+
+        // Header SQL Kompatibel phpMyAdmin / MySQL
+        echo "-- ==========================================================\n";
+        echo "-- Evidence Command Center (ECC) Database Backup\n";
+        echo "-- Versi Basis Data: MySQL / MariaDB\n";
+        echo "-- Database: `" . $dbName . "`\n";
+        echo "-- Waktu Pencadangan: " . date('Y-m-d H:i:s') . "\n";
+        echo "-- ==========================================================\n\n";
+        echo "SET FOREIGN_KEY_CHECKS=0;\n";
+        echo "SET SQL_MODE = \"NO_AUTO_VALUE_ON_ZERO\";\n";
+        echo "SET AUTOCOMMIT = 0;\n";
+        echo "START TRANSACTION;\n";
+        echo "SET time_zone = \"+00:00\";\n\n";
+
+        foreach ($tables as $table) {
+            echo "-- --------------------------------------------------------\n";
+            echo "-- Struktur Tabel: `" . $table . "`\n";
+            echo "-- --------------------------------------------------------\n";
+            echo "DROP TABLE IF EXISTS `" . $table . "`;\n";
+
+            $createRow = $db->query("SHOW CREATE TABLE `" . $table . "`")->getRowArray();
+            if ($createRow && isset($createRow['Create Table'])) {
+                echo $createRow['Create Table'] . ";\n\n";
+            }
+
+            // Data Baris
+            $count = $db->table($table)->countAllResults();
+            if ($count > 0) {
+                echo "-- Data untuk Tabel: `" . $table . "` (Total: " . $count . " baris)\n";
+                $query = $db->table($table)->get();
+                $batch = [];
+                $batchSize = 100;
+                $fields = null;
+
+                foreach ($query->getResultArray() as $row) {
+                    if ($fields === null) {
+                        $fields = '`' . implode('`, `', array_keys($row)) . '`';
+                    }
+
+                    $escapedValues = [];
+                    foreach ($row as $val) {
+                        if ($val === null) {
+                            $escapedValues[] = 'NULL';
+                        } elseif (is_numeric($val) && !is_string($val)) {
+                            $escapedValues[] = $val;
+                        } else {
+                            $escapedValues[] = $db->escape($val);
+                        }
+                    }
+                    $batch[] = '(' . implode(', ', $escapedValues) . ')';
+
+                    if (count($batch) >= $batchSize) {
+                        echo "INSERT INTO `" . $table . "` (" . $fields . ") VALUES\n" . implode(",\n", $batch) . ";\n";
+                        $batch = [];
+                        flush();
+                    }
+                }
+
+                if (!empty($batch)) {
+                    echo "INSERT INTO `" . $table . "` (" . $fields . ") VALUES\n" . implode(",\n", $batch) . ";\n";
+                }
+                echo "\n";
+            }
+        }
+
+        echo "COMMIT;\n";
+        echo "SET FOREIGN_KEY_CHECKS=1;\n";
+        echo "-- Akhir Cadangan Basis Data ECC --\n";
+        exit;
+    }
+
+    /**
+     * Pembersihan & Manajemen Retensi Data Log (Housekeeping)
+     * Menghapus catatan log lama (audit_logs & notifications) berdasarkan ambang batas bulan
+     */
+    public function purgeLogs()
+    {
+        if (!hasRole('admin')) {
+            return redirect()->to('dashboard')->with('error', 'Akses ditolak. Hanya administrator yang dapat membersihkan log sistem.');
+        }
+
+        $retentionMonths = (int)$this->request->getPost('retention_months');
+        if (!in_array($retentionMonths, [3, 6, 12], true)) {
+            $retentionMonths = 12; // default 12 bulan
+        }
+
+        $target = (string)($this->request->getPost('target_table') ?? 'all');
+        if (!in_array($target, ['all', 'audit_logs', 'notifications'], true)) {
+            $target = 'all';
+        }
+
+        $cutoffDate = date('Y-m-d H:i:s', strtotime("-{$retentionMonths} months"));
+
+        $db = \Config\Database::connect();
+        $deletedAudit = 0;
+        $deletedNotif = 0;
+
+        $db->transStart();
+
+        if ($target === 'all' || $target === 'audit_logs') {
+            $deletedAudit = $db->table('audit_logs')
+                               ->where('created_at <', $cutoffDate)
+                               ->countAllResults(false);
+            if ($deletedAudit > 0) {
+                $db->table('audit_logs')
+                   ->where('created_at <', $cutoffDate)
+                   ->delete();
+            }
+        }
+
+        if ($target === 'all' || $target === 'notifications') {
+            $deletedNotif = $db->table('notifications')
+                               ->where('created_at <', $cutoffDate)
+                               ->countAllResults(false);
+            if ($deletedNotif > 0) {
+                $db->table('notifications')
+                   ->where('created_at <', $cutoffDate)
+                   ->delete();
+            }
+        }
+
+        $db->transComplete();
+
+        if ($db->transStatus() === false) {
+            return redirect()->back()->with('error', 'Gagal membersihkan log. Silakan coba lagi.');
+        }
+
+        // Catat jejak audit atas pembersihan log
+        helper('audit');
+        if (function_exists('log_audit')) {
+            $currentUserId = session()->get('id') ?? session()->get('user_id');
+            log_audit(
+                'PURGE_OLD_LOGS',
+                'system',
+                $currentUserId,
+                null,
+                [
+                    'retention_months' => $retentionMonths,
+                    'cutoff_date'      => $cutoffDate,
+                    'deleted_audit'    => $deletedAudit,
+                    'deleted_notif'    => $deletedNotif,
+                    'target'           => $target
+                ]
+            );
+        }
+
+        $totalDeleted = $deletedAudit + $deletedNotif;
+        $msg = $totalDeleted > 0
+            ? "Pembersihan berhasil. Sebanyak {$totalDeleted} catatan log yang berusia lebih dari {$retentionMonths} bulan telah dibersihkan."
+            : "Tidak ada catatan log yang berusia lebih dari {$retentionMonths} bulan. Seluruh data masih dalam rentang waktu aktif.";
 
         return redirect()->back()->with('success', $msg);
     }

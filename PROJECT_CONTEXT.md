@@ -25,12 +25,12 @@ Sistem menggunakan *Role-Based Access Control (RBAC)* dengan 10 varian peran akt
    - **Direktur (`direktur`)**: Pimpinan tertinggi dengan akses penuh ke Dashboard Command Center, Rekap Kepegawaian, auto-approve target mandiri (dapat merevisi mandiri kapan saja), serta hak persetujuan target dan penilaian kinerja staf institusi.
    - **Wakil Direktur (`wadir`)**: Pimpinan Eksekutif Pengawas/Monitoring dengan akses ke Dashboard Command Center, Rekap Kepegawaian, Monitoring Kinerja, dan Instrumen Akreditasi ECC. **Wadir secara eksplisit tidak memiliki akses/wewenang untuk merevisi target staf, menyetujui target staf, ataupun memberikan penilaian kinerja kepada staf** (hanya mengelola target dan capaian personal "Target Saya").
 3. **Kepala Bagian & Struktural (`kabag`, `kabag_aak`, `kabag_kuk`, `manajemen`, `spm`)**:
-   - Akses ke Dashboard Admin, Rekap Kepegawaian Institusi, Kelola Tim, dan Penilaian Kinerja Staf Bawahan.
+   - Akses ke Dashboard Admin, Rekap Kepegawaian Institusi, Kelola Tim, dan Penilaian Kinerja Staf.
    - Verifikasi bukti dan simulasi skor Akreditasi LED ECC.
 4. **Tim Kepegawaian (`kepegawaian`)**:
    - Pengawasan menyeluruh modul Rekapitulasi Kinerja Kepegawaian (`/kepegawaian`), evaluasi ketercapaian RHK untuk hak remunerasi, dan ekspor berkas dinas (Excel Multi-Sheet & PDF Landscape).
 5. **Pegawai Reguler / Staf Pelaksana (`user`)**:
-   - Pengelolaan Target Kinerja Bulanan (`/laporan-harian`), Log Kegiatan Harian (`/log-kegiatan`), Kontrak Kinerja, Pakta Integritas, dan SKP.
+   - Pengelolaan Target Kinerja Bulanan (`/laporan-harian`), Log Kegiatan Harian (`/log-kegiatan`), Kontrak Kinerja, dan Pakta Integritas.
 6. **Pegawai Tugas Belajar (`tugas_belajar`)**:
    - Akses khusus pelaporan progres studi/tugas belajar mandiri.
 
@@ -157,12 +157,12 @@ Menu tree Kepegawaian di sidebar memiliki 2 submodul terpadu untuk Tim Kepegawai
 - **Auto-Routing Dimatikan**: `$routes->setAutoRoute(false);` wajib aktif demi keamanan endpoint.
 - **Rute Terdaftar Eksplisit**: Seluruh rute sistem terverifikasi 100% memetakan ke Controller dan Method aktif tanpa rute rusak.
 - **Filter Guard `auth`**: Seluruh rute internal dibungkus dalam grup `['filter' => 'auth']`.
-- **Rute Delete Terkunci ke POST**: Seluruh endpoint hapus data (Master Data, SKP, dan Bukti LED) wajib menggunakan metode `POST` berpelindung token CSRF.
+- **Rute Delete Terkunci ke POST**: Seluruh endpoint hapus data (Master Data dan Bukti LED) wajib menggunakan metode `POST` berpelindung token CSRF.
 
 ---
 
 ## 8. Sinkronisasi Database (Local vs cPanel Production)
-- Database: `ekinerja_kinerja` (24 Tabel Basis Data).
+- Database: `ekinerja_kinerja` (22 Tabel Aktif Basis Data).
 - Presisi Tinggi: `target_bulanan` dan `jumlah_capaian` menggunakan `DECIMAL(10,4)`, `nilai_capaian` menggunakan `DECIMAL(5,2)`.
 - Status Paritas: Hasil audit forensik pada dump `ekinerja_kinerja (2).sql` membuktikan bahwa database cPanel sudah **100% SINKRON** dengan database lokal (0 missing columns, identical data types & settings keys). **Tidak diperlukan query SQL manual setelah push.**
 

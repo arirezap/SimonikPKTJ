@@ -356,7 +356,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     html: `
                         <div class="d-flex flex-column align-items-center gap-2 my-2">
                             <div class="ecc-loading-spinner-wrapper">
-                                <div class="ecc-loading-spinner"></div>
+                                <div class="ecc-loading-spinner spinner-border text-primary" role="status" style="width: 2.75rem; height: 2.75rem; border-width: 3.5px;"></div>
                             </div>
                             <div class="ecc-loading-title">Sedang mengompilasi data audit log...</div>
                             <span class="ecc-loading-desc">Sistem sedang merekap catatan aktivitas dan jejak keamanan. File akan langsung terunduh begitu proses selesai.</span>

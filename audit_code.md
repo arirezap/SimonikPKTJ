@@ -19,9 +19,29 @@ Setiap modul, endpoint, dan konfigurasi sistem pada **Evidence Command Center (E
 | **5** | **Efisiensi & Ketahanan Beban** | Performance & Concurrency | Batch query berkecepatan tinggi $O(N)$ in-memory (0 masalah N+1), indeks basis data lengkap, manajemen sesi anti-lock (*Database/Redis session driver*), dan optimalisasi batas memori PHP. |
 | **6** | **Mitigasi Bug & Observabilitas** | Exception & Monitoring | *Zero-division defense*, penanganan `null/empty` terpadu, failsafe sesi user, *graceful fallback* dialog SweetAlert2, serta mekanisme pencatatan & notifikasi error kritis (*error alerting*). |
 | **7** | **Ergonomi Sentuh & 8-Point Grid** | UI/UX & Aksesibilitas | Desain responsif (<768px & <576px), kepatuhan mutlak skala **8-Point Grid** (`4px` s.d. `80px`), *touch target* minimal 44px, dual-view (tabel desktop & kartu mobile), angka tabular, dan atribut `aria-label`. |
-| **8** | **Standarisasi Bahasa & Disaster Recovery** | Branding & Operasional | Kepatuhan istilah baku **"staf"**, identitas **"Evidence Command Center (ECC)"**, kalimat simpel & tidak kepanjangan, otomatisasi pencadangan data (*database backup*), dan retensi data (*housekeeping*). |
+| **8** | **Standarisasi Bahasa & Disaster Recovery** | Branding & Operasional | Kepatuhan mutlak teks antarmuka (non-teknis, singkat, padat, dan jelas), istilah baku **"staf"**, identitas **"Evidence Command Center (ECC)"**, otomatisasi pencadangan data (*database backup*), dan retensi data (*housekeeping*). |
 
 ---
+
+## 📝 Standar Baku Teks Antarmuka & Bahasa Pengguna (Microcopy Standard)
+
+> [!IMPORTANT]
+> **Aturan Wajib Teks Antarmuka Pengguna (Non-Teknis, Singkat, Padat & Jelas):**
+> **"Kalimat untuk notifikasi, penjelasan, pop up modal, dan teks lainnya di aplikasi jangan menggunakan bahasa yang teknis. Gunakan kalimat/kata yang singkat, padat, dan jelas saja."**
+>
+> * **Larangan Bahasa Teknis**: Jangan pernah menampilkan istilah teknis sistem/server/database kepada pengguna, seperti: *"database"*, *"gangguan basis data"*, *"server/jaringan"*, *"SQL"*, *"query"*, *"+ toleransi X hari"*, *"exception"*, *"permanen"*, *"full table scan"*, atau kode galat teknis.
+> * **Prinsip Solutif**: Gunakan kalimat tenang yang langsung berorientasi pada tindakan pengguna.
+>   * ❌ *"Gagal mengirim laporan harian karena gangguan basis data."* $\rightarrow$ ✅ *"Gagal mengirim laporan. Silakan coba lagi."*
+>   * ❌ *"Pengisian laporan periode Agustus 2026 telah ditutup sejak tanggal 05 September (Batas akhir + toleransi 5 hari)."* $\rightarrow$ ✅ *"Pengisian laporan periode Agustus 2026 telah ditutup sejak 05 September 2026."*
+>   * ❌ *"Silakan isi minimal satu kegiatan pada Tugas Pokok atau Tugas Tambahan sebelum mengirim ke atasan."* $\rightarrow$ ✅ *"Isi minimal 1 kegiatan pokok atau tugas tambahan."*
+> * **Dialog SweetAlert2**:
+>   * **Judul**: Singkat 2–4 kata (*"Hapus Kegiatan?"*, *"Kirim Laporan?"*).
+>   * **Teks**: 1 kalimat pendek dan tenang (*"Kegiatan ini akan dihapus."*).
+>   * **Tombol Aksi**: Kata kerja singkat dan tegas (*"Ya, Hapus"*, *"Kirim"*, *"Batal"*).
+> * **Pembakuan Istilah Resmi**:
+>   * Selalu gunakan istilah resmi **"staf"** (dilarang menggunakan "bawahan" atau "staff").
+>   * Selalu gunakan nama aplikasi **"Evidence Command Center (ECC)"** (dilarang menggunakan "Simonik").
+>   * Selalu gunakan istilah baku: **"Kata Sandi"**, **"Alamat Email"**, **"Keluar"**, dan **"Simpan Profil"**.
 
 ## 🔄 Prosedur Wajib: Rencana Implementasi (*Implementation Plan*) Sebelum Eksekusi
 
@@ -96,7 +116,7 @@ Berikut adalah status audit dan verifikasi kelayakan produksi pada seluruh 15 mo
   - [x] **Isolasi Hierarki Data (Anti-Data Leakage)**:
     - *Direktur, Wadir, Kabag (kabag, kabag_aak, kabag_kuk), Katim Kepegawaian & Role Kepegawaian, Admin:* Memiliki akses visibilitas institusional penuh untuk memantau performa seluruh pegawai di PKTJ (`$canSeeAll = true`).
     - *Manajemen Struktural Khusus/Koordinator:* Dibatasi hanya mengakses data staf binaan dan unit kerja di bawah supervisinya via `$userModel->getAllStaf($user_id, $role)`.
-    - *Staf Pelaksana:* Data personal terisolasi; otomatis menampilkan tabel *"Monitoring Kinerja Staf Saya"* jika memiliki bawahan, atau tabel transparan *"Rekan Kerja Satu Unit"* (*Unit Peers*) jika tidak memiliki bawahan.
+    - *Staf Pelaksana:* Data personal terisolasi; otomatis menampilkan tabel *"Monitoring Kinerja Staf Saya"* jika memiliki staf, atau tabel transparan *"Rekan Kerja Satu Unit"* (*Unit Peers*) jika tidak memiliki staf.
     - *Pegawai Tugas Belajar:* Tampilan personal yang fokus pada progres tugas dan keselarasan mutu institusi.
   - [x] **Ultra-Fast 2-Query Batch Loading (Trait `KinerjaBatchTrait`)**: Seluruh agregasi target tahunan dan tugas tambahan ditarik dalam 2 kueri SQL terindeks, diproses in-memory $O(1)$, menjamin bebas dari masalah kueri N+1 dan hemat memori PHP.
   - [x] **Integrasi Trait Mutu Akreditasi (`EccDataTrait`)**: Grafik radar/polar pemenuhan standar mutu LED ECC dimuat secara konsisten di seluruh tipe dasbor pengguna.
@@ -332,6 +352,9 @@ Berikut adalah status audit dan verifikasi kelayakan produksi pada seluruh 15 mo
 - [x] **Controller**: `app/Controllers/NotificationController.php`, `app/Controllers/Admin/MasterDataController.php`
 - [x] **Checklist Kesiapan Produksi**:
   - [x] **Notifikasi Pintar Virtual**: Pengingat pengisian log harian otomatis di hari kerja (`is_working_day()`) dan pengingat batas waktu penyusunan target awal bulan.
+  - [x] **Smart Polling & Hemat Beban Jaringan**: Polling notifikasi otomatis dijeda (*pause*) saat tab peramban tidak aktif (*hidden*) menggunakan Page Visibility API, dan aktif kembali saat tab difokuskan.
+  - [x] **Standarisasi Mikro-Kopi (Non-Teknis, Singkat, Padat & Jelas)**: Kalimat notifikasi bebas dari istilah teknis sistem/server, langsung berorientasi aksi, dan fungsional mengarahkan pengguna ke halaman terkait saat diklik.
+  - [x] **Ergonomi UI Popover 8-Point Grid**: Dropdown notifikasi dirancang dengan skala 8-Point Grid (lebar 384px, squircle icon box 40px × 40px, padding rapi 12px 16px, tombol aksi pill 30px, dan bebas teks footer teknis).
   - [x] **Auto-Sync Hari Libur Multi-Fallback**: Sinkronisasi hari libur nasional & cuti bersama otomatis dari 3 endpoint API dengan timeout aman (3 detik).
   - [x] **CSRF Freshness**: AJAX tandai notifikasi terbaca mengembalikan token hash CSRF baru ke klien untuk mencegah error 403.
 
@@ -350,7 +373,11 @@ Berikut adalah status audit dan verifikasi kelayakan produksi pada seluruh 15 mo
 ### 📌 13. Modul Pengaturan Sistem, Mode Pemeliharaan & Master Data
 - [x] **Controller**: `app/Controllers/Admin/SettingsController.php`, `app/Controllers/Admin/MasterDataController.php`
 - **Checklist Kesiapan Produksi**:
+  - [x] **Pencadangan Basis Data 1-Klik (Superadmin)**: Generator SQL murni PHP (100% kompatibel dengan phpMyAdmin import) dengan transaksi atomik, bypass `disable_functions` exec/mysqldump di cPanel, dan dialog konfirmasi SweetAlert2.
+  - [x] **Housekeeping & Manajemen Retensi Data Log**: Fitur pembersihan log audit dan notifikasi lama (>12, >6, >3 bulan) terproteksi transaksi database atomik, penghitungan jumlah log aktif, dialog konfirmasi terpandu, dan pencatatan audit trail `PURGE_OLD_LOGS`.
+  - [x] **In-Memory Request Caching**: Caching konfigurasi sistem statis in-memory pada `SettingModel` yang memangkas 5–8 query SQL berulang per request dengan auto-invalidasi saat pengaturan diubah.
   - [x] **Mode Pemeliharaan Mandiri (1-Click Maintenance Mode)**: Saklar aktivasi di menu Pengaturan mengalihkan pengguna non-admin ke halaman `public/maintenance.html` (HTTP 503) dengan auto-refresh 30 detik.
+  - [x] **Standarisasi Mikro-Kopi (Non-Teknis & Jelas)**: Seluruh label pengaturan, panduan kartu bento, modal pop-up, dan SweetAlert2 menggunakan kalimat singkat, padat, dan jelas tanpa istilah teknis database/server.
   - [x] **Pencegahan Duplikasi Master Data**: Validasi keunikan nama sasaran, indikator, satuan, dan unit kerja saat penambahan/perubahan.
   - [x] **Proteksi Deletion Barrier Unit Kerja**: Unit kerja yang masih memiliki pegawai aktif terdaftar tidak dapat dihapus sembarangan.
   - [x] **Cascading Update Unit Kerja**: Perubahan nama unit kerja di Master Data otomatis memperbarui data unit profil seluruh pegawai terkait.
@@ -389,7 +416,7 @@ Berikut adalah status audit dan verifikasi kelayakan produksi pada seluruh 15 mo
 - **Checklist Kesiapan Produksi**:
   - [x] **AutoRoute Dinonaktifkan**: Pengaturan `$routes->setAutoRoute(false)` terkunci untuk mencegah akses controller liar.
   - [x] **Proteksi Grup Autentikasi**: Seluruh rute internal dibungkus dalam grup `['filter' => 'auth']`.
-  - [x] **Kunci Metode Hapus ke POST**: Seluruh aksi penghapusan data (Master Data, SKP, dan Bukti LED) wajib menggunakan metode `POST` dan token CSRF.
+  - [x] **Kunci Metode Hapus ke POST**: Seluruh aksi penghapusan data (Master Data dan Bukti LED) wajib menggunakan metode `POST` dan token CSRF.
   - [x] **Bebas Broken Routes**: Seluruh endpoint terdaftar eksplisit dan konsisten dengan form view.
 
 ---

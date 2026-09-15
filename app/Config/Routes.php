@@ -70,6 +70,8 @@ $routes->post('notifications/read-all', 'NotificationController::markAllAsRead')
     // Pengaturan Sistem
     $routes->get('settings', 'Admin\SettingsController::index');
     $routes->post('settings/store', 'Admin\SettingsController::store');
+    $routes->get('settings/backup-db', 'Admin\SettingsController::backupDatabase');
+    $routes->post('settings/purge-logs', 'Admin\SettingsController::purgeLogs');
     $routes->post('users/update', 'Admin\UserController::update');
     $routes->post('users/reset-kinerja', 'Admin\UserController::resetKinerja');
     $routes->post('users/delete/(:num)', 'Admin\UserController::delete/$1');
@@ -173,15 +175,6 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
 
     $routes->get('ketarunaan', 'User\KetarunaanController::index');
     $routes->get('diklat', 'User\DiklatController::index');
-
-    // --- PERBAIKAN DISINI (MASUKKAN KE DALAM GRUP) ---
-    // Hapus 'user/' di depannya karena sudah otomatis ikut grup user
-    $routes->get('skp', 'User\Skp::index');          // URL: user/skp
-    $routes->post('skp/store', 'User\Skp::store');   // URL: user/skp/store
-    $routes->get('skp/detail/(:num)', 'User\Skp::detail/$1');
-    // Di dalam $routes->group('user' ...
-    $routes->post('skp/target/store', 'User\Skp::storeTarget');
-    $routes->post('skp/delete/(:num)', 'User\Skp::delete/$1');
     // --- Kelola Tim ---
     $routes->get('tim', 'User\TimController::index');
     $routes->post('tim/add', 'User\TimController::addStaf');

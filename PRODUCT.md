@@ -16,7 +16,7 @@ Evidence Command Center (ECC) (sebelumnya Simonik) adalah sistem informasi inter
 
 ## Positioning
 
-Platform evaluasi kinerja institusi berbasis bukti digital (*evidence-based*) yang menggabungkan hierarki struktural birokrasi, penegakan integritas penilaian atasan-bawahan, monitoring remunerasi objektif, dan pemantauan akreditasi program studi dalam satu *command center* visual berkinerja tinggi.
+Platform evaluasi kinerja institusi berbasis bukti digital (*evidence-based*) yang menggabungkan hierarki struktural birokrasi, penegakan integritas penilaian atasan-staf, monitoring remunerasi objektif, dan pemantauan akreditasi program studi dalam satu *command center* visual berkinerja tinggi.
 
 ## Operating Context
 

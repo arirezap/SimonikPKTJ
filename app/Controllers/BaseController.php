@@ -90,19 +90,23 @@ abstract class BaseController extends Controller
                                 $allRoles[] = strtolower($role_aplikasi);
                             }
 
+                            $userAgent = (string) $this->request->getUserAgent();
+                            $fingerprint = hash('sha256', $userAgent);
+
                             $ses_data = [
-                                'id'           => $user['id'],
-                                'user_id'      => $user['id'], // Kompatibilitas mundur
-                                'username'     => $user['username'],
-                                'nama'         => $user['nama_lengkap'], 
-                                'nip'          => $user['nip'],           
-                                'role'         => $role_aplikasi,          
-                                'all_roles'    => $allRoles,
-                                'unit'         => $user['unit'] ?? '-', 
-                                'jabatan'      => $user['jabatan'] ?? '-',
-                                'pangkat'      => $user['pangkat'] ?? '-',
-                                'foto'         => $user['foto'] ?? null,
-                                'isLoggedIn'   => TRUE
+                                'id'                     => $user['id'],
+                                'user_id'                => $user['id'], // Kompatibilitas mundur
+                                'username'               => $user['username'],
+                                'nama'                   => $user['nama_lengkap'], 
+                                'nip'                    => $user['nip'],           
+                                'role'                   => $role_aplikasi,          
+                                'all_roles'              => $allRoles,
+                                'unit'                   => $user['unit'] ?? '-', 
+                                'jabatan'                => $user['jabatan'] ?? '-',
+                                'pangkat'                => $user['pangkat'] ?? '-',
+                                'foto'                   => $user['foto'] ?? null,
+                                'user_agent_fingerprint' => $fingerprint,
+                                'isLoggedIn'             => TRUE
                             ];
                             $this->session->set($ses_data);
                         } else {
@@ -117,5 +121,37 @@ abstract class BaseController extends Controller
             }
         }
         // --------------------------------
+    }
+
+    /**
+     * Memeriksa dan membatasi frekuensi ekspor berkas berat (PDF/Excel)
+     * Menggunakan CodeIgniter 4 Throttler Service (Default: Maks 5 unduhan per menit per akun/IP)
+     *
+     * @param string $actionType Nama aksi ekspor untuk audit (cth: 'EXPORT_EXCEL_REKAP_KINERJA')
+     * @param int $capacity Batas kapasitas unduhan dalam jendela waktu (default: 5)
+     * @param int $seconds Durasi jendela waktu dalam detik (default: 60 / 1 menit)
+     * @return bool True jika diizinkan, False jika terkena rate limit
+     */
+    protected function checkExportRateLimit(string $actionType = 'EXPORT_DOCUMENT', int $capacity = 5, int $seconds = 60): bool
+    {
+        $throttler = \Config\Services::throttler();
+        $userId = (int) ($this->session->get('id') ?? $this->session->get('user_id') ?? 0);
+        $ip = $this->request->getIPAddress();
+        
+        $key = 'export_' . md5($userId . '_' . $ip);
+
+        if ($throttler->check($key, $capacity, $seconds) === false) {
+            helper('audit');
+            if (function_exists('log_audit')) {
+                log_audit('RATE_LIMIT_EXPORT', 'export', (string)$userId, null, [
+                    'action' => $actionType,
+                    'ip'     => $ip,
+                    'reason' => 'capacity_exceeded'
+                ]);
+            }
+            return false;
+        }
+
+        return true;
     }
 }

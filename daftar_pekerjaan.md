@@ -51,7 +51,7 @@ Dokumen ini adalah lembar kerja resmi pelacakan pekerjaan pengembangan, perbaika
 - [x] **TUGAS 2.1: Audit & Optimasi Dashboard Admin (`app/Controllers/Admin/Dashboard.php` & `app/Views/admin/dashboard.php`)**
   - **Uraian Pekerjaan**:
     - **Zero-Division Defense**: Pasang pengaman ternary `$stat['count'] > 0` pada agregasi rata-rata per unit kerja (baris ~394).
-    - **Isolasi Hierarki Peran**: Perbaikan query agregasi agar Kabag/Manajemen menghimpun bawahan rekursif multi-level secara akurat.
+    - **Isolasi Hierarki Peran**: Perbaikan query agregasi agar Kabag/Manajemen menghimpun staf rekursif multi-level secara akurat.
     - **Keamanan Modal**: Terapkan *Singleton Modal Instance* dan sanitasi DOM XSS (`escapeHtml()`) pada modal detail chart.
     - **Leaderboard Query**: Optimasi efisiensi query Top 5 & Bottom 5 (Perlu Perhatian).
     - **Mobile View**: Responsivitas Bento Grid metrik cards & touch tab prodi ECC di layar HP.

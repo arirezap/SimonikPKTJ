@@ -133,7 +133,8 @@ Panduan ini berisi pedoman lengkap arsitektur sistem, peta modul, basis data, da
 ---
 
 ## 6. Standar Gaya Bahasa, Notifikasi & Mikro-Kopi (Tone, Simplicity & Microcopy)
-- **Prinsip Utama: Singkat, Padat, Jelas & Ramah Pengguna**:
+- **Aturan Baku Teks Antarmuka (Non-Teknis, Singkat, Padat & Jelas)**:
+  - **Kalimat untuk notifikasi, penjelasan, pop up modal, dan teks lainnya di aplikasi jangan menggunakan bahasa yang teknis. Gunakan kalimat/kata yang singkat, padat, dan jelas saja.**
   - Seluruh teks antarmuka (label form, tombol aksi, tooltip, alert banner, modal pop-up, SweetAlert2, toast notifikasi, pesan validasi/error) wajib menggunakan kalimat ringkas dan langsung pada intinya.
 - **Larangan Istilah Teknis pada Teks Pengguna**:
   - Dilarang keras menampilkan istilah teknis sistem/server/database kepada pengguna, seperti: *"database"*, *"basis data"*, *"server/jaringan"*, *"SQL"*, *"query"*, *"+ toleransi X hari"*, *"exception"*, *"permanen"*, dsb.

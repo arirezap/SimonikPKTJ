@@ -129,8 +129,9 @@ Seluruh modul perhitungan predikat (Controller, Modal AJAX, Desktop Table, Mobil
 ---
 
 ## 6. Gaya Bahasa, Notifikasi & Mikro-Kopi (Tone, Simplicity & Microcopy)
-- **Prinsip Utama: Singkat, Padat, Jelas & Non-Teknis**:
-  - Seluruh teks pada antarmuka pengguna (UI label, tombol, tooltip, alert banner, hint form, modal pop-up, SweetAlert2, notifikasi sistem, pesan error) dan berkas dokumentasi (`AGENTS.md`, `design.md`, `audit_code.md`) **WAJIB** menggunakan bahasa yang singkat, padat, langsung pada intinya, dan ramah pengguna.
+- **Aturan Baku Teks Antarmuka (Non-Teknis, Singkat, Padat & Jelas)**:
+  - **Kalimat untuk notifikasi, penjelasan, pop up modal, dan teks lainnya di aplikasi jangan menggunakan bahasa yang teknis. Gunakan kalimat/kata yang singkat, padat, dan jelas saja.**
+  - Seluruh teks pada antarmuka pengguna (UI label, tombol, tooltip, alert banner, hint form, modal pop-up, SweetAlert2, notifikasi sistem, pesan error) dan berkas dokumentasi (`AGENTS.md`, `design.md`, `audit_code.md`) **WAJIB** mematuhi prinsip ini tanpa pengecualian.
 - **Larangan Istilah Teknis pada Teks Pengguna**:
   - Jangan pernah menampilkan istilah teknis sistem/server/database kepada pengguna, seperti: *"database"*, *"gangguan basis data"*, *"server/jaringan"*, *"SQL"*, *"query"*, *"+ toleransi X hari"*, *"exception"*, *"permanen"*, *"full table scan"*, atau kode error teknis.
   - Gunakan kalimat yang berorientasi pada aksi solutif pengguna. Contoh:

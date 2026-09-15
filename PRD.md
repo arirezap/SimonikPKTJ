@@ -74,7 +74,7 @@ Aplikasi ini dikembangkan dengan berpegang teguh pada prinsip **ui-ux-pro-max**:
 
 ### 5. Arsitektur Keamanan & Multi-Role
 Sistem menerapkan konsep pemisahan tugas menggunakan arsitektur **Tabel Pivot (Multi-Role)**:
-- **Role Primer (Struktural):** Menentukan posisi jabatan dan hak akses dasar (misal: `user`, `manajemen`, `direktur`, `admin`). Role primer mendasari fungsi pencatatan kinerja dan validasi atasan-bawahan.
+- **Role Primer (Struktural):** Menentukan posisi jabatan dan hak akses dasar (misal: `user`, `manajemen`, `direktur`, `admin`). Role primer mendasari fungsi pencatatan kinerja dan validasi atasan-staf.
 - **Role Sekunder (Fungsional):** Peran tambahan yang bisa disematkan lebih dari satu ke pegawai tanpa menghapus peran strukturalnya.
   - **Kepegawaian:** Akses *read-only* ke rekapitulasi nilai kinerja semua unit (untuk remunerasi) beserta fitur export Excel.
   - **SPM (Satuan Penjaminan Mutu):** Akses khusus untuk mengendalikan **Simulasi Penilaian LED** di modul ECC.

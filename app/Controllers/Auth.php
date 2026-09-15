@@ -93,20 +93,24 @@ class Auth extends BaseController
                 // Regenerasi Session ID untuk Mencegah Serangan Session Fixation (dengan penghancuran sesi lama)
                 $session->regenerate(true);
 
-                // Simpan Session Lengkap
+                // Simpan Session Lengkap (termasuk fingerprint peramban untuk proteksi anti session hijacking)
+                $userAgent = (string) $this->request->getUserAgent();
+                $fingerprint = hash('sha256', $userAgent);
+
                 $ses_data = [
-                    'id'           => $data['id'],
-                    'user_id'      => $data['id'], // Kompatibilitas mundur
-                    'username'     => $data['username'],
-                    'nama'         => $data['nama_lengkap'], 
-                    'nip'          => $data['nip'],           
-                    'role'         => $role_aplikasi,   // Role primer (backward compatible)
-                    'all_roles'    => $allRoles,        // Semua role (multi-role)
-                    'unit'         => $data['unit'] ?? '-', 
-                    'jabatan'      => $data['jabatan'] ?? '-',
-                    'pangkat'      => $data['pangkat'] ?? '-',
-                    'foto'         => $data['foto'] ?? null,
-                    'isLoggedIn'   => TRUE
+                    'id'                     => $data['id'],
+                    'user_id'                => $data['id'], // Kompatibilitas mundur
+                    'username'               => $data['username'],
+                    'nama'                   => $data['nama_lengkap'], 
+                    'nip'                    => $data['nip'],           
+                    'role'                   => $role_aplikasi,   // Role primer (backward compatible)
+                    'all_roles'              => $allRoles,        // Semua role (multi-role)
+                    'unit'                   => $data['unit'] ?? '-', 
+                    'jabatan'                => $data['jabatan'] ?? '-',
+                    'pangkat'                => $data['pangkat'] ?? '-',
+                    'foto'                   => $data['foto'] ?? null,
+                    'user_agent_fingerprint' => $fingerprint,
+                    'isLoggedIn'             => TRUE
                 ];
                 $session->set($ses_data);
                 

@@ -57,6 +57,13 @@ class MonitoringController extends BaseController
      */
     public function exportExcel($userId, $tahun)
     {
+        // Proteksi Throttling: Batasi frekuensi unduhan dokumen berat (Maks 5x / menit)
+        if (!$this->checkExportRateLimit('EXPORT_EXCEL_MONITORING')) {
+            $this->session->setFlashdata('error', 'Pengunduhan dokumen dibatasi. Silakan tunggu beberapa saat sebelum mengunduh kembali.');
+            $referer = $this->request->getServer('HTTP_REFERER');
+            return !empty($referer) ? redirect()->back() : redirect()->to(site_url('monitoring'));
+        }
+
         $userModel = new UserModel();
         $rencanaModel = new RencanaKinerjaModel();
         $user = $userModel->find($userId);
@@ -114,6 +121,13 @@ class MonitoringController extends BaseController
      */
     public function exportPdf($userId, $tahun)
     {
+        // Proteksi Throttling: Batasi frekuensi unduhan dokumen berat (Maks 5x / menit)
+        if (!$this->checkExportRateLimit('EXPORT_PDF_MONITORING')) {
+            $this->session->setFlashdata('error', 'Pengunduhan dokumen dibatasi. Silakan tunggu beberapa saat sebelum mengunduh kembali.');
+            $referer = $this->request->getServer('HTTP_REFERER');
+            return !empty($referer) ? redirect()->back() : redirect()->to(site_url('monitoring'));
+        }
+
         $userModel = new UserModel();
         $rencanaModel = new RencanaKinerjaModel();
         

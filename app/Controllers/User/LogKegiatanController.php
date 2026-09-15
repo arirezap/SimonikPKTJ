@@ -132,7 +132,7 @@ class LogKegiatanController extends BaseController
             $holidayMap[$h['holiday_date']] = $h['holiday_name'];
         }
 
-        // Ambil semua log kegiatan harian & tugas tambahan user pada tahun ini (memanfaatkan index idx_user_tgl)
+        // Ambil semua log kegiatan harian & tugas tambahan user pada tahun ini (memanfaatkan index idx_lkh_user_tgl & idx_ltt_user_tgl)
         $yearlyLogs = $logModel->select('tanggal_kegiatan, status')
                                ->where('user_id', $userId)
                                ->where('tanggal_kegiatan >=', $startDateYear)

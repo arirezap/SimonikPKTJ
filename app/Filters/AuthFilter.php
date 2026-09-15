@@ -18,7 +18,35 @@ class AuthFilter implements FilterInterface
             return redirect()->to('/login');
         }
 
-        // 2. Cek apakah rute ini memerlukan peran tertentu
+        // 2. Pertahanan Pembajakan Sesi (Session Hijacking Defense via User-Agent Fingerprint)
+        $savedFingerprint = session()->get('user_agent_fingerprint');
+        $currentAgent = (string) $request->getUserAgent();
+        $currentFingerprint = hash('sha256', $currentAgent);
+
+        if ($savedFingerprint === null) {
+            // Migrasi transparan: jika sesi aktif dibuat sebelum fitur ini aktif, rekam fingerprint sekarang
+            session()->set('user_agent_fingerprint', $currentFingerprint);
+        } elseif (!hash_equals($savedFingerprint, $currentFingerprint)) {
+            // Terdeteksi ketidakcocokan identitas peramban (potensi session hijacking):
+            helper('audit');
+            $userId = session()->get('id') ?? session()->get('user_id');
+            if (function_exists('log_audit')) {
+                log_audit('SESSION_HIJACK_ATTEMPT', 'auth', $userId, null, [
+                    'reason' => 'user_agent_mismatch',
+                    'ip'     => $request->getIPAddress(),
+                    'agent'  => $currentAgent
+                ]);
+            }
+
+            session()->destroy();
+            helper('cookie');
+            delete_cookie('remember_me');
+
+            session()->setFlashdata('error', 'Sesi Anda telah berakhir demi keamanan. Silakan masuk kembali.');
+            return redirect()->to('/login');
+        }
+
+        // 3. Cek apakah rute ini memerlukan peran tertentu
         if (!empty($arguments)) {
             // PERBAIKAN:
             // Pecah string argumen (cth: 'admin,manajemen,aak') menjadi array

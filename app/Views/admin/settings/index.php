@@ -352,6 +352,115 @@
             </div>
         </div>
     </form>
+
+    <!-- 5. UTILITAS CADANGAN BASIS DATA (DATABASE BACKUP) -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 setting-card" id="cardBackupDatabase">
+        <div class="card-header bg-light-subtle py-3 px-3 px-md-4 border-bottom d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2.5">
+                <span class="badge bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 32px; height: 32px; font-size: 1rem;">
+                    <i class="bi bi-database-fill-gear"></i>
+                </span>
+                <div>
+                    <h6 class="fw-bold text-dark mb-0">Cadangan Basis Data (Database Backup)</h6>
+                    <span class="text-muted" style="font-size: 0.72rem;">Pencadangan 1-klik untuk pemulihan bencana (*disaster recovery*)</span>
+                </div>
+            </div>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 small fw-semibold">
+                <i class="bi bi-shield-check me-1"></i> Format SQL Standar
+            </span>
+        </div>
+        <div class="card-body p-3 p-md-4">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center gap-2 mb-1.5 flex-wrap">
+                        <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill small">
+                            <i class="bi bi-hdd-network text-primary me-1"></i> Basis Data: <strong><?= esc($databaseName ?? 'ekinerja_kinerja') ?></strong>
+                        </span>
+                        <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill small">
+                            <i class="bi bi-table text-primary me-1"></i> Total: <strong><?= esc($totalTables ?? 23) ?> Tabel</strong>
+                        </span>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill small">
+                            <i class="bi bi-check-circle-fill me-1"></i> Kompatibel phpMyAdmin
+                        </span>
+                    </div>
+                    <p class="text-muted small mb-0 leading-relaxed">
+                        Unduh salinan cadangan struktur tabel dan seluruh data sistem ke dalam satu berkas SQL murni (<code class="text-primary fw-semibold">.sql</code>). Berkas ini dapat langsung di-restore melalui menu Import phpMyAdmin kapan saja.
+                    </p>
+                </div>
+                <div class="flex-shrink-0 align-self-stretch align-self-lg-auto d-flex justify-content-end">
+                    <button type="button" class="btn btn-primary btn-tactile rounded-pill px-3.5 py-2 fw-semibold shadow-sm d-inline-flex align-items-center gap-2" id="btnBackupDb">
+                        <i class="bi bi-database-down fs-5"></i>
+                        <span>Unduh Cadangan Basis Data (.sql)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. PEMELIHARAAN & RETENSI LOG SISTEM (HOUSEKEEPING) -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 setting-card" id="cardHousekeeping">
+        <div class="card-header bg-light-subtle py-3 px-3 px-md-4 border-bottom d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2.5">
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 32px; height: 32px; font-size: 1rem;">
+                    <i class="bi bi-trash3-fill"></i>
+                </span>
+                <div>
+                    <h6 class="fw-bold text-dark mb-0">Pemeliharaan & Retensi Log Sistem (Housekeeping)</h6>
+                    <span class="text-muted" style="font-size: 0.72rem;">Pembersihan log lama untuk menjaga efisiensi ruang penyimpanan dan performa kueri</span>
+                </div>
+            </div>
+            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2.5 py-1 small fw-semibold">
+                <i class="bi bi-shield-exclamation me-1"></i> Tindakan Terkendali
+            </span>
+        </div>
+        <div class="card-body p-3 p-md-4">
+            <form action="<?= site_url('settings/purge-logs') ?>" method="POST" id="formPurgeLogs">
+                <?= csrf_field() ?>
+                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                            <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill small">
+                                <i class="bi bi-journal-text text-primary me-1"></i> Audit Log: <strong><?= number_format($totalAuditLogs ?? 0, 0, ',', '.') ?> Catatan</strong>
+                            </span>
+                            <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill small">
+                                <i class="bi bi-bell-fill text-warning me-1"></i> Notifikasi: <strong><?= number_format($totalNotifications ?? 0, 0, ',', '.') ?> Catatan</strong>
+                            </span>
+                            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-2.5 py-1 rounded-pill small">
+                                <i class="bi bi-clock-history me-1"></i> Data Aktif Terjaga
+                            </span>
+                        </div>
+                        <p class="text-muted small mb-2.5 leading-relaxed">
+                            Pilih batas usia retensi dan target log yang ingin dibersihkan. Catatan yang lebih baru dari periode yang dipilih akan tetap aman tersimpan.
+                        </p>
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <div class="input-group input-group-sm shadow-sm" style="max-width: 250px;">
+                                <label class="input-group-text bg-white text-muted small fw-semibold" for="retention_months">Hapus Lebih Dari</label>
+                                <select name="retention_months" id="retention_months" class="form-select form-select-sm fw-semibold text-dark">
+                                    <option value="12" selected>12 Bulan (1 Tahun)</option>
+                                    <option value="6">6 Bulan</option>
+                                    <option value="3">3 Bulan</option>
+                                </select>
+                            </div>
+                            <div class="input-group input-group-sm shadow-sm" style="max-width: 230px;">
+                                <label class="input-group-text bg-white text-muted small fw-semibold" for="target_table">Target</label>
+                                <select name="target_table" id="target_table" class="form-select form-select-sm fw-semibold text-dark">
+                                    <option value="all" selected>Semua (Audit & Notif)</option>
+                                    <option value="audit_logs">Audit Log Saja</option>
+                                    <option value="notifications">Notifikasi Saja</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0 align-self-stretch align-self-lg-auto d-flex justify-content-end mt-2 mt-lg-0">
+                        <button type="button" class="btn btn-outline-danger btn-tactile rounded-pill px-3.5 py-2 fw-semibold shadow-sm d-inline-flex align-items-center gap-2" id="btnPurgeLogs">
+                            <i class="bi bi-trash3 fs-5"></i>
+                            <span>Bersihkan Log Lama</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 <?= $this->endSection() ?>
 
@@ -417,6 +526,80 @@
             btn.disabled = true;
         }
     });
+
+    const btnBackupDb = document.getElementById('btnBackupDb');
+    if (btnBackupDb) {
+        btnBackupDb.addEventListener('click', function() {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Cadangkan Basis Data?',
+                    text: 'Salinan data sistem (.sql) akan diunduh ke perangkat Anda.',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#0d6efd',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="bi bi-download me-1"></i> Ya, Unduh',
+                    cancelButtonText: 'Batal',
+                    customClass: {
+                        popup: 'rounded-4 shadow-sm'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        btnBackupDb.disabled = true;
+                        const originalContent = btnBackupDb.innerHTML;
+                        btnBackupDb.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Menyiapkan Berkas...';
+                        window.location.href = '<?= site_url('settings/backup-db') ?>';
+                        setTimeout(() => {
+                            btnBackupDb.disabled = false;
+                            btnBackupDb.innerHTML = originalContent;
+                        }, 4000);
+                    }
+                });
+            } else {
+                if (confirm('Cadangkan Basis Data?\nSalinan data sistem (.sql) akan diunduh ke perangkat Anda.')) {
+                    window.location.href = '<?= site_url('settings/backup-db') ?>';
+                }
+            }
+        });
+    }
+
+    const btnPurgeLogs = document.getElementById('btnPurgeLogs');
+    const formPurgeLogs = document.getElementById('formPurgeLogs');
+    if (btnPurgeLogs && formPurgeLogs) {
+        btnPurgeLogs.addEventListener('click', function() {
+            const monthsSelect = document.getElementById('retention_months');
+            const targetSelect = document.getElementById('target_table');
+            const monthsText = monthsSelect.options[monthsSelect.selectedIndex].text;
+            const targetText = targetSelect.options[targetSelect.selectedIndex].text;
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Bersihkan Log Lama?',
+                    text: `Catatan log (${targetText}) yang berusia lebih dari ${monthsText} akan dibersihkan.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="bi bi-trash3 me-1"></i> Ya, Bersihkan',
+                    cancelButtonText: 'Batal',
+                    customClass: {
+                        popup: 'rounded-4 shadow-sm'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        btnPurgeLogs.disabled = true;
+                        btnPurgeLogs.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Membersihkan...';
+                        formPurgeLogs.submit();
+                    }
+                });
+            } else {
+                if (confirm(`Bersihkan Log Lama?\nCatatan log (${targetText}) yang berusia lebih dari ${monthsText} akan dibersihkan.`)) {
+                    btnPurgeLogs.disabled = true;
+                    formPurgeLogs.submit();
+                }
+            }
+        });
+    }
 </script>
 <?= $this->endSection() ?>
 

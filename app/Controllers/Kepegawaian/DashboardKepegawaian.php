@@ -517,6 +517,13 @@ class DashboardKepegawaian extends BaseController
             return redirect()->to('/dashboard');
         }
 
+        // Proteksi Throttling: Batasi frekuensi unduhan dokumen berat (Maks 5x / menit)
+        if (!$this->checkExportRateLimit('EXPORT_EXCEL_REKAP_KINERJA')) {
+            $this->session->setFlashdata('error', 'Pengunduhan dokumen dibatasi. Silakan tunggu beberapa saat sebelum mengunduh kembali.');
+            $referer = $this->request->getServer('HTTP_REFERER');
+            return !empty($referer) ? redirect()->back() : redirect()->to(site_url('kepegawaian/monitoring-penilaian'));
+        }
+
         $userModel = new User();
 
         $bulanTerpilih = $this->request->getGet('bulan') ?? (string)date('n');
@@ -948,6 +955,13 @@ class DashboardKepegawaian extends BaseController
     {
         if (!hasAnyRole(['kepegawaian', 'admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk'])) {
             return redirect()->to('/dashboard');
+        }
+
+        // Proteksi Throttling: Batasi frekuensi unduhan dokumen berat (Maks 5x / menit)
+        if (!$this->checkExportRateLimit('EXPORT_PDF_REKAP_KINERJA')) {
+            $this->session->setFlashdata('error', 'Pengunduhan dokumen dibatasi. Silakan tunggu beberapa saat sebelum mengunduh kembali.');
+            $referer = $this->request->getServer('HTTP_REFERER');
+            return !empty($referer) ? redirect()->back() : redirect()->to(site_url('kepegawaian/monitoring-penilaian'));
         }
 
         $userModel = new User();

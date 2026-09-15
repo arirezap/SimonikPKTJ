@@ -315,6 +315,13 @@ class MonitoringTargetController extends BaseController
             return redirect()->to('/dashboard');
         }
 
+        // Proteksi Throttling: Batasi frekuensi unduhan dokumen berat (Maks 5x / menit)
+        if (!$this->checkExportRateLimit('EXPORT_EXCEL_MONITORING_TARGET')) {
+            $this->session->setFlashdata('error', 'Pengunduhan dokumen dibatasi. Silakan tunggu beberapa saat sebelum mengunduh kembali.');
+            $referer = $this->request->getServer('HTTP_REFERER');
+            return !empty($referer) ? redirect()->back() : redirect()->to(site_url('kepegawaian/target-kinerja'));
+        }
+
         $userModel = new User();
         $targetModel = new TargetKinerja();
 
@@ -627,6 +634,13 @@ class MonitoringTargetController extends BaseController
     {
         if (!hasAnyRole(['kepegawaian', 'admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk'])) {
             return redirect()->to('/dashboard');
+        }
+
+        // Proteksi Throttling: Batasi frekuensi unduhan dokumen berat (Maks 5x / menit)
+        if (!$this->checkExportRateLimit('EXPORT_PDF_MONITORING_TARGET')) {
+            $this->session->setFlashdata('error', 'Pengunduhan dokumen dibatasi. Silakan tunggu beberapa saat sebelum mengunduh kembali.');
+            $referer = $this->request->getServer('HTTP_REFERER');
+            return !empty($referer) ? redirect()->back() : redirect()->to(site_url('kepegawaian/target-kinerja'));
         }
 
         $userModel = new User();
