@@ -18,6 +18,7 @@ The Evidence Command Center (ECC) UI/UX is built to deliver a **world-class, hig
 5. **Mobile-First & Touch-Friendly**: Dual-view paradigm where wide desktop tables seamlessly collapse into touch cards on smartphones (<768px), maintaining minimum 44px touch targets.
 6. **Corporate Tone & Strict Terminology**: Strictly use **"staf"** across all UI labels, buttons, documentation, and variables (never use "staf").
 7. **Simplicity & Clear Microcopy**: Gunakan kalimat yang ringkas, simpel, padat, tidak berbelit-belit, dan hindari bahasa teknis yang kepanjangan baik pada UI labels maupun dokumentasi.
+8. **Clean UI & Minimalist Icon Policy**: Dilarang menggunakan banyak ikon pada antarmuka pengguna. Gunakan ikon jika memang sangat dibutuhkan saja (navigasi utama, tombol aksi fungsional, dan indikator status kritis) agar aplikasi selalu berpenampilan bersih (*clean*), rapi, elegan, dan profesional tanpa *visual clutter*.
 
 ---
 

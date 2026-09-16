@@ -123,6 +123,9 @@ Seluruh modul perhitungan predikat (Controller, Modal AJAX, Desktop Table, Mobil
   - Accessible focus rings: `box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15)`.
   - Tactile feedback: `.btn-tactile` with active scale response `transform: scale(0.97)`.
   - Motion: Natural deceleration `cubic-bezier(0.16, 1, 0.3, 1)` with full `@media (prefers-reduced-motion: reduce)` support.
+- **Clean UI & Pembatasan Ikon (Minimalist Icon Policy)**:
+  - **Dilarang menggunakan banyak ikon pada tampilan antarmuka**: Terapkan prinsip kesederhanaan visual (*visual simplicity*). Ikon **hanya digunakan jika memang sangat dibutuhkan** untuk memperjelas aksi fungsional atau navigasi penting (misal: menu sidebar, tombol aksi edit/hapus/tambah, indikator status centang disetujui/silang ditolak/pensil draf, dan avatar).
+  - Hindari menaruh ikon dekoratif pada setiap judul, kolom tabel, kartu, label form, atau teks penjelasan jika teks sudah cukup jelas dengan sendirinya (*anti-visual clutter*), agar tampilan aplikasi selalu berpenampilan bersih (*clean*), rapi, elegan, dan profesional.
 - **SweetAlert2 & JS Fallback**:
   - Always verify `typeof Swal !== 'undefined'` before invoking `Swal.fire()` and provide native browser dialog fallback (`confirm()`) so the UI functions seamlessly even if CDN assets fail to load.
 

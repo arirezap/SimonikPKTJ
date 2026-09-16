@@ -18,7 +18,7 @@ Setiap modul, endpoint, dan konfigurasi sistem pada **Evidence Command Center (E
 | **4** | **Keamanan Komprehensif (Security)** | Hardening & Protection | Proteksi CSRF dinamis, sanitasi XSS (`esc()` & skema aman URL `http(s)://`), proteksi IDOR, otorisasi RBAC multi-role, HTTP Security Headers (`secureheaders`), kuki `$secure` HTTPS, dan proteksi berkas web server (`.htaccess`). |
 | **5** | **Efisiensi & Ketahanan Beban** | Performance & Concurrency | Batch query berkecepatan tinggi $O(N)$ in-memory (0 masalah N+1), indeks basis data lengkap, manajemen sesi anti-lock (*Database/Redis session driver*), dan optimalisasi batas memori PHP. |
 | **6** | **Mitigasi Bug & Observabilitas** | Exception & Monitoring | *Zero-division defense*, penanganan `null/empty` terpadu, failsafe sesi user, *graceful fallback* dialog SweetAlert2, serta mekanisme pencatatan & notifikasi error kritis (*error alerting*). |
-| **7** | **Ergonomi Sentuh & 8-Point Grid** | UI/UX & Aksesibilitas | Desain responsif (<768px & <576px), kepatuhan mutlak skala **8-Point Grid** (`4px` s.d. `80px`), *touch target* minimal 44px, dual-view (tabel desktop & kartu mobile), angka tabular, dan atribut `aria-label`. |
+| **7** | **Ergonomi Sentuh & 8-Point Grid** | UI/UX & Aksesibilitas | Desain responsif (<768px & <576px), kepatuhan mutlak skala **8-Point Grid** (`4px` s.d. `80px`), *touch target* minimal 44px, dual-view (tabel desktop & kartu mobile), angka tabular, atribut `aria-label`, serta prinsip **Clean UI** (dilarang menggunakan banyak ikon; ikon hanya digunakan jika sangat dibutuhkan). |
 | **8** | **Standarisasi Bahasa & Disaster Recovery** | Branding & Operasional | Kepatuhan mutlak teks antarmuka (non-teknis, singkat, padat, dan jelas), istilah baku **"staf"**, identitas **"Evidence Command Center (ECC)"**, otomatisasi pencadangan data (*database backup*), dan retensi data (*housekeeping*). |
 
 ---
@@ -42,6 +42,20 @@ Setiap modul, endpoint, dan konfigurasi sistem pada **Evidence Command Center (E
 >   * Selalu gunakan istilah resmi **"staf"** (dilarang menggunakan "bawahan" atau "staff").
 >   * Selalu gunakan nama aplikasi **"Evidence Command Center (ECC)"** (dilarang menggunakan "Simonik").
 >   * Selalu gunakan istilah baku: **"Kata Sandi"**, **"Alamat Email"**, **"Keluar"**, dan **"Simpan Profil"**.
+
+## 🎨 Standar Antarmuka Bersih & Pembatasan Ikon (Clean UI & Minimalist Icon Standard)
+
+> [!IMPORTANT]
+> **Aturan Wajib Penggunaan Ikon (Clean UI & Minimalist Icon Policy):**
+> **"Dilarang menggunakan banyak ikon. Gunakan ikon jika memang sangat dibutuhkan saja agar aplikasi terlihat clean, rapi, dan profesional."**
+>
+> * **Larangan Visual Clutter**: Jangan menaruh ikon dekoratif pada setiap judul, kolom tabel, label formulir, tombol bantuan, atau teks penjelasan jika teks sudah cukup jelas dengan sendirinya. Hindari tampilan antarmuka yang terlalu ramai (*busy interface*).
+> * **Penggunaan Selektif & Kontekstual**: Ikon **hanya diperbolehkan** pada:
+>   - Navigasi utama (menu sidebar & tab navigasi utama).
+>   - Tombol aksi fungsional utama (misal: tambah data, unduh PDF/Excel, filter, edit, dan hapus).
+>   - Indikator status kritis (misal: tanda centang hijau untuk disetujui, tanda silang merah untuk ditolak, ikon pensil draf).
+>   - Avatar atau kotak penanda fitur utama (*prominent feature boxes*).
+> * **Kerapian & Proporsi**: Jika ikon digunakan, wadah (*container*) dan dimensinya wajib mematuhi standar 8-Point Grid (`16px`, `32px`, `40px`, atau `48px`) dan tidak mendominasi keterbacaan data utama.
 
 ## 🔄 Prosedur Wajib: Rencana Implementasi (*Implementation Plan*) Sebelum Eksekusi
 
@@ -264,7 +278,7 @@ Berikut adalah status audit dan verifikasi kelayakan produksi pada seluruh 15 mo
     - Failsafe sesi: Pengecekan username/NIP pada pemrosesan penilaian dan pembatalan target.
     - Failsafe defensif notifikasi: Pemanggilan `send_notification()` dibungkus dalam blok `try...catch (\Throwable $e)` mandiri.
   - [x] **Ergonomi Sentuh & 8-Point Grid (Pilar 7)**:
-    - Kalender Heatmap 8-Point Grid: Matriks 7 kolom (Senin-Minggu) 100% bebas emoji, sel desktop `min-height: 64px`, sel mobile `min-height: 48px`, strip legenda bento capsule `height: 32px`, swatches indikator `16px × 16px`.
+    - Kalender Heatmap 8-Point Grid: Matriks 7 kolom (Senin-Minggu) 100% bebas emoji, sel desktop `min-height: 64px`, sel mobile `min-height: 48px`, strip legenda bento capsule `height: 32px`, swatches indikator `16px × 16px`. Dilengkapi pewarnaan cerdas khusus sel tanggal draf/simpan sementara (`.is-draft`, latar kuning lembut `#fefce8`, border `#fde047`, dan badge kuning) serta swatch & pill keterangan draf pada baris legenda.
     - Modal Pop-up Rincian Pekerjaan (`#modalDetailLogTanggal`): Header icon `40px × 40px`, navigasi tanggal `<` `>` `32px × 32px`, banner tanggal bersih tanpa label redundan, tabel bento `max-height: 440px`, footer pill buttons `height: 36px`.
     - Bento card elevation: `.card-bento-ecc`, padding desktop `24px` dan mobile `16px`.
     - Tabular numerics: `font-variant-numeric: tabular-nums` pada seluruh skor, persentase, dan tanggal.

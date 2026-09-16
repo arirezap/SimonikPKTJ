@@ -295,6 +295,31 @@
         color: #ffffff;
     }
 
+    /* Status Draf / Simpan Sementara (Kuning / Amber) */
+    .heatmap-day-cell.is-draft {
+        background-color: #fefce8 !important; /* Soft warm yellow */
+        border-color: #fde047 !important;     /* Amber-yellow border */
+        color: #854d0e !important;
+    }
+    .heatmap-day-cell.is-draft:hover {
+        border-color: #eab308 !important;
+        box-shadow: 0 4px 12px rgba(234, 179, 8, 0.25) !important;
+    }
+    .heatmap-day-cell.is-draft .day-num {
+        color: #854d0e !important;
+        font-weight: 700;
+    }
+    .heatmap-day-cell.is-draft .badge-count,
+    .heatmap-day-cell.is-draft .badge-subtle-custom {
+        background-color: #fef08a !important;
+        color: #713f12 !important;
+        border: 1px solid #facc15 !important;
+        font-weight: 700;
+    }
+    .heatmap-day-cell.is-draft.is-tanggal-merah .day-num {
+        color: #dc3545 !important;
+    }
+
     /* Cell Internal Elements */
     .heatmap-day-cell .day-header {
         display: flex;
@@ -813,15 +838,19 @@
                                 <?php
                                     $levelClass = 'heatmap-level-' . $day['level'];
                                     $tanggalMerahClass = $day['is_tanggal_merah'] ? 'is-tanggal-merah' : '';
+                                    $draftClass = $day['has_draft'] ? 'is-draft' : '';
                                     $tooltipTitle = esc($day['date_formatted']);
                                     if ($day['is_holiday']) {
                                         $tooltipTitle .= ' - ' . esc($day['holiday_name']);
                                     } elseif ($day['is_weekend']) {
                                         $tooltipTitle .= ' - Akhir Pekan';
                                     }
+                                    if ($day['has_draft']) {
+                                        $tooltipTitle .= ' [Draf]';
+                                    }
                                     $tooltipTitle .= ' (' . $day['count_logs'] . ' Kegiatan)';
                                 ?>
-                                <div class="heatmap-day-cell <?= $levelClass ?> <?= $tanggalMerahClass ?>" 
+                                <div class="heatmap-day-cell <?= $levelClass ?> <?= $tanggalMerahClass ?> <?= $draftClass ?>" 
                                      data-is-staf="0"
                                      data-staf-id=""
                                      data-day-num="<?= $day['day_num'] ?>"
@@ -878,11 +907,21 @@
                                         <span>Tgl Merah / Libur</span>
                                     </div>
 
+                                    <div class="d-inline-flex align-items-center bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill shadow-xs" style="font-size: 0.75rem; font-weight: 600; min-height: 32px; padding: 6px 14px; gap: 8px;">
+                                        <span class="heatmap-legend-swatch" style="background-color: #fefce8; border: 1px solid #fde047;"></span>
+                                        <i class="bi bi-pencil-fill" style="font-size: 0.7rem;"></i>
+                                        <span>Draf (Simpan Sementara)</span>
+                                    </div>
+
                                     <!-- Strip Swatch Skala Intensitas (Bento Capsule) -->
                                     <div class="d-inline-flex align-items-center bg-light rounded-pill border border-light-subtle flex-wrap shadow-xs" style="min-height: 32px; padding: 6px 16px; gap: 16px;">
                                         <div class="d-flex align-items-center" style="font-size: 0.75rem; gap: 8px;">
                                             <span class="heatmap-legend-swatch" style="background-color: #ffffff; border: 1px solid #cbd5e1;"></span>
                                             <span class="text-secondary fw-medium">0 Log</span>
+                                        </div>
+                                        <div class="d-flex align-items-center" style="font-size: 0.75rem; gap: 8px;">
+                                            <span class="heatmap-legend-swatch" style="background-color: #fefce8; border: 1px solid #fde047;"></span>
+                                            <span class="text-warning-emphasis fw-semibold">Draf</span>
                                         </div>
                                         <div class="d-flex align-items-center" style="font-size: 0.75rem; gap: 8px;">
                                             <span class="heatmap-legend-swatch" style="background-color: #f0fdf4; border: 1px solid #bbf7d0;"></span>
@@ -1301,15 +1340,19 @@
                                     <?php
                                         $levelClass = 'heatmap-level-' . $day['level'];
                                         $tanggalMerahClass = $day['is_tanggal_merah'] ? 'is-tanggal-merah' : '';
+                                        $draftClass = $day['has_draft'] ? 'is-draft' : '';
                                         $tooltipTitle = esc($day['date_formatted']);
                                         if ($day['is_holiday']) {
                                             $tooltipTitle .= ' - ' . esc($day['holiday_name']);
                                         } elseif ($day['is_weekend']) {
                                             $tooltipTitle .= ' - Akhir Pekan';
                                         }
+                                        if ($day['has_draft']) {
+                                            $tooltipTitle .= ' [Draf]';
+                                        }
                                         $tooltipTitle .= ' (' . $day['count_logs'] . ' Kegiatan)';
                                     ?>
-                                    <div class="heatmap-day-cell <?= $levelClass ?> <?= $tanggalMerahClass ?>" 
+                                    <div class="heatmap-day-cell <?= $levelClass ?> <?= $tanggalMerahClass ?> <?= $draftClass ?>" 
                                          data-is-staf="1"
                                          data-staf-id="<?= esc($staf_id_terpilih) ?>"
                                          data-day-num="<?= $day['day_num'] ?>"
@@ -1366,11 +1409,21 @@
                                             <span>Tgl Merah / Libur</span>
                                         </div>
 
+                                        <div class="d-inline-flex align-items-center bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill shadow-xs" style="font-size: 0.75rem; font-weight: 600; min-height: 32px; padding: 6px 14px; gap: 8px;">
+                                            <span class="heatmap-legend-swatch" style="background-color: #fefce8; border: 1px solid #fde047;"></span>
+                                            <i class="bi bi-pencil-fill" style="font-size: 0.7rem;"></i>
+                                            <span>Draf (Simpan Sementara)</span>
+                                        </div>
+
                                         <!-- Strip Swatch Skala Intensitas (Bento Capsule) -->
                                         <div class="d-inline-flex align-items-center bg-light rounded-pill border border-light-subtle flex-wrap shadow-xs" style="min-height: 32px; padding: 6px 16px; gap: 16px;">
                                             <div class="d-flex align-items-center" style="font-size: 0.75rem; gap: 8px;">
                                                 <span class="heatmap-legend-swatch" style="background-color: #ffffff; border: 1px solid #cbd5e1;"></span>
                                                 <span class="text-secondary fw-medium">0 Log</span>
+                                            </div>
+                                            <div class="d-flex align-items-center" style="font-size: 0.75rem; gap: 8px;">
+                                                <span class="heatmap-legend-swatch" style="background-color: #fefce8; border: 1px solid #fde047;"></span>
+                                                <span class="text-warning-emphasis fw-semibold">Draf</span>
                                             </div>
                                             <div class="d-flex align-items-center" style="font-size: 0.75rem; gap: 8px;">
                                                 <span class="heatmap-legend-swatch" style="background-color: #f0fdf4; border: 1px solid #bbf7d0;"></span>

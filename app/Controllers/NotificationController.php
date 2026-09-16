@@ -261,11 +261,12 @@ class NotificationController extends BaseController
                 }
             }
 
-            // Format waktu relatif untuk setiap notifikasi database
+            // Format waktu relatif dan normalisasi tautan agar selalu selaras dengan host lingkungan aktif
             $formattedDbNotifs = [];
             foreach ($dbNotifications as $n) {
                 $n['is_virtual'] = false;
                 $n['time_ago'] = format_notif_time($n['created_at']);
+                $n['link'] = normalize_notif_link($n['link'] ?? null);
                 $formattedDbNotifs[] = $n;
             }
 

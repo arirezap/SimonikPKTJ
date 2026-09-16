@@ -3,12 +3,47 @@
 use App\Models\NotificationModel;
 use App\Models\HolidayModel;
 
+if (!function_exists('normalize_notif_link')) {
+    /**
+     * Menormalisasi tautan notifikasi agar selalu merujuk ke baseURL lingkungan aktif (Localhost / Production)
+     */
+    function normalize_notif_link(?string $link): string
+    {
+        if (empty($link) || $link === '#' || str_starts_with(strtolower($link), 'javascript:')) {
+            return '#';
+        }
+
+        if (preg_match('#^https?://#i', $link)) {
+            $parts = parse_url($link);
+            $path = ltrim($parts['path'] ?? '', '/');
+            $query = isset($parts['query']) ? '?' . $parts['query'] : '';
+            $fragment = isset($parts['fragment']) ? '#' . $parts['fragment'] : '';
+            return site_url($path . $query . $fragment);
+        }
+
+        return site_url(ltrim($link, '/'));
+    }
+}
+
 if (!function_exists('send_notification')) {
     /**
      * Kirim Notifikasi ke User
+     * Tautan disimpan sebagai relative path agar database portabel antar server lokal dan produksi
      */
     function send_notification($user_id, $title, $message, $link = null)
     {
+        if (!empty($link) && $link !== '#' && !str_starts_with(strtolower($link), 'javascript:')) {
+            if (preg_match('#^https?://#i', $link)) {
+                $parts = parse_url($link);
+                $path = ltrim($parts['path'] ?? '', '/');
+                $query = isset($parts['query']) ? '?' . $parts['query'] : '';
+                $fragment = isset($parts['fragment']) ? '#' . $parts['fragment'] : '';
+                $link = $path . $query . $fragment;
+            } else {
+                $link = ltrim($link, '/');
+            }
+        }
+
         $notifModel = new NotificationModel();
         return $notifModel->insert([
             'user_id'    => $user_id,

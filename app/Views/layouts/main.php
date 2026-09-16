@@ -356,7 +356,7 @@
                                 icon = 'bi-bell-fill';
                             }
 
-                            const safeLink = (item.link && !item.link.toLowerCase().startsWith('javascript:')) ? item.link : '#';
+                            const safeLink = resolveAppUrl(item.link);
                             const safeTitle = escapeHtml(item.title);
                             const safeMessage = escapeHtml(item.message);
                             const safeTime = escapeHtml(item.time_ago || '');
@@ -527,12 +527,35 @@
         .catch(err => console.error('Error marking all notifications as read:', err));
     }
 
+    function resolveAppUrl(rawLink) {
+        if (!rawLink || rawLink === '#' || rawLink.toLowerCase().startsWith('javascript:')) {
+            return '#';
+        }
+        try {
+            if (rawLink.startsWith('http://') || rawLink.startsWith('https://')) {
+                const parsed = new URL(rawLink);
+                // Jika domain berbeda dari domain host browser saat ini (misal link kinerja.pktj.ac.id saat sedang di lokal/simonikpktj.test atau sebaliknya)
+                if (parsed.host !== window.location.host) {
+                    return window.location.origin + parsed.pathname + parsed.search + parsed.hash;
+                }
+                return rawLink;
+            }
+            if (rawLink.startsWith('/')) {
+                return window.location.origin + rawLink;
+            }
+            return window.location.origin + '/' + rawLink;
+        } catch (e) {
+            return rawLink;
+        }
+    }
+
     function markNotifRead(id, event, element, link) {
         if (event) {
             event.preventDefault();
         }
         
-        const hasValidLink = link && link !== 'null' && link !== '#' && !link.toLowerCase().startsWith('javascript:');
+        const targetLink = resolveAppUrl(link);
+        const hasValidLink = targetLink && targetLink !== 'null' && targetLink !== '#' && !targetLink.toLowerCase().startsWith('javascript:');
         
         // 1. Ubah tampilan notifikasi ini menjadi status terbaca seketika
         if (element) {
@@ -585,7 +608,7 @@
 
         // 4. Langsung alihkan pengguna ke menu tujuan tanpa jeda jaringan
         if (hasValidLink) {
-            window.location.href = link;
+            window.location.href = targetLink;
         }
     }
 
