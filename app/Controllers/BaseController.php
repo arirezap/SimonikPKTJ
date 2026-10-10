@@ -35,7 +35,7 @@ abstract class BaseController extends Controller
      *
      * @var list<string>
      */
-    protected $helpers = ['url', 'form', 'role', 'avatar', 'tanggal', 'audit'];
+    protected $helpers = ['url', 'form', 'role', 'avatar', 'tanggal', 'audit', 'kinerja'];
 
     /**
      * Be sure to declare properties for any property fetch you initialized.
@@ -73,44 +73,61 @@ abstract class BaseController extends Controller
                     $db = \Config\Database::connect();
                     $user = $db->table('users')->where('id', $userId)->get()->getRowArray();
                     if ($user) {
-                        $expectedHash = md5($user['id'] . $user['username'] . $user['password']);
-                        if (hash_equals($expectedHash, $hash)) {
-                            $role_aplikasi = $user['role'];
-                            if (strtolower(trim($user['unit'] ?? '')) === 'satuan penjaminan mutu') {
-                                $role_aplikasi = 'spm';
-                            }
-
-                            // Load semua role dari tabel pivot user_roles
-                            $userRoles = $db->table('user_roles')
-                                            ->where('user_id', $user['id'])
-                                            ->get()
-                                            ->getResultArray();
-                            $allRoles = array_column($userRoles, 'role_name');
-                            if (!in_array(strtolower($role_aplikasi), array_map('strtolower', $allRoles))) {
-                                $allRoles[] = strtolower($role_aplikasi);
-                            }
-
-                            $userAgent = (string) $this->request->getUserAgent();
-                            $fingerprint = hash('sha256', $userAgent);
-
-                            $ses_data = [
-                                'id'                     => $user['id'],
-                                'user_id'                => $user['id'], // Kompatibilitas mundur
-                                'username'               => $user['username'],
-                                'nama'                   => $user['nama_lengkap'], 
-                                'nip'                    => $user['nip'],           
-                                'role'                   => $role_aplikasi,          
-                                'all_roles'              => $allRoles,
-                                'unit'                   => $user['unit'] ?? '-', 
-                                'jabatan'                => $user['jabatan'] ?? '-',
-                                'pangkat'                => $user['pangkat'] ?? '-',
-                                'foto'                   => $user['foto'] ?? null,
-                                'user_agent_fingerprint' => $fingerprint,
-                                'isLoggedIn'             => TRUE
-                            ];
-                            $this->session->set($ses_data);
-                        } else {
+                        // Tolak auto-login khusus jika akun berstatus nonaktif (mutasi_keluar & pensiun tetap diizinkan)
+                        if (($user['status_pegawai'] ?? 'aktif') === 'nonaktif') {
                             delete_cookie('remember_me');
+                        } else {
+                            $expectedHmac = hash_hmac('sha256', $user['id'] . '::' . $user['username'] . '::' . $user['password'], (string)config('App')->appTimezone ?: 'ecc_auth_token');
+                            $expectedMd5 = md5($user['id'] . $user['username'] . $user['password']);
+                            
+                            if (hash_equals($expectedHmac, $hash) || hash_equals($expectedMd5, $hash)) {
+                                $role_aplikasi = $user['role'];
+
+                                // Load semua role dari tabel pivot user_roles
+                                $userRoles = $db->table('user_roles')
+                                                ->where('user_id', $user['id'])
+                                                ->get()
+                                                ->getResultArray();
+                                $allRoles = array_column($userRoles, 'role_name');
+                                if (!in_array(strtolower($role_aplikasi), array_map('strtolower', $allRoles))) {
+                                    $allRoles[] = strtolower($role_aplikasi);
+                                }
+
+                                // Regenerasi Session ID untuk Mencegah Session Fixation
+                                $this->session->regenerate(true);
+
+                                $userAgent = (string) $this->request->getUserAgent();
+                                $fingerprint = hash('sha256', $userAgent);
+
+                                $ses_data = [
+                                    'id'                     => $user['id'],
+                                    'user_id'                => $user['id'], // Kompatibilitas mundur
+                                    'username'               => $user['username'],
+                                    'nama'                   => $user['nama_lengkap'], 
+                                    'nip'                    => $user['nip'],           
+                                    'role'                   => $role_aplikasi,          
+                                    'all_roles'              => $allRoles,
+                                    'unit'                   => $user['unit'] ?? '-', 
+                                    'unit_id'                => $user['unit_id'] ?? null,
+                                    'jabatan'                => $user['jabatan'] ?? '-',
+                                    'pangkat'                => $user['pangkat'] ?? '-',
+                                    'status_pegawai'         => $user['status_pegawai'] ?? 'aktif',
+                                    'foto'                   => $user['foto'] ?? null,
+                                    'user_agent_fingerprint' => $fingerprint,
+                                    'isLoggedIn'             => TRUE
+                                ];
+                                $this->session->set($ses_data);
+
+                                helper('audit');
+                                if (function_exists('log_audit')) {
+                                    log_audit('LOGIN_REMEMBER_ME', 'users', $user['id'], null, [
+                                        'username'   => $user['username'],
+                                        'ip_address' => $this->request->getIPAddress()
+                                    ]);
+                                }
+                            } else {
+                                delete_cookie('remember_me');
+                            }
                         }
                     } else {
                         delete_cookie('remember_me');

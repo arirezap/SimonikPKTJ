@@ -185,7 +185,7 @@
                 <i class="bi bi-people-fill"></i><span>Batch Edit Atasan</span>
             </button>
             <button type="button" class="btn btn-outline-success btn-tactile rounded-pill px-3 py-1.5 fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5" data-bs-toggle="modal" data-bs-target="#importModal" style="height: 36px; font-size: 0.8125rem;" title="Impor pengguna dari file Excel">
-                <i class="bi bi-file-earmark-excel-fill text-success"></i><span>Import Excel</span>
+                <i class="bi bi-file-earmark-excel-fill text-success"></i><span>Impor Excel</span>
             </button>
             <a href="<?= site_url('users/export') ?>" class="btn btn-outline-secondary btn-tactile rounded-pill px-3 py-1.5 fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5" style="height: 36px; font-size: 0.8125rem;" title="Unduh template Excel">
                 <i class="bi bi-download"></i><span>Template Excel</span>
@@ -291,22 +291,26 @@
     <div class="card mb-3 border-0 shadow-sm rounded-4 bento-stagger bento-stagger-2">
         <div class="card-body p-3">
             <form action="<?= site_url('users') ?>" method="GET" class="row g-2 align-items-end">
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-md-3">
                     <label for="search" class="form-label text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.6875rem; letter-spacing: 0.04em;">Pencarian</label>
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-light border-end-0 text-muted ps-2.5 pe-2" style="border-radius: 8px 0 0 8px; height: 38px;"><i class="bi bi-search"></i></span>
                         <input type="text" name="search" id="search" class="form-control border-start-0 ps-1" placeholder="Nama, NIP, atau Username..." value="<?= esc($search ?? '') ?>" style="border-radius: 0 8px 8px 0; height: 38px; font-size: 0.8125rem;">
                     </div>
                 </div>
-                <div class="col-12 col-sm-6 col-md-3">
-                    <label for="role" class="form-label text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.6875rem; letter-spacing: 0.04em;">Role / Peran</label>
+                <div class="col-12 col-sm-6 col-md-2">
+                    <label for="role" class="form-label text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.6875rem; letter-spacing: 0.04em;">Role</label>
                     <select name="role" id="role" class="form-select form-select-sm" style="height: 38px; border-radius: 8px; font-size: 0.8125rem;">
                         <option value="">Semua Role</option>
-                        <option value="admin" <?= (isset($filter_role) && $filter_role == 'admin') ? 'selected' : '' ?>>Admin</option>
+                        <option value="admin" <?= (isset($filter_role) && $filter_role == 'admin') ? 'selected' : '' ?>>Administrator</option>
                         <option value="direktur" <?= (isset($filter_role) && $filter_role == 'direktur') ? 'selected' : '' ?>>Direktur</option>
                         <option value="wadir" <?= (isset($filter_role) && $filter_role == 'wadir') ? 'selected' : '' ?>>Wakil Direktur</option>
-                        <option value="user" <?= (isset($filter_role) && $filter_role == 'user') ? 'selected' : '' ?>>Staf</option>
                         <option value="kabag" <?= (isset($filter_role) && $filter_role == 'kabag') ? 'selected' : '' ?>>Kabag (AAK/KUK)</option>
+                        <option value="manajemen" <?= (isset($filter_role) && $filter_role == 'manajemen') ? 'selected' : '' ?>>Kanit / Katim</option>
+                        <option value="user" <?= (isset($filter_role) && $filter_role == 'user') ? 'selected' : '' ?>>Staf</option>
+                        <option value="kepegawaian" <?= (isset($filter_role) && $filter_role == 'kepegawaian') ? 'selected' : '' ?>>Kepegawaian</option>
+                        <option value="spm" <?= (isset($filter_role) && $filter_role == 'spm') ? 'selected' : '' ?>>SPM</option>
+                        <option value="tugas_belajar" <?= (isset($filter_role) && $filter_role == 'tugas_belajar') ? 'selected' : '' ?>>Tugas Belajar</option>
                     </select>
                 </div>
                 <div class="col-12 col-sm-6 col-md-3">
@@ -319,11 +323,21 @@
                         <?php endforeach; ?>
                     </select>
                 </div>
+                <div class="col-12 col-sm-6 col-md-2">
+                    <label for="status_pegawai" class="form-label text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.6875rem; letter-spacing: 0.04em;">Status</label>
+                    <select name="status_pegawai" id="status_pegawai" class="form-select form-select-sm" style="height: 38px; border-radius: 8px; font-size: 0.8125rem;">
+                        <option value="">Semua Status</option>
+                        <option value="aktif" <?= (isset($filter_status_pegawai) && $filter_status_pegawai == 'aktif') ? 'selected' : '' ?>>Aktif</option>
+                        <option value="mutasi_keluar" <?= (isset($filter_status_pegawai) && $filter_status_pegawai == 'mutasi_keluar') ? 'selected' : '' ?>>Mutasi Keluar</option>
+                        <option value="pensiun" <?= (isset($filter_status_pegawai) && $filter_status_pegawai == 'pensiun') ? 'selected' : '' ?>>Pensiun</option>
+                        <option value="nonaktif" <?= (isset($filter_status_pegawai) && $filter_status_pegawai == 'nonaktif') ? 'selected' : '' ?>>Nonaktif</option>
+                    </select>
+                </div>
                 <div class="col-12 col-md-2 d-flex gap-1.5">
                     <button type="submit" class="btn btn-primary btn-tactile flex-grow-1 fw-bold shadow-xs px-3 d-inline-flex align-items-center justify-content-center gap-1" style="height: 38px; border-radius: 8px; font-size: 0.8125rem;">
                         <i class="bi bi-funnel-fill"></i><span>Filter</span>
                     </button>
-                    <?php if (!empty($search) || !empty($filter_role) || !empty($filter_unit) || (!empty($sortBy) && $sortBy !== 'users.nama_lengkap') || (!empty($sortOrder) && $sortOrder !== 'asc')): ?>
+                    <?php if (!empty($search) || !empty($filter_role) || !empty($filter_unit) || !empty($filter_status_pegawai) || (!empty($sortBy) && $sortBy !== 'users.nama_lengkap') || (!empty($sortOrder) && $sortOrder !== 'asc')): ?>
                         <a href="<?= site_url('users') ?>" class="btn btn-outline-secondary btn-tactile d-inline-flex align-items-center justify-content-center px-2.5" title="Reset Filter" style="height: 38px; border-radius: 8px;">
                             <i class="bi bi-arrow-counterclockwise"></i>
                         </a>
@@ -457,9 +471,21 @@
                             <div class="d-flex align-items-center gap-2.5">
                                 <?= render_user_avatar($user, $user['nama_lengkap'], 36) ?>
                                 <div class="d-flex flex-column" style="min-width: 0;">
-                                    <span class="fw-bold text-dark text-truncate lh-sm mb-0.5" style="font-size: 0.875rem;" title="<?= esc($user['nama_lengkap']) ?>"><?= esc($user['nama_lengkap']) ?></span>
+                                    <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                                        <span class="fw-bold text-dark text-truncate lh-sm mb-0.5" style="font-size: 0.875rem;" title="<?= esc($user['nama_lengkap']) ?>"><?= esc($user['nama_lengkap']) ?></span>
+                                        <?php if (($user['status_pegawai'] ?? 'aktif') === 'mutasi_keluar'): ?>
+                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Mutasi Keluar <?= !empty($user['tmt_selesai']) ? 'TMT ' . date('d/m/Y', strtotime($user['tmt_selesai'])) : '' ?>">Mutasi</span>
+                                        <?php elseif (($user['status_pegawai'] ?? 'aktif') === 'pensiun'): ?>
+                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Pensiun">Pensiun</span>
+                                        <?php elseif (($user['status_pegawai'] ?? 'aktif') === 'nonaktif'): ?>
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Nonaktif">Nonaktif</span>
+                                        <?php endif; ?>
+                                        <?php if (!empty($user['dispensasi_lampau_sampai']) && $user['dispensasi_lampau_sampai'] >= date('Y-m-d')): ?>
+                                            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Dispensasi s.d. <?= date('d/m/Y', strtotime($user['dispensasi_lampau_sampai'])) ?>">Dispensasi</span>
+                                        <?php endif; ?>
+                                    </div>
                                     <span class="text-muted small num-tabular font-monospace" style="font-size: 0.72rem;">
-                                        <i class="bi bi-person-badge me-1 opacity-75"></i><?= esc($user['nip'] ?: ($user['username'] ?: '-')) ?>
+                                        <?= esc($user['nip'] ?: ($user['username'] ?: '-')) ?>
                                     </span>
                                 </div>
                             </div>
@@ -513,10 +539,8 @@
                                 }
                             ?>
                             <?php if(!empty($atasan_display) && $atasan_display !== '-'): ?>
-                                <span class="badge <?= $is_auto_synced ? 'bg-info-subtle text-info-emphasis border border-info-subtle' : 'bg-success-subtle text-success border border-success-subtle' ?> px-2.5 py-1 text-wrap text-start lh-sm d-inline-flex align-items-center gap-1" style="font-size: 0.75rem; font-weight: 500;" <?= $is_auto_synced ? 'title="Disinkronisasi otomatis dari Unit Kerja"' : '' ?>>
-                                    <i class="bi bi-person-check-fill flex-shrink-0"></i>
+                                <span class="badge <?= $is_auto_synced ? 'bg-info-subtle text-info-emphasis border border-info-subtle' : 'bg-success-subtle text-success border border-success-subtle' ?> px-2.5 py-1 text-wrap text-start lh-sm" style="font-size: 0.75rem; font-weight: 500;" <?= $is_auto_synced ? 'title="Disinkronisasi otomatis dari Unit Kerja"' : '' ?>>
                                     <span><?= esc($atasan_display) ?></span>
-                                    <?= $is_auto_synced ? ' <i class="bi bi-arrow-repeat flex-shrink-0"></i>' : '' ?>
                                 </span>
                             <?php else: ?>
                                 <span class="text-muted fst-italic small" style="font-size: 0.75rem;">Tidak diset / Pimpinan</span>
@@ -526,18 +550,18 @@
                         <td class="text-center">
                             <?php $qs = !empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : ''; ?>
                             <div class="d-inline-flex align-items-center gap-1" role="group">
-                                <a href="<?= site_url('users/edit/'.$user['id']) . $qs ?>" class="btn btn-outline-warning btn-tactile rounded-circle d-inline-flex align-items-center justify-content-center p-0" style="width: 30px; height: 30px;" title="Edit Data Pengguna">
+                                <a href="<?= site_url('users/edit/'.$user['id']) . $qs ?>" class="btn btn-outline-warning btn-tactile rounded-circle d-inline-flex align-items-center justify-content-center p-0" style="width: 32px; height: 32px;" title="Edit Data Pengguna">
                                     <i class="bi bi-pencil-square" style="font-size: 0.75rem;"></i>
                                 </a>
                                 <?php if (!$isSuperAdminAccount): ?>
                                     <form action="<?= site_url('users/delete/'.$user['id']) ?>" method="POST" class="d-inline form-delete-user">
                                         <?= csrf_field() ?>
-                                        <button type="button" class="btn btn-outline-danger btn-tactile rounded-circle d-inline-flex align-items-center justify-content-center p-0 btn-delete-user" style="width: 30px; height: 30px;" data-user-name="<?= esc($user['nama_lengkap']) ?>" title="Hapus Pengguna">
+                                        <button type="button" class="btn btn-outline-danger btn-tactile rounded-circle d-inline-flex align-items-center justify-content-center p-0 btn-delete-user" style="width: 32px; height: 32px;" data-user-name="<?= esc($user['nama_lengkap']) ?>" title="Hapus Pengguna">
                                             <i class="bi bi-trash" style="font-size: 0.75rem;"></i>
                                         </button>
                                     </form>
                                 <?php else: ?>
-                                    <button class="btn btn-outline-secondary rounded-circle d-inline-flex align-items-center justify-content-center p-0" disabled style="width: 30px; height: 30px;" title="Superadmin Terkunci">
+                                    <button class="btn btn-outline-secondary rounded-circle d-inline-flex align-items-center justify-content-center p-0" disabled style="width: 32px; height: 32px;" title="Superadmin Terkunci">
                                         <i class="bi bi-lock-fill" style="font-size: 0.75rem;"></i>
                                     </button>
                                 <?php endif; ?>
@@ -591,7 +615,19 @@
                     <div class="d-flex align-items-center gap-2.5 mb-2.5">
                         <?= render_user_avatar($user, $user['nama_lengkap'], 38) ?>
                         <div class="lh-sm flex-grow-1" style="min-width: 0;">
-                            <div class="fw-bold text-dark text-truncate" style="font-size: 0.9375rem;"><?= esc($user['nama_lengkap']) ?></div>
+                            <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                                <span class="fw-bold text-dark text-truncate" style="font-size: 0.9375rem;"><?= esc($user['nama_lengkap']) ?></span>
+                                <?php if (($user['status_pegawai'] ?? 'aktif') === 'mutasi_keluar'): ?>
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Mutasi Keluar <?= !empty($user['tmt_selesai']) ? 'TMT ' . date('d/m/Y', strtotime($user['tmt_selesai'])) : '' ?>">Mutasi</span>
+                                <?php elseif (($user['status_pegawai'] ?? 'aktif') === 'pensiun'): ?>
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Pensiun">Pensiun</span>
+                                <?php elseif (($user['status_pegawai'] ?? 'aktif') === 'nonaktif'): ?>
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Nonaktif">Nonaktif</span>
+                                <?php endif; ?>
+                                <?php if (!empty($user['dispensasi_lampau_sampai']) && $user['dispensasi_lampau_sampai'] >= date('Y-m-d')): ?>
+                                    <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Dispensasi s.d. <?= date('d/m/Y', strtotime($user['dispensasi_lampau_sampai'])) ?>">Dispensasi</span>
+                                <?php endif; ?>
+                            </div>
                             <small class="text-muted" style="font-size: 0.75rem;"><?= esc($user['jabatan'] ?: 'Staf Pelaksana') ?> <?= !empty($user['pangkat']) ? '• ' . esc($user['pangkat']) : '' ?></small>
                         </div>
                     </div>
@@ -605,7 +641,7 @@
                             <span class="text-muted fw-semibold">Atasan:</span>
                             <?php if(!empty($atasan_display) && $atasan_display !== '-'): ?>
                                 <span class="badge <?= $is_auto_synced ? 'bg-info-subtle text-info-emphasis' : 'bg-success-subtle text-success' ?> px-2 py-0.5 text-truncate" style="max-width: 190px;">
-                                    <i class="bi bi-person-check-fill me-0.5"></i><?= esc($atasan_display) ?>
+                                    <?= esc($atasan_display) ?>
                                 </span>
                             <?php else: ?>
                                 <span class="text-muted fst-italic">Tidak diset / Pimpinan</span>
@@ -675,7 +711,7 @@
                 <div class="modal-footer border-top bg-light px-3 px-md-4 py-2.5 gap-2">
                     <button type="button" class="btn btn-outline-secondary btn-tactile rounded-pill px-3 py-1.5 fw-semibold shadow-xs" data-bs-dismiss="modal" style="height: 36px; font-size: 0.8125rem;">Batal</button>
                     <button type="submit" class="btn btn-success btn-tactile rounded-pill px-3.5 py-1.5 fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5" id="btnSubmitImport" style="height: 36px; font-size: 0.8125rem;">
-                        <i class="bi bi-upload"></i><span>Mulai Import</span>
+                        <i class="bi bi-upload"></i><span>Mulai Impor</span>
                     </button>
                 </div>
             </form>
@@ -752,12 +788,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 title: 'Hapus Pengguna?',
-                html: `Akun <b>${userName}</b> beserta seluruh data kinerjanya akan dihapus permanen.`,
+                html: `Akun <b>${userName}</b> beserta data kinerjanya akan dihapus.`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#dc3545',
                 cancelButtonColor: '#6c757d',
-                confirmButtonText: '<i class="bi bi-trash-fill me-1"></i> Ya, Hapus Pengguna',
+                confirmButtonText: 'Ya, Hapus',
                 cancelButtonText: 'Batal',
                 reverseButtons: true,
                 customClass: {

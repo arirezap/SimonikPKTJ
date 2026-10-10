@@ -17,11 +17,20 @@ class TimController extends BaseController
         $this->unitKerjaModel = new UnitKerja();
     }
 
+    /**
+     * Otorisasi Hak Akses Pimpinan Tim (Katim, Kabag, Kanit, Kapokja, Manajemen, Admin)
+     */
+    private function isAuthorizedTimLeader(): bool
+    {
+        helper('role');
+        return hasAnyRole(['manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'kanit', 'katim', 'kapokja', 'admin']);
+    }
+
     public function index()
     {
         helper(['avatar', 'role', 'audit']);
         
-        if (!hasAnyRole(['manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'kanit', 'katim', 'kapokja', 'admin'])) {
+        if (!$this->isAuthorizedTimLeader()) {
             return redirect()->to('dashboard')->with('error', 'Anda tidak memiliki hak akses ke modul Kelola Tim.');
         }
 
@@ -29,15 +38,22 @@ class TimController extends BaseController
         $me = $this->userModel->find($userId);
         $myUnit = $me['unit'] ?? null;
         
-        // Ambil staf dengan selective columns: yang atasan_id-nya = $userId ATAU unit-nya sama dengan unit manajer
+        // Ambil staf aktif: yang atasan_id = $userId ATAU (unit sama dan belum memiliki atasan lain)
         $stafQuery = $this->userModel->select('id, nama_lengkap, nip, unit, unit_id, jabatan, role, atasan_id, foto')
-                                     ->where('id !=', $userId);
+                                     ->where('id !=', $userId)
+                                     ->where('status_pegawai', 'aktif');
         
         if (!empty($myUnit)) {
             $stafQuery->groupStart()
                          ->where('atasan_id', $userId)
-                         ->orWhere('unit', $myUnit)
-                         ->groupEnd();
+                         ->orGroupStart()
+                             ->where('unit', $myUnit)
+                             ->groupStart()
+                                 ->where('atasan_id', null)
+                                 ->orWhere('atasan_id', 0)
+                             ->groupEnd()
+                         ->groupEnd()
+                      ->groupEnd();
         } else {
             $stafQuery->where('atasan_id', $userId);
         }
@@ -46,19 +62,17 @@ class TimController extends BaseController
         $stafIds = array_column($staf, 'id');
         $stafIds[] = $userId; // Tambahkan diri sendiri agar tidak muncul di dropdown
         
-        // Ambil semua pegawai kecuali admin dan direktur dengan selective columns untuk efisiensi RAM
-        $semuaPegawaiDb = $this->userModel
+        // Ambil pegawai aktif kecuali admin dan direktur dengan kueri selektif
+        $semuaPegawaiQuery = $this->userModel
             ->select('id, nama_lengkap, nip, unit, unit_id, jabatan, role, atasan_id, foto')
             ->whereNotIn('role', ['admin', 'direktur'])
-            ->orderBy('nama_lengkap', 'ASC')
-            ->findAll();
-            
-        $semua_pegawai = [];
-        foreach ($semuaPegawaiDb as $p) {
-            if (!in_array($p['id'], $stafIds)) {
-                $semua_pegawai[] = $p;
-            }
+            ->where('status_pegawai', 'aktif');
+
+        if (!empty($stafIds)) {
+            $semuaPegawaiQuery->whereNotIn('id', $stafIds);
         }
+
+        $semua_pegawai = $semuaPegawaiQuery->orderBy('nama_lengkap', 'ASC')->findAll();
 
         $unitKerjaList = $this->unitKerjaModel->orderBy('nama_unit', 'ASC')->findAll();
 
@@ -77,6 +91,11 @@ class TimController extends BaseController
 
     public function addStaf()
     {
+        helper(['role', 'audit']);
+        if (!$this->isAuthorizedTimLeader()) {
+            return redirect()->to('dashboard')->with('error', 'Anda tidak memiliki hak akses untuk menambah anggota tim.');
+        }
+
         $stafId = $this->request->getPost('staf_id');
         $myId = $this->getNormalizedCurrentUserId();
         $me = $this->userModel->find($myId);
@@ -96,48 +115,106 @@ class TimController extends BaseController
         }
 
         $targetUser = $this->userModel->find($stafId);
-        if (!$targetUser || in_array($targetUser['role'], ['admin', 'direktur'])) {
+        if (!$targetUser || in_array($targetUser['role'], ['admin', 'direktur']) || ($targetUser['status_pegawai'] ?? 'aktif') !== 'aktif') {
             return redirect()->back()->with('error', 'Pengguna tersebut tidak dapat ditambahkan sebagai anggota tim.');
         }
 
-        $this->userModel->update($stafId, [
+        // Proteksi Siklus Hierarki (Cycle Prevention): Calon staf tidak boleh merupakan atasan pimpinan ini
+        $currentCheckId = $me['atasan_id'] ?? null;
+        $visited = [(int)$myId];
+        while (!empty($currentCheckId) && !in_array((int)$currentCheckId, $visited, true)) {
+            if ((int)$currentCheckId === (int)$stafId) {
+                return redirect()->back()->with('error', 'Tidak dapat menambahkan atasan Anda sebagai staf tim.');
+            }
+            $visited[] = (int)$currentCheckId;
+            $parent = $this->userModel->select('id, atasan_id')->find($currentCheckId);
+            $currentCheckId = $parent['atasan_id'] ?? null;
+        }
+
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        $oldData = [
+            'atasan_id' => $targetUser['atasan_id'],
+            'unit'      => $targetUser['unit'],
+            'unit_id'   => $targetUser['unit_id']
+        ];
+        $newData = [
             'atasan_id' => $myId,
             'unit'      => $myUnit,
             'unit_id'   => $myUnitId
-        ]);
-        log_audit('UPDATE', 'users', $stafId, null, ['action' => 'ADD_TO_TEAM', 'atasan_id' => $myId, 'unit' => $myUnit, 'unit_id' => $myUnitId]);
+        ];
+
+        $this->userModel->update($stafId, $newData);
+        log_audit('UPDATE', 'users', $stafId, $oldData, ['action' => 'ADD_TO_TEAM', 'old' => $oldData, 'new' => $newData]);
+
+        $db->transComplete();
+
+        if ($db->transStatus() === false) {
+            return redirect()->back()->with('error', 'Gagal menambahkan anggota tim. Silakan coba lagi.');
+        }
+
         return redirect()->back()->with('success', 'Pegawai berhasil ditambahkan ke tim Anda.');
     }
 
     public function removeStaf()
     {
+        helper(['role', 'audit']);
+        if (!$this->isAuthorizedTimLeader()) {
+            return redirect()->to('dashboard')->with('error', 'Anda tidak memiliki hak akses untuk mengelola anggota tim.');
+        }
+
         $stafId = $this->request->getPost('staf_id');
         $myId = $this->getNormalizedCurrentUserId();
         $me = $this->userModel->find($myId);
         $myUnit = $me['unit'] ?? null;
 
-        // Pastikan yang dihapus benar-benar stafnya
         $staf = $this->userModel->find($stafId);
-        $isStaf = ($staf && (($staf['atasan_id'] == $myId) || (!empty($myUnit) && $staf['unit'] === $myUnit)));
+        $isStaf = ($staf && (((int)$staf['atasan_id'] === (int)$myId) || (!empty($myUnit) && $staf['unit'] === $myUnit && (empty($staf['atasan_id']) || (int)$staf['atasan_id'] === 0))));
         
-        if ($staf && $isStaf) {
-            // Kosongkan atasan_id (set ke 0), unit (''), dan unit_id (null)
-            $this->userModel->update($stafId, [
-                'atasan_id' => 0, 
-                'unit'      => '',
-                'unit_id'   => null
-            ]);
-            log_audit('UPDATE', 'users', $stafId, null, ['action' => 'REMOVE_FROM_TEAM', 'old_atasan_id' => $myId]);
-            return redirect()->back()->with('success', 'Pegawai berhasil dikeluarkan dari tim Anda.');
+        if (!$staf || !$isStaf) {
+            return redirect()->back()->with('error', 'Pegawai tidak ditemukan atau bukan staf Anda.');
         }
-        
-        return redirect()->back()->with('error', 'Pegawai tidak ditemukan atau bukan staf Anda.');
+
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        $oldData = [
+            'atasan_id' => $staf['atasan_id'],
+            'unit'      => $staf['unit'],
+            'unit_id'   => $staf['unit_id']
+        ];
+        $newData = [
+            'atasan_id' => null, 
+            'unit'      => '',
+            'unit_id'   => null
+        ];
+
+        $this->userModel->update($stafId, $newData);
+        log_audit('UPDATE', 'users', $stafId, $oldData, ['action' => 'REMOVE_FROM_TEAM', 'old' => $oldData, 'new' => $newData]);
+
+        $db->transComplete();
+
+        if ($db->transStatus() === false) {
+            return redirect()->back()->with('error', 'Gagal mengeluarkan staf dari tim. Silakan coba lagi.');
+        }
+
+        return redirect()->back()->with('success', 'Pegawai berhasil dikeluarkan dari tim Anda.');
     }
 
     public function updateUnit()
     {
+        helper(['role', 'audit']);
         if (!$this->request->isAJAX()) {
             return $this->response->setStatusCode(403, 'Forbidden');
+        }
+
+        if (!$this->isAuthorizedTimLeader()) {
+            return $this->response->setJSON([
+                'success'    => false,
+                'message'    => 'Akses ditolak.',
+                csrf_token() => csrf_hash()
+            ])->setStatusCode(403);
         }
 
         $userId = $this->request->getPost('user_id');
@@ -148,8 +225,13 @@ class TimController extends BaseController
 
         // Validasi staf
         $staf = $this->userModel->find($userId);
-        if (!$staf || ($staf['atasan_id'] != $myId && $staf['unit'] !== $myUnit)) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Bukan staf Anda.'])->setStatusCode(403);
+        $isStaf = ($staf && (((int)$staf['atasan_id'] === (int)$myId) || (!empty($myUnit) && $staf['unit'] === $myUnit)));
+        if (!$staf || !$isStaf) {
+            return $this->response->setJSON([
+                'success'    => false,
+                'message'    => 'Bukan staf Anda.',
+                csrf_token() => csrf_hash()
+            ])->setStatusCode(403);
         }
 
         $unitId = null;
@@ -175,34 +257,51 @@ class TimController extends BaseController
             'unit_id' => $unitId
         ];
 
-        if (strtolower(trim($unitNama ?? '')) === 'satuan penjaminan mutu') {
-            $updateData['role'] = 'spm';
-        }
-
-        // Sinkronisasi otomatis atasan berdasarkan unit yang baru
+        // Sinkronisasi atasan berdasarkan unit yang baru
         if (!empty($unitNama)) {
-            $pimpinan = $this->userModel->where('unit', $unitNama)
-                                        ->whereIn('role', ['manajemen', 'kabag_aak', 'kabag_kuk', 'kabag', 'kanit', 'katim', 'kapokja'])
-                                        ->first();
-            if ($pimpinan) {
-                $updateData['atasan_id'] = $pimpinan['id'];
+            if ($unitNama === $myUnit) {
+                // Tetap berada dalam unit pimpinan saat ini
+                $updateData['atasan_id'] = $myId;
             } else {
-                $updateData['atasan_id'] = 0;
+                // Dipindahkan ke unit lain: cari pimpinan aktif di unit tersebut (bukan staf itu sendiri)
+                $pimpinan = $this->userModel->where('unit', $unitNama)
+                                            ->where('id !=', $userId)
+                                            ->where('status_pegawai', 'aktif')
+                                            ->whereIn('role', ['manajemen', 'kabag_aak', 'kabag_kuk', 'kabag', 'kanit', 'katim', 'kapokja'])
+                                            ->first();
+                $updateData['atasan_id'] = $pimpinan ? (int)$pimpinan['id'] : null;
             }
         } else {
-            $updateData['atasan_id'] = 0;
+            $updateData['atasan_id'] = null;
         }
 
-        if ($this->userModel->update($userId, $updateData)) {
-            log_audit('UPDATE', 'users', $userId, null, ['action' => 'UPDATE_UNIT_TIM', 'unit' => $unitNama, 'unit_id' => $unitId]);
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        $oldData = [
+            'atasan_id' => $staf['atasan_id'],
+            'unit'      => $staf['unit'],
+            'unit_id'   => $staf['unit_id']
+        ];
+
+        $this->userModel->update($userId, $updateData);
+        log_audit('UPDATE', 'users', $userId, $oldData, ['action' => 'UPDATE_UNIT_TIM', 'old' => $oldData, 'new' => $updateData]);
+
+        $db->transComplete();
+
+        if ($db->transStatus() === false) {
             return $this->response->setJSON([
-                'success' => true, 
-                'message' => 'Unit kerja berhasil diperbarui.',
+                'success'    => false,
+                'message'    => 'Gagal memperbarui unit kerja.',
                 csrf_token() => csrf_hash()
-            ]);
+            ])->setStatusCode(500);
         }
 
-        return $this->response->setJSON(['success' => false, 'message' => 'Gagal memperbarui unit kerja.', csrf_token() => csrf_hash()])->setStatusCode(500);
+        return $this->response->setJSON([
+            'success'    => true, 
+            'message'    => 'Unit kerja berhasil diperbarui.',
+            csrf_token() => csrf_hash()
+        ]);
     }
 
     /**
@@ -223,3 +322,4 @@ class TimController extends BaseController
         return (int)$currentUserId;
     }
 }
+

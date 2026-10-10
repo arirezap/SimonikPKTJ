@@ -39,7 +39,7 @@ class DaftarPegawaiController extends BaseController
         );
 
         // Query dasar: Sembunyikan akun Superadmin (role = 'admin' atau username = 'admin')
-        $query = $userModel->select('users.id, users.nama_lengkap, users.nip, users.username, users.jabatan, users.pangkat, users.unit, users.role, users.foto, users.atasan_id, atasan.nama_lengkap as nama_atasan')
+        $query = $userModel->select('users.id, users.nama_lengkap, users.nip, users.username, users.jabatan, users.pangkat, users.unit, users.role, users.status_pegawai, users.tmt_selesai, users.foto, users.atasan_id, atasan.nama_lengkap as nama_atasan')
                            ->join('users as atasan', 'atasan.id = users.atasan_id', 'left')
                            ->where('users.role !=', 'admin')
                            ->where('users.username !=', 'admin');
@@ -57,11 +57,32 @@ class DaftarPegawaiController extends BaseController
         }
 
         if (!empty($role)) {
-            $query->where('users.role', $role);
+            $targetRoles = ($role === 'kabag') ? ['kabag', 'kabag_aak', 'kabag_kuk'] : [$role];
+            
+            // Dapatkan ID pengguna yang memiliki peran target dari tabel pivot user_roles
+            $matchedPivotIds = array_column(
+                $db->table('user_roles')->select('user_id')->whereIn('role_name', $targetRoles)->get()->getResultArray(),
+                'user_id'
+            );
+
+            $query->groupStart();
+            $query->whereIn('users.role', $targetRoles);
+            if (!empty($matchedPivotIds)) {
+                $query->orWhereIn('users.id', $matchedPivotIds);
+            }
+            $query->groupEnd();
         }
 
         if (!empty($unit)) {
-            $query->where('users.unit', $unit);
+            $ukRow = $unitKerjaModel->where('nama_unit', $unit)->first();
+            if ($ukRow) {
+                $query->groupStart()
+                      ->where('users.unit', $unit)
+                      ->orWhere('users.unit_id', $ukRow['id'])
+                      ->groupEnd();
+            } else {
+                $query->where('users.unit', $unit);
+            }
         }
 
         $users = $query->orderBy($dbSortColumn, $sortOrder)->findAll();

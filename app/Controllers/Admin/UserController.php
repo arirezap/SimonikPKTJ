@@ -39,28 +39,38 @@ class UserController extends BaseController
         $search = $this->request->getGet('search');
         $role = $this->request->getGet('role');
         $unit = $this->request->getGet('unit');
+        $statusPegawai = $this->request->getGet('status_pegawai');
         $perPage = $this->request->getGet('per_page') ?? 10;
         
         $sortBy = $this->request->getGet('sort_by') ?? 'users.nama_lengkap';
         $sortOrder = $this->request->getGet('sort_order') ?? 'asc';
 
-        // Join dengan tabel users (self join) untuk mengambil nama atasan
-        $query = $this->userModel->select('users.*, atasan.nama_lengkap as nama_atasan')
+        // Join dengan tabel users (self join) untuk mengambil nama atasan (kueri selektif tanpa hash password)
+        $query = $this->userModel->select('users.id, users.nama_lengkap, users.nip, users.username, users.email, users.jabatan, users.pangkat, users.unit, users.unit_id, users.role, users.status_pegawai, users.tmt_selesai, users.dispensasi_lampau_sampai, users.foto, users.atasan_id, atasan.nama_lengkap as nama_atasan')
                                  ->join('users as atasan', 'atasan.id = users.atasan_id', 'left');
 
         if (!empty($search)) {
             $query = $query->groupStart()
                            ->like('users.nama_lengkap', $search)
+                           ->orLike('users.nip', $search)
                            ->orLike('users.username', $search)
                            ->groupEnd();
         }
         
         if (!empty($role)) {
-            if ($role === 'kabag') {
-                $query = $query->like('users.role', 'kabag', 'after');
-            } else {
-                $query = $query->where('users.role', $role);
+            $targetRoles = ($role === 'kabag') ? ['kabag', 'kabag_aak', 'kabag_kuk'] : [$role];
+            $db = \Config\Database::connect();
+            $matchedPivotIds = array_column(
+                $db->table('user_roles')->select('user_id')->whereIn('role_name', $targetRoles)->get()->getResultArray(),
+                'user_id'
+            );
+
+            $query = $query->groupStart()
+                           ->whereIn('users.role', $targetRoles);
+            if (!empty($matchedPivotIds)) {
+                $query = $query->orWhereIn('users.id', $matchedPivotIds);
             }
+            $query = $query->groupEnd();
         }
         
         if (!empty($unit)) {
@@ -74,6 +84,10 @@ class UserController extends BaseController
             }
         }
 
+        if (!empty($statusPegawai)) {
+            $query = $query->where('users.status_pegawai', $statusPegawai);
+        }
+
         $allowedSorts = [
             'users.id'            => 'users.id',
             'id'                  => 'users.id',
@@ -85,6 +99,8 @@ class UserController extends BaseController
             'unit'                => 'users.unit',
             'users.role'          => 'users.role',
             'role'                => 'users.role',
+            'users.status_pegawai'=> 'users.status_pegawai',
+            'status_pegawai'      => 'users.status_pegawai',
             'atasan.nama_lengkap' => 'atasan.nama_lengkap',
             'nama_atasan'         => 'atasan.nama_lengkap',
         ];
@@ -111,17 +127,22 @@ class UserController extends BaseController
         $data['search'] = $search;
         $data['filter_role'] = $role;
         $data['filter_unit'] = $unit;
+        $data['filter_status_pegawai'] = $statusPegawai;
         $data['per_page'] = $perPage;
         $data['sortBy'] = $sortBy;
         $data['sortOrder'] = $sortOrder;
 
-        // Ambil data untuk dropdown atasan di modal batch edit
-        $data['potential_bosses'] = $this->userModel->orderBy('nama_lengkap', 'ASC')->findAll();
+        // Ambil data pimpinan untuk dropdown atasan di modal batch edit (hanya role pimpinan & kolom selektif)
+        $bossRoles = ['direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'kanit', 'katim', 'kapokja', 'kepegawaian'];
+        $data['potential_bosses'] = $this->userModel->select('id, nama_lengkap, jabatan, role')
+                                                    ->whereIn('role', $bossRoles)
+                                                    ->orderBy('nama_lengkap', 'ASC')
+                                                    ->findAll();
 
-        // Ambil master unit kerja
+        // Ambil master unit kerja (kueri tunggal)
         $unitKerjaModel = new UnitKerja();
-        $unitKerjaMap = array_column($unitKerjaModel->findAll(), 'parent_unit', 'nama_unit');
         $data['unit_kerja_list'] = $unitKerjaModel->orderBy('nama_unit', 'ASC')->findAll();
+        $unitKerjaMap = array_column($data['unit_kerja_list'], 'parent_unit', 'nama_unit');
         
         foreach($data['users'] as &$u) {
             // Jika nama_atasan null, ubah jadi strip
@@ -193,6 +214,24 @@ class UserController extends BaseController
                 'errors' => [
                     'required' => 'Nama lengkap wajib diisi.'
                 ]
+            ],
+            'status_pegawai' => [
+                'rules'  => 'permit_empty|in_list[aktif,mutasi_keluar,pensiun,nonaktif]',
+                'errors' => [
+                    'in_list' => 'Status pegawai tidak valid.'
+                ]
+            ],
+            'tmt_selesai' => [
+                'rules'  => 'permit_empty|valid_date[Y-m-d]',
+                'errors' => [
+                    'valid_date' => 'Format tanggal TMT selesai tidak valid.'
+                ]
+            ],
+            'dispensasi_lampau_sampai' => [
+                'rules'  => 'permit_empty|valid_date[Y-m-d]',
+                'errors' => [
+                    'valid_date' => 'Format tanggal dispensasi tidak valid.'
+                ]
             ]
         ])) {
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
@@ -219,18 +258,27 @@ class UserController extends BaseController
         }
 
         $role = $this->request->getPost('role');
+        $statusPegawai = $this->request->getPost('status_pegawai') ?: 'aktif';
+        if (!in_array($statusPegawai, ['aktif', 'mutasi_keluar', 'pensiun', 'nonaktif'])) {
+            $statusPegawai = 'aktif';
+        }
+        $tmtSelesai = ($statusPegawai !== 'aktif') ? ($this->request->getPost('tmt_selesai') ?: null) : null;
+        $dispensasiSampai = $this->request->getPost('dispensasi_lampau_sampai') ?: null;
 
         $data = [
-            'nama_lengkap' => $this->request->getPost('nama_lengkap'),
-            'nip'          => $this->request->getPost('nip'),
-            'jabatan'      => $this->request->getPost('jabatan'),
-            'pangkat'      => $this->request->getPost('pangkat'),
-            'unit'         => $unitNama,
-            'unit_id'      => $unitId,
-            'role'         => $role,
-            'email'        => $this->request->getPost('email'),
-            'username'     => $this->request->getPost('username'),
-            'password'     => password_hash($this->request->getPost('password'), PASSWORD_DEFAULT),
+            'nama_lengkap'             => $this->request->getPost('nama_lengkap'),
+            'nip'                      => $this->request->getPost('nip'),
+            'jabatan'                  => $this->request->getPost('jabatan'),
+            'pangkat'                  => $this->request->getPost('pangkat'),
+            'unit'                     => $unitNama,
+            'unit_id'                  => $unitId,
+            'role'                     => $role,
+            'status_pegawai'           => $statusPegawai,
+            'tmt_selesai'              => !empty($tmtSelesai) ? $tmtSelesai : null,
+            'dispensasi_lampau_sampai' => !empty($dispensasiSampai) ? $dispensasiSampai : null,
+            'email'                    => $this->request->getPost('email'),
+            'username'                 => $this->request->getPost('username'),
+            'password'                 => password_hash($this->request->getPost('password'), PASSWORD_DEFAULT),
         ];
 
         // Logic Atasan
@@ -239,36 +287,45 @@ class UserController extends BaseController
             $data['atasan_id'] = $atasan_id;
         }
 
-        $insertID = $this->userModel->insert($data);
-
-        // Insert Multi-Roles (Pivot Table)
         $db = \Config\Database::connect();
-        
-        // 1. Insert role primer (wajib ada)
-        $db->table('user_roles')->insert([
-            'user_id' => $insertID,
-            'role_name' => strtolower($role),
-            'created_at' => date('Y-m-d H:i:s')
-        ]);
-        
-        // 2. Insert role sekunder yang dicentang
-        $secondaryRoles = $this->request->getPost('secondary_roles');
-        if (!empty($secondaryRoles) && is_array($secondaryRoles)) {
-            foreach ($secondaryRoles as $secRole) {
-                // Jangan masukkan lagi jika sama dengan role primer
-                if (strtolower($secRole) !== strtolower($role)) {
-                    $db->table('user_roles')->insert([
-                        'user_id' => $insertID,
-                        'role_name' => strtolower($secRole),
-                        'created_at' => date('Y-m-d H:i:s')
-                    ]);
+        $db->transStart();
+        try {
+            $insertID = $this->userModel->insert($data);
+
+            // 1. Insert role primer (wajib ada)
+            $db->table('user_roles')->insert([
+                'user_id' => $insertID,
+                'role_name' => strtolower($role),
+                'created_at' => date('Y-m-d H:i:s')
+            ]);
+            
+            // 2. Insert role sekunder yang dicentang
+            $secondaryRoles = $this->request->getPost('secondary_roles');
+            if (!empty($secondaryRoles) && is_array($secondaryRoles)) {
+                foreach ($secondaryRoles as $secRole) {
+                    // Jangan masukkan lagi jika sama dengan role primer
+                    if (strtolower($secRole) !== strtolower($role)) {
+                        $db->table('user_roles')->insert([
+                            'user_id' => $insertID,
+                            'role_name' => strtolower($secRole),
+                            'created_at' => date('Y-m-d H:i:s')
+                        ]);
+                    }
                 }
             }
+
+            log_audit('CREATE', 'users', $insertID, null, $data);
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                return redirect()->back()->withInput()->with('error', 'Gagal menambahkan data pengguna.');
+            }
+
+            return redirect()->to('users')->with('success', 'Pengguna baru berhasil ditambahkan.');
+        } catch (\Throwable $e) {
+            $db->transRollback();
+            return redirect()->back()->withInput()->with('error', 'Gagal menambahkan data pengguna: ' . $e->getMessage());
         }
-
-        log_audit('CREATE', 'users', $insertID, null, $data);
-
-        return redirect()->to('users')->with('success', 'User baru berhasil ditambahkan.');
     }
     // --- END FITUR BARU ---
 
@@ -343,10 +400,30 @@ class UserController extends BaseController
                 'errors' => [
                     'required' => 'Nama lengkap wajib diisi.'
                 ]
+            ],
+            'status_pegawai' => [
+                'rules'  => 'permit_empty|in_list[aktif,mutasi_keluar,pensiun,nonaktif]',
+                'errors' => [
+                    'in_list' => 'Status pegawai tidak valid.'
+                ]
+            ],
+            'tmt_selesai' => [
+                'rules'  => 'permit_empty|valid_date[Y-m-d]',
+                'errors' => [
+                    'valid_date' => 'Format tanggal TMT selesai tidak valid.'
+                ]
+            ],
+            'dispensasi_lampau_sampai' => [
+                'rules'  => 'permit_empty|valid_date[Y-m-d]',
+                'errors' => [
+                    'valid_date' => 'Format tanggal dispensasi tidak valid.'
+                ]
             ]
         ])) {
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
+
+        $existingUser = $this->userModel->find($id);
 
         $unitInput = $this->request->getPost('unit_id') ?? $this->request->getPost('unit');
         $unitId = null;
@@ -369,28 +446,46 @@ class UserController extends BaseController
         }
 
         $role = $this->request->getPost('role');
+        $statusPegawai = $this->request->getPost('status_pegawai') ?: 'aktif';
+
+        // Kunci status akun Superadmin utama agar selalu 'aktif'
+        if ($existingUser && ($existingUser['username'] === 'admin' || $existingUser['role'] === 'admin')) {
+            $statusPegawai = 'aktif';
+        } elseif (!in_array($statusPegawai, ['aktif', 'mutasi_keluar', 'pensiun', 'nonaktif'])) {
+            $statusPegawai = 'aktif';
+        }
+
+        $tmtSelesai = ($statusPegawai !== 'aktif') ? ($this->request->getPost('tmt_selesai') ?: null) : null;
+        $dispensasiSampai = $this->request->getPost('dispensasi_lampau_sampai') ?: null;
 
         $data = [
-            'nama_lengkap' => $this->request->getPost('nama_lengkap'),
-            'nip'          => $this->request->getPost('nip'),
-            'jabatan'      => $this->request->getPost('jabatan'),
-            'pangkat'      => $this->request->getPost('pangkat'),
-            'unit'         => $unitNama,
-            'unit_id'      => $unitId,
-            'role'         => $role,
-            'email'        => $this->request->getPost('email'),
-            'username'     => $this->request->getPost('username'),
+            'nama_lengkap'             => $this->request->getPost('nama_lengkap'),
+            'nip'                      => $this->request->getPost('nip'),
+            'jabatan'                  => $this->request->getPost('jabatan'),
+            'pangkat'                  => $this->request->getPost('pangkat'),
+            'unit'                     => $unitNama,
+            'unit_id'                  => $unitId,
+            'role'                     => $role,
+            'status_pegawai'           => $statusPegawai,
+            'tmt_selesai'              => !empty($tmtSelesai) ? $tmtSelesai : null,
+            'dispensasi_lampau_sampai' => !empty($dispensasiSampai) ? $dispensasiSampai : null,
+            'email'                    => $this->request->getPost('email'),
+            'username'                 => $this->request->getPost('username'),
         ];
 
         $atasan_id = $this->request->getPost('atasan_id');
-        $data['atasan_id'] = !empty($atasan_id) ? $atasan_id : 0;
+        // Proteksi Self-Atasan Loop: Pengguna tidak boleh menjadi atasan bagi dirinya sendiri
+        if (!empty($atasan_id) && (int)$atasan_id === (int)$id) {
+            $atasan_id = 0;
+        }
+        $data['atasan_id'] = !empty($atasan_id) ? (int)$atasan_id : 0;
 
         // Jika atasan tidak dipilih tapi unit ada, cari pimpinannya secara otomatis
-        if (empty($atasan_id) && !empty($data['unit'])) {
+        if (empty($data['atasan_id']) && !empty($data['unit'])) {
             $pimpinan = $this->userModel->where('unit', $data['unit'])
                                         ->whereIn('role', ['manajemen', 'kabag_aak', 'kabag_kuk', 'kabag'])
                                         ->first();
-            if ($pimpinan) {
+            if ($pimpinan && (int)$pimpinan['id'] !== (int)$id) {
                 $data['atasan_id'] = $pimpinan['id'];
             }
         }
@@ -400,45 +495,55 @@ class UserController extends BaseController
             $data['password'] = password_hash($password, PASSWORD_DEFAULT);
         }
 
-        $this->userModel->update($id, $data);
-
-        // Update Multi-Roles (Pivot Table)
         $db = \Config\Database::connect();
-        
-        // 1. Hapus role sekunder yang lama
-        $db->table('user_roles')->where('user_id', $id)->delete();
-        
-        // 2. Insert role primer (wajib ada)
-        $db->table('user_roles')->insert([
-            'user_id' => $id,
-            'role_name' => strtolower($role),
-            'created_at' => date('Y-m-d H:i:s')
-        ]);
-        
-        // 3. Insert role sekunder yang dicentang
-        $secondaryRoles = $this->request->getPost('secondary_roles');
-        if (!empty($secondaryRoles) && is_array($secondaryRoles)) {
-            foreach ($secondaryRoles as $secRole) {
-                // Jangan masukkan lagi jika sama dengan role primer
-                if (strtolower($secRole) !== strtolower($role)) {
-                    $db->table('user_roles')->insert([
-                        'user_id' => $id,
-                        'role_name' => strtolower($secRole),
-                        'created_at' => date('Y-m-d H:i:s')
-                    ]);
+        $db->transStart();
+        try {
+            $this->userModel->update($id, $data);
+
+            // Update Multi-Roles (Pivot Table)
+            // 1. Hapus role sekunder yang lama
+            $db->table('user_roles')->where('user_id', $id)->delete();
+            
+            // 2. Insert role primer (wajib ada)
+            $db->table('user_roles')->insert([
+                'user_id' => $id,
+                'role_name' => strtolower($role),
+                'created_at' => date('Y-m-d H:i:s')
+            ]);
+            
+            // 3. Insert role sekunder yang dicentang
+            $secondaryRoles = $this->request->getPost('secondary_roles');
+            if (!empty($secondaryRoles) && is_array($secondaryRoles)) {
+                foreach ($secondaryRoles as $secRole) {
+                    // Jangan masukkan lagi jika sama dengan role primer
+                    if (strtolower($secRole) !== strtolower($role)) {
+                        $db->table('user_roles')->insert([
+                            'user_id' => $id,
+                            'role_name' => strtolower($secRole),
+                            'created_at' => date('Y-m-d H:i:s')
+                        ]);
+                    }
                 }
             }
+
+            log_audit('UPDATE', 'users', $id, null, $data);
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                return redirect()->back()->withInput()->with('error', 'Gagal memperbarui data pengguna.');
+            }
+
+            $returnQs = $this->request->getPost('return_qs');
+            $redirectUrl = 'users';
+            if (!empty($returnQs)) {
+                $redirectUrl .= '?' . $returnQs;
+            }
+
+            return redirect()->to($redirectUrl)->with('success', 'Data pengguna berhasil diperbarui.');
+        } catch (\Throwable $e) {
+            $db->transRollback();
+            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui data pengguna: ' . $e->getMessage());
         }
-
-        log_audit('UPDATE', 'users', $id, null, $data);
-
-        $returnQs = $this->request->getPost('return_qs');
-        $redirectUrl = 'users';
-        if (!empty($returnQs)) {
-            $redirectUrl .= '?' . $returnQs;
-        }
-
-        return redirect()->to($redirectUrl)->with('success', 'Data pengguna berhasil diperbarui.');
     }
 
     public function ajaxUpdateUnit()
@@ -591,22 +696,35 @@ class UserController extends BaseController
 
         // Hapus foto jika ada dan bukan file default
         if (!empty($user['foto']) && $user['foto'] !== 'default.png') {
-            $fotoPath = 'assets/uploads/profile/' . basename($user['foto']);
+            $fotoBasename = basename($user['foto']);
+            $fotoPath = FCPATH . 'assets/uploads/profile/' . $fotoBasename;
             if (file_exists($fotoPath)) {
                 @unlink($fotoPath);
             }
         }
 
         $db = \Config\Database::connect();
-        // Hapus entri multi-roles di user_roles
-        $db->table('user_roles')->where('user_id', $id)->delete();
+        $db->transStart();
+        try {
+            // Hapus entri multi-roles di user_roles
+            $db->table('user_roles')->where('user_id', $id)->delete();
 
-        // Reset atasan_id pada staf yang dipimpin oleh user ini agar tidak terjadi orphan link
-        $this->userModel->where('atasan_id', $id)->set(['atasan_id' => 0])->update();
+            // Reset atasan_id pada staf yang dipimpin oleh user ini agar tidak terjadi orphan link
+            $this->userModel->where('atasan_id', $id)->set(['atasan_id' => 0])->update();
 
-        $this->userModel->delete($id);
-        log_audit('DELETE', 'users', $id, $user, null);
-        return redirect()->to('users')->with('success', 'Pengguna berhasil dihapus.');
+            $this->userModel->delete($id);
+            log_audit('DELETE', 'users', $id, $user, null);
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                return redirect()->to('users')->with('error', 'Gagal menghapus pengguna.');
+            }
+
+            return redirect()->to('users')->with('success', 'Pengguna berhasil dihapus.');
+        } catch (\Throwable $e) {
+            $db->transRollback();
+            return redirect()->to('users')->with('error', 'Gagal menghapus pengguna: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -724,6 +842,14 @@ class UserController extends BaseController
         $existingUsernames = array_column($existingUsers, 'username');
         $existingEmails = array_column($existingUsers, 'email');
 
+        // Peta unit kerja untuk dual-sync unit_id
+        $unitKerjaModel = new UnitKerja();
+        $allUnits = $unitKerjaModel->findAll();
+        $unitMapByName = [];
+        foreach ($allUnits as $uk) {
+            $unitMapByName[strtolower(trim($uk['nama_unit']))] = (int)$uk['id'];
+        }
+
         $rowIndex = 0;
         foreach ($sheetData as $row) {
             $rowIndex++;
@@ -756,6 +882,14 @@ class UserController extends BaseController
             }
 
             $unit = trim($row['I'] ?? '');
+            $unitId = null;
+            if (!empty($unit)) {
+                $unitKey = strtolower($unit);
+                if (isset($unitMapByName[$unitKey])) {
+                    $unitId = $unitMapByName[$unitKey];
+                }
+            }
+
             if (strtolower($unit) === 'satuan penjaminan mutu') {
                 $role = 'spm';
             }
@@ -770,6 +904,7 @@ class UserController extends BaseController
                 'jabatan'      => trim($row['G'] ?? ''),
                 'pangkat'      => trim($row['H'] ?? ''),
                 'unit'         => $unit,
+                'unit_id'      => $unitId,
                 'atasan_id'    => !empty(trim($row['J'] ?? '')) ? (int)trim($row['J']) : null,
             ];
 
@@ -780,16 +915,27 @@ class UserController extends BaseController
 
         if (!empty($dataToInsert)) {
             $db = \Config\Database::connect();
-            foreach ($dataToInsert as $newUserData) {
-                $newId = $this->userModel->insert($newUserData);
-                if ($newId) {
-                    $db->table('user_roles')->insert([
-                        'user_id'    => $newId,
-                        'role_name'  => strtolower($newUserData['role']),
-                        'created_at' => date('Y-m-d H:i:s')
-                    ]);
-                    $insertedCount++;
+            $db->transStart();
+            try {
+                foreach ($dataToInsert as $newUserData) {
+                    $newId = $this->userModel->insert($newUserData);
+                    if ($newId) {
+                        $db->table('user_roles')->insert([
+                            'user_id'    => $newId,
+                            'role_name'  => strtolower($newUserData['role']),
+                            'created_at' => date('Y-m-d H:i:s')
+                        ]);
+                        $insertedCount++;
+                    }
                 }
+                $db->transComplete();
+
+                if ($db->transStatus() === false) {
+                    return redirect()->to('users')->with('error', 'Gagal mengimpor data pengguna karena kendala transaksi basis data.');
+                }
+            } catch (\Throwable $e) {
+                $db->transRollback();
+                return redirect()->to('users')->with('error', 'Gagal mengimpor data pengguna: ' . $e->getMessage());
             }
         }
 
@@ -835,30 +981,50 @@ class UserController extends BaseController
         $targetIds = array_column($targetData, 'id');
 
         $logKegiatanModel = new \App\Models\LogKegiatanHarian();
+        $logTugasTambahanModel = new \App\Models\LogTugasTambahan();
         $remunerasiModel = new \App\Models\Remunerasi();
 
-        // 1. Hapus Log Kegiatan Harian berdasarkan user_id, bulan, dan tahun
-        $logKegiatanModel->where('user_id', $userId)
-                         ->where('MONTH(tanggal_kegiatan)', $bulan)
-                         ->where('YEAR(tanggal_kegiatan)', $tahun)
-                         ->delete();
+        $db = \Config\Database::connect();
+        $db->transStart();
+        try {
+            // 1. Hapus Log Kegiatan Harian berdasarkan user_id, bulan, dan tahun
+            $logKegiatanModel->where('user_id', $userId)
+                             ->where('MONTH(tanggal_kegiatan)', $bulan)
+                             ->where('YEAR(tanggal_kegiatan)', $tahun)
+                             ->delete();
 
-        // 2. Hapus Target Kinerja Bulanan (target_kinerja_bulanan)
-        if (!empty($targetIds)) {
-            $targetKinerjaModel->whereIn('id', $targetIds)->delete();
+            // 2. Hapus Log Tugas Tambahan berdasarkan user_id, bulan, dan tahun
+            $logTugasTambahanModel->where('user_id', $userId)
+                                  ->where('MONTH(tanggal_kegiatan)', $bulan)
+                                  ->where('YEAR(tanggal_kegiatan)', $tahun)
+                                  ->delete();
+
+            // 3. Hapus Target Kinerja Bulanan (target_kinerja_bulanan)
+            if (!empty($targetIds)) {
+                $targetKinerjaModel->whereIn('id', $targetIds)->delete();
+            }
+
+            // 4. Hapus Nilai Rekap Remunerasi
+            $remunerasiModel->where('user_id', $userId)
+                            ->where('bulan', $bulan)
+                            ->where('tahun', $tahun)
+                            ->delete();
+
+            // Audit Log
+            if (function_exists('log_audit')) {
+                log_audit('DELETE', 'reset_kinerja', $userId, null, ['bulan' => $bulan, 'tahun' => $tahun]);
+            }
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                return redirect()->back()->with('error', 'Gagal mereset data kinerja.');
+            }
+
+            return redirect()->back()->with('success', "Seluruh data kinerja bulan $bulan tahun $tahun berhasil direset.");
+        } catch (\Throwable $e) {
+            $db->transRollback();
+            return redirect()->back()->with('error', 'Gagal mereset data kinerja: ' . $e->getMessage());
         }
-
-        // 3. Hapus Nilai Rekap Remunerasi
-        $remunerasiModel->where('user_id', $userId)
-                        ->where('bulan', $bulan)
-                        ->where('tahun', $tahun)
-                        ->delete();
-
-        // Audit Log
-        if (function_exists('log_audit')) {
-            log_audit('DELETE', 'reset_kinerja', $userId, null, ['bulan' => $bulan, 'tahun' => $tahun]);
-        }
-
-        return redirect()->back()->with('success', "Seluruh Data Kinerja (Target, Log Harian, dan Rekap Nilai) untuk bulan $bulan tahun $tahun berhasil dihapus permanen.");
     }
 }

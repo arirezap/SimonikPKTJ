@@ -57,6 +57,55 @@ class TargetKinerja extends Model
             $builder->where('target_kinerja_bulanan.bulan', $bulan);
         }
 
-        return $builder->groupBy('target_kinerja_bulanan.id')->findAll();
+        return $builder->groupBy('target_kinerja_bulanan.id')
+                       ->orderBy('target_kinerja_bulanan.id', 'ASC')
+                       ->findAll();
+    }
+
+    /**
+     * Mengambil target kinerja bulanan berdasarkan user_id, bulan, dan tahun.
+     */
+    public function getTargetsByUserAndPeriod(int $userId, int $bulan, int $tahun): array
+    {
+        return $this->where('user_id', $userId)
+                    ->where('bulan', $bulan)
+                    ->where('tahun', $tahun)
+                    ->orderBy('id', 'ASC')
+                    ->findAll();
+    }
+
+    /**
+     * Memeriksa apakah suatu baris data target kinerja telah terisi lengkap.
+     */
+    public function isComplete(array $target): bool
+    {
+        $sasaran   = trim((string)($target['sasaran_program'] ?? ''));
+        $indikator = trim((string)($target['indikator_kinerja'] ?? ''));
+        $satuan    = trim((string)($target['satuan'] ?? ''));
+        $targetVal = $target['target_bulanan'] ?? null;
+
+        if ($sasaran === '' || $indikator === '' || $satuan === '') {
+            return false;
+        }
+
+        if ($targetVal === null || !is_numeric($targetVal) || (float)$targetVal <= 0) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Mengambil daftar target kinerja yang siap disetujui (berstatus terkirim dan belum disetujui).
+     */
+    public function getPendingApprovalTargets(int $userId, int $bulan, int $tahun): array
+    {
+        return $this->where('user_id', $userId)
+                    ->where('bulan', $bulan)
+                    ->where('tahun', $tahun)
+                    ->where('status', 'terkirim')
+                    ->where('status_approval !=', 'disetujui')
+                    ->orderBy('id', 'ASC')
+                    ->findAll();
     }
 }

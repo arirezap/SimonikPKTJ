@@ -56,7 +56,7 @@
                     <!-- SECTION A: AKUN -->
                     <div class="col-lg-6">
                         <div class="p-3 bg-light rounded-3 border border-light-subtle h-100">
-                            <h6 class="fw-bold text-primary mb-3"><i class="bi bi-shield-lock me-1"></i> A. Informasi Akun</h6>
+                            <h6 class="fw-bold text-primary mb-3">A. Informasi Akun</h6>
                             
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-dark mb-1">Username <span class="text-danger">*</span></label>
@@ -67,8 +67,8 @@
                                 <input type="email" name="email" class="form-control form-control-sm" value="<?= esc($user['email']) ?>" placeholder="nama@instansi.go.id" required>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label small fw-bold text-dark mb-1">Password Baru <small class="text-muted fw-normal">(Kosongkan jika tidak diubah)</small></label>
-                                <input type="password" name="password" class="form-control form-control-sm" placeholder="Isi hanya jika ingin mengubah password...">
+                                <label class="form-label small fw-bold text-dark mb-1">Kata Sandi Baru <small class="text-muted fw-normal">(Kosongkan jika tidak diubah)</small></label>
+                                <input type="password" name="password" class="form-control form-control-sm" placeholder="Isi hanya jika ingin mengubah kata sandi...">
                             </div>
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-dark mb-1">Role Primer</label>
@@ -110,7 +110,7 @@
                     <!-- SECTION B: KEPEGAWAIAN & HIERARKI -->
                     <div class="col-lg-6">
                         <div class="p-3 bg-light rounded-3 border border-light-subtle h-100">
-                            <h6 class="fw-bold text-success mb-3"><i class="bi bi-diagram-3 me-1"></i> B. Data Kepegawaian & Hierarki</h6>
+                            <h6 class="fw-bold text-success mb-3">B. Data Kepegawaian & Hierarki</h6>
                             
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-dark mb-1">Nama Lengkap & Gelar <span class="text-danger">*</span></label>
@@ -144,7 +144,7 @@
                                 </select>
                             </div>
 
-                            <div class="p-3 bg-white border rounded-3">
+                            <div class="p-3 bg-white border rounded-3 mb-3">
                                 <label class="form-label small fw-bold text-dark mb-1">Atasan Langsung (Pejabat Penilai)</label>
                                 <select name="atasan_id" class="form-select form-select-sm select2" id="selectAtasanEdit">
                                     <option value="">-- Tanpa Atasan (Misal: Direktur) --</option>
@@ -158,6 +158,33 @@
                                     Atasan akan menjadi pejabat penilai kinerja dan pihak kedua di kontrak kinerja.
                                 </div>
                             </div>
+
+                            <div class="p-3 bg-white border rounded-3">
+                                <label class="form-label small fw-bold text-dark mb-1">Status Kepegawaian & Akses</label>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-sm-6">
+                                        <label class="form-label small text-muted mb-1" style="font-size: 0.75rem;">Status Pegawai</label>
+                                        <select name="status_pegawai" id="statusPegawaiEdit" class="form-select form-select-sm">
+                                            <?php $curStatus = old('status_pegawai', $user['status_pegawai'] ?? 'aktif'); ?>
+                                            <option value="aktif" <?= $curStatus === 'aktif' ? 'selected' : '' ?>>Aktif</option>
+                                            <option value="mutasi_keluar" <?= $curStatus === 'mutasi_keluar' ? 'selected' : '' ?>>Mutasi Keluar</option>
+                                            <option value="pensiun" <?= $curStatus === 'pensiun' ? 'selected' : '' ?>>Pensiun</option>
+                                            <option value="nonaktif" <?= $curStatus === 'nonaktif' ? 'selected' : '' ?>>Nonaktif</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-sm-6" id="wrapperTmtSelesaiEdit" style="<?= $curStatus === 'aktif' ? 'display: none;' : '' ?>">
+                                        <label class="form-label small text-muted mb-1" style="font-size: 0.75rem;">Tanggal Akhir Tugas (TMT)</label>
+                                        <input type="date" name="tmt_selesai" class="form-control form-control-sm" value="<?= old('tmt_selesai', $user['tmt_selesai'] ?? '') ?>">
+                                    </div>
+                                </div>
+                                <div class="mt-2 pt-2 border-top">
+                                    <label class="form-label small text-muted mb-1" style="font-size: 0.75rem;">Dispensasi Pengisian Lampau (Khusus)</label>
+                                    <input type="date" name="dispensasi_lampau_sampai" class="form-control form-control-sm" value="<?= old('dispensasi_lampau_sampai', $user['dispensasi_lampau_sampai'] ?? '') ?>">
+                                    <div class="form-text small" style="font-size: 0.72rem;">
+                                        Jika diisi, akun ini diizinkan menginput laporan tanggal lampau sampai batas tanggal yang ditentukan.
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -165,7 +192,7 @@
                 <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
                     <a href="<?= site_url('users') . (!empty($query_string) ? '?' . $query_string : '') ?>" class="btn btn-secondary btn-sm rounded-pill px-4">Batal</a>
                     <button type="submit" class="btn btn-primary btn-sm rounded-pill fw-bold shadow-sm px-4" id="btnSubmitUserEdit">
-                        <i class="bi bi-save me-1"></i> Simpan Perubahan
+                        <i class="bi bi-save me-1"></i> Simpan Pengguna
                     </button>
                 </div>
             </form>
@@ -231,6 +258,17 @@ $(document).ready(function() {
             placeholder: '-- Pilih Atasan --'
         });
     }
+
+    function toggleTmtField() {
+        var status = $('#statusPegawaiEdit').val();
+        if (status === 'aktif') {
+            $('#wrapperTmtSelesaiEdit').hide();
+        } else {
+            $('#wrapperTmtSelesaiEdit').show();
+        }
+    }
+    $('#statusPegawaiEdit').on('change', toggleTmtField);
+    toggleTmtField();
 
     $('#formUserEdit').on('submit', function() {
         $('#btnSubmitUserEdit').html('<span class="spinner-border spinner-border-sm me-1" role="status"></span> Menyimpan...').prop('disabled', true);

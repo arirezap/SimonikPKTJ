@@ -358,26 +358,19 @@
                     $p = $row['pegawai'];
                     $score = (float)$row['rata_rata'];
                     
-                    // Predikat
-                    if ($row['rhk_dinilai'] == 0 && $score == 0) {
-                        $predikatText = 'Belum Dinilai';
-                        $badgeClass = 'badge-belum';
-                    } elseif ($score > 100) {
-                        $predikatText = 'Sangat Baik';
-                        $badgeClass = 'badge-sangat-baik';
-                    } elseif ($score > 90) {
-                        $predikatText = 'Baik';
-                        $badgeClass = 'badge-baik';
-                    } elseif ($score > 75) {
-                        $predikatText = 'Butuh Perbaikan';
-                        $badgeClass = 'badge-butuh-perbaikan';
-                    } elseif ($score > 25) {
-                        $predikatText = 'Kurang';
-                        $badgeClass = 'badge-kurang';
-                    } else {
-                        $predikatText = 'Sangat Kurang';
-                        $badgeClass = 'badge-sangat-kurang';
-                    }
+                    // Predikat Resmi Institusi ECC
+                    $isTerbit = ((int)$row['rhk_dinilai'] > 0);
+                    $predikatInfo = hitung_predikat_kinerja($isTerbit ? $score : null, $isTerbit);
+                    $predikatText = $predikatInfo['label'];
+                    $badgeMap = [
+                        'Belum Dinilai'   => 'badge-belum',
+                        'Sangat Kurang'   => 'badge-sangat-kurang',
+                        'Kurang'          => 'badge-kurang',
+                        'Butuh Perbaikan' => 'badge-butuh-perbaikan',
+                        'Baik'            => 'badge-baik',
+                        'Sangat Baik'     => 'badge-sangat-baik',
+                    ];
+                    $badgeClass = $badgeMap[$predikatText] ?? 'badge-belum';
                 ?>
                     <?php if ($bulan_terpilih === 'all'): ?>
                         <tr>

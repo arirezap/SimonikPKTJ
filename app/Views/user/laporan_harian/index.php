@@ -86,6 +86,24 @@
         font-size: 0.85rem;
     }
 
+    .hapus-baris {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        min-height: 32px;
+    }
+    @media (pointer: coarse) {
+        .hapus-baris {
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+            min-height: 38px;
+        }
+        .table-bento td:last-child {
+            padding: 8px 12px;
+        }
+    }
+
     /* Motion Design & Natural Deceleration Transitions */
     @keyframes rowSlideIn {
         0% {
@@ -270,16 +288,25 @@
     </ul>
 
 <datalist id="daftarSatuanStandar">
-    <option value="Laporan">
-    <option value="Dokumen">
-    <option value="Pertemuan">
-    <option value="Kegiatan">
-    <option value="Mahasiswa">
-    <option value="Peserta">
-    <option value="Sertifikat">
-    <option value="Paket Kegiatan">
-    <option value="Jam Pelajaran (JP)">
-    <option value="Surat Keputusan (SK)">
+    <?php if (!empty($daftar_satuan)): ?>
+        <?php foreach ($daftar_satuan as $sat): ?>
+            <?php $valSatuan = $sat['nama_satuan'] ?? $sat['satuan'] ?? ''; ?>
+            <?php if ($valSatuan !== ''): ?>
+                <option value="<?= esc($valSatuan) ?>">
+            <?php endif; ?>
+        <?php endforeach; ?>
+    <?php else: ?>
+        <option value="Laporan">
+        <option value="Dokumen">
+        <option value="Pertemuan">
+        <option value="Kegiatan">
+        <option value="Mahasiswa">
+        <option value="Peserta">
+        <option value="Sertifikat">
+        <option value="Paket Kegiatan">
+        <option value="Jam Pelajaran (JP)">
+        <option value="Surat Keputusan (SK)">
+    <?php endif; ?>
 </datalist>
 
 <div class="tab-content" id="targetKinerjaTabContent">
@@ -318,6 +345,13 @@
                             <strong>Akses Terkunci.</strong> Batas pengisian tanggal <?= esc($batas_target) ?> telah terlewati.
                         </div>
                     </div>
+                <?php elseif (!empty($is_revision)): ?>
+                    <div class="alert alert-info border-info-subtle bg-info-subtle text-info-emphasis mb-3 py-2.5 px-3 small rounded-4 d-flex align-items-center gap-2">
+                        <i class="bi bi-arrow-repeat text-info fs-5 flex-shrink-0"></i>
+                        <div>
+                            <strong>Mode Revisi.</strong> Persetujuan target telah dibatalkan agar dapat diperbaiki. Silakan sesuaikan target dan ajukan kembali.
+                        </div>
+                    </div>
                 <?php endif; ?>
 
                 <form method="POST" action="<?= site_url('laporan-harian/store') ?>" class="form-target-sendiri">
@@ -325,18 +359,76 @@
                     <input type="hidden" name="bulan" value="<?= esc($bulan_terpilih) ?>">
                     <input type="hidden" name="tahun" value="<?= esc($tahun_terpilih) ?>">
                     <input type="hidden" name="is_editing_staf" value="0">
+                    <input type="hidden" name="action" value="submit">
+                    <div id="containerDeletedTargetIdsSendiri"></div>
 
                     <?php
                         $isDirektur = (session()->get('role') === 'direktur');
-                        $allApproved = !empty($rekap_data_sendiri);
+                        $oldSasaran = old('sasaran_program');
+                        $displayRowsSendiri = [];
+
+                        // TKB-14: Rekonstitusi baris dari input old() saat ada kegagalan submit
+                        if (is_array($oldSasaran) && !empty($oldSasaran) && old('is_editing_staf') != '1') {
+                            $oldIndikator = (array) old('indikator_kinerja', []);
+                            $oldTarget = (array) old('target_bulanan', []);
+                            $oldSatuan = (array) old('satuan', []);
+                            $oldLaporanId = (array) old('laporan_id', []);
+                            $oldClientId = (array) old('client_row_id', []);
+
+                            foreach ($oldSasaran as $i => $sasaran) {
+                                $rowId = isset($oldLaporanId[$i]) && is_numeric($oldLaporanId[$i]) && (int)$oldLaporanId[$i] > 0 ? (int)$oldLaporanId[$i] : null;
+                                $cId = !empty($oldClientId[$i]) ? $oldClientId[$i] : ('c_row_old_' . $i);
+                                $dbStatusApproval = null;
+                                $dbStatus = 'draft';
+
+                                if ($rowId && !empty($rekap_data_sendiri)) {
+                                    foreach ($rekap_data_sendiri as $r) {
+                                        if ((int)$r['id'] === $rowId) {
+                                            $dbStatusApproval = $r['status_approval'];
+                                            $dbStatus = $r['status'] ?? 'draft';
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                $displayRowsSendiri[] = [
+                                    'id' => $rowId,
+                                    'client_row_id' => $cId,
+                                    'sasaran_program' => (string)$sasaran,
+                                    'indikator_kinerja' => (string)($oldIndikator[$i] ?? ''),
+                                    'target_bulanan' => $oldTarget[$i] ?? '',
+                                    'satuan' => (string)($oldSatuan[$i] ?? ''),
+                                    'status_approval' => $dbStatusApproval,
+                                    'status' => $dbStatus
+                                ];
+                            }
+                        } else {
+                            foreach ($rekap_data_sendiri as $r) {
+                                $displayRowsSendiri[] = [
+                                    'id' => $r['id'],
+                                    'client_row_id' => 'c_row_' . $r['id'],
+                                    'sasaran_program' => $r['sasaran_program'] ?? '',
+                                    'indikator_kinerja' => $r['indikator_kinerja'] ?? '',
+                                    'target_bulanan' => $r['target_bulanan'] ?? '',
+                                    'satuan' => $r['satuan'] ?? '',
+                                    'status_approval' => $r['status_approval'] ?? null,
+                                    'status' => $r['status'] ?? 'draft'
+                                ];
+                            }
+                        }
+
+                        $allApproved = !empty($displayRowsSendiri);
+                        $hasApproved = false;
                         $hasDraft = false;
                         $hasTerkirim = false;
-                        if (!empty($rekap_data_sendiri)) {
-                            foreach ($rekap_data_sendiri as $row) {
-                                if ($row['status_approval'] !== 'disetujui') {
+                        if (!empty($displayRowsSendiri)) {
+                            foreach ($displayRowsSendiri as $row) {
+                                if ($row['status_approval'] === 'disetujui') {
+                                    $hasApproved = true;
+                                } else {
                                     $allApproved = false;
                                 }
-                                if (($row['status'] ?? '') === 'draft') {
+                                if (($row['status'] ?? '') === 'draft' || empty($row['status'])) {
                                     $hasDraft = true;
                                 }
                                 if (($row['status'] ?? '') === 'terkirim') {
@@ -353,25 +445,48 @@
                                 <strong>Akun Direktur:</strong> Target Kinerja Bulanan Anda otomatis berstatus <strong>Disetujui</strong> dan dapat Anda ubah/revisi sendiri sewaktu-waktu.
                             </div>
                         </div>
-                    <?php elseif ($hasDraft && !$allApproved): ?>
-                        <div class="alert alert-warning mb-3 shadow-sm py-2.5 px-3 border border-warning-subtle small rounded-4 d-flex align-items-center gap-2">
-                            <i class="bi bi-pencil-square fs-5 text-warning-emphasis flex-shrink-0"></i>
+                    <?php elseif (!empty($is_revision)): ?>
+                        <div class="alert alert-info border-info-subtle bg-info-subtle text-info-emphasis mb-3 py-2.5 px-3 small rounded-4 d-flex align-items-center gap-2">
+                            <i class="bi bi-arrow-repeat text-info fs-5 flex-shrink-0"></i>
                             <div>
-                                <strong>Perlu Revisi.</strong> Perbaiki rincian target di bawah, lalu klik <strong>Ajukan Target</strong>.
+                                <strong>Mode Revisi.</strong> Persetujuan target telah dibatalkan agar dapat disesuaikan. Silakan perbaiki rincian target dan ajukan kembali.
                             </div>
                         </div>
-                    <?php elseif ($hasTerkirim && !$allApproved): ?>
+                    <?php elseif ($allApproved): ?>
+                        <!-- Seluruh target telah disetujui atasan, banner konfirmasi ada di bagian bawah form -->
+                    <?php elseif ($hasApproved && !$allApproved): ?>
+                        <div class="alert alert-warning mb-3 shadow-sm py-2.5 px-3 border border-warning-subtle small rounded-4 d-flex align-items-center gap-2">
+                            <i class="bi bi-pie-chart fs-5 text-warning-emphasis flex-shrink-0"></i>
+                            <div>
+                                <strong>Disetujui Sebagian.</strong> Sebagian target telah disetujui atasan. Lengkapi target yang belum disetujui, lalu klik <strong>Ajukan Target</strong>.
+                            </div>
+                        </div>
+                    <?php elseif ($hasTerkirim && !$hasDraft): ?>
                         <div class="alert alert-info mb-3 shadow-sm py-2.5 px-3 border border-info-subtle small rounded-4 d-flex align-items-center gap-2">
                             <i class="bi bi-hourglass-split fs-5 text-primary flex-shrink-0"></i>
                             <div>
-                                <strong>Menunggu Persetujuan.</strong> Target kinerja telah dikirim ke atasan langsung. Anda masih dapat mengedit atau menambah target sebelum disetujui oleh atasan.
+                                <strong>Menunggu Persetujuan.</strong> Seluruh target telah diajukan ke atasan langsung. Anda masih dapat mengedit atau menambah target sebelum disetujui oleh atasan.
+                            </div>
+                        </div>
+                    <?php elseif ($hasTerkirim && $hasDraft): ?>
+                        <div class="alert alert-info mb-3 shadow-sm py-2.5 px-3 border border-info-subtle small rounded-4 d-flex align-items-center gap-2">
+                            <i class="bi bi-hourglass-split fs-5 text-primary flex-shrink-0"></i>
+                            <div>
+                                <strong>Menunggu Persetujuan.</strong> Terdapat pembaruan draf target. Klik <strong>Perbarui & Ajukan Ulang</strong> untuk mengirim seluruh target ke atasan.
+                            </div>
+                        </div>
+                    <?php elseif ($hasDraft): ?>
+                        <div class="alert alert-secondary mb-3 shadow-sm py-2.5 px-3 border border-secondary-subtle small rounded-4 d-flex align-items-center gap-2">
+                            <i class="bi bi-pencil fs-5 text-secondary flex-shrink-0"></i>
+                            <div>
+                                <strong>Draf Target.</strong> Rancang target kinerja Anda di bawah, lalu klik <strong>Ajukan Target</strong> agar dapat diperiksa atasan.
                             </div>
                         </div>
                     <?php endif; ?>
 
                     <!-- TABLE TOOLBAR HEADER (8pt Grid) -->
                     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap" style="gap: 8px;">
-                        <div class="d-flex align-items-center" style="gap: 8px;">
+                        <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
                             <span class="badge bg-light text-dark border fw-semibold d-inline-flex align-items-center" style="padding: 6px 12px; font-size: 0.78rem; border-radius: 8px; gap: 6px;">
                                 <i class="bi bi-list-check text-primary"></i>
                                 <span>Rincian Target <?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?></span>
@@ -379,7 +494,7 @@
                         </div>
                         <?php if (!$is_locked && (!$allApproved || $isDirektur)): ?>
                         <div>
-                            <button type="button" class="btn btn-outline-primary btn-tactile rounded-pill fw-semibold shadow-none d-inline-flex align-items-center" style="height: 32px; padding: 0 16px; font-size: 0.78rem; gap: 8px; border-radius: 16px;" data-bs-toggle="modal" data-bs-target="#modalSalinTarget" title="Salin target dan sasaran kinerja dari periode bulan sebelumnya atau periode lainnya">
+                            <button type="button" class="btn btn-outline-primary btn-tactile rounded-pill fw-semibold shadow-none d-inline-flex align-items-center" id="btnSalinTargetModal" style="height: 32px; padding: 0 16px; font-size: 0.78rem; gap: 8px; border-radius: 16px;" data-bs-toggle="modal" data-bs-target="#modalSalinTarget" title="Salin target dan sasaran kinerja dari periode bulan sebelumnya atau periode lainnya">
                                 <i class="bi bi-copy text-primary"></i>
                                 <span>Salin dari Bulan Lain</span>
                             </button>
@@ -401,11 +516,15 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                 <?php if (!empty($rekap_data_sendiri)): ?>
-                                    <?php foreach ($rekap_data_sendiri as $index => $row): ?>
-                                        <?php $isRowLocked = ($is_locked || ($row['status_approval'] === 'disetujui' && !$isDirektur)); ?>
-                                        <tr>
-                                            <input type="hidden" name="laporan_id[]" value="<?= esc($row['id']) ?>">
+                                 <?php if (!empty($displayRowsSendiri)): ?>
+                                    <?php foreach ($displayRowsSendiri as $index => $row): ?>
+                                        <?php 
+                                            $isRowApproved = ($row['status_approval'] === 'disetujui');
+                                            $isRowLocked = ($is_locked || ($isRowApproved && !$isDirektur)); 
+                                        ?>
+                                        <tr data-client-id="<?= esc($row['client_row_id'] ?? ('c_row_' . ($row['id'] ?? $index))) ?>" data-approved="<?= $isRowApproved ? '1' : '0' ?>">
+                                            <input type="hidden" name="client_row_id[]" value="<?= esc($row['client_row_id'] ?? ('c_row_' . ($row['id'] ?? $index))) ?>">
+                                            <input type="hidden" name="laporan_id[]" value="<?= esc($row['id'] ?? '') ?>">
                                             <td class="nomor-baris text-center fw-bold text-muted"><?= $index + 1 ?></td>
                                             <td>
                                                 <textarea name="sasaran_program[]" class="form-control form-control-sm" rows="2" placeholder="Sasaran Program Unit..." aria-label="Sasaran Program Unit baris <?= $index + 1 ?>" <?= $isRowLocked ? 'readonly' : '' ?>><?= esc($row['sasaran_program']) ?></textarea>
@@ -414,30 +533,37 @@
                                                 <textarea name="indikator_kinerja[]" class="form-control form-control-sm" rows="2" placeholder="Indikator / RHK..." aria-label="Indikator Kinerja Individu baris <?= $index + 1 ?>" <?= $isRowLocked ? 'readonly' : '' ?>><?= esc($row['indikator_kinerja']) ?></textarea>
                                             </td>
                                             <td>
-                                                <input type="number" step="any" min="0.0001" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary input-target-val" placeholder="Target" aria-label="Target Kuantitatif baris <?= $index + 1 ?>" value="<?= isset($row['target_bulanan']) && $row['target_bulanan'] !== null ? (float)$row['target_bulanan'] : '' ?>" <?= $isRowLocked ? 'readonly' : '' ?>>
+                                                <input type="number" step="any" min="0.0001" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary input-target-val" placeholder="Target" aria-label="Target Kuantitatif baris <?= $index + 1 ?>" value="<?= isset($row['target_bulanan']) && $row['target_bulanan'] !== null && $row['target_bulanan'] !== '' ? (float)$row['target_bulanan'] : '' ?>" <?= $isRowLocked ? 'readonly' : '' ?>>
                                             </td>
                                             <td>
                                                 <input type="text" name="satuan[]" class="form-control form-control-sm text-center input-satuan-val" placeholder="Satuan" list="daftarSatuanStandar" aria-label="Satuan Target baris <?= $index + 1 ?>" value="<?= esc($row['satuan']) ?>" title="<?= esc($row['satuan']) ?>" <?= $isRowLocked ? 'readonly' : '' ?>>
                                             </td>
                                             <td class="text-center">
-                                                <?php if($row['status_approval'] === 'disetujui'): ?>
+                                                <?php if($isRowApproved): ?>
                                                     <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 status-badge"><i class="bi bi-check-circle me-1"></i> Disetujui</span>
                                                 <?php elseif(($row['status'] ?? '') === 'terkirim'): ?>
                                                     <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2.5 py-1 status-badge"><i class="bi bi-hourglass-split me-1"></i> Menunggu Persetujuan</span>
+                                                <?php elseif(empty($row['id'])): ?>
+                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 status-badge"><i class="bi bi-pencil me-1"></i> Draf Baru</span>
+                                                <?php elseif(!empty($is_revision)): ?>
+                                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2.5 py-1 status-badge"><i class="bi bi-pencil-square me-1"></i> Draf Revisi</span>
+                                                <?php elseif($is_locked): ?>
+                                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2.5 py-1 status-badge"><i class="bi bi-lock me-1"></i> Lewat Tenggat</span>
                                                 <?php else: ?>
-                                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2.5 py-1 status-badge"><i class="bi bi-pencil-square me-1"></i> Draf (Revisi)</span>
+                                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2.5 py-1 status-badge"><i class="bi bi-pencil me-1"></i> Draf</span>
                                                 <?php endif; ?>
                                             </td>
                                             <td class="text-center">
                                                 <?php if (!$isRowLocked): ?>
-                                                <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris" data-id="<?= esc($row['id']) ?>" title="Hapus Target" aria-label="Hapus target baris <?= $index + 1 ?>" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
+                                                <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris" data-id="<?= esc($row['id'] ?? '') ?>" title="Hapus Target" aria-label="Hapus target baris <?= $index + 1 ?>"><i class="bi bi-trash3"></i></button>
                                                 <?php endif; ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php elseif (!$is_locked): ?>
                                     <!-- Baris Kosong Default -->
-                                    <tr>
+                                    <tr data-client-id="c_row_init_0" data-approved="0">
+                                        <input type="hidden" name="client_row_id[]" value="c_row_init_0">
                                         <input type="hidden" name="laporan_id[]" value="">
                                         <td class="nomor-baris text-center fw-bold text-muted">1</td>
                                         <td><textarea name="sasaran_program[]" class="form-control form-control-sm" rows="2" placeholder="Sasaran Program Unit..." aria-label="Sasaran Program Unit baris 1"></textarea></td>
@@ -446,7 +572,7 @@
                                         <td><input type="text" name="satuan[]" class="form-control form-control-sm text-center input-satuan-val" placeholder="Satuan" list="daftarSatuanStandar" aria-label="Satuan Target baris 1"></td>
                                         <td class="text-center"><span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 status-badge"><i class="bi bi-pencil me-1"></i> Draf Baru</span></td>
                                         <td class="text-center">
-                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris" data-id="" title="Hapus Target" aria-label="Hapus target baris 1" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
+                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris" data-id="" title="Hapus Target" aria-label="Hapus target baris 1"><i class="bi bi-trash3"></i></button>
                                         </td>
                                     </tr>
                                 <?php else: ?>
@@ -552,15 +678,61 @@
                         </div>
                     <?php else: ?>
                         
-                        <div class="d-flex justify-content-between align-items-center mb-2 mt-2">
-                            <h6 class="fw-bold mb-0 text-dark small"><i class="bi bi-list-check text-primary me-1.5"></i>Target Kinerja Staf</h6>
-                            <small class="text-muted" style="font-size: 0.72rem;">Periksa dan setujui target kinerja staf di bawah ini.</small>
-                        </div>
-
                         <?php
-                            $allApprovedStaf = !empty($rekap_data_staf);
-                            if (!empty($rekap_data_staf)) {
-                                foreach ($rekap_data_staf as $row) {
+                            $displayRowsStaf = [];
+                            $oldSasaran = old('sasaran_program');
+                            if (is_array($oldSasaran) && !empty($oldSasaran) && old('is_editing_staf') == '1') {
+                                $oldIndikator = (array) old('indikator_kinerja', []);
+                                $oldTarget = (array) old('target_bulanan', []);
+                                $oldSatuan = (array) old('satuan', []);
+                                $oldLaporanId = (array) old('laporan_id', []);
+                                $oldClientId = (array) old('client_row_id', []);
+
+                                foreach ($oldSasaran as $i => $sasaran) {
+                                    $rowId = isset($oldLaporanId[$i]) && is_numeric($oldLaporanId[$i]) && (int)$oldLaporanId[$i] > 0 ? (int)$oldLaporanId[$i] : null;
+                                    $cId = !empty($oldClientId[$i]) ? $oldClientId[$i] : ('c_row_staf_old_' . $i);
+                                    $dbStatusApproval = null;
+                                    $dbStatus = 'draft';
+
+                                    if ($rowId && !empty($rekap_data_staf)) {
+                                        foreach ($rekap_data_staf as $r) {
+                                            if ((int)$r['id'] === $rowId) {
+                                                $dbStatusApproval = $r['status_approval'];
+                                                $dbStatus = $r['status'] ?? 'draft';
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    $displayRowsStaf[] = [
+                                        'id' => $rowId,
+                                        'client_row_id' => $cId,
+                                        'sasaran_program' => (string)$sasaran,
+                                        'indikator_kinerja' => (string)($oldIndikator[$i] ?? ''),
+                                        'target_bulanan' => $oldTarget[$i] ?? '',
+                                        'satuan' => (string)($oldSatuan[$i] ?? ''),
+                                        'status_approval' => $dbStatusApproval,
+                                        'status' => $dbStatus
+                                    ];
+                                }
+                            } else {
+                                foreach ($rekap_data_staf as $r) {
+                                    $displayRowsStaf[] = [
+                                        'id' => $r['id'],
+                                        'client_row_id' => 'c_row_staf_' . $r['id'],
+                                        'sasaran_program' => $r['sasaran_program'] ?? '',
+                                        'indikator_kinerja' => $r['indikator_kinerja'] ?? '',
+                                        'target_bulanan' => $r['target_bulanan'] ?? '',
+                                        'satuan' => $r['satuan'] ?? '',
+                                        'status_approval' => $r['status_approval'] ?? null,
+                                        'status' => $r['status'] ?? 'draft'
+                                    ];
+                                }
+                            }
+
+                            $allApprovedStaf = !empty($displayRowsStaf);
+                            if (!empty($displayRowsStaf)) {
+                                foreach ($displayRowsStaf as $row) {
                                     if ($row['status_approval'] !== 'disetujui') {
                                         $allApprovedStaf = false;
                                         break;
@@ -569,12 +741,21 @@
                             }
                         ?>
 
+                        <div class="d-flex justify-content-between align-items-center mb-2 mt-2 flex-wrap" style="gap: 8px;">
+                            <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
+                                <h6 class="fw-bold mb-0 text-dark small"><i class="bi bi-list-check text-primary me-1.5"></i>Target Kinerja Staf</h6>
+                            </div>
+                            <small class="text-muted" style="font-size: 0.72rem;">Periksa dan setujui target kinerja staf di bawah ini.</small>
+                        </div>
+
                         <form action="<?= site_url('laporan-harian/store') ?>" method="POST" class="form-target-staf">
                             <?= csrf_field() ?>
                             <input type="hidden" name="bulan" value="<?= esc($bulan_terpilih) ?>">
                             <input type="hidden" name="tahun" value="<?= esc($tahun_terpilih) ?>">
                             <input type="hidden" name="is_editing_staf" value="1">
                             <input type="hidden" name="staf_id" value="<?= esc($staf_id_terpilih) ?>">
+                            <input type="hidden" name="action" value="submit">
+                            <div id="containerDeletedTargetIdsStaf"></div>
 
                             <div class="table-responsive mb-3 border rounded-4 shadow-sm bg-white">
                                 <table class="table table-bordered align-middle table-hover mb-0 table-bento tabel-target">
@@ -590,10 +771,11 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php foreach ($rekap_data_staf as $index => $row): ?>
+                                        <?php foreach ($displayRowsStaf as $index => $row): ?>
                                             <?php $isStafApproved = ($row['status_approval'] === 'disetujui'); ?>
-                                            <tr>
-                                                <input type="hidden" name="laporan_id[]" value="<?= esc($row['id']) ?>">
+                                            <tr data-client-id="<?= esc($row['client_row_id'] ?? ('c_row_staf_' . ($row['id'] ?? $index))) ?>" data-approved="<?= $isStafApproved ? '1' : '0' ?>">
+                                                <input type="hidden" name="client_row_id[]" value="<?= esc($row['client_row_id'] ?? ('c_row_staf_' . ($row['id'] ?? $index))) ?>">
+                                                <input type="hidden" name="laporan_id[]" value="<?= esc($row['id'] ?? '') ?>">
                                                 <td class="nomor-baris text-center fw-bold text-muted"><?= $index + 1 ?></td>
                                                 <td>
                                                     <textarea name="sasaran_program[]" class="form-control form-control-sm staf-input <?= $isStafApproved ? 'locked-approved' : '' ?>" rows="2" placeholder="Sasaran Program Unit..." aria-label="Sasaran Program Unit Staf baris <?= $index + 1 ?>" required readonly><?= esc($row['sasaran_program']) ?></textarea>
@@ -602,23 +784,25 @@
                                                     <textarea name="indikator_kinerja[]" class="form-control form-control-sm staf-input <?= $isStafApproved ? 'locked-approved' : '' ?>" rows="2" placeholder="Indikator / RHK..." aria-label="Indikator Kinerja Individu Staf baris <?= $index + 1 ?>" required readonly><?= esc($row['indikator_kinerja']) ?></textarea>
                                                 </td>
                                                 <td>
-                                                    <input type="number" step="any" min="0.0001" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary staf-input input-target-val <?= $isStafApproved ? 'locked-approved' : '' ?>" aria-label="Target Kuantitatif Staf baris <?= $index + 1 ?>" value="<?= (float)$row['target_bulanan'] ?>" required readonly>
+                                                    <input type="number" step="any" min="0.0001" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary staf-input input-target-val <?= $isStafApproved ? 'locked-approved' : '' ?>" aria-label="Target Kuantitatif Staf baris <?= $index + 1 ?>" value="<?= isset($row['target_bulanan']) && $row['target_bulanan'] !== null && $row['target_bulanan'] !== '' ? (float)$row['target_bulanan'] : '' ?>" required readonly>
                                                 </td>
                                                 <td>
                                                     <input type="text" name="satuan[]" class="form-control form-control-sm text-center staf-input input-satuan-val <?= $isStafApproved ? 'locked-approved' : '' ?>" list="daftarSatuanStandar" aria-label="Satuan Target Staf baris <?= $index + 1 ?>" value="<?= esc($row['satuan']) ?>" title="<?= esc($row['satuan']) ?>" required readonly>
                                                 </td>
                                                 <td class="text-center">
-                                                    <?php if($row['status_approval'] === 'disetujui'): ?>
+                                                    <?php if($isStafApproved): ?>
                                                         <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 status-badge"><i class="bi bi-check-circle me-1"></i> Disetujui</span>
                                                     <?php elseif(($row['status'] ?? '') === 'terkirim'): ?>
                                                         <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2.5 py-1 status-badge"><i class="bi bi-hourglass-split me-1"></i> Menunggu Persetujuan</span>
+                                                    <?php elseif(empty($row['id'])): ?>
+                                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 status-badge"><i class="bi bi-pencil me-1"></i> Draf Baru</span>
                                                     <?php else: ?>
                                                         <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2.5 py-1 status-badge"><i class="bi bi-pencil me-1"></i> Draf</span>
                                                     <?php endif; ?>
                                                 </td>
                                                 <td class="text-center col-aksi-staf" style="display: none;">
                                                     <?php if (!$isStafApproved): ?>
-                                                    <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris btn-hapus-staf" data-id="<?= esc($row['id']) ?>" title="Hapus Target" aria-label="Hapus target staf baris <?= $index + 1 ?>" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
+                                                    <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris btn-hapus-staf" data-id="<?= esc($row['id'] ?? '') ?>" title="Hapus Target" aria-label="Hapus target staf baris <?= $index + 1 ?>"><i class="bi bi-trash3"></i></button>
                                                     <?php endif; ?>
                                                 </td>
                                             </tr>
@@ -807,28 +991,122 @@
             $(this).blur();
         });
 
+        let clientRowCounter = Date.now();
+        function generateClientRowId(prefix) {
+            clientRowCounter++;
+            return (prefix || 'c_row') + '_' + clientRowCounter + '_' + Math.floor(Math.random() * 10000);
+        }
+
+        // Pembuatan baris target melalui template statis dan DOM setter murni (TKB-12 & TKB-14)
+        function createTargetRow(data, clientId, isStaf) {
+            clientId = clientId || generateClientRowId(isStaf ? 'c_row_staf' : 'c_row');
+            data = data || {};
+            const valSasaran = data.sasaran_program || '';
+            const valIndikator = data.indikator_kinerja || '';
+            const valTarget = (data.target_bulanan !== null && data.target_bulanan !== undefined && data.target_bulanan !== '') ? data.target_bulanan : '';
+            const valSatuan = data.satuan || '';
+
+            const stafInputClass = isStaf ? 'staf-input' : '';
+            const colAksiClass = isStaf ? 'col-aksi-staf' : '';
+            const colAksiStyle = isStaf ? 'style="display: table-cell;"' : '';
+            const btnStafClass = isStaf ? 'btn-hapus-staf' : '';
+
+            const row = $(`
+                <tr class="row-slide-in" data-client-id="${clientId}" data-approved="0">
+                    <input type="hidden" name="client_row_id[]" value="${clientId}">
+                    <input type="hidden" name="laporan_id[]" value="">
+                    <td class="nomor-baris text-center fw-bold text-muted">1</td>
+                    <td>
+                        <textarea name="sasaran_program[]" class="form-control form-control-sm ${stafInputClass}" rows="2" placeholder="Sasaran Program Unit..."></textarea>
+                    </td>
+                    <td>
+                        <textarea name="indikator_kinerja[]" class="form-control form-control-sm ${stafInputClass}" rows="2" placeholder="Indikator / RHK..."></textarea>
+                    </td>
+                    <td>
+                        <input type="number" step="any" min="0.0001" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary input-target-val ${stafInputClass}" placeholder="Target">
+                    </td>
+                    <td>
+                        <input type="text" name="satuan[]" class="form-control form-control-sm text-center input-satuan-val ${stafInputClass}" placeholder="Satuan" list="daftarSatuanStandar">
+                    </td>
+                    <td class="text-center">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 status-badge"><i class="bi bi-pencil me-1"></i> Draf Baru</span>
+                    </td>
+                    <td class="text-center ${colAksiClass}" ${colAksiStyle}>
+                        <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris ${btnStafClass}" data-id="" title="Hapus Target" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
+                    </td>
+                </tr>
+            `);
+
+            // Isi nilai secara aman via .val() dan .attr() tanpa interpolasi string (TKB-12)
+            row.find('textarea[name="sasaran_program[]"]').val(valSasaran);
+            row.find('textarea[name="indikator_kinerja[]"]').val(valIndikator);
+            row.find('input[name="target_bulanan[]"]').val(valTarget);
+            row.find('input[name="satuan[]"]').val(valSatuan).attr('title', valSatuan);
+
+            return row;
+        }
+
+        // Pengendali status simpan form untuk mencegah konflik operasi (TKB-08)
+        // Tracking perubahan belum tersimpan (TKB-14)
+        let isFormDirty = false;
+
+        $(document).on('input change', '.tabel-target textarea, .tabel-target input', function() {
+            isFormDirty = true;
+        });
+
+        // Pengendali kuota target real-time (TKB-14)
+        function updateTargetCounter(form) {
+            if (!form || !form.length) return;
+            const tabel = form.find('.tabel-target tbody');
+            const rows = tabel.find('tr').filter(function() {
+                return $(this).find('textarea[name="sasaran_program[]"]').length > 0;
+            });
+            const count = rows.length;
+            const btnTambah = form.find('.btn-tambah-baris, .btn-tambah-baris-staf');
+
+            if (count >= 30) {
+                btnTambah.prop('disabled', true).addClass('opacity-50');
+            } else {
+                if (!isSavingTarget) {
+                    btnTambah.prop('disabled', false).removeClass('opacity-50');
+                }
+            }
+        }
+
+        // Pengendali status simpan form untuk mencegah konflik operasi (TKB-08)
+        let isSavingTarget = false;
+        function setTargetFormSavingState(form, isSaving) {
+            isSavingTarget = isSaving;
+            form.find('#btnSimpanSementara').prop('disabled', isSaving);
+            form.find('button[type="submit"]').prop('disabled', isSaving);
+            form.find('.btn-tambah-baris, .btn-tambah-baris-staf').prop('disabled', isSaving);
+            form.find('.hapus-baris').prop('disabled', isSaving);
+            $('[data-bs-target="#modalSalinTarget"]').prop('disabled', isSaving);
+            $('.filter-select, .input-filter-tahun').prop('disabled', isSaving);
+        }
+
         // Fungsi Tambah Baris untuk Form Target Saya dengan Fluid Animation
         $('.btn-tambah-baris').on('click', function() {
-            const tabel = $(this).closest('form').find('.tabel-target tbody');
-            const rowPertama = tabel.find('tr:first').clone();
-            
-            rowPertama.removeClass('row-slide-out table-danger').addClass('row-slide-in');
-            rowPertama.find('input[name="laporan_id[]"]').val('');
-            rowPertama.find('input[type="number"]').val('');
-            rowPertama.find('input[type="text"]').val('').attr('title', '');
-            rowPertama.find('textarea').val('');
-            rowPertama.find('textarea').removeAttr('readonly');
-            rowPertama.find('input').removeAttr('readonly');
-            
-            rowPertama.find('.status-badge').removeClass('bg-success-subtle text-success bg-warning-subtle text-warning-emphasis bg-secondary-subtle text-secondary').addClass('bg-primary-subtle text-primary border border-primary-subtle').html('<i class="bi bi-pencil me-1"></i> Draf Baru');
-            rowPertama.find('.hapus-baris').attr('data-id', '').show();
-            
-            tabel.append(rowPertama);
+            if (isSavingTarget) return;
+            const form = $(this).closest('form');
+            const tabel = form.find('.tabel-target tbody');
+            const currentRows = tabel.find('tr').length;
+            if (currentRows >= 30) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Batas Maksimal', 'Jumlah target kinerja sudah mencapai batas maksimal 30 target.', 'warning');
+                } else {
+                    alert('Jumlah target sudah mencapai batas maksimal 30 target.');
+                }
+                return;
+            }
+
+            isFormDirty = true;
+            const newRow = createTargetRow({}, generateClientRowId('c_row'), false);
+            tabel.append(newRow);
             updateRowNumbers(tabel);
 
-            // Auto focus ke sasaran program dengan smooth micro-delay
             setTimeout(() => {
-                rowPertama.find('textarea[name="sasaran_program[]"]').focus();
+                newRow.find('textarea[name="sasaran_program[]"]').focus();
             }, 80);
         });
 
@@ -847,13 +1125,18 @@
                 $(this).find('input[name="satuan[]"]').attr('aria-label', 'Satuan Target baris ' + rowNum);
                 $(this).find('.hapus-baris').attr('aria-label', 'Hapus target baris ' + rowNum);
             });
+            updateTargetCounter(tabel.closest('form'));
         }
 
         // Fungsi Reset Baris ke Kosong
         function resetRowToEmpty(row) {
+            const newClientId = generateClientRowId('c_row_reset');
+            row.attr('data-client-id', newClientId);
+            row.attr('data-approved', '0');
+            row.find('input[name="client_row_id[]"]').val(newClientId);
             row.find('input[name="laporan_id[]"]').val('');
             row.find('input[type="number"]').val('');
-            row.find('input[type="text"]').val('');
+            row.find('input[type="text"]').val('').attr('title', '');
             row.find('textarea').val('');
             row.find('.status-badge').removeClass('bg-success-subtle text-success bg-warning-subtle text-warning-emphasis bg-secondary-subtle text-secondary').addClass('bg-primary-subtle text-primary border border-primary-subtle').html('<i class="bi bi-pencil me-1"></i> Draf Baru');
             row.find('.hapus-baris').attr('data-id', '');
@@ -861,11 +1144,13 @@
 
         // Fungsi Hapus Baris dengan Smooth Collapse & Slide-out
         $(document).on('click', '.hapus-baris', function() {
+            if (isSavingTarget) return;
             const tabel = $(this).closest('tbody');
             const row = $(this).closest('tr');
             let idLaporan = row.find('input[name="laporan_id[]"]').val() || $(this).attr('data-id');
 
             const animateRemoveRow = function() {
+                isFormDirty = true;
                 row.addClass('row-slide-out');
                 setTimeout(() => {
                     if (tabel.find('tr').length > 1) {
@@ -874,6 +1159,7 @@
                     } else {
                         row.removeClass('row-slide-out');
                         resetRowToEmpty(row);
+                        updateRowNumbers(tabel);
                     }
                 }, 220);
             };
@@ -928,7 +1214,7 @@
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
                         title: 'Hapus Target?',
-                        html: 'Target ini akan dihapus. Laporan harian terkait akan kembali menjadi Draf.',
+                        html: 'Target ini akan dihapus. Catatan kegiatan harian terkait akan kembali berstatus draf dan nilai capaian pada target ini akan direset.',
                         icon: 'warning',
                         showCancelButton: true,
                         confirmButtonColor: '#dc3545',
@@ -941,7 +1227,7 @@
                         }
                     });
                 } else {
-                    if (confirm('Target ini akan dihapus. Laporan harian terkait akan kembali menjadi Draf.')) {
+                    if (confirm('Target ini akan dihapus. Catatan kegiatan harian terkait akan kembali berstatus draf dan nilai capaian pada target ini akan direset.')) {
                         doDelete();
                     }
                 }
@@ -991,25 +1277,26 @@
 
         // Fungsi Tambah Baris untuk Form Target Staf (Mode Edit Atasan)
         $(document).on('click', '.btn-tambah-baris-staf', function() {
-            const tabel = $(this).closest('form').find('.tabel-target tbody');
-            const rowPertama = tabel.find('tr:first').clone();
-            
-            rowPertama.removeClass('row-slide-out table-danger').addClass('row-slide-in');
-            rowPertama.find('input[name="laporan_id[]"]').val('');
-            rowPertama.find('input[type="number"]').val('').removeAttr('readonly').removeClass('locked-approved');
-            rowPertama.find('input[type="text"]').val('').attr('title', '').removeAttr('readonly').removeClass('locked-approved');
-            rowPertama.find('textarea').val('').removeAttr('readonly').removeClass('locked-approved');
-            
-            rowPertama.find('.status-badge').removeClass('bg-success-subtle text-success bg-warning-subtle text-warning-emphasis bg-secondary-subtle text-secondary').addClass('bg-primary-subtle text-primary border border-primary-subtle').html('<i class="bi bi-pencil me-1"></i> Draf Baru');
-            rowPertama.find('.col-aksi-staf').show();
-            rowPertama.find('.hapus-baris').attr('data-id', '').css('display', 'inline-flex');
-            
-            tabel.append(rowPertama);
+            if (isSavingTarget) return;
+            const form = $(this).closest('form');
+            const tabel = form.find('.tabel-target tbody');
+            const currentRows = tabel.find('tr').length;
+            if (currentRows >= 30) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Batas Maksimal', 'Jumlah target kinerja sudah mencapai batas maksimal 30 target.', 'warning');
+                } else {
+                    alert('Jumlah target sudah mencapai batas maksimal 30 target.');
+                }
+                return;
+            }
+
+            isFormDirty = true;
+            const newRow = createTargetRow({}, generateClientRowId('c_row_staf'), true);
+            tabel.append(newRow);
             updateRowNumbers(tabel);
 
-            // Auto focus ke sasaran program dengan smooth micro-delay
             setTimeout(() => {
-                rowPertama.find('textarea[name="sasaran_program[]"]').focus();
+                newRow.find('textarea[name="sasaran_program[]"]').focus();
             }, 80);
         });
 
@@ -1053,6 +1340,7 @@
         // Validasi saat submit "Ajukan Target" (Form submit biasa dengan konfirmasi SweetAlert)
         $('.form-target-sendiri').on('submit', function(e) {
             if (isTargetSubmitConfirmed) {
+                isFormDirty = false;
                 return true;
             }
 
@@ -1109,10 +1397,11 @@
 
             if (!isValid) {
                 e.preventDefault();
+                let errMsg = 'Lengkapi seluruh kolom sasaran, indikator, target, dan satuan.';
                 if (typeof Swal !== 'undefined') {
-                    Swal.fire('Data Belum Lengkap', 'Lengkapi seluruh kolom sasaran, indikator, target, dan satuan.', 'warning');
+                    Swal.fire('Data Belum Lengkap', errMsg, 'warning');
                 } else {
-                    alert('Lengkapi seluruh kolom sasaran, indikator, target, dan satuan.');
+                    alert(errMsg);
                 }
                 return false;
             }
@@ -1171,6 +1460,7 @@
                 }).then((result) => {
                     if (result.isConfirmed) {
                         isTargetSubmitConfirmed = true;
+                        isFormDirty = false;
                         const submitBtn = formEl.find('button[type="submit"]');
                         if (submitBtn.length) {
                             submitBtn.html(loadingText).prop('disabled', true);
@@ -1183,6 +1473,7 @@
                 const promptMsg = isDirektur ? 'Simpan target kinerja bulanan ini?' : 'Ajukan target kinerja bulanan ini ke atasan?';
                 if (confirm(promptMsg)) {
                     isTargetSubmitConfirmed = true;
+                    isFormDirty = false;
                     const submitBtn = formEl.find('button[type="submit"]');
                     if (submitBtn.length) {
                         submitBtn.prop('disabled', true);
@@ -1196,6 +1487,7 @@
 
         // Validasi saat submit "Persetujuan Target Staf"
         $('.form-target-staf').on('submit', function() {
+            isFormDirty = false;
             $('#btnApproveAll, #btnEditStaf').prop('disabled', true);
             let activeBtn = $(document.activeElement);
             if (activeBtn.is('#btnApproveAll')) {
@@ -1203,8 +1495,9 @@
             }
         });
 
-        // Fungsi Simpan Sementara (AJAX)
+        // Fungsi Simpan Sementara (AJAX) (TKB-08)
         $('#btnSimpanSementara').on('click', function() {
+            if (isSavingTarget) return;
             let btn = $(this);
             let originalText = btn.html();
             let form = $('.form-target-sendiri');
@@ -1227,27 +1520,45 @@
                 return;
             }
 
-            btn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menyimpan...').prop('disabled', true);
+            setTargetFormSavingState(form, true);
+            btn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menyimpan...');
             
+            form.find('input[name="action"]').val('draft');
             $.ajax({
                 url: '<?= site_url('laporan-harian/store') ?>',
                 type: 'POST',
-                data: form.serialize() + '&action=draft',
+                data: form.serialize(),
                 dataType: 'json',
+                complete: function() {
+                    form.find('input[name="action"]').val('submit');
+                    setTargetFormSavingState(form, false);
+                },
                 success: function(response) {
                     if (response.csrf_hash) {
                         updateAllCsrfTokens(response.csrf_hash);
                     }
 
                     if (response.success) {
+                        isFormDirty = false;
                         btn.html('<i class="bi bi-check-lg me-2"></i> Tersimpan Draf').removeClass('btn-outline-primary').addClass('btn-outline-success');
                         
+                        // Bersihkan kontainer deleted_ids yang sudah selesai dieksekusi di database
+                        $('#containerDeletedTargetIdsSendiri').empty();
+
+                        // TKB-08: Pasang ID baru berdasarkan data-client-id stabil
                         if (response.new_ids) {
-                            for (let index in response.new_ids) {
-                                let row = form.find('.tabel-target tbody tr').eq(index);
+                            for (let clientId in response.new_ids) {
+                                let newId = response.new_ids[clientId];
+                                let row = form.find('.tabel-target tbody tr[data-client-id="' + clientId + '"]');
                                 if (row.length) {
-                                    row.find('input[name="laporan_id[]"]').val(response.new_ids[index]);
-                                    row.find('.hapus-baris').attr('data-id', response.new_ids[index]);
+                                    row.find('input[name="laporan_id[]"]').val(newId);
+                                    row.find('.hapus-baris').attr('data-id', newId);
+                                    let badge = row.find('.status-badge');
+                                    if (badge.text().includes('Draf Baru')) {
+                                        badge.removeClass('bg-primary-subtle text-primary border-primary-subtle')
+                                             .addClass('bg-secondary-subtle text-secondary border border-secondary-subtle')
+                                             .html('<i class="bi bi-pencil me-1"></i> Draf');
+                                    }
                                 }
                             }
                         }
@@ -1263,7 +1574,7 @@
                         }
 
                         setTimeout(() => {
-                            btn.html(originalText).removeClass('btn-outline-success').addClass('btn-outline-primary').prop('disabled', false);
+                            btn.html(originalText).removeClass('btn-outline-success').addClass('btn-outline-primary');
                         }, 2000);
                     } else {
                         if (typeof Swal !== 'undefined') {
@@ -1271,7 +1582,7 @@
                         } else {
                             alert('Gagal menyimpan: ' + (response.message || 'Error tidak diketahui'));
                         }
-                        btn.html(originalText).prop('disabled', false);
+                        btn.html(originalText);
                     }
                 },
                 error: function(xhr, status, error) {
@@ -1281,7 +1592,7 @@
                     } else {
                         alert('Gagal menyimpan. Silakan coba lagi.');
                     }
-                    btn.html(originalText).prop('disabled', false);
+                    btn.html(originalText);
                 }
             });
         });
@@ -1352,7 +1663,7 @@
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     title: 'Batalkan Persetujuan?',
-                    html: `Persetujuan target bulanan staf akan dibatalkan agar dapat direvisi.`,
+                    html: 'Target bulanan dan laporan kegiatan terkait akan kembali berstatus draf. Nilai penilaian periode ini akan direset agar dapat dinilai ulang.',
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#dc3545',
@@ -1365,14 +1676,14 @@
                     }
                 });
             } else {
-                if (confirm('Batalkan persetujuan target bulanan staf ini?')) {
+                if (confirm('Target bulanan dan laporan kegiatan terkait akan kembali berstatus draf. Nilai penilaian periode ini akan direset agar dapat dinilai ulang.')) {
                     executeCancel();
                 }
             }
         });
 
         // =============================================
-        // SALIN TARGET KINERJA DARI PERIODE PILIHAN USER (POST)
+        // SALIN TARGET KINERJA DARI PERIODE PILIHAN USER (POST) (TKB-07, TKB-08, TKB-12, K-03)
         // =============================================
         $('#btnEksekusiSalinTarget').on('click', function() {
             const btn = $(this);
@@ -1380,7 +1691,9 @@
             const bulanSumber = $('#salinBulanSumber').val();
             const tahunSumber = $('#salinTahunSumber').val();
             const modeSalin = $('input[name="modeSalinTarget"]:checked').val() || 'replace';
-            const tabel = $('.form-target-sendiri .tabel-target tbody');
+            const form = $('.form-target-sendiri');
+            const tabel = form.find('.tabel-target tbody');
+            const deletedContainer = $('#containerDeletedTargetIdsSendiri');
             const csrfTokenName = '<?= csrf_token() ?>';
             const csrfHash = $('input[name="' + csrfTokenName + '"]').first().val() || $('input[name="csrf_test_name"]').first().val() || '<?= csrf_hash() ?>';
 
@@ -1433,7 +1746,7 @@
                             if (modalObj) modalObj.hide();
                         }
 
-                        // Cek apakah tabel saat ini hanya memiliki 1 baris dan semua isiannya kosong
+                        // Cek apakah tabel saat ini hanya memiliki 1 baris kosong default
                         const barisSaatIni = tabel.find('tr');
                         let isCurrentTableEmpty = false;
                         if (barisSaatIni.length === 1) {
@@ -1441,15 +1754,43 @@
                             const sasaran = (firstRow.find('textarea[name="sasaran_program[]"]').val() || '').trim();
                             const indikator = (firstRow.find('textarea[name="indikator_kinerja[]"]').val() || '').trim();
                             const targetVal = (firstRow.find('input[name="target_bulanan[]"]').val() || '').trim();
-                            if (sasaran === '' && indikator === '' && targetVal === '') {
+                            const idVal = (firstRow.find('input[name="laporan_id[]"]').val() || '').trim();
+                            if (sasaran === '' && indikator === '' && targetVal === '' && idVal === '') {
                                 isCurrentTableEmpty = true;
                             }
                         }
 
-                        // Koleksi target yang sudah ada di tabel saat ini untuk mencegah duplikasi jika mode append
+                        // Kumpulkan key target yang ada untuk deteksi duplikasi
                         const existingTargetKeys = new Set();
-                        if (modeSalin === 'append' && !isCurrentTableEmpty) {
-                            tabel.find('tr').each(function() {
+                        let keptApprovedCount = 0;
+
+                        if (modeSalin === 'replace' && !isCurrentTableEmpty) {
+                            // TKB-07 & K-03: Baris yang sudah disetujui atasan dipertahankan
+                            // Baris tersimpan yang belum disetujui ditampung ke deletedContainer
+                            barisSaatIni.each(function() {
+                                const row = $(this);
+                                const isApproved = row.attr('data-approved') === '1' || row.find('.locked-approved').length > 0;
+                                const existingId = (row.find('input[name="laporan_id[]"]').val() || '').trim();
+
+                                if (isApproved) {
+                                    keptApprovedCount++;
+                                    const s = (row.find('textarea[name="sasaran_program[]"]').val() || '').trim().toLowerCase();
+                                    const i = (row.find('textarea[name="indikator_kinerja[]"]').val() || '').trim().toLowerCase();
+                                    if (s !== '' || i !== '') {
+                                        existingTargetKeys.add(s + '|||' + i);
+                                    }
+                                } else {
+                                    if (existingId !== '') {
+                                        deletedContainer.append(`<input type="hidden" name="deleted_ids[]" value="${existingId}">`);
+                                    }
+                                    row.remove();
+                                }
+                            });
+                        } else if (isCurrentTableEmpty) {
+                            tabel.empty();
+                        } else {
+                            // Mode append: kumpulkan semua target yang sudah ada
+                            barisSaatIni.each(function() {
                                 const s = ($(this).find('textarea[name="sasaran_program[]"]').val() || '').trim().toLowerCase();
                                 const i = ($(this).find('textarea[name="indikator_kinerja[]"]').val() || '').trim().toLowerCase();
                                 if (s !== '' || i !== '') {
@@ -1458,20 +1799,24 @@
                             });
                         }
 
-                        if (modeSalin === 'replace' || isCurrentTableEmpty) {
-                            tabel.empty();
-                        }
-
                         let insertedCount = 0;
                         let skippedDuplicates = 0;
+                        let skippedQuota = 0;
+                        const maxRows = 30;
 
                         response.data.forEach(function(item) {
+                            const currentTotalRows = tabel.find('tr').length;
+                            if (currentTotalRows >= maxRows) {
+                                skippedQuota++;
+                                return;
+                            }
+
                             const rawSasaran = (item.sasaran_program || '').trim();
                             const rawIndikator = (item.indikator_kinerja || '').trim();
                             const itemKey = rawSasaran.toLowerCase() + '|||' + rawIndikator.toLowerCase();
 
-                            // Jika mode append dan item ini sudah ada di tabel, lewati untuk mencegah duplikasi
-                            if (modeSalin === 'append' && existingTargetKeys.has(itemKey)) {
+                            // Lewati duplikasi
+                            if (existingTargetKeys.has(itemKey)) {
                                 skippedDuplicates++;
                                 return;
                             }
@@ -1479,86 +1824,60 @@
                             existingTargetKeys.add(itemKey);
                             insertedCount++;
 
-                            const valTarget = (item.target_bulanan !== null && item.target_bulanan !== '') ? item.target_bulanan : '';
-                            const safeSasaran = escapeHtml(item.sasaran_program);
-                            const safeIndikator = escapeHtml(item.indikator_kinerja);
-                            const safeSatuan = escapeHtml(item.satuan);
+                            const clientId = generateClientRowId('c_row_copy');
+                            const newRow = createTargetRow({
+                                sasaran_program: item.sasaran_program,
+                                indikator_kinerja: item.indikator_kinerja,
+                                target_bulanan: item.target_bulanan,
+                                satuan: item.satuan
+                            }, clientId, false);
 
-                            const newRow = $(`
-                                <tr class="row-slide-in" style="animation-delay: ${insertedCount * 45}ms;">
-                                    <input type="hidden" name="laporan_id[]" value="">
-                                    <td class="nomor-baris text-center fw-bold text-muted">1</td>
-                                    <td>
-                                        <textarea name="sasaran_program[]" class="form-control form-control-sm" rows="2" placeholder="Sasaran Program Unit..." aria-label="Sasaran Program Unit baris ${insertedCount}">${safeSasaran}</textarea>
-                                    </td>
-                                    <td>
-                                        <textarea name="indikator_kinerja[]" class="form-control form-control-sm" rows="2" placeholder="Indikator / RHK..." aria-label="Indikator Kinerja Individu baris ${insertedCount}">${safeIndikator}</textarea>
-                                    </td>
-                                    <td>
-                                        <input type="number" step="any" min="0.0001" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary input-target-val" placeholder="Target" aria-label="Target Kuantitatif baris ${insertedCount}" value="${valTarget}">
-                                    </td>
-                                    <td>
-                                        <input type="text" name="satuan[]" class="form-control form-control-sm text-center input-satuan-val" placeholder="Satuan" list="daftarSatuanStandar" aria-label="Satuan Target baris ${insertedCount}" value="${safeSatuan}" title="${safeSatuan}">
-                                    </td>
-                                    <td class="text-center">
-                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 status-badge"><i class="bi bi-pencil me-1"></i> Draf Baru</span>
-                                    </td>
-                                    <td class="text-center">
-                                        <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris" data-id="" title="Hapus Target" aria-label="Hapus target baris ${insertedCount}" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
-                                    </td>
-                                </tr>
-                            `);
+                            newRow.css('animation-delay', (insertedCount * 45) + 'ms');
                             tabel.append(newRow);
                         });
 
                         updateRowNumbers(tabel);
+                        isFormDirty = true;
 
-                        // Notifikasi hasil salin cerdas
-                        if (typeof Swal !== 'undefined') {
-                            if (insertedCount > 0 && skippedDuplicates === 0) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Target Disalin',
-                                    text: `${insertedCount} target berhasil disalin ke tabel.`,
-                                    confirmButtonText: 'Periksa Target'
-                                });
-                            } else if (insertedCount > 0 && skippedDuplicates > 0) {
-                                Swal.fire({
-                                    icon: 'info',
-                                    title: 'Target Ditambahkan',
-                                    text: `${insertedCount} target ditambahkan (${skippedDuplicates} target dilewati karena sudah ada).`,
-                                    confirmButtonText: 'Mengerti'
-                                });
-                            } else if (insertedCount === 0 && skippedDuplicates > 0) {
-                                Swal.fire({
-                                    icon: 'warning',
-                                    title: 'Target Sudah Ada',
-                                    text: `Semua ${skippedDuplicates} target sudah ada di tabel saat ini.`,
-                                    confirmButtonText: 'Baik'
-                                });
-                            }
-                        } else {
-                            if (insertedCount > 0) {
-                                alert(`${insertedCount} target berhasil ditambahkan (${skippedDuplicates} dilewati).`);
-                            } else {
-                                alert('Semua target dari periode tersebut sudah ada di tabel.');
-                            }
+                        // Susun pesan umpan balik singkat, padat, dan jelas (Aturan 6)
+                        let notifMsg = `Berhasil menyalin ${insertedCount} target kinerja.`;
+                        if (keptApprovedCount > 0) {
+                            notifMsg += ` (${keptApprovedCount} target yang disetujui tetap dipertahankan).`;
                         }
-                    } else {
+                        if (skippedDuplicates > 0) {
+                            notifMsg += ` ${skippedDuplicates} target dilewati karena sudah ada.`;
+                        }
+                        if (skippedQuota > 0) {
+                            notifMsg += ` ${skippedQuota} target dilewati karena mencapai batas kuota 30 target.`;
+                        }
+                        notifMsg += '<br><br><small class="text-muted">Target telah disalin ke formulir. Klik <strong>Simpan Draf</strong> atau <strong>Ajukan Target</strong> untuk menyimpan.</small>';
+
                         if (typeof Swal !== 'undefined') {
-                            Swal.fire('Gagal', response.message || 'Gagal memuat target.', 'error');
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Target Disalin',
+                                html: notifMsg,
+                                confirmButtonText: 'Selesai'
+                            });
                         } else {
-                            alert('Gagal: ' + (response.message || 'Terjadi kesalahan.'));
+                            alert(`Berhasil menyalin ${insertedCount} target.`);
                         }
                     }
                 },
                 error: function(xhr, status, error) {
                     btn.html(originalText).prop('disabled', false);
                     console.error('Salin Target Error:', xhr.responseText || error);
+                    let errText = 'Gagal mengambil data target dari periode sumber.';
+                    try {
+                        const jsonErr = JSON.parse(xhr.responseText);
+                        if (jsonErr.message) errText = jsonErr.message;
+                        if (jsonErr.csrf_hash) updateAllCsrfTokens(jsonErr.csrf_hash);
+                    } catch(e) {}
+
                     if (typeof Swal !== 'undefined') {
-                        Swal.fire('Error', 'Gagal memuat target. Silakan coba lagi.', 'error');
+                        Swal.fire('Gagal', errText, 'error');
                     } else {
-                        alert('Gagal memuat target. Silakan coba lagi.');
+                        alert(errText);
                     }
                 }
             });
@@ -1569,6 +1888,107 @@
             $('.modal-radio-card').removeClass('active');
             $(this).closest('.modal-radio-card').addClass('active');
         });
+
+        // =============================================
+        // Proteksi Perubahan Belum Tersimpan (TKB-14)
+        // =============================================
+        $(document).on('submit', 'form', function() {
+            isFormDirty = false;
+        });
+
+        window.addEventListener('beforeunload', function(e) {
+            if (isFormDirty) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+
+        // Proteksi pergantian tab jika ada data belum tersimpan
+        $('#targetKinerjaTab button[data-bs-toggle="tab"]').on('show.bs.tab', function(e) {
+            if (isFormDirty) {
+                e.preventDefault();
+                const targetTab = $(this);
+                const proceedTabSwitch = function() {
+                    isFormDirty = false;
+                    targetTab.tab('show');
+                };
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Perubahan Belum Disimpan',
+                        text: 'Ada perubahan target yang belum disimpan. Yakin ingin berpindah?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Pindah',
+                        cancelButtonText: 'Batal',
+                        reverseButtons: true
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            proceedTabSwitch();
+                        }
+                    });
+                } else {
+                    if (confirm('Ada perubahan target yang belum disimpan. Yakin ingin berpindah?')) {
+                        proceedTabSwitch();
+                    }
+                }
+            }
+        });
+
+        // Proteksi pergantian filter dropdown jika ada data belum tersimpan
+        $(document).on('focus', '.filter-select', function() {
+            $(this).data('prev-val', $(this).val());
+        });
+
+        $(document).on('change', '.filter-select', function(e) {
+            if (isFormDirty) {
+                e.preventDefault();
+                const selectEl = $(this);
+                const previousVal = selectEl.data('prev-val') || selectEl.find('option[selected]').val();
+                
+                const proceedFilter = function() {
+                    isFormDirty = false;
+                    selectEl.closest('form').submit();
+                };
+
+                const cancelFilter = function() {
+                    selectEl.val(previousVal);
+                };
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Perubahan Belum Disimpan',
+                        text: 'Ada perubahan target yang belum disimpan. Yakin ingin mengganti filter?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Ganti',
+                        cancelButtonText: 'Batal',
+                        reverseButtons: true
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            proceedFilter();
+                        } else {
+                            cancelFilter();
+                        }
+                    });
+                } else {
+                    if (confirm('Ada perubahan target yang belum disimpan. Yakin ingin mengganti filter?')) {
+                        proceedFilter();
+                    } else {
+                        cancelFilter();
+                    }
+                }
+            }
+        });
+
+        // Fokus keyboard otomatis saat modal salin dibuka (TKB-14)
+        $('#modalSalinTarget').on('shown.bs.modal', function() {
+            $('#salinBulanSumber').focus();
+        });
+
+        // Inisialisasi awal kuota target pada kedua form
+        updateTargetCounter($('.form-target-sendiri'));
+        updateTargetCounter($('.form-target-staf'));
 
         function escapeHtml(text) {
             if (!text) return '';

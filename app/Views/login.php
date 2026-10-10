@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Evidence Command Center (ECC)</title>
+    <title>Masuk ke Akun - Evidence Command Center (ECC)</title>
     <link rel="shortcut icon" type="image/png" href="<?= base_url('assets/logo_pktj.png') ?>">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=1.4.' . filemtime(FCPATH . 'assets/css/style.css')) ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=1.5.' . filemtime(FCPATH . 'assets/css/style.css')) ?>">
     <style>
         body.login-page {
             background-color: #f1f5f9;
@@ -98,6 +98,11 @@
             padding: 0.35rem 0.6rem;
             border-radius: 0.375rem;
             transition: color 0.15s ease;
+            min-height: 36px;
+            min-width: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .fit-toggle-pwd:hover {
@@ -190,6 +195,12 @@
         
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .fit-spinner {
+                animation: none !important;
+            }
         }
 
         /* 5. Clean Error Alert Box */
@@ -299,7 +310,7 @@
                 </form>
 
                 <div class="text-center mt-3 pt-1">
-                    <p class="text-muted mb-0" style="font-size: 0.75rem; color: #64748b;">&copy; <?= date("Y"); ?> Evidence Command Center (ECC) &bull; PKTJ Tegal &bull; <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5" style="font-size: 0.7rem; font-variant-numeric: tabular-nums;">v 1.4</span></p>
+                    <p class="text-muted mb-0" style="font-size: 0.75rem; color: #64748b;">&copy; <?= date("Y"); ?> Evidence Command Center (ECC) &bull; PKTJ Tegal &bull; <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5" style="font-size: 0.7rem; font-variant-numeric: tabular-nums;">v 1.5</span></p>
                 </div>
             </div>
             
@@ -333,16 +344,24 @@
             });
         }
 
-        // Loading state pada tombol login (hanya jika form valid)
+        // Loading state pada tombol login (hanya jika form valid, dengan perlindungan anti-double submit)
         const loginForm = document.getElementById('loginForm');
         if (loginForm) {
+            let isSubmitting = false;
             loginForm.addEventListener('submit', function(e) {
+                if (isSubmitting) {
+                    e.preventDefault();
+                    return false;
+                }
                 if (loginForm.checkValidity()) {
+                    isSubmitting = true;
                     const btn = document.getElementById('loginBtn');
                     if (btn) {
                         btn.innerHTML = '<span class="fit-spinner"></span> <span>Memproses...</span>';
                         btn.style.opacity = '0.9';
-                        btn.disabled = true;
+                        setTimeout(function() {
+                            btn.disabled = true;
+                        }, 10);
                     }
                 }
             });

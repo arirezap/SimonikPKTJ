@@ -24,58 +24,131 @@ class DashboardKepegawaian extends BaseController
             return redirect()->to('/dashboard');
         }
 
-        helper(['avatar']);
+        helper(['avatar', 'kinerja']);
 
         $userModel = new User();
-        $laporanModel = new LaporanHarian();
-        $logTambahanModel = new LogTugasTambahan();
 
         $bulanTerpilih = $this->request->getGet('bulan') ?? (string)date('n');
         $tahunTerpilih = $this->request->getGet('tahun') ?? (string)date('Y');
         $unitFilter    = $this->request->getGet('unit') ?? '';
         $roleFilter    = $this->request->getGet('role') ?? '';
 
-        $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-        $namaBulan = ($bulanTerpilih === 'all') ? 'Sepanjang Tahun' : ($bulanIndo[(int)$bulanTerpilih - 1] ?? '');
-
-        // Ambil daftar unit untuk filter
+        // Ambil daftar unit untuk dropdown filter
         $units = $userModel->select('unit')->distinct()->where('unit !=', null)->where('unit !=', '')->orderBy('unit', 'ASC')->findAll();
         $daftarUnit = array_column($units, 'unit');
 
-        // Ambil semua user (kecuali admin) dengan selective columns untuk efisiensi memori
-        $builder = $userModel->select('id, nama_lengkap, nip, unit, jabatan, role, atasan_id, foto')
-                             ->where('role !=', 'admin');
-        if (!empty($unitFilter)) {
-            $builder = $builder->where('unit', $unitFilter);
+        $dataset = $this->preparePegawaiDataset($bulanTerpilih, $tahunTerpilih, $unitFilter, $roleFilter, false);
+
+        $data = array_merge($dataset, [
+            'title'       => 'Rekap Kinerja Kepegawaian',
+            'daftar_unit' => $daftarUnit,
+        ]);
+
+        return view('kepegawaian/rekap_kinerja', $data);
+    }
+
+    /**
+     * Mempersiapkan dataset rekap kinerja pegawai secara terpusat untuk Dashboard, Export Excel, dan Export PDF.
+     * Mengakomodasi filter unit, filter role (termasuk multi-role pivot user_roles), status pegawai aktif/mutasi/pensiun/nonaktif,
+     * serta selective lookup atasan langsung terfokus.
+     */
+    private function preparePegawaiDataset(string $bulanTerpilih, string $tahunTerpilih, string $unitFilter = '', string $roleFilter = '', bool $includeRincianDetail = false): array
+    {
+        helper(['avatar', 'kinerja']);
+
+        $userModel = new User();
+        $db = \Config\Database::connect();
+
+        $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        $namaBulan = ($bulanTerpilih === 'all') ? 'Sepanjang Tahun' : ($bulanIndo[(int)$bulanTerpilih - 1] ?? '');
+
+        // 1. Ambil semua pegawai (kecuali admin) dengan selective columns untuk efisiensi memori
+        $builder = $userModel->select('id, nama_lengkap, nip, unit, jabatan, role, status_pegawai, tmt_selesai, atasan_id, foto');
+
+        // MP-01: Kecualikan role admin (baik primary role maupun pivot user_roles)
+        $adminPivotIds = array_column(
+            $db->table('user_roles')->select('user_id')->where('role_name', 'admin')->get()->getResultArray(),
+            'user_id'
+        );
+        $builder->where('role !=', 'admin');
+        if (!empty($adminPivotIds)) {
+            $builder->whereNotIn('id', $adminPivotIds);
         }
+
+        // MP-02: Filter periode mencakup status aktif serta mutasi_keluar, pensiun, dan nonaktif dengan TMT selesai
+        if ($bulanTerpilih !== 'all' && !empty($bulanTerpilih)) {
+            $periodMonth = sprintf('%04d-%02d-01', (int)$tahunTerpilih, (int)$bulanTerpilih);
+            $builder->groupStart()
+                    ->where('status_pegawai', 'aktif')
+                    ->orGroupStart()
+                        ->whereIn('status_pegawai', ['mutasi_keluar', 'pensiun', 'nonaktif'])
+                        ->where('tmt_selesai IS NOT NULL')
+                        ->where('tmt_selesai >=', $periodMonth)
+                    ->groupEnd()
+                    ->groupEnd();
+        } else {
+            $builder->groupStart()
+                    ->where('status_pegawai', 'aktif')
+                    ->orGroupStart()
+                        ->whereIn('status_pegawai', ['mutasi_keluar', 'pensiun', 'nonaktif'])
+                        ->where('tmt_selesai IS NOT NULL')
+                        ->where('YEAR(tmt_selesai) >=', (int)$tahunTerpilih)
+                    ->groupEnd()
+                    ->groupEnd();
+        }
+
+        if (!empty($unitFilter)) {
+            $builder->where('unit', $unitFilter);
+        }
+
+        // MP-01: Filter Kategori Jabatan dengan dukungan Multi-Role Pivot (user_roles)
         if (!empty($roleFilter)) {
             if ($roleFilter === 'pimpinan') {
-                $builder = $builder->whereIn('role', ['direktur', 'wadir']);
+                $targetRoles = ['direktur', 'wadir'];
             } elseif ($roleFilter === 'manajemen' || $roleFilter === 'struktural') {
-                $builder = $builder->whereIn('role', ['kabag', 'kabag_aak', 'kabag_kuk', 'manajemen', 'katim', 'kapus', 'kanit']);
+                $targetRoles = ['kabag', 'kabag_aak', 'kabag_kuk', 'manajemen', 'katim', 'kapus', 'kanit', 'kapokja'];
             } elseif ($roleFilter === 'kepegawaian') {
-                $builder = $builder->where('role', 'kepegawaian');
+                $targetRoles = ['kepegawaian'];
             } elseif ($roleFilter === 'tugas_belajar') {
-                $builder = $builder->where('role', 'tugas_belajar');
+                $targetRoles = ['tugas_belajar'];
             } elseif ($roleFilter === 'user' || $roleFilter === 'staf') {
-                $builder = $builder->where('role', 'user');
+                $targetRoles = ['user'];
             } else {
-                $builder = $builder->where('role', $roleFilter);
+                $targetRoles = [$roleFilter];
             }
+
+            $matchedPivotIds = array_column(
+                $db->table('user_roles')->select('user_id')->whereIn('role_name', $targetRoles)->get()->getResultArray(),
+                'user_id'
+            );
+
+            $builder->groupStart()
+                    ->whereIn('role', $targetRoles);
+            if (!empty($matchedPivotIds)) {
+                $builder->orWhereIn('id', $matchedPivotIds);
+            }
+            $builder->groupEnd();
         }
+
         $semuaPegawai = $builder->findAll();
         $semuaPegawai = $this->sortPegawaiByHierarchy($semuaPegawai);
 
-        // Mapping atasan untuk lookup cepat
-        $allUsers = $userModel->select('id, nama_lengkap, nip, unit, jabatan')->findAll();
+        // MP-03: Mapping atasan untuk lookup cepat (Hanya fetch atasan yang relevan)
+        $atasanIds = array_unique(array_filter(array_column($semuaPegawai, 'atasan_id')));
         $userMap = [];
-        foreach ($allUsers as $u) {
-            $userMap[$u['id']] = $u;
+        if (!empty($atasanIds)) {
+            $atasanList = $userModel->select('id, nama_lengkap, nip, unit, jabatan')
+                                    ->whereIn('id', $atasanIds)
+                                    ->findAll();
+            foreach ($atasanList as $u) {
+                $userMap[$u['id']] = $u;
+            }
         }
 
         // Ambil data rekap secara bulk (Ultra Fast 2-Query Batch Fetching)
-        $bulkData = $this->getBulkRekapKinerja($semuaPegawai, $userMap, $bulanTerpilih, $tahunTerpilih, $bulanIndo, $namaBulan, false);
+        $bulkData = $this->getBulkRekapKinerja($semuaPegawai, $userMap, $bulanTerpilih, $tahunTerpilih, $bulanIndo, $namaBulan, $includeRincianDetail);
         $rekapKinerja = $bulkData['rekapKinerja'];
+        $rincianDetail = $bulkData['rincianDetail'] ?? [];
 
         // Hitung statistik instansi
         $sudahDinilai = 0;
@@ -93,46 +166,52 @@ class DashboardKepegawaian extends BaseController
         $rataRataDinilai = $sudahDinilai > 0 ? round($sumRataInstansi / $sudahDinilai, 2) : 0;
         $rataRataKeseluruhan = $totalPegawai > 0 ? round($sumRataInstansi / $totalPegawai, 2) : 0;
 
-        $data = [
-            'title'                 => 'Rekap Kinerja Kepegawaian',
-            'rekap_kinerja'         => $rekapKinerja,
+        return [
             'bulan_terpilih'        => $bulanTerpilih,
             'tahun_terpilih'        => $tahunTerpilih,
             'nama_bulan'            => $namaBulan,
             'bulan_indo'            => $bulanIndo,
-            'daftar_unit'           => $daftarUnit,
             'unit_filter'           => $unitFilter,
             'role_filter'           => $roleFilter,
+            'semua_pegawai'         => $semuaPegawai,
+            'user_map'              => $userMap,
+            'rekap_kinerja'         => $rekapKinerja,
+            'rincian_detail'        => $rincianDetail,
+            'total_pegawai'         => $totalPegawai,
             'sudah_dinilai'         => $sudahDinilai,
             'belum_dinilai'         => $belumDinilai,
             'rata_rata_dinilai'     => $rataRataDinilai,
             'rata_rata_keseluruhan' => $rataRataKeseluruhan,
             'rata_rata_instansi'    => $rataRataDinilai // Backward compatibility
         ];
-
-        return view('kepegawaian/rekap_kinerja', $data);
     }
 
     /**
-     * Helper untuk menentukan predikat kinerja standar ECC
+     * Helper untuk menentukan predikat kinerja standar ECC (berdasarkan helper kinerja resmi)
      */
     private function getPredikatKinerja($dinilaiCount, $score)
     {
-        if ($dinilaiCount == 0 && (float)$score == 0) {
-            return ['text' => 'Belum Dinilai', 'fill' => 'F1F5F9', 'color' => '475569'];
-        }
-        $score = (float)$score;
-        if ($score > 100) {
-            return ['text' => 'Sangat Baik', 'fill' => 'D1FAE5', 'color' => '065F46'];
-        } elseif ($score > 90) {
-            return ['text' => 'Baik', 'fill' => 'DBEAFE', 'color' => '1E40AF'];
-        } elseif ($score > 75) {
-            return ['text' => 'Butuh Perbaikan', 'fill' => 'E0F2FE', 'color' => '0369A1'];
-        } elseif ($score > 25) {
-            return ['text' => 'Kurang', 'fill' => 'FEF3C7', 'color' => '92400E'];
-        } else {
-            return ['text' => 'Sangat Kurang', 'fill' => 'FEE2E2', 'color' => '991B1B'];
-        }
+        $isTerbit = ((int)$dinilaiCount > 0);
+        $res = hitung_predikat_kinerja($isTerbit ? (float)$score : null, $isTerbit);
+
+        $excelStyles = [
+            'Sangat Baik'     => ['fill' => 'D1FAE5', 'color' => '065F46'],
+            'Baik'            => ['fill' => 'DBEAFE', 'color' => '1E40AF'],
+            'Butuh Perbaikan' => ['fill' => 'E0F2FE', 'color' => '0369A1'],
+            'Kurang'          => ['fill' => 'FEF3C7', 'color' => '92400E'],
+            'Sangat Kurang'   => ['fill' => 'FEE2E2', 'color' => '991B1B'],
+            'Belum Dinilai'   => ['fill' => 'F1F5F9', 'color' => '475569'],
+        ];
+
+        $style = $excelStyles[$res['label']] ?? ['fill' => 'F1F5F9', 'color' => '475569'];
+
+        return [
+            'text'        => $res['label'],
+            'fill'        => $style['fill'],
+            'color'       => $style['color'],
+            'badge'       => $res['badge'],
+            'badge_class' => $res['badge_class'],
+        ];
     }
 
     /**
@@ -524,67 +603,22 @@ class DashboardKepegawaian extends BaseController
             return !empty($referer) ? redirect()->back() : redirect()->to(site_url('kepegawaian/monitoring-penilaian'));
         }
 
-        $userModel = new User();
-
         $bulanTerpilih = $this->request->getGet('bulan') ?? (string)date('n');
         $tahunTerpilih = $this->request->getGet('tahun') ?? (string)date('Y');
         $unitFilter    = $this->request->getGet('unit') ?? '';
         $roleFilter    = $this->request->getGet('role') ?? '';
 
-        $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-        $namaBulan = ($bulanTerpilih === 'all') ? 'Sepanjang Tahun' : ($bulanIndo[(int)$bulanTerpilih - 1] ?? '');
+        $dataset = $this->preparePegawaiDataset($bulanTerpilih, $tahunTerpilih, $unitFilter, $roleFilter, true);
 
-        // Mapping atasan
-        $allUsers = $userModel->select('id, nama_lengkap, nip, unit, jabatan')->findAll();
-        $userMap = [];
-        foreach ($allUsers as $u) {
-            $userMap[$u['id']] = $u;
-        }
-
-        // Ambil semua user (kecuali admin) dengan selective columns
-        $builder = $userModel->select('id, nama_lengkap, nip, unit, jabatan, role, atasan_id, foto')
-                             ->where('role !=', 'admin');
-        if (!empty($unitFilter)) {
-            $builder = $builder->where('unit', $unitFilter);
-        }
-        if (!empty($roleFilter)) {
-            if ($roleFilter === 'pimpinan') {
-                $builder = $builder->whereIn('role', ['direktur', 'wadir']);
-            } elseif ($roleFilter === 'manajemen' || $roleFilter === 'struktural') {
-                $builder = $builder->whereIn('role', ['kabag', 'kabag_aak', 'kabag_kuk', 'manajemen', 'katim', 'kapus', 'kanit']);
-            } elseif ($roleFilter === 'kepegawaian') {
-                $builder = $builder->where('role', 'kepegawaian');
-            } elseif ($roleFilter === 'tugas_belajar') {
-                $builder = $builder->where('role', 'tugas_belajar');
-            } elseif ($roleFilter === 'user' || $roleFilter === 'staf') {
-                $builder = $builder->where('role', 'user');
-            } else {
-                $builder = $builder->where('role', $roleFilter);
-            }
-        }
-        $semuaPegawai = $builder->findAll();
-        $semuaPegawai = $this->sortPegawaiByHierarchy($semuaPegawai);
-
-        // Ambil data rekap secara bulk (Super Fast Batch Fetching)
-        $bulkData = $this->getBulkRekapKinerja($semuaPegawai, $userMap, $bulanTerpilih, $tahunTerpilih, $bulanIndo, $namaBulan, true);
-        $rekapKinerja = $bulkData['rekapKinerja'];
-        $rincianDetail = $bulkData['rincianDetail'];
-
-        // Hitung statistik instansi
-        $sudahDinilai = 0;
-        $belumDinilai = 0;
-        $sumRataInstansi = 0;
-        foreach ($rekapKinerja as $r) {
-            if ($r['rhk_dinilai'] > 0) {
-                $sudahDinilai++;
-                $sumRataInstansi += $r['rata_rata'];
-            } else {
-                $belumDinilai++;
-            }
-        }
-        $totalPegawai = count($rekapKinerja);
-        $rataRataDinilai = $sudahDinilai > 0 ? round($sumRataInstansi / $sudahDinilai, 2) : 0;
-        $rataRataKeseluruhan = $totalPegawai > 0 ? round($sumRataInstansi / $totalPegawai, 2) : 0;
+        $namaBulan           = $dataset['nama_bulan'];
+        $bulanIndo           = $dataset['bulan_indo'];
+        $rekapKinerja        = $dataset['rekap_kinerja'];
+        $rincianDetail       = $dataset['rincian_detail'];
+        $totalPegawai        = $dataset['total_pegawai'];
+        $sudahDinilai        = $dataset['sudah_dinilai'];
+        $belumDinilai        = $dataset['belum_dinilai'];
+        $rataRataDinilai     = $dataset['rata_rata_dinilai'];
+        $rataRataKeseluruhan = $dataset['rata_rata_keseluruhan'];
 
         // INSIALISASI SPREADSHEET
         $spreadsheet = new Spreadsheet();
@@ -964,82 +998,19 @@ class DashboardKepegawaian extends BaseController
             return !empty($referer) ? redirect()->back() : redirect()->to(site_url('kepegawaian/monitoring-penilaian'));
         }
 
-        $userModel = new User();
-
-        $bulanTerpilih = $this->request->getGet('bulan') ?? date('n');
-        $tahunTerpilih = $this->request->getGet('tahun') ?? date('Y');
+        $bulanTerpilih = $this->request->getGet('bulan') ?? (string)date('n');
+        $tahunTerpilih = $this->request->getGet('tahun') ?? (string)date('Y');
         $unitFilter    = $this->request->getGet('unit') ?? '';
         $roleFilter    = $this->request->getGet('role') ?? '';
 
-        $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-        $namaBulan = ($bulanTerpilih === 'all') ? 'Sepanjang Tahun' : ($bulanIndo[(int)$bulanTerpilih - 1] ?? '');
+        $dataset = $this->preparePegawaiDataset($bulanTerpilih, $tahunTerpilih, $unitFilter, $roleFilter, false);
 
-        // Mapping atasan
-        $allUsers = $userModel->select('id, nama_lengkap, nip, unit, jabatan')->findAll();
-        $userMap = [];
-        foreach ($allUsers as $u) {
-            $userMap[$u['id']] = $u;
-        }
+        $namaBulan    = $dataset['nama_bulan'];
+        $totalPegawai = $dataset['total_pegawai'];
 
-        // Ambil semua user (kecuali admin) dengan selective columns
-        $builder = $userModel->select('id, nama_lengkap, nip, unit, jabatan, role, atasan_id, foto')
-                             ->where('role !=', 'admin');
-        if (!empty($unitFilter)) {
-            $builder = $builder->where('unit', $unitFilter);
-        }
-        if (!empty($roleFilter)) {
-            if ($roleFilter === 'pimpinan') {
-                $builder = $builder->whereIn('role', ['direktur', 'wadir']);
-            } elseif ($roleFilter === 'manajemen' || $roleFilter === 'struktural') {
-                $builder = $builder->whereIn('role', ['kabag', 'kabag_aak', 'kabag_kuk', 'manajemen', 'katim', 'kapus', 'kanit']);
-            } elseif ($roleFilter === 'kepegawaian') {
-                $builder = $builder->where('role', 'kepegawaian');
-            } elseif ($roleFilter === 'tugas_belajar') {
-                $builder = $builder->where('role', 'tugas_belajar');
-            } elseif ($roleFilter === 'user' || $roleFilter === 'staf') {
-                $builder = $builder->where('role', 'user');
-            } else {
-                $builder = $builder->where('role', $roleFilter);
-            }
-        }
-        $semuaPegawai = $builder->findAll();
-        $semuaPegawai = $this->sortPegawaiByHierarchy($semuaPegawai);
-
-        // Bulk Fetch Data Kinerja (Super Fast Batch Query)
-        $bulkData = $this->getBulkRekapKinerja($semuaPegawai, $userMap, $bulanTerpilih, $tahunTerpilih, $bulanIndo, $namaBulan, false);
-        $rekapKinerja = $bulkData['rekapKinerja'];
-
-        // Hitung statistik instansi
-        $sudahDinilai = 0;
-        $belumDinilai = 0;
-        $sumRataInstansi = 0;
-        foreach ($rekapKinerja as $r) {
-            if ($r['rhk_dinilai'] > 0) {
-                $sudahDinilai++;
-                $sumRataInstansi += $r['rata_rata'];
-            } else {
-                $belumDinilai++;
-            }
-        }
-        $totalPegawai = count($rekapKinerja);
-        $rataRataDinilai = $sudahDinilai > 0 ? round($sumRataInstansi / $sudahDinilai, 2) : 0;
-        $rataRataKeseluruhan = $totalPegawai > 0 ? round($sumRataInstansi / $totalPegawai, 2) : 0;
-
-        $data = [
-            'title'                 => "Laporan Rekapitulasi Kinerja {$namaBulan} {$tahunTerpilih}",
-            'rekap_kinerja'         => $rekapKinerja,
-            'bulan_terpilih'        => $bulanTerpilih,
-            'tahun_terpilih'        => $tahunTerpilih,
-            'nama_bulan'            => $namaBulan,
-            'bulan_indo'            => $bulanIndo,
-            'unit_filter'           => $unitFilter,
-            'role_filter'           => $roleFilter,
-            'sudah_dinilai'         => $sudahDinilai,
-            'belum_dinilai'         => $belumDinilai,
-            'rata_rata_dinilai'     => $rataRataDinilai,
-            'rata_rata_keseluruhan' => $rataRataKeseluruhan,
-            'rata_rata_instansi'    => $rataRataDinilai
-        ];
+        $data = array_merge($dataset, [
+            'title' => "Laporan Rekapitulasi Kinerja {$namaBulan} {$tahunTerpilih}",
+        ]);
 
         $html = view('kepegawaian/rekap_kinerja_pdf', $data);
 
@@ -1187,26 +1158,10 @@ class DashboardKepegawaian extends BaseController
         $totalKomponen = count($rekapRhk) + (!empty($tugasTambahan) ? 1 : 0);
         $rataRata = $jmlDinilai > 0 ? round($totalNilai / $jmlDinilai, 2) : 0;
 
-        $predikatLabel = 'Belum Dinilai';
-        $badgeClass = 'bg-secondary';
-        if ($jmlDinilai > 0) {
-            if ($rataRata > 100) {
-                $predikatLabel = 'Sangat Baik';
-                $badgeClass = 'bg-success';
-            } elseif ($rataRata > 90) {
-                $predikatLabel = 'Baik';
-                $badgeClass = 'bg-primary';
-            } elseif ($rataRata > 75) {
-                $predikatLabel = 'Butuh Perbaikan';
-                $badgeClass = 'bg-info text-dark';
-            } elseif ($rataRata > 25) {
-                $predikatLabel = 'Kurang';
-                $badgeClass = 'bg-warning text-dark';
-            } else {
-                $predikatLabel = 'Sangat Kurang';
-                $badgeClass = 'bg-danger';
-            }
-        }
+        helper(['kinerja']);
+        $predikatData = hitung_predikat_kinerja($jmlDinilai > 0 ? $rataRata : null, $jmlDinilai > 0);
+        $predikatLabel = $predikatData['label'];
+        $badgeClass    = $predikatData['badge_class'];
 
         return $this->response->setJSON([
             'status' => 'success',

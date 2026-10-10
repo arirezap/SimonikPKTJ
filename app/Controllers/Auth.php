@@ -38,13 +38,14 @@ class Auth extends BaseController
         // --- PROTEKSI BRUTE FORCE ATTACK (THROTTLING) ---
         $throttler = \Config\Services::throttler();
         $ipAddress = $this->request->getIPAddress();
-        if ($throttler->check(md5($ipAddress . '_login'), 10, MINUTE) === false) {
+        $throttleKey = md5($ipAddress . '_' . strtolower($username) . '_login');
+        if ($throttler->check($throttleKey, 10, MINUTE) === false) {
             log_audit('RATE_LIMIT_LOGIN', 'auth', null, null, [
                 'username' => $username,
                 'ip'       => $ipAddress,
                 'reason'   => 'brute_force_throttled'
             ]);
-            $session->setFlashdata('error', 'Terlalu banyak percobaan login yang gagal dari perangkat Anda. Silakan tunggu 1 menit.');
+            $session->setFlashdata('error', 'Terlalu banyak percobaan login yang gagal untuk akun ini. Silakan tunggu 1 menit.');
             return redirect()->to(site_url('login'))->withInput();
         }
 
@@ -68,6 +69,17 @@ class Auth extends BaseController
             }
 
             if ($verify_pass) {
+                // PROTEKSI STATUS PEGAWAI (Khusus status 'nonaktif' diblokir, mutasi_keluar & pensiun tetap diizinkan menyelesaikan tanggung jawab)
+                if (($data['status_pegawai'] ?? 'aktif') === 'nonaktif') {
+                    log_audit('FAILED_LOGIN_DISABLED_ACCOUNT', 'users', $data['id'], null, [
+                        'username'       => $username,
+                        'reason'         => 'account_disabled',
+                        'status_pegawai' => 'nonaktif'
+                    ]);
+                    $session->setFlashdata('error', 'Akun Anda sedang dinonaktifkan. Silakan hubungi bagian Kepegawaian.');
+                    return redirect()->to(site_url('login'))->withInput();
+                }
+
                 // AUTO PASSWORD HASH UPGRADE (Keamanan: Otomatis perbarui hash lemah ke BCRYPT)
                 if ($isLegacyPass || password_needs_rehash($pass, PASSWORD_DEFAULT)) {
                     $model->update($data['id'], [
@@ -93,7 +105,7 @@ class Auth extends BaseController
                 // Regenerasi Session ID untuk Mencegah Serangan Session Fixation (dengan penghancuran sesi lama)
                 $session->regenerate(true);
 
-                // Simpan Session Lengkap (termasuk fingerprint peramban untuk proteksi anti session hijacking)
+                // Simpan Session Lengkap (termasuk unit_id dan fingerprint peramban untuk proteksi anti session hijacking)
                 $userAgent = (string) $this->request->getUserAgent();
                 $fingerprint = hash('sha256', $userAgent);
 
@@ -106,20 +118,23 @@ class Auth extends BaseController
                     'role'                   => $role_aplikasi,   // Role primer (backward compatible)
                     'all_roles'              => $allRoles,        // Semua role (multi-role)
                     'unit'                   => $data['unit'] ?? '-', 
+                    'unit_id'                => $data['unit_id'] ?? null,
                     'jabatan'                => $data['jabatan'] ?? '-',
                     'pangkat'                => $data['pangkat'] ?? '-',
+                    'status_pegawai'         => $data['status_pegawai'] ?? 'aktif',
                     'foto'                   => $data['foto'] ?? null,
                     'user_agent_fingerprint' => $fingerprint,
                     'isLoggedIn'             => TRUE
                 ];
                 $session->set($ses_data);
                 
-                // --- FITUR REMEMBER ME (HttpOnly Flag for Security) ---
+                // --- FITUR REMEMBER ME (HMAC-SHA256 Token & HttpOnly Flag for Security) ---
                 helper('cookie');
                 $remember = $this->request->getVar('remember');
                 if ($remember) {
-                    // Buat token: id::md5(id+username+password)
-                    $tokenString = $data['id'] . '::' . md5($data['id'] . $data['username'] . $data['password']);
+                    // Buat token aman: id::hmac_sha256(id::username::password)
+                    $tokenHash = hash_hmac('sha256', $data['id'] . '::' . $data['username'] . '::' . $data['password'], (string)config('App')->appTimezone ?: 'ecc_auth_token');
+                    $tokenString = $data['id'] . '::' . $tokenHash;
                     $token = base64_encode($tokenString);
                     // Set cookie untuk 30 hari (2592000 detik) dengan HttpOnly=true
                     set_cookie('remember_me', $token, 2592000, '', '/', '', false, true);
@@ -131,7 +146,11 @@ class Auth extends BaseController
                 // -------------------------
 
                 // Catat Log Audit Login
-                log_audit('LOGIN', 'users', $data['id']);
+                log_audit('LOGIN', 'users', $data['id'], null, [
+                    'username'   => $data['username'],
+                    'ip_address' => $ipAddress,
+                    'user_agent' => (string) $this->request->getUserAgent()
+                ]);
 
                 return redirect()->to(site_url('dashboard'));
                 

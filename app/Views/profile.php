@@ -475,17 +475,27 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label text-muted small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.3px;">
-                                    Atasan Langsung <span class="text-secondary fw-normal text-lowercase">(opsional)</span>
+                                    Atasan Langsung <?= empty($is_direktur) ? '<span class="text-secondary fw-normal text-lowercase">(opsional)</span>' : '' ?>
                                 </label>
-                                <?php $selectedAtasan = old('atasan_id', $user['atasan_id']); ?>
-                                <select name="atasan_id" id="selectAtasan" class="form-select form-select-sm select2">
-                                    <option value="">-- Pilih Atasan Langsung --</option>
-                                    <?php foreach ($potential_bosses as $boss): ?>
-                                        <option value="<?= $boss['id'] ?>" <?= ($selectedAtasan == $boss['id']) ? 'selected' : '' ?>>
-                                            <?= esc($boss['nama_lengkap']) ?> - <?= esc(!empty(trim((string)($boss['jabatan'] ?? ''))) ? $boss['jabatan'] : 'Pimpinan / Pejabat') ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
+                                <?php if (!empty($is_direktur) || (strtolower(trim($user['role'] ?? '')) === 'direktur')): ?>
+                                    <div class="p-2.5 rounded-3 bg-light border text-muted small d-flex align-items-center gap-2" style="min-height: 38px;">
+                                        <i class="bi bi-award-fill text-warning fs-5 flex-shrink-0"></i>
+                                        <div class="lh-sm">
+                                            <strong class="d-block text-dark" style="font-size: 0.78rem;">Pimpinan Tertinggi Institusi</strong>
+                                            <span style="font-size: 0.71rem;">Akun Direktur bertindak sebagai pimpinan tertinggi tanpa atasan langsung.</span>
+                                        </div>
+                                    </div>
+                                <?php else: ?>
+                                    <?php $selectedAtasan = old('atasan_id', $user['atasan_id']); ?>
+                                    <select name="atasan_id" id="selectAtasan" class="form-select form-select-sm select2">
+                                        <option value="">-- Pilih Atasan Langsung --</option>
+                                        <?php foreach ($potential_bosses as $boss): ?>
+                                            <option value="<?= $boss['id'] ?>" <?= ($selectedAtasan == $boss['id']) ? 'selected' : '' ?>>
+                                                <?= esc($boss['nama_lengkap']) ?> - <?= esc(!empty(trim((string)($boss['jabatan'] ?? ''))) ? $boss['jabatan'] : 'Pimpinan / Pejabat') ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                <?php endif; ?>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label text-muted small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.3px;">

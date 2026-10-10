@@ -14,6 +14,12 @@ trait KinerjaBatchTrait
      */
     protected function loadBatchKinerjaData($tahun, ?array $userIds = null)
     {
+        // Jika $userIds diberikan array kosong ([]), berarti tidak ada pengguna yang cocok (misal staf kosong)
+        // Langsung kembalikan hasil kosong tanpa mengeksekusi query database
+        if ($userIds !== null && empty($userIds)) {
+            return [[], []];
+        }
+
         $db = \Config\Database::connect();
         
         $targetBuilder = $db->table('target_kinerja_bulanan')
@@ -21,7 +27,7 @@ trait KinerjaBatchTrait
             ->where('tahun', (int)$tahun)
             ->where('status', 'terkirim');
 
-        if (!empty($userIds)) {
+        if ($userIds !== null) {
             $targetBuilder->whereIn('user_id', array_map('intval', $userIds));
         }
 
@@ -34,12 +40,14 @@ trait KinerjaBatchTrait
             $batchTargets[$uid][$b][] = $t;
         }
 
+        $tahunInt = (int)$tahun;
         $tambahanBuilder = $db->table('log_tugas_tambahan')
             ->select('id, user_id, MONTH(tanggal_kegiatan) as bulan, nilai_capaian, status_penilaian')
-            ->where('YEAR(tanggal_kegiatan)', (int)$tahun)
+            ->where('tanggal_kegiatan >=', "{$tahunInt}-01-01")
+            ->where('tanggal_kegiatan <=', "{$tahunInt}-12-31")
             ->where('status', 'terkirim');
 
-        if (!empty($userIds)) {
+        if ($userIds !== null) {
             $tambahanBuilder->whereIn('user_id', array_map('intval', $userIds));
         }
 
@@ -110,12 +118,14 @@ trait KinerjaBatchTrait
                     }
                 }
 
-                if ($targetsPerBulan[$m] > 0) {
-                    $rataRataPerBulan[$m] = $dinilaiPerBulan[$m] > 0 ? round($nilaiPerBulan[$m] / $dinilaiPerBulan[$m], 2) : 0;
+                if ($targetsPerBulan[$m] > 0 && $dinilaiPerBulan[$m] > 0) {
+                    $rataRataPerBulan[$m] = round($nilaiPerBulan[$m] / $dinilaiPerBulan[$m], 2);
+                } else {
+                    $rataRataPerBulan[$m] = null;
                 }
             }
 
-            $validMonths = array_filter($rataRataPerBulan, fn($v) => $v !== null && $v > 0);
+            $validMonths = array_filter($rataRataPerBulan, fn($v) => $v !== null);
             $rataRata = count($validMonths) > 0 ? round(array_sum($validMonths) / count($validMonths), 2) : 0;
             $totalLaporan = array_sum($targetsPerBulan);
             $totalPokok = array_sum($pokokPerBulan);

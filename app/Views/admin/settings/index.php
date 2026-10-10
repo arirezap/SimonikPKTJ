@@ -9,6 +9,13 @@
             font-size: 16px !important;
         }
     }
+    @media (max-width: 575.98px) {
+        .input-group-sm > .form-control,
+        .input-group-sm > .input-group-text,
+        .input-group-sm > .form-select {
+            min-height: 40px;
+        }
+    }
     .setting-card {
         transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         border: 1px solid rgba(226, 232, 240, 0.8) !important;
@@ -105,13 +112,13 @@
                                     </span>
                                 </div>
                                 <p class="text-muted small mb-0 leading-relaxed">
-                                    Ketika saklar ini diaktifkan, seluruh pengguna non-admin (Staf, Atasan, Direktur, Kepegawaian, Tamu) akan dialihkan ke halaman pemberitahuan pemeliharaan dengan hitung mundur otomatis 30 detik tanpa perlu menyunting file cPanel.
+                                    Ketika saklar ini aktif, seluruh pengguna selain Administrator dialihkan ke halaman pemeliharaan sementara.
                                 </p>
                             </div>
                             <div class="col-12 col-md-5">
                                 <div class="p-3 bg-light rounded-3 border border-light-subtle">
                                     <label class="form-label fw-bold text-dark small mb-1.5 d-flex align-items-center justify-content-between">
-                                        <span><i class="bi bi-chat-left-quote text-primary me-1"></i> Pesan untuk Pengguna</span>
+                                        <span>Pesan untuk Pengguna</span>
                                         <span class="text-muted" style="font-size: 0.7rem;">Opsional</span>
                                     </label>
                                     <textarea name="settings[maintenance_message]" rows="2" class="form-control form-control-sm" placeholder="Sistem sedang dalam pembaruan..." style="font-size: 0.82rem; resize: none;"><?= esc($maintenanceMessage) ?></textarea>
@@ -127,7 +134,7 @@
                 <div class="card border-0 shadow-sm h-100 rounded-4 overflow-hidden setting-card" id="cardTarget">
                     <div class="card-header bg-light-subtle py-3 px-3 px-md-4 border-bottom d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center gap-2.5">
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 28px; height: 28px; font-size: 0.85rem;">1</span>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.85rem;">1</span>
                             <div>
                                 <h6 class="fw-bold text-dark mb-0">Target Kinerja Bulanan</h6>
                                 <span class="text-muted" style="font-size: 0.72rem;">Batas waktu penyusunan RHK</span>
@@ -155,9 +162,7 @@
                         <div class="p-3 bg-light rounded-3 border border-light-subtle">
                             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                 <div>
-                                    <label class="form-label fw-bold text-dark small mb-0 d-flex align-items-center gap-1.5">
-                                        <i class="bi bi-calendar-event text-primary"></i> Tanggal Maksimal
-                                    </label>
+                                    <label class="form-label fw-bold text-dark small mb-0">Tanggal Maksimal</label>
                                     <span class="text-muted d-block" style="font-size: 0.72rem;">Setiap bulan berjalan</span>
                                 </div>
                                 <div class="d-flex align-items-center gap-2">
@@ -181,7 +186,7 @@
                 <div class="card border-0 shadow-sm h-100 rounded-4 overflow-hidden setting-card" id="cardMonthlyLog">
                     <div class="card-header bg-light-subtle py-3 px-3 px-md-4 border-bottom d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center gap-2.5">
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 28px; height: 28px; font-size: 0.85rem;">2</span>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.85rem;">2</span>
                             <div>
                                 <h6 class="fw-bold text-dark mb-0">Kunci Laporan Bulan Lalu</h6>
                                 <span class="text-muted" style="font-size: 0.72rem;">Batas pengisian akhir bulan (Cutoff)</span>
@@ -209,9 +214,7 @@
                         <div class="p-3 bg-light rounded-3 border border-light-subtle">
                             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                 <div>
-                                    <label class="form-label fw-bold text-dark small mb-0 d-flex align-items-center gap-1.5">
-                                        <i class="bi bi-clock-history text-primary"></i> Toleransi Tambahan
-                                    </label>
+                                    <label class="form-label fw-bold text-dark small mb-0">Toleransi Tambahan</label>
                                     <span class="text-muted d-block" style="font-size: 0.72rem;">Setelah tanggal akhir bulan</span>
                                 </div>
                                 <div class="d-flex align-items-center gap-2">
@@ -235,7 +238,7 @@
                 <div class="card border-0 shadow-sm h-100 rounded-4 overflow-hidden setting-card" id="cardLog">
                     <div class="card-header bg-light-subtle py-3 px-3 px-md-4 border-bottom d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center gap-2.5">
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 28px; height: 28px; font-size: 0.85rem;">3</span>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.85rem;">3</span>
                             <div>
                                 <h6 class="fw-bold text-dark mb-0">Toleransi Harian Pelaporan</h6>
                                 <span class="text-muted" style="font-size: 0.72rem;">Batas bergulir per tanggal kegiatan</span>
@@ -263,9 +266,7 @@
                         <div class="p-3 bg-light rounded-3 border border-light-subtle">
                             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                 <div>
-                                    <label class="form-label fw-bold text-dark small mb-0 d-flex align-items-center gap-1.5">
-                                        <i class="bi bi-hourglass-split text-primary"></i> Toleransi Hari Pelaporan
-                                    </label>
+                                    <label class="form-label fw-bold text-dark small mb-0">Toleransi Hari Pelaporan</label>
                                     <span class="text-muted d-block" style="font-size: 0.72rem;">Setelah tanggal kegiatan</span>
                                 </div>
                                 <div class="d-flex align-items-center gap-2">
@@ -289,7 +290,7 @@
                 <div class="card border-0 shadow-sm h-100 rounded-4 overflow-hidden setting-card" id="cardPenilaian">
                     <div class="card-header bg-light-subtle py-3 px-3 px-md-4 border-bottom d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center gap-2.5">
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 28px; height: 28px; font-size: 0.85rem;">4</span>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.85rem;">4</span>
                             <div>
                                 <h6 class="fw-bold text-dark mb-0">Penilaian Kinerja Staf</h6>
                                 <span class="text-muted" style="font-size: 0.72rem;">Batas waktu verifikasi atasan</span>
@@ -317,9 +318,7 @@
                         <div class="p-3 bg-light rounded-3 border border-light-subtle">
                             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                 <div>
-                                    <label class="form-label fw-bold text-dark small mb-0 d-flex align-items-center gap-1.5">
-                                        <i class="bi bi-award-fill text-primary"></i> Tanggal Maksimal
-                                    </label>
+                                    <label class="form-label fw-bold text-dark small mb-0">Tanggal Maksimal</label>
                                     <span class="text-muted d-block" style="font-size: 0.72rem;">Di bulan berikutnya</span>
                                 </div>
                                 <div class="d-flex align-items-center gap-2">
@@ -333,6 +332,43 @@
                             <div class="form-text text-muted small mt-2 pt-1 border-top" style="font-size: 0.72rem;">
                                 <i class="bi bi-info-circle me-1"></i> Default sistem: Tanggal 10 di bulan berikutnya
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. TAMPILAN KALENDER HEATMAP & LAPORAN HARIAN BERBASIS TAHUN -->
+            <div class="col-12">
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden setting-card" id="cardHeatmapSettings">
+                    <div class="card-header bg-light-subtle py-3 px-3 px-md-4 border-bottom d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-2.5">
+                            <span class="badge bg-secondary-subtle text-secondary border rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 1rem;">
+                                <i class="bi bi-calendar-x"></i>
+                            </span>
+                            <div>
+                                <h6 class="fw-bold text-dark mb-0">Tampilan Kalender Heatmap & Laporan Harian</h6>
+                                <span class="text-muted" style="font-size: 0.72rem;">Sembunyikan heatmap dan tampilkan tabel laporan harian pada tahun tertentu</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-3 p-md-4">
+                        <p class="text-muted small mb-3">
+                            Pilih tahun di bawah ini jika ingin <strong>menyembunyikan kalender heatmap</strong> pada menu Rekap & Penilaian Kinerja untuk seluruh pengguna. Pada tahun yang dipilih, tampilan otomatis digantikan dengan <strong>tabel laporan kegiatan harian</strong>.
+                        </p>
+                        <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+                            <?php foreach ($availableYears as $yearOpt): ?>
+                                <?php $isChecked = in_array((string)$yearOpt, $hiddenHeatmapYears, true); ?>
+                                <div>
+                                    <input type="checkbox" class="btn-check input-heatmap-year" name="hide_heatmap_years[]" id="year_<?= $yearOpt ?>" value="<?= $yearOpt ?>" <?= $isChecked ? 'checked' : '' ?> autocomplete="off">
+                                    <label class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" for="year_<?= $yearOpt ?>">
+                                        <i class="bi <?= $isChecked ? 'bi-check-circle-fill' : 'bi-calendar' ?>"></i>
+                                        <span><?= $yearOpt ?></span>
+                                    </label>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <div class="form-text text-muted small mt-2 pt-1 border-top" style="font-size: 0.72rem;">
+                            <i class="bi bi-info-circle me-1"></i> Klik pada angka tahun untuk memilih atau membatalkan pilihan. Anda dapat memilih lebih dari satu tahun. Jika tidak ada tahun yang dipilih, heatmap akan tetap tampil di semua tahun.
                         </div>
                     </div>
                 </div>
@@ -362,7 +398,7 @@
                 </span>
                 <div>
                     <h6 class="fw-bold text-dark mb-0">Cadangan Basis Data (Database Backup)</h6>
-                    <span class="text-muted" style="font-size: 0.72rem;">Pencadangan 1-klik untuk pemulihan bencana (*disaster recovery*)</span>
+                    <span class="text-muted" style="font-size: 0.72rem;">Pencadangan data untuk pemulihan sewaktu-waktu</span>
                 </div>
             </div>
             <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 small fw-semibold">
@@ -384,7 +420,7 @@
                         </span>
                     </div>
                     <p class="text-muted small mb-0 leading-relaxed">
-                        Unduh salinan cadangan struktur tabel dan seluruh data sistem ke dalam satu berkas SQL murni (<code class="text-primary fw-semibold">.sql</code>). Berkas ini dapat langsung di-restore melalui menu Import phpMyAdmin kapan saja.
+                        Unduh salinan cadangan struktur tabel dan seluruh data sistem ke dalam satu berkas (<code class="text-primary fw-semibold">.sql</code>). Berkas ini dapat dipulihkan kembali kapan saja.
                     </p>
                 </div>
                 <div class="flex-shrink-0 align-self-stretch align-self-lg-auto d-flex justify-content-end">
@@ -470,6 +506,8 @@
         const isChecked = switchEl.checked;
         const targetCard = document.getElementById(switchEl.dataset.target);
         const statusBadge = document.getElementById(switchEl.dataset.status);
+        const inputEl = document.getElementById(switchEl.dataset.input);
+        const paramBox = inputEl ? inputEl.closest('.bg-light') : null;
 
         if (isChecked) {
             statusBadge.className = 'badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1 rounded-pill small fw-semibold';
@@ -478,12 +516,26 @@
                 targetCard.classList.add('active-deadline');
                 targetCard.style.opacity = '1';
             }
+            if (inputEl) {
+                inputEl.disabled = false;
+            }
+            if (paramBox) {
+                paramBox.classList.remove('opacity-50');
+                paramBox.style.pointerEvents = '';
+            }
         } else {
             statusBadge.className = 'badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill small fw-semibold';
             statusBadge.innerHTML = '<i class="bi bi-unlock-fill me-1"></i> <span>Mode Bebas</span>';
             if (targetCard) {
                 targetCard.classList.remove('active-deadline');
-                targetCard.style.opacity = '0.85';
+                targetCard.style.opacity = '0.9';
+            }
+            if (inputEl) {
+                inputEl.disabled = true;
+            }
+            if (paramBox) {
+                paramBox.classList.add('opacity-50');
+                paramBox.style.pointerEvents = 'none';
             }
         }
     }
@@ -520,6 +572,14 @@
     });
 
     document.getElementById('formSettings').addEventListener('submit', function() {
+        // Aktifkan kembali input number sebelum submit agar nilainya terkirim ke backend
+        document.querySelectorAll('.toggle-deadline').forEach(function(switchEl) {
+            const inputEl = document.getElementById(switchEl.dataset.input);
+            if (inputEl) {
+                inputEl.disabled = false;
+            }
+        });
+
         const btn = document.getElementById('btnSubmitSettings');
         if (btn) {
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Menyimpan...';
@@ -538,7 +598,7 @@
                     showCancelButton: true,
                     confirmButtonColor: '#0d6efd',
                     cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="bi bi-download me-1"></i> Ya, Unduh',
+                    confirmButtonText: 'Ya, Unduh',
                     cancelButtonText: 'Batal',
                     customClass: {
                         popup: 'rounded-4 shadow-sm'
@@ -580,7 +640,7 @@
                     showCancelButton: true,
                     confirmButtonColor: '#dc3545',
                     cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="bi bi-trash3 me-1"></i> Ya, Bersihkan',
+                    confirmButtonText: 'Ya, Bersihkan',
                     cancelButtonText: 'Batal',
                     customClass: {
                         popup: 'rounded-4 shadow-sm'
@@ -600,6 +660,23 @@
             }
         });
     }
+
+    // Interaktivitas Saklar Tahun Penonaktifan Heatmap
+    document.querySelectorAll('.input-heatmap-year').forEach(function(el) {
+        el.addEventListener('change', function() {
+            const label = this.nextElementSibling;
+            if (label) {
+                const icon = label.querySelector('i');
+                if (icon) {
+                    if (this.checked) {
+                        icon.className = 'bi bi-check-circle-fill';
+                    } else {
+                        icon.className = 'bi bi-calendar';
+                    }
+                }
+            }
+        });
+    });
 </script>
 <?= $this->endSection() ?>
 

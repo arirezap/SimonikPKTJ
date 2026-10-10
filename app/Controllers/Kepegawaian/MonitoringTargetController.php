@@ -26,6 +26,9 @@ class MonitoringTargetController extends BaseController
     /**
      * Halaman Utama Monitoring Target Kinerja Bulanan
      */
+    /**
+     * Halaman Utama Monitoring Target Kinerja Bulanan
+     */
     public function index()
     {
         // Role yang diizinkan mengakses modul Kepegawaian (Direktur, Wadir, Kabag, Kepegawaian, Admin)
@@ -35,204 +38,30 @@ class MonitoringTargetController extends BaseController
 
         helper(['avatar']);
 
-        $userModel = new User();
-        $targetModel = new TargetKinerja();
-
         $bulanTerpilih = $this->request->getGet('bulan') ?? (string)date('n');
         $tahunTerpilih = $this->request->getGet('tahun') ?? (string)date('Y');
         $unitFilter    = $this->request->getGet('unit') ?? '';
         $roleFilter    = $this->request->getGet('role') ?? '';
         $statusFilter  = $this->request->getGet('status') ?? '';
 
-        $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-        $namaBulan = ($bulanTerpilih === 'all') ? 'Sepanjang Tahun' : ($bulanIndo[(int)$bulanTerpilih - 1] ?? '');
+        $dataset = $this->prepareMonitoringDataset($bulanTerpilih, $tahunTerpilih, $unitFilter, $roleFilter, $statusFilter);
 
         // Ambil daftar unit kerja untuk filter dropdown
+        $userModel = new User();
         $units = $userModel->select('unit')->distinct()->where('unit !=', null)->where('unit !=', '')->orderBy('unit', 'ASC')->findAll();
         $daftarUnit = array_column($units, 'unit');
-
-        // Ambil data semua pegawai (kecuali admin) dengan selective columns untuk efisiensi memori
-        $builder = $userModel->select('id, nama_lengkap, nip, unit, jabatan, role, atasan_id, foto')
-                             ->where('role !=', 'admin');
-        if (!empty($unitFilter)) {
-            $builder = $builder->where('unit', $unitFilter);
-        }
-        if (!empty($roleFilter)) {
-            if ($roleFilter === 'pimpinan') {
-                $builder = $builder->whereIn('role', ['direktur', 'wadir']);
-            } elseif ($roleFilter === 'manajemen' || $roleFilter === 'struktural') {
-                $builder = $builder->whereIn('role', ['kabag', 'kabag_aak', 'kabag_kuk', 'manajemen', 'katim', 'kapus', 'kanit']);
-            } elseif ($roleFilter === 'kepegawaian') {
-                $builder = $builder->where('role', 'kepegawaian');
-            } elseif ($roleFilter === 'tugas_belajar') {
-                $builder = $builder->where('role', 'tugas_belajar');
-            } elseif ($roleFilter === 'user' || $roleFilter === 'staf') {
-                $builder = $builder->where('role', 'user');
-            } else {
-                $builder = $builder->where('role', $roleFilter);
-            }
-        }
-        $semuaPegawai = $builder->findAll();
-
-        // Urutkan berdasarkan hierarki resmi institusi
-        $semuaPegawai = $this->sortPegawaiByHierarchy($semuaPegawai);
-
-        // Mapping atasan langsung untuk lookup cepat
-        $allUsers = $userModel->select('id, nama_lengkap, nip, unit, jabatan')->findAll();
-        $userMap = [];
-        foreach ($allUsers as $u) {
-            $userMap[$u['id']] = $u;
-        }
-
-        // Single Batch Fetching Target Kinerja Bulanan
-        $userIds = array_column($semuaPegawai, 'id');
-        $targetsByUser = [];
-        if (!empty($userIds)) {
-            $tBuilder = $targetModel->whereIn('user_id', $userIds)
-                                    ->where('tahun', $tahunTerpilih);
-            if ($bulanTerpilih !== 'all') {
-                $tBuilder->where('bulan', $bulanTerpilih);
-            }
-            $allTargets = $tBuilder->orderBy('id', 'ASC')->findAll();
-            foreach ($allTargets as $t) {
-                $targetsByUser[$t['user_id']][] = $t;
-            }
-        }
-
-        // Struktur data rekap monitoring target
-        $rekapTarget = [];
-        $statTotalPegawai = count($semuaPegawai);
-        $statSudahMengirim = 0;
-        $statDraft = 0;
-        $statBelumMengisi = 0;
-        $statSudahDisetujui = 0;
-        $statMenungguPersetujuan = 0;
-        $statTotalRhk = 0;
-
-        foreach ($semuaPegawai as $p) {
-            $pId = $p['id'];
-            $pTargets = $targetsByUser[$pId] ?? [];
-            $totalRhk = count($pTargets);
-            $statTotalRhk += $totalRhk;
-
-            $countTerkirim  = 0;
-            $countDisetujui = 0;
-            $countDraft     = 0;
-
-            foreach ($pTargets as $item) {
-                $stAppr = $item['status_approval'] ?? 'menunggu_persetujuan';
-                $stKirim = $item['status'] ?? 'draft';
-
-                if ($stAppr === 'disetujui') {
-                    $countDisetujui++;
-                }
-                if ($stKirim === 'terkirim') {
-                    $countTerkirim++;
-                } else {
-                    $countDraft++;
-                }
-            }
-
-            // Auto-Approve rule untuk akun Direktur
-            $isDirektur = ($p['role'] === 'direktur');
-            if ($isDirektur && $countTerkirim > 0) {
-                $countDisetujui = $countTerkirim;
-            }
-
-            // Tentukan status agregat pengiriman & persetujuan
-            if ($totalRhk === 0) {
-                $statusPengiriman = 'belum_mengisi';
-                $statusPersetujuan = 'belum_mengisi';
-                $statBelumMengisi++;
-            } elseif ($countDisetujui === $totalRhk) {
-                $statusPengiriman = 'disetujui';
-                $statusPersetujuan = 'disetujui';
-                $statSudahMengirim++;
-                $statSudahDisetujui++;
-            } elseif ($countTerkirim > 0) {
-                if ($countDisetujui > 0) {
-                    $statusPengiriman = 'sebagian_disetujui';
-                    $statusPersetujuan = 'sebagian_disetujui';
-                    $statMenungguPersetujuan++;
-                } else {
-                    $statusPengiriman = 'terkirim';
-                    $statusPersetujuan = 'menunggu_persetujuan';
-                    $statMenungguPersetujuan++;
-                }
-                $statSudahMengirim++;
-            } else {
-                $statusPengiriman = 'draft';
-                $statusPersetujuan = 'draft';
-                $statDraft++;
-            }
-
-            // Lookup atasan langsung
-            $atasanInfo = null;
-            if (!empty($p['atasan_id']) && isset($userMap[$p['atasan_id']])) {
-                $atasanInfo = $userMap[$p['atasan_id']];
-            }
-
-            $rowPegawai = [
-                'user'               => $p,
-                'atasan'             => $atasanInfo,
-                'total_rhk'          => $totalRhk,
-                'count_terkirim'     => $countTerkirim,
-                'count_disetujui'    => $countDisetujui,
-                'count_draft'        => $countDraft,
-                'status_pengiriman'  => $statusPengiriman,
-                'status_persetujuan' => $statusPersetujuan,
-                'targets'            => $pTargets
-            ];
-
-            // Filter status jika dipilih
-            if (!empty($statusFilter)) {
-                if ($statusFilter === 'sudah_mengirim' && !in_array($statusPengiriman, ['terkirim', 'disetujui', 'sebagian_disetujui'])) {
-                    continue;
-                } elseif ($statusFilter === 'draft' && $statusPengiriman !== 'draft') {
-                    continue;
-                } elseif ($statusFilter === 'belum_mengisi' && $statusPengiriman !== 'belum_mengisi') {
-                    continue;
-                } elseif ($statusFilter === 'disetujui' && $statusPersetujuan !== 'disetujui') {
-                    continue;
-                } elseif ($statusFilter === 'menunggu_persetujuan' && !in_array($statusPersetujuan, ['menunggu_persetujuan', 'sebagian_disetujui'])) {
-                    continue;
-                }
-            }
-
-            $rekapTarget[] = $rowPegawai;
-        }
 
         // Pengecekan informasi deadline target
         $settingModel = new SettingModel();
         $isDeadlineActive = $settingModel->getValue('enable_target_deadline', '0') === '1';
         $batasTarget = (int) $settingModel->getValue('batas_input_target', 5);
 
-        $persenKirim = $statTotalPegawai > 0 ? round(($statSudahMengirim / $statTotalPegawai) * 100, 1) : 0;
-        $persenSetuju = $statTotalPegawai > 0 ? round(($statSudahDisetujui / $statTotalPegawai) * 100, 1) : 0;
-
-        $data = [
-            'title'                     => 'Monitoring Target Kinerja Bulanan',
-            'rekap_target'              => $rekapTarget,
-            'bulan_terpilih'            => $bulanTerpilih,
-            'tahun_terpilih'            => $tahunTerpilih,
-            'nama_bulan'                => $namaBulan,
-            'bulan_indo'                => $bulanIndo,
-            'daftar_unit'               => $daftarUnit,
-            'unit_filter'               => $unitFilter,
-            'role_filter'               => $roleFilter,
-            'status_filter'             => $statusFilter,
-            'stat_total_pegawai'        => $statTotalPegawai,
-            'stat_sudah_mengirim'       => $statSudahMengirim,
-            'stat_draft'                => $statDraft,
-            'stat_belum_mengisi'        => $statBelumMengisi,
-            'stat_sudah_disetujui'      => $statSudahDisetujui,
-            'stat_menunggu_persetujuan' => $statMenungguPersetujuan,
-            'stat_total_rhk'            => $statTotalRhk,
-            'persen_kirim'              => $persenKirim,
-            'persen_setuju'             => $persenSetuju,
-            'is_deadline_active'        => $isDeadlineActive,
-            'batas_target'              => $batasTarget,
-        ];
+        $data = array_merge($dataset, [
+            'title'              => 'Monitoring Target Kinerja Bulanan',
+            'daftar_unit'        => $daftarUnit,
+            'is_deadline_active' => $isDeadlineActive,
+            'batas_target'       => $batasTarget,
+        ]);
 
         return view('kepegawaian/monitoring_target', $data);
     }
@@ -322,57 +151,17 @@ class MonitoringTargetController extends BaseController
             return !empty($referer) ? redirect()->back() : redirect()->to(site_url('kepegawaian/target-kinerja'));
         }
 
-        $userModel = new User();
-        $targetModel = new TargetKinerja();
-
         $bulanTerpilih = $this->request->getGet('bulan') ?? (string)date('n');
         $tahunTerpilih = $this->request->getGet('tahun') ?? (string)date('Y');
         $unitFilter    = $this->request->getGet('unit') ?? '';
         $roleFilter    = $this->request->getGet('role') ?? '';
         $statusFilter  = $this->request->getGet('status') ?? '';
 
-        $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-        $namaBulan = ($bulanTerpilih === 'all') ? 'Sepanjang Tahun' : ($bulanIndo[(int)$bulanTerpilih - 1] ?? '');
+        $dataset = $this->prepareMonitoringDataset($bulanTerpilih, $tahunTerpilih, $unitFilter, $roleFilter, $statusFilter);
 
-        // Ambil data pegawai dengan selective columns
-        $builder = $userModel->select('id, nama_lengkap, nip, unit, jabatan, role, atasan_id, foto')
-                             ->where('role !=', 'admin');
-        if (!empty($unitFilter)) $builder->where('unit', $unitFilter);
-        if (!empty($roleFilter)) {
-            if ($roleFilter === 'pimpinan') {
-                $builder->whereIn('role', ['direktur', 'wadir']);
-            } elseif ($roleFilter === 'manajemen' || $roleFilter === 'struktural') {
-                $builder->whereIn('role', ['kabag', 'kabag_aak', 'kabag_kuk', 'manajemen', 'katim', 'kapus', 'kanit']);
-            } elseif ($roleFilter === 'kepegawaian') {
-                $builder->where('role', 'kepegawaian');
-            } elseif ($roleFilter === 'tugas_belajar') {
-                $builder->where('role', 'tugas_belajar');
-            } elseif ($roleFilter === 'user' || $roleFilter === 'staf') {
-                $builder->where('role', 'user');
-            } else {
-                $builder->where('role', $roleFilter);
-            }
-        }
-        $semuaPegawai = $this->sortPegawaiByHierarchy($builder->findAll());
-
-        $allUsers = $userModel->select('id, nama_lengkap, nip, unit, jabatan')->findAll();
-        $userMap = [];
-        foreach ($allUsers as $u) {
-            $userMap[$u['id']] = $u;
-        }
-
-        $userIds = array_column($semuaPegawai, 'id');
-        $targetsByUser = [];
-        if (!empty($userIds)) {
-            $tBuilder = $targetModel->whereIn('user_id', $userIds)->where('tahun', $tahunTerpilih);
-            if ($bulanTerpilih !== 'all') {
-                $tBuilder->where('bulan', $bulanTerpilih);
-            }
-            $allTargets = $tBuilder->orderBy('id', 'ASC')->findAll();
-            foreach ($allTargets as $t) {
-                $targetsByUser[$t['user_id']][] = $t;
-            }
-        }
+        $namaBulan   = $dataset['nama_bulan'];
+        $rekapTarget = $dataset['rekap_target'];
+        $rincianRows = $dataset['rincian_rows'];
 
         $spreadsheet = new Spreadsheet();
         $spreadsheet->getProperties()
@@ -407,75 +196,36 @@ class MonitoringTargetController extends BaseController
 
         $rowNum = 6;
         $no = 1;
-        $rincianRows = [];
 
-        foreach ($semuaPegawai as $p) {
-            $pId = $p['id'];
-            $pTargets = $targetsByUser[$pId] ?? [];
-            $totalRhk = count($pTargets);
+        foreach ($rekapTarget as $row) {
+            $p = $row['user'];
+            $totalRhk = $row['total_rhk'];
+            $statusPengiriman = $row['status_pengiriman'];
+            $statusPersetujuan = $row['status_persetujuan'];
 
-            $countTerkirim  = 0;
-            $countDisetujui = 0;
-            $countDraft     = 0;
-
-            foreach ($pTargets as $item) {
-                if (($item['status_approval'] ?? '') === 'disetujui') $countDisetujui++;
-                if (($item['status'] ?? '') === 'terkirim') $countTerkirim++;
-                else $countDraft++;
-
-                $bNum = (int)($item['bulan'] ?? 1);
-                $bName = $bulanIndo[$bNum - 1] ?? "Bulan {$bNum}";
-
-                $rincianRows[] = [
-                    'nama'        => $p['nama_lengkap'],
-                    'nip'         => $p['nip'] ?? '-',
-                    'unit'        => $p['unit'] ?? '-',
-                    'bulan'       => $bName,
-                    'sasaran'     => $item['sasaran_program'] ?? '',
-                    'indikator'   => $item['indikator_kinerja'] ?? '',
-                    'target'      => (float)($item['target_bulanan'] ?? 0),
-                    'satuan'      => $item['satuan'] ?? '',
-                    'status_kirim'=> ($item['status'] ?? 'draft') === 'terkirim' ? 'Terkirim' : 'Draf',
-                    'status_appr' => ($item['status_approval'] ?? '') === 'disetujui' ? 'Disetujui' : 'Menunggu Persetujuan'
-                ];
-            }
-
-            $isDirektur = ($p['role'] === 'direktur');
-            if ($isDirektur && $countTerkirim > 0) {
-                $countDisetujui = $countTerkirim;
-            }
-
-            if ($totalRhk === 0) {
-                $statusPengiriman = 'belum_mengisi';
-                $statusPersetujuan = 'belum_mengisi';
+            if ($statusPengiriman === 'belum_mengisi') {
                 $stKirimTxt = 'Belum Mengisi';
-                $stApprTxt = 'Belum Mengisi';
-            } elseif ($countDisetujui === $totalRhk) {
-                $statusPengiriman = 'disetujui';
-                $statusPersetujuan = 'disetujui';
+            } elseif ($statusPengiriman === 'disetujui') {
                 $stKirimTxt = 'Disetujui';
-                $stApprTxt = 'Disetujui';
-            } elseif ($countTerkirim > 0) {
-                $statusPengiriman = ($countDisetujui > 0) ? 'sebagian_disetujui' : 'terkirim';
-                $statusPersetujuan = ($countDisetujui > 0) ? 'sebagian_disetujui' : 'menunggu_persetujuan';
-                $stKirimTxt = 'Terkirim (' . $countTerkirim . '/' . $totalRhk . ')';
-                $stApprTxt = $countDisetujui > 0 ? "Sebagian Disetujui ({$countDisetujui}/{$totalRhk})" : 'Menunggu Persetujuan';
+            } elseif ($statusPengiriman === 'sebagian_disetujui' || $statusPengiriman === 'terkirim') {
+                $stKirimTxt = 'Terkirim (' . $row['count_terkirim'] . '/' . $totalRhk . ')';
             } else {
-                $statusPengiriman = 'draft';
-                $statusPersetujuan = 'draft';
                 $stKirimTxt = 'Draf (Belum Dikirim)';
+            }
+
+            if ($statusPersetujuan === 'belum_mengisi') {
+                $stApprTxt = 'Belum Mengisi';
+            } elseif ($statusPersetujuan === 'disetujui') {
+                $stApprTxt = 'Disetujui';
+            } elseif ($statusPersetujuan === 'sebagian_disetujui') {
+                $stApprTxt = "Sebagian Disetujui ({$row['count_disetujui']}/{$totalRhk})";
+            } elseif ($statusPersetujuan === 'menunggu_persetujuan') {
+                $stApprTxt = 'Menunggu Persetujuan';
+            } else {
                 $stApprTxt = 'Draf';
             }
 
-            if (!empty($statusFilter)) {
-                if ($statusFilter === 'sudah_mengirim' && !in_array($statusPengiriman, ['terkirim', 'disetujui', 'sebagian_disetujui'])) continue;
-                if ($statusFilter === 'draft' && $statusPengiriman !== 'draft') continue;
-                if ($statusFilter === 'belum_mengisi' && $statusPengiriman !== 'belum_mengisi') continue;
-                if ($statusFilter === 'disetujui' && $statusPersetujuan !== 'disetujui') continue;
-                if ($statusFilter === 'menunggu_persetujuan' && !in_array($statusPersetujuan, ['menunggu_persetujuan', 'sebagian_disetujui'])) continue;
-            }
-
-            $atasanName = (!empty($p['atasan_id']) && isset($userMap[$p['atasan_id']])) ? $userMap[$p['atasan_id']]['nama_lengkap'] : '-';
+            $atasanName = !empty($row['atasan']['nama_lengkap']) ? $row['atasan']['nama_lengkap'] : ($p['role'] === 'direktur' ? 'Auto-Approve (Direktur)' : '-');
 
             $sheet1->setCellValue('A' . $rowNum, $no++);
             $sheet1->setCellValue('B' . $rowNum, $p['nama_lengkap']);
@@ -566,7 +316,7 @@ class MonitoringTargetController extends BaseController
             $rowNum2++;
         }
 
-        // Bulk Styling Sheet 2 (Mengeliminasi ribuan getStyle per-baris)
+        // Bulk Styling Sheet 2
         if ($rowNum2 > 5) {
             $sheet2->getStyle('A5:A' . ($rowNum2 - 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             if ($isAllMonth) {
@@ -617,7 +367,7 @@ class MonitoringTargetController extends BaseController
                     'unit'           => $unitFilter,
                     'role'           => $roleFilter,
                     'status'         => $statusFilter,
-                    'jumlah_pegawai' => $no - 1
+                    'jumlah_pegawai' => count($rekapTarget)
                 ]
             );
         }
@@ -643,130 +393,26 @@ class MonitoringTargetController extends BaseController
             return !empty($referer) ? redirect()->back() : redirect()->to(site_url('kepegawaian/target-kinerja'));
         }
 
-        $userModel = new User();
-        $targetModel = new TargetKinerja();
-
         $bulanTerpilih = $this->request->getGet('bulan') ?? (string)date('n');
         $tahunTerpilih = $this->request->getGet('tahun') ?? (string)date('Y');
         $unitFilter    = $this->request->getGet('unit') ?? '';
         $roleFilter    = $this->request->getGet('role') ?? '';
         $statusFilter  = $this->request->getGet('status') ?? '';
 
-        $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-        $namaBulan = ($bulanTerpilih === 'all') ? 'Sepanjang Tahun' : ($bulanIndo[(int)$bulanTerpilih - 1] ?? '');
-        $namaBulanTtd = ($bulanTerpilih === 'all') ? ($bulanIndo[(int)date('n') - 1] ?? 'Januari') : $namaBulan;
-
-        $builder = $userModel->select('id, nama_lengkap, nip, unit, jabatan, role, atasan_id, foto')
-                             ->where('role !=', 'admin');
-        if (!empty($unitFilter)) $builder->where('unit', $unitFilter);
-        if (!empty($roleFilter)) {
-            if ($roleFilter === 'pimpinan') {
-                $builder->whereIn('role', ['direktur', 'wadir']);
-            } elseif ($roleFilter === 'manajemen' || $roleFilter === 'struktural') {
-                $builder->whereIn('role', ['kabag', 'kabag_aak', 'kabag_kuk', 'manajemen', 'katim', 'kapus', 'kanit']);
-            } elseif ($roleFilter === 'kepegawaian') {
-                $builder->where('role', 'kepegawaian');
-            } elseif ($roleFilter === 'tugas_belajar') {
-                $builder->where('role', 'tugas_belajar');
-            } elseif ($roleFilter === 'user' || $roleFilter === 'staf') {
-                $builder->where('role', 'user');
-            } else {
-                $builder->where('role', $roleFilter);
-            }
-        }
-        $semuaPegawai = $this->sortPegawaiByHierarchy($builder->findAll());
-
-        $allUsers = $userModel->select('id, nama_lengkap, nip, unit, jabatan')->findAll();
-        $userMap = [];
-        foreach ($allUsers as $u) {
-            $userMap[$u['id']] = $u;
-        }
-
-        $userIds = array_column($semuaPegawai, 'id');
-        $targetsByUser = [];
-        if (!empty($userIds)) {
-            $tBuilder = $targetModel->whereIn('user_id', $userIds)->where('tahun', $tahunTerpilih);
-            if ($bulanTerpilih !== 'all') {
-                $tBuilder->where('bulan', $bulanTerpilih);
-            }
-            $allTargets = $tBuilder->orderBy('id', 'ASC')->findAll();
-            foreach ($allTargets as $t) {
-                $targetsByUser[$t['user_id']][] = $t;
-            }
-        }
-
-        $rekapTarget = [];
-        $statTotal = count($semuaPegawai);
-        $statKirim = 0;
-        $statDraft = 0;
-        $statKosong = 0;
-        $statSetuju = 0;
-
-        foreach ($semuaPegawai as $p) {
-            $pId = $p['id'];
-            $pTargets = $targetsByUser[$pId] ?? [];
-            $totalRhk = count($pTargets);
-
-            $countTerkirim  = 0;
-            $countDisetujui = 0;
-
-            foreach ($pTargets as $item) {
-                if (($item['status_approval'] ?? '') === 'disetujui') $countDisetujui++;
-                if (($item['status'] ?? '') === 'terkirim') $countTerkirim++;
-            }
-
-            $isDirektur = ($p['role'] === 'direktur');
-            if ($isDirektur && $countTerkirim > 0) {
-                $countDisetujui = $countTerkirim;
-            }
-
-            if ($totalRhk === 0) {
-                $statusPengiriman = 'belum_mengisi';
-                $statusPersetujuan = 'belum_mengisi';
-                $statKosong++;
-            } elseif ($countDisetujui === $totalRhk) {
-                $statusPengiriman = 'disetujui';
-                $statusPersetujuan = 'disetujui';
-                $statKirim++;
-                $statSetuju++;
-            } elseif ($countTerkirim > 0) {
-                $statusPengiriman = ($countDisetujui > 0) ? 'sebagian_disetujui' : 'terkirim';
-                $statusPersetujuan = ($countDisetujui > 0) ? 'sebagian_disetujui' : 'menunggu_persetujuan';
-                $statKirim++;
-            } else {
-                $statusPengiriman = 'draft';
-                $statusPersetujuan = 'draft';
-                $statDraft++;
-            }
-
-            if (!empty($statusFilter)) {
-                if ($statusFilter === 'sudah_mengirim' && !in_array($statusPengiriman, ['terkirim', 'disetujui', 'sebagian_disetujui'])) continue;
-                if ($statusFilter === 'draft' && $statusPengiriman !== 'draft') continue;
-                if ($statusFilter === 'belum_mengisi' && $statusPengiriman !== 'belum_mengisi') continue;
-                if ($statusFilter === 'disetujui' && $statusPersetujuan !== 'disetujui') continue;
-                if ($statusFilter === 'menunggu_persetujuan' && !in_array($statusPersetujuan, ['menunggu_persetujuan', 'sebagian_disetujui'])) continue;
-            }
-
-            $rekapTarget[] = [
-                'user'               => $p,
-                'atasan'             => (!empty($p['atasan_id']) && isset($userMap[$p['atasan_id']])) ? $userMap[$p['atasan_id']] : null,
-                'total_rhk'          => $totalRhk,
-                'status_pengiriman'  => $statusPengiriman,
-                'status_persetujuan' => $statusPersetujuan,
-            ];
-        }
+        $dataset = $this->prepareMonitoringDataset($bulanTerpilih, $tahunTerpilih, $unitFilter, $roleFilter, $statusFilter);
 
         $data = [
-            'rekap_target'   => $rekapTarget,
-            'nama_bulan'     => $namaBulan,
-            'nama_bulan_ttd' => $namaBulanTtd,
-            'tahun_terpilih' => $tahunTerpilih,
-            'unit_filter'    => $unitFilter,
-            'stat_total'     => $statTotal,
-            'stat_kirim'     => $statKirim,
-            'stat_draft'     => $statDraft,
-            'stat_kosong'    => $statKosong,
-            'stat_setuju'    => $statSetuju,
+            'rekap_target'   => $dataset['rekap_target'],
+            'nama_bulan'     => $dataset['nama_bulan'],
+            'nama_bulan_ttd' => $dataset['nama_bulan_ttd'],
+            'tahun_terpilih' => $dataset['tahun_terpilih'],
+            'unit_filter'    => $dataset['unit_filter'],
+            'stat_total'     => $dataset['stat_total_pegawai'],
+            'stat_kirim'     => $dataset['stat_sudah_mengirim'],
+            'stat_draft'     => $dataset['stat_draft'],
+            'stat_kosong'    => $dataset['stat_belum_mengisi'],
+            'stat_setuju'    => $dataset['stat_sudah_disetujui'],
+            'stat_menunggu'  => $dataset['stat_menunggu_persetujuan'],
         ];
 
         $html = view('kepegawaian/monitoring_target_pdf', $data);
@@ -794,7 +440,7 @@ class MonitoringTargetController extends BaseController
                     'unit'           => $unitFilter,
                     'role'           => $roleFilter,
                     'status'         => $statusFilter,
-                    'jumlah_pegawai' => count($rekapTarget)
+                    'jumlah_pegawai' => count($dataset['rekap_target'])
                 ]
             );
         }
@@ -805,9 +451,273 @@ class MonitoringTargetController extends BaseController
         }
 
         header('Access-Control-Expose-Headers: Content-Disposition');
-        $filename = "Monitoring_Target_Kinerja_" . str_replace(' ', '_', $namaBulan) . "_{$tahunTerpilih}.pdf";
+        $filename = "Monitoring_Target_Kinerja_" . str_replace(' ', '_', $dataset['nama_bulan']) . "_{$tahunTerpilih}.pdf";
         $dompdf->stream($filename, ['Attachment' => false]);
         exit;
+    }
+
+    /**
+     * Mempersiapkan dataset rekapitulasi monitoring target kinerja institusi
+     * yang digunakan bersama oleh method index(), exportExcel(), dan exportPdf().
+     */
+    private function prepareMonitoringDataset(string $bulanTerpilih, string $tahunTerpilih, string $unitFilter = '', string $roleFilter = '', string $statusFilter = ''): array
+    {
+        $userModel = new User();
+        $targetModel = new TargetKinerja();
+
+        $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        $namaBulan = ($bulanTerpilih === 'all') ? 'Sepanjang Tahun' : ($bulanIndo[(int)$bulanTerpilih - 1] ?? '');
+        $namaBulanTtd = ($bulanTerpilih === 'all') ? ($bulanIndo[(int)date('n') - 1] ?? 'Januari') : $namaBulan;
+
+        // Ambil data semua pegawai (kecuali admin) dengan selective columns untuk efisiensi memori
+        $builder = $userModel->select('id, nama_lengkap, nip, unit, jabatan, role, status_pegawai, tmt_selesai, atasan_id, foto');
+
+        // MT-01: Kecualikan role admin (baik primary role maupun pivot user_roles)
+        $db = \Config\Database::connect();
+        $adminPivotIds = array_column(
+            $db->table('user_roles')->select('user_id')->where('role_name', 'admin')->get()->getResultArray(),
+            'user_id'
+        );
+        $builder->where('role !=', 'admin');
+        if (!empty($adminPivotIds)) {
+            $builder->whereNotIn('id', $adminPivotIds);
+        }
+
+        // MT-03: Filter periode mencakup status aktif serta mutasi_keluar, pensiun, dan nonaktif dengan TMT selesai
+        if ($bulanTerpilih !== 'all' && !empty($bulanTerpilih)) {
+            $periodMonth = sprintf('%04d-%02d-01', (int)$tahunTerpilih, (int)$bulanTerpilih);
+            $builder->groupStart()
+                    ->where('status_pegawai', 'aktif')
+                    ->orGroupStart()
+                        ->whereIn('status_pegawai', ['mutasi_keluar', 'pensiun', 'nonaktif'])
+                        ->where('tmt_selesai IS NOT NULL')
+                        ->where('tmt_selesai >=', $periodMonth)
+                    ->groupEnd()
+                    ->groupEnd();
+        } else {
+            $builder->groupStart()
+                    ->where('status_pegawai', 'aktif')
+                    ->orGroupStart()
+                        ->whereIn('status_pegawai', ['mutasi_keluar', 'pensiun', 'nonaktif'])
+                        ->where('tmt_selesai IS NOT NULL')
+                        ->where('YEAR(tmt_selesai) >=', (int)$tahunTerpilih)
+                    ->groupEnd()
+                    ->groupEnd();
+        }
+
+        if (!empty($unitFilter)) {
+            $builder->where('unit', $unitFilter);
+        }
+
+        // MT-01: Filter Kategori Jabatan dengan dukungan Multi-Role Pivot (user_roles)
+        if (!empty($roleFilter)) {
+            if ($roleFilter === 'pimpinan') {
+                $targetRoles = ['direktur', 'wadir'];
+            } elseif ($roleFilter === 'manajemen' || $roleFilter === 'struktural') {
+                $targetRoles = ['kabag', 'kabag_aak', 'kabag_kuk', 'manajemen', 'katim', 'kapus', 'kanit', 'kapokja'];
+            } elseif ($roleFilter === 'kepegawaian') {
+                $targetRoles = ['kepegawaian'];
+            } elseif ($roleFilter === 'tugas_belajar') {
+                $targetRoles = ['tugas_belajar'];
+            } elseif ($roleFilter === 'user' || $roleFilter === 'staf') {
+                $targetRoles = ['user'];
+            } else {
+                $targetRoles = [$roleFilter];
+            }
+
+            $matchedPivotIds = array_column(
+                $db->table('user_roles')->select('user_id')->whereIn('role_name', $targetRoles)->get()->getResultArray(),
+                'user_id'
+            );
+
+            $builder->groupStart()
+                    ->whereIn('role', $targetRoles);
+            if (!empty($matchedPivotIds)) {
+                $builder->orWhereIn('id', $matchedPivotIds);
+            }
+            $builder->groupEnd();
+        }
+
+        $semuaPegawai = $builder->findAll();
+
+        // Urutkan berdasarkan hierarki resmi institusi
+        $semuaPegawai = $this->sortPegawaiByHierarchy($semuaPegawai);
+
+        // MT-04: Lookup Atasan Langsung Terfokus (Selective In-Query)
+        $atasanIds = array_unique(array_filter(array_column($semuaPegawai, 'atasan_id')));
+        $userMap = [];
+        if (!empty($atasanIds)) {
+            $atasanList = $userModel->select('id, nama_lengkap, nip, unit, jabatan')
+                                    ->whereIn('id', $atasanIds)
+                                    ->findAll();
+            foreach ($atasanList as $u) {
+                $userMap[$u['id']] = $u;
+            }
+        }
+
+        // Single Batch Fetching Target Kinerja Bulanan
+        $userIds = array_column($semuaPegawai, 'id');
+        $targetsByUser = [];
+        if (!empty($userIds)) {
+            $tBuilder = $targetModel->whereIn('user_id', $userIds)
+                                    ->where('tahun', $tahunTerpilih);
+            if ($bulanTerpilih !== 'all') {
+                $tBuilder->where('bulan', $bulanTerpilih);
+            }
+            $allTargets = $tBuilder->orderBy('id', 'ASC')->findAll();
+            foreach ($allTargets as $t) {
+                $targetsByUser[$t['user_id']][] = $t;
+            }
+        }
+
+        // Rekonsiliasi data dan penghitungan agregat KPI
+        $rekapTarget = [];
+        $rincianRows = [];
+        $statTotalPegawai = count($semuaPegawai);
+        $statSudahMengirim = 0;
+        $statDraft = 0;
+        $statBelumMengisi = 0;
+        $statSudahDisetujui = 0;
+        $statMenungguPersetujuan = 0;
+        $statTotalRhk = 0;
+
+        foreach ($semuaPegawai as $p) {
+            $pId = $p['id'];
+            $pTargets = $targetsByUser[$pId] ?? [];
+            $totalRhk = count($pTargets);
+            $statTotalRhk += $totalRhk;
+
+            $countTerkirim  = 0;
+            $countDisetujui = 0;
+            $countDraft     = 0;
+
+            foreach ($pTargets as $item) {
+                $stAppr = $item['status_approval'] ?? 'menunggu_persetujuan';
+                $stKirim = $item['status'] ?? 'draft';
+
+                if ($stAppr === 'disetujui') {
+                    $countDisetujui++;
+                }
+                if ($stKirim === 'terkirim') {
+                    $countTerkirim++;
+                } else {
+                    $countDraft++;
+                }
+            }
+
+            // Auto-Approve rule untuk akun Direktur
+            $isDirektur = ($p['role'] === 'direktur');
+            if ($isDirektur && $countTerkirim > 0) {
+                $countDisetujui = $countTerkirim;
+            }
+
+            // Tentukan status agregat pengiriman & persetujuan
+            if ($totalRhk === 0) {
+                $statusPengiriman = 'belum_mengisi';
+                $statusPersetujuan = 'belum_mengisi';
+                $statBelumMengisi++;
+            } elseif ($countDisetujui === $totalRhk) {
+                $statusPengiriman = 'disetujui';
+                $statusPersetujuan = 'disetujui';
+                $statSudahMengirim++;
+                $statSudahDisetujui++;
+            } elseif ($countTerkirim > 0) {
+                if ($countDisetujui > 0) {
+                    $statusPengiriman = 'sebagian_disetujui';
+                    $statusPersetujuan = 'sebagian_disetujui';
+                    $statMenungguPersetujuan++;
+                } else {
+                    $statusPengiriman = 'terkirim';
+                    $statusPersetujuan = 'menunggu_persetujuan';
+                    $statMenungguPersetujuan++;
+                }
+                $statSudahMengirim++;
+            } else {
+                $statusPengiriman = 'draft';
+                $statusPersetujuan = 'draft';
+                $statDraft++;
+            }
+
+            // Filter status jika dipilih
+            if (!empty($statusFilter)) {
+                if ($statusFilter === 'sudah_mengirim' && !in_array($statusPengiriman, ['terkirim', 'disetujui', 'sebagian_disetujui'])) {
+                    continue;
+                } elseif ($statusFilter === 'draft' && $statusPengiriman !== 'draft') {
+                    continue;
+                } elseif ($statusFilter === 'belum_mengisi' && $statusPengiriman !== 'belum_mengisi') {
+                    continue;
+                } elseif ($statusFilter === 'disetujui' && $statusPersetujuan !== 'disetujui') {
+                    continue;
+                } elseif ($statusFilter === 'menunggu_persetujuan' && !in_array($statusPersetujuan, ['menunggu_persetujuan', 'sebagian_disetujui'])) {
+                    continue;
+                }
+            }
+
+            // Lookup atasan langsung
+            $atasanInfo = null;
+            if (!empty($p['atasan_id']) && isset($userMap[$p['atasan_id']])) {
+                $atasanInfo = $userMap[$p['atasan_id']];
+            }
+
+            $rekapTarget[] = [
+                'user'               => $p,
+                'atasan'             => $atasanInfo,
+                'total_rhk'          => $totalRhk,
+                'count_terkirim'     => $countTerkirim,
+                'count_disetujui'    => $countDisetujui,
+                'count_draft'        => $countDraft,
+                'status_pengiriman'  => $statusPengiriman,
+                'status_persetujuan' => $statusPersetujuan,
+                'targets'            => $pTargets
+            ];
+
+            // Rincian target untuk Sheet 2 Excel (hanya untuk pegawai yang lolos filter)
+            foreach ($pTargets as $item) {
+                $bNum = (int)($item['bulan'] ?? 1);
+                $bName = $bulanIndo[$bNum - 1] ?? "Bulan {$bNum}";
+
+                $rincianRows[] = [
+                    'nama'        => $p['nama_lengkap'],
+                    'nip'         => $p['nip'] ?? '-',
+                    'unit'        => $p['unit'] ?? '-',
+                    'bulan'       => $bName,
+                    'sasaran'     => $item['sasaran_program'] ?? '',
+                    'indikator'   => $item['indikator_kinerja'] ?? '',
+                    'target'      => (float)($item['target_bulanan'] ?? 0),
+                    'satuan'      => $item['satuan'] ?? '',
+                    'status_kirim'=> ($item['status'] ?? 'draft') === 'terkirim' ? 'Terkirim' : 'Draf',
+                    'status_appr' => ($item['status_approval'] ?? '') === 'disetujui' ? 'Disetujui' : 'Menunggu Persetujuan'
+                ];
+            }
+        }
+
+        $persenKirim = $statTotalPegawai > 0 ? round(($statSudahMengirim / $statTotalPegawai) * 100, 1) : 0;
+        $persenSetuju = $statTotalPegawai > 0 ? round(($statSudahDisetujui / $statTotalPegawai) * 100, 1) : 0;
+
+        return [
+            'semua_pegawai'             => $semuaPegawai,
+            'rekap_target'              => $rekapTarget,
+            'rincian_rows'              => $rincianRows,
+            'targets_by_user'           => $targetsByUser,
+            'user_map'                  => $userMap,
+            'bulan_terpilih'            => $bulanTerpilih,
+            'tahun_terpilih'            => $tahunTerpilih,
+            'nama_bulan'                => $namaBulan,
+            'nama_bulan_ttd'            => $namaBulanTtd,
+            'bulan_indo'                => $bulanIndo,
+            'unit_filter'               => $unitFilter,
+            'role_filter'               => $roleFilter,
+            'status_filter'             => $statusFilter,
+            'stat_total_pegawai'        => $statTotalPegawai,
+            'stat_sudah_mengirim'       => $statSudahMengirim,
+            'stat_draft'                => $statDraft,
+            'stat_belum_mengisi'        => $statBelumMengisi,
+            'stat_sudah_disetujui'      => $statSudahDisetujui,
+            'stat_menunggu_persetujuan' => $statMenungguPersetujuan,
+            'stat_total_rhk'            => $statTotalRhk,
+            'persen_kirim'              => $persenKirim,
+            'persen_setuju'             => $persenSetuju,
+        ];
     }
 
     /**

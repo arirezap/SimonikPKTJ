@@ -59,6 +59,11 @@ class SettingsController extends BaseController
                 'setting_name'  => 'Pesan Pemeliharaan Sistem',
                 'setting_value' => 'Sistem sedang melakukan sinkronisasi pembaruan performa dan peningkatan fitur terbaru. Layanan akan kembali normal dalam beberapa saat.',
                 'description'   => 'Pesan kustom yang ditampilkan kepada pengguna saat mode pemeliharaan aktif.'
+            ],
+            'hide_heatmap_years' => [
+                'setting_name'  => 'Tahun Penonaktifan Kalender Heatmap',
+                'setting_value' => '[]',
+                'description'   => 'Daftar tahun di mana kalender heatmap pada menu Rekap & Penilaian Kinerja disembunyikan untuk semua pengguna dan digantikan dengan tabel laporan harian.'
             ]
         ];
 
@@ -94,6 +99,15 @@ class SettingsController extends BaseController
         $totalAuditLogs = $db->table('audit_logs')->countAllResults();
         $totalNotifications = $db->table('notifications')->countAllResults();
 
+        $rawHiddenYears = $settingsMap['hide_heatmap_years']['setting_value'] ?? '[]';
+        $hiddenHeatmapYears = json_decode($rawHiddenYears, true);
+        if (!is_array($hiddenHeatmapYears)) {
+            $hiddenHeatmapYears = [];
+        }
+
+        $currentYear = (int)date('Y');
+        $availableYears = range(2024, max($currentYear + 2, 2028));
+
         $data = [
             'title'                      => 'Pengaturan Sistem',
             'settingsMap'                => $settingsMap,
@@ -103,6 +117,8 @@ class SettingsController extends BaseController
             'isPenilaianDeadlineActive'  => ($settingsMap['enable_penilaian_deadline']['setting_value'] ?? '0') === '1',
             'isMaintenanceActive'        => ($settingsMap['enable_maintenance_mode']['setting_value'] ?? '0') === '1',
             'maintenanceMessage'         => $settingsMap['maintenance_message']['setting_value'] ?? 'Sistem sedang melakukan sinkronisasi pembaruan performa dan peningkatan fitur terbaru. Layanan akan kembali normal dalam beberapa saat.',
+            'hiddenHeatmapYears'         => $hiddenHeatmapYears,
+            'availableYears'             => $availableYears,
             'databaseName'               => $dbName,
             'totalTables'                => count($tables),
             'totalAuditLogs'             => $totalAuditLogs,
@@ -121,54 +137,102 @@ class SettingsController extends BaseController
         $settingModel = new SettingModel();
         $this->ensureDefaultSettings($settingModel);
         
-        // 1. Simpan status masing-masing saklar toggle (1 per 1)
-        $toggles = [
-            'enable_target_deadline'      => $this->request->getPost('enable_target_deadline') ? '1' : '0',
-            'enable_monthly_log_deadline' => $this->request->getPost('enable_monthly_log_deadline') ? '1' : '0',
-            'enable_log_deadline'         => $this->request->getPost('enable_log_deadline') ? '1' : '0',
-            'enable_penilaian_deadline'   => $this->request->getPost('enable_penilaian_deadline') ? '1' : '0',
-            'enable_maintenance_mode'     => $this->request->getPost('enable_maintenance_mode') ? '1' : '0',
-        ];
+        $db = \Config\Database::connect();
+        $db->transStart();
 
-        foreach ($toggles as $tKey => $tVal) {
-            $settingModel->update($tKey, [
-                'setting_value' => $tVal,
-                'updated_at'    => date('Y-m-d H:i:s')
-            ]);
-        }
+        try {
+            // 1. Simpan status masing-masing saklar toggle (1 per 1)
+            $toggles = [
+                'enable_target_deadline'      => $this->request->getPost('enable_target_deadline') ? '1' : '0',
+                'enable_monthly_log_deadline' => $this->request->getPost('enable_monthly_log_deadline') ? '1' : '0',
+                'enable_log_deadline'         => $this->request->getPost('enable_log_deadline') ? '1' : '0',
+                'enable_penilaian_deadline'   => $this->request->getPost('enable_penilaian_deadline') ? '1' : '0',
+                'enable_maintenance_mode'     => $this->request->getPost('enable_maintenance_mode') ? '1' : '0',
+            ];
 
-        // 2. Simpan nilai parameter angka dan teks dengan batasan (clamping) valid
-        $settings = $this->request->getPost('settings');
-        if ($settings && is_array($settings)) {
-            foreach ($settings as $key => $value) {
-                if ($key === 'maintenance_message') {
-                    $valClean = trim((string)$value);
-                } else {
-                    $rawVal = (int)trim((string)$value);
-                    if (in_array($key, ['batas_input_target', 'batas_penilaian_kinerja'])) {
-                        $valClean = (string)min(31, max(1, $rawVal));
-                    } elseif ($key === 'toleransi_hari_bulan_lalu') {
-                        $valClean = (string)min(30, max(0, $rawVal)); // Min 0 hari, Max 30 hari
-                    } elseif ($key === 'batas_input_log') {
-                        $valClean = (string)min(60, max(1, $rawVal));
-                    } else {
-                        $valClean = (string)max(0, $rawVal);
-                    }
-                }
-
-                $settingModel->update($key, [
-                    'setting_value' => (string)$valClean,
+            foreach ($toggles as $tKey => $tVal) {
+                $settingModel->update($tKey, [
+                    'setting_value' => $tVal,
                     'updated_at'    => date('Y-m-d H:i:s')
                 ]);
             }
+
+            // 2. Simpan nilai parameter angka dan teks dengan batasan (clamping) valid dan whitelist kunci resmi
+            $allowedSettingKeys = [
+                'batas_input_target',
+                'toleransi_hari_bulan_lalu',
+                'batas_input_log',
+                'batas_penilaian_kinerja',
+                'maintenance_message'
+            ];
+
+            $settings = $this->request->getPost('settings');
+            $cleanSettings = [];
+            if ($settings && is_array($settings)) {
+                foreach ($settings as $key => $value) {
+                    if (!in_array($key, $allowedSettingKeys, true)) {
+                        continue;
+                    }
+
+                    if ($key === 'maintenance_message') {
+                        $valClean = trim((string)$value);
+                    } else {
+                        $rawVal = (int)trim((string)$value);
+                        if (in_array($key, ['batas_input_target', 'batas_penilaian_kinerja'], true)) {
+                            $valClean = (string)min(31, max(1, $rawVal));
+                        } elseif ($key === 'toleransi_hari_bulan_lalu') {
+                            $valClean = (string)min(30, max(0, $rawVal)); // Min 0 hari, Max 30 hari
+                        } elseif ($key === 'batas_input_log') {
+                            $valClean = (string)min(60, max(1, $rawVal));
+                        } else {
+                            $valClean = (string)max(0, $rawVal);
+                        }
+                    }
+
+                    $cleanSettings[$key] = $valClean;
+                    $settingModel->update($key, [
+                        'setting_value' => (string)$valClean,
+                        'updated_at'    => date('Y-m-d H:i:s')
+                    ]);
+                }
+            }
+
+            // 3. Simpan pengaturan tahun penonaktifan kalender heatmap
+            $rawHeatmapYears = $this->request->getPost('hide_heatmap_years');
+            $cleanHeatmapYears = [];
+            if (is_array($rawHeatmapYears)) {
+                foreach ($rawHeatmapYears as $yr) {
+                    $yrInt = (int)$yr;
+                    if ($yrInt >= 2020 && $yrInt <= 2099) {
+                        $cleanHeatmapYears[] = (string)$yrInt;
+                    }
+                }
+            }
+            $cleanHeatmapYears = array_values(array_unique($cleanHeatmapYears));
+            sort($cleanHeatmapYears);
+
+            $settingModel->update('hide_heatmap_years', [
+                'setting_value' => json_encode($cleanHeatmapYears),
+                'updated_at'    => date('Y-m-d H:i:s')
+            ]);
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                return redirect()->back()->with('error', 'Gagal menyimpan pengaturan. Silakan coba lagi.');
+            }
+        } catch (\Throwable $e) {
+            $db->transRollback();
+            return redirect()->back()->with('error', 'Gagal menyimpan pengaturan: ' . $e->getMessage());
         }
 
         // Invalidate in-memory cache seketika
         SettingModel::clearCache();
 
         log_audit('UPDATE', 'settings', 'system_and_deadlines', null, [
-            'toggles' => $toggles,
-            'values'  => $settings
+            'toggles'            => $toggles,
+            'values'             => $cleanSettings,
+            'hide_heatmap_years' => $cleanHeatmapYears
         ]);
         
         $msg = $toggles['enable_maintenance_mode'] === '1'
@@ -179,13 +243,18 @@ class SettingsController extends BaseController
     }
 
     /**
-     * Pencadangan Basis Data 1-Klik untuk Superadmin (Pure PHP Stream Writer)
+     * Pencadangan Basis Data 1-Klik untuk Superadmin (Pure PHP Unbuffered Stream Writer)
      * Menghasilkan berkas .sql standar yang 100% kompatibel dengan phpMyAdmin / MySQL
      */
     public function backupDatabase()
     {
         if (!hasRole('admin')) {
             return redirect()->to('dashboard')->with('error', 'Akses ditolak. Hanya administrator yang dapat mencadangkan basis data.');
+        }
+
+        // Hindari batas waktu eksekusi skrip saat streaming basis data besar
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(0);
         }
 
         // Batasi frekuensi pencadangan (maksimal 3 kali per menit)
@@ -255,16 +324,16 @@ class SettingsController extends BaseController
                 echo $createRow['Create Table'] . ";\n\n";
             }
 
-            // Data Baris
+            // Data Baris (Unbuffered Streaming O(1) Memory)
             $count = $db->table($table)->countAllResults();
             if ($count > 0) {
                 echo "-- Data untuk Tabel: `" . $table . "` (Total: " . $count . " baris)\n";
-                $query = $db->table($table)->get();
+                $query = $db->query("SELECT * FROM `" . $table . "`");
                 $batch = [];
                 $batchSize = 100;
                 $fields = null;
 
-                foreach ($query->getResultArray() as $row) {
+                while ($row = $query->getUnbufferedRow('array')) {
                     if ($fields === null) {
                         $fields = '`' . implode('`, `', array_keys($row)) . '`';
                     }
@@ -290,6 +359,7 @@ class SettingsController extends BaseController
 
                 if (!empty($batch)) {
                     echo "INSERT INTO `" . $table . "` (" . $fields . ") VALUES\n" . implode(",\n", $batch) . ";\n";
+                    flush();
                 }
                 echo "\n";
             }
@@ -330,25 +400,17 @@ class SettingsController extends BaseController
         $db->transStart();
 
         if ($target === 'all' || $target === 'audit_logs') {
-            $deletedAudit = $db->table('audit_logs')
-                               ->where('created_at <', $cutoffDate)
-                               ->countAllResults(false);
-            if ($deletedAudit > 0) {
-                $db->table('audit_logs')
-                   ->where('created_at <', $cutoffDate)
-                   ->delete();
-            }
+            $db->table('audit_logs')
+               ->where('created_at <', $cutoffDate)
+               ->delete();
+            $deletedAudit = (int)$db->affectedRows();
         }
 
         if ($target === 'all' || $target === 'notifications') {
-            $deletedNotif = $db->table('notifications')
-                               ->where('created_at <', $cutoffDate)
-                               ->countAllResults(false);
-            if ($deletedNotif > 0) {
-                $db->table('notifications')
-                   ->where('created_at <', $cutoffDate)
-                   ->delete();
-            }
+            $db->table('notifications')
+               ->where('created_at <', $cutoffDate)
+               ->delete();
+            $deletedNotif = (int)$db->affectedRows();
         }
 
         $db->transComplete();

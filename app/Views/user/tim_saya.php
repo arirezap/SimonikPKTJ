@@ -219,12 +219,23 @@
     width: 100%;
 }
 
+/* Micro-Interaction Animation: Spin Icon */
+@keyframes spinIcon {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.spin-icon {
+    display: inline-block;
+    animation: spinIcon 1s linear infinite;
+}
+
 /* Accessibility: Prefers Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
     .bento-stagger,
     .btn-tactile,
     .kpi-bento-card,
     .mobile-staf-card,
+    .spin-icon,
     #addStafModal .modal-content {
         animation: none !important;
         transition: none !important;
@@ -481,7 +492,7 @@
                                 <form action="<?= site_url('tim/remove') ?>" method="POST" class="w-100 form-remove-staf">
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="staf_id" value="<?= $b['id'] ?>">
-                                    <button type="button" class="btn btn-outline-danger btn-sm btn-tactile rounded-pill w-100 py-2 d-inline-flex align-items-center justify-content-center gap-1.5 btn-remove-staf fw-semibold shadow-xs" data-nama="<?= esc($b['nama_lengkap']) ?>" style="min-height: 40px; font-size: 0.8125rem;">
+                                    <button type="button" class="btn btn-outline-danger btn-sm btn-tactile rounded-pill w-100 py-2 d-inline-flex align-items-center justify-content-center gap-1.5 btn-remove-staf fw-semibold shadow-xs" data-nama="<?= esc($b['nama_lengkap']) ?>" style="min-height: 44px; font-size: 0.8125rem;">
                                         <i class="bi bi-person-x-fill"></i>
                                         <span>Keluarkan dari Tim</span>
                                     </button>
@@ -580,6 +591,17 @@
 <script>
 $(document).ready(function() {
     
+    // Fungsi Pembantu: Sanitasi Teks HTML untuk Mencegah DOM-based XSS
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
     // 1. Template Hasil Pencarian Pegawai di Select2 (Bento Card Style)
     function formatPegawaiOption(state) {
         if (!state.id || !state.element) {
@@ -591,9 +613,15 @@ $(document).ready(function() {
         const unit = state.element.dataset.unit || 'Tanpa Unit';
         const hasAtasan = state.element.dataset.hasAtasan === '1';
 
+        // Sanitasi seluruh data atribut sebelum disisipkan ke DOM
+        const safeNama = escapeHtml(nama);
+        const safeNip = escapeHtml(nip);
+        const safeJabatan = escapeHtml(jabatan);
+        const safeUnit = escapeHtml(unit);
+
         // Inisial avatar
         const parts = nama.trim().split(' ').filter(Boolean);
-        const initials = (parts.length >= 2 ? (parts[0][0] + parts[1][0]) : (parts[0] ? parts[0].substring(0, 2) : 'PG')).toUpperCase();
+        const initials = escapeHtml((parts.length >= 2 ? (parts[0][0] + parts[1][0]) : (parts[0] ? parts[0].substring(0, 2) : 'PG')).toUpperCase());
 
         return $(`
             <div class="select2-pegawai-card py-1">
@@ -602,13 +630,13 @@ $(document).ready(function() {
                 </div>
                 <div class="d-flex flex-column flex-grow-1" style="min-width: 0;">
                     <div class="d-flex align-items-center justify-content-between gap-2">
-                        <span class="fw-bold nama-pegawai text-truncate text-dark" style="font-size: 0.88rem;">${nama}</span>
-                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2 py-0.5 flex-shrink-0" style="font-size: 0.68rem;">${jabatan}</span>
+                        <span class="fw-bold nama-pegawai text-truncate text-dark" style="font-size: 0.88rem;">${safeNama}</span>
+                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2 py-0.5 flex-shrink-0" style="font-size: 0.68rem;">${safeJabatan}</span>
                     </div>
                     <div class="d-flex align-items-center gap-2 mt-0.5" style="font-size: 0.75rem; color: #64748b;">
-                        <span class="text-nowrap flex-shrink-0 font-monospace"><i class="bi bi-person-badge me-1 opacity-75"></i>${nip}</span>
+                        <span class="text-nowrap flex-shrink-0 font-monospace"><i class="bi bi-person-badge me-1 opacity-75"></i>${safeNip}</span>
                         <span class="opacity-50 flex-shrink-0">•</span>
-                        <span class="text-truncate flex-grow-1"><i class="bi bi-building me-1 opacity-75"></i>${unit}</span>
+                        <span class="text-truncate flex-grow-1"><i class="bi bi-building me-1 opacity-75"></i>${safeUnit}</span>
                         ${hasAtasan ? '<span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2 py-0.5 flex-shrink-0 ms-auto" style="font-size: 0.65rem;">Sudah punya atasan</span>' : ''}
                     </div>
                 </div>
@@ -739,15 +767,24 @@ $(document).ready(function() {
                 },
                 body: formData
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data[csrfTokenName]) {
+            .then(response => {
+                return response.json().then(data => ({
+                    ok: response.ok,
+                    data: data
+                })).catch(() => ({
+                    ok: response.ok,
+                    data: {}
+                }));
+            })
+            .then(res => {
+                const data = res.data;
+                if (data && data[csrfTokenName]) {
                     document.querySelectorAll('input[name="' + csrfTokenName + '"]').forEach(input => {
                         input.value = data[csrfTokenName];
                     });
                 }
 
-                if (data.success) {
+                if (res.ok && data.success) {
                     statusDiv.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i> Tersimpan';
                     statusDiv.className = 'update-status small mt-1 text-success fw-medium';
                 } else {
@@ -758,7 +795,7 @@ $(document).ready(function() {
             })
             .catch(error => {
                 console.error('Error:', error);
-                statusDiv.innerHTML = '<i class="bi bi-x-circle-fill text-danger"></i> Error jaringan!';
+                statusDiv.innerHTML = '<i class="bi bi-x-circle-fill text-danger"></i> Gagal menyimpan. Coba lagi.';
                 statusDiv.className = 'update-status small mt-1 text-danger';
                 setTimeout(() => { statusDiv.innerHTML = ''; }, 3000);
             });
@@ -776,7 +813,7 @@ $(document).ready(function() {
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     title: 'Keluarkan dari Tim?',
-                    text: `Apakah Anda yakin ingin mengeluarkan ${namaPegawai} dari tim Anda?`,
+                    text: 'Pegawai ini akan dikeluarkan dari tim Anda.',
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#dc3545',

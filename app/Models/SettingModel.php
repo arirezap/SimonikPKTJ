@@ -58,6 +58,18 @@ class SettingModel extends Model
     }
 
     /**
+     * Helper statis instan O(1) untuk mengambil nilai pengaturan
+     *
+     * @param string $key
+     * @param mixed $default
+     * @return mixed
+     */
+    public static function getSetting(string $key, $default = null)
+    {
+        return (new self())->getValue($key, $default);
+    }
+
+    /**
      * Ambil seluruh data baris pengaturan sebagai map terindeks setting_key
      *
      * @return array

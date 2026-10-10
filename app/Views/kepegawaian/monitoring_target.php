@@ -692,7 +692,16 @@
                                             <?php endif; ?>
                                             <div class="lh-sm flex-grow-1">
                                                 <div class="d-flex align-items-center justify-content-between pe-1">
-                                                    <div class="fw-bold text-dark mb-0.5 pegawai-nama-text"><?= esc($user['nama_lengkap']) ?></div>
+                                                    <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                                                        <span class="fw-bold text-dark mb-0.5 pegawai-nama-text"><?= esc($user['nama_lengkap']) ?></span>
+                                                        <?php if (($user['status_pegawai'] ?? 'aktif') === 'mutasi_keluar'): ?>
+                                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Mutasi Keluar <?= !empty($user['tmt_selesai']) ? 'TMT ' . date('d/m/Y', strtotime($user['tmt_selesai'])) : '' ?>">Mutasi</span>
+                                                        <?php elseif (($user['status_pegawai'] ?? 'aktif') === 'pensiun'): ?>
+                                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Pensiun">Pensiun</span>
+                                                        <?php elseif (($user['status_pegawai'] ?? 'aktif') === 'nonaktif'): ?>
+                                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Nonaktif">Nonaktif</span>
+                                                        <?php endif; ?>
+                                                    </div>
                                                     <span class="row-hover-hint ms-1" title="Lihat rincian"><i class="bi bi-chevron-right"></i></span>
                                                 </div>
                                                 <div class="text-muted small" style="font-size: 0.72rem;">
@@ -849,7 +858,16 @@
                                     </div>
                                 <?php endif; ?>
                                 <div class="lh-sm flex-grow-1">
-                                    <div class="fw-bold text-dark mobile-nama-text"><?= esc($user['nama_lengkap']) ?></div>
+                                    <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                                        <span class="fw-bold text-dark mobile-nama-text"><?= esc($user['nama_lengkap']) ?></span>
+                                        <?php if (($user['status_pegawai'] ?? 'aktif') === 'mutasi_keluar'): ?>
+                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Mutasi Keluar <?= !empty($user['tmt_selesai']) ? 'TMT ' . date('d/m/Y', strtotime($user['tmt_selesai'])) : '' ?>">Mutasi</span>
+                                        <?php elseif (($user['status_pegawai'] ?? 'aktif') === 'pensiun'): ?>
+                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Pensiun">Pensiun</span>
+                                        <?php elseif (($user['status_pegawai'] ?? 'aktif') === 'nonaktif'): ?>
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Nonaktif">Nonaktif</span>
+                                        <?php endif; ?>
+                                    </div>
                                     <div class="text-muted small" style="font-size: 0.72rem;">NIP: <span class="num-tabular"><?= !empty($user['nip']) ? esc($user['nip']) : '-' ?></span></div>
                                     <div class="text-secondary small fw-medium mt-0.5" style="font-size: 0.7rem;"><?= !empty($user['jabatan']) ? esc($user['jabatan']) : '-' ?></div>
                                 </div>
@@ -1335,9 +1353,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="ecc-loading-spinner-wrapper">
                             <div class="ecc-loading-spinner spinner-border text-primary" role="status" style="width: 2.75rem; height: 2.75rem; border-width: 3.5px;"></div>
                         </div>
-                        <div class="ecc-loading-title">Sedang mengompilasi data target kinerja...</div>
-                        <span class="ecc-loading-desc">Sistem sedang merekap data target, sasaran program, dan status persetujuan. Mohon tunggu, berkas akan terunduh otomatis saat proses selesai.</span>
-                        <span class="ecc-loading-badge-step"><i class="bi bi-shield-check text-primary"></i> Streaming data terenkripsi & aman</span>
+                        <div class="ecc-loading-title">Sedang menyiapkan berkas...</div>
+                        <span class="ecc-loading-desc">Mohon tunggu sebentar, unduhan akan dimulai otomatis.</span>
                     </div>
                 `,
                 customClass: {

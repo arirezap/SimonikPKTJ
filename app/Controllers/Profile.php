@@ -8,39 +8,69 @@ use App\Models\User;
 class Profile extends BaseController
 {
     protected $userModel;
+    protected $unitKerjaModel;
 
     public function __construct()
     {
         $this->userModel = new User();
+        $this->unitKerjaModel = new \App\Models\UnitKerja();
     }
 
     public function index()
     {
+        helper(['avatar', 'audit']);
+
         $userId = session()->get('id') ?? session()->get('user_id');
         
-        // AMBIL DATA FRESH DARI DB (Solusi Error Undefined Index)
+        // Ambil data terbaru pengguna dari basis data
         $user = $this->userModel->find($userId);
 
         if (!$user) {
             return redirect()->to('logout');
         }
 
-        $unitKerjaModel = new \App\Models\UnitKerja();
-        $unit_kerja_list = $unitKerjaModel->orderBy('nama_unit', 'ASC')->findAll();
+        $unit_kerja_list = $this->unitKerjaModel->orderBy('nama_unit', 'ASC')->findAll();
         
-        $bossRoles = ['direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'kanit', 'katim', 'kapokja'];
-        $potential_bosses = $this->userModel->select('id, nama_lengkap, nip, unit, jabatan, role')
-                                            ->where('id !=', $userId)
-                                            ->whereIn('role', $bossRoles)
-                                            ->orderBy('nama_lengkap', 'ASC')
-                                            ->findAll();
+        // PRF-05: Deteksi role Direktur (Pimpinan Tertinggi tanpa atasan langsung)
+        $isDirektur = (strtolower(trim($user['role'] ?? '')) === 'direktur');
+
+        // PRF-04: Filter kandidat atasan hanya pegawai aktif (status_pegawai = 'aktif')
+        $potential_bosses = [];
+        if (!$isDirektur) {
+            $bossRoles = ['direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'kanit', 'katim', 'kapokja'];
+            $potential_bosses = $this->userModel->select('id, nama_lengkap, nip, unit, jabatan, role')
+                                                ->where('id !=', $userId)
+                                                ->where('status_pegawai', 'aktif')
+                                                ->whereIn('role', $bossRoles)
+                                                ->orderBy('nama_lengkap', 'ASC')
+                                                ->findAll();
+
+            // Failsafe: Jika pengguna sudah memiliki atasan_id, pastikan record atasan tetap termuat agar tidak terputus
+            if (!empty($user['atasan_id'])) {
+                $existingBossFound = false;
+                foreach ($potential_bosses as $pb) {
+                    if ((int)$pb['id'] === (int)$user['atasan_id']) {
+                        $existingBossFound = true;
+                        break;
+                    }
+                }
+                if (!$existingBossFound) {
+                    $curBoss = $this->userModel->select('id, nama_lengkap, nip, unit, jabatan, role')
+                                               ->find($user['atasan_id']);
+                    if ($curBoss) {
+                        array_unshift($potential_bosses, $curBoss);
+                    }
+                }
+            }
+        }
 
         $data = [
-            'title' => 'Profil Saya',
-            'user'  => $user,
+            'title'            => 'Profil Saya',
+            'user'             => $user,
+            'is_direktur'      => $isDirektur,
             'unit_kerja_list'  => $unit_kerja_list,
             'potential_bosses' => $potential_bosses,
-            'validation' => \Config\Services::validation()
+            'validation'       => \Config\Services::validation()
         ];
 
         return view('profile', $data);
@@ -53,31 +83,44 @@ class Profile extends BaseController
         // 1. Validasi Input Dasar
         $rules = [
             'nama_lengkap' => [
-                'rules'  => 'required',
-                'errors' => ['required' => 'Nama lengkap wajib diisi.']
+                'rules'  => 'required|max_length[100]',
+                'errors' => [
+                    'required'   => 'Nama lengkap wajib diisi.',
+                    'max_length' => 'Nama lengkap maksimal 100 karakter.'
+                ]
             ],
             'email' => [
-                'rules'  => 'required|valid_email',
+                'rules'  => 'required|valid_email|max_length[100]',
                 'errors' => [
                     'required'    => 'Alamat email wajib diisi.',
-                    'valid_email' => 'Format email tidak sesuai.'
+                    'valid_email' => 'Format email tidak sesuai.',
+                    'max_length'  => 'Alamat email maksimal 100 karakter.'
                 ]
             ],
             'nip' => [
-                'rules'  => 'required',
-                'errors' => ['required' => 'NIP atau NIK wajib diisi.']
+                'rules'  => 'required|max_length[50]',
+                'errors' => [
+                    'required'   => 'NIP atau NIK wajib diisi.',
+                    'max_length' => 'NIP atau NIK maksimal 50 karakter.'
+                ]
             ],
             'jabatan' => [
-                'rules'  => 'required',
-                'errors' => ['required' => 'Jabatan wajib diisi.']
+                'rules'  => 'required|max_length[100]',
+                'errors' => [
+                    'required'   => 'Jabatan wajib diisi.',
+                    'max_length' => 'Jabatan maksimal 100 karakter.'
+                ]
             ],
             'unit' => [
-                'rules'  => 'required',
-                'errors' => ['required' => 'Pilih unit kerja.']
+                'rules'  => 'required|max_length[100]',
+                'errors' => [
+                    'required'   => 'Pilih unit kerja.',
+                    'max_length' => 'Unit kerja maksimal 100 karakter.'
+                ]
             ]
         ];
 
-        // Validasi foto hanya jika pengguna memilih file (tidak kosong)
+        // Validasi foto hanya jika pengguna memilih berkas (tidak kosong)
         $fileFoto = $this->request->getFile('foto');
         if ($fileFoto && $fileFoto->getError() !== UPLOAD_ERR_NO_FILE) {
             $rules['foto'] = [
@@ -100,39 +143,49 @@ class Profile extends BaseController
             return redirect()->to('logout');
         }
 
-        $emailPost = trim((string)$this->request->getPost('email'));
-        $nipPost   = trim((string)$this->request->getPost('nip'));
-        $namaPost  = trim((string)$this->request->getPost('nama_lengkap'));
+        $emailPost   = trim((string)$this->request->getPost('email'));
+        $nipPost     = trim((string)$this->request->getPost('nip'));
+        $namaPost    = trim((string)$this->request->getPost('nama_lengkap'));
         $jabatanPost = trim((string)$this->request->getPost('jabatan'));
         $pangkatPost = trim((string)$this->request->getPost('pangkat'));
-        $unitPost  = trim((string)$this->request->getPost('unit'));
-        $noHpPost  = preg_replace('/[^0-9+]/', '', trim((string)$this->request->getPost('no_hp')));
+        $unitPost    = trim((string)$this->request->getPost('unit'));
+        $noHpPost    = preg_replace('/[^0-9+]/', '', trim((string)$this->request->getPost('no_hp')));
 
-        // Validasi Keunikan Email (Mencegah collision dengan akun lain)
+        // Validasi Keunikan Email (Mencegah tabrakan dengan akun lain)
         $existingEmail = $this->userModel->where('email', $emailPost)->where('id !=', $userId)->first();
         if ($existingEmail) {
             return redirect()->back()->withInput()->with('errors', ['email' => 'Alamat email sudah digunakan.']);
         }
 
-        // Validasi Keunikan NIP / NIK (Mencegah collision dengan akun lain)
+        // Validasi Keunikan NIP / NIK (Mencegah tabrakan dengan akun lain)
         $existingNip = $this->userModel->where('nip', $nipPost)->where('id !=', $userId)->first();
         if ($existingNip) {
             return redirect()->back()->withInput()->with('errors', ['nip' => 'NIP atau NIK sudah terdaftar.']);
         }
 
         // Dual-Sync unit_id berdasarkan kecocokan nama_unit
-        $unitKerjaModel = new \App\Models\UnitKerja();
         $unitId = null;
         if (!empty($unitPost)) {
-            $unitDb = $unitKerjaModel->where('nama_unit', $unitPost)->first();
+            $unitDb = $this->unitKerjaModel->where('nama_unit', $unitPost)->first();
             if ($unitDb) {
                 $unitId = (int)$unitDb['id'];
             }
         }
 
-        // Proteksi Self-Atasan Loop: Pengguna tidak boleh menjadi atasan bagi dirinya sendiri
-        $atasanIdPost = $this->request->getPost('atasan_id');
-        $atasanId = (!empty($atasanIdPost) && (int)$atasanIdPost !== (int)$userId) ? (int)$atasanIdPost : null;
+        // PRF-04 & PRF-05: Penanganan Khusus Direktur & Validasi Atasan Langsung
+        $isDirektur = (strtolower(trim($user['role'] ?? '')) === 'direktur');
+        $atasanId = null;
+
+        if (!$isDirektur) {
+            $atasanIdPost = $this->request->getPost('atasan_id');
+            if (!empty($atasanIdPost) && (int)$atasanIdPost !== (int)$userId) {
+                // Pastikan target atasan benar-benar ada di database dan berstatus aktif
+                $bossCandidate = $this->userModel->select('id, status_pegawai, role')->find((int)$atasanIdPost);
+                if ($bossCandidate && ($bossCandidate['status_pegawai'] ?? 'aktif') === 'aktif') {
+                    $atasanId = (int)$atasanIdPost;
+                }
+            }
+        }
 
         $data = [
             'nama_lengkap' => $namaPost,
@@ -147,7 +200,7 @@ class Profile extends BaseController
             'username'     => $user['username'], // Proteksi: Username tidak dapat diubah via POST payload
         ];
 
-        // 3. Cek apakah Password diubah
+        // 3. Cek apakah Kata Sandi diubah
         $password = $this->request->getPost('password');
         $passwordConfirm = $this->request->getPost('password_confirm');
         if (!empty($password)) {
@@ -160,51 +213,55 @@ class Profile extends BaseController
             $data['password'] = password_hash($password, PASSWORD_DEFAULT);
         }
 
-        // 4. Handle Upload Foto
+        // 4. Handle Upload Foto (PRF-06: Menggunakan direktori absolut eksplisit FCPATH)
         $hapusFoto = $this->request->getPost('hapus_foto');
+        $uploadDir = FCPATH . 'assets/uploads/profile';
+        if (!is_dir($uploadDir)) {
+            @mkdir($uploadDir, 0755, true);
+        }
 
         if ($hapusFoto === '1') {
-            // Hapus foto lama jika ada dan bukan file default
-            if (!empty($user['foto']) && $user['foto'] !== 'default.png') {
-                $oldFile = 'assets/uploads/profile/' . basename($user['foto']);
+            // Hapus foto lama jika ada dan bukan berkas bawaan
+            if (!empty($user['foto']) && !in_array($user['foto'], ['default.png', 'undraw_profile.svg'])) {
+                $oldFile = $uploadDir . '/' . basename($user['foto']);
                 if (file_exists($oldFile)) {
                     @unlink($oldFile);
-                } elseif (file_exists(FCPATH . $oldFile)) {
-                    @unlink(FCPATH . $oldFile);
                 }
             }
-            $data['foto'] = null; // Set ke null di DB
+            $data['foto'] = null; // Set ke null di basis data
         } elseif ($fileFoto && $fileFoto->isValid() && !$fileFoto->hasMoved()) {
             $namaFoto = $fileFoto->getRandomName();
             
-            // Hapus foto lama jika ada
-            if (!empty($user['foto']) && $user['foto'] !== 'default.png') {
-                $oldFile = 'assets/uploads/profile/' . basename($user['foto']);
+            // Hapus foto lama jika ada dan bukan berkas bawaan
+            if (!empty($user['foto']) && !in_array($user['foto'], ['default.png', 'undraw_profile.svg'])) {
+                $oldFile = $uploadDir . '/' . basename($user['foto']);
                 if (file_exists($oldFile)) {
                     @unlink($oldFile);
-                } elseif (file_exists(FCPATH . $oldFile)) {
-                    @unlink(FCPATH . $oldFile);
                 }
             }
 
-            // Pindahkan file baru ke folder
-            $fileFoto->move('assets/uploads/profile', $namaFoto);
+            // Pindahkan berkas baru ke direktori absolut
+            $fileFoto->move($uploadDir, $namaFoto);
             $data['foto'] = $namaFoto;
         }
 
-        // Otomatis jadikan role 'spm' jika unit kerjanya diubah ke Satuan Penjaminan Mutu
-        $role_aplikasi = $user['role'];
-        if (strtolower(trim($data['unit'] ?? '')) === 'satuan penjaminan mutu' && in_array($user['role'], ['staf', 'pegawai', 'user'])) {
-            $role_aplikasi = 'spm';
-            $data['role'] = 'spm';
-        }
+        // PRF-01: Peran pengguna tetap konsisten (penghapusan eskalasi peran SPM mandiri)
 
         // 5. Eksekusi Update ke Database dengan Transaksi
         $db = \Config\Database::connect();
         $db->transStart();
         try {
             $this->userModel->update($userId, $data);
-            log_audit('UPDATE', 'users', $userId, $user, $data);
+
+            // PRF-02: Sanitasi Hash Kata Sandi agar Tidak Bocor ke Audit Log
+            $auditOld = $user;
+            unset($auditOld['password']);
+            $auditNew = $data;
+            if (isset($auditNew['password'])) {
+                $auditNew['password'] = '[DIUBAH]';
+            }
+
+            log_audit('UPDATE', 'users', $userId, $auditOld, $auditNew);
             $db->transComplete();
 
             if ($db->transStatus() === false) {
@@ -216,13 +273,16 @@ class Profile extends BaseController
             return redirect()->back()->withInput()->with('errors', ['db' => 'Gagal menyimpan profil. Silakan coba lagi.']);
         }
 
-        // 6. Update Session Data (Agar nama, unit, role & FOTO di header langsung berubah)
+        // 6. Update Session Data Lengkap (PRF-03: Menyelaraskan nama, NIP, jabatan, pangkat, unit, & foto ke sesi)
         $sessionData = [
             'nama'         => $data['nama_lengkap'],
             'nama_lengkap' => $data['nama_lengkap'],
+            'nip'          => $data['nip'],
+            'jabatan'      => $data['jabatan'],
+            'pangkat'      => $data['pangkat'],
             'unit'         => $data['unit'],
             'unit_id'      => $unitId,
-            'role'         => $role_aplikasi
+            'no_hp'        => $data['no_hp'],
         ];
         if (array_key_exists('foto', $data)) {
             $sessionData['foto'] = $data['foto'];

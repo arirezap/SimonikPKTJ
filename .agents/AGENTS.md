@@ -87,6 +87,16 @@ Seluruh modul perhitungan predikat (Controller, Modal AJAX, Desktop Table, Mobil
 ### H. Proteksi Self-Atasan Loop
 - Pengguna tidak diperbolehkan memilih akun dirinya sendiri sebagai Atasan Langsung (`atasan_id !== userId`). Logika pengontrol wajib memvalidasi dan menganulir relasi atasan jika terjadi manipulasi input pemilihan diri sendiri.
 
+### I. Sentralisasi Otorisasi & Kebijakan Rekap Kinerja (`PenilaianKinerjaPolicy`)
+- Hak akses melihat rekap kinerja, detail kegiatan staf, pemberian nilai draf/terbit, reset penilaian, pembukaan kunci revisi, dan pembatalan persetujuan target bulanan wajib dikontrol secara sentral melalui `App\Libraries\PenilaianKinerjaPolicy`.
+- **Privasi Draf Penilai**: Nilai capaian yang masih berstatus draf hanya boleh ditampilkan kepada pihak penilai yang sah. Seluruh respons antarmuka dan API untuk staf hanya mengekspos nilai yang telah resmi berstatus `terbit`.
+- **Penyelarasan Nilai saat Revisi**: Pembukaan izin revisi kegiatan atau pembatalan persetujuan target staf otomatis mereset status penilaian capaian menjadi `NULL` (Belum Dinilai) dalam transaksi atomik, mencegah nilai usang tetap berlaku tanpa proses penilaian ulang yang sah.
+
+### J. Standarisasi Perhitungan Kinerja & Parameter Predikat (`kinerja_helper.php`)
+- Seluruh logika kalkulasi rata-rata capaian kinerja pegawai dan konversi predikat (Sangat Baik, Baik, Butuh Perbaikan, Kurang, Sangat Kurang) wajib dipusatkan pada `app/Helpers/kinerja_helper.php` (`hitung_capaian_kinerja()` dan `hitung_predikat_kinerja()`).
+- Ambang batas predikat resmi dioperkan langsung dari backend ke antarmuka klien (JavaScript) sebagai satu sumber kebenaran (*single source of truth*), mencegah duplikasi atau desinkronisasi logika kalkulasi di peramban.
+- Formulir mandiri Direktur (`#formPenilaianMandiri`) dan formulir staf (`#formPenilaian`) wajib diisolasi secara ketat dalam penamaan selector, validasi rentang 0–150%, dan reset nilai.
+
 ---
 
 ## 5. UI/UX, 8-Point Grid & Interaction Design Standards
@@ -126,6 +136,9 @@ Seluruh modul perhitungan predikat (Controller, Modal AJAX, Desktop Table, Mobil
 - **Clean UI & Pembatasan Ikon (Minimalist Icon Policy)**:
   - **Dilarang menggunakan banyak ikon pada tampilan antarmuka**: Terapkan prinsip kesederhanaan visual (*visual simplicity*). Ikon **hanya digunakan jika memang sangat dibutuhkan** untuk memperjelas aksi fungsional atau navigasi penting (misal: menu sidebar, tombol aksi edit/hapus/tambah, indikator status centang disetujui/silang ditolak/pensil draf, dan avatar).
   - Hindari menaruh ikon dekoratif pada setiap judul, kolom tabel, kartu, label form, atau teks penjelasan jika teks sudah cukup jelas dengan sendirinya (*anti-visual clutter*), agar tampilan aplikasi selalu berpenampilan bersih (*clean*), rapi, elegan, dan profesional.
+- **Animasi Sederhana & Selektif (Simple & Purposeful Motion Policy)**:
+  - **Boleh menambahkan atau mengganti animasi sederhana saja pada halaman hanya jika dibutuhkan**: Periksa terlebih dahulu animasi yang sudah ada di halaman bersangkutan dan sesuaikan secara hemat sesuai kebutuhan.
+  - Hindari animasi berlebihan, lambat, atau mengganggu fokus kerja pengguna. Pastikan transisi halus, performa tetap ringan, dan selalu menghormati `@media (prefers-reduced-motion: reduce)`.
 - **SweetAlert2 & JS Fallback**:
   - Always verify `typeof Swal !== 'undefined'` before invoking `Swal.fire()` and provide native browser dialog fallback (`confirm()`) so the UI functions seamlessly even if CDN assets fail to load.
 

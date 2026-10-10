@@ -3,6 +3,7 @@
 namespace App\Controllers\User;
 
 use App\Controllers\BaseController;
+use App\Libraries\PenilaianKinerjaPolicy;
 use App\Models\LogKegiatanHarian;
 use App\Models\Satuan;
 use App\Models\SettingModel;
@@ -22,6 +23,68 @@ class LaporanHarianController extends BaseController
      * Batas kuota maksimum baris target yang dapat disimpan dalam satu bulan.
      */
     public const MAX_TARGET_ROWS = 30;
+
+    /**
+     * Memeriksa apakah pegawai memiliki izin revisi yang sah dari Superadmin untuk periode tertentu.
+     * Izin revisi diverifikasi melalui jejak audit CANCEL_APPROVE_TARGET dalam 14 hari terakhir
+     * dan target pada periode tersebut masih berstatus belum disetujui (draf revisi).
+     */
+    public static function hasRevisionPermission(int $userId, int $bulan, int $tahun): bool
+    {
+        if ($userId <= 0 || $bulan < 1 || $bulan > 12 || $tahun < 2020) {
+            return false;
+        }
+
+        $db = \Config\Database::connect();
+        $fourteenDaysAgo = date('Y-m-d H:i:s', strtotime('-14 days'));
+        $auditLogs = $db->table('audit_logs')
+                        ->where('action', 'CANCEL_APPROVE_TARGET')
+                        ->where('entity', 'target_kinerja_bulanan')
+                        ->where('entity_id', (string)$userId)
+                        ->where('created_at >=', $fourteenDaysAgo)
+                        ->orderBy('id', 'DESC')
+                        ->get()
+                        ->getResultArray();
+
+        if (empty($auditLogs)) {
+            return false;
+        }
+
+        $hasValidAudit = false;
+        foreach ($auditLogs as $log) {
+            $newVals = !empty($log['new_values']) ? json_decode($log['new_values'], true) : null;
+            if (is_array($newVals) && isset($newVals['bulan'], $newVals['tahun'])) {
+                if ((int)$newVals['bulan'] === (int)$bulan && (int)$newVals['tahun'] === (int)$tahun) {
+                    $hasValidAudit = true;
+                    break;
+                }
+            }
+        }
+
+        if (!$hasValidAudit) {
+            return false;
+        }
+
+        $targetModel = new TargetKinerja();
+        $targets = $targetModel->where('user_id', $userId)
+                               ->where('bulan', $bulan)
+                               ->where('tahun', $tahun)
+                               ->findAll();
+
+        if (empty($targets)) {
+            return false;
+        }
+
+        $allApproved = true;
+        foreach ($targets as $t) {
+            if (($t['status_approval'] ?? '') !== 'disetujui') {
+                $allApproved = false;
+                break;
+            }
+        }
+
+        return !$allApproved;
+    }
 
     public function index()
     {
@@ -76,10 +139,12 @@ class LaporanHarianController extends BaseController
         $namaBulan = $bulanIndo[$bulanTerpilih - 1];
 
         // Ambil data laporan/target pada bulan tersebut untuk user ini (Target Saya)
-        $rekapDataSendiri = $laporanModel->where('user_id', $userId)
-                                  ->where('bulan', $bulanTerpilih)
-                                  ->where('tahun', $tahunTerpilih)
-                                  ->findAll();
+        $rekapDataSendiri = $laporanModel->select('id, user_id, sasaran_program, indikator_kinerja, target_bulanan, satuan, status_approval, status, nilai_capaian, status_penilaian')
+                                         ->where('user_id', $userId)
+                                         ->where('bulan', $bulanTerpilih)
+                                         ->where('tahun', $tahunTerpilih)
+                                         ->orderBy('id', 'ASC')
+                                         ->findAll();
 
         // Cek apakah user punya staf atau akses pimpinan eksekutif (Admin, Direktur)
         // Catatan: Role Wadir tidak memiliki akses menyetujui / merevisi target staf
@@ -91,7 +156,19 @@ class LaporanHarianController extends BaseController
                 $daftarUnit[] = $u['unit'];
             }
 
-            $builder = $userModel->where('id !=', $userId);
+            $periodDate = sprintf('%04d-%02d-01', (int)$tahunTerpilih, (int)$bulanTerpilih);
+            $periodMonth = date('Y-m', strtotime($periodDate));
+
+            $builder = $userModel->select('id, nama_lengkap, jabatan, unit, role, status_pegawai, tmt_selesai, atasan_id')
+                                 ->where('id !=', $userId)
+                                 ->groupStart()
+                                     ->where('status_pegawai', 'aktif')
+                                     ->orGroupStart()
+                                         ->whereIn('status_pegawai', ['mutasi_keluar', 'pensiun'])
+                                         ->where('tmt_selesai IS NOT NULL')
+                                         ->where('tmt_selesai >=', $periodMonth . '-01')
+                                     ->groupEnd()
+                                 ->groupEnd();
             if (!empty($unitKerjaTerpilih)) {
                 $builder = $builder->where('unit', $unitKerjaTerpilih);
             }
@@ -102,16 +179,31 @@ class LaporanHarianController extends BaseController
             $daftarStaf = [];
             $isAtasan = false;
         } else {
-            $daftarStaf = $userModel->getStaf($userId);
+            $periodDate = sprintf('%04d-%02d-01', (int)$tahunTerpilih, (int)$bulanTerpilih);
+            $periodMonth = date('Y-m', strtotime($periodDate));
+
+            $daftarStaf = $userModel->getStaf($userId, $periodDate);
             // Jika user punya role kepegawaian, sertakan seluruh pegawai Tugas Belajar
             if (hasRole('kepegawaian')) {
                 $db = \Config\Database::connect();
                 $tubelIds = array_column($db->table('user_roles')->select('user_id')->where('role_name', 'tugas_belajar')->get()->getResultArray(), 'user_id');
-                $builder = $userModel->where('role', 'tugas_belajar');
+                $tubelBuilder = $userModel->select('id, nama_lengkap, jabatan, unit, role, status_pegawai, tmt_selesai, atasan_id')
+                                          ->groupStart()
+                                          ->where('role', 'tugas_belajar');
                 if (!empty($tubelIds)) {
-                    $builder->orWhereIn('id', $tubelIds);
+                    $tubelBuilder->orWhereIn('id', $tubelIds);
                 }
-                $tubelUsers = $builder->where('id !=', $userId)->findAll();
+                $tubelUsers = $tubelBuilder->groupEnd()
+                                           ->groupStart()
+                                               ->where('status_pegawai', 'aktif')
+                                               ->orGroupStart()
+                                                   ->whereIn('status_pegawai', ['mutasi_keluar', 'pensiun'])
+                                                   ->where('tmt_selesai IS NOT NULL')
+                                                   ->where('tmt_selesai >=', $periodMonth . '-01')
+                                               ->groupEnd()
+                                           ->groupEnd()
+                                           ->where('id !=', $userId)
+                                           ->findAll();
 
                 $existingIds = array_column($daftarStaf, 'id');
                 foreach ($tubelUsers as $tb) {
@@ -136,13 +228,16 @@ class LaporanHarianController extends BaseController
             }
             if ($isValidStaf) {
                 $isPenyetuju = true;
-                $rekapDataStaf = $laporanModel->where('user_id', $stafIdTerpilih)
+                $rekapDataStaf = $laporanModel->select('id, user_id, sasaran_program, indikator_kinerja, target_bulanan, satuan, status_approval, status, nilai_capaian, status_penilaian')
+                                              ->where('user_id', $stafIdTerpilih)
                                               ->where('bulan', $bulanTerpilih)
                                               ->where('tahun', $tahunTerpilih)
                                               ->where('status', 'terkirim')
+                                              ->orderBy('id', 'ASC')
                                               ->findAll();
             } else {
-                $stafIdTerpilih = ''; 
+                $stafIdTerpilih = '';
+                session()->remove('laporan_staf_id');
             }
         }
 
@@ -152,18 +247,22 @@ class LaporanHarianController extends BaseController
         $batasTarget = (int) $settingModel->getValue('batas_input_target', 5);
         $isLocked = false;
 
+        // Cek apakah periode ini memiliki izin revisi sah yang terverifikasi (K-02 & TKB-11)
+        $targetUserIdContext = !empty($stafIdTerpilih) ? (int)$stafIdTerpilih : (int)$userId;
+        $isRevision = self::hasRevisionPermission($targetUserIdContext, $bulanTerpilih, $tahunTerpilih);
+
         if ($isDeadlineActive && !hasRole('admin') && !hasRole('direktur')) {
             $now = new \DateTime();
             $targetMonth = new \DateTime(sprintf('%04d-%02d-01', $tahunTerpilih, $bulanTerpilih));
             $currentMonth = new \DateTime(date('Y-m-01'));
 
             if ($targetMonth < $currentMonth) {
-                // Bulan lalu terkunci jika pembatasan deadline aktif
-                $isLocked = true;
+                // Bulan lalu terkunci jika pembatasan deadline aktif (kecuali jika dalam izin revisi sah)
+                $isLocked = !$isRevision;
             } elseif ($targetMonth == $currentMonth) {
-                // Bulan berjalan: terkunci jika melewati tanggal batas
+                // Bulan berjalan: terkunci jika melewati tanggal batas (kecuali jika dalam izin revisi sah)
                 if ((int)$now->format('j') > $batasTarget) {
-                    $isLocked = true;
+                    $isLocked = !$isRevision;
                 }
             }
             // Bulan ke depan ($targetMonth > $currentMonth) DIPERBOLEHKAN (tidak dikunci)
@@ -176,10 +275,11 @@ class LaporanHarianController extends BaseController
             'nama_bulan' => $namaBulan,
             'rekap_data_sendiri' => $rekapDataSendiri,
             'rekap_data_staf' => $rekapDataStaf,
-            'daftar_satuan' => $satuanModel->findAll(),
+            'daftar_satuan' => $satuanModel->orderBy('nama_satuan', 'ASC')->findAll(),
             'bulan_indo' => $bulanIndo,
             'batas_target' => $batasTarget,
             'is_locked' => $isLocked,
+            'is_revision' => $isRevision,
             'is_atasan' => $isAtasan,
             'is_penyetuju' => $isPenyetuju,
             'daftar_staf' => $daftarStaf,
@@ -196,50 +296,106 @@ class LaporanHarianController extends BaseController
     {
         $userId = session()->get('id') ?? session()->get('user_id');
         $laporanModel = new TargetKinerja();
-
-        $bulan = (int)$this->request->getPost('bulan');
-        $tahun = (int)$this->request->getPost('tahun');
-        
-        $isEditingStaf = $this->request->getPost('is_editing_staf') == '1';
-        $targetUserId = $isEditingStaf ? $this->request->getPost('staf_id') : $userId;
-
         $userModel = new User();
-        $targetUser = $userModel->find($targetUserId);
-        if (!$targetUser) {
-            $msg = 'Pengguna target tidak ditemukan.';
+
+        $currentUser = $userModel->select('id, nama_lengkap, nip, username, role, unit, atasan_id')->find($userId);
+        if (!$currentUser) {
+            $msg = 'Sesi pengguna tidak valid.';
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+            }
+            return redirect()->to('/login')->with('error', $msg);
+        }
+
+        // Validasi parameter bulan dan tahun (TKB-10)
+        $rawBulan = $this->request->getPost('bulan');
+        $rawTahun = $this->request->getPost('tahun');
+        if (!is_numeric($rawBulan) || (int)$rawBulan < 1 || (int)$rawBulan > 12) {
+            $msg = 'Bulan tidak valid.';
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+            }
+            return redirect()->back()->with('error', $msg);
+        }
+        if (!is_numeric($rawTahun) || (int)$rawTahun < 2020 || (int)$rawTahun > 2099) {
+            $msg = 'Tahun tidak valid.';
             if ($this->request->isAJAX()) {
                 return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
             }
             return redirect()->back()->with('error', $msg);
         }
 
-        // Otorisasi: Jika menyunting target milik staf lain, pastikan user adalah Atasan Langsung, Admin, Direktur, atau Kepegawaian (Wadir tidak diizinkan)
-        if ($isEditingStaf && $targetUserId != $userId) {
-            if (hasRole('wadir')) {
-                $msg = 'Akses ditolak. Role Wakil Direktur tidak memiliki wewenang merevisi target staf.';
+        $bulan = (int)$rawBulan;
+        $tahun = (int)$rawTahun;
+
+        $isEditingStafInput = $this->request->getPost('is_editing_staf') == '1';
+        $stafIdInput = $this->request->getPost('staf_id');
+        $targetUserId = (!empty($stafIdInput) && is_numeric($stafIdInput)) ? (int)$stafIdInput : (int)$userId;
+
+        // Anti-Spoofing (TKB-01): Jika target adalah diri sendiri, dilarang memakai mode is_editing_staf
+        if ((int)$targetUserId === (int)$userId) {
+            $isEditingStaf = false;
+            $targetUserId = (int)$userId;
+            $targetUser = $currentUser;
+        } else {
+            // Target adalah staf lain: wajib divalidasi dengan PenilaianKinerjaPolicy
+            $targetUser = $userModel->select('id, nama_lengkap, nip, username, role, unit, status_pegawai, tmt_selesai, dispensasi_lampau_sampai, atasan_id')->find($targetUserId);
+            if (!$targetUser) {
+                $msg = 'Pengguna target tidak ditemukan.';
                 if ($this->request->isAJAX()) {
                     return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
                 }
                 return redirect()->back()->with('error', $msg);
             }
-            $isAtasan = !empty($targetUser['atasan_id']) && ($targetUser['atasan_id'] == $userId);
-            if (!hasAnyRole(['admin', 'direktur', 'kepegawaian']) && !$isAtasan) {
+
+            if (!PenilaianKinerjaPolicy::canEditTarget($currentUser, $targetUser)) {
+                $msg = 'Akses ditolak. Anda tidak memiliki izin menyunting target staf ini.';
                 if ($this->request->isAJAX()) {
-                    return $this->response->setJSON(['success' => false, 'message' => 'Akses ditolak. Anda tidak memiliki izin menyunting target staf ini.', 'csrf_hash' => csrf_hash()]);
+                    return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
                 }
-                return redirect()->back()->with('error', 'Akses ditolak. Anda tidak memiliki izin menyunting target staf ini.');
+                return redirect()->back()->with('error', $msg);
             }
+
+            $isEditingStaf = true;
         }
 
-        $isDraft = $this->request->isAJAX() || $this->request->getPost('action') === 'draft';
+        // Penentuan Aksi Eksplisit (TKB-10)
+        $action = strtolower(trim((string)$this->request->getPost('action')));
+        $isDraft = ($action === 'draft');
         $targetStatus = $isDraft ? 'draft' : 'terkirim';
+
+        // Validasi Status Kepegawaian & Mode Arsip (Read-Only)
+        $targetUserStatus = $targetUser['status_pegawai'] ?? 'aktif';
+        $hasDispensasi = !empty($targetUser['dispensasi_lampau_sampai']) && $targetUser['dispensasi_lampau_sampai'] >= date('Y-m-d');
+        $targetPeriodeStr = sprintf('%04d-%02d-01', (int)$tahun, (int)$bulan);
+        $tmtSelesaiStr = !empty($targetUser['tmt_selesai']) ? date('Y-m-01', strtotime($targetUser['tmt_selesai'])) : null;
+
+        if ($targetUserStatus !== 'aktif') {
+            if (!$hasDispensasi) {
+                $msg = 'Akun dalam status arsip kepegawaian. Tidak dapat menambah atau mengubah target kinerja.';
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+                }
+                return redirect()->back()->with('error', $msg);
+            }
+
+            if ($tmtSelesaiStr !== null && $targetPeriodeStr > $tmtSelesaiStr) {
+                $msg = 'Target tidak dapat diajukan untuk periode setelah tanggal akhir masa penugasan.';
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+                }
+                return redirect()->back()->with('error', $msg);
+            }
+        }
 
         // Validasi Kunci Waktu jika pembatasan deadline target diaktifkan oleh Admin
         $settingModel = new SettingModel();
         $isDeadlineActive = $settingModel->getValue('enable_target_deadline', '0') === '1';
         $batasTarget = (int) $settingModel->getValue('batas_input_target', 5);
 
-        if ($isDeadlineActive && !hasRole('admin') && !hasRole('direktur') && !$isEditingStaf) {
+        $isRevision = self::hasRevisionPermission($targetUserId, $bulan, $tahun);
+
+        if ($isDeadlineActive && !hasRole('admin') && !hasRole('direktur') && !$isEditingStaf && !$isRevision && !$hasDispensasi) {
             $now = new \DateTime();
             $targetMonth = new \DateTime(sprintf('%04d-%02d-01', $tahun, $bulan));
             $currentMonth = new \DateTime(date('Y-m-01'));
@@ -262,16 +418,29 @@ class LaporanHarianController extends BaseController
             }
         }
 
-        // Server-Side Two-Tier Lock Check: Jika target bulan tersebut sudah disetujui, staf tidak boleh mengubahnya
-        $isDirektur = (session()->get('role') === 'direktur');
-        if (!$isEditingStaf && !$isDirektur && !hasRole('admin')) {
-            $alreadyApprovedCount = $laporanModel->where('user_id', $targetUserId)
-                                                 ->where('bulan', $bulan)
-                                                 ->where('tahun', $tahun)
-                                                 ->where('status_approval', 'disetujui')
-                                                 ->countAllResults();
-            if ($alreadyApprovedCount > 0) {
-                $msg = "Gagal menyimpan: Target Kinerja Bulanan untuk periode {$bulan}/{$tahun} telah disetujui oleh atasan dan terkunci dari perubahan.";
+        $isTargetDirektur = (strtolower((string)($targetUser['role'] ?? '')) === 'direktur');
+
+        // Ambil data array dari form (TKB-10, TKB-08, TKB-07)
+        $laporan_ids = $this->request->getPost('laporan_id');
+        $sasaran_program_arr = $this->request->getPost('sasaran_program');
+        $indikator_kinerja_arr = $this->request->getPost('indikator_kinerja');
+        $target_bulanan_arr = $this->request->getPost('target_bulanan');
+        $satuan_arr = $this->request->getPost('satuan');
+        $client_row_ids = $this->request->getPost('client_row_id');
+        $deleted_ids = $this->request->getPost('deleted_ids');
+
+        // Validasi tipe array satu tingkat (menolak input scalar jika field terkirim)
+        foreach ([
+            'laporan_id' => $laporan_ids, 
+            'sasaran_program' => $sasaran_program_arr, 
+            'indikator_kinerja' => $indikator_kinerja_arr, 
+            'target_bulanan' => $target_bulanan_arr, 
+            'satuan' => $satuan_arr,
+            'client_row_id' => $client_row_ids,
+            'deleted_ids' => $deleted_ids
+        ] as $paramName => $paramVal) {
+            if ($paramVal !== null && !is_array($paramVal)) {
+                $msg = 'Format data tidak valid.';
                 if ($this->request->isAJAX()) {
                     return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
                 }
@@ -279,170 +448,390 @@ class LaporanHarianController extends BaseController
             }
         }
 
-        // Ambil data dari form
-        $laporan_ids = $this->request->getPost('laporan_id');
-        $sasaran_program_arr = $this->request->getPost('sasaran_program');
-        $indikator_kinerja_arr = $this->request->getPost('indikator_kinerja');
-        $target_bulanan_arr = $this->request->getPost('target_bulanan');
-        $satuan_arr = $this->request->getPost('satuan');
+        $laporan_ids = is_array($laporan_ids) ? $laporan_ids : [];
+        $sasaran_program_arr = is_array($sasaran_program_arr) ? $sasaran_program_arr : [];
+        $indikator_kinerja_arr = is_array($indikator_kinerja_arr) ? $indikator_kinerja_arr : [];
+        $target_bulanan_arr = is_array($target_bulanan_arr) ? $target_bulanan_arr : [];
+        $satuan_arr = is_array($satuan_arr) ? $satuan_arr : [];
+        $client_row_ids = is_array($client_row_ids) ? $client_row_ids : [];
+        $deleted_ids = is_array($deleted_ids) ? $deleted_ids : [];
 
-        // Validasi batas kuota baris target kinerja
-        if (!empty($sasaran_program_arr) && count($sasaran_program_arr) > self::MAX_TARGET_ROWS) {
-            $msg = 'Gagal menyimpan: Jumlah baris target kinerja melebihi batas maksimum (' . self::MAX_TARGET_ROWS . ' baris per bulan).';
+        // Validasi batas kuota baris dalam payload (maksimal 30 baris per request)
+        if (count($sasaran_program_arr) > self::MAX_TARGET_ROWS) {
+            $msg = 'Jumlah baris target melebihi batas maksimal (' . self::MAX_TARGET_ROWS . ' baris).';
             if ($this->request->isAJAX()) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => $msg,
-                    'csrf_hash' => csrf_hash()
-                ]);
+                return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
             }
             return redirect()->back()->withInput()->with('error', $msg);
         }
 
-        $dataToUpdate = [];
-        $dataToInsert = [];
-        $hasValidRow = false;
-        $hasError = false;
-        
-        // Jika diedit oleh atasan atau pemilik akun adalah Direktur, langsung disetujui
-        $isDirektur = (session()->get('role') === 'direktur');
-        $status_approval = ($isEditingStaf || $isDirektur) ? 'disetujui' : 'menunggu_persetujuan';
-
-        $seenPairs = [];
-        if ($sasaran_program_arr) {
-            foreach ($sasaran_program_arr as $index => $sasaran) {
-                $indikator = $indikator_kinerja_arr[$index] ?? '';
-                $targetVal = $target_bulanan_arr[$index] ?? '';
-                $satuanVal = $satuan_arr[$index] ?? '';
-                
-                $sasaranStr = trim((string)$sasaran);
-                $indikatorStr = trim((string)$indikator);
-                $targetStr = trim((string)$targetVal);
-                $satuanStr = trim((string)$satuanVal);
-
-                // Abaikan baris yang benar-benar kosong
-                if ($sasaranStr === '' && $indikatorStr === '' && $targetStr === '' && $satuanStr === '') {
-                    continue; 
-                }
-
-                // Cek duplikasi pasangan sasaran program & indikator kinerja
-                if ($sasaranStr !== '' || $indikatorStr !== '') {
-                    $pairKey = mb_strtolower($sasaranStr . '|||' . $indikatorStr);
-                    if (isset($seenPairs[$pairKey])) {
-                        $rowA = $seenPairs[$pairKey] + 1;
-                        $rowB = $index + 1;
-                        $dupMsg = "Gagal menyimpan: Terdapat duplikasi target (RHK & Indikator yang sama) pada baris ke-{$rowA} dan baris ke-{$rowB}. Harap sesuaikan indikator agar tidak tercatat ganda.";
-                        if ($this->request->isAJAX()) {
-                            return $this->response->setJSON([
-                                'success' => false,
-                                'message' => $dupMsg,
-                                'csrf_hash' => csrf_hash()
-                            ]);
-                        }
-                        return redirect()->back()->withInput()->with('error', $dupMsg);
-                    }
-                    $seenPairs[$pairKey] = $index;
-                }
-
-                // Jika Simpan & Kirim, pastikan tidak ada sel yang kosong dalam baris yang terisi
-                if (!$isDraft) {
-                    if ($sasaranStr === '' || $indikatorStr === '' || $targetStr === '' || $satuanStr === '') {
-                        $hasError = true;
-                        break;
-                    }
-                }
-
-                // Konversi koma ke titik untuk desimal
-                $targetValNum = str_replace(',', '.', $targetStr);
-                
-                // Pastikan target adalah angka yang valid dan bernilai lebih dari 0 (jika sudah diisi)
-                if ($targetStr !== '') {
-                    if (!is_numeric($targetValNum) || (float)$targetValNum <= 0) {
-                        $hasError = true;
-                        $errorCustomMsg = "Gagal menyimpan: Nilai Target Bulanan pada baris ke-" . ($index + 1) . " harus berupa angka lebih besar dari 0 (tidak boleh 0 atau bernilai negatif).";
-                        break;
-                    }
-                }
-
-                $hasValidRow = true;
-
-                $rowData = [
-                    'user_id'           => $targetUserId,
-                    'tanggal'           => null,
-                    'bulan'             => $bulan,
-                    'tahun'             => $tahun,
-                    'sasaran_program'   => $sasaranStr,
-                    'indikator_kinerja' => $indikatorStr,
-                    'target_bulanan'    => is_numeric($targetValNum) && (float)$targetValNum > 0 ? (float)$targetValNum : null,
-                    'satuan'            => $satuanStr,
-                    'status_approval'   => $status_approval,
-                    'status'            => $targetStatus
-                ];
-
-                if (!empty($laporan_ids[$index])) {
-                    $rowData['id'] = $laporan_ids[$index];
-                    $dataToUpdate[] = $rowData;
-                } else {
-                    $dataToInsert[$index] = $rowData;
-                }
-            }
+        // Ambil data target yang sudah tersimpan di database untuk pengguna dan periode ini (TKB-02 & TKB-06)
+        $existingDbTargets = $laporanModel->getTargetsByUserAndPeriod($targetUserId, $bulan, $tahun);
+        $existingDbMap = [];
+        foreach ($existingDbTargets as $dbt) {
+            $existingDbMap[(int)$dbt['id']] = $dbt;
         }
 
-        // Jika Simpan & Kirim, harus ada minimal 1 baris yang valid
-        // Jika draf, boleh disimpan dalam keadaan kosong sama sekali (hasValidRow = false) tapi tidak boleh ada error format
-        if ((!$isDraft && !$hasValidRow) || $hasError) {
-            $msg = $errorCustomMsg ?? ($hasError ? 'Gagal menyimpan. Pastikan angka target menggunakan format yang benar (lebih dari 0) dan seluruh sel dalam baris terisi (jika Simpan & Kirim).' : 'Gagal menyimpan. Minimal harus ada 1 target.');
-            if ($this->request->isAJAX()) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => $msg,
-                    'csrf_hash' => csrf_hash()
-                ]);
+        // Validasi dan siapkan daftar ID yang dihapus secara eksplisit (TKB-07 / K-03)
+        $dataToDelete = [];
+        foreach ($deleted_ids as $delId) {
+            if ($delId === null || trim((string)$delId) === '') continue;
+            $intDelId = (int)$delId;
+            if ($intDelId <= 0) continue;
+
+            if (!isset($existingDbMap[$intDelId])) {
+                continue; // Bukan ID periode ini / bukan milik user ini
             }
-            return redirect()->back()->withInput()->with('error', $msg);
+
+            if ($existingDbMap[$intDelId]['status_approval'] === 'disetujui' && !$isTargetDirektur) {
+                $msg = 'Target yang sudah disetujui tidak dapat diganti atau dihapus.';
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+                }
+                return redirect()->back()->withInput()->with('error', $msg);
+            }
+
+            $dataToDelete[] = $intDelId;
         }
 
-        $oldTargetValues = [];
-        if (!empty($dataToUpdate)) {
-            $updateIds = array_column($dataToUpdate, 'id');
-            $oldTargets = $laporanModel->whereIn('id', $updateIds)->findAll();
-            foreach ($oldTargets as $ot) {
-                // Validasi kepemilikan anti-IDOR
-                if ((int)$ot['user_id'] !== (int)$targetUserId) {
-                    $msg = 'Akses ditolak. Terdeteksi manipulasi ID target kinerja.';
+        // Validasi ID Target & Anti-Pindah Periode (TKB-02)
+        $submittedIds = [];
+        foreach ($laporan_ids as $lid) {
+            if ($lid !== null && trim((string)$lid) !== '') {
+                $lidStr = trim((string)$lid);
+                if (!is_numeric($lidStr) || (int)$lidStr <= 0) {
+                    $msg = 'ID target tidak valid.';
                     if ($this->request->isAJAX()) {
                         return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
                     }
                     return redirect()->back()->with('error', $msg);
                 }
-                $oldTargetValues[$ot['id']] = [
-                    'id' => $ot['id'],
-                    'sasaran_program' => $ot['sasaran_program'],
-                    'indikator_kinerja' => $ot['indikator_kinerja'],
-                    'target_bulanan' => $ot['target_bulanan'],
-                    'satuan' => $ot['satuan'],
-                    'status_approval' => $ot['status_approval'],
-                    'status' => $ot['status']
-                ];
+                $intId = (int)$lidStr;
+                if (in_array($intId, $submittedIds, true)) {
+                    $msg = 'Terdeteksi duplikasi ID target.';
+                    if ($this->request->isAJAX()) {
+                        return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+                    }
+                    return redirect()->back()->with('error', $msg);
+                }
+                $submittedIds[] = $intId;
             }
         }
 
+        $oldTargetValues = [];
+        if (!empty($submittedIds)) {
+            $foundDbRows = $laporanModel->whereIn('id', $submittedIds)->findAll();
+            if (count($foundDbRows) !== count($submittedIds)) {
+                $msg = 'Data target tidak ditemukan.';
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+                }
+                return redirect()->back()->with('error', $msg);
+            }
+            foreach ($foundDbRows as $fRow) {
+                // Anti-IDOR: ID harus milik pengguna target yang sedang dikelola
+                if ((int)$fRow['user_id'] !== (int)$targetUserId) {
+                    $msg = 'Akses ditolak. ID target tidak sesuai.';
+                    if ($this->request->isAJAX()) {
+                        return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+                    }
+                    return redirect()->back()->with('error', $msg);
+                }
+                // Anti-Pindah Periode (TKB-02): ID target harus berasal dari bulan & tahun yang sama
+                if ((int)$fRow['bulan'] !== $bulan || (int)$fRow['tahun'] !== $tahun) {
+                    $msg = 'Target tidak sesuai dengan periode yang dipilih.';
+                    if ($this->request->isAJAX()) {
+                        return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+                    }
+                    return redirect()->back()->with('error', $msg);
+                }
+                $oldTargetValues[(int)$fRow['id']] = $fRow;
+            }
+        }
+
+        // Parsing & Validasi Tiap Baris (TKB-10)
+        $status_approval = ($isEditingStaf || $isTargetDirektur) ? 'disetujui' : 'menunggu_persetujuan';
+        $dataToUpdate = [];
+        $dataToInsert = [];
+        $updatedIdSet = [];
+        $hasValidRow = false;
+
+        $resetScoreTargetIds = [];
+        $maxIndex = max(
+            count($sasaran_program_arr),
+            count($indikator_kinerja_arr),
+            count($target_bulanan_arr),
+            count($satuan_arr),
+            count($laporan_ids)
+        );
+
+        for ($index = 0; $index < $maxIndex; $index++) {
+            $sasaranRaw = $sasaran_program_arr[$index] ?? '';
+            $indikatorRaw = $indikator_kinerja_arr[$index] ?? '';
+            $targetRaw = $target_bulanan_arr[$index] ?? '';
+            $satuanRaw = $satuan_arr[$index] ?? '';
+            $rowIdRaw = $laporan_ids[$index] ?? '';
+
+            // Pastikan elemen berupa nilai skalar
+            if (is_array($sasaranRaw) || is_array($indikatorRaw) || is_array($targetRaw) || is_array($satuanRaw) || is_array($rowIdRaw)) {
+                $msg = 'Format data baris tidak valid.';
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+                }
+                return redirect()->back()->with('error', $msg);
+            }
+
+            $sasaranStr = trim((string)$sasaranRaw);
+            $indikatorStr = trim((string)$indikatorRaw);
+            $targetStr = trim((string)$targetRaw);
+            $satuanStr = trim((string)$satuanRaw);
+            $rowId = (!empty($rowIdRaw) && is_numeric($rowIdRaw)) ? (int)$rowIdRaw : null;
+
+            // Abaikan baris yang seluruh isinya kosong tanpa ID
+            if ($sasaranStr === '' && $indikatorStr === '' && $targetStr === '' && $satuanStr === '' && $rowId === null) {
+                continue;
+            }
+
+            // Validasi panjang string teks (TKB-10)
+            $rowNumber = $index + 1;
+            if (mb_strlen($sasaranStr) > 255) {
+                $msg = "Rencana Hasil Kerja pada baris ke-{$rowNumber} melebihi 255 karakter.";
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+                }
+                return redirect()->back()->withInput()->with('error', $msg);
+            }
+            if (mb_strlen($indikatorStr) > 255) {
+                $msg = "Indikator kinerja pada baris ke-{$rowNumber} melebihi 255 karakter.";
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+                }
+                return redirect()->back()->withInput()->with('error', $msg);
+            }
+            if (mb_strlen($satuanStr) > 255) {
+                $msg = "Satuan pada baris ke-{$rowNumber} melebihi 255 karakter.";
+                if ($this->request->isAJAX()) {
+                    return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+                }
+                return redirect()->back()->withInput()->with('error', $msg);
+            }
+
+            // Validasi angka target (desimal koma Indonesia & batas kapasitas)
+            $targetValNum = null;
+            if ($targetStr !== '') {
+                $targetNormalized = str_replace(',', '.', $targetStr);
+                if (!is_numeric($targetNormalized) || !is_finite((float)$targetNormalized) || (float)$targetNormalized <= 0 || (float)$targetNormalized >= 10000000) {
+                    $msg = "Nilai target pada baris ke-{$rowNumber} harus berupa angka positif yang valid.";
+                    if ($this->request->isAJAX()) {
+                        return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+                    }
+                    return redirect()->back()->withInput()->with('error', $msg);
+                }
+                $targetValNum = round((float)$targetNormalized, 2);
+            }
+
+            // Validasi kelengkapan jika aksi bukan draf (Simpan & Kirim wajib lengkap)
+            if (!$isDraft) {
+                if ($sasaranStr === '' || $indikatorStr === '' || $targetValNum === null || $satuanStr === '') {
+                    $msg = "Lengkapi seluruh kolom pada baris ke-{$rowNumber}.";
+                    if ($this->request->isAJAX()) {
+                        return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+                    }
+                    return redirect()->back()->withInput()->with('error', $msg);
+                }
+            }
+
+            // Tandai baris valid jika memiliki isi minimal
+            if ($sasaranStr !== '' || $indikatorStr !== '' || $targetValNum !== null || $satuanStr !== '') {
+                $hasValidRow = true;
+            }
+
+            $rowData = [
+                'user_id'           => $targetUserId,
+                'tanggal'           => null,
+                'bulan'             => $bulan,
+                'tahun'             => $tahun,
+                'sasaran_program'   => $sasaranStr,
+                'indikator_kinerja' => $indikatorStr,
+                'target_bulanan'    => $targetValNum,
+                'satuan'            => $satuanStr,
+                'status_approval'   => $status_approval,
+                'status'            => $targetStatus
+            ];
+
+            if ($rowId !== null && isset($oldTargetValues[$rowId])) {
+                $oldRow = $oldTargetValues[$rowId];
+                $isOldApproved = (($oldRow['status_approval'] ?? '') === 'disetujui');
+
+                $isSubstantiveChanged = (
+                    $sasaranStr !== trim((string)$oldRow['sasaran_program']) ||
+                    $indikatorStr !== trim((string)$oldRow['indikator_kinerja']) ||
+                    $satuanStr !== trim((string)$oldRow['satuan']) ||
+                    (float)$targetValNum !== (float)$oldRow['target_bulanan']
+                );
+
+                // TKB-05: Penyelarasan penguncian per baris (row-level lock)
+                if ($isOldApproved && !$isTargetDirektur) {
+                    if ($isSubstantiveChanged) {
+                        $msg = "Target pada baris ke-{$rowNumber} sudah disetujui oleh atasan dan tidak dapat diubah.";
+                        if ($this->request->isAJAX()) {
+                            return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+                        }
+                        return redirect()->back()->withInput()->with('error', $msg);
+                    }
+
+                    // Baris tidak diubah: pertahankan data lama dan status disetujui tanpa menimpanya
+                    $updatedIdSet[$rowId] = true;
+                    continue;
+                }
+
+                // K-06: Jika isi substantif berubah pada revisi sah, invalidasi nilai penilaian lama
+                if ($isSubstantiveChanged && ($oldRow['nilai_capaian'] !== null || $oldRow['status_penilaian'] !== null)) {
+                    $rowData['nilai_capaian'] = null;
+                    $rowData['status_penilaian'] = null;
+                    $resetScoreTargetIds[] = $rowId;
+                }
+
+                $rowData['id'] = $rowId;
+                $dataToUpdate[] = $rowData;
+                $updatedIdSet[$rowId] = true;
+            } else {
+                $clientKey = (!empty($client_row_ids[$index])) ? (string)$client_row_ids[$index] : "c_row_{$index}";
+                $dataToInsert[$clientKey] = $rowData;
+            }
+        }
+
+        // Kunci periode penuh jika seluruh target di basis data telah disetujui dan tidak ada baris baru/perubahan
+        $allApprovedDbCount = 0;
+        foreach ($existingDbTargets as $dbt) {
+            if ($dbt['status_approval'] === 'disetujui') {
+                $allApprovedDbCount++;
+            }
+        }
+        $isAllDbApproved = (!empty($existingDbTargets) && $allApprovedDbCount === count($existingDbTargets));
+        if ($isAllDbApproved && empty($dataToInsert) && empty($dataToUpdate) && empty($dataToDelete) && !$isTargetDirektur && !hasRole('admin')) {
+            $msg = "Semua target kinerja untuk periode {$bulan}/{$tahun} telah disetujui oleh atasan dan terkunci.";
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+            }
+            return redirect()->back()->with('error', $msg);
+        }
+
+        // Jika Simpan & Kirim, harus ada minimal 1 baris yang valid
+        if (!$isDraft && !$hasValidRow && empty($existingDbTargets)) {
+            $msg = 'Isi minimal 1 target kinerja.';
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+            }
+            return redirect()->back()->withInput()->with('error', $msg);
+        }
+
+        // Perhitungan Keadaan Akhir (Final State) & Kuota 30 (TKB-06)
+        $finalState = [];
+        // 1. Data target yang diperbarui dalam request ini
+        foreach ($dataToUpdate as $upRow) {
+            $finalState[] = $upRow;
+        }
+        // 2. Data target tersimpan di DB yang tidak dikirim dalam request (dipertahankan, kecuali yang dihapus eksplisit)
+        foreach ($existingDbMap as $dbId => $dbRow) {
+            if (!isset($updatedIdSet[$dbId]) && !in_array($dbId, $dataToDelete, true)) {
+                // TKB-03: Jika diajukan, pastikan draf lama yang tersimpan juga sudah lengkap
+                if (!$isDraft) {
+                    if (trim((string)$dbRow['sasaran_program']) === '' || trim((string)$dbRow['indikator_kinerja']) === '' || empty($dbRow['target_bulanan']) || (float)$dbRow['target_bulanan'] <= 0 || trim((string)$dbRow['satuan']) === '') {
+                        $msg = 'Terdapat draf target tersimpan yang belum lengkap. Silakan lengkapi atau hapus sebelum mengajukan.';
+                        if ($this->request->isAJAX()) {
+                            return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+                        }
+                        return redirect()->back()->withInput()->with('error', $msg);
+                    }
+                }
+                $finalState[] = $dbRow;
+            }
+        }
+        // 3. Data target baru yang ditambahkan
+        foreach ($dataToInsert as $insRow) {
+            $finalState[] = $insRow;
+        }
+
+        // Penegakan kuota maksimum 30 target pada keadaan akhir
+        if (count($finalState) > self::MAX_TARGET_ROWS) {
+            $msg = 'Total target kinerja untuk periode ini melebihi batas maksimal ' . self::MAX_TARGET_ROWS . ' target.';
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+            }
+            return redirect()->back()->withInput()->with('error', $msg);
+        }
+
+        // Penegakan keunikan RHK + Indikator pada seluruh keadaan akhir
+        $seenPairs = [];
+        foreach ($finalState as $fsRow) {
+            $sKey = trim((string)($fsRow['sasaran_program'] ?? ''));
+            $iKey = trim((string)($fsRow['indikator_kinerja'] ?? ''));
+            if ($sKey !== '' || $iKey !== '') {
+                $pairHash = mb_strtolower($sKey . '|||' . $iKey);
+                if (isset($seenPairs[$pairHash])) {
+                    $dupMsg = 'Terdapat duplikasi target (Rencana Hasil Kerja dan Indikator yang sama). Harap sesuaikan indikator agar tidak tercatat ganda.';
+                    if ($this->request->isAJAX()) {
+                        return $this->response->setJSON(['success' => false, 'message' => $dupMsg, 'csrf_hash' => csrf_hash()]);
+                    }
+                    return redirect()->back()->withInput()->with('error', $dupMsg);
+                }
+                $seenPairs[$pairHash] = true;
+            }
+        }
+
+        // Simpan ke Basis Data dalam Transaksi Atomik
         $insertedIds = [];
         $db = \Config\Database::connect();
         $db->transStart();
 
         try {
+            // Hapus baris yang diminta secara eksplisit (TKB-07 / K-03)
+            if (!empty($dataToDelete)) {
+                $logModel = new LogKegiatanHarian();
+                $logModel->where('user_id', $targetUserId)
+                         ->whereIn('target_id', $dataToDelete)
+                         ->set(['target_id' => null, 'status' => 'draft'])
+                         ->update();
+
+                $laporanModel->where('user_id', $targetUserId)
+                             ->whereIn('id', $dataToDelete)
+                             ->delete();
+            }
+
             if (!empty($dataToUpdate)) {
-                $laporanModel->updateBatch($dataToUpdate, 'id');
+                foreach ($dataToUpdate as $upRow) {
+                    $targetId = (int)$upRow['id'];
+                    unset($upRow['id']);
+                    $laporanModel->update($targetId, $upRow);
+                }
             }
             if (!empty($dataToInsert)) {
-                foreach ($dataToInsert as $origIndex => $insertRow) {
+                foreach ($dataToInsert as $clientKey => $insertRow) {
                     $laporanModel->insert($insertRow);
-                    $insertedIds[$origIndex] = $laporanModel->getInsertID();
+                    $insertedIds[$clientKey] = $laporanModel->getInsertID();
                 }
             }
 
+            // Jika Simpan & Kirim, update target bulan ini yang belum disetujui menjadi terkirim
+            if (!$isDraft) {
+                $updateData = ['status' => 'terkirim'];
+                if ($isEditingStaf || $isTargetDirektur) {
+                    $updateData['status_approval'] = 'disetujui';
+                }
+                $laporanModel->where('user_id', $targetUserId)
+                             ->where('bulan', $bulan)
+                             ->where('tahun', $tahun)
+                             ->where('status_approval !=', 'disetujui')
+                             ->set($updateData)
+                             ->update();
+            }
+
             $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                throw new \RuntimeException('Gagal menyimpan target ke basis data.');
+            }
         } catch (\Throwable $e) {
             try { @$db->transRollback(); } catch (\Throwable $t) {}
             log_message('error', 'LaporanHarianController::store failed for user #' . $targetUserId . ': ' . $e->getMessage());
@@ -456,33 +845,21 @@ class LaporanHarianController extends BaseController
             return redirect()->back()->withInput()->with('error', 'Gagal menyimpan data. Silakan coba lagi.');
         }
 
-        // Jika Simpan & Kirim, update semua target bulan ini yang sebelumnya draf menjadi terkirim
-        if (!$isDraft) {
-            $updateData = ['status' => 'terkirim'];
-            if ($isDirektur) {
-                $updateData['status_approval'] = 'disetujui';
-            }
-            $laporanModel->where('user_id', $targetUserId)
-                         ->where('bulan', $bulan)
-                         ->where('tahun', $tahun)
-                         ->set($updateData)
-                         ->update();
-        }
-
         // Catat Audit Trail aktivitas penetapan / pembaruan target
         $targetUserName = $targetUser['nama_lengkap'] ?? "User #{$targetUserId}";
         $actionType = $isEditingStaf ? 'UPDATE_TARGET_STAF' : ($isDraft ? 'DRAFT_TARGET' : 'SUBMIT_TARGET');
 
         log_audit($actionType, 'target_kinerja_bulanan', $targetUserId, !empty($oldTargetValues) ? $oldTargetValues : null, [
-            'bulan'         => $bulan,
-            'tahun'         => $tahun,
-            'target_staf'   => $targetUserName,
-            'jumlah_target' => count($dataToUpdate) + count($dataToInsert),
-            'status'        => $targetStatus,
-            'is_draft'      => $isDraft ? 1 : 0,
-            'disimpan_oleh' => session()->get('nama_lengkap'),
-            'updated_rows'  => $dataToUpdate,
-            'inserted_rows' => $dataToInsert
+            'bulan'                  => $bulan,
+            'tahun'                  => $tahun,
+            'target_staf'            => $targetUserName,
+            'jumlah_target'          => count($dataToUpdate) + count($dataToInsert),
+            'status'                 => $targetStatus,
+            'is_draft'               => $isDraft ? 1 : 0,
+            'disimpan_oleh'          => session()->get('nama_lengkap'),
+            'updated_rows'           => $dataToUpdate,
+            'inserted_rows'          => $dataToInsert,
+            'reset_score_target_ids' => !empty($resetScoreTargetIds) ? $resetScoreTargetIds : null
         ]);
 
         if ($this->request->isAJAX()) {
@@ -501,7 +878,6 @@ class LaporanHarianController extends BaseController
         $currentUserName = session()->get('nama_lengkap') ?? 'Atasan';
 
         if ($isEditingStaf && $targetUserId != $userId) {
-            // Notifikasi ke staf jika targetnya disunting/disetujui langsung oleh atasan
             try {
                 send_notification(
                     $targetUserId,
@@ -512,12 +888,21 @@ class LaporanHarianController extends BaseController
             } catch (\Throwable $e) {
                 log_message('error', 'Gagal mengirim notifikasi target ke staf #' . $targetUserId . ': ' . $e->getMessage());
             }
-        } elseif (!$isEditingStaf && !$isDraft && !$isDirektur) {
-            // Notifikasi ke atasan langsung jika staf mengajukan atau memperbarui target
+        } elseif (!$isEditingStaf && !$isDraft && !$isTargetDirektur) {
             if (!empty($targetUser['atasan_id'])) {
                 try {
-                    $notifJudul = !empty($oldTargetValues) ? 'Pembaruan Target Bulanan' : 'Persetujuan Target Bulanan';
-                    $notifPesan = !empty($oldTargetValues)
+                    $hadSubmittedBefore = false;
+                    if (!empty($oldTargetValues)) {
+                        foreach ($oldTargetValues as $ot) {
+                            if (($ot['status'] ?? '') === 'terkirim') {
+                                $hadSubmittedBefore = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    $notifJudul = $hadSubmittedBefore ? 'Pembaruan Target Bulanan' : 'Persetujuan Target Bulanan';
+                    $notifPesan = $hadSubmittedBefore
                         ? ($targetUser['nama_lengkap'] ?? 'Staf') . " memperbarui Target Bulanan ({$namaBulan} {$tahun}) untuk diperiksa."
                         : ($targetUser['nama_lengkap'] ?? 'Staf') . " mengirimkan Target Bulanan ({$namaBulan} {$tahun}) untuk diperiksa.";
 
@@ -525,7 +910,7 @@ class LaporanHarianController extends BaseController
                         $targetUser['atasan_id'], 
                         $notifJudul, 
                         $notifPesan,
-                        site_url('laporan-harian?source_tab=staf&staf_id=' . $targetUserId)
+                        site_url('laporan-harian?source_tab=staf&staf_id=' . $targetUserId . '&bulan=' . $bulan . '&tahun=' . $tahun)
                     );
                 } catch (\Throwable $e) {
                     log_message('error', 'Gagal mengirim notifikasi target ke atasan #' . $targetUser['atasan_id'] . ': ' . $e->getMessage());
@@ -537,151 +922,233 @@ class LaporanHarianController extends BaseController
             ? 'Target Bulanan berhasil disimpan sementara.' 
             : ($isEditingStaf 
                 ? 'Target Bulanan staf berhasil diperbarui dan disetujui.' 
-                : ($isDirektur 
+                : ($isTargetDirektur 
                     ? 'Target Bulanan berhasil disimpan dan disetujui.' 
-                    : (!empty($oldTargetValues) ? 'Target Bulanan berhasil diperbarui dan dikirim kembali ke atasan langsung.' : 'Target Bulanan berhasil dikirim ke atasan langsung.')));
+                    : (!empty($hadSubmittedBefore) ? 'Target Bulanan berhasil diperbarui dan diajukan kembali ke atasan langsung.' : 'Target Bulanan berhasil diajukan ke atasan langsung.')));
 
-        return redirect()->to(site_url('laporan-harian'))
+        $redirectUrl = $isEditingStaf
+            ? site_url('laporan-harian?source_tab=staf&staf_id=' . $targetUserId . '&bulan=' . $bulan . '&tahun=' . $tahun)
+            : site_url('laporan-harian?bulan=' . $bulan . '&tahun=' . $tahun);
+
+        return redirect()->to($redirectUrl)
                          ->with('success', $successMsg);
     }
     
     public function approve()
     {
-        $id = $this->request->getPost('id');
-        $currentUserId = session()->get('id') ?? session()->get('user_id');
+        $id = (int)$this->request->getPost('id');
+        $currentUserId = (int)(session()->get('id') ?? session()->get('user_id'));
+        $userModel = new User();
+        $currentUser = $userModel->select('id, nama_lengkap, nip, username, role, unit, atasan_id')->find($currentUserId);
 
-        if ($id) {
-            $laporanModel = new TargetKinerja();
-            $laporan = $laporanModel->find($id);
-            if ($laporan) {
-                // Prevent self-approval (Conflict of Interest) except for Direktur
-                if ($laporan['user_id'] == $currentUserId && !hasRole('direktur')) {
-                    return $this->response->setJSON([
-                        'success' => false,
-                        'message' => 'Akses ditolak. Anda tidak dapat menyetujui target kinerja milik Anda sendiri.',
-                        'csrf_hash' => csrf_hash()
-                    ]);
-                }
+        if (!$currentUser || !$id) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Parameter tidak valid atau sesi telah berakhir.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
 
-                if (hasRole('wadir')) {
-                    return $this->response->setJSON([
-                        'success' => false,
-                        'message' => 'Akses ditolak. Role Wakil Direktur tidak memiliki wewenang menyetujui target staf.',
-                        'csrf_hash' => csrf_hash()
-                    ]);
-                }
-                $targetUser = (new User())->find($laporan['user_id']);
-                $isAtasan = $targetUser && !empty($targetUser['atasan_id']) && ($targetUser['atasan_id'] == $currentUserId);
-                if (!hasAnyRole(['admin', 'direktur', 'kepegawaian']) && !$isAtasan) {
-                    return $this->response->setJSON([
-                        'success' => false,
-                        'message' => 'Akses ditolak. Anda tidak memiliki izin menyetujui target ini.',
-                        'csrf_hash' => csrf_hash()
-                    ]);
-                }
-                $laporanModel->update($id, [
-                    'status_approval' => 'disetujui',
-                    'status'          => 'terkirim'
+        $laporanModel = new TargetKinerja();
+        $laporan = $laporanModel->find($id);
+        if (!$laporan) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Data target tidak ditemukan.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        $targetUser = $userModel->select('id, nama_lengkap, nip, username, role, unit, atasan_id')->find($laporan['user_id']);
+        if (!$targetUser) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Pengguna pemilik target tidak ditemukan.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        if (!PenilaianKinerjaPolicy::canApproveTarget($currentUser, $targetUser)) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Akses ditolak. Anda tidak memiliki izin menyetujui target ini.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        // TKB-03 & TKB-04: Idempotensi, validasi status dan kelengkapan
+        if ($laporan['status_approval'] === 'disetujui') {
+            return $this->response->setJSON([
+                'success'   => true,
+                'message'   => 'Target sudah disetujui sebelumnya.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        if ($laporan['status'] !== 'terkirim') {
+            return $this->response->setJSON([
+                'success'   => false,
+                'message'   => 'Target belum diajukan oleh pegawai.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        if (!$laporanModel->isComplete($laporan)) {
+            return $this->response->setJSON([
+                'success'   => false,
+                'message'   => 'Data target belum lengkap untuk disetujui.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        try {
+            $laporanModel->update($id, [
+                'status_approval' => 'disetujui',
+                'status'          => 'terkirim'
+            ]);
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                return $this->response->setJSON([
+                    'success'   => false,
+                    'message'   => 'Gagal menyetujui target. Silakan coba lagi.',
+                    'csrf_hash' => csrf_hash()
                 ]);
+            }
+        } catch (\Throwable $e) {
+            try { @$db->transRollback(); } catch (\Throwable $t) {}
+            log_message('error', 'Error approving target: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success'   => false,
+                'message'   => 'Gagal menyetujui target. Silakan coba lagi.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
 
-                log_audit('APPROVE', 'target_kinerja_bulanan', $id, $laporan, [
-                    'approved_by' => session()->get('nama_lengkap'),
-                    'approver_id' => $currentUserId,
-                    'bulan'       => $laporan['bulan'],
-                    'tahun'       => $laporan['tahun'],
-                    'target_user' => $targetUser['nama_lengkap'] ?? "User #{$laporan['user_id']}"
-                ]);
+        log_audit('APPROVE', 'target_kinerja_bulanan', $id, [
+            'status_approval' => $laporan['status_approval'],
+            'status'          => $laporan['status'],
+            'sasaran_program' => $laporan['sasaran_program']
+        ], [
+            'status_approval' => 'disetujui',
+            'status'          => 'terkirim',
+            'approved_by'     => session()->get('nama_lengkap'),
+            'approver_id'     => $currentUserId,
+            'bulan'           => $laporan['bulan'],
+            'tahun'           => $laporan['tahun'],
+            'target_user'     => $targetUser['nama_lengkap'] ?? "User #{$laporan['user_id']}"
+        ]);
 
-                // Kirim notifikasi ke staf bahwa targetnya telah disetujui (jika bukan akun sendiri)
-                if ($laporan['user_id'] != $currentUserId) {
-                    helper('notification');
-                    $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-                    $namaBulan = $bulanIndo[(int)$laporan['bulan'] - 1] ?? "Bulan {$laporan['bulan']}";
-                    $atasanName = session()->get('nama_lengkap') ?? 'Atasan Langsung';
-                    $targetDesc = !empty($laporan['sasaran_program']) ? (' ("' . mb_strimwidth($laporan['sasaran_program'], 0, 40, '...') . '")') : '';
+        // Kirim notifikasi ke staf bahwa targetnya telah disetujui (jika bukan akun sendiri)
+        if ($laporan['user_id'] != $currentUserId) {
+            try {
+                helper('notification');
+                $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                $namaBulan = $bulanIndo[(int)$laporan['bulan'] - 1] ?? "Bulan {$laporan['bulan']}";
+                $atasanName = session()->get('nama_lengkap') ?? 'Atasan Langsung';
+                $targetDesc = !empty($laporan['sasaran_program']) ? (' ("' . mb_strimwidth($laporan['sasaran_program'], 0, 40, '...') . '")') : '';
 
-                    send_notification(
-                        $laporan['user_id'],
-                        'Target Kinerja Disetujui',
-                        "Target Kinerja{$targetDesc} ({$namaBulan} {$laporan['tahun']}) telah disetujui oleh {$atasanName}.",
-                        site_url('laporan-harian?bulan=' . $laporan['bulan'] . '&tahun=' . $laporan['tahun'])
-                    );
-                }
-
-                return $this->response->setJSON(['success' => true, 'csrf_hash' => csrf_hash()]);
+                send_notification(
+                    $laporan['user_id'],
+                    'Target Kinerja Disetujui',
+                    "Target Kinerja{$targetDesc} ({$namaBulan} {$laporan['tahun']}) telah disetujui oleh {$atasanName}.",
+                    site_url('laporan-harian?bulan=' . $laporan['bulan'] . '&tahun=' . $laporan['tahun'])
+                );
+            } catch (\Throwable $e) {
+                log_message('error', 'Gagal mengirim notifikasi target: ' . $e->getMessage());
             }
         }
-        return $this->response->setJSON(['success' => false, 'message' => 'Data target tidak ditemukan.', 'csrf_hash' => csrf_hash()]);
+
+        return $this->response->setJSON([
+            'success'   => true,
+            'message'   => 'Target berhasil disetujui.',
+            'csrf_hash' => csrf_hash()
+        ]);
     }
     
     public function approveAll()
     {
-        $staf_id = $this->request->getPost('staf_id');
+        $staf_id = (int)$this->request->getPost('staf_id');
         $bulan = (int)$this->request->getPost('bulan');
         $tahun = (int)$this->request->getPost('tahun');
-        $currentUserId = session()->get('id') ?? session()->get('user_id');
+        $currentUserId = (int)(session()->get('id') ?? session()->get('user_id'));
 
-        if ($staf_id && $bulan && $tahun) {
-            // Prevent self-approval (Conflict of Interest) except for Direktur
-            if ($staf_id == $currentUserId && !hasRole('direktur')) {
-                return redirect()->back()->with('error', 'Akses ditolak. Anda tidak dapat menyetujui target kinerja milik Anda sendiri.');
+        $userModel = new User();
+        $currentUser = $userModel->select('id, nama_lengkap, nip, username, role, unit, atasan_id')->find($currentUserId);
+
+        if (!$currentUser || !$staf_id || !$bulan || !$tahun) {
+            return redirect()->back()->with('error', 'Parameter tidak lengkap atau sesi telah berakhir.');
+        }
+
+        $targetUser = $userModel->select('id, nama_lengkap, nip, username, role, unit, atasan_id')->find($staf_id);
+        if (!$targetUser) {
+            return redirect()->back()->with('error', 'Pegawai target tidak ditemukan.');
+        }
+
+        if (!PenilaianKinerjaPolicy::canApproveTarget($currentUser, $targetUser)) {
+            return redirect()->back()->with('error', 'Akses ditolak. Anda tidak memiliki izin menyetujui target staf ini.');
+        }
+
+        $laporanModel = new TargetKinerja();
+        $targetsToApprove = $laporanModel->getPendingApprovalTargets($staf_id, $bulan, $tahun);
+
+        if (empty($targetsToApprove)) {
+            return redirect()->back()->with('error', 'Tidak ada target kinerja berstatus diajukan yang menunggu persetujuan pada periode ini.');
+        }
+
+        // TKB-03: Validasi kelengkapan semua target yang akan disetujui
+        foreach ($targetsToApprove as $tRow) {
+            if (!$laporanModel->isComplete($tRow)) {
+                return redirect()->back()->with('error', 'Terdapat target yang belum lengkap. Pastikan seluruh sasaran, indikator, target, dan satuan telah terisi.');
             }
+        }
 
-            // Otorisasi: Pastikan penilai adalah Atasan Langsung dari staf, Superadmin, Direktur, atau Kepegawaian (Wadir tidak diizinkan)
-            if (hasRole('wadir')) {
-                return redirect()->back()->with('error', 'Akses ditolak. Role Wakil Direktur tidak memiliki wewenang menyetujui target staf.');
+        $targetIdsToApprove = array_column($targetsToApprove, 'id');
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        try {
+            $laporanModel->whereIn('id', $targetIdsToApprove)
+                         ->set(['status_approval' => 'disetujui'])
+                         ->update();
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                log_message('error', "approveAll transaction failed for staf_id: {$staf_id}, periode: {$bulan}/{$tahun}");
+                return redirect()->back()->with('error', 'Gagal menyetujui target staf. Silakan coba lagi.');
             }
-            $targetUser = (new User())->find($staf_id);
-            $isAtasan = $targetUser && !empty($targetUser['atasan_id']) && ($targetUser['atasan_id'] == $currentUserId);
-            if (!hasAnyRole(['admin', 'direktur', 'kepegawaian']) && !$isAtasan) {
-                return redirect()->back()->with('error', 'Akses ditolak. Anda tidak memiliki izin menyetujui target staf ini.');
-            }
+        } catch (\Throwable $e) {
+            try { @$db->transRollback(); } catch (\Throwable $t) {}
+            log_message('error', "approveAll exception: " . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal menyetujui target staf.');
+        }
 
-            $laporanModel = new TargetKinerja();
-            $targetsToApprove = $laporanModel->where('user_id', $staf_id)
-                                             ->where('bulan', $bulan)
-                                             ->where('tahun', $tahun)
-                                             ->where('status', 'terkirim')
-                                             ->findAll();
+        $oldSnapshots = [];
+        foreach ($targetsToApprove as $tRow) {
+            $oldSnapshots[] = [
+                'id'              => $tRow['id'],
+                'sasaran_program' => $tRow['sasaran_program'],
+                'status_approval' => $tRow['status_approval'],
+                'status'          => $tRow['status']
+            ];
+        }
 
-            if (empty($targetsToApprove)) {
-                return redirect()->back()->with('error', 'Tidak ada target kinerja berstatus diajukan yang menunggu persetujuan pada periode ini.');
-            }
-
-            $db = \Config\Database::connect();
-            $db->transStart();
-
-            try {
-                $laporanModel->where('user_id', $staf_id)
-                             ->where('bulan', $bulan)
-                             ->where('tahun', $tahun)
-                             ->where('status', 'terkirim')
-                             ->set([
-                                 'status_approval' => 'disetujui'
-                             ])
-                             ->update();
-
-                $db->transComplete();
-
-                if ($db->transStatus() === false) {
-                    log_message('error', "approveAll transaction failed for staf_id: {$staf_id}, periode: {$bulan}/{$tahun}");
-                    return redirect()->back()->with('error', 'Gagal menyetujui target staf. Silakan coba lagi.');
-                }
-            } catch (\Throwable $e) {
-                try { @$db->transRollback(); } catch (\Throwable $t) {}
-                log_message('error', "approveAll exception: " . $e->getMessage());
-                return redirect()->back()->with('error', 'Gagal menyetujui target staf.');
-            }
-
-            log_audit('APPROVE_ALL', 'target_kinerja_bulanan', $staf_id, null, [
-                'bulan'            => $bulan,
-                'tahun'            => $tahun,
-                'staf'             => $targetUser['nama_lengkap'] ?? "User #{$staf_id}",
-                'jumlah_disetujui' => count($targetsToApprove),
-                'approved_by'      => session()->get('nama_lengkap'),
-                'approver_id'      => $currentUserId
-            ]);
-            
+        log_audit('APPROVE_ALL', 'target_kinerja_bulanan', $staf_id, $oldSnapshots, [
+            'bulan'            => $bulan,
+            'tahun'            => $tahun,
+            'staf'             => $targetUser['nama_lengkap'] ?? "User #{$staf_id}",
+            'target_ids'       => $targetIdsToApprove,
+            'jumlah_disetujui' => count($targetsToApprove),
+            'approved_by'      => session()->get('nama_lengkap'),
+            'approver_id'      => $currentUserId
+        ]);
+        
+        try {
             helper('notification');
             $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
             $namaBulan = $bulanIndo[(int)$bulan - 1] ?? "Bulan {$bulan}";
@@ -693,98 +1160,150 @@ class LaporanHarianController extends BaseController
                 "Seluruh Target Kinerja Bulanan Anda (" . count($targetsToApprove) . " target pada {$namaBulan} {$tahun}) telah disetujui oleh {$atasanName}.",
                 site_url('laporan-harian?bulan=' . $bulan . '&tahun=' . $tahun)
             );
-
-            return redirect()->to(site_url('laporan-harian'))->with('success', 'Semua target milik staf berhasil disetujui (' . count($targetsToApprove) . ' target).');
+        } catch (\Throwable $e) {
+            log_message('error', 'Gagal mengirim notifikasi approveAll staf #' . $staf_id . ': ' . $e->getMessage());
         }
-        return redirect()->back()->with('error', 'Data tidak valid.');
+
+        return redirect()->to(site_url('laporan-harian?source_tab=staf&staf_id=' . $staf_id . '&bulan=' . $bulan . '&tahun=' . $tahun))
+                         ->with('success', 'Semua target milik staf berhasil disetujui (' . count($targetsToApprove) . ' target).');
     }
 
     public function hapus()
     {
-        $id = $this->request->getPost('id');
-        $currentUserId = session()->get('id') ?? session()->get('user_id');
+        $id = (int)$this->request->getPost('id');
+        $currentUserId = (int)(session()->get('id') ?? session()->get('user_id'));
+        $userModel = new User();
+        $currentUser = $userModel->select('id, nama_lengkap, nip, username, role, unit, atasan_id')->find($currentUserId);
 
-        if ($id) {
-            $laporanModel = new TargetKinerja();
-            $laporan = $laporanModel->find($id);
-            if ($laporan) {
-                $targetUser = (new User())->find($laporan['user_id']);
-                $isAtasan = $targetUser && !empty($targetUser['atasan_id']) && ($targetUser['atasan_id'] == $currentUserId);
+        if (!$currentUser || !$id) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Parameter tidak valid atau sesi telah berakhir.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
 
-                // Otorisasi: Pastikan target milik user bersangkutan atau user adalah Admin / Direktur / Kepegawaian / Atasan Langsung (Wadir dilarang)
-                if ($laporan['user_id'] != $currentUserId && hasRole('wadir')) {
-                    return $this->response->setJSON([
-                        'success' => false,
-                        'message' => 'Akses ditolak. Role Wakil Direktur tidak memiliki izin menghapus atau merevisi target staf.',
-                        'csrf_hash' => csrf_hash()
-                    ]);
+        $laporanModel = new TargetKinerja();
+        $laporan = $laporanModel->find($id);
+        if (!$laporan) {
+            return $this->response->setJSON([
+                'success' => false, 
+                'message' => 'Data target tidak ditemukan.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        $targetUser = $userModel->select('id, nama_lengkap, nip, username, role, unit, status_pegawai, tmt_selesai, dispensasi_lampau_sampai, atasan_id')->find($laporan['user_id']);
+        if (!$targetUser) {
+            return $this->response->setJSON([
+                'success' => false, 
+                'message' => 'Pemilik target tidak ditemukan.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        if (!PenilaianKinerjaPolicy::canDeleteTarget($currentUser, $targetUser, $laporan)) {
+            $msg = (($laporan['status_approval'] ?? '') === 'disetujui')
+                ? 'Terkunci. Target sudah disetujui oleh atasan.'
+                : 'Akses ditolak. Anda tidak memiliki izin menghapus target ini.';
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => $msg,
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        // K-07: Batasi penghapusan setelah tenggat kecuali memiliki izin revisi sah yang terverifikasi
+        $isEditingStafHapus = ($currentUserId !== (int)$laporan['user_id']);
+        $targetUserStatusHapus = $targetUser['status_pegawai'] ?? 'aktif';
+        $hasDispensasiHapus = !empty($targetUser['dispensasi_lampau_sampai']) && $targetUser['dispensasi_lampau_sampai'] >= date('Y-m-d');
+
+        if ($targetUserStatusHapus !== 'aktif' && !$hasDispensasiHapus) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Akun dalam status arsip kepegawaian. Tidak dapat menghapus target kinerja.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        $settingModelHapus = new SettingModel();
+        $isDeadlineActiveHapus = $settingModelHapus->getValue('enable_target_deadline', '0') === '1';
+        $batasTargetHapus = (int)$settingModelHapus->getValue('batas_input_target', 5);
+        $isRevisionHapus = self::hasRevisionPermission((int)$laporan['user_id'], (int)$laporan['bulan'], (int)$laporan['tahun']);
+
+        if ($isDeadlineActiveHapus && !hasRole('admin') && !hasRole('direktur') && !$isEditingStafHapus && !$isRevisionHapus && !$hasDispensasiHapus) {
+            $now = new \DateTime();
+            $targetMonth = new \DateTime(sprintf('%04d-%02d-01', (int)$laporan['tahun'], (int)$laporan['bulan']));
+            $currentMonth = new \DateTime(date('Y-m-01'));
+            $isLockedHapus = false;
+            if ($targetMonth < $currentMonth) {
+                $isLockedHapus = true;
+            } elseif ($targetMonth == $currentMonth) {
+                if ((int)$now->format('j') > $batasTargetHapus) {
+                    $isLockedHapus = true;
                 }
-                if ($laporan['user_id'] != $currentUserId && !hasAnyRole(['admin', 'kepegawaian', 'direktur']) && !$isAtasan) {
-                    return $this->response->setJSON([
-                        'success' => false,
-                        'message' => 'Akses ditolak. Anda tidak memiliki izin menghapus target ini.',
-                        'csrf_hash' => csrf_hash()
-                    ]);
-                }
-
-                $isDirektur = (session()->get('role') === 'direktur');
-                if (!$isDirektur && !hasRole('admin')) {
-                    // Jangan izinkan hapus jika sudah disetujui
-                    if ($laporan['status_approval'] == 'disetujui') {
-                        return $this->response->setJSON([
-                            'success' => false, 
-                            'message' => 'Terkunci. Target sudah disetujui oleh atasan.',
-                            'csrf_hash' => csrf_hash()
-                        ]);
-                    }
-                }
-
-                $db = \Config\Database::connect();
-                $db->transStart();
-
-                $logModel = new LogKegiatanHarian();
-                $affectedLogs = $logModel->where('target_id', $id)->countAllResults();
-                if ($affectedLogs > 0) {
-                    // Lepaskan target_id dan kembalikan status laporan harian ke 'draft'
-                    $logModel->where('target_id', $id)
-                             ->set([
-                                 'target_id' => null,
-                                 'status'    => 'draft'
-                             ])
-                             ->update();
-                }
-
-                $laporanModel->delete($id);
-                log_audit('DELETE', 'target_kinerja_bulanan', $id, $laporan, [
-                    'affected_logs_reset_to_draft' => $affectedLogs
-                ]);
-
-                $db->transComplete();
-
-                if ($db->transStatus() === false) {
-                    log_message('error', "hapus target failed for target_id: {$id}");
-                    return $this->response->setJSON([
-                        'success' => false,
-                        'message' => 'Gagal menghapus data target.',
-                        'csrf_hash' => csrf_hash()
-                    ]);
-                }
-
-                $msg = ($affectedLogs > 0)
-                    ? "Target RHK berhasil dihapus. Sebanyak {$affectedLogs} catatan kegiatan harian yang sebelumnya menggunakan target ini telah kembali berstatus Draf agar targetnya dapat Anda sesuaikan."
-                    : "Target RHK berhasil dihapus.";
-
+            }
+            if ($isLockedHapus) {
                 return $this->response->setJSON([
-                    'success' => true,
-                    'message' => $msg,
-                    'affected_logs' => $affectedLogs,
+                    'success' => false,
+                    'message' => 'Batas waktu pengisian target kinerja untuk periode ini telah berakhir.',
                     'csrf_hash' => csrf_hash()
                 ]);
             }
         }
+
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        try {
+            $logModel = new LogKegiatanHarian();
+            $affectedLogs = $logModel->where('user_id', $targetUser['id'])
+                                     ->where('target_id', $id)
+                                     ->countAllResults();
+            if ($affectedLogs > 0) {
+                // Lepaskan target_id dan kembalikan status laporan harian ke 'draft'
+                $logModel->where('user_id', $targetUser['id'])
+                         ->where('target_id', $id)
+                         ->set([
+                             'target_id' => null,
+                             'status'    => 'draft'
+                         ])
+                         ->update();
+            }
+
+            $laporanModel->where('user_id', $targetUser['id'])->where('id', $id)->delete();
+            log_audit('DELETE', 'target_kinerja_bulanan', $id, $laporan, [
+                'affected_logs_reset_to_draft' => $affectedLogs
+            ]);
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                log_message('error', "hapus target failed for target_id: {$id}");
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Gagal menghapus data target.',
+                    'csrf_hash' => csrf_hash()
+                ]);
+            }
+        } catch (\Throwable $e) {
+            try { @$db->transRollback(); } catch (\Throwable $t) {}
+            log_message('error', 'hapus target exception: ' . $e->getMessage() . ' for target_id: ' . $id);
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Gagal menghapus data target.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        $msg = ($affectedLogs > 0)
+            ? "Target RHK berhasil dihapus. Sebanyak {$affectedLogs} catatan kegiatan harian yang sebelumnya menggunakan target ini telah kembali berstatus Draf agar targetnya dapat Anda sesuaikan."
+            : "Target RHK berhasil dihapus.";
+
         return $this->response->setJSON([
-            'success' => false, 
-            'message' => 'Data target tidak ditemukan.',
+            'success' => true,
+            'message' => $msg,
+            'affected_logs' => $affectedLogs,
             'csrf_hash' => csrf_hash()
         ]);
     }
@@ -795,7 +1314,11 @@ class LaporanHarianController extends BaseController
      */
     public function cancelApprove()
     {
-        if (!hasRole('admin')) {
+        $currentUserId = (int)(session()->get('id') ?? session()->get('user_id'));
+        $userModel = new User();
+        $currentUser = $userModel->select('id, nama_lengkap, nip, username, role, unit, atasan_id')->find($currentUserId);
+
+        if (!$currentUser || !PenilaianKinerjaPolicy::canCancelTargetApproval($currentUser)) {
             return $this->response->setJSON([
                 'success' => false,
                 'message' => 'Akses ditolak. Fitur ini hanya untuk Superadmin.',
@@ -860,15 +1383,60 @@ class LaporanHarianController extends BaseController
         $db->transStart();
 
         try {
-            // Revert status_approval ke 'menunggu_persetujuan' dan status ke 'draft' agar form dapat diedit kembali oleh staf
+            // Snapshot data sebelum reset untuk audit trail lengkap
+            $oldTargetSnapshots = [];
+            foreach ($existingTargets as $t) {
+                $oldTargetSnapshots[] = [
+                    'id'                => $t['id'],
+                    'sasaran_program'   => $t['sasaran_program'],
+                    'indikator_kinerja' => $t['indikator_kinerja'],
+                    'target_bulanan'    => $t['target_bulanan'],
+                    'satuan'            => $t['satuan'],
+                    'status_approval'   => $t['status_approval'],
+                    'status'            => $t['status'],
+                    'nilai_capaian'     => $t['nilai_capaian'],
+                    'status_penilaian'  => $t['status_penilaian']
+                ];
+            }
+
+            $startDate = sprintf('%04d-%02d-01', (int)$tahun, (int)$bulan);
+            $endDate   = date('Y-m-t', strtotime($startDate));
+            $logTambahanModel = new \App\Models\LogTugasTambahan();
+            $existingTambahan = $logTambahanModel->where('user_id', $stafId)
+                                                 ->where('tanggal_kegiatan >=', $startDate)
+                                                 ->where('tanggal_kegiatan <=', $endDate)
+                                                 ->findAll();
+            $oldTambahanSnapshots = [];
+            foreach ($existingTambahan as $tt) {
+                $oldTambahanSnapshots[] = [
+                    'id'                 => $tt['id'],
+                    'deskripsi_kegiatan' => $tt['deskripsi_kegiatan'],
+                    'nilai_capaian'      => $tt['nilai_capaian'],
+                    'status_penilaian'   => $tt['status_penilaian']
+                ];
+            }
+
+            // Revert status_approval ke 'menunggu_persetujuan', status ke 'draft', dan reset nilai penilaian (RPK-07 & K-04)
             $laporanModel->where('user_id', $stafId)
                          ->where('bulan', $bulan)
                          ->where('tahun', $tahun)
                          ->set([
-                              'status_approval' => 'menunggu_persetujuan',
-                              'status'          => 'draft'
+                              'status_approval'  => 'menunggu_persetujuan',
+                              'status'           => 'draft',
+                              'nilai_capaian'    => null,
+                              'status_penilaian' => null,
                          ])
                          ->update();
+
+            // Reset nilai penilaian tugas tambahan pada periode bulan yang sama
+            $logTambahanModel->where('user_id', $stafId)
+                             ->where('tanggal_kegiatan >=', $startDate)
+                             ->where('tanggal_kegiatan <=', $endDate)
+                             ->set([
+                                 'nilai_capaian'    => null,
+                                 'status_penilaian' => null,
+                             ])
+                             ->update();
 
             // Cascade: Revert semua Log Kegiatan Harian terkait yang berstatus 'terkirim' kembali ke 'draft'
             $targetIds = array_column($existingTargets, 'id');
@@ -899,28 +1467,37 @@ class LaporanHarianController extends BaseController
                 ]);
             }
 
-            // Audit log
-            log_audit('CANCEL_APPROVE_TARGET', 'target_kinerja_bulanan', $stafId, null, [
+            // Audit log dengan old values dan new values lengkap
+            log_audit('CANCEL_APPROVE_TARGET', 'target_kinerja_bulanan', $stafId, [
+                'targets'        => $oldTargetSnapshots,
+                'tugas_tambahan' => $oldTambahanSnapshots
+            ], [
                 'bulan'                  => $bulan,
                 'tahun'                  => $tahun,
                 'staf'                   => $targetUser['nama_lengkap'],
                 'target_count'           => count($existingTargets),
                 'affected_logs_to_draft' => $affectedLogs,
+                'reset_nilai_count'      => count($oldTargetSnapshots) + count($oldTambahanSnapshots),
                 'dibatal_oleh'           => session()->get('nama_lengkap')
             ]);
 
             // Kirim notifikasi ke staf
+            helper(['notification']);
             if (function_exists('send_notification')) {
-                $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-                $namaBulan = $bulanIndo[(int)$bulan - 1] ?? $bulan;
-                $logInfo = ($affectedLogs > 0) ? " Sebanyak {$affectedLogs} catatan log kegiatan harian juga telah dikembalikan ke status draf untuk disesuaikan." : "";
+                try {
+                    $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                    $namaBulan = $bulanIndo[(int)$bulan - 1] ?? $bulan;
+                    $logInfo = ($affectedLogs > 0) ? " Sebanyak {$affectedLogs} catatan log kegiatan harian juga telah dikembalikan ke status draf untuk disesuaikan." : "";
 
-                send_notification(
-                    $stafId,
-                    'Persetujuan Target Dibatalkan',
-                    "Persetujuan Target Bulanan ({$namaBulan} {$tahun}) Anda telah dibatalkan oleh Superadmin.{$logInfo} Silakan lakukan revisi dan ajukan kembali ke atasan langsung.",
-                    site_url('laporan-harian')
-                );
+                    send_notification(
+                        $stafId,
+                        'Persetujuan Target Dibatalkan',
+                        "Persetujuan Target Bulanan ({$namaBulan} {$tahun}) Anda telah dibatalkan oleh Superadmin.{$logInfo} Silakan lakukan revisi dan ajukan kembali ke atasan langsung.",
+                        site_url('laporan-harian?bulan=' . $bulan . '&tahun=' . $tahun)
+                    );
+                } catch (\Throwable $e) {
+                    log_message('error', '[LaporanHarianController::cancelApprove:notification] ' . $e->getMessage() . ' | Staf: ' . $stafId);
+                }
             }
 
             $msg = "Persetujuan Target Bulanan {$targetUser['nama_lengkap']} berhasil dibatalkan. Target kini berstatus draf.";
@@ -940,7 +1517,7 @@ class LaporanHarianController extends BaseController
             log_message('error', "cancelApprove exception: " . $e->getMessage());
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Gagal membatalkan persetujuan: ' . $e->getMessage(),
+                'message' => 'Gagal membatalkan persetujuan target. Silakan coba lagi.',
                 'csrf_hash' => csrf_hash()
             ]);
         }
@@ -952,37 +1529,52 @@ class LaporanHarianController extends BaseController
      */
     public function getPreviousTargets()
     {
-        $userId = session()->get('id') ?? session()->get('user_id');
+        $currentUserId = (int)(session()->get('id') ?? session()->get('user_id'));
+        $userModel = new User();
+        $currentUser = $userModel->select('id, nama_lengkap, nip, username, role, unit, atasan_id')->find($currentUserId);
+
         $bulanSumber = (int)$this->request->getVar('bulan');
         $tahunSumber = (int)$this->request->getVar('tahun');
         $stafId = $this->request->getVar('staf_id');
 
-        $targetUserId = (!empty($stafId) && is_numeric($stafId)) ? (int)$stafId : $userId;
+        $targetUserId = (!empty($stafId) && is_numeric($stafId)) ? (int)$stafId : $currentUserId;
 
-        // Validasi Otorisasi jika mengakses data staf lain
-        if ($targetUserId !== $userId) {
-            $userModel = new User();
-            $targetUser = $userModel->find($targetUserId);
-            $isAtasan = $targetUser && !empty($targetUser['atasan_id']) && ($targetUser['atasan_id'] == $userId);
-            if (!hasAnyRole(['admin', 'direktur', 'kepegawaian']) && !$isAtasan) {
-                return $this->response->setJSON([
-                    'status' => 'error',
-                    'message' => 'Akses ditolak: Anda tidak memiliki wewenang untuk mengambil data target staf ini.',
-                    'csrf_hash' => csrf_hash()
-                ])->setStatusCode(403);
-            }
-        }
-
-        if (!$bulanSumber || !$tahunSumber) {
+        if (!$currentUser) {
             return $this->response->setJSON([
                 'status' => 'error',
-                'message' => 'Parameter bulan dan tahun sumber wajib dipilih.',
+                'message' => 'Sesi tidak valid.',
+                'csrf_hash' => csrf_hash()
+            ])->setStatusCode(401);
+        }
+
+        $targetUser = ($targetUserId === $currentUserId) ? $currentUser : $userModel->select('id, nama_lengkap, nip, username, role, unit, atasan_id')->find($targetUserId);
+        if (!$targetUser) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Pengguna target tidak ditemukan.',
+                'csrf_hash' => csrf_hash()
+            ])->setStatusCode(404);
+        }
+
+        if (!PenilaianKinerjaPolicy::canCopyTargetSource($currentUser, $targetUser)) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Akses ditolak: Anda tidak memiliki wewenang untuk mengambil data target staf ini.',
+                'csrf_hash' => csrf_hash()
+            ])->setStatusCode(403);
+        }
+
+        if (!$bulanSumber || !$tahunSumber || $bulanSumber < 1 || $bulanSumber > 12 || $tahunSumber < 2020 || $tahunSumber > 2099) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Pilih bulan dan tahun sumber yang valid.',
                 'csrf_hash' => csrf_hash()
             ])->setStatusCode(400);
         }
 
         $laporanModel = new TargetKinerja();
-        $targets = $laporanModel->where('user_id', $targetUserId)
+        $targets = $laporanModel->select('sasaran_program, indikator_kinerja, target_bulanan, satuan')
+                                ->where('user_id', $targetUserId)
                                 ->where('bulan', $bulanSumber)
                                 ->where('tahun', $tahunSumber)
                                 ->orderBy('id', 'ASC')

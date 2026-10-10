@@ -1,7 +1,7 @@
 # 🎨 DESIGN SYSTEM & UI/UX GUIDELINES
 ## Evidence Command Center (ECC)
 **Official Application Name:** Evidence Command Center (ECC) (formerly Simonik)  
-**Version:** 1.4.0 (Enterprise Production Release - 1 September 2026)  
+**Version:** 1.5.0 (Enterprise Production Release - 11 Oktober 2026)  
 **Design Philosophy:** Modern Enterprise Bento Grid, Visual Excellence, Micro-Interactions, Mobile-First Touch Experience, 3-Tier Data Guards, and High-Performance Ergonomics.
 
 ---
@@ -217,7 +217,7 @@ For dense tabular data (Penilaian Kinerja, Rekap Kepegawaian, Activity Log):
 ### 6.1 Automatic Cache Busting
 To ensure client browsers immediately receive styling updates without requiring manual cache clearing:
 ```html
-<link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=1.4.' . filemtime(FCPATH . 'assets/css/style.css')) ?>">
+<link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=1.5.' . filemtime(FCPATH . 'assets/css/style.css')) ?>">
 ```
 Coupled with HTTP no-cache headers in `main.php`:
 ```html

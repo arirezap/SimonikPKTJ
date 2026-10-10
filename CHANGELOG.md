@@ -1,6 +1,15 @@
-# CHANGELOG: Pembaruan Sistem Simonik PKTJ (Sesi Terakhir)
+# CHANGELOG: Pembaruan Sistem Evidence Command Center (ECC)
 
-Dokumen ini berisi riwayat fitur, perbaikan (*bug fixes*), dan peningkatan antarmuka (UI/UX) yang telah diselesaikan pada sesi ini. Dokumen ini sangat berguna sebagai konteks apabila Anda memulai sesi (obrolan) baru dengan AI.
+## Versi 1.5.0 (11 Oktober 2026)
+- **Audit & Pengetatan `.gitignore` (Anti-Kebocoran Data Sensitif):**
+  - Mengabaikan seluruh foto profil dinamis pegawai (`public/assets/uploads/profile/*`) dan media upload dengan tetap menjaga aset bawaan (`default.png` dan `.htaccess`).
+  - Mengabaikan variasi berkas environment (`.env.*`, `*.env`), pangkalan data (`*.sql`, `*.sqlite`, `*.dump`), arsip/backup (`*.zip`, `*.tar.gz`, `*.bak`), dan sertifikat/kunci privat (`*.pem`, `*.key`, `id_rsa*`).
+  - Menghapus foto profil pegawai dan arsip zip lama dari pelacakan Git (`git rm --cached`) tanpa menghapus berkas fisik lokal.
+- **Pembaruan Modul Kelola Tim & Penguatan Autentikasi:**
+  - Otorisasi terpusat pimpinan tim (`isAuthorizedTimLeader()`), eliminasi eskalasi peran SPM pada pengubahan unit kerja.
+  - Integrasi siklus status pegawai (`aktif`, `mutasi_keluar`, `pensiun`, `nonaktif`) dengan izin login tetap aktif bagi pegawai mutasi/pensiun untuk penuntasan tanggung jawab kinerja.
+  - Penguatan form login (area sentuh 44px, anti-double submit, throttling IP + username) dan perbaikan remember-me berstandar HMAC-SHA256.
+
 
 ## 1. Fitur Baru: Log Keamanan Aktivitas (Audit Trail)
 - **Pembuatan Infrastruktur Audit:** 
@@ -272,4 +281,60 @@ Dokumen ini berisi riwayat fitur, perbaikan (*bug fixes*), dan peningkatan antar
 - **Standar Bahasa Non-Teknis & Pembakuan Istilah Resmi ECC:**
   - Pembersihan seluruh istilah teknis sistem/database dari notifikasi, alert, dan dialog pengguna.
   - Pembakuan istilah antarmuka resmi: *"Kata Sandi"* (bukan Password), *"Alamat Email"* (bukan Email Address), *"Keluar"* (bukan Logout), *"Simpan Profil"* (bukan Simpan Perubahan), dan *"Perbarui Kata Sandi"* (bukan Ubah Password).
+
+## 20. Rilis Resmi Versi 1.5: Audit 8-Pilar Modul Monitoring Target Kinerja, Monitoring Penilaian Kinerja, Profil Saya, dan Dashboard Admin & User (11 Oktober 2026)
+- **Modul Monitoring Target Kinerja Bulanan (`/kepegawaian/monitoring-target`):**
+  - Penyelesaian audit 8-pilar kode komprehensif (MT-01 s.d. MT-07).
+  - Pengerasan tombol pembatalan persetujuan target dengan konfirmasi SweetAlert2 dan rollback status atomik.
+  - Penambahan audit trail resmi via `log_audit()` (`CANCEL_APPROVE_TARGET`, `EXPORT_EXCEL_MONITORING_TARGET`, `EXPORT_PDF_MONITORING_TARGET`).
+  - Standarisasi formula persentase ketercapaian target institusional `(tercapai / target) * 100` dengan batas atas 150%.
+  - Engine ekspor Excel multi-sheet dan PDF landscape format A4 resmi berstandar instansi.
+- **Modul Monitoring Penilaian Kinerja Kepegawaian (`/kepegawaian` & `/kepegawaian/rekap-kinerja`):**
+  - Penyelesaian audit 8-pilar kode komprehensif (MP-01 s.d. MP-07).
+  - Implementasi kebijakan otorisasi sentral `PenilaianKinerjaPolicy` (hanya role Direktur, Wadir, Kabag, Kepegawaian, Admin).
+  - Pengerasan modal detail kegiatan staf dengan *selective column queries* dan sanitasi XSS pada URL tautan bukti.
+  - Log audit otomatis untuk reset penilaian dan ekspor laporan (`RESET_PENILAIAN_KINERJA`, `EXPORT_EXCEL_REKAP_KINERJA`, `EXPORT_PDF_REKAP_KINERJA`).
+  - Standarisasi ambang batas predikat resmi 0 s.d. 150% mematuhi formula resmi `AGENTS.md` 4.C dan `kinerja_helper.php`.
+- **Modul Profil Saya (`/profile` & `Profile.php`):**
+  - Penyelesaian audit 8-pilar kode komprehensif (PRF-01 s.d. PRF-07).
+  - Proteksi *Self-Atasan Loop* (`atasan_id !== user_id`) untuk mencegah anomali siklus hierarki organisasi.
+  - *Dual-sync* pembaruan unit kerja pengguna antara teks `users.unit` dan foreign key `users.unit_id` ke tabel `unit_kerja`.
+  - Pertahanan berlapis unggah foto profil (2MB client/server, validasi struktur MIME, penamaan acak kriptografis, dan script barrier `.htaccess`).
+- **Modul Dashboard Admin & User (`/dashboard`):**
+  - Penyelesaian audit 8-pilar kode komprehensif (DSH-01 s.d. DSH-07).
+  - **Perbaikan Kritis Modal Drilldown Grafik:** Penambahan header `X-Requested-With: XMLHttpRequest` pada `fetchChartDetail()` sehingga interaksi klik grafik donat "Sebaran Predikat Kinerja" dan titik grafik "Tren Kinerja Bulanan" terbuka mulus tanpa galat 403.
+  - **Eliminasi Beban Dead Code Legacy SKP:** Menghapus ~130 baris kueri dan parsing JSON `rencana_kinerja` lama di controller admin yang tidak pernah digunakan di view bento UI modern, menghemat CPU dan RAM server secara signifikan.
+  - **Keamanan Data & Filter Pegawai Aktif:** Menerapkan *selective column queries* (`id, nama_lengkap, nip, username, jabatan, unit, role`) dan filter status pegawai aktif (`status_pegawai = 'aktif'`) pada seluruh agregasi analitik organisasi dan perankingan Bottom 5.
+  - **Single-Pass Loop Agregasi Unit:** Menggabungkan kalkulasi unit kerja ke dalam loop pembuatan rekap dashboard (*single-pass O(N)*).
+  - **Pembersihan Dead Code Modul User:** Menghapus blok dead code grafik unit institusi `$isSuper` dan modal detail unit dari controller dan view user dashboard, memfokuskan antarmuka staf murni pada Kinerja Pribadi dan Radar Mutu ECC.
+  - **Standarisasi Predikat Kinerja:** Memusatkan penentuan kelas warna badge predikat pada helper JavaScript tunggal `getPredikatBadgeClass()` di kedua view sesuai standar resmi.
+  - **Mikro-Kopi Ramah Non-Teknis:** Penyesuaian pesan error jaringan menjadi *"Gagal memuat data. Silakan coba lagi."*.
+- **Pembaruan Versi Aplikasi v1.5 & Cache Busting:**
+  - Peningkatan label versi resmi menjadi **`v1.5`** pada footer tata letak utama (`main.php`), halaman login (`login.php`), halaman mode pemeliharaan (`maintenance.html`), header stylesheet (`style.css`), serta dokumentasi proyek (`README.md`, `PRD.md`, `design.md`).
+  - Mekanisme anti-cache busting aset ditingkatkan menjadi `style.css?v=1.5.TIMESTAMP` untuk memastikan seluruh peramban pengguna langsung menerima gaya visual mutakhir.
+
+## 21. Penguatan Modul Kelola Tim (`/tim`), Fitur Status Pegawai, dan Autentikasi Login & Logout (11 Oktober 2026)
+- **Modul Kelola Tim (`/tim` & `User\TimController`):**
+  - Penyelesaian audit 8-pilar kode komprehensif (TIM-01 s.d. TIM-08 & TIM-12).
+  - **Otorisasi Terpusat Pimpinan Tim:** Menambahkan verifikasi `isAuthorizedTimLeader()` di seluruh endpoint aksi mutasi (`addStaf`, `removeStaf`, `updateUnit`) sehingga akun staf biasa dicegah memanipulasi struktur tim atau memutasi unit kerja.
+  - **Eliminasi Eskalasi Peran SPM:** Menghapus logika otomatisasi pengubahan peran menjadi `'spm'` saat staf dipindahkan ke unit kerja SPM, mengembalikan kontrol hak peran seutuhnya kepada Administrator.
+  - **Penyaringan Pegawai Aktif:** Menerapkan filter `status_pegawai = 'aktif'` pada daftar anggota tim dan kueri dropdown penambahan anggota baru via database (`whereNotIn`).
+  - **Proteksi Siklus Hierarki (*Cycle Prevention*):** Menambahkan algoritma penelusuran garis atasan (*ancestor traversal*) untuk mencegah pimpinan menambahkan atasannya sendiri sebagai staf.
+  - **Standardisasi Skema Database `atasan_id`:** Mengubah nilai pengosongan atasan menjadi `NULL` (bukan angka `0`) sesuai skema relasional `users.atasan_id INT NULL`.
+  - **Transaksi Atomik & Audit Trail Lengkap:** Membungkus mutasi tim ke dalam transaksi database (`$db->transStart()` dan `$db->transComplete()`) serta mencatat data sebelum (`old_data`) dan sesudah perubahan pada `log_audit()`.
+  - **Peningkatan UI/UX & Pencegahan DOM XSS:** Sanitasi teks HTML atribut `dataset` pada template Select2, penambahan animasi putar `@keyframes spinIcon` pada indikator loading AJAX, peningkatan area sentuh tombol mobile ke `min-height: 44px;`, dan penyelarasan mikro-kopi dialog konfirmasi SweetAlert2.
+- **Fitur Status Pegawai & Dispensasi Masa Lampau (`/users` & `Admin\UserController`):**
+  - Implementasi siklus kepegawaian modern dengan opsi status: `aktif`, `mutasi_keluar`, `pensiun`, dan `nonaktif`.
+  - Penambahan kolom `tmt_selesai` dan `dispensasi_lampau_sampai` untuk mendukung penugasan lampau perorangan tanpa perlu membuka saklar batas waktu global institusi.
+  - Penapisan staf aktif otomatis pada antarmuka penilaian atasan dan kalkulasi rekap tahunan proporsional.
+- **Fitur dan Tampilan Halaman Login & Logout (`/login`, `/logout`, `Auth.php`, `BaseController.php`, `login.php`):**
+  - Penyelesaian audit 8-pilar kode komprehensif (AUTH-01 s.d. AUTH-08).
+  - **Proteksi Login Sesuai Aturan Bisnis PKTJ:** Memblokir secara spesifik akun dengan status `'nonaktif'` (*account disabled*), sementara pegawai `mutasi_keluar` dan `pensiun` **tetap diizinkan masuk** untuk menyelesaikan tanggung jawab pengisian laporan kinerja dan target lampau yang belum tuntas.
+  - **Eliminasi Celah SPM di Auto-Login:** Menghapus sisa otomatisasi peran SPM pada logika auto-login remember-me di `BaseController.php`.
+  - **Sinkronisasi Data Sesi:** Menyertakan foreign key `unit_id` dan `status_pegawai` secara otomatis ke dalam session `$ses_data` saat login manual maupun auto-login.
+  - **Throttling Multi-Faktor Anti-False Positive:** Kunci rate-limiting diperbarui menjadi kombinasi IP dan username (`md5($ipAddress . '_' . strtolower($username) . '_login')`), mencegah penguncian massal seluruh pegawai di jaringan WiFi / NAT kampus PKTJ.
+  - **Peningkatan Keamanan Token Remember-Me:** Menggunakan algoritma HMAC-SHA256 dengan fallback token lama, regenerasi ID sesi otomatis (`session()->regenerate(true)`), dan pencatatan audit log `LOGIN_REMEMBER_ME`.
+  - **Ergonomi Layar Sentuh Mobile:** Menetapkan dimensi tombol mata lihat/sembunyikan kata sandi dengan area sentuh minimal 44px (`min-width: 44px; min-height: 36px;`).
+  - **Stabilitas Form Submit & Aksesibilitas:** Penundaan mikro `setTimeout` (10ms) pada penonaktifan tombol login untuk mencegah pembatalan submit di peramban WebKit/iOS Safari, penambahan `@media (prefers-reduced-motion: reduce)`, serta penyelarasan judul halaman menjadi *"Masuk ke Akun - Evidence Command Center (ECC)"*.
+
 

@@ -151,6 +151,22 @@ Menu tree Kepegawaian di sidebar memiliki 2 submodul terpadu untuk Tim Kepegawai
 - **Script Execution Barrier (`public/assets/uploads/.htaccess`)**: Mematikan parser PHP (`php_flag engine off`) dan menolak eksekusi seluruh skrip web (`.php`, `.phtml`, `.cgi`, `.sh`, `.exe`, dll.).
 - **Penghapusan Berkas Aman**: Membersihkan nama file dengan `basename()` dan verifikasi `file_exists(FCPATH . ...)` sebelum `unlink()`.
 
+### H. Modul Kelola Tim (`/tim`) & Siklus Status Pegawai:
+- Controller: `app/Controllers/User/TimController.php` | View: `app/Views/user/tim_saya.php`.
+- **Otorisasi Terpusat Pimpinan Tim**: Memvalidasi hak peran pimpinan via `isAuthorizedTimLeader()` di seluruh endpoint mutasi tim (`addStaf`, `removeStaf`, `updateUnit`).
+- **Penyaringan Pegawai Aktif**: Hanya pegawai berstatus `aktif` yang dimuat pada daftar anggota tim dan modal penambahan staf.
+- **Proteksi Siklus Hierarki (*Cycle Prevention*)**: Memeriksa garis atasan (*ancestor traversal*) untuk mencegah penambahan atasan sebagai staf.
+- **Standardisasi Skema Database `atasan_id`**: Nilai pengosongan atasan menggunakan `NULL` (bukan angka `0`).
+- **Siklus Status Pegawai**: Mendukung status `aktif`, `mutasi_keluar`, `pensiun`, dan `nonaktif` serta tiket dispensasi pengisian masa lampau (`tmt_selesai` dan `dispensasi_lampau_sampai`).
+
+### I. Modul Autentikasi Login, Remember-Me & Logout (`/login` & `/logout`):
+- Controller: `app/Controllers/Auth.php` & `app/Controllers/BaseController.php` | View: `app/Views/login.php`.
+- **Proteksi Status Pegawai**: Khusus status `nonaktif` diblokir masuk ke sistem. Pegawai dengan status `mutasi_keluar` dan `pensiun` tetap diperbolehkan masuk untuk menyelesaikan pengisian laporan/target yang belum tuntas.
+- **Sinkronisasi Sesi**: Data `unit_id` dan `status_pegawai` tersimpan otomatis ke dalam data sesi pengguna saat login normal maupun auto-login.
+- **Throttling Multi-Faktor Anti-False Positive**: Menggunakan kunci kombinasi IP dan username (`md5($ip . '_' . strtolower($username) . '_login')`), melindungi pengguna di jaringan WiFi/NAT kampus PKTJ dari pemblokiran massal.
+- **Kriptografi Token Remember-Me**: Menggunakan HMAC-SHA256 dengan regenerasi ID sesi otomatis dan pencatatan audit log `LOGIN_REMEMBER_ME`.
+- **Ergonomi Sentuh Mobile**: Tombol mata toggle kata sandi diselaraskan ke area sentuh minimal 44px (`min-width: 44px; min-height: 36px;`).
+
 ---
 
 ## 7. Arsitektur Perutean (Routing Rules - `app/Config/Routes.php`)
@@ -162,14 +178,15 @@ Menu tree Kepegawaian di sidebar memiliki 2 submodul terpadu untuk Tim Kepegawai
 ---
 
 ## 8. Sinkronisasi Database (Local vs cPanel Production)
-- Database: `ekinerja_kinerja` (22 Tabel Aktif Basis Data).
+- Database: `ekinerja_kinerja` (24 Tabel Aktif Basis Data).
 - Presisi Tinggi: `target_bulanan` dan `jumlah_capaian` menggunakan `DECIMAL(10,4)`, `nilai_capaian` menggunakan `DECIMAL(5,2)`.
-- Status Paritas: Hasil audit forensik pada dump `ekinerja_kinerja (2).sql` membuktikan bahwa database cPanel sudah **100% SINKRON** dengan database lokal (0 missing columns, identical data types & settings keys). **Tidak diperlukan query SQL manual setelah push.**
+- Status Paritas: Seluruh perubahan skema lokal tercatat di file migrasi `app/Database/Migrations/` dan `database_updates_cpanel.sql`.
 
 ---
 
 ## 9. Status Graphify Knowledge Graph
-- Tanggal Pembaruan: 7 September 2026.
-- Korpus Terindeks: 636 berkas (~1.155.113 kata).
-- Simpul & Relasi: 9.624 nodes, 19.948 edges, 555 communities.
+- Tanggal Pembaruan: 11 Oktober 2026.
+- Korpus Terindeks: 232 berkas kode utama.
+- Simpul & Relasi: 10.093 nodes, 20.874 edges, 586 communities.
 - Berkas Artefak: `graphify-out/graph.json`, `graphify-out/graph.html`, dan `graphify-out/GRAPH_REPORT.md`.
+

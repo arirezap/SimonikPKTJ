@@ -27,11 +27,10 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-# Database Dumps
-*.sql
-
-# Linux
+# Linux & Editors Swap
 *~
+*.swp
+*.swo
 
 # KDE directory preferences
 .directory
@@ -40,16 +39,75 @@ $RECYCLE.BIN/
 .Trash-*
 
 #-------------------------
-# Environment Files
+# Environment & Credential Files
 #-------------------------
-# These should never be under version control,
-# as it poses a security risk.
+# These should never be under version control, as it poses a security risk.
 .env
+.env.*
+*.env
+.env.local
+.env.production
+.env.development
+.env.testing
+.env.backup
 .vagrant
 Vagrantfile
 
 #-------------------------
-# Temporary Files
+# SSL / Certificates / Private Keys
+#-------------------------
+*.pem
+*.key
+*.crt
+*.cer
+*.pfx
+*.p12
+*.pkcs12
+id_rsa
+id_rsa*
+
+#-------------------------
+# Database Dumps & Data Storage
+#-------------------------
+*.sql
+*.sqlite
+*.sqlite3
+*.db
+*.db3
+*.dump
+*.rdb
+
+#-------------------------
+# Backup & Archive Files
+#-------------------------
+*.bak
+*.backup
+*.old
+*.orig
+*.patch
+*.diff
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+*.gz
+*.bz2
+
+#-------------------------
+# User Uploads & Public Media (PII)
+#-------------------------
+# Protect all dynamically uploaded user assets
+public/assets/uploads/*
+!public/assets/uploads/.htaccess
+!public/assets/uploads/profile/
+public/assets/uploads/profile/*
+!public/assets/uploads/profile/default.png
+!public/assets/uploads/profile/.gitkeep
+
+#-------------------------
+# Writable & Temporary Files
 #-------------------------
 graphify-out/
 writable/cache/*
@@ -67,6 +125,9 @@ writable/uploads/*
 writable/debugbar/*
 !writable/debugbar/index.html
 
+# Generic Log Files
+*.log
+*.log.*
 php_errors.log
 
 #-------------------------
@@ -81,26 +142,24 @@ user_guide_src/cilexer/pycilexer.egg-info/*
 # Test Files
 #-------------------------
 tests/coverage*
-
-# Don't save phpunit under version control.
 phpunit
 
 #-------------------------
-# Composer
+# Composer & Node Dependencies
 #-------------------------
 vendor/
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 #-------------------------
 # IDE / Development Files
 #-------------------------
-
-# Modules Testing
 _modules/*
-
-# phpenv local config
 .php-version
 
-# Jetbrains editors (PHPStorm, etc)
+# Jetbrains editors
 .idea/
 *.iml
 
@@ -128,10 +187,3 @@ _modules/*
 
 /results/
 /phpunit*.xml
-
-#-------------------------
-# Database Dumps
-#-------------------------
-*.sql
-*.sqlite
-*.db

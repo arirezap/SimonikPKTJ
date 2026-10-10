@@ -45,7 +45,7 @@
                     <!-- SECTION A: AKUN -->
                     <div class="col-lg-6">
                         <div class="p-3 bg-light rounded-3 border border-light-subtle h-100">
-                            <h6 class="fw-bold text-primary mb-3"><i class="bi bi-shield-lock me-1"></i> A. Informasi Akun</h6>
+                            <h6 class="fw-bold text-primary mb-3">A. Informasi Akun</h6>
                             
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-dark mb-1">Username <span class="text-danger">*</span></label>
@@ -56,8 +56,8 @@
                                 <input type="email" name="email" class="form-control form-control-sm" value="<?= old('email') ?>" placeholder="nama@instansi.go.id" required>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label small fw-bold text-dark mb-1">Password <span class="text-danger">*</span></label>
-                                <input type="password" name="password" class="form-control form-control-sm" placeholder="Password akun..." required>
+                                <label class="form-label small fw-bold text-dark mb-1">Kata Sandi <span class="text-danger">*</span></label>
+                                <input type="password" name="password" class="form-control form-control-sm" placeholder="Kata sandi akun..." required>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-dark mb-1">Role Primer</label>
@@ -100,7 +100,7 @@
                     <!-- SECTION B: KEPEGAWAIAN & HIERARKI -->
                     <div class="col-lg-6">
                         <div class="p-3 bg-light rounded-3 border border-light-subtle h-100">
-                            <h6 class="fw-bold text-success mb-3"><i class="bi bi-diagram-3 me-1"></i> B. Data Kepegawaian & Hierarki</h6>
+                            <h6 class="fw-bold text-success mb-3">B. Data Kepegawaian & Hierarki</h6>
                             
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-dark mb-1">Nama Lengkap & Gelar <span class="text-danger">*</span></label>
@@ -132,7 +132,7 @@
                                 </select>
                             </div>
 
-                            <div class="p-3 bg-white border rounded-3">
+                            <div class="p-3 bg-white border rounded-3 mb-3">
                                 <label class="form-label small fw-bold text-dark mb-1">Atasan Langsung (Pejabat Penilai)</label>
                                 <select name="atasan_id" class="form-select form-select-sm select2" id="selectAtasanCreate">
                                     <option value="">-- Tanpa Atasan (Misal: Direktur) --</option>
@@ -144,6 +144,32 @@
                                 </select>
                                 <div class="form-text small" style="font-size: 0.72rem;">
                                     Atasan akan menjadi pejabat penilai kinerja dan pihak kedua di kontrak kinerja.
+                                </div>
+                            </div>
+
+                            <div class="p-3 bg-white border rounded-3">
+                                <label class="form-label small fw-bold text-dark mb-1">Status Kepegawaian & Akses</label>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-sm-6">
+                                        <label class="form-label small text-muted mb-1" style="font-size: 0.75rem;">Status Pegawai</label>
+                                        <select name="status_pegawai" id="statusPegawaiCreate" class="form-select form-select-sm">
+                                            <option value="aktif" <?= old('status_pegawai', 'aktif') === 'aktif' ? 'selected' : '' ?>>Aktif</option>
+                                            <option value="mutasi_keluar" <?= old('status_pegawai') === 'mutasi_keluar' ? 'selected' : '' ?>>Mutasi Keluar</option>
+                                            <option value="pensiun" <?= old('status_pegawai') === 'pensiun' ? 'selected' : '' ?>>Pensiun</option>
+                                            <option value="nonaktif" <?= old('status_pegawai') === 'nonaktif' ? 'selected' : '' ?>>Nonaktif</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-sm-6" id="wrapperTmtSelesaiCreate" style="<?= old('status_pegawai', 'aktif') === 'aktif' ? 'display: none;' : '' ?>">
+                                        <label class="form-label small text-muted mb-1" style="font-size: 0.75rem;">Tanggal Akhir Tugas (TMT)</label>
+                                        <input type="date" name="tmt_selesai" class="form-control form-control-sm" value="<?= old('tmt_selesai') ?>">
+                                    </div>
+                                </div>
+                                <div class="mt-2 pt-2 border-top">
+                                    <label class="form-label small text-muted mb-1" style="font-size: 0.75rem;">Dispensasi Pengisian Lampau (Khusus)</label>
+                                    <input type="date" name="dispensasi_lampau_sampai" class="form-control form-control-sm" value="<?= old('dispensasi_lampau_sampai') ?>">
+                                    <div class="form-text small" style="font-size: 0.72rem;">
+                                        Jika diisi, akun ini diizinkan menginput laporan tanggal lampau sampai batas tanggal yang ditentukan.
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -174,6 +200,17 @@ $(document).ready(function() {
             placeholder: '-- Pilih Atasan --'
         });
     }
+
+    function toggleTmtField() {
+        var status = $('#statusPegawaiCreate').val();
+        if (status === 'aktif') {
+            $('#wrapperTmtSelesaiCreate').hide();
+        } else {
+            $('#wrapperTmtSelesaiCreate').show();
+        }
+    }
+    $('#statusPegawaiCreate').on('change', toggleTmtField);
+    toggleTmtField();
 
     $('#formUserCreate').on('submit', function() {
         $('#btnSubmitUserCreate').html('<span class="spinner-border spinner-border-sm me-1" role="status"></span> Menyimpan...').prop('disabled', true);

@@ -12,8 +12,8 @@
     font-size: 0.8125rem;
 }
 .avatar-circle-sm {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     font-size: 0.75rem;
     flex-shrink: 0;
 }
@@ -32,6 +32,13 @@
 .table-responsive-smooth {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+}
+.unit-badge {
+    white-space: normal !important;
+    line-height: 1.3;
+    max-width: 184px;
+    display: inline-block;
+    text-align: left;
 }
 </style>
 <?= $this->endSection() ?>
@@ -90,9 +97,16 @@
                     </select>
                 </div>
                 <div class="col-12 col-md-2">
-                    <button type="submit" class="btn btn-sm btn-primary w-100 fw-bold shadow-sm px-3" style="min-height: 32px;">
-                        <i class="bi bi-funnel-fill me-1"></i> Filter
-                    </button>
+                    <div class="d-flex gap-1">
+                        <button type="submit" class="btn btn-sm btn-primary <?= (!empty($search) || !empty($filter_unit) || !empty($filter_role)) ? 'flex-grow-1' : 'w-100' ?> fw-bold shadow-sm" style="min-height: 32px;">
+                            Filter
+                        </button>
+                        <?php if (!empty($search) || !empty($filter_unit) || !empty($filter_role)): ?>
+                            <a href="<?= site_url('daftar-pegawai') ?>" class="btn btn-sm btn-outline-secondary" title="Reset Filter" style="min-height: 32px; padding: 4px 10px;">
+                                Reset
+                            </a>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </form>
         </div>
@@ -134,7 +148,7 @@
                                 Jabatan / Pangkat <?= $getSortIcon('jabatan') ?>
                             </a>
                         </th>
-                        <th class="py-2" style="min-width: 160px;">
+                        <th class="py-2" style="width: 180px; max-width: 200px;">
                             <a href="<?= $buildSortUrl('unit') ?>" class="sort-link" title="Urutkan berdasar Unit Kerja">
                                 Unit Kerja <?= $getSortIcon('unit') ?>
                             </a>
@@ -163,22 +177,25 @@
                                         <?= render_user_avatar($u, $u['nama_lengkap'] ?? '', 32) ?>
                                         <div>
                                             <span class="fw-bold text-dark d-block" style="font-size: 0.83rem; line-height: 1.25;"><?= esc($u['nama_lengkap']) ?></span>
-                                            <small class="text-muted" style="font-size: 0.72rem;"><i class="bi bi-card-text me-1"></i><?= esc($u['nip'] ?: ($u['username'] ?: '-')) ?></small>
+                                            <small class="text-muted" style="font-size: 0.72rem;"><?= esc($u['nip'] ?: ($u['username'] ?: '-')) ?></small>
                                         </div>
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="d-block text-dark fw-semibold" style="font-size: 0.78rem; line-height: 1.2;"><?= esc($u['jabatan'] ?: '-') ?></span>
-                                    <small class="text-muted" style="font-size: 0.71rem;"><?= esc($u['pangkat'] ?: '-') ?></small>
+                                    <div class="d-flex flex-wrap align-items-center gap-1 mb-1">
+                                        <span class="text-dark fw-semibold" style="font-size: 0.78rem; line-height: 1.2;"><?= esc($u['jabatan'] ?: '-') ?></span>
+                                        <?= render_role_badge($u['role']) ?>
+                                    </div>
+                                    <small class="text-muted d-block" style="font-size: 0.71rem;"><?= esc($u['pangkat'] ?: '-') ?></small>
                                 </td>
-                                <td>
-                                    <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-2 py-0.5" style="font-size: 0.72rem; font-weight: 500;">
-                                        <i class="bi bi-building me-1"></i><?= esc($u['unit'] ?: 'Belum Diatur') ?>
+                                <td style="max-width: 200px;">
+                                    <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-2 py-1 unit-badge" style="font-size: 0.72rem; font-weight: 500;">
+                                        <?= esc($u['unit'] ?: 'Belum Diatur') ?>
                                     </span>
                                 </td>
                                 <td>
                                     <?php if (!empty($u['nama_atasan']) && $u['nama_atasan'] !== '-'): ?>
-                                        <span class="text-dark fw-semibold" style="font-size: 0.78rem;"><i class="bi bi-person-badge text-success me-1"></i><?= esc($u['nama_atasan']) ?></span>
+                                        <span class="text-dark fw-semibold" style="font-size: 0.78rem;"><?= esc($u['nama_atasan']) ?></span>
                                     <?php else: ?>
                                         <span class="text-muted" style="font-size: 0.75rem;">-</span>
                                     <?php endif; ?>

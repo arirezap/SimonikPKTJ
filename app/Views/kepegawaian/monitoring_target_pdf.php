@@ -213,21 +213,21 @@
                 </div>
             </td>
             <td style="width: 20%; padding: 0 3px;">
-                <div class="kpi-box" style="background-color: #ecfdf5; border-color: #a7f3d0;">
-                    <div class="kpi-value" style="color: #065f46;"><?= esc($stat_kirim) ?></div>
-                    <div class="kpi-label" style="color: #047857;">Sudah Mengirim</div>
-                </div>
-            </td>
-            <td style="width: 20%; padding: 0 3px;">
                 <div class="kpi-box" style="background-color: #f0fdf4; border-color: #bbf7d0;">
                     <div class="kpi-value" style="color: #166534;"><?= esc($stat_setuju) ?></div>
                     <div class="kpi-label" style="color: #15803d;">Sudah Disetujui</div>
                 </div>
             </td>
             <td style="width: 20%; padding: 0 3px;">
-                <div class="kpi-box" style="background-color: #fffbeb; border-color: #fde68a;">
-                    <div class="kpi-value" style="color: #92400e;"><?= esc($stat_draft) ?></div>
-                    <div class="kpi-label" style="color: #b45309;">Draf (Belum Dikirim)</div>
+                <div class="kpi-box" style="background-color: #fefce8; border-color: #fef08a;">
+                    <div class="kpi-value" style="color: #854d0e;"><?= esc($stat_menunggu ?? 0) ?></div>
+                    <div class="kpi-label" style="color: #a16207;">Menunggu Persetujuan</div>
+                </div>
+            </td>
+            <td style="width: 20%; padding: 0 3px;">
+                <div class="kpi-box" style="background-color: #f8fafc; border-color: #e2e8f0;">
+                    <div class="kpi-value" style="color: #475569;"><?= esc($stat_draft) ?></div>
+                    <div class="kpi-label" style="color: #64748b;">Draf (Belum Dikirim)</div>
                 </div>
             </td>
             <td style="width: 20%; padding: 0 3px;">

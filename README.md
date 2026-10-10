@@ -62,8 +62,8 @@ Dibangun dengan fokus pada kecepatan dan kenyamanan pengguna, sistem ini memasti
 ---
 
 ## 📌 Versi Terbaru & Dokumentasi
-- **Versi Rilis:** `v1.4` (7 September 2026)
-- **Ringkasan Perubahan:** Lihat [CHANGELOG.md](file:///d:/laragon/www/SimonikPKTJ/CHANGELOG.md), [PROJECT_CONTEXT.md](file:///d:/laragon/www/SimonikPKTJ/PROJECT_CONTEXT.md), [audit_code.md](file:///d:/laragon/www/SimonikPKTJ/audit_code.md), dan [daftar_pekerjaan.md](file:///d:/laragon/www/SimonikPKTJ/daftar_pekerjaan.md) untuk detail audit 100% komprehensif seluruh modul sistem.
+- **Versi Rilis:** `v1.5` (11 Oktober 2026)
+- **Ringkasan Perubahan:** Lihat [CHANGELOG.md](CHANGELOG.md), [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md), [audit_code.md](audit_code.md), dan [daftar_pekerjaan.md](daftar_pekerjaan.md) untuk detail audit 100% komprehensif seluruh modul sistem.
 
 ---
 

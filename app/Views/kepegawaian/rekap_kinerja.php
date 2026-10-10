@@ -637,24 +637,14 @@
                                         $statusCat = 'belum';
                                     }
 
+                                    $predikatInfo = hitung_predikat_kinerja($dinilai > 0 ? $rata : null, $dinilai > 0);
+                                    $statusText = $predikatInfo['label'];
                                     if ($dinilai == 0) {
                                         $badgeClass = 'bg-secondary-subtle text-secondary border border-secondary-subtle';
-                                        $statusText = 'Belum Dinilai';
-                                    } elseif ($rata <= 25) {
-                                        $badgeClass = 'bg-danger text-white';
-                                        $statusText = 'Sangat Kurang';
-                                    } elseif ($rata <= 75) {
-                                        $badgeClass = 'bg-warning text-dark';
-                                        $statusText = 'Kurang';
-                                    } elseif ($rata <= 90) {
-                                        $badgeClass = 'bg-info text-dark';
-                                        $statusText = 'Butuh Perbaikan';
-                                    } elseif ($rata <= 100) {
-                                        $badgeClass = 'bg-primary text-white';
-                                        $statusText = 'Baik';
                                     } else {
-                                        $badgeClass = 'bg-success text-white';
-                                        $statusText = 'Sangat Baik';
+                                        $badgeClass = (strpos($predikatInfo['badge_class'], 'text-dark') !== false) 
+                                            ? $predikatInfo['badge_class'] 
+                                            : $predikatInfo['badge_class'] . ' text-white';
                                     }
                                 ?>
                                 <tr class="pegawai-row cursor-pointer btn-detail-pegawai" 
@@ -697,8 +687,17 @@
                                                 </div>
                                             <?php endif; ?>
                                             <div class="lh-sm" style="min-width: 0;">
-                                                <div class="fw-bold text-dark text-truncate" style="font-size: 0.82rem;" title="<?= esc($item['pegawai']['nama_lengkap']) ?>">
-                                                    <?= esc($item['pegawai']['nama_lengkap']) ?>
+                                                <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                                                    <span class="fw-bold text-dark text-truncate" style="font-size: 0.82rem;" title="<?= esc($item['pegawai']['nama_lengkap']) ?>">
+                                                        <?= esc($item['pegawai']['nama_lengkap']) ?>
+                                                    </span>
+                                                    <?php if (($item['pegawai']['status_pegawai'] ?? 'aktif') === 'mutasi_keluar'): ?>
+                                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Mutasi Keluar <?= !empty($item['pegawai']['tmt_selesai']) ? 'TMT ' . date('d/m/Y', strtotime($item['pegawai']['tmt_selesai'])) : '' ?>">Mutasi</span>
+                                                    <?php elseif (($item['pegawai']['status_pegawai'] ?? 'aktif') === 'pensiun'): ?>
+                                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Pensiun">Pensiun</span>
+                                                    <?php elseif (($item['pegawai']['status_pegawai'] ?? 'aktif') === 'nonaktif'): ?>
+                                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Nonaktif">Nonaktif</span>
+                                                    <?php endif; ?>
                                                 </div>
                                                 <div class="text-muted small" style="font-size: 0.72rem;">
                                                     NIP: <span class="num-tabular"><?= !empty($item['pegawai']['nip']) ? esc($item['pegawai']['nip']) : '-' ?></span>
@@ -815,24 +814,14 @@
                                     $statusCat = 'belum';
                                 }
 
+                                $predikatInfo = hitung_predikat_kinerja($dinilai > 0 ? $rata : null, $dinilai > 0);
+                                $statusText = $predikatInfo['label'];
                                 if ($dinilai == 0) {
                                     $badgeClass = 'bg-secondary-subtle text-secondary border border-secondary-subtle';
-                                    $statusText = 'Belum Dinilai';
-                                } elseif ($rata <= 25) {
-                                    $badgeClass = 'bg-danger text-white';
-                                    $statusText = 'Sangat Kurang';
-                                } elseif ($rata <= 75) {
-                                    $badgeClass = 'bg-warning text-dark';
-                                    $statusText = 'Kurang';
-                                } elseif ($rata <= 90) {
-                                    $badgeClass = 'bg-info text-dark';
-                                    $statusText = 'Butuh Perbaikan';
-                                } elseif ($rata <= 100) {
-                                    $badgeClass = 'bg-primary text-white';
-                                    $statusText = 'Baik';
                                 } else {
-                                    $badgeClass = 'bg-success text-white';
-                                    $statusText = 'Sangat Baik';
+                                    $badgeClass = (strpos($predikatInfo['badge_class'], 'text-dark') !== false) 
+                                        ? $predikatInfo['badge_class'] 
+                                        : $predikatInfo['badge_class'] . ' text-white';
                                 }
                             ?>
                             <div class="mobile-pegawai-card pegawai-row cursor-pointer btn-detail-pegawai"
@@ -880,7 +869,16 @@
                                         </div>
                                     <?php endif; ?>
                                     <div class="lh-sm flex-grow-1" style="min-width: 0;">
-                                        <div class="fw-bold text-dark mobile-nama-text"><?= esc($item['pegawai']['nama_lengkap']) ?></div>
+                                        <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                                            <div class="fw-bold text-dark mobile-nama-text"><?= esc($item['pegawai']['nama_lengkap']) ?></div>
+                                            <?php if (($item['pegawai']['status_pegawai'] ?? 'aktif') === 'mutasi_keluar'): ?>
+                                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Mutasi Keluar <?= !empty($item['pegawai']['tmt_selesai']) ? 'TMT ' . date('d/m/Y', strtotime($item['pegawai']['tmt_selesai'])) : '' ?>">Mutasi</span>
+                                            <?php elseif (($item['pegawai']['status_pegawai'] ?? 'aktif') === 'pensiun'): ?>
+                                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Pensiun">Pensiun</span>
+                                            <?php elseif (($item['pegawai']['status_pegawai'] ?? 'aktif') === 'nonaktif'): ?>
+                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Nonaktif">Nonaktif</span>
+                                            <?php endif; ?>
+                                        </div>
                                         <div class="text-muted small" style="font-size: 0.72rem;">NIP: <span class="num-tabular"><?= !empty($item['pegawai']['nip']) ? esc($item['pegawai']['nip']) : '-' ?></span></div>
                                         <div class="text-secondary small fw-medium mt-0.5" style="font-size: 0.7rem;"><?= !empty($item['pegawai']['jabatan']) ? esc($item['pegawai']['jabatan']) : '-' ?></div>
                                     </div>
@@ -1511,9 +1509,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="ecc-loading-spinner-wrapper">
                             <div class="ecc-loading-spinner spinner-border text-primary" role="status" style="width: 2.75rem; height: 2.75rem; border-width: 3.5px;"></div>
                         </div>
-                        <div class="ecc-loading-title">Sedang mengompilasi data instansi...</div>
-                        <span class="ecc-loading-desc">Sistem sedang merekap data target, capaian realisasi, dan tugas tambahan. File akan langsung terunduh begitu proses selesai.</span>
-                        <span class="ecc-loading-badge-step"><i class="bi bi-shield-check text-primary"></i> Streaming terenkripsi & aman</span>
+                        <div class="ecc-loading-title">Menyiapkan dokumen...</div>
+                        <span class="ecc-loading-desc">Mohon tunggu, berkas akan terunduh otomatis.</span>
                     </div>
                 `,
                 customClass: {
@@ -1525,7 +1522,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     try {
                         const response = await fetch(url);
                         if (!response.ok) {
-                            throw new Error('Gagal menyiapkan berkas dari server');
+                            throw new Error('Gagal mengunduh berkas');
                         }
 
                         // Cek jika server mengembalikan halaman HTML (misal redirect atau auth)

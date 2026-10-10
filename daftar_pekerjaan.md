@@ -271,10 +271,53 @@ Dokumen ini adalah lembar kerja resmi pelacakan pekerjaan pengembangan, perbaika
 
 ---
 
+### 📌 HALAMAN 14: KELOLA TIM, STATUS PEGAWAI & PENGUATAN AUTENTIKASI LOGIN-LOGOUT
+
+- [x] **TUGAS 14.1: Audit 8-Pilar Modul Kelola Tim (`app/Controllers/User/TimController.php` & `app/Views/user/tim_saya.php`)**
+  - **Uraian Pekerjaan**:
+    - Otorisasi terpusat peran pimpinan tim (`isAuthorizedTimLeader()`) di seluruh endpoint mutasi (`addStaf`, `removeStaf`, `updateUnit`).
+    - Eliminasi otomatisasi eskalasi peran SPM pada pengubahan unit kerja staf.
+    - Filter `status_pegawai = 'aktif'` pada daftar tim dan modal penambahan staf.
+    - Proteksi siklus hierarki (*cycle prevention*) untuk mencegah penambahan atasan sebagai staf.
+    - Standardisasi pengosongan nilai `atasan_id` menjadi `NULL` (bukan angka `0`).
+    - Transaksi database atomik `$db->transStart() / $db->transComplete()` dan pencatatan audit komprehensif (`old_data` vs `new_data`).
+    - Peningkatan antarmuka: CSS `@keyframes spinIcon`, area sentuh mobile minimum 44px, sanitasi HTML template Select2 (anti-DOM XSS), dan dialog konfirmasi SweetAlert2 dengan mikro-kopi padat.
+  - **Status**: Selesai ✅ *(11 Oktober 2026)*
+
+- [x] **TUGAS 14.2: Siklus Status Pegawai & Dispensasi Pengisian Lampau (`UserController.php` & Migrasi DB)**
+  - **Uraian Pekerjaan**:
+    - Penambahan status pegawai (`aktif`, `mutasi_keluar`, `pensiun`, `nonaktif`), `tmt_selesai`, dan `dispensasi_lampau_sampai`.
+    - Hak login dipertahankan untuk pegawai `mutasi_keluar` dan `pensiun` guna menyelesaikan pengisian laporan/target kinerja yang belum tuntas.
+    - Penapisan staf aktif otomatis pada penilaian kinerja atasan dan kalkulasi rekap tahunan proporsional.
+  - **Status**: Selesai ✅ *(11 Oktober 2026)*
+
+- [x] **TUGAS 14.3: Penguatan Autentikasi Login, Remember-Me & Logout (`Auth.php`, `BaseController.php`, & `login.php`)**
+  - **Uraian Pekerjaan**:
+    - Proteksi login khusus untuk akun berstatus `nonaktif`, sementara pegawai `mutasi_keluar` dan `pensiun` tetap dapat login.
+    - Penghapusan sisa eskalasi peran SPM pada mekanisme auto-login remember-me di `BaseController.php`.
+    - Sinkronisasi kolom `unit_id` dan `status_pegawai` ke dalam data sesi pengguna saat login manual maupun auto-login.
+    - Throttling login berbasis kombinasi IP + username (`md5($ipAddress . '_' . strtolower($username) . '_login')`) guna mencegah *false positive lockout* massal pada jaringan WiFi kampus PKTJ.
+    - Peningkatan token remember-me dengan HMAC-SHA256, regenerasi sesi saat auto-login, dan pencatatan audit log `LOGIN_REMEMBER_ME`.
+    - Area sentuh tombol mata toggle kata sandi diselaraskan ke minimal 44px (`min-width: 44px; min-height: 36px;`).
+    - Stabilitas submit form login anti-double submit dengan penundaan mikro `setTimeout`, dukungan `@media (prefers-reduced-motion: reduce)`, serta penyelarasan judul halaman menjadi *"Masuk ke Akun - Evidence Command Center (ECC)"*.
+  - **Status**: Selesai ✅ *(11 Oktober 2026)*
+
+- [x] **TUGAS 14.4: Audit Keamanan Git & Proteksi Data Sensitif (`.gitignore`)**
+  - **Uraian Pekerjaan**:
+    - Audit komprehensif berkas ter-track dan untracked terhadap risiko kebocoran kredensial, PII, dan dump basis data.
+    - Pengetatan `.gitignore` untuk melindungi seluruh file dinamis: foto profil upload pegawai (`public/assets/uploads/profile/*`), environment (`.env.*`, `*.env`), basis data (`*.sql`, `*.sqlite`, `*.dump`), arsip/backup (`*.zip`, `*.tar.gz`, `*.bak`), dan sertifikat/kunci privat (`*.pem`, `*.key`, `id_rsa*`).
+    - Whitelist ketat aset esensial publik (`default.png` dan `.htaccess`).
+    - Penghapusan foto profil pegawai dan berkas arsip/backup lama dari pelacakan index Git (`git rm --cached`) tanpa menghapus file fisik di komputer lokal.
+  - **Status**: Selesai ✅ *(11 Oktober 2026)*
+
+---
+
 ## 📊 Status Progres Pelaksanaan
 
 ```text
-[████████████████████████████████████████████] 100% Selesai (13 dari 13 Modul Ter-audit & Ter-optimasi)
+[████████████████████████████████████████████] 100% Selesai (14 dari 14 Modul Ter-audit & Ter-optimasi)
 ```
 
 *(Dokumen ini diperbarui secara real-time setiap kali satu halaman selesai diaudit dan dioptimasi)*
+
+

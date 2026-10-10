@@ -205,6 +205,12 @@
         border-color: #0d6efd !important;
         z-index: 2;
     }
+    .heatmap-day-cell:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.35);
+        border-color: #0d6efd !important;
+        z-index: 3;
+    }
     .heatmap-day-cell:active {
         transform: scale(0.97);
     }
@@ -466,7 +472,7 @@
                 <div class="row g-3 align-items-end">
                     <div class="col-6 col-sm-3 col-md-3">
                         <label class="form-label fw-bold text-dark small mb-1" style="font-size: 0.75rem; letter-spacing: 0.02em;"><i class="bi bi-calendar-month text-primary me-1"></i> Bulan</label>
-                        <select name="bulan" class="form-select form-select-sm border-primary fw-semibold" style="height: 36px; font-size: 0.8125rem;" aria-label="Pilih Bulan Penilaian" onchange="this.form.submit()">
+                        <select name="bulan" id="filterBulanSelect" class="form-select form-select-sm border-primary fw-semibold" style="height: 36px; font-size: 0.8125rem;" aria-label="Pilih Bulan Penilaian">
                             <?php foreach($bulan_indo as $index => $nama): ?>
                                 <option value="<?= $index + 1 ?>" <?= ($bulan_terpilih == $index + 1) ? 'selected' : '' ?>><?= $nama ?></option>
                             <?php endforeach; ?>
@@ -480,7 +486,7 @@
                     <?php if ($is_super): ?>
                     <div class="col-12 col-sm-4 col-md-4">
                         <label class="form-label fw-bold text-dark small mb-1" style="font-size: 0.75rem; letter-spacing: 0.02em;"><i class="bi bi-building text-primary me-1"></i> Unit Kerja</label>
-                        <select name="unit_kerja" class="form-select form-select-sm border-primary fw-semibold" style="height: 36px; font-size: 0.8125rem;" aria-label="Pilih Unit Kerja" onchange="this.form.submit()">
+                        <select name="unit_kerja" id="filterUnitSelect" class="form-select form-select-sm border-primary fw-semibold" style="height: 36px; font-size: 0.8125rem;" aria-label="Pilih Unit Kerja">
                             <option value="">Semua Unit Kerja</option>
                             <?php foreach ($daftar_unit as $u): ?>
                                 <option value="<?= esc($u) ?>" <?= ($u == $unit_kerja_terpilih) ? 'selected' : '' ?>><?= esc($u) ?></option>
@@ -519,44 +525,24 @@
                     </div>
                 <?php else: ?>
                     <?php
-                        $jmlDinilai = 0;
-                        $totalNilai = 0;
-                        foreach ($rekap_data_sendiri as $rd) {
-                            if (isset($rd['status_penilaian']) && $rd['status_penilaian'] === 'terbit' && $rd['nilai_capaian'] !== null && $rd['nilai_capaian'] !== '') {
-                                $jmlDinilai++;
-                                $totalNilai += (float)$rd['nilai_capaian'];
-                            }
-                        }
-                        
-                        // Perhitungan tugas tambahan jika dinilai dan terbit
-                        $scoreTambahanIndividu = null;
-                        if (!empty($tugas_tambahan_sendiri)) {
+                        $rekapIndividu = hitung_rekap_komponen_kinerja($rekap_data_sendiri, $tugas_tambahan_sendiri, true);
+                        $jmlDinilai = $rekapIndividu['jml_dinilai'];
+                        $totalNilai = $rekapIndividu['total_nilai'];
+                        $scoreTambahanIndividu = $rekapIndividu['score_tambahan'];
+                        $rataRataIndividu = $rekapIndividu['rata_rata'];
+                        $predikatRataIndividu = $rekapIndividu['predikat'];
+                        $badgeColorRataIndividu = $rekapIndividu['badge_color'];
+                        $warnaScore = $rekapIndividu['warna_score'];
+
+                        // Nilai input tugas tambahan form mandiri Direktur (mendukung pratinjau draf maupun terbit)
+                        $scoreTambahanDirekturForm = $scoreTambahanIndividu;
+                        if ($scoreTambahanDirekturForm === null && session()->get('role') === 'direktur' && !empty($tugas_tambahan_sendiri)) {
                             foreach ($tugas_tambahan_sendiri as $tmb) {
-                                if (isset($tmb['status_penilaian']) && $tmb['status_penilaian'] === 'terbit' && $tmb['nilai_capaian'] !== null) {
-                                    $scoreTambahanIndividu = (float)$tmb['nilai_capaian'];
+                                if ($tmb['nilai_capaian'] !== null && trim((string)$tmb['nilai_capaian']) !== '') {
+                                    $scoreTambahanDirekturForm = (float)$tmb['nilai_capaian'];
                                     break;
                                 }
                             }
-                        }
-
-                        if ($scoreTambahanIndividu !== null) {
-                            $totalNilai += $scoreTambahanIndividu;
-                            $jmlDinilai++;
-                        }
-
-                        $rataRataIndividu = $jmlDinilai > 0 ? (float)($totalNilai / $jmlDinilai) : 0;
-                        
-                        $predikatRataIndividu = '-';
-                        $badgeColorRataIndividu = 'secondary';
-                        $warnaScore = 'success';
-                        if ($jmlDinilai == 0) {
-                            $warnaScore = 'secondary';
-                        } else {
-                            if ($rataRataIndividu <= 25) { $warnaScore = 'danger'; $predikatRataIndividu = 'Sangat Kurang'; $badgeColorRataIndividu = 'danger'; }
-                            elseif ($rataRataIndividu <= 75) { $warnaScore = 'warning text-dark'; $predikatRataIndividu = 'Kurang'; $badgeColorRataIndividu = 'warning text-dark'; }
-                            elseif ($rataRataIndividu <= 90) { $warnaScore = 'info text-dark'; $predikatRataIndividu = 'Butuh Perbaikan'; $badgeColorRataIndividu = 'info text-dark'; }
-                            elseif ($rataRataIndividu <= 100) { $warnaScore = 'primary'; $predikatRataIndividu = 'Baik'; $badgeColorRataIndividu = 'primary'; }
-                            else { $warnaScore = 'success'; $predikatRataIndividu = 'Sangat Baik'; $badgeColorRataIndividu = 'success'; }
                         }
                     ?>
 
@@ -584,7 +570,7 @@
                     </div>
                     
                     <?php if (session()->get('role') === 'direktur'): ?>
-                    <form method="POST" action="<?= site_url('penilaian-kinerja/store') ?>">
+                    <form method="POST" action="<?= site_url('penilaian-kinerja/store') ?>" id="formPenilaianMandiri">
                         <?= csrf_field() ?>
                         <input type="hidden" name="is_self_eval" value="1">
                         <input type="hidden" name="staf_id" value="<?= esc(session()->get('id') ?? session()->get('user_id')) ?>">
@@ -630,9 +616,18 @@
                                             <?php if (session()->get('role') === 'direktur'): ?>
                                                 <input type="hidden" name="laporan_id[]" value="<?= esc($row['id']) ?>">
                                                 <div class="input-group input-group-sm">
-                                                    <input type="number" step="0.01" min="0" max="150" name="nilai_capaian[]" class="form-control text-center text-primary fw-bold num-tabular input-nilai-capaian" value="<?= isset($row['nilai_capaian']) && $row['nilai_capaian'] !== null ? (float)$row['nilai_capaian'] : '' ?>" placeholder="0 - 150" aria-label="Nilai Capaian Mandiri RHK: <?= esc($row['indikator_kinerja']) ?>">
+                                                    <input type="number" step="0.01" min="0" max="150" name="nilai_capaian[<?= esc($row['id']) ?>]" class="form-control text-center text-primary fw-bold num-tabular input-nilai-capaian" value="<?= esc(old('nilai_capaian.' . $row['id'], old('nilai_capaian.' . $index, isset($row['nilai_capaian']) && $row['nilai_capaian'] !== null ? (float)$row['nilai_capaian'] : ''))) ?>" placeholder="0 - 150" aria-label="Nilai Capaian Mandiri RHK: <?= esc($row['indikator_kinerja']) ?>">
                                                     <span class="input-group-text">%</span>
                                                 </div>
+                                                <?php if (isset($row['nilai_capaian']) && $row['nilai_capaian'] !== null && trim((string)$row['nilai_capaian']) !== ''): ?>
+                                                    <div class="mt-1">
+                                                        <?php if (($row['status_penilaian'] ?? '') === 'terbit'): ?>
+                                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-0.5" style="font-size:0.68rem;">Terbit</span>
+                                                        <?php else: ?>
+                                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2 py-0.5" style="font-size:0.68rem;">Draf</span>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                <?php endif; ?>
                                             <?php else: ?>
                                                 <?= $isTerbit ? str_replace('.', ',', (float)$row['nilai_capaian']) . '%' : '<span class="text-muted fw-normal" title="Belum diterbitkan atasan">-</span>' ?>
                                             <?php endif; ?>
@@ -666,6 +661,9 @@
                                     <tr><td colspan="5" class="text-center text-muted py-3">Tidak ada tugas tambahan pada bulan ini.</td></tr>
                                 <?php else: ?>
                                     <?php foreach ($tugas_tambahan_sendiri as $idx => $tmb): ?>
+                                        <?php if (session()->get('role') === 'direktur'): ?>
+                                            <input type="hidden" name="log_tambahan_id[]" value="<?= esc($tmb['id']) ?>">
+                                        <?php endif; ?>
                                         <tr>
                                             <td class="text-center fw-bold text-muted"><?= $idx + 1 ?></td>
                                             <td><?= nl2br(esc($tmb['deskripsi_kegiatan'])) ?></td>
@@ -680,8 +678,12 @@
                                                  <?= (isset($tmb['jumlah_capaian']) && $tmb['jumlah_capaian'] !== null && $tmb['jumlah_capaian'] !== '') ? str_replace('.', ',', (float)$tmb['jumlah_capaian']) : '-' ?> <?= esc($tmb['satuan'] ?? '') ?>
                                              </td>
                                             <td class="text-center">
-                                                <?php if (!empty($tmb['link_bukti'])): ?>
-                                                    <a href="<?= esc($tmb['link_bukti']) ?>" target="_blank" class="btn btn-light btn-sm text-primary rounded-pill border px-2 py-0.5 btn-tactile" style="font-size: 0.72rem;" title="Lihat Bukti Pekerjaan"><i class="bi bi-box-arrow-up-right me-1"></i>Bukti</a>
+                                                <?php 
+                                                    $linkBuktiSendiri = trim((string)($tmb['link_bukti'] ?? ''));
+                                                    $isSafeBuktiSendiri = ($linkBuktiSendiri !== '' && preg_match('/^https?:\/\//i', $linkBuktiSendiri));
+                                                ?>
+                                                <?php if ($isSafeBuktiSendiri): ?>
+                                                    <a href="<?= esc($linkBuktiSendiri) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-light btn-sm text-primary rounded-pill border px-2 py-0.5 btn-tactile" style="font-size: 0.72rem;" title="Lihat Bukti Pekerjaan"><i class="bi bi-box-arrow-up-right me-1"></i>Bukti</a>
                                                 <?php else: ?>
                                                     <span class="text-muted">-</span>
                                                 <?php endif; ?>
@@ -696,9 +698,8 @@
                                     <td colspan="4" class="text-end pe-3 align-middle text-muted fw-normal">Nilai Tugas Tambahan:</td>
                                     <td class="text-center align-middle fw-bold fs-6 text-success p-2 num-tabular">
                                         <?php if (session()->get('role') === 'direktur'): ?>
-                                            <input type="hidden" name="log_tambahan_id[]" value="<?= esc($tugas_tambahan_sendiri[0]['id']) ?>">
                                             <div class="input-group input-group-sm justify-content-center" style="max-width: 130px; margin: 0 auto;">
-                                                <input type="number" step="0.01" min="0" max="150" name="nilai_tugas_tambahan_gabungan" class="form-control text-center text-success fw-bold num-tabular input-nilai-capaian" value="<?= $scoreTambahanIndividu !== null ? (float)$scoreTambahanIndividu : '' ?>" placeholder="0 - 150" aria-label="Nilai Tugas Tambahan Mandiri">
+                                                <input type="number" step="0.01" min="0" max="150" name="nilai_tugas_tambahan_gabungan" class="form-control text-center text-success fw-bold num-tabular input-nilai-capaian" value="<?= esc(old('nilai_tugas_tambahan_gabungan', $scoreTambahanDirekturForm !== null ? (float)$scoreTambahanDirekturForm : '')) ?>" placeholder="0 - 150" aria-label="Nilai Tugas Tambahan Mandiri">
                                                 <span class="input-group-text">%</span>
                                             </div>
                                         <?php else: ?>
@@ -782,6 +783,121 @@
                         </div>
                     <?php endif; ?>
 
+                    <?php if (!empty($is_heatmap_hidden)): ?>
+                    <!-- TABEL LAPORAN KEGIATAN HARIAN SAYA (PENGGANTI HEATMAP PADA TAHUN TERPILIH) -->
+                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bento-stagger bento-stagger-3">
+                        <div class="card-header bg-white py-3 px-3 px-md-4 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 fw-bold" style="font-size: 0.72rem;">
+                                    <i class="bi bi-journal-text me-1"></i> Laporan Kegiatan Harian Saya
+                                </span>
+                                <span class="text-muted small fw-semibold" style="font-size: 0.75rem;">
+                                    Periode: <?= esc($bulan_indo[$bulan_terpilih - 1] ?? '') ?> <?= esc($tahun_terpilih) ?>
+                                </span>
+                            </div>
+                            <div>
+                                <span class="badge bg-light text-dark border rounded-pill px-3 py-1.5 num-tabular" style="font-size: 0.75rem;">
+                                    Total: <strong><?= count($log_harian_sendiri) ?></strong> Kegiatan
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <?php if (empty($log_harian_sendiri)): ?>
+                                <div class="text-center py-5 px-3">
+                                    <i class="bi bi-journal-x fs-1 text-muted opacity-50 mb-2"></i>
+                                    <h6 class="fw-bold text-dark mb-1">Belum Ada Catatan Kegiatan</h6>
+                                    <p class="text-muted small mb-0">Tidak ada laporan kegiatan harian yang tercatat untuk periode <?= esc($bulan_indo[$bulan_terpilih - 1] ?? '') ?> <?= esc($tahun_terpilih) ?>.</p>
+                                </div>
+                            <?php else: ?>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover align-middle mb-0 table-bento">
+                                        <thead class="bg-light text-muted">
+                                            <tr class="align-middle">
+                                                <th style="width: 45px;" class="text-center">No</th>
+                                                <th style="width: 130px;" class="text-center">Tanggal</th>
+                                                <th style="width: 125px;" class="text-center">Jenis</th>
+                                                <th style="min-width: 200px;">Indikator RHK / Sasaran</th>
+                                                <th style="min-width: 250px;">Deskripsi Aktivitas</th>
+                                                <th style="width: 110px;" class="text-center">Realisasi</th>
+                                                <th style="width: 90px;" class="text-center">Bukti</th>
+                                                <th style="width: 120px;" class="text-center">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($log_harian_sendiri as $idx => $logItem): ?>
+                                                <tr>
+                                                    <td class="text-center fw-bold text-muted"><?= $idx + 1 ?></td>
+                                                    <td class="text-center num-tabular" style="font-size: 0.8rem;">
+                                                        <?php
+                                                            $tglWaktu = strtotime($logItem['tanggal_kegiatan'] ?? '');
+                                                            echo $tglWaktu ? date('d/m/Y', $tglWaktu) : '-';
+                                                        ?>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <?php if (!empty($logItem['is_tambahan'])): ?>
+                                                            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-2 py-1" style="font-size: 0.7rem;">
+                                                                Tugas Tambahan
+                                                            </span>
+                                                        <?php else: ?>
+                                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1" style="font-size: 0.7rem;">
+                                                                Tugas Pokok
+                                                            </span>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                    <td class="small">
+                                                        <?= esc($logItem['indikator_kinerja'] ?? '-') ?>
+                                                    </td>
+                                                    <td class="small">
+                                                        <?= nl2br(esc($logItem['deskripsi_kegiatan'] ?? '-')) ?>
+                                                    </td>
+                                                    <td class="text-center num-tabular fw-bold text-primary small">
+                                                        <?= isset($logItem['jumlah_capaian']) && $logItem['jumlah_capaian'] !== null ? str_replace('.', ',', (float)$logItem['jumlah_capaian']) : '-' ?>
+                                                        <span class="text-muted fw-normal"><?= esc($logItem['satuan'] ?? '') ?></span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <?php
+                                                            $rawLink = trim((string)($logItem['link_bukti'] ?? ''));
+                                                            $isSafeUrl = (bool)preg_match('/^https?:\/\//i', $rawLink);
+                                                        ?>
+                                                        <?php if (!empty($rawLink) && $isSafeUrl): ?>
+                                                            <a href="<?= esc($rawLink) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary rounded-pill px-2.5 py-0.5" style="font-size: 0.72rem;" title="Lihat Bukti Pekerjaan">
+                                                                <i class="bi bi-box-arrow-up-right me-0.5"></i> Bukti
+                                                            </a>
+                                                        <?php elseif (!empty($rawLink)): ?>
+                                                            <span class="text-muted small">-</span>
+                                                        <?php else: ?>
+                                                            <span class="text-muted small">-</span>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <?php $st = $logItem['status'] ?? 'terkirim'; ?>
+                                                        <?php if ($st === 'disetujui'): ?>
+                                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1" style="font-size: 0.7rem;">
+                                                                <i class="bi bi-check-circle me-1"></i> Disetujui
+                                                            </span>
+                                                        <?php elseif ($st === 'terkirim'): ?>
+                                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2.5 py-1" style="font-size: 0.7rem;">
+                                                                <i class="bi bi-hourglass-split me-1"></i> Terkirim
+                                                            </span>
+                                                        <?php elseif ($st === 'draf'): ?>
+                                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2.5 py-1" style="font-size: 0.7rem;">
+                                                                <i class="bi bi-pencil me-1"></i> Draf
+                                                            </span>
+                                                        <?php else: ?>
+                                                            <span class="badge bg-light text-dark border rounded-pill px-2.5 py-1" style="font-size: 0.7rem;">
+                                                                <?= esc(ucfirst($st)) ?>
+                                                            </span>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php else: ?>
                     <!-- HEATMAP KALENDER AKTIVITAS BULANAN PEGAWAI (INDIVIDU) -->
                     <?php if (!empty($heatmap_sendiri)): ?>
                     <div class="calendar-heatmap-card mb-4 bento-stagger bento-stagger-3">
@@ -851,6 +967,9 @@
                                     $tooltipTitle .= ' (' . $day['count_logs'] . ' Kegiatan)';
                                 ?>
                                 <div class="heatmap-day-cell <?= $levelClass ?> <?= $tanggalMerahClass ?> <?= $draftClass ?>" 
+                                     role="button"
+                                     tabindex="0"
+                                     aria-label="<?= esc($day['date_formatted']) ?>, <?= $day['count_logs'] ?> kegiatan<?= $day['is_holiday'] ? ', libur ' . esc($day['holiday_name']) : '' ?>"
                                      data-is-staf="0"
                                      data-staf-id=""
                                      data-day-num="<?= $day['day_num'] ?>"
@@ -863,6 +982,7 @@
                                      data-is-tanggal-merah="<?= $day['is_tanggal_merah'] ? '1' : '0' ?>"
                                      data-has-draft="<?= $day['has_draft'] ? '1' : '0' ?>"
                                      data-has-terkirim="<?= $day['has_terkirim'] ? '1' : '0' ?>"
+                                     data-is-revisi="<?= (!empty($day['is_revisi_aktif'])) ? '1' : '0' ?>"
                                      data-total-kegiatan="<?= $day['count_logs'] ?>"
                                      data-logs='<?= htmlspecialchars(json_encode($day['logs']), ENT_QUOTES, 'UTF-8') ?>'
                                      data-bs-toggle="tooltip"
@@ -951,6 +1071,7 @@
                         </div>
                     </div>
                     <?php endif; ?>
+                    <?php endif; ?>
                 <?php endif; ?>
             </div> <!-- End Tab Individu -->
 
@@ -967,7 +1088,7 @@
                     <div class="row align-items-end">
                         <div class="col-md-6">
                             <label class="form-label fw-bold text-success mb-1 small" style="font-size: 0.75rem; letter-spacing: 0.3px;"><i class="bi bi-person-check me-1"></i> Pilih Staf yang Akan Dinilai</label>
-                            <select name="staf_id" id="selectStaf" class="form-select border-success form-select-sm" aria-label="Pilih Staf yang Akan Dinilai" onchange="this.form.submit()">
+                            <select name="staf_id" id="selectStaf" class="form-select border-success form-select-sm" aria-label="Pilih Staf yang Akan Dinilai">
                                 <option value="">-- Pilih Staf --</option>
                                 <?php foreach ($daftar_staf as $b): ?>
                                     <option value="<?= $b['id'] ?>" <?= ($b['id'] == $staf_id_terpilih) ? 'selected' : '' ?>>
@@ -988,45 +1109,64 @@
                         </div>
                     <?php else: ?>
                         <?php
-                            $jmlDinilaiBwh = 0;
-                            $totalNilaiBwh = 0;
-                            foreach ($rekap_data_staf as $rd) {
-                                // Hanya hitung nilai yang sudah resmi diterbitkan (status_penilaian = 'terbit')
-                                if (isset($rd['status_penilaian']) && $rd['status_penilaian'] === 'terbit' && $rd['nilai_capaian'] !== null && $rd['nilai_capaian'] !== '') {
-                                    $jmlDinilaiBwh++;
-                                    $totalNilaiBwh += (float)$rd['nilai_capaian'];
-                                }
-                            }
+                            $rekapStaf = hitung_rekap_komponen_kinerja($rekap_data_staf, $tugas_tambahan_staf, true);
+                            $jmlDinilaiBwh = $rekapStaf['jml_dinilai'];
+                            $totalNilaiBwh = $rekapStaf['total_nilai'];
+                            $scoreTambahanStaf = $rekapStaf['score_tambahan'];
+                            $rataRataBwh = $rekapStaf['rata_rata'];
+                            $predikatRataRataBwh = $rekapStaf['predikat'];
+                            $badgeColorRataBwh = $rekapStaf['badge_color'];
+                            $warnaScoreBwh = $rekapStaf['warna_score'];
 
-                            // Perhitungan tugas tambahan gabungan jika dinilai
-                            $scoreTambahanStaf = null;
-                            if (!empty($tugas_tambahan_staf)) {
+                            // Nilai tugas tambahan form staf (bisa dari draf maupun terbit)
+                            $scoreTambahanStafInput = $scoreTambahanStaf;
+                            if ($scoreTambahanStafInput === null && !empty($tugas_tambahan_staf)) {
                                 foreach ($tugas_tambahan_staf as $tmb) {
-                                    if ($tmb['nilai_capaian'] !== null) {
-                                        $scoreTambahanStaf = (float)$tmb['nilai_capaian'];
+                                    if ($tmb['nilai_capaian'] !== null && trim((string)$tmb['nilai_capaian']) !== '') {
+                                        $scoreTambahanStafInput = (float)$tmb['nilai_capaian'];
                                         break;
                                     }
                                 }
                             }
 
-                            if ($scoreTambahanStaf !== null) {
-                                $totalNilaiBwh += $scoreTambahanStaf;
-                                $jmlDinilaiBwh++;
+                            // Deteksi status penilaian staf secara keseluruhan (terbit / draft / belum_dinilai)
+                            $hasAnyDraft = false;
+                            $hasAnyTerbit = false;
+                            $hasAnyNilai = false;
+
+                            foreach ($rekap_data_staf as $rdRow) {
+                                if ($rdRow['nilai_capaian'] !== null && trim((string)$rdRow['nilai_capaian']) !== '') {
+                                    $hasAnyNilai = true;
+                                    if (($rdRow['status_penilaian'] ?? '') === 'terbit') {
+                                        $hasAnyTerbit = true;
+                                    } else {
+                                        $hasAnyDraft = true;
+                                    }
+                                }
                             }
 
-                            $rataRataBwh = $jmlDinilaiBwh > 0 ? (float)($totalNilaiBwh / $jmlDinilaiBwh) : 0;
-                            
-                            $predikatRataRataBwh = '-';
-                            $badgeColorRataBwh = 'secondary';
-                            $warnaScoreBwh = 'success';
-                            if ($jmlDinilaiBwh == 0) {
-                                $warnaScoreBwh = 'secondary';
-                            } else {
-                                if ($rataRataBwh <= 25) { $warnaScoreBwh = 'danger'; $predikatRataRataBwh = 'Sangat Kurang'; $badgeColorRataBwh = 'danger'; }
-                                elseif ($rataRataBwh <= 75) { $warnaScoreBwh = 'warning text-dark'; $predikatRataRataBwh = 'Kurang'; $badgeColorRataBwh = 'warning text-dark'; }
-                                elseif ($rataRataBwh <= 90) { $warnaScoreBwh = 'info text-dark'; $predikatRataRataBwh = 'Butuh Perbaikan'; $badgeColorRataBwh = 'info text-dark'; }
-                                elseif ($rataRataBwh <= 100) { $warnaScoreBwh = 'primary'; $predikatRataRataBwh = 'Baik'; $badgeColorRataBwh = 'primary'; }
-                                else { $warnaScoreBwh = 'success'; $predikatRataRataBwh = 'Sangat Baik'; $badgeColorRataBwh = 'success'; }
+                            $isTmbTerbit = false;
+                            $isTmbDraft = false;
+                            if (!empty($tugas_tambahan_staf)) {
+                                foreach ($tugas_tambahan_staf as $tmbRow) {
+                                    if ($tmbRow['nilai_capaian'] !== null && trim((string)$tmbRow['nilai_capaian']) !== '') {
+                                        $hasAnyNilai = true;
+                                        if (($tmbRow['status_penilaian'] ?? '') === 'terbit') {
+                                            $hasAnyTerbit = true;
+                                            $isTmbTerbit = true;
+                                        } else {
+                                            $hasAnyDraft = true;
+                                            $isTmbDraft = true;
+                                        }
+                                    }
+                                }
+                            }
+
+                            $statusPenilaianGlobal = 'belum_dinilai';
+                            if ($hasAnyDraft) {
+                                $statusPenilaianGlobal = 'draft';
+                            } elseif ($hasAnyTerbit) {
+                                $statusPenilaianGlobal = 'terbit';
                             }
                         ?>
 
@@ -1063,6 +1203,24 @@
                             <a href="<?= site_url('laporan-harian?staf_id=' . esc($staf_id_terpilih) . '&bulan=' . esc($bulan_terpilih) . '&tahun=' . esc($tahun_terpilih) . '&source_tab=staf') ?>" class="btn btn-warning btn-sm btn-tactile text-dark fw-bold rounded-pill px-3 py-1.5 shadow-xs text-nowrap" style="height: 36px; display: inline-flex; align-items: center;">
                                 <i class="bi bi-check2-circle me-1.5"></i> Buka Menu Target Kinerja untuk Menyetujui
                             </a>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if ($statusPenilaianGlobal === 'draft'): ?>
+                        <!-- ALERT: STATUS DRAF PENILAIAN -->
+                        <div class="alert alert-warning border border-warning-subtle shadow-sm rounded-4 p-3 mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2 bento-stagger bento-stagger-1">
+                            <div class="d-flex align-items-center gap-2.5">
+                                <span class="badge bg-warning text-dark px-2.5 py-1 rounded-pill fw-bold">Draf</span>
+                                <span class="small text-dark fw-medium">Nilai pada periode ini masih berupa draf dan belum dikirim ke staf.</span>
+                            </div>
+                        </div>
+                        <?php elseif ($statusPenilaianGlobal === 'terbit'): ?>
+                        <!-- ALERT: STATUS TERBIT PENILAIAN -->
+                        <div class="alert alert-success border border-success-subtle shadow-sm rounded-4 p-3 mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2 bento-stagger bento-stagger-1">
+                            <div class="d-flex align-items-center gap-2.5">
+                                <span class="badge bg-success text-white px-2.5 py-1 rounded-pill fw-bold">Terbit</span>
+                                <span class="small text-dark fw-medium">Nilai pada periode ini telah dikirim ke staf.</span>
+                            </div>
                         </div>
                         <?php endif; ?>
 
@@ -1113,13 +1271,15 @@
                                                 $nilai_capaian = $row['nilai_capaian'];
                                                 $predikatLabel = '-';
                                                 $predikatBadge = 'bg-light text-muted border border-secondary-subtle';
-                                                if ($nilai_capaian !== null && $nilai_capaian !== '') {
-                                                    $n = (float)$nilai_capaian;
-                                                    if ($n <= 25) { $predikatLabel = 'Sangat Kurang'; $predikatBadge = 'bg-danger'; }
-                                                    elseif ($n <= 75) { $predikatLabel = 'Kurang'; $predikatBadge = 'bg-warning text-dark'; }
-                                                    elseif ($n <= 90) { $predikatLabel = 'Butuh Perbaikan'; $predikatBadge = 'bg-info text-dark'; }
-                                                    elseif ($n <= 100) { $predikatLabel = 'Baik'; $predikatBadge = 'bg-primary'; }
-                                                    else { $predikatLabel = 'Sangat Baik'; $predikatBadge = 'bg-success'; }
+                                                $rowStatusPenilaian = $row['status_penilaian'] ?? null;
+                                                $hasRowNilai = ($nilai_capaian !== null && trim((string)$nilai_capaian) !== '');
+                                                $isRowTerbit = ($hasRowNilai && $rowStatusPenilaian === 'terbit');
+                                                $isRowDraft = ($hasRowNilai && !$isRowTerbit);
+
+                                                if ($hasRowNilai) {
+                                                    $predInfoRow = hitung_predikat_kinerja($nilai_capaian, true);
+                                                    $predikatLabel = $predInfoRow['label'];
+                                                    $predikatBadge = $predInfoRow['badge_class'];
                                                 } else {
                                                     $predikatLabel = '<i class="bi bi-dash-circle me-1"></i> Belum dinilai';
                                                 }
@@ -1150,11 +1310,16 @@
                                                         </div>
                                                     <?php else: ?>
                                                         <div class="input-group input-group-sm mb-1 shadow-sm rounded-3 border border-primary-subtle" style="width: 100%; min-width: 145px; height: 36px;">
-                                                            <input type="number" name="nilai_capaian[]" class="form-control text-center input-nilai-capaian fw-bold text-primary px-2 num-tabular" style="font-size:0.875rem; min-width: 90px; height: 34px;" value="<?= $nilai_capaian !== null ? (float)$nilai_capaian : '' ?>" step="0.01" min="0" max="150" placeholder="0 - 150" aria-label="Input Nilai Capaian RHK: <?= esc($row['indikator_kinerja']) ?>">
+                                                            <input type="number" name="nilai_capaian[<?= esc($row['id']) ?>]" class="form-control text-center input-nilai-capaian fw-bold text-primary px-2 num-tabular" style="font-size:0.875rem; min-width: 90px; height: 34px;" value="<?= esc(old('nilai_capaian.' . $row['id'], old('nilai_capaian.' . $index, $hasRowNilai ? (float)$nilai_capaian : ''))) ?>" step="0.01" min="0" max="150" placeholder="0 - 150" data-status-penilaian="<?= $isRowTerbit ? 'terbit' : ($isRowDraft ? 'draft' : 'none') ?>" data-initial-value="<?= $hasRowNilai ? (float)$nilai_capaian : '' ?>" aria-label="Input Nilai Capaian RHK: <?= esc($row['indikator_kinerja']) ?>">
                                                             <span class="input-group-text bg-primary-subtle text-primary fw-bold px-2">%</span>
                                                         </div>
-                                                        <div class="predikat-badge-container">
-                                                            <span class="badge <?= $predikatBadge ?> rounded-pill px-2 py-0.5" style="font-size:0.72rem;"><?= $predikatLabel ?></span>
+                                                        <div class="predikat-badge-container d-flex align-items-center justify-content-center gap-1 flex-wrap">
+                                                            <?php if ($isRowDraft): ?>
+                                                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2 py-0.5 badge-status-row" style="font-size:0.7rem;">Draf</span>
+                                                            <?php elseif ($isRowTerbit): ?>
+                                                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-0.5 badge-status-row" style="font-size:0.7rem;">Terbit</span>
+                                                            <?php endif; ?>
+                                                            <span class="badge <?= $predikatBadge ?> rounded-pill px-2 py-0.5 badge-predikat-val" style="font-size:0.7rem;"><?= $predikatLabel ?></span>
                                                         </div>
                                                         <div class="invalid-feedback" style="font-size: 0.7rem;">Nilai tidak sesuai!</div>
                                                     <?php endif; ?>
@@ -1203,8 +1368,12 @@
                                                          <?= (isset($tmb['jumlah_capaian']) && $tmb['jumlah_capaian'] !== null && $tmb['jumlah_capaian'] !== '') ? str_replace('.', ',', (float)$tmb['jumlah_capaian']) : '-' ?> <?= esc($tmb['satuan'] ?? '') ?>
                                                      </td>
                                                     <td class="text-center">
-                                                        <?php if (!empty($tmb['link_bukti'])): ?>
-                                                            <a href="<?= esc($tmb['link_bukti']) ?>" target="_blank" class="btn btn-light btn-sm text-primary rounded-pill border px-3 py-1 btn-tactile" style="font-size: 0.75rem; height: 32px; display: inline-flex; align-items: center; justify-content: center;" title="Lihat Bukti Pekerjaan"><i class="bi bi-box-arrow-up-right me-1"></i>Bukti</a>
+                                                        <?php 
+                                                            $linkBuktiStaf = trim((string)($tmb['link_bukti'] ?? ''));
+                                                            $isSafeBuktiStaf = ($linkBuktiStaf !== '' && preg_match('/^https?:\/\//i', $linkBuktiStaf));
+                                                        ?>
+                                                        <?php if ($isSafeBuktiStaf): ?>
+                                                            <a href="<?= esc($linkBuktiStaf) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-light btn-sm text-primary rounded-pill border px-3 py-1 btn-tactile" style="font-size: 0.75rem; height: 32px; display: inline-flex; align-items: center; justify-content: center;" title="Lihat Bukti Pekerjaan"><i class="bi bi-box-arrow-up-right me-1"></i>Bukti</a>
                                                         <?php else: ?>
                                                             <span class="text-muted">-</span>
                                                         <?php endif; ?>
@@ -1221,14 +1390,16 @@
                                             </td>
                                             <td class="p-2 align-middle text-center col-nilai">
                                                 <div class="input-group input-group-sm shadow-sm rounded-3 border border-success-subtle" style="width: 100%; min-width: 145px; height: 36px;">
-                                                    <input type="number" step="0.01" max="150" min="0" name="nilai_tugas_tambahan_gabungan" id="inputNilaiTambahanGabungan" class="form-control text-center fw-bold <?= (isset($is_target_staf_disetujui) && !$is_target_staf_disetujui) ? 'text-muted bg-light' : 'text-success' ?> px-2 num-tabular input-nilai-capaian" style="font-size:0.875rem; min-width: 90px; height: 34px;" value="<?= $scoreTambahanStaf !== null ? $scoreTambahanStaf : '' ?>" placeholder="<?= (isset($is_target_staf_disetujui) && !$is_target_staf_disetujui) ? 'Terkunci' : '0 - 150' ?>" aria-label="Input Nilai Akumulasi Tugas Tambahan Staf" <?= (!$is_penilai || (isset($is_target_staf_disetujui) && !$is_target_staf_disetujui)) ? 'disabled' : '' ?>>
+                                                    <input type="number" step="0.01" max="150" min="0" name="nilai_tugas_tambahan_gabungan" id="inputNilaiTambahanGabungan" class="form-control text-center fw-bold <?= (isset($is_target_staf_disetujui) && !$is_target_staf_disetujui) ? 'text-muted bg-light' : 'text-success' ?> px-2 num-tabular input-nilai-capaian" style="font-size:0.875rem; min-width: 90px; height: 34px;" value="<?= esc(old('nilai_tugas_tambahan_gabungan', $scoreTambahanStafInput !== null ? $scoreTambahanStafInput : '')) ?>" placeholder="<?= (isset($is_target_staf_disetujui) && !$is_target_staf_disetujui) ? 'Terkunci' : '0 - 150' ?>" data-status-penilaian="<?= $isTmbTerbit ? 'terbit' : ($isTmbDraft ? 'draft' : 'none') ?>" data-initial-value="<?= $scoreTambahanStafInput !== null ? $scoreTambahanStafInput : '' ?>" aria-label="Input Nilai Akumulasi Tugas Tambahan Staf" <?= (!$is_penilai || (isset($is_target_staf_disetujui) && !$is_target_staf_disetujui)) ? 'disabled' : '' ?>>
                                                     <span class="input-group-text bg-success-subtle text-success fw-bold px-2">%</span>
                                                 </div>
-                                                <div id="hintTambahanContainer">
-                                                    <?php if ($scoreTambahanStaf === null): ?>
-                                                        <span class="badge bg-light text-muted border border-secondary-subtle mt-1 rounded-pill px-2 py-0.5" style="font-size:0.72rem;"><i class="bi bi-dash-circle me-1"></i> Belum dinilai</span>
+                                                <div id="hintTambahanContainer" class="d-flex align-items-center justify-content-center gap-1 mt-1">
+                                                    <?php if ($scoreTambahanStafInput === null): ?>
+                                                        <span class="badge bg-light text-muted border border-secondary-subtle rounded-pill px-2 py-0.5" style="font-size:0.72rem;"><i class="bi bi-dash-circle me-1"></i> Belum dinilai</span>
+                                                    <?php elseif ($isTmbTerbit): ?>
+                                                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-0.5" style="font-size:0.72rem;">Terbit</span>
                                                     <?php else: ?>
-                                                        <span class="badge bg-success-subtle text-success border border-success-subtle mt-1 rounded-pill px-2 py-0.5" style="font-size:0.72rem;"><i class="bi bi-check-circle me-1"></i> Terisi</span>
+                                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2 py-0.5" style="font-size:0.72rem;">Draf</span>
                                                     <?php endif; ?>
                                                 </div>
                                             </td>
@@ -1242,14 +1413,23 @@
                             <div class="card bg-white border border-2 border-<?= ($warnaScoreBwh === 'warning text-dark' || $warnaScoreBwh === 'info text-dark') ? ($warnaScoreBwh === 'warning text-dark' ? 'warning' : 'info') : $warnaScoreBwh ?> rounded-4 p-3 p-md-4 shadow-sm mb-4 score-card-transition bento-stagger bento-stagger-3" id="cardKinerjaStafSummary" role="region" aria-label="Ringkasan Nilai Akhir Kinerja Staf">
                                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 score-banner-wrapper">
                                     <div>
-                                        <h6 class="fw-bold text-dark mb-1" style="font-size: 0.9375rem;"><i class="bi bi-award-fill text-success me-2"></i> NILAI AKHIR KINERJA STAF</h6>
+                                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                            <h6 class="fw-bold text-dark mb-0" style="font-size: 0.9375rem;"><i class="bi bi-award-fill text-success me-2"></i> NILAI AKHIR KINERJA STAF</h6>
+                                            <?php if ($statusPenilaianGlobal === 'draft'): ?>
+                                                <span class="badge bg-warning text-dark px-2.5 py-1 rounded-pill fw-bold" id="badgeSummaryStatusPenilaian">Draf</span>
+                                            <?php elseif ($statusPenilaianGlobal === 'terbit'): ?>
+                                                <span class="badge bg-success text-white px-2.5 py-1 rounded-pill fw-bold" id="badgeSummaryStatusPenilaian">Terbit</span>
+                                            <?php else: ?>
+                                                <span class="badge bg-secondary text-white px-2.5 py-1 rounded-pill fw-bold" id="badgeSummaryStatusPenilaian">Belum Dinilai</span>
+                                            <?php endif; ?>
+                                        </div>
                                         <div class="d-flex flex-wrap gap-2 align-items-center mt-2">
                                             <span class="badge bg-light text-dark border px-2.5 py-1.5">
                                                 <i class="bi bi-list-task me-1 text-primary"></i> <span id="countRhkTerisi"><?= $jmlDinilaiBwh - ($scoreTambahanStaf !== null ? 1 : 0) ?></span> / <?= count($rekap_data_staf) ?> RHK Terisi
                                             </span>
                                             <?php if (!empty($tugas_tambahan_staf)): ?>
                                             <span class="badge bg-light text-dark border px-2.5 py-1.5" id="badgeTambahanStatus">
-                                                <i class="bi bi-journal-plus me-1 text-success"></i> Tugas Tambahan: <span id="textTambahanStatus"><?= $scoreTambahanStaf !== null ? (float)$scoreTambahanStaf . '%' : 'Belum Dinilai' ?></span>
+                                                <i class="bi bi-journal-plus me-1 text-success"></i> Tugas Tambahan: <span id="textTambahanStatus"><?= $scoreTambahanStafInput !== null ? (float)$scoreTambahanStafInput . '%' . ($isTmbTerbit ? ' (Terbit)' : ' (Draf)') : 'Belum Dinilai' ?></span>
                                             </span>
                                             <?php endif; ?>
                                             <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2.5 py-1.5 d-none" id="badgeHintUnfilled">
@@ -1284,6 +1464,121 @@
                             </div>
                         </form>
 
+                        <?php if (!empty($is_heatmap_hidden)): ?>
+                        <!-- TABEL LAPORAN KEGIATAN HARIAN STAF (PENGGANTI HEATMAP PADA TAHUN TERPILIH) -->
+                        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bento-stagger bento-stagger-3">
+                            <div class="card-header bg-white py-3 px-3 px-md-4 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 fw-bold" style="font-size: 0.72rem;">
+                                        <i class="bi bi-journal-text me-1"></i> Laporan Kegiatan Harian Staf
+                                    </span>
+                                    <span class="text-muted small fw-semibold" style="font-size: 0.75rem;">
+                                        Periode: <?= esc($bulan_indo[$bulan_terpilih - 1] ?? '') ?> <?= esc($tahun_terpilih) ?>
+                                    </span>
+                                </div>
+                                <div>
+                                    <span class="badge bg-light text-dark border rounded-pill px-3 py-1.5 num-tabular" style="font-size: 0.75rem;">
+                                        Total: <strong><?= count($log_harian_staf) ?></strong> Kegiatan
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <?php if (empty($log_harian_staf)): ?>
+                                    <div class="text-center py-5 px-3">
+                                        <i class="bi bi-journal-x fs-1 text-muted opacity-50 mb-2"></i>
+                                        <h6 class="fw-bold text-dark mb-1">Belum Ada Catatan Kegiatan Staf</h6>
+                                        <p class="text-muted small mb-0">Tidak ada laporan kegiatan harian yang tercatat untuk staf ini pada periode <?= esc($bulan_indo[$bulan_terpilih - 1] ?? '') ?> <?= esc($tahun_terpilih) ?>.</p>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover align-middle mb-0 table-bento">
+                                            <thead class="bg-light text-muted">
+                                                <tr class="align-middle">
+                                                    <th style="width: 45px;" class="text-center">No</th>
+                                                    <th style="width: 130px;" class="text-center">Tanggal</th>
+                                                    <th style="width: 125px;" class="text-center">Jenis</th>
+                                                    <th style="min-width: 200px;">Indikator RHK / Sasaran</th>
+                                                    <th style="min-width: 250px;">Deskripsi Aktivitas</th>
+                                                    <th style="width: 110px;" class="text-center">Realisasi</th>
+                                                    <th style="width: 90px;" class="text-center">Bukti</th>
+                                                    <th style="width: 120px;" class="text-center">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach ($log_harian_staf as $idx => $logItem): ?>
+                                                    <tr>
+                                                        <td class="text-center fw-bold text-muted"><?= $idx + 1 ?></td>
+                                                        <td class="text-center num-tabular" style="font-size: 0.8rem;">
+                                                            <?php
+                                                                $tglWaktu = strtotime($logItem['tanggal_kegiatan'] ?? '');
+                                                                echo $tglWaktu ? date('d/m/Y', $tglWaktu) : '-';
+                                                            ?>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <?php if (!empty($logItem['is_tambahan'])): ?>
+                                                                <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-2 py-1" style="font-size: 0.7rem;">
+                                                                    Tugas Tambahan
+                                                                </span>
+                                                            <?php else: ?>
+                                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1" style="font-size: 0.7rem;">
+                                                                    Tugas Pokok
+                                                                </span>
+                                                            <?php endif; ?>
+                                                        </td>
+                                                        <td class="small">
+                                                            <?= esc($logItem['indikator_kinerja'] ?? '-') ?>
+                                                        </td>
+                                                        <td class="small">
+                                                            <?= nl2br(esc($logItem['deskripsi_kegiatan'] ?? '-')) ?>
+                                                        </td>
+                                                        <td class="text-center num-tabular fw-bold text-primary small">
+                                                            <?= isset($logItem['jumlah_capaian']) && $logItem['jumlah_capaian'] !== null ? str_replace('.', ',', (float)$logItem['jumlah_capaian']) : '-' ?>
+                                                            <span class="text-muted fw-normal"><?= esc($logItem['satuan'] ?? '') ?></span>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <?php
+                                                                $rawLink = trim((string)($logItem['link_bukti'] ?? ''));
+                                                                $isSafeUrl = (bool)preg_match('/^https?:\/\//i', $rawLink);
+                                                            ?>
+                                                            <?php if (!empty($rawLink) && $isSafeUrl): ?>
+                                                                <a href="<?= esc($rawLink) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary rounded-pill px-2.5 py-0.5" style="font-size: 0.72rem;" title="Lihat Bukti Pekerjaan">
+                                                                    <i class="bi bi-box-arrow-up-right me-0.5"></i> Bukti
+                                                                </a>
+                                                            <?php elseif (!empty($rawLink)): ?>
+                                                                <span class="text-muted small">-</span>
+                                                            <?php else: ?>
+                                                                <span class="text-muted small">-</span>
+                                                            <?php endif; ?>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <?php $st = $logItem['status'] ?? 'terkirim'; ?>
+                                                            <?php if ($st === 'disetujui'): ?>
+                                                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1" style="font-size: 0.7rem;">
+                                                                    <i class="bi bi-check-circle me-1"></i> Disetujui
+                                                                </span>
+                                                            <?php elseif ($st === 'terkirim'): ?>
+                                                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2.5 py-1" style="font-size: 0.7rem;">
+                                                                    <i class="bi bi-hourglass-split me-1"></i> Terkirim
+                                                                </span>
+                                                            <?php elseif ($st === 'draf'): ?>
+                                                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2.5 py-1" style="font-size: 0.7rem;">
+                                                                    <i class="bi bi-pencil me-1"></i> Draf
+                                                                </span>
+                                                            <?php else: ?>
+                                                                <span class="badge bg-light text-dark border rounded-pill px-2.5 py-1" style="font-size: 0.7rem;">
+                                                                    <?= esc(ucfirst($st)) ?>
+                                                                </span>
+                                                            <?php endif; ?>
+                                                        </td>
+                                                    </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <?php else: ?>
                         <!-- HEATMAP KALENDER AKTIVITAS BULANAN STAF (PENILAIAN) -->
                         <?php if (!empty($heatmap_staf)): ?>
                         <div class="calendar-heatmap-card mb-4 bento-stagger bento-stagger-3">
@@ -1340,19 +1635,25 @@
                                     <?php
                                         $levelClass = 'heatmap-level-' . $day['level'];
                                         $tanggalMerahClass = $day['is_tanggal_merah'] ? 'is-tanggal-merah' : '';
-                                        $draftClass = $day['has_draft'] ? 'is-draft' : '';
+                                        $isRevisi = !empty($day['is_revisi_aktif']);
+                                        $draftClass = ($day['has_draft'] || $isRevisi) ? 'is-draft' : '';
                                         $tooltipTitle = esc($day['date_formatted']);
                                         if ($day['is_holiday']) {
                                             $tooltipTitle .= ' - ' . esc($day['holiday_name']);
                                         } elseif ($day['is_weekend']) {
                                             $tooltipTitle .= ' - Akhir Pekan';
                                         }
-                                        if ($day['has_draft']) {
+                                        if ($isRevisi) {
+                                            $tooltipTitle .= ' [Revisi Aktif]';
+                                        } elseif ($day['has_draft']) {
                                             $tooltipTitle .= ' [Draf]';
                                         }
                                         $tooltipTitle .= ' (' . $day['count_logs'] . ' Kegiatan)';
                                     ?>
                                     <div class="heatmap-day-cell <?= $levelClass ?> <?= $tanggalMerahClass ?> <?= $draftClass ?>" 
+                                         role="button"
+                                         tabindex="0"
+                                         aria-label="<?= esc($day['date_formatted']) ?>, <?= $day['count_logs'] ?> kegiatan<?= $day['is_holiday'] ? ', libur ' . esc($day['holiday_name']) : '' ?>"
                                          data-is-staf="1"
                                          data-staf-id="<?= esc($staf_id_terpilih) ?>"
                                          data-day-num="<?= $day['day_num'] ?>"
@@ -1363,8 +1664,9 @@
                                          data-holiday-name="<?= esc($day['holiday_name'] ?? '') ?>"
                                          data-is-weekend="<?= $day['is_weekend'] ? '1' : '0' ?>"
                                          data-is-tanggal-merah="<?= $day['is_tanggal_merah'] ? '1' : '0' ?>"
-                                         data-has-draft="<?= $day['has_draft'] ? '1' : '0' ?>"
+                                         data-has-draft="<?= ($day['has_draft'] || $isRevisi) ? '1' : '0' ?>"
                                          data-has-terkirim="<?= $day['has_terkirim'] ? '1' : '0' ?>"
+                                         data-is-revisi="<?= $isRevisi ? '1' : '0' ?>"
                                          data-total-kegiatan="<?= $day['count_logs'] ?>"
                                          data-logs='<?= htmlspecialchars(json_encode($day['logs']), ENT_QUOTES, 'UTF-8') ?>'
                                          data-bs-toggle="tooltip"
@@ -1376,6 +1678,8 @@
                                                 <i class="bi bi-sun-fill holiday-indicator" style="font-size: 0.65rem;" title="<?= esc($day['holiday_name']) ?>"></i>
                                             <?php elseif ($day['is_weekend']): ?>
                                                 <i class="bi bi-moon-stars text-secondary" style="font-size: 0.65rem;"></i>
+                                            <?php elseif ($isRevisi): ?>
+                                                <i class="bi bi-pencil-square text-warning-emphasis" style="font-size: 0.65rem;" title="Mode Revisi Aktif"></i>
                                             <?php elseif ($day['count_logs'] === 0): ?>
                                                 <i class="bi bi-dash text-muted opacity-50" style="font-size: 0.75rem;"></i>
                                             <?php elseif ($day['has_draft']): ?>
@@ -1385,7 +1689,9 @@
                                             <?php endif; ?>
                                         </div>
                                         <div class="day-footer">
-                                            <?php if ($day['count_logs'] === 0): ?>
+                                            <?php if ($isRevisi && $day['count_logs'] === 0): ?>
+                                                <span class="badge-count text-warning-emphasis fw-bold" style="font-size: 0.65rem;">Revisi</span>
+                                            <?php elseif ($day['count_logs'] === 0): ?>
                                                 <span class="badge-count text-muted">-</span>
                                             <?php else: ?>
                                                 <span class="badge-count <?= in_array($day['level'], [3, 4]) ? 'badge-subtle-custom' : 'fw-bold' ?>">
@@ -1453,6 +1759,7 @@
                             </div>
                         </div>
                         <?php endif; ?>
+                        <?php endif; ?>
                     <?php endif; ?>
                 <?php else: ?>
                     <div class="card bg-light border-0 rounded-4 p-5 text-center my-3">
@@ -1487,10 +1794,10 @@
                 <div class="d-flex align-items-center gap-2">
                     <!-- Tombol Navigasi Tanggal Cepat (Prev / Next) -->
                     <div class="btn-group btn-group-sm shadow-xs" role="group" aria-label="Navigasi Tanggal">
-                        <button type="button" class="btn btn-outline-secondary btn-nav-date btn-tactile d-inline-flex align-items-center justify-content-center" id="btnModalPrevDay" title="Hari Sebelumnya" style="width: 32px; height: 32px; padding: 0; border-radius: 8px 0 0 8px;">
+                        <button type="button" class="btn btn-outline-secondary btn-nav-date btn-tactile d-inline-flex align-items-center justify-content-center" id="btnModalPrevDay" title="Hari Sebelumnya" aria-label="Hari Sebelumnya" style="min-width: 36px; min-height: 36px; width: 36px; height: 36px; padding: 0; border-radius: 8px 0 0 8px;">
                             <i class="bi bi-chevron-left"></i>
                         </button>
-                        <button type="button" class="btn btn-outline-secondary btn-nav-date btn-tactile d-inline-flex align-items-center justify-content-center" id="btnModalNextDay" title="Hari Berikutnya" style="width: 32px; height: 32px; padding: 0; border-radius: 0 8px 8px 0;">
+                        <button type="button" class="btn btn-outline-secondary btn-nav-date btn-tactile d-inline-flex align-items-center justify-content-center" id="btnModalNextDay" title="Hari Berikutnya" aria-label="Hari Berikutnya" style="min-width: 36px; min-height: 36px; width: 36px; height: 36px; padding: 0; border-radius: 0 8px 8px 0;">
                             <i class="bi bi-chevron-right"></i>
                         </button>
                     </div>
@@ -1578,25 +1885,100 @@
 <?= $this->section('scripts') ?>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    const ECC_PREDIKAT_THRESHOLDS = <?= json_encode(get_predikat_thresholds()) ?>;
     const bulanTerpilih = <?= esc($bulan_terpilih) ?>;
     const tahunTerpilih = <?= esc($tahun_terpilih) ?>;
 
     $(document).ready(function() {
+        let isPenilaianFormDirty = false;
+        const filterPreviousValues = {
+            bulan: $('#filterBulanSelect').val(),
+            tahun: $('#tahunFilterInput').val(),
+            unit: $('#filterUnitSelect').val(),
+            staf: $('#selectStaf').val()
+        };
+
+        $(document).on('input change', '#formPenilaian .input-nilai-capaian, #formPenilaian #inputNilaiTambahanGabungan, #formPenilaianMandiri .input-nilai-capaian', function() {
+            isPenilaianFormDirty = true;
+        });
+
+        function handleFilterChange(formToSubmit, changedSelectEl, key) {
+            if (isPenilaianFormDirty) {
+                const revertVal = filterPreviousValues[key];
+                const proceedSubmit = function() {
+                    isPenilaianFormDirty = false;
+                    formToSubmit[0].submit();
+                };
+                const cancelSubmit = function() {
+                    if (changedSelectEl && changedSelectEl.length) {
+                        if (key === 'staf' && typeof $.fn.select2 !== 'undefined') {
+                            changedSelectEl.val(revertVal).trigger('change.select2');
+                        } else {
+                            changedSelectEl.val(revertVal);
+                        }
+                    }
+                };
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Perubahan Belum Disimpan',
+                        text: 'Terdapat perubahan nilai yang belum disimpan. Tetap ganti filter?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Lanjutkan',
+                        cancelButtonText: 'Batal',
+                        reverseButtons: true
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            proceedSubmit();
+                        } else {
+                            cancelSubmit();
+                        }
+                    });
+                } else {
+                    if (confirm('Terdapat perubahan nilai yang belum disimpan. Tetap ganti filter?')) {
+                        proceedSubmit();
+                    } else {
+                        cancelSubmit();
+                    }
+                }
+            } else {
+                formToSubmit[0].submit();
+            }
+        }
+
+        // Listener filter dropdown bulan & unit
+        $('#filterBulanSelect').on('change', function() {
+            handleFilterChange($(this).closest('form'), $(this), 'bulan');
+        });
+        $('#filterUnitSelect').on('change', function() {
+            handleFilterChange($(this).closest('form'), $(this), 'unit');
+        });
+
+        // Inisialisasi Select2 dengan Fallback Dropdown Native
         if ($('#selectStaf').length) {
-            $('#selectStaf').select2({ 
-                width: '100%', 
-                placeholder: "Cari Nama Staf...",
-                allowClear: false
-            });
-            $('#selectStaf').on('select2:select', function (e) { $(this).closest('form').submit(); });
-            
-            $('#selectStaf').on('select2:open', function () {
-                setTimeout(function() {
-                    document.querySelector('.select2-search__field').focus();
-                }, 50);
-            });
+            if (typeof $.fn.select2 !== 'undefined') {
+                $('#selectStaf').select2({ 
+                    width: '100%', 
+                    placeholder: "Cari Nama Staf...",
+                    allowClear: false
+                });
+                $('#selectStaf').on('select2:select', function (e) {
+                    handleFilterChange($(this).closest('form'), $(this), 'staf');
+                });
+                
+                $('#selectStaf').on('select2:open', function () {
+                    setTimeout(function() {
+                        const searchField = document.querySelector('.select2-search__field');
+                        if (searchField) searchField.focus();
+                    }, 50);
+                });
+            } else {
+                $('#selectStaf').on('change', function() {
+                    handleFilterChange($(this).closest('form'), $(this), 'staf');
+                });
+            }
         }
 
         // Debounce 600ms untuk input tahun filter (cegah multiple submit saat mengetik)
@@ -1608,7 +1990,7 @@
                 tahunDebounceTimer = setTimeout(function() {
                     const val = parseInt(tahunInput.value);
                     if (!isNaN(val) && val >= 2020 && val <= 2099) {
-                        tahunInput.closest('form').submit();
+                        handleFilterChange($(tahunInput).closest('form'), $(tahunInput), 'tahun');
                     }
                 }, 600);
             });
@@ -1623,12 +2005,20 @@
             if (isNaN(val) || val === '' || val === null) {
                 return { label: '-', class: 'bg-light text-muted border', textClass: 'secondary' };
             }
-            // Threshold standar ECC: SK ≤25 | K >25-75 | BP >75-90 | Baik >90-100 | SB >100-150
-            if (val <= 25) return { label: 'Sangat Kurang', class: 'bg-danger', textClass: 'danger' };
-            if (val <= 75) return { label: 'Kurang', class: 'bg-warning text-dark', textClass: 'warning' };
-            if (val <= 90) return { label: 'Butuh Perbaikan', class: 'bg-info text-dark', textClass: 'info' };
-            if (val <= 100) return { label: 'Baik', class: 'bg-primary', textClass: 'primary' };
-            return { label: 'Sangat Baik', class: 'bg-success', textClass: 'success' };
+            const num = parseFloat(val);
+            if (num <= ECC_PREDIKAT_THRESHOLDS.sangat_kurang.max) {
+                return { label: ECC_PREDIKAT_THRESHOLDS.sangat_kurang.label, class: ECC_PREDIKAT_THRESHOLDS.sangat_kurang.badge_class, textClass: ECC_PREDIKAT_THRESHOLDS.sangat_kurang.color };
+            }
+            if (num <= ECC_PREDIKAT_THRESHOLDS.kurang.max) {
+                return { label: ECC_PREDIKAT_THRESHOLDS.kurang.label, class: ECC_PREDIKAT_THRESHOLDS.kurang.badge_class, textClass: ECC_PREDIKAT_THRESHOLDS.kurang.color };
+            }
+            if (num <= ECC_PREDIKAT_THRESHOLDS.butuh_perbaikan.max) {
+                return { label: ECC_PREDIKAT_THRESHOLDS.butuh_perbaikan.label, class: ECC_PREDIKAT_THRESHOLDS.butuh_perbaikan.badge_class, textClass: ECC_PREDIKAT_THRESHOLDS.butuh_perbaikan.color };
+            }
+            if (num <= ECC_PREDIKAT_THRESHOLDS.baik.max) {
+                return { label: ECC_PREDIKAT_THRESHOLDS.baik.label, class: ECC_PREDIKAT_THRESHOLDS.baik.badge_class, textClass: ECC_PREDIKAT_THRESHOLDS.baik.color };
+            }
+            return { label: ECC_PREDIKAT_THRESHOLDS.sangat_baik.label, class: ECC_PREDIKAT_THRESHOLDS.sangat_baik.badge_class, textClass: ECC_PREDIKAT_THRESHOLDS.sangat_baik.color };
         }
 
         function calculateOverallStafScore() {
@@ -1638,9 +2028,15 @@
             let rhkTotal = rhkInputs.length;
             let rhkFilled = 0;
 
+            let hasAnyDraftRow = false;
+            let hasAnyTerbitRow = false;
+            let hasAnyNilaiRow = false;
+
             // 1. Hitung Nilai RHK (hanya dari baris tbody)
             rhkInputs.each(function() {
                 let rawVal = $(this).val();
+                let initialVal = $(this).attr('data-initial-value') || '';
+                let statusPenilaian = $(this).attr('data-status-penilaian') || 'none';
                 let v = parseFloat(rawVal);
                 let badgeContainer = $(this).closest('td').find('.predikat-badge-container');
 
@@ -1649,9 +2045,25 @@
                         total += v;
                         count++;
                         rhkFilled++;
+                        hasAnyNilaiRow = true;
                     }
                     let p = getPredikatInfo(v);
-                    badgeContainer.html('<span class="badge ' + p.class + ' rounded-pill px-2 py-0.5 badge-predikat-pop" style="font-size:0.72rem;">' + p.label + '</span>');
+
+                    // Cek apakah nilai diubah oleh penilai
+                    let isDirty = (initialVal !== '' && parseFloat(initialVal) !== v) || (initialVal === '' && rawVal !== '');
+                    let rowStatusBadge = '';
+                    if (isDirty || statusPenilaian === 'draft') {
+                        rowStatusBadge = '<span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2 py-0.5 badge-status-row" style="font-size:0.7rem;">Draf</span>';
+                        hasAnyDraftRow = true;
+                    } else if (statusPenilaian === 'terbit') {
+                        rowStatusBadge = '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-0.5 badge-status-row" style="font-size:0.7rem;">Terbit</span>';
+                        hasAnyTerbitRow = true;
+                    } else {
+                        rowStatusBadge = '<span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2 py-0.5 badge-status-row" style="font-size:0.7rem;">Draf</span>';
+                        hasAnyDraftRow = true;
+                    }
+
+                    badgeContainer.html(rowStatusBadge + '<span class="badge ' + p.class + ' rounded-pill px-2 py-0.5 badge-predikat-pop" style="font-size:0.72rem;">' + p.label + '</span>');
                     $(this).removeClass('border-warning shadow-sm');
                 } else {
                     badgeContainer.html('<span class="badge bg-light text-muted border border-secondary-subtle rounded-pill px-2 py-0.5" style="font-size:0.72rem;"><i class="bi bi-dash-circle me-1"></i> Belum dinilai</span>');
@@ -1666,20 +2078,45 @@
 
             if (hasTambahan) {
                 let hintContainer = $('#hintTambahanContainer');
+                let initialTmbVal = $('#inputNilaiTambahanGabungan').attr('data-initial-value') || '';
+                let tmbStatus = $('#inputNilaiTambahanGabungan').attr('data-status-penilaian') || 'none';
+
                 if (rawTambahan !== '' && !isNaN(vTambahan) && vTambahan >= 0 && vTambahan <= 150) {
                     total += vTambahan;
                     count++;
                     tambahanFilled = true;
-                    $('#textTambahanStatus').text(vTambahan + '%');
-                    if (hintContainer.length) {
-                        hintContainer.html('<span class="badge bg-success-subtle text-success border border-success-subtle mt-1 rounded-pill px-2 py-0.5 badge-predikat-pop" style="font-size:0.72rem;"><i class="bi bi-check-circle me-1"></i> Terisi</span>');
+                    hasAnyNilaiRow = true;
+
+                    let isTmbDirty = (initialTmbVal !== '' && parseFloat(initialTmbVal) !== vTambahan) || (initialTmbVal === '' && rawTambahan !== '');
+                    let tmbStatusLabel = 'Draf';
+                    if (!isTmbDirty && tmbStatus === 'terbit') {
+                        tmbStatusLabel = 'Terbit';
+                        hasAnyTerbitRow = true;
+                        hintContainer.html('<span class="badge bg-success-subtle text-success border border-success-subtle mt-1 rounded-pill px-2 py-0.5 badge-predikat-pop" style="font-size:0.72rem;">Terbit</span>');
+                    } else {
+                        hasAnyDraftRow = true;
+                        hintContainer.html('<span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle mt-1 rounded-pill px-2 py-0.5 badge-predikat-pop" style="font-size:0.72rem;">Draf</span>');
                     }
+
+                    $('#textTambahanStatus').text(vTambahan + '% (' + tmbStatusLabel + ')');
                     $('#inputNilaiTambahanGabungan').removeClass('border-warning shadow-sm');
                 } else {
                     $('#textTambahanStatus').text('Belum Dinilai');
                     if (hintContainer.length) {
                         hintContainer.html('<span class="badge bg-light text-muted border border-secondary-subtle mt-1 rounded-pill px-2 py-0.5" style="font-size:0.72rem;"><i class="bi bi-dash-circle me-1"></i> Belum dinilai</span>');
                     }
+                }
+            }
+
+            // Update badge status di header summary card
+            let summaryBadgeEl = $('#badgeSummaryStatusPenilaian');
+            if (summaryBadgeEl.length) {
+                if (hasAnyDraftRow || (hasAnyNilaiRow && !hasAnyTerbitRow)) {
+                    summaryBadgeEl.attr('class', 'badge bg-warning text-dark px-2.5 py-1 rounded-pill fw-bold').text('Draf');
+                } else if (hasAnyTerbitRow && !hasAnyDraftRow) {
+                    summaryBadgeEl.attr('class', 'badge bg-success text-white px-2.5 py-1 rounded-pill fw-bold').text('Terbit');
+                } else {
+                    summaryBadgeEl.attr('class', 'badge bg-secondary text-white px-2.5 py-1 rounded-pill fw-bold').text('Belum Dinilai');
                 }
             }
 
@@ -1728,7 +2165,8 @@
             if ($(this).hasClass('input-nilai-capaian')) {
                 var val = parseFloat($(this).val());
                 var error = $(this).parent().siblings('.invalid-feedback');
-                var btnSubmit = $('#formPenilaian button[type="submit"]');
+                var form = $(this).closest('form');
+                var btnSubmit = form.find('button[type="submit"]');
 
                 if (!isNaN(val) && (val < 0 || val > 150)) {
                     $(this).addClass('is-invalid');
@@ -1737,7 +2175,7 @@
                 } else {
                     $(this).removeClass('is-invalid');
                     error.hide();
-                    if ($('.input-nilai-capaian.is-invalid').length === 0) {
+                    if (form.find('.input-nilai-capaian.is-invalid').length === 0) {
                         btnSubmit.prop('disabled', false);
                     }
                 }
@@ -1746,26 +2184,28 @@
             calculateOverallStafScore();
         });
 
-        // Handle Kosongkan form (Reset)
+        // Handle Kosongkan form (Reset) khusus Form Penilaian Staf
         $('#formPenilaian button[type="reset"], #btnResetNilaiStaf').on('click', function(e) {
             e.preventDefault();
 
             function doResetAndSubmit() {
-                $('.input-nilai-capaian, #inputNilaiTambahanGabungan').val('').removeClass('is-invalid border-warning shadow-sm').removeAttr('title');
-                $('.invalid-feedback').hide();
-                $('.predikat-badge-container').html('<span class="badge bg-light text-muted border border-secondary-subtle rounded-pill px-2 py-0.5" style="font-size:0.72rem;"><i class="bi bi-dash-circle me-1"></i> Belum dinilai</span>');
+                $('#formPenilaian .input-nilai-capaian, #formPenilaian #inputNilaiTambahanGabungan').val('').removeClass('is-invalid border-warning shadow-sm').removeAttr('title');
+                $('#formPenilaian .invalid-feedback').hide();
+                $('#formPenilaian .predikat-badge-container').html('<span class="badge bg-light text-muted border border-secondary-subtle rounded-pill px-2 py-0.5" style="font-size:0.72rem;"><i class="bi bi-dash-circle me-1"></i> Belum dinilai</span>');
                 if ($('#hintTambahanContainer').length) {
                     $('#hintTambahanContainer').html('<span class="badge bg-light text-muted border border-secondary-subtle mt-1 rounded-pill px-2 py-0.5" style="font-size:0.72rem;"><i class="bi bi-dash-circle me-1"></i> Belum dinilai</span>');
                 }
                 calculateOverallStafScore();
+                isPenilaianFormDirty = false;
                 $('#penilaianActionInput').val('reset');
+                $('#formPenilaian button[type="submit"], #btnResetNilaiStaf').prop('disabled', true);
                 $('#formPenilaian')[0].submit();
             }
 
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     title: 'Reset Penilaian?',
-                    text: "Nilai kinerja staf pada periode ini akan dikosongkan.",
+                    text: 'Nilai kinerja staf pada periode ini akan dikosongkan.',
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#dc3545',
@@ -1779,7 +2219,7 @@
                     }
                 });
             } else {
-                if (confirm('Reset dan kosongkan seluruh nilai capaian staf pada periode ini seperti belum pernah dinilai?')) {
+                if (confirm('Nilai kinerja staf pada periode ini akan dikosongkan. Lanjutkan?')) {
                     doResetAndSubmit();
                 }
             }
@@ -1798,7 +2238,7 @@
             let form = $(this);
             let hasInvalid = false;
 
-            // Make sure the hidden input is always set before any button state changes
+            // Pastikan hidden action input selalu sinkron
             $('#penilaianActionInput').val(lastClickedAction);
 
             form.find('.input-nilai-capaian').each(function() {
@@ -1806,22 +2246,31 @@
                 if (!isNaN(v) && (v < 0 || v > 150)) {
                     hasInvalid = true;
                     $(this).addClass('is-invalid');
+                } else {
+                    $(this).removeClass('is-invalid');
                 }
             });
 
-            let vTambahan = parseFloat($('#inputNilaiTambahanGabungan').val());
+            let vTambahan = parseFloat(form.find('#inputNilaiTambahanGabungan').val());
             if (!isNaN(vTambahan) && (vTambahan < 0 || vTambahan > 150)) {
                 hasInvalid = true;
-                $('#inputNilaiTambahanGabungan').addClass('is-invalid');
+                form.find('#inputNilaiTambahanGabungan').addClass('is-invalid');
+            } else {
+                form.find('#inputNilaiTambahanGabungan').removeClass('is-invalid');
             }
 
             if (hasInvalid) {
                 e.preventDefault();
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Nilai Tidak Sesuai',
-                    text: 'Terdapat nilai capaian yang di luar batas yang diperbolehkan (0 - 150%).'
-                });
+                const invalidMsg = 'Nilai capaian harus di antara 0 dan 150%.';
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Nilai di Luar Batas',
+                        text: invalidMsg
+                    });
+                } else {
+                    alert(invalidMsg);
+                }
                 return false;
             }
 
@@ -1830,62 +2279,82 @@
             // Jika tombol yang ditekan adalah Simpan & Terbitkan Penilaian dan masih ada kolom yang kosong
             if (lastClickedAction === 'submit' && stats.totalUnfilled > 0 && !isPublishConfirmed) {
                 e.preventDefault();
-                Swal.fire({
-                    title: 'Terbitkan Nilai?',
-                    html: `Terdapat <strong>${stats.totalUnfilled} komponen</strong> belum diisi dan akan diberi nilai 0. Tetap terbitkan?`,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#198754',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="bi bi-check-circle-fill me-1"></i> Ya, Terbitkan',
-                    cancelButtonText: 'Periksa Kembali',
-                    reverseButtons: true
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        isPublishConfirmed = true;
+                const confirmPublish = function() {
+                    isPublishConfirmed = true;
+                    isPenilaianFormDirty = false;
 
-                        // Otomatis isi seluruh input RHK yang kosong dengan '0'
-                        $('#tablePenilaianStaf tbody .input-nilai-capaian').each(function() {
-                            if ($(this).val() === '') {
-                                $(this).val('0');
-                            }
-                        });
-
-                        // Otomatis isi input tugas tambahan jika ada dan kosong dengan '0'
-                        if ($('#inputNilaiTambahanGabungan').length && $('#inputNilaiTambahanGabungan').val() === '') {
-                            $('#inputNilaiTambahanGabungan').val('0');
+                    // Otomatis isi seluruh input RHK yang kosong dengan '0'
+                    form.find('#tablePenilaianStaf tbody .input-nilai-capaian').each(function() {
+                        if ($(this).val() === '') {
+                            $(this).val('0');
                         }
+                    });
 
-                        // Hitung ulang kalkulasi di layar dengan nilai 0
-                        calculateOverallStafScore();
-
-                        $('#penilaianActionInput').val('submit');
-                        form.find('button[type="submit"]').prop('disabled', true);
-                        form.find('button[value="submit"]').html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menerbitkan...');
-                        form[0].submit();
-                    } else {
-                        // Highlight kolom yang masih kosong dengan border warning
-                        $('.input-nilai-capaian').each(function() {
-                            if ($(this).val() === '') {
-                                $(this).addClass('border-warning shadow-sm');
-                            }
-                        });
-                        if ($('#inputNilaiTambahanGabungan').length && $('#inputNilaiTambahanGabungan').val() === '') {
-                            $('#inputNilaiTambahanGabungan').addClass('border-warning shadow-sm');
-                        }
-                        let firstEmpty = $('.input-nilai-capaian').filter(function() { return $(this).val() === ''; }).first();
-                        if (firstEmpty.length) {
-                            firstEmpty.focus();
-                        } else if ($('#inputNilaiTambahanGabungan').length && $('#inputNilaiTambahanGabungan').val() === '') {
-                            $('#inputNilaiTambahanGabungan').focus();
-                        }
+                    // Otomatis isi input tugas tambahan jika ada dan kosong dengan '0'
+                    let tmb = form.find('#inputNilaiTambahanGabungan');
+                    if (tmb.length && tmb.val() === '') {
+                        tmb.val('0');
                     }
-                });
+
+                    // Hitung ulang kalkulasi di layar dengan nilai 0
+                    calculateOverallStafScore();
+
+                    $('#penilaianActionInput').val('submit');
+                    form.find('button[type="submit"]').prop('disabled', true);
+                    form.find('button[value="submit"]').html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menerbitkan...');
+                    form[0].submit();
+                };
+
+                const cancelPublish = function() {
+                    // Highlight kolom yang masih kosong pada form staf ini
+                    form.find('.input-nilai-capaian').each(function() {
+                        if ($(this).val() === '') {
+                            $(this).addClass('border-warning shadow-sm');
+                        }
+                    });
+                    let tmb = form.find('#inputNilaiTambahanGabungan');
+                    if (tmb.length && tmb.val() === '') {
+                        tmb.addClass('border-warning shadow-sm');
+                    }
+                    let firstEmpty = form.find('.input-nilai-capaian').filter(function() { return $(this).val() === ''; }).first();
+                    if (firstEmpty.length) {
+                        firstEmpty.focus();
+                    } else if (tmb.length && tmb.val() === '') {
+                        tmb.focus();
+                    }
+                };
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Terbitkan Nilai?',
+                        text: `Ada ${stats.totalUnfilled} komponen belum diisi dan akan dinilai 0. Tetap terbitkan?`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#198754',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: '<i class="bi bi-check-circle-fill me-1"></i> Ya, Terbitkan',
+                        cancelButtonText: 'Periksa Kembali',
+                        reverseButtons: true
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            confirmPublish();
+                        } else {
+                            cancelPublish();
+                        }
+                    });
+                } else {
+                    if (confirm(`Ada ${stats.totalUnfilled} komponen belum diisi dan akan dinilai 0. Tetap terbitkan?`)) {
+                        confirmPublish();
+                    } else {
+                        cancelPublish();
+                    }
+                }
                 return false;
             }
 
             // Sync hidden action input before submission
             $('#penilaianActionInput').val(lastClickedAction);
+            isPenilaianFormDirty = false;
 
             let submitBtns = form.find('button[type="submit"]');
             let activeBtn = form.find('button[value="' + lastClickedAction + '"]');
@@ -1893,6 +2362,43 @@
                 activeBtn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> ' + (lastClickedAction === 'submit' ? 'Menerbitkan...' : 'Menyimpan...'));
             }
             // Use setTimeout to disable buttons so current submit event carries the form data normally
+            setTimeout(() => {
+                submitBtns.prop('disabled', true);
+            }, 10);
+        });
+
+        // Handler khusus Form Evaluasi Mandiri Direktur (Tab 1)
+        $('#formPenilaianMandiri').on('submit', function(e) {
+            let form = $(this);
+            let hasInvalid = false;
+
+            form.find('.input-nilai-capaian').each(function() {
+                let v = parseFloat($(this).val());
+                if (!isNaN(v) && (v < 0 || v > 150)) {
+                    hasInvalid = true;
+                    $(this).addClass('is-invalid');
+                } else {
+                    $(this).removeClass('is-invalid');
+                }
+            });
+
+            if (hasInvalid) {
+                e.preventDefault();
+                const invalidMsg = 'Nilai capaian harus di antara 0 dan 150%.';
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Nilai di Luar Batas',
+                        text: invalidMsg
+                    });
+                } else {
+                    alert(invalidMsg);
+                }
+                return false;
+            }
+
+            isPenilaianFormDirty = false;
+            let submitBtns = form.find('button[type="submit"]');
             setTimeout(() => {
                 submitBtns.prop('disabled', true);
             }, 10);
@@ -1971,22 +2477,23 @@
             }
 
             // Contextual Action Buttons & Badges
-            const canManageRevisi = <?= (hasRole('admin') || $is_atasan || $is_penilai) ? 'true' : 'false' ?>;
+            const canManageRevisi = <?= (hasAnyRole(['admin', 'direktur']) || $is_atasan || $is_penilai) ? 'true' : 'false' ?>;
+            const isRevisi = cell.data('is-revisi') == 1 || cell.data('is-revisi') == '1';
 
             if (isStaf) {
                 // Sembunyikan shortcut form lapor
                 $('#btnModalGoToLapor').hide();
 
                 if (canManageRevisi && stafId) {
-                    if (hasTerkirim) {
+                    if (isRevisi || (hasDraft && !hasTerkirim && totalKegiatan > 0)) {
+                        // Laporan sudah dalam mode revisi aktif oleh staf
+                        $('#modalLogBtnRevisiContainer').hide();
+                        $('#modalLogBadgeRevisiAktif').show();
+                    } else if (hasTerkirim) {
                         // Tampilkan tombol Buka Kunci
                         $('#btnModalBukaKunci').data('tanggal', dateStr).data('staf-id', stafId).data('tanggal-formatted', tglFormatted);
                         $('#modalLogBtnRevisiContainer').show();
                         $('#modalLogBadgeRevisiAktif').hide();
-                    } else if (hasDraft && totalKegiatan > 0) {
-                        // Laporan sudah dalam mode revisi
-                        $('#modalLogBtnRevisiContainer').hide();
-                        $('#modalLogBadgeRevisiAktif').show();
                     } else {
                         $('#modalLogBtnRevisiContainer').hide();
                         $('#modalLogBadgeRevisiAktif').hide();
@@ -2063,7 +2570,9 @@
                 });
             } else {
                 $('#modalLogTableContainer').hide();
-                if (isHoliday) {
+                if (isRevisi) {
+                    $('#modalLogEmptyDesc').text('Laporan pada tanggal ini telah dibuka kuncinya dan sedang dalam proses revisi oleh staf.');
+                } else if (isHoliday) {
                     $('#modalLogEmptyDesc').text(`Hari Libur Nasional: ${holidayName}. Tidak ada catatan laporan kegiatan.`);
                 } else if (isWeekend) {
                     $('#modalLogEmptyDesc').text('Akhir pekan (Sabtu / Minggu). Tidak ada catatan laporan kegiatan.');
@@ -2091,6 +2600,19 @@
         $(document).on('click', '.heatmap-day-cell', function(e) {
             e.preventDefault();
             populateModalFromCell($(this));
+        });
+
+        $(document).on('keydown', '.heatmap-day-cell', function(e) {
+            if (e.key === 'Enter' || e.key === ' ' || e.keyCode === 13 || e.keyCode === 32) {
+                e.preventDefault();
+                populateModalFromCell($(this));
+            }
+        });
+
+        $('#modalDetailLogTanggal').on('hidden.bs.modal', function () {
+            if (currentActiveHeatmapCell && currentActiveHeatmapCell.length) {
+                currentActiveHeatmapCell.focus();
+            }
         });
 
         // Event Navigasi Hari Prev / Next di Modal
@@ -2281,7 +2803,7 @@
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     title: 'Batalkan Persetujuan?',
-                    html: `Persetujuan target bulanan staf akan dibatalkan agar dapat direvisi.`,
+                    html: 'Target bulanan dan laporan kegiatan terkait akan kembali berstatus draf. Nilai penilaian periode ini akan direset agar dapat dinilai ulang.',
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#dc3545',
@@ -2294,7 +2816,7 @@
                     }
                 });
             } else {
-                if (confirm('Batalkan Persetujuan Target?\n\nPersetujuan target bulanan staf akan dibatalkan agar staf dapat merevisi.')) {
+                if (confirm('Target bulanan dan laporan kegiatan terkait akan kembali berstatus draf. Nilai penilaian periode ini akan direset agar dapat dinilai ulang.')) {
                     executeCancel();
                 }
             }

@@ -3,7 +3,6 @@
 namespace App\Controllers\User;
 
 use App\Controllers\BaseController;
-use App\Models\RencanaKinerja as RencanaKinerjaModel;
 use App\Models\User as UserModel;
 use App\Controllers\Traits\EccDataTrait; 
 use App\Controllers\Traits\KinerjaBatchTrait;
@@ -14,8 +13,8 @@ class Dashboard extends BaseController
 
     public function index()
     {
-        $rencanaModel = new RencanaKinerjaModel();
         $userModel = new UserModel();
+        $db = \Config\Database::connect();
         $user_id = session()->get('id') ?? session()->get('user_id');
 
         $ajax_type = $this->request->getGet('ajax_type');
@@ -30,12 +29,12 @@ class Dashboard extends BaseController
             if ($this->request->isAJAX() && $ajax_type === 'ecc') {
                 return $this->response->setJSON([
                     'prodiData' => $eccData['prodiData'],
-                    'tahun' => $tahun_ecc
+                    'tahun'     => $tahun_ecc
                 ]);
             }
         }
 
-        // --- 2. PROSES DATA Kinerja Pribadi (Berdasarkan Laporan Harian) ---
+        // --- 2. PROSES DATA Kinerja Pribadi & Staf / Rekan Unit ---
         if (!$this->request->isAJAX() || $ajax_type === 'kinerja') {
             // BATCH LOAD: Ambil seluruh data kinerja tahun ini dalam 2 query ringkas (O(1) in-memory)
             [$batchTargets, $batchTambahan] = $this->loadBatchKinerjaData($tahun_kinerja);
@@ -50,18 +49,24 @@ class Dashboard extends BaseController
             }
 
             $role = session()->get('role');
-            $isSuper = hasAnyRole(['admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk', 'manajemen', 'kepegawaian']);
             $daftarStaf = $userModel->getAllStaf($user_id, $role);
             $isAtasan = !empty($daftarStaf);
             
-            $me = $userModel->find($user_id);
+            $userSelect = 'id, nama_lengkap, nip, username, jabatan, unit, role';
+            $me = $userModel->select($userSelect)->find($user_id);
             $isUnitPeers = false;
             
+            // Jika bukan atasan langsung, tampilkan data rekan kerja aktif dalam 1 unit
             if (!$isAtasan && !empty($me['unit'])) {
-                $daftarStaf = $userModel->where('unit', $me['unit'])
-                                         ->where('id !=', $user_id)
-                                         ->where('role !=', 'admin')
-                                         ->findAll();
+                $peerQuery = $userModel->select($userSelect)
+                    ->where('unit', $me['unit'])
+                    ->where('id !=', $user_id)
+                    ->where('role !=', 'admin');
+                
+                if ($db->fieldExists('status_pegawai', 'users')) {
+                    $peerQuery->where('status_pegawai', 'aktif');
+                }
+                $daftarStaf = $peerQuery->findAll();
                 $isUnitPeers = true;
             }
 
@@ -82,114 +87,33 @@ class Dashboard extends BaseController
                 }
             }
 
-            $unitStats = [];
-            $chartPegawaiUnitLabels = [];
-            $chartPegawaiUnitData = [];
-            
-            if ($isSuper && !empty($rekapDashboard)) {
-                foreach ($rekapDashboard as $rekap) {
-                    $unitName = trim($rekap['staf']['unit'] ?? '');
-                    if (empty($unitName)) $unitName = 'Tanpa Unit';
-                    
-                    if (!isset($unitStats[$unitName])) {
-                        $unitStats[$unitName] = ['total_rata' => 0, 'count' => 0, 'anggota' => []];
-                    }
-                    $unitStats[$unitName]['total_rata'] += $rekap['rata_rata'];
-                    $unitStats[$unitName]['count']++;
-                    $unitStats[$unitName]['anggota'][] = [
-                        'nama'           => $rekap['staf']['nama_lengkap'],
-                        'jabatan'        => $rekap['staf']['jabatan'] ?? '-',
-                        'total_pokok'    => $rekap['total_pokok'],
-                        'total_tambahan' => $rekap['total_tambahan'],
-                        'rata_rata'      => $rekap['rata_rata'],
-                        'dinilai'        => $rekap['dinilai'],
-                        'total_laporan'  => $rekap['total_laporan']
-                    ];
-                }
-                
-                $unitRanking = [];
-                foreach ($unitStats as $unitName => &$unitData) {
-                    $unitTotal = 0;
-                    $unitTotalAktif = 0;
-                    $unitCountAktif = 0;
-                    $totalAnggota = $unitData['count'];
-
-                    if (isset($unitData['anggota'])) {
-                        foreach ($unitData['anggota'] as $anggota) {
-                            $unitTotal += $anggota['rata_rata'];
-                            if ($anggota['rata_rata'] > 0) {
-                                $unitTotalAktif += $anggota['rata_rata'];
-                                $unitCountAktif++;
-                            }
-                        }
-                    }
-                    $avg = $totalAnggota > 0 ? round($unitTotal / $totalAnggota, 2) : 0;
-                    $unitData['rata_rata_unit'] = $avg;
-                    $unitRanking[] = [
-                        'nama' => $unitName,
-                        'rata' => $avg,
-                        'total_aktif' => $unitCountAktif,
-                        'total_anggota' => $totalAnggota
-                    ];
-                }
-                unset($unitData);
-
-                usort($unitRanking, function($a, $b) {
-                    if ($b['rata'] != $a['rata']) {
-                        return $b['rata'] <=> $a['rata'];
-                    }
-                    if ($b['total_aktif'] != $a['total_aktif']) {
-                        return $b['total_aktif'] <=> $a['total_aktif'];
-                    }
-                    return strcasecmp($a['nama'], $b['nama']);
-                });
-
-                foreach ($unitRanking as $ur) {
-                    $chartPegawaiUnitLabels[] = $ur['nama'];
-                    $chartPegawaiUnitData[] = $ur['rata'];
-                }
-            }
-
             if ($this->request->isAJAX() && $ajax_type === 'kinerja') {
                 return $this->response->setJSON([
-                    'rataRataCapaian' => $rataRataCapaian,
-                    'totalIndikator' => $totalIndikator,
+                    'rataRataCapaian'      => $rataRataCapaian,
+                    'totalIndikator'       => $totalIndikator,
                     'cumulative_realisasi' => $lineChartRealisasiData,
-                    'isAtasan' => $isAtasan,
-                    'isUnitPeers' => $isUnitPeers,
-                    'rekapDashboard' => $rekapDashboard,
-                    'isSuper' => $isSuper,
-                    'chartPegawaiUnitLabels' => $chartPegawaiUnitLabels,
-                    'chartPegawaiUnitData' => $chartPegawaiUnitData,
-                    'unitStats' => $unitStats,
-                    'tahun' => $tahun_kinerja
+                    'isAtasan'             => $isAtasan,
+                    'isUnitPeers'          => $isUnitPeers,
+                    'rekapDashboard'       => $rekapDashboard,
+                    'tahun'                => $tahun_kinerja
                 ]);
             }
         }
 
         // --- 3. RENDER FULL VIEW JIKA BUKAN AJAX ---
         $data = [
-            'page_title' => 'Dashboard',
-            'tahun_ecc' => $tahun_ecc,
-            'tahun_kinerja' => $tahun_kinerja,
-            'daftar_tahun' => $eccData['daftar_tahun'] ?? [date('Y')],
-            
-            'prodiData' => $eccData['prodiData'] ?? [],
-            
-            'totalIndikator' => $totalIndikator ?? 0,
-            'rataRataCapaian' => $rataRataCapaian ?? 0,
-            
-            'lineChartLabels' => ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'],
+            'page_title'             => 'Dashboard',
+            'tahun_ecc'              => $tahun_ecc,
+            'tahun_kinerja'          => $tahun_kinerja,
+            'daftar_tahun'           => $eccData['daftar_tahun'] ?? [date('Y')],
+            'prodiData'              => $eccData['prodiData'] ?? [],
+            'totalIndikator'         => $totalIndikator ?? 0,
+            'rataRataCapaian'        => $rataRataCapaian ?? 0,
+            'lineChartLabels'        => ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'],
             'lineChartRealisasiData' => $lineChartRealisasiData ?? [],
-
-            'isAtasan' => $isAtasan ?? false,
-            'isUnitPeers' => $isUnitPeers ?? false,
-            'rekapDashboard' => $rekapDashboard ?? [],
-
-            'isSuper' => $isSuper ?? false,
-            'chartPegawaiUnitLabels' => $chartPegawaiUnitLabels ?? [],
-            'chartPegawaiUnitData' => $chartPegawaiUnitData ?? [],
-            'unitStats' => $unitStats ?? [],
+            'isAtasan'               => $isAtasan ?? false,
+            'isUnitPeers'            => $isUnitPeers ?? false,
+            'rekapDashboard'         => $rekapDashboard ?? [],
         ];
 
         return view('user/dashboard', $data);

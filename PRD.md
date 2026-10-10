@@ -90,7 +90,7 @@ Sistem menerapkan konsep pemisahan tugas menggunakan arsitektur **Tabel Pivot (M
 - [x] Modul Evidence Command Center (ECC LED & Simulasi Penilaian).
 - [x] Modul Notifikasi Auto-Sync Hari Libur Nasional API & History Retention.
 - [x] Sistem Layout Utama, Pembatasan Role Sidebar, & Dynamic CSRF Protection.
-- [x] Mekanisme Automatic Anti-Cache Busting v1.4 (`style.css?v=1.4.TIMESTAMP`).
+- [x] Mekanisme Automatic Anti-Cache Busting v1.5 (`style.css?v=1.5.TIMESTAMP`).
 - [x] Grafik Historis (Chart.js) pada *dashboard* user untuk melihat tren kinerja pribadi selama setahun.
 - [x] Rilis Resmi Versi 1.3: Penyelesaian Audit 8-Pilar Menyeluruh Seluruh Modul Sistem (31 Agustus 2026).
 - [x] Fitur Mode Pemeliharaan Mandiri Administrator (Web-Based Maintenance Mode) via `/settings`.
@@ -98,4 +98,5 @@ Sistem menerapkan konsep pemisahan tugas menggunakan arsitektur **Tabel Pivot (M
 - [x] Engine Ekspor Rekap Kepegawaian Multi-Sheet Excel & PDF Landscape A4 dengan Pengurutan Hierarki 13-Tier Jabatan.
 - [x] Rilis Resmi Versi 1.4: Penyelesaian Audit 8-Pilar Modul Kelola Tim, Kelola Pengguna, Profil Saya, dan Pengerasan Rute POST (3 September 2026).
 - [x] Audit & Pemolesan 8-Point Grid Modul Direktori Pegawai & Profil Saya, Pengamanan Berkas Ganda 2MB, Script Execution Barrier `.htaccess`, dan Pembakuan Istilah Non-Teknis (7 September 2026).
+- [x] Rilis Resmi Versi 1.5: Penyelesaian Audit 8-Pilar Modul Monitoring Target Kinerja, Monitoring Penilaian Kinerja, Profil Saya, dan Dashboard Admin & User (11 Oktober 2026).
 

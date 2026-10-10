@@ -30,11 +30,11 @@ if (!function_exists('hasRole')) {
                 try {
                     $db = \Config\Database::connect();
                     $secondaryRoles = $db->table('user_roles')
-                        ->select('role')
+                        ->select('role_name')
                         ->where('user_id', $userId)
                         ->get()
                         ->getResultArray();
-                    $roles = array_column($secondaryRoles, 'role');
+                    $roles = array_column($secondaryRoles, 'role_name');
                     $primaryRole = (string)session()->get('role');
                     if ($primaryRole !== '') {
                         array_unshift($roles, $primaryRole);

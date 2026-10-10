@@ -687,9 +687,12 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <?php if (!empty($row['link_bukti'])): ?>
+                                            <?php 
+                                            $safeLink = !empty($row['link_bukti']) && preg_match('#^https?://#i', trim($row['link_bukti'])) ? trim($row['link_bukti']) : null;
+                                            ?>
+                                            <?php if ($safeLink): ?>
                                                 <div class="text-center">
-                                                    <a href="<?= esc($row['link_bukti']) ?>" target="_blank" class="btn btn-sm btn-light text-primary border rounded-pill px-3 py-1 btn-bukti-link btn-tactile shadow-xs" title="Buka tautan bukti pekerjaan di tab baru">
+                                                    <a href="<?= esc($safeLink) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-light text-primary border rounded-pill px-3 py-1 btn-bukti-link btn-tactile shadow-xs" title="Buka tautan bukti pekerjaan di tab baru">
                                                         <i class="bi bi-box-arrow-up-right me-1"></i> Bukti
                                                     </a>
                                                 </div>
@@ -818,9 +821,12 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <?php if (!empty($rowTmb['link_bukti'])): ?>
+                                            <?php 
+                                            $safeLinkTmb = !empty($rowTmb['link_bukti']) && preg_match('#^https?://#i', trim($rowTmb['link_bukti'])) ? trim($rowTmb['link_bukti']) : null;
+                                            ?>
+                                            <?php if ($safeLinkTmb): ?>
                                                 <div class="text-center">
-                                                    <a href="<?= esc($rowTmb['link_bukti']) ?>" target="_blank" class="btn btn-sm btn-light text-primary border rounded-pill px-3 py-1 btn-bukti-link btn-tactile shadow-xs" title="Buka tautan bukti pekerjaan di tab baru">
+                                                    <a href="<?= esc($safeLinkTmb) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-light text-primary border rounded-pill px-3 py-1 btn-bukti-link btn-tactile shadow-xs" title="Buka tautan bukti pekerjaan di tab baru">
                                                         <i class="bi bi-box-arrow-up-right me-1"></i> Bukti
                                                     </a>
                                                 </div>
@@ -877,6 +883,71 @@
             </div>
             <?php endif; ?>
         </form>
+
+        <!-- Template DOM HTML untuk Baris Baru (Eliminasi Template Literal JS) -->
+        <template id="templateRowPokok">
+            <tr class="row-tugas-pokok input-row row-slide-in">
+                <input type="hidden" name="log_id[]" value="">
+                <td class="nomor-baris text-center fw-bold text-muted">1</td>
+                <td>
+                    <select name="target_id[]" class="form-select form-select-sm" aria-label="Pilih Target RHK baris">
+                        <option value="">-- Pilih Target / RHK --</option>
+                        <?php if (!empty($daftar_target)): ?>
+                            <?php foreach($daftar_target as $target): ?>
+                                <?php 
+                                $cleanIndikator = esc($target['indikator_kinerja']);
+                                $cleanSatuan = esc($target['satuan']);
+                                $labelTarget = $cleanIndikator . ' (' . str_replace('.', ',', (float)$target['target_bulanan']) . ' ' . $cleanSatuan . ')'; 
+                                ?>
+                                <option value="<?= esc($target['id']) ?>" data-satuan="<?= $cleanSatuan ?>"><?= $labelTarget ?></option>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </select>
+                </td>
+                <td>
+                    <textarea name="deskripsi_kegiatan[]" class="form-control form-control-sm" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..." aria-label="Deskripsi Kegiatan Pokok baris"></textarea>
+                </td>
+                <td class="col-capaian-log">
+                    <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
+                        <input type="number" step="any" min="0.0001" name="jumlah_capaian[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-primary" placeholder="0" aria-label="Jumlah Capaian Pokok baris">
+                        <span class="input-group-text badge-capaian-satuan bg-light">-</span>
+                    </div>
+                </td>
+                <td>
+                    <input type="url" name="link_bukti[]" class="form-control form-control-sm" placeholder="https://..." aria-label="Tautan Bukti Pekerjaan Pokok baris">
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris btn-tactile" title="Hapus baris" aria-label="Hapus kegiatan pokok baris" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
+                </td>
+            </tr>
+        </template>
+
+        <template id="templateRowTambahan">
+            <tr class="row-tugas-tambahan row-slide-in">
+                <input type="hidden" name="log_tambahan_id[]" value="">
+                <td class="nomor-baris-tmb text-center fw-bold text-muted">1</td>
+                <td class="align-middle">
+                    <div class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill">
+                        <i class="bi bi-journal-plus me-1"></i> Tugas Tambahan
+                    </div>
+                </td>
+                <td>
+                    <textarea name="deskripsi_kegiatan_tambahan[]" class="form-control form-control-sm" rows="2" placeholder="Jelaskan tugas tambahan yang Anda kerjakan hari ini..." aria-label="Deskripsi Kegiatan Tambahan baris"></textarea>
+                </td>
+                <td class="col-capaian-log">
+                    <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
+                        <input type="number" step="any" min="0.0001" name="jumlah_capaian_tambahan[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-success" placeholder="0" aria-label="Jumlah Capaian Tambahan baris">
+                        <input type="text" name="satuan_tambahan[]" class="form-control input-satuan-val text-center" placeholder="Satuan" list="daftarSatuanStandar" aria-label="Satuan Capaian Tambahan baris">
+                    </div>
+                </td>
+                <td>
+                    <input type="url" name="link_bukti_tambahan[]" class="form-control form-control-sm" placeholder="https://..." aria-label="Tautan Bukti Pekerjaan Tambahan baris">
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris-tmb btn-tactile" title="Hapus" aria-label="Hapus tugas tambahan baris" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
+                </td>
+            </tr>
+        </template>
     </div>
 </div>
 
@@ -941,39 +1012,8 @@
                 newRow.find('.hapus-baris').removeAttr('data-id');
                 newRow.find('.is-invalid').removeClass('is-invalid');
             } else {
-                newRow = $(`
-                <tr class="row-tugas-pokok input-row row-slide-in">
-                    <input type="hidden" name="log_id[]" value="">
-                    <td class="nomor-baris text-center fw-bold text-muted">1</td>
-                    <td>
-                        <select name="target_id[]" class="form-select form-select-sm" aria-label="Pilih Target RHK baris">
-                            <option value="">-- Pilih Target / RHK --</option>
-                            <?php foreach($daftar_target as $target): ?>
-                                <?php 
-                                $cleanIndikator = str_replace('`', '', esc($target['indikator_kinerja']));
-                                $cleanSatuan = str_replace('`', '', esc($target['satuan']));
-                                $labelTarget = $cleanIndikator . ' (' . str_replace('.', ',', (float)$target['target_bulanan']) . ' ' . $cleanSatuan . ')'; 
-                                ?>
-                                <option value="<?= esc($target['id']) ?>" data-satuan="<?= $cleanSatuan ?>"><?= $labelTarget ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </td>
-                    <td>
-                        <textarea name="deskripsi_kegiatan[]" class="form-control form-control-sm" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..." aria-label="Deskripsi Kegiatan Pokok baris"></textarea>
-                    </td>
-                    <td class="col-capaian-log">
-                        <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
-                            <input type="number" step="any" min="0.0001" name="jumlah_capaian[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-primary" placeholder="0" aria-label="Jumlah Capaian Pokok baris">
-                            <span class="input-group-text badge-capaian-satuan bg-light">-</span>
-                        </div>
-                    </td>
-                    <td>
-                        <input type="url" name="link_bukti[]" class="form-control form-control-sm" placeholder="https://..." aria-label="Tautan Bukti Pekerjaan Pokok baris">
-                    </td>
-                    <td class="text-center">
-                        <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris btn-tactile" title="Hapus baris" aria-label="Hapus kegiatan pokok baris" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
-                    </td>
-                </tr>`);
+                const tpl = document.getElementById('templateRowPokok');
+                newRow = $(tpl.content.cloneNode(true)).find('tr');
             }
             
             $('#rowHeaderTambahan').before(newRow);
@@ -1110,31 +1150,8 @@
                 newRow.find('.hapus-baris-tmb').removeAttr('data-id');
                 newRow.find('.is-invalid').removeClass('is-invalid');
             } else {
-                newRow = $(`
-                <tr class="row-tugas-tambahan row-slide-in">
-                    <input type="hidden" name="log_tambahan_id[]" value="">
-                    <td class="nomor-baris-tmb text-center fw-bold text-muted">1</td>
-                    <td class="align-middle">
-                        <div class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill">
-                            <i class="bi bi-journal-plus me-1"></i> Tugas Tambahan
-                        </div>
-                    </td>
-                    <td>
-                        <textarea name="deskripsi_kegiatan_tambahan[]" class="form-control form-control-sm" rows="2" placeholder="Jelaskan tugas tambahan yang Anda kerjakan hari ini..." aria-label="Deskripsi Kegiatan Tambahan baris"></textarea>
-                    </td>
-                    <td class="col-capaian-log">
-                        <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
-                            <input type="number" step="any" min="0.0001" name="jumlah_capaian_tambahan[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-success" placeholder="0" aria-label="Jumlah Capaian Tambahan baris">
-                            <input type="text" name="satuan_tambahan[]" class="form-control input-satuan-val text-center" placeholder="Satuan" list="daftarSatuanStandar" aria-label="Satuan Capaian Tambahan baris">
-                        </div>
-                    </td>
-                    <td>
-                        <input type="url" name="link_bukti_tambahan[]" class="form-control form-control-sm" placeholder="https://..." aria-label="Tautan Bukti Pekerjaan Tambahan baris">
-                    </td>
-                    <td class="text-center">
-                        <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris-tmb btn-tactile" title="Hapus" aria-label="Hapus tugas tambahan baris" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-trash3"></i></button>
-                    </td>
-                </tr>`);
+                const tplTmb = document.getElementById('templateRowTambahan');
+                newRow = $(tplTmb.content.cloneNode(true)).find('tr');
             }
             tabelLog.append(newRow);
             updateRowNumbers();
@@ -1395,13 +1412,23 @@
             let submitBtn = $(this).find('button[type="submit"]');
             submitBtn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Mengirim Laporan...').prop('disabled', true);
             $('#btnSimpanSementara').prop('disabled', true);
+            setRowControlsDisabled(true);
         });
+
+        // LKH-06: Helper untuk menonaktifkan kontrol baris saat proses AJAX berlangsung (cegah pergeseran indeks baris)
+        function setRowControlsDisabled(disabled) {
+            $('#tambahBaris, #tambahBarisTambahan').prop('disabled', disabled);
+            tabelLog.find('.hapus-baris, .hapus-baris-tmb').prop('disabled', disabled);
+            $('#formLog button[type="submit"]').prop('disabled', disabled);
+        }
 
         // Single Unified Submit "Simpan Sementara" (AJAX)
         $('#btnSimpanSementara').on('click', function() {
             let btn = $(this);
             let originalText = btn.html();
             
+            // Nonaktifkan tombol tambah/hapus baris dan submit untuk mencegah pergeseran indeks
+            setRowControlsDisabled(true);
             btn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menyimpan...').prop('disabled', true);
             
             $.ajax({
@@ -1472,6 +1499,10 @@
                         alert('Terjadi kendala jaringan. Silakan coba lagi.');
                     }
                     btn.html(originalText).prop('disabled', false);
+                },
+                complete: function() {
+                    // Aktifkan kembali kontrol penambahan & penghapusan baris setelah AJAX selesai
+                    setRowControlsDisabled(false);
                 }
             });
         });

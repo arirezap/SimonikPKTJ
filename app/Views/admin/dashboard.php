@@ -757,14 +757,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         let tbody = '';
                         if(details && details.length > 0) {
                             details.forEach(item => {
-                                let badgeClass = 'bg-secondary';
-                                if (item.dinilai > 0 || item.rata_rata > 0) {
-                                    if (item.rata_rata > 100) badgeClass = 'bg-success';
-                                    else if (item.rata_rata > 90) badgeClass = 'bg-primary';
-                                    else if (item.rata_rata > 75) badgeClass = 'bg-info text-dark';
-                                    else if (item.rata_rata > 25) badgeClass = 'bg-warning text-dark';
-                                    else badgeClass = 'bg-danger';
-                                }
+                                const badgeClass = getPredikatBadgeClass(item.rata_rata, item.dinilai);
                                 
                                 const scoreItemStr = Number(item.rata_rata || 0).toFixed(2);
                                 tbody += `
@@ -925,6 +918,17 @@ document.addEventListener('DOMContentLoaded', function () {
             .replace(/'/g, '&#039;');
     }
 
+    // --- HELPER BADGE PREDIKAT KINERJA (STANDAR ECC) ---
+    function getPredikatBadgeClass(rata, dinilai = 1) {
+        if (!dinilai || Number(rata) === 0) return 'bg-secondary';
+        const val = Number(rata);
+        if (val > 100) return 'bg-success';
+        if (val > 90) return 'bg-primary';
+        if (val > 75) return 'bg-info text-dark';
+        if (val > 25) return 'bg-warning text-dark';
+        return 'bg-danger';
+    }
+
     // --- CHART DETAIL MODAL LOGIC ---
     function fetchChartDetail(mode, label, bulanVal = null) {
         const tahun = document.getElementById('tahun_kinerja').value;
@@ -954,7 +958,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const modal = bootstrap.Modal.getInstance(chartModalEl) || new bootstrap.Modal(chartModalEl);
         modal.show();
 
-        fetch(url)
+        fetch(url, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
             .then(res => res.json())
             .then(res => {
                 if (res.status === 'success') {
@@ -967,13 +973,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <thead class="table-light"><tr><th class="ps-3">Nama Pegawai</th><th class="text-center">Nilai Rata-rata</th></tr></thead><tbody>`;
                     
                     res.data.forEach(p => {
-                        let badgeColor = 'secondary';
-                        if (p.rata_rata > 100) badgeColor = 'success';
-                        else if (p.rata_rata > 90) badgeColor = 'primary';
-                        else if (p.rata_rata > 75) badgeColor = 'info text-dark';
-                        else if (p.rata_rata > 25) badgeColor = 'warning text-dark';
-                        else if (p.rata_rata > 0 || (p.dinilai && p.dinilai > 0)) badgeColor = 'danger';
-
+                        const badgeColor = getPredikatBadgeClass(p.rata_rata, p.dinilai !== undefined ? p.dinilai : 1);
                         const scoreDetailStr = Number(p.rata_rata || 0).toFixed(2);
                         html += `<tr>
                                     <td class="ps-3">
@@ -981,7 +981,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                         <div class="text-muted small">${escapeHtml(p.jabatan || '-')} • ${escapeHtml(p.unit || '-')}</div>
                                     </td>
                                     <td class="text-center">
-                                        <span class="badge bg-${badgeColor} rounded-pill px-3 py-2" style="font-size:0.85rem">${scoreDetailStr}</span>
+                                        <span class="badge ${badgeColor} rounded-pill px-3 py-2" style="font-size:0.85rem">${scoreDetailStr}</span>
                                     </td>
                                  </tr>`;
                     });
@@ -993,7 +993,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             })
             .catch(err => {
-                document.getElementById('detailChartBody').innerHTML = `<div class="alert alert-danger py-2">Gagal menghubungi server.</div>`;
+                document.getElementById('detailChartBody').innerHTML = `<div class="alert alert-danger py-2">Gagal memuat data. Silakan coba lagi.</div>`;
             });
     }
 </script>

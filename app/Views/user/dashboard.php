@@ -211,73 +211,6 @@ Dashboard
 </div>
 <?php endif; ?>
 
-<!-- 4. ANALISIS KINERJA UNIT (Khusus Super/Admin/Direktur/Wadir - 8pt Grid) -->
-<?php if (isset($isSuper) && $isSuper): ?>
-<div class="d-flex align-items-center mb-3">
-    <h5 class="fw-bold text-secondary mb-0 d-flex align-items-center gap-2" style="font-size: 1rem;"><i class="bi bi-building"></i> Kinerja Seluruh Pegawai (Per Unit)</h5>
-    <span class="badge bg-primary bg-opacity-10 text-primary ms-3 rounded-pill shadow-sm" style="font-size: 0.72rem; padding: 4px 10px;">Direktur / Wadir</span>
-</div>
-
-<div class="row g-4 mb-5">
-    <div class="col-12">
-        <div class="bento-card border-top border-4 border-info rounded-4 shadow-sm">
-            <div class="bento-body" style="padding: 24px;">
-                <?php if (empty($chartPegawaiUnitLabels)): ?>
-                    <div class="alert alert-light border text-center text-muted mb-0 shadow-sm rounded-3"><i class="bi bi-info-circle me-2"></i> Belum ada data rekap kinerja staf.</div>
-                <?php else: ?>
-                    <div class="performance-chart-container">
-                        <canvas id="unitPerformanceChart" role="img" aria-label="Grafik Batang Kinerja Pegawai Per Unit Kerja"></canvas>
-                    </div>
-                    <p class="text-center text-muted small mt-3 mb-0" style="font-size: 0.75rem;"><i class="bi bi-info-circle me-1"></i> Klik pada grafik batang untuk melihat detail anggota unit kerja.</p>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Detail Unit (Bento Popup - 8pt Grid System) -->
-<div class="modal fade" id="unitDetailModal" tabindex="-1" aria-labelledby="unitDetailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden" style="border-top: 4px solid #0d6efd !important;">
-            <div class="modal-header bg-light border-bottom" style="padding: 16px 24px;">
-                <div class="d-flex align-items-center" style="gap: 12px;">
-                    <div class="bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 40px; height: 40px; border-radius: 12px;">
-                        <i class="bi bi-building-check fs-5"></i>
-                    </div>
-                    <div>
-                        <h6 class="modal-title fw-bold text-dark mb-0 d-flex align-items-center flex-wrap gap-2" id="unitDetailModalLabel" style="font-size: 1rem; line-height: 1.3;">
-                            <span>Detail Pegawai:</span>
-                            <span id="modalUnitName" class="text-primary"></span>
-                            <span id="modalPeriodBadge" class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-0.5" style="font-size: 0.72rem;"></span>
-                        </h6>
-                    </div>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" style="padding: 24px;">
-                <div class="table-responsive bg-white border rounded-3 shadow-sm overflow-hidden">
-                    <table class="table table-hover align-middle mb-0 table-bento" style="font-size: 0.8rem;">
-                        <thead class="bg-light text-muted small text-uppercase" style="background-color: #f8fafc;">
-                            <tr>
-                                <th class="ps-3" style="padding: 12px 16px;">Nama Pegawai</th>
-                                <th class="text-center" style="padding: 12px 16px;">Target & Tambahan</th>
-                                <th class="text-center pe-3" style="padding: 12px 16px;">Rata-rata Nilai</th>
-                            </tr>
-                        </thead>
-                        <tbody id="unitDetailTbody" class="border-top-0">
-                            <!-- Injected via JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="modal-footer bg-light border-top" style="padding: 12px 24px;">
-                <button type="button" class="btn btn-sm btn-secondary rounded-pill px-4 fw-semibold" style="height: 32px; font-size: 0.78rem;" data-bs-dismiss="modal">Tutup</button>
-            </div>
-        </div>
-    </div>
-</div>
-<?php endif; ?>
-
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
@@ -285,8 +218,17 @@ Dashboard
 
 <script>
 window.userDashboardCharts = window.userDashboardCharts || {};
-window.unitStatsCache = {};
-window.unitLabelsCache = [];
+
+// Helper: Predikat Badge Class (Standar ECC)
+function getPredikatBadgeClass(rata, dinilai = 1) {
+    if (!dinilai || Number(rata) === 0) return 'bg-secondary';
+    const val = Number(rata);
+    if (val > 100) return 'bg-success';
+    if (val > 90) return 'bg-primary';
+    if (val > 75) return 'bg-info text-dark';
+    if (val > 25) return 'bg-warning text-dark';
+    return 'bg-danger';
+}
 
 // Helper: Smooth KPI Metric Count-Up Number Ticker
 function animateValue(elementId, start, end, duration = 800, suffix = '', decimals = 0) {
@@ -417,14 +359,7 @@ async function updateKinerjaData() {
                     let htmlStaf = '';
                     rekapDashboard.forEach(rekap => {
                         let rata = Number(rekap.rata_rata || 0);
-                        let warnaBadge = 'bg-secondary';
-                        if ((rekap.dinilai > 0) || rata > 0) {
-                            if (rata > 100) warnaBadge = 'bg-success';
-                            else if (rata > 90) warnaBadge = 'bg-primary';
-                            else if (rata > 75) warnaBadge = 'bg-info text-dark';
-                            else if (rata > 25) warnaBadge = 'bg-warning text-dark';
-                            else warnaBadge = 'bg-danger';
-                        }
+                        const warnaBadge = getPredikatBadgeClass(rata, rekap.dinilai);
                         
                         let inisial = (rekap.staf.nama_lengkap || '').trim().charAt(0).toUpperCase();
                         let jabatan = rekap.staf.jabatan || '-';
@@ -466,16 +401,6 @@ async function updateKinerjaData() {
                     tabelContainer.style.display = 'none';
                     tabelTitle.style.display = 'none';
                 }
-            }
-
-            // Update Unit Chart
-            if (data.isSuper && window.userDashboardCharts['unitChart']) {
-                const chart = window.userDashboardCharts['unitChart'];
-                window.unitLabelsCache = data.chartPegawaiUnitLabels || [];
-                window.unitStatsCache = data.unitStats || {};
-                chart.data.labels = window.unitLabelsCache;
-                chart.data.datasets[0].data = data.chartPegawaiUnitData || [];
-                chart.update();
             }
         }
     } catch(err) { console.error("Gagal mengambil data Kinerja:", err); }
@@ -677,109 +602,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
-
-    // --- INIT CHART UNIT (SUPER ADMIN) ---
-    <?php if (isset($isSuper) && $isSuper && !empty($chartPegawaiUnitLabels)): ?>
-    const ctxUnit = document.getElementById('unitPerformanceChart');
-    if (ctxUnit) {
-        window.unitStatsCache = <?= json_encode($unitStats ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
-        window.unitLabelsCache = <?= json_encode($chartPegawaiUnitLabels ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
-        const unitData = <?= json_encode($chartPegawaiUnitData ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
-        
-        window.userDashboardCharts['unitChart'] = new Chart(ctxUnit, {
-            type: 'bar',
-            data: {
-                labels: window.unitLabelsCache,
-                datasets: [{
-                    label: 'Rata-Rata Kinerja',
-                    data: unitData,
-                    backgroundColor: 'rgba(30, 64, 175, 0.85)',
-                    borderColor: '#1e40af',
-                    borderWidth: 1,
-                    borderRadius: 6,
-                    hoverBackgroundColor: '#1e40af'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: '#1e293b',
-                        padding: 12,
-                        callbacks: {
-                            label: function(context) { return 'Rata-Rata: ' + Number(context.parsed.y || 0).toFixed(2); }
-                        }
-                    }
-                },
-                scales: {
-                    y: { beginAtZero: true, suggestedMax: 100, grace: '8%', grid: { borderDash: [2, 4], color: '#f1f5f9' } },
-                    x: { grid: { display: false } }
-                },
-                onClick: (e, elements) => {
-                    if (elements.length > 0) {
-                        const idx = elements[0].index;
-                        const selectedUnit = window.unitLabelsCache[idx];
-                        const details = window.unitStatsCache[selectedUnit]?.anggota;
-                        
-                        document.getElementById('modalUnitName').innerText = selectedUnit;
-                        const tahunSelect = document.getElementById('tahun_kinerja');
-                        const periodBadgeEl = document.getElementById('modalPeriodBadge');
-                        if (periodBadgeEl) {
-                            periodBadgeEl.innerText = tahunSelect ? `Tahun ${tahunSelect.value}` : '';
-                        }
-                        
-                        let tbody = '';
-                        if(details && details.length > 0) {
-                            details.forEach(item => {
-                                let badgeClass = 'bg-success';
-                                if(item.rata_rata <= 25 && item.dinilai > 0) badgeClass = 'bg-danger';
-                                else if(item.rata_rata <= 75 && item.dinilai > 0) badgeClass = 'bg-warning text-dark';
-                                else if(item.rata_rata <= 90 && item.dinilai > 0) badgeClass = 'bg-secondary';
-                                else if(item.rata_rata <= 100 && item.dinilai > 0) badgeClass = 'bg-primary';
-                                else if(item.rata_rata == 0 && item.dinilai == 0) badgeClass = 'bg-secondary';
-                                
-                                const modalRataStr = Number(item.rata_rata || 0).toFixed(2);
-                                tbody += `
-                                    <tr>
-                                        <td class="ps-3 py-3 border-bottom border-light">
-                                            <div class="fw-bold text-dark">${escapeHtml(item.nama)}</div>
-                                            <div class="small text-muted">${escapeHtml(item.jabatan || '-')}</div>
-                                        </td>
-                                        <td class="text-center py-3 border-bottom border-light">
-                                            <div class="d-flex flex-column align-items-center justify-content-center gap-1">
-                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5" style="font-size: 0.72rem;">
-                                                    ${escapeHtml(item.total_pokok !== undefined ? item.total_pokok : item.total_laporan)} Pokok
-                                                </span>
-                                                <span class="badge ${(item.total_tambahan || 0) > 0 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-light text-muted border'} rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">
-                                                    ${escapeHtml(item.total_tambahan || 0)} Tambahan
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td class="text-center py-3 border-bottom border-light pe-3">
-                                            <span class="badge ${badgeClass} fs-6 rounded-pill px-3 shadow-sm">${modalRataStr}</span>
-                                        </td>
-                                    </tr>
-                                `;
-                            });
-                        } else {
-                            tbody = `<tr><td colspan="3" class="text-center text-muted py-4">Data staf kosong</td></tr>`;
-                        }
-                        document.getElementById('unitDetailTbody').innerHTML = tbody;
-                        
-                        const unitModalEl = document.getElementById('unitDetailModal');
-                        const unitModal = bootstrap.Modal.getInstance(unitModalEl) || new bootstrap.Modal(unitModalEl);
-                        unitModal.show();
-                    }
-                },
-                onHover: (e, elements) => {
-                    e.native.target.style.cursor = elements.length ? 'pointer' : 'default';
-                }
-            }
-        });
-    }
-    <?php endif; ?>
 });
 </script>
 <?= $this->endSection() ?>
