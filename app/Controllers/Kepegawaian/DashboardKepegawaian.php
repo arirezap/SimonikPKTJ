@@ -17,6 +17,13 @@ use Dompdf\Options;
 
 class DashboardKepegawaian extends BaseController
 {
+    protected $userModel;
+
+    public function __construct()
+    {
+        $this->userModel = new User();
+    }
+
     public function index()
     {
         // Role yang diizinkan: Kepegawaian, Admin, Direktur, Wadir, Kabag
@@ -327,6 +334,7 @@ class DashboardKepegawaian extends BaseController
 
         $laporanModel = new LaporanHarian();
         $logTambahanModel = new LogTugasTambahan();
+        $userModel = $this->userModel ?? new User();
 
         // 1. Batch Query Target Kinerja + Total Realisasi
         $targetBuilder = $laporanModel->select('target_kinerja_bulanan.*, IFNULL(SUM(log_kegiatan_harian.jumlah_capaian), 0) as total_realisasi')
@@ -376,19 +384,20 @@ class DashboardKepegawaian extends BaseController
             $atasanNama = '-';
 
             // Penyelarasan Atasan Langsung & Penugasan Berdasarkan Periode Bulan/Tahun Terpilih
-            if ($bulanTerpilih !== 'all' && $bulanTerpilih !== '') {
-                $penugasanBulan = $userModel->getPenugasanPeriode($uId, (int)$bulanTerpilih, (int)$tahunTerpilih);
-                if ($penugasanBulan) {
-                    $pegawai['jabatan'] = $penugasanBulan['jabatan'] ?: $pegawai['jabatan'];
-                    $pegawai['unit']    = $penugasanBulan['unit'] ?: $pegawai['unit'];
-                    if (!empty($penugasanBulan['atasan_id'])) {
-                        $atasanIdPeriode = (int)$penugasanBulan['atasan_id'];
-                        if (isset($userMap[$atasanIdPeriode])) {
-                            $atasanNama = $userMap[$atasanIdPeriode]['nama_lengkap'];
-                        } else {
-                            $bossRow = $userModel->select('nama_lengkap')->find($atasanIdPeriode);
-                            $atasanNama = $bossRow['nama_lengkap'] ?? '-';
-                        }
+            $bulanCek = ($bulanTerpilih !== 'all' && $bulanTerpilih !== '') ? (int)$bulanTerpilih : (int)date('n');
+            $penugasanBulan = $userModel->getPenugasanPeriode($uId, $bulanCek, (int)$tahunTerpilih);
+            if ($penugasanBulan) {
+                $pegawai['jabatan'] = $penugasanBulan['jabatan'] ?: $pegawai['jabatan'];
+                $pegawai['unit']    = $penugasanBulan['unit'] ?: $pegawai['unit'];
+                if (!empty($penugasanBulan['nama_atasan'])) {
+                    $atasanNama = $penugasanBulan['nama_atasan'];
+                } elseif (!empty($penugasanBulan['atasan_id'])) {
+                    $atasanIdPeriode = (int)$penugasanBulan['atasan_id'];
+                    if (isset($userMap[$atasanIdPeriode])) {
+                        $atasanNama = $userMap[$atasanIdPeriode]['nama_lengkap'];
+                    } else {
+                        $bossRow = $userModel->select('nama_lengkap')->find($atasanIdPeriode);
+                        $atasanNama = $bossRow['nama_lengkap'] ?? '-';
                     }
                 }
             }
@@ -1098,10 +1107,19 @@ class DashboardKepegawaian extends BaseController
             return $this->response->setJSON(['status' => 'error', 'message' => 'Pegawai tidak ditemukan']);
         }
 
-        // Atasan Info
+        // Penyelarasan Atasan Langsung & Penugasan Berdasarkan Periode
         $atasan = null;
-        if (!empty($pegawai['atasan_id'])) {
-            $atasan = $userModel->find($pegawai['atasan_id']);
+        $bulanCek = ($bulan !== 'all') ? (int)$bulan : (int)date('n');
+        $penugasan = $userModel->getPenugasanPeriode($userId, $bulanCek, (int)$tahun);
+        if ($penugasan) {
+            $pegawai['jabatan'] = $penugasan['jabatan'] ?: $pegawai['jabatan'];
+            $pegawai['unit']    = $penugasan['unit'] ?: $pegawai['unit'];
+            if (!empty($penugasan['atasan_id'])) {
+                $atasan = $userModel->select('id, nama_lengkap, nip, jabatan, unit')->find($penugasan['atasan_id']);
+            }
+        }
+        if (!$atasan && !empty($pegawai['atasan_id'])) {
+            $atasan = $userModel->select('id, nama_lengkap, nip, jabatan, unit')->find($pegawai['atasan_id']);
         }
 
         $laporanModel = new LaporanHarian();

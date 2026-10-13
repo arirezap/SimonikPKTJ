@@ -247,7 +247,7 @@
                 <th style="width: 180px;">Nama Pegawai & NIP</th>
                 <th style="width: 120px;">Jabatan</th>
                 <th style="width: 130px;">Unit Kerja</th>
-                <th style="width: 140px;">Atasan Penyetuju</th>
+                <th style="width: 140px;">Atasan Langsung</th>
                 <th style="width: 55px;">Target</th>
                 <th style="width: 100px;">Status Pengiriman</th>
                 <th style="width: 100px;">Status Persetujuan</th>

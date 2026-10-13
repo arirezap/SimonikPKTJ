@@ -609,9 +609,9 @@
                                     <i class="bi bi-arrow-down-up sort-indicator"></i>
                                 </div>
                             </th>
-                            <th style="min-width: 170px;" class="sortable-th" data-sort-key="atasan" data-sort-type="string" tabindex="0" role="button" aria-sort="none" title="Klik untuk mengurutkan berdasarkan atasan penyetuju">
+                            <th style="min-width: 170px;" class="sortable-th" data-sort-key="atasan" data-sort-type="string" tabindex="0" role="button" aria-sort="none" title="Klik untuk mengurutkan berdasarkan atasan langsung">
                                 <div class="d-flex align-items-center justify-content-between gap-1">
-                                    <span>Atasan Penyetuju</span>
+                                    <span>Atasan Langsung</span>
                                     <i class="bi bi-arrow-down-up sort-indicator"></i>
                                 </div>
                             </th>
@@ -721,7 +721,7 @@
                                         </span>
                                     </td>
 
-                                    <!-- Atasan Penyetuju -->
+                                    <!-- Atasan Langsung -->
                                     <td>
                                         <?php if ($user['role'] === 'direktur'): ?>
                                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5 small">
@@ -967,7 +967,7 @@
                             </div>
                             <div class="col-md-5 border-start-md">
                                 <div class="ps-md-3">
-                                    <span class="text-muted small fw-semibold text-uppercase d-block mb-1" style="font-size: 0.6875rem; letter-spacing: 0.04em;">Atasan Langsung Penyetuju:</span>
+                                    <span class="text-muted small fw-semibold text-uppercase d-block mb-1" style="font-size: 0.6875rem; letter-spacing: 0.04em;">Atasan Langsung:</span>
                                     <div class="fw-bold text-dark small" id="modalAtasanNama">-</div>
                                     <div class="text-muted small mt-0.5" id="modalAtasanJabatan" style="font-size: 0.72rem;">-</div>
                                 </div>

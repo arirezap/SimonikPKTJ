@@ -91,8 +91,18 @@ class MonitoringTargetController extends BaseController
             return $this->response->setStatusCode(404)->setJSON(['success' => false, 'message' => 'Pegawai tidak ditemukan']);
         }
 
+        // Penyelarasan Atasan Langsung & Penugasan Berdasarkan Periode
         $atasan = null;
-        if (!empty($user['atasan_id'])) {
+        $bulanCek = ($bulan !== 'all') ? (int)$bulan : (int)date('n');
+        $penugasan = $userModel->getPenugasanPeriode($userId, $bulanCek, (int)$tahun);
+        if ($penugasan) {
+            $user['jabatan'] = $penugasan['jabatan'] ?: $user['jabatan'];
+            $user['unit']    = $penugasan['unit'] ?: $user['unit'];
+            if (!empty($penugasan['atasan_id'])) {
+                $atasan = $userModel->select('id, nama_lengkap, nip, jabatan, unit')->find($penugasan['atasan_id']);
+            }
+        }
+        if (!$atasan && !empty($user['atasan_id'])) {
             $atasan = $userModel->select('id, nama_lengkap, nip, jabatan, unit')->find($user['atasan_id']);
         }
 
@@ -655,18 +665,25 @@ class MonitoringTargetController extends BaseController
 
             // Lookup atasan langsung & penugasan dinamis periode
             $atasanInfo = null;
-            if ($bulanTerpilih !== 'all' && !empty($bulanTerpilih)) {
-                $penugasanBulan = $userModel->getPenugasanPeriode($pId, (int)$bulanTerpilih, (int)$tahunTerpilih);
-                if ($penugasanBulan) {
-                    $p['jabatan'] = $penugasanBulan['jabatan'] ?: $p['jabatan'];
-                    $p['unit']    = $penugasanBulan['unit'] ?: $p['unit'];
-                    if (!empty($penugasanBulan['atasan_id'])) {
-                        $atasanIdPeriode = (int)$penugasanBulan['atasan_id'];
-                        if (isset($userMap[$atasanIdPeriode])) {
-                            $atasanInfo = $userMap[$atasanIdPeriode];
-                        } else {
-                            $atasanInfo = $userModel->select('id, nama_lengkap, nip, unit, jabatan')->find($atasanIdPeriode);
-                        }
+            $bulanCek = ($bulanTerpilih !== 'all' && !empty($bulanTerpilih)) ? (int)$bulanTerpilih : (int)date('n');
+            $penugasanBulan = $userModel->getPenugasanPeriode($pId, $bulanCek, (int)$tahunTerpilih);
+            if ($penugasanBulan) {
+                $p['jabatan'] = $penugasanBulan['jabatan'] ?: $p['jabatan'];
+                $p['unit']    = $penugasanBulan['unit'] ?: $p['unit'];
+                if (!empty($penugasanBulan['atasan_id'])) {
+                    $atasanIdPeriode = (int)$penugasanBulan['atasan_id'];
+                    if (isset($userMap[$atasanIdPeriode])) {
+                        $atasanInfo = $userMap[$atasanIdPeriode];
+                    } elseif (!empty($penugasanBulan['nama_atasan'])) {
+                        $atasanInfo = [
+                            'id'           => $atasanIdPeriode,
+                            'nama_lengkap' => $penugasanBulan['nama_atasan'],
+                            'nip'          => $penugasanBulan['nip_atasan'] ?? '',
+                            'jabatan'      => $penugasanBulan['jabatan_atasan'] ?? '',
+                            'unit'         => $penugasanBulan['unit'] ?? ''
+                        ];
+                    } else {
+                        $atasanInfo = $userModel->select('id, nama_lengkap, nip, unit, jabatan')->find($atasanIdPeriode);
                     }
                 }
             }
