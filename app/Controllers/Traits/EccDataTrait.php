@@ -123,18 +123,70 @@ trait EccDataTrait
             ];
         }
 
-        // --- Ambil daftar tahun unik (gabungan dari skor dan kinerja) ---
-        $rencanaModel = new RencanaKinerjaModel();
-        
-        $ecc_tahun_raw = $scoreModel->select('tahun')->distinct()->orderBy('tahun', 'DESC')->findAll();
-        $kinerja_tahun_raw = $rencanaModel->select('tahun_anggaran AS tahun')->distinct()->orderBy('tahun_anggaran', 'DESC')->findAll();
-        
-        $ecc_tahun = array_column($ecc_tahun_raw, 'tahun');
-        $kinerja_tahun = array_column($kinerja_tahun_raw, 'tahun');
-        
-        // Gabungkan semua tahun unik, dan pastikan tahun sekarang selalu ada.
-        $daftar_tahun = array_unique(array_merge([date('Y')], $ecc_tahun, $kinerja_tahun));
-        // Urutkan dari yang terbaru ke terlama
+        // --- Ambil daftar tahun unik (gabungan dari target bulanan, rencana tahunan, skor LED, tugas tambahan, dan riwayat atasan) ---
+        $db = \Config\Database::connect();
+        $years = [(int)date('Y'), (int)date('Y') - 1];
+
+        // 1. Dari target_kinerja_bulanan
+        if ($db->tableExists('target_kinerja_bulanan')) {
+            $targetYears = $db->table('target_kinerja_bulanan')
+                ->select('DISTINCT(tahun) as tahun')
+                ->where('tahun IS NOT NULL')
+                ->where('tahun >=', 2020)
+                ->get()->getResultArray();
+            foreach ($targetYears as $ty) {
+                if (!empty($ty['tahun'])) $years[] = (int)$ty['tahun'];
+            }
+        }
+
+        // 2. Dari rencana_kinerja
+        if ($db->tableExists('rencana_kinerja')) {
+            $rencanaYears = $db->table('rencana_kinerja')
+                ->select('DISTINCT(tahun_anggaran) as tahun')
+                ->where('tahun_anggaran IS NOT NULL')
+                ->where('tahun_anggaran >=', 2020)
+                ->get()->getResultArray();
+            foreach ($rencanaYears as $ry) {
+                if (!empty($ry['tahun'])) $years[] = (int)$ry['tahun'];
+            }
+        }
+
+        // 3. Dari led_scores
+        if ($db->tableExists('led_scores')) {
+            $scoreYears = $db->table('led_scores')
+                ->select('DISTINCT(tahun) as tahun')
+                ->where('tahun IS NOT NULL')
+                ->where('tahun >=', 2020)
+                ->get()->getResultArray();
+            foreach ($scoreYears as $sy) {
+                if (!empty($sy['tahun'])) $years[] = (int)$sy['tahun'];
+            }
+        }
+
+        // 4. Dari riwayat_atasan
+        if ($db->tableExists('riwayat_atasan')) {
+            $riwayatYears = $db->table('riwayat_atasan')
+                ->select('DISTINCT(tahun) as tahun')
+                ->where('tahun IS NOT NULL')
+                ->where('tahun >=', 2020)
+                ->get()->getResultArray();
+            foreach ($riwayatYears as $rwy) {
+                if (!empty($rwy['tahun'])) $years[] = (int)$rwy['tahun'];
+            }
+        }
+
+        // 5. Dari log_tugas_tambahan
+        if ($db->tableExists('log_tugas_tambahan')) {
+            $tambahanYears = $db->table('log_tugas_tambahan')
+                ->select('DISTINCT(YEAR(tanggal_kegiatan)) as tahun')
+                ->where('tanggal_kegiatan IS NOT NULL')
+                ->get()->getResultArray();
+            foreach ($tambahanYears as $tmy) {
+                if (!empty($tmy['tahun']) && (int)$tmy['tahun'] >= 2020) $years[] = (int)$tmy['tahun'];
+            }
+        }
+
+        $daftar_tahun = array_values(array_unique(array_filter($years)));
         rsort($daftar_tahun);
 
         return [

@@ -1,6 +1,6 @@
 # Panduan Audit & Optimasi Evidence Command Center (ECC)
 
-**Versi panduan:** 3.1.0 · **Diperbarui:** 17 September 2026
+**Versi panduan:** 3.2.0 · **Diperbarui:** 13 Oktober 2026
 
 **Lingkungan:** Laragon lokal dan cPanel produksi. Catat hasil keduanya secara terpisah.
 
@@ -90,6 +90,8 @@ Gunakan pilar yang relevan; tulis alasan jika tidak berlaku. Pemeriksaan kerenta
 - [ ] Status dan otorisasi diperiksa kembali saat menyimpan. Tombol nonaktif tidak mencegah pengiriman ganda, perubahan bersamaan, atau permintaan yang dimanipulasi.
 - [ ] Gagal notifikasi tidak membatalkan penyimpanan utama yang berhasil; transaksi gagal tidak menghasilkan pesan sukses atau notifikasi persetujuan.
 - [ ] Perubahan unit menyinkronkan `unit_id` dan `unit`; relasi atasan mencegah diri sendiri serta siklus hierarki. Periksa nasib catatan terkait ketika data induk dihapus.
+- [ ] Preservasi data pegawai pensiun, mutasi, dan nonaktif: Pegawai dengan status `pensiun`, `mutasi_keluar`, atau `nonaktif` tetap muncul pada dashboard dan monitoring periode lampau selama periode tersebut sebelum/pada `tmt_selesai`. Data riwayat kinerja historis tidak boleh terhapus atau hilang saat status pegawai berubah.
+- [ ] Riwayat penugasan multi-periode (rotasi jabatan, pindah unit, dan pergantian pimpinan): Perubahan atasan langsung, unit kerja, atau jabatan dicatat secara temporal (`riwayat_atasan`). Kueri rekap, cetak dokumen SKP, dan filtering dashboard mengacu pada penugasan periode bersangkutan (`getPenugasanPeriode()`), bukan menimpa data historis secara destruktif.
 - [ ] Periode, zona waktu, pergantian bulan/tahun, tahun kabisat, hari libur, dan tenggat memakai acuan konsisten.
 
 ### C. Antarmuka dan bahasa
@@ -148,17 +150,17 @@ Konfirmasi keberadaan berkas/route pada revisi yang diperiksa. Semua modul mengi
 | Sasaran | Titik masuk utama | Pemeriksaan khusus |
 | --- | --- | --- |
 | Autentikasi/sesi | `app/Controllers/Auth.php`, `app/Filters/AuthFilter.php` | Login/logout, remember-me, regenerasi, fingerprint, pembatasan login |
-| Dashboard | `app/Controllers/DashboardController.php`, `app/Controllers/Admin/Dashboard.php`, `app/Controllers/User/Dashboard.php` | Cakupan institusi/unit/staf, drilldown, ranking, periode, nilai terbit |
+| Dashboard | `app/Controllers/DashboardController.php`, `app/Controllers/Admin/Dashboard.php`, `app/Controllers/User/Dashboard.php` | Cakupan institusi/unit/staf, pegawai mutasi/pensiun dengan TMT aktif, riwayat penugasan unit/jabatan periode terkait, filter tahun multi-periode (2025/2026), nilai terbit, predikat ≤ 25% (Perhatian Khusus) dan Belum Dinilai |
 | Agregasi bersama | `app/Controllers/Traits/KinerjaBatchTrait.php`, `app/Controllers/Traits/EccDataTrait.php` | Seluruh pemanggil, data tahunan, tugas tambahan, rata-rata dan bulan bernilai nol |
 | Target bulanan | `app/Controllers/User/LaporanHarianController.php`, `app/Models/TargetKinerja.php`, `app/Models/LaporanHarian.php` | Draf/pengajuan/persetujuan, salin periode, batas baris, Direktur, pembatalan dan dampak ke log |
 | Kegiatan harian | `app/Controllers/User/LogKegiatanController.php`, `app/Models/LogKegiatanHarian.php`, `app/Models/LogTugasTambahan.php` | Target sah, pemilik/tanggal, draf masa depan, tenggat, revisi, bukti, kalender |
 | Penilaian | `app/Controllers/User/PenilaianKinerjaController.php` | Target disetujui, hak penilai, draf/terbit/reset, kosong/nol, rentang 0–150 |
-| Monitoring target | `app/Controllers/Kepegawaian/MonitoringTargetController.php` | Peran, belum mengisi, status campuran, bulanan/tahunan, layar dan ekspor |
-| Monitoring penilaian | `app/Controllers/Kepegawaian/DashboardKepegawaian.php` | Kelengkapan, nilai terbit, predikat, hierarki, detail/Excel/PDF |
-| Monitoring/remunerasi | `app/Controllers/Admin/MonitoringController.php`, `app/Controllers/Admin/RemunerasiController.php` | Sumber nilai, akses, mutasi, periode, pembatasan ekspor |
-| Kelola pengguna | `app/Controllers/Admin/UserController.php`, `app/Models/User.php` | Peran, impor/batch, duplikasi, reset, penghapusan, unggahan |
-| Profil/direktori | `app/Controllers/Profile.php`, `app/Controllers/User/DaftarPegawaiController.php` | Field diubah/dilihat, unit ganda, self-atasan, pemberian peran, foto, pencarian |
-| Kelola tim | `app/Controllers/User/TimController.php` | Hak tambah/keluarkan staf, atasan/unit, siklus, perubahan unit/peran |
+| Monitoring target | `app/Controllers/Kepegawaian/MonitoringTargetController.php` | Peran, pegawai pensiun/mutasi dengan TMT aktif, riwayat penugasan/atasan periode bersangkutan, belum mengisi, status campuran, bulanan/tahunan, layar dan ekspor |
+| Monitoring penilaian | `app/Controllers/Kepegawaian/DashboardKepegawaian.php` | Kelengkapan, pegawai pensiun/mutasi dengan TMT aktif, riwayat penugasan/atasan penilai multi-periode, nilai terbit, predikat, hierarki, detail/Excel/PDF |
+| Monitoring/remunerasi | `app/Controllers/Admin/MonitoringController.php`, `app/Controllers/Admin/RemunerasiController.php` | Sumber nilai, akses, mutasi pegawai, periode, pembatasan ekspor |
+| Kelola pengguna | `app/Controllers/Admin/UserController.php`, `app/Models/User.php` | Peran, status_pegawai (aktif, mutasi, pensiun, nonaktif), tmt_selesai, riwayat penugasan periode (`riwayat_atasan`), impor/batch, duplikasi, reset, penghapusan, unggahan |
+| Profil/direktori | `app/Controllers/Profile.php`, `app/Controllers/User/DaftarPegawaiController.php` | Field diubah/dilihat, smart lock atasan/unit bagi staf biasa, status pegawai (mutasi/pensiun), self-atasan, unit ganda, pemberian peran, foto, pencarian |
+| Kelola tim | `app/Controllers/User/TimController.php` | Hak tambah/keluarkan staf, sinkronisasi riwayat atasan periode aktif, perubahan unit/jabatan pimpinan, siklus hierarki |
 | Kontrak/pakta | `app/Controllers/User/KontrakController.php`, `app/Controllers/User/PaktaController.php` | Identitas, periode, penandatangan, data kosong, cetak A4 |
 | LED/simulasi | `app/Controllers/EccController.php`, `app/Controllers/Admin/MasterDataController.php`, `app/Models/LedScore.php` | Prodi/unit, bukti, persetujuan, simulasi SPM/admin, skor/grafik |
 | Master/hari libur | `app/Controllers/Admin/MasterDataController.php`, `app/Models/UnitKerja.php`, `app/Models/HolidayModel.php` | Duplikasi, hapus data berelasi, nama unit, API gagal/timeout/sinkronisasi berulang |
@@ -173,6 +175,11 @@ Konfirmasi keberadaan berkas/route pada revisi yang diperiksa. Semua modul mengi
 - Penilaian staf mensyaratkan seluruh target periode terkait disetujui. Reset mengembalikan `nilai_capaian` dan `status_penilaian` ke `NULL`.
 - Monitoring kepegawaian mengikuti peran: `kepegawaian`, `admin`, `direktur`, `wadir`, `kabag`, `kabag_aak`, `kabag_kuk`. Hak melihat tidak otomatis memberi hak mengubah.
 - Nilai belum terbit tidak muncul sebagai nilai resmi. Periksa rumus di layar/grafik/detail/Excel/PDF dan kontribusi tugas tambahan.
+- **Pegawai pensiun, mutasi keluar, dan nonaktif:** Tetap diikutsertakan dalam rekapitulasi, dashboard, dan monitoring periode lampau berbasis tanggal batas TMT (`tmt_selesai >= periodMonth` atau `YEAR(tmt_selesai) >= tahun_kinerja`). Tampilkan lencana (*badge*) status yang jelas pada antarmuka pengguna tanpa mengaburkan data capaian yang sah.
+- **Rotasi jabatan, pindah unit kerja, dan pergantian pimpinan (multi-periode):** Hubungan atasan langsung, unit, dan jabatan pegawai mengacu pada riwayat penugasan periode aktif (`riwayat_atasan` via `User::getPenugasanPeriode()`). Penilaian kinerja lampau, lembar cetak SKP, dan agregasi unit kerja masa lalu tetap terkunci sesuai struktur organisasi pada periode bersangkutan.
+- **Persetujuan target dan penilaian kinerja saat pergantian pimpinan:** Pejabat yang berhak menyetujui target dan memberikan nilai capaian staf pada suatu periode adalah atasan yang aktif menjabat pada periode bulan/tahun bersangkutan. Pimpinan baru hanya berwenang memproses periode berjalan sejak awal masa penugasannya. Lembar cetak laporan PDF/Excel menyelaraskan pejabat penilai dan atasan penilai sesuai riwayat jabatan masa tersebut (PermenPAN-RB No. 6 Tahun 2022).
+- **Proteksi integritas profil staf (*Smart Lock*):** Input pilihan atasan langsung dan unit kerja pada menu profil (`/profile`) dikunci bagi staf biasa. Penyesuaian hierarki penugasan dan rotasi mutasi dikelola secara terpusat oleh Admin atau Kepegawaian untuk menjamin konsistensi audit trail institusi.
+- **Filter tahun dan penanganan nilai kosong/0 di dashboard:** Dropdown filter tahun wajib menghimpun seluruh riwayat tahun (misal: 2025 dan 2026). Capaian dengan nilai 0 atau belum berstatus terbit dilabeli **"Belum Dinilai"**, sedangkan daftar evaluasi perhatian khusus dibatasi secara ketat hanya untuk nilai ≤ 25% (tidak mencampur pegawai yang belum dinilai).
 - **Konflik teridentifikasi saat penyusunan panduan:** `.agents/AGENTS.md` dan `PROJECT_CONTEXT.md` menetapkan “Baik” pada `> 90`, sedangkan skill ECC dan `design.md` memakai `>= 90`. Dokumen juga perlu membedakan nol yang sudah dinilai dari belum dinilai. Periksa apakah konflik masih ada; jangan mengubah ambang tanpa keputusan kebijakan pengguna.
 - Skenario batas nilai: `NULL`, kosong, `0`, `25`, `25.01`, `75`, `75.01`, `89.99`, `90`, `90.01`, `100`, `100.01`, `150`, dan nilai di luar rentang. Tambahkan tanpa target, hanya tugas tambahan, sebagian belum dinilai, serta rata-rata tahunan dengan bulan bernilai nol.
 
@@ -284,6 +291,8 @@ PHPUnit, browser testing, dan pengujian beban hanya dijalankan setelah diizinkan
 `php spark migrate`, seeder, `php spark cache:clear`, perubahan skema/data, restore, dan pembersihan log adalah tindakan perubahan. Tempatkan dalam rencana implementasi yang diizinkan, bukan paket perintah audit.
 
 ## 12. Catatan revisi
+
+Versi 3.2.0 (13 Oktober 2026) menambahkan panduan audit dan aturan bisnis penanganan pegawai dinamis (pensiun, mutasi keluar, rotasi jabatan, pindah unit kerja, dan pergantian atasan langsung) berbasis riwayat penugasan multi-periode (`riwayat_atasan`), preservasi data kinerja lampau berbasis `tmt_selesai`, standardisasi label "Belum Dinilai", pembatasan daftar perhatian khusus (≤ 25%), serta perluasan cakupan filter tahun lintas periode (2025/2026).
 
 Versi 3.0.0 mengubah daftar klaim kelulusan menjadi panduan pemeriksaan berulang. Checklist lama bertanda selesai dan angka “100% modul”/“90% infrastruktur” tidak dipakai sebagai status saat ini karena tidak menyertakan bukti per sesi. Riwayat sebelumnya tetap tersedia di Git dan dokumen riwayat terkait.
 

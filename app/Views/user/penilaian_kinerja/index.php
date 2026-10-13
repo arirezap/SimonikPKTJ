@@ -1511,6 +1511,7 @@
                                                     <th style="width: 110px;" class="text-center">Realisasi</th>
                                                     <th style="width: 90px;" class="text-center">Bukti</th>
                                                     <th style="width: 120px;" class="text-center">Status</th>
+                                                    <th style="width: 120px;" class="text-center">Aksi</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -1569,7 +1570,7 @@
                                                                 <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2.5 py-1" style="font-size: 0.7rem;">
                                                                     <i class="bi bi-hourglass-split me-1"></i> Terkirim
                                                                 </span>
-                                                            <?php elseif ($st === 'draf'): ?>
+                                                            <?php elseif ($st === 'draf' || $st === 'draft'): ?>
                                                                 <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2.5 py-1" style="font-size: 0.7rem;">
                                                                     <i class="bi bi-pencil me-1"></i> Draf
                                                                 </span>
@@ -1577,6 +1578,34 @@
                                                                 <span class="badge bg-light text-dark border rounded-pill px-2.5 py-1" style="font-size: 0.7rem;">
                                                                     <?= esc(ucfirst($st)) ?>
                                                                 </span>
+                                                            <?php endif; ?>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <?php 
+                                                                $canManage = (hasAnyRole(['admin', 'direktur']) || !empty($is_atasan) || !empty($is_penilai));
+                                                                $tglRaw = $logItem['tanggal_kegiatan'] ?? '';
+                                                                $tglFormatted = $tglWaktu ? date('d/m/Y', $tglWaktu) : $tglRaw;
+                                                            ?>
+                                                            <?php if ($canManage && !empty($staf_id_terpilih)): ?>
+                                                                <?php if ($st === 'draf' || $st === 'draft'): ?>
+                                                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2.5 py-1" style="font-size: 0.6875rem;" title="Laporan sudah dalam mode revisi aktif oleh staf">
+                                                                        Mode Revisi
+                                                                    </span>
+                                                                <?php elseif ($st === 'terkirim' || $st === 'disetujui'): ?>
+                                                                    <button type="button" 
+                                                                        class="btn btn-sm btn-outline-warning text-dark border-warning-subtle fw-semibold rounded-pill px-2.5 py-0.5 btn-tactile btn-buka-kunci-penilaian"
+                                                                        data-tanggal="<?= esc($tglRaw) ?>"
+                                                                        data-staf-id="<?= esc($staf_id_terpilih) ?>"
+                                                                        data-tanggal-formatted="<?= esc($tglFormatted) ?>"
+                                                                        style="font-size: 0.72rem; height: 30px; display: inline-flex; align-items: center;"
+                                                                        title="Kembalikan laporan tanggal ini agar dapat direvisi staf">
+                                                                        <i class="bi bi-arrow-counterclockwise text-warning me-1"></i> Kembalikan
+                                                                    </button>
+                                                                <?php else: ?>
+                                                                    <span class="text-muted small">-</span>
+                                                                <?php endif; ?>
+                                                            <?php else: ?>
+                                                                <span class="text-muted small">-</span>
                                                             <?php endif; ?>
                                                         </td>
                                                     </tr>
@@ -2708,13 +2737,13 @@
 
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
-                    title: 'Izinkan Revisi?',
-                    html: `Laporan tanggal <strong>${tglFormatted}</strong> akan dibuka untuk direvisi staf.`,
+                    title: 'Kembalikan Laporan?',
+                    html: `Laporan tanggal <strong>${tglFormatted}</strong> akan dikembalikan ke status draf agar dapat direvisi staf.`,
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonColor: '#ffc107',
                     cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="bi bi-pencil-square me-1"></i> Ya, Buka Revisi',
+                    confirmButtonText: '<i class="bi bi-arrow-counterclockwise me-1"></i> Ya, Kembalikan',
                     cancelButtonText: 'Batal'
                 }).then((result) => {
                     if (result.isConfirmed) {
@@ -2722,7 +2751,7 @@
                     }
                 });
             } else {
-                if (confirm(`Izinkan Revisi Laporan harian staf tanggal ${tglFormatted}?`)) {
+                if (confirm(`Kembalikan laporan tanggal ${tglFormatted} agar dapat direvisi staf?`)) {
                     executeBukaKunciStaf();
                 }
             }

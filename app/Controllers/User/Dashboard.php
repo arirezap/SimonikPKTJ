@@ -20,7 +20,7 @@ class Dashboard extends BaseController
         $ajax_type = $this->request->getGet('ajax_type');
         $tahun_ecc = $this->request->getGet('tahun_ecc') ?? date('Y');
         $tahun_kinerja = $this->request->getGet('tahun_kinerja') ?? (string)date('Y');
-        $bulanTerpilih = $this->request->getGet('bulan_kinerja') ?? (string)date('n');
+        $bulanTerpilih = $this->request->getGet('bulan_kinerja') ?? 'all';
 
         // --- 1. PROSES DATA ECC ---
         $eccData = null;
@@ -39,21 +39,32 @@ class Dashboard extends BaseController
             // BATCH LOAD: Ambil seluruh data kinerja tahun ini dalam 2 query ringkas (O(1) in-memory)
             [$batchTargets, $batchTambahan] = $this->loadBatchKinerjaData($tahun_kinerja);
 
-            $statPersonal = $this->hitungKinerjaPegawai($user_id, 'all', $tahun_kinerja, $batchTargets, $batchTambahan);
+            $statPersonal = $this->hitungKinerjaPegawai($user_id, $bulanTerpilih, $tahun_kinerja, $batchTargets, $batchTambahan);
             $rataRataCapaian = $statPersonal['rata_rata'];
             $totalIndikator = $statPersonal['total_laporan'];
             
+            $statYear = ($bulanTerpilih === 'all') ? $statPersonal : $this->hitungKinerjaPegawai($user_id, 'all', $tahun_kinerja, $batchTargets, $batchTambahan);
             $lineChartRealisasiData = [];
             for ($i = 1; $i <= 12; $i++) {
-                $lineChartRealisasiData[] = $statPersonal['monthly_averages'][$i] ?? 0;
+                $lineChartRealisasiData[] = $statYear['monthly_averages'][$i] ?? 0;
             }
 
             $role = session()->get('role');
-            $daftarStaf = $userModel->getAllStaf($user_id, $role);
+            $bulanCek = ($bulanTerpilih === 'all' || empty($bulanTerpilih)) ? 12 : (int)$bulanTerpilih;
+            $periodDate = sprintf('%04d-%02d-01', (int)$tahun_kinerja, $bulanCek);
+
+            $daftarStaf = $userModel->getAllStaf($user_id, $role, $periodDate);
             $isAtasan = !empty($daftarStaf);
             
-            $userSelect = 'id, nama_lengkap, nip, username, jabatan, unit, role';
+            $userSelect = 'id, nama_lengkap, nip, username, jabatan, unit, role, status_pegawai, tmt_selesai, foto';
             $me = $userModel->select($userSelect)->find($user_id);
+            if ($me) {
+                $penugasanMe = $userModel->getPenugasanPeriode($user_id, $bulanCek, (int)$tahun_kinerja);
+                if ($penugasanMe) {
+                    $me['unit'] = $penugasanMe['unit'] ?? $me['unit'];
+                    $me['jabatan'] = $penugasanMe['jabatan'] ?? $me['jabatan'];
+                }
+            }
             $isUnitPeers = false;
             
             // Jika bukan atasan langsung, tampilkan data rekan kerja aktif dalam 1 unit
@@ -64,7 +75,17 @@ class Dashboard extends BaseController
                     ->where('role !=', 'admin');
                 
                 if ($db->fieldExists('status_pegawai', 'users')) {
-                    $peerQuery->where('status_pegawai', 'aktif');
+                    if ($db->fieldExists('tmt_selesai', 'users')) {
+                        $peerQuery->groupStart()
+                            ->where('status_pegawai', 'aktif')
+                            ->orGroupStart()
+                                ->whereIn('status_pegawai', ['mutasi', 'pensiun'])
+                                ->where('tmt_selesai >=', $periodDate)
+                            ->groupEnd()
+                        ->groupEnd();
+                    } else {
+                        $peerQuery->where('status_pegawai', 'aktif');
+                    }
                 }
                 $daftarStaf = $peerQuery->findAll();
                 $isUnitPeers = true;
@@ -74,6 +95,12 @@ class Dashboard extends BaseController
 
             if (!empty($daftarStaf)) {
                 foreach ($daftarStaf as $staf) {
+                    $penugasanStaf = $userModel->getPenugasanPeriode($staf['id'], $bulanCek, (int)$tahun_kinerja);
+                    if ($penugasanStaf) {
+                        $staf['unit'] = $penugasanStaf['unit'] ?? $staf['unit'];
+                        $staf['jabatan'] = $penugasanStaf['jabatan'] ?? $staf['jabatan'];
+                    }
+
                     $statStaf = $this->hitungKinerjaPegawai($staf['id'], $bulanTerpilih, $tahun_kinerja, $batchTargets, $batchTambahan);
                     
                     $rekapDashboard[] = [
@@ -95,7 +122,8 @@ class Dashboard extends BaseController
                     'isAtasan'             => $isAtasan,
                     'isUnitPeers'          => $isUnitPeers,
                     'rekapDashboard'       => $rekapDashboard,
-                    'tahun'                => $tahun_kinerja
+                    'tahun'                => $tahun_kinerja,
+                    'bulan'                => $bulanTerpilih
                 ]);
             }
         }
@@ -105,6 +133,7 @@ class Dashboard extends BaseController
             'page_title'             => 'Dashboard',
             'tahun_ecc'              => $tahun_ecc,
             'tahun_kinerja'          => $tahun_kinerja,
+            'bulan_kinerja'          => $bulanTerpilih,
             'daftar_tahun'           => $eccData['daftar_tahun'] ?? [date('Y')],
             'prodiData'              => $eccData['prodiData'] ?? [],
             'totalIndikator'         => $totalIndikator ?? 0,

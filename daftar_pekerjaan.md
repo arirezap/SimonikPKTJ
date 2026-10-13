@@ -65,6 +65,14 @@ Dokumen ini adalah lembar kerja resmi pelacakan pekerjaan pengembangan, perbaika
     - **Mobile View**: Penyesuaian tinggi kontainer Chart.js agar tidak terhimpit di layar kecil.
   - **Status**: ✅ **100% Selesai & Lulus Audit 7-Pilar**
 
+- [x] **TUGAS 2.3: Preservasi Data Historis Pegawai Dinamis & Filter Multi-Periode Kinerja (`Dashboard.php`, `Admin/Dashboard.php`, `EccDataTrait.php`)**
+  - **Uraian Pekerjaan**:
+    - **Integritas Pegawai Pensiun, Mutasi, dan Nonaktif**: Memastikan pegawai berstatus `pensiun`, `mutasi_keluar`, atau `nonaktif` tetap muncul dan dihitung pada dashboard periode saat mereka masih bertugas berdasarkan batas tanggal TMT (`tmt_selesai >= periodMonth` atau `YEAR(tmt_selesai) >= tahun_kinerja`), dilengkapi badge status kontekstual.
+    - **Dukungan Hierarki Multi-Periode (`riwayat_atasan`)**: Penyelarasan penugasan unit kerja dan rotasi jabatan lampau menggunakan `User::getPenugasanPeriode()`.
+    - **Perluasan Filter Tahun Lintas Periode (`EccDataTrait`)**: Kueri tahun otomatis merangkum tahun dengan riwayat target (`target_kinerja_bulanan`), log tambahan, dan riwayat atasan, mengaktifkan opsi tahun 2025 dan 2026.
+    - **Standardisasi Predikat & Evaluasi Khusus**: Label nilai `0` resmi distandarkan menjadi **"Belum Dinilai"**, dan daftar evaluasi perhatian khusus dibatasi hanya ≤ 25% (tidak mencampur nilai 0/belum dinilai).
+  - **Status**: ✅ **100% Selesai & Lulus Audit 8-Pilar** *(13 Oktober 2026)*
+
 ---
 
 ### 📌 HALAMAN 3: TARGET KINERJA BULANAN (`/laporan-harian`)
@@ -141,6 +149,14 @@ Dokumen ini adalah lembar kerja resmi pelacakan pekerjaan pengembangan, perbaika
     - Standarisasi SweetAlert2: Judul ringkas 2–4 kata (*"Reset Penilaian?"*, *"Terbitkan Nilai?"*, *"Izinkan Revisi?"*, *"Batalkan Persetujuan?"*), teks penjelasan 1 kalimat tenang, dan tombol aksi tegas.
     - Penyelarasan format dokumentasi kesiapan produksi pada `audit_code.md` (Bagian 6).
   - **Status**: Selesai ✅ *(7 September 2026)*
+
+- [x] **TUGAS 5.3: Fitur Pengembalian Laporan Harian Staf pada Tampilan Tabel Pengganti Heatmap (`penilaian_kinerja/index.php`)**
+  - **Uraian Pekerjaan**:
+    - Penambahan kolom `Aksi` pada tabel laporan kegiatan harian staf (`$log_harian_staf`) saat kalender heatmap digantikan tabel pada tahun terpilih (`$is_heatmap_hidden`).
+    - Pemasangan tombol aksi taktikal berstandar 8-Point Grid (`.btn-buka-kunci-penilaian`, `height: 30px`, `rounded-pill`) berlabel *"Kembalikan"* pada laporan berstatus *Terkirim* atau *Disetujui*, memicu dialog konfirmasi SweetAlert2 dan pengiriman AJAX POST ke endpoint `/log-kegiatan/buka-kunci`.
+    - Pemasangan indikator badge *"Mode Revisi"* (Draf) saat laporan tanggal tersebut telah berhasil dikembalikan ke status draf agar dapat disunting ulang oleh staf.
+    - Penyelarasan mikro-kopi dialog konfirmasi SweetAlert2 ("Kembalikan Laporan?", "Laporan tanggal DD/MM/YYYY akan dikembalikan ke status draf agar dapat direvisi staf.", "Ya, Kembalikan") bebas istilah teknis sesuai aturan ECC.
+  - **Status**: Selesai ✅ *(13 Oktober 2026)*
 
 ---
 

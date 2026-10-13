@@ -13,6 +13,12 @@ Dashboard
 <!-- 0. TOP FILTER TOOLBAR (8pt Grid System) -->
 <div class="d-flex justify-content-start align-items-center flex-wrap gap-2 mb-4 bento-stagger bento-stagger-1">
     <form id="formKinerja" class="m-0 d-flex flex-wrap gap-2 align-items-center">
+        <select class="form-select form-select-sm filter-select fw-semibold text-dark bg-white shadow-xs rounded-pill border" id="bulan_kinerja" name="bulan_kinerja" aria-label="Pilih Bulan Kinerja" style="height: 36px; padding: 0 32px 0 16px; width: auto; min-width: 160px; cursor: pointer; font-size: 0.82rem;" onchange="updateKinerjaData()">
+            <option value="all" <?= ($bulan_kinerja === 'all') ? 'selected' : '' ?>>Semua Bulan (Setahun)</option>
+            <?php for ($i = 1; $i <= 12; $i++): ?>
+                <option value="<?= $i; ?>" <?= ((string)$bulan_kinerja === (string)$i) ? 'selected' : ''; ?>><?= bulan_indo($i) ?></option>
+            <?php endfor; ?>
+        </select>
         <select name="tahun_kinerja" id="tahun_kinerja" class="form-select form-select-sm filter-select fw-semibold text-dark bg-white shadow-xs rounded-pill border" aria-label="Pilih Tahun Kinerja" style="height: 36px; padding: 0 32px 0 16px; width: auto; min-width: 140px; cursor: pointer; font-size: 0.82rem;" onchange="updateKinerjaData()">
             <?php foreach ($daftar_tahun as $tahun_item): ?>
                 <option value="<?= esc($tahun_item) ?>" <?= ($tahun_kinerja == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
@@ -161,13 +167,14 @@ Dashboard
                             <?php foreach ($rekapDashboard as $rekap): ?>
                                 <?php 
                                     $rata = (float)$rekap['rata_rata'];
+                                    $dinilai = (int)($rekap['dinilai'] ?? 0);
                                     $warnaBadge = 'bg-secondary';
-                                    if ($rekap['dinilai'] > 0 || $rata > 0) {
-                                        if ($rata > 100) $warnaBadge = 'bg-success';
-                                        elseif ($rata > 90) $warnaBadge = 'bg-primary';
+                                    if ($dinilai > 0 && $rata > 0) {
+                                        if ($rata > 100) $warnaBadge = 'bg-success text-white';
+                                        elseif ($rata > 90) $warnaBadge = 'bg-primary text-white';
                                         elseif ($rata > 75) $warnaBadge = 'bg-info text-dark';
                                         elseif ($rata > 25) $warnaBadge = 'bg-warning text-dark';
-                                        else $warnaBadge = 'bg-danger';
+                                        else $warnaBadge = 'bg-danger text-white';
                                     }
                                 ?>
                                 <tr>
@@ -177,7 +184,14 @@ Dashboard
                                                 <?= strtoupper(substr(trim($rekap['staf']['nama_lengkap']), 0, 1)) ?>
                                             </div>
                                             <div style="min-width: 0;">
-                                                <div class="fw-bold text-dark text-truncate" style="font-size: 0.82rem;"><?= esc($rekap['staf']['nama_lengkap']) ?></div>
+                                                <div class="fw-bold text-dark text-truncate d-flex align-items-center gap-1" style="font-size: 0.82rem;">
+                                                    <span class="text-truncate"><?= esc($rekap['staf']['nama_lengkap']) ?></span>
+                                                    <?php if(($rekap['staf']['status_pegawai'] ?? '') === 'mutasi'): ?>
+                                                        <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;">Mutasi</span>
+                                                    <?php elseif(($rekap['staf']['status_pegawai'] ?? '') === 'pensiun'): ?>
+                                                        <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;">Pensiun</span>
+                                                    <?php endif; ?>
+                                                </div>
                                                 <div class="text-muted small num-tabular" style="font-size: 0.72rem; margin-top: 1px;"><?= esc($rekap['staf']['nip'] ?: '-') ?></div>
                                             </div>
                                         </div>
@@ -196,9 +210,15 @@ Dashboard
                                         </div>
                                     </td>
                                     <td class="text-center border-bottom border-light" style="padding: 12px 16px;">
-                                        <span class="badge <?= $warnaBadge ?> rounded-pill px-3 py-1.5 shadow-sm num-tabular" style="font-size: 0.82rem; font-weight: 700;">
-                                            <?= number_format($rata, 2, ',', '.') ?>
-                                        </span>
+                                        <?php if ($rata == 0 || $dinilai == 0): ?>
+                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2.5 py-1 shadow-sm num-tabular" style="font-size: 0.74rem; font-weight: 600;">
+                                                Belum Dinilai
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="badge <?= $warnaBadge ?> rounded-pill px-3 py-1.5 shadow-sm num-tabular" style="font-size: 0.82rem; font-weight: 700;">
+                                                <?= number_format($rata, 2, ',', '.') ?>
+                                            </span>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -221,13 +241,13 @@ window.userDashboardCharts = window.userDashboardCharts || {};
 
 // Helper: Predikat Badge Class (Standar ECC)
 function getPredikatBadgeClass(rata, dinilai = 1) {
-    if (!dinilai || Number(rata) === 0) return 'bg-secondary';
+    if (!dinilai || Number(rata) === 0) return 'bg-secondary-subtle text-secondary border border-secondary-subtle';
     const val = Number(rata);
-    if (val > 100) return 'bg-success';
-    if (val > 90) return 'bg-primary';
+    if (val > 100) return 'bg-success text-white';
+    if (val > 90) return 'bg-primary text-white';
     if (val > 75) return 'bg-info text-dark';
     if (val > 25) return 'bg-warning text-dark';
-    return 'bg-danger';
+    return 'bg-danger text-white';
 }
 
 // Helper: Smooth KPI Metric Count-Up Number Ticker
@@ -305,8 +325,9 @@ function updateDashboardYear(val) {
 
 async function updateKinerjaData() {
     const tahunKinerja = document.getElementById('tahun_kinerja').value;
+    const bulanKinerja = document.getElementById('bulan_kinerja') ? document.getElementById('bulan_kinerja').value : 'all';
     try {
-        const response = await fetch(`<?= site_url('dashboard') ?>?ajax_type=kinerja&tahun_kinerja=${tahunKinerja}`, {
+        const response = await fetch(`<?= site_url('dashboard') ?>?ajax_type=kinerja&tahun_kinerja=${tahunKinerja}&bulan_kinerja=${bulanKinerja}`, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
         const data = await response.json();
@@ -359,11 +380,25 @@ async function updateKinerjaData() {
                     let htmlStaf = '';
                     rekapDashboard.forEach(rekap => {
                         let rata = Number(rekap.rata_rata || 0);
-                        const warnaBadge = getPredikatBadgeClass(rata, rekap.dinilai);
+                        const dinilai = Number(rekap.dinilai || 0);
+                        const warnaBadge = getPredikatBadgeClass(rata, dinilai);
                         
                         let inisial = (rekap.staf.nama_lengkap || '').trim().charAt(0).toUpperCase();
                         let jabatan = rekap.staf.jabatan || '-';
-                        let rataStr = rata.toFixed(2);
+                        
+                        let statusBadge = '';
+                        if (rekap.staf && rekap.staf.status_pegawai === 'mutasi') {
+                            statusBadge = ` <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-1.5 py-0.5 ms-1" style="font-size: 0.65rem;">Mutasi</span>`;
+                        } else if (rekap.staf && rekap.staf.status_pegawai === 'pensiun') {
+                            statusBadge = ` <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle rounded-pill px-1.5 py-0.5 ms-1" style="font-size: 0.65rem;">Pensiun</span>`;
+                        }
+
+                        let scoreBadgeHtml = '';
+                        if (rata === 0 || dinilai === 0) {
+                            scoreBadgeHtml = `<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2.5 py-1 shadow-sm num-tabular" style="font-size: 0.74rem; font-weight: 600;">Belum Dinilai</span>`;
+                        } else {
+                            scoreBadgeHtml = `<span class="badge ${warnaBadge} rounded-pill px-3 py-1.5 shadow-sm num-tabular" style="font-size: 0.82rem; font-weight: 700;">${rata.toFixed(2)}</span>`;
+                        }
                         
                         htmlStaf += `
                         <tr>
@@ -373,7 +408,9 @@ async function updateKinerjaData() {
                                         ${escapeHtml(inisial)}
                                     </div>
                                     <div style="min-width: 0;">
-                                        <div class="fw-bold text-dark text-truncate" style="font-size: 0.82rem;">${escapeHtml(rekap.staf.nama_lengkap)}</div>
+                                        <div class="fw-bold text-dark text-truncate d-flex align-items-center gap-1" style="font-size: 0.82rem;">
+                                            <span class="text-truncate">${escapeHtml(rekap.staf.nama_lengkap)}</span>${statusBadge}
+                                        </div>
                                         <div class="text-muted small num-tabular" style="font-size: 0.72rem; margin-top: 1px;">${escapeHtml(rekap.staf.nip || '-')}</div>
                                     </div>
                                 </div>
@@ -392,7 +429,7 @@ async function updateKinerjaData() {
                                 </div>
                             </td>
                             <td class="text-center border-bottom border-light" style="padding: 12px 16px;">
-                                <span class="badge ${warnaBadge} rounded-pill px-3 py-1.5 shadow-sm num-tabular" style="font-size: 0.82rem; font-weight: 700;">${rataStr}</span>
+                                ${scoreBadgeHtml}
                             </td>
                         </tr>`;
                     });

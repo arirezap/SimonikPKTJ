@@ -222,11 +222,22 @@
                                         <?php else: ?><div class="d-flex justify-content-center align-items-center mx-auto fw-bold text-muted" style="width: 24px; height: 24px; font-size: 0.8rem;"><?= $i+1 ?></div><?php endif; ?>
                                     </td>
                                     <td class="border-bottom border-light" style="padding: 12px 16px; max-width: 0; width: 100%;">
-                                        <div class="fw-bold text-dark text-truncate" style="font-size: 0.82rem;" title="<?= esc($t['staf']['nama_lengkap']) ?>"><?= esc($t['staf']['nama_lengkap']) ?></div>
+                                        <div class="d-flex align-items-center gap-1 flex-wrap">
+                                            <span class="fw-bold text-dark text-truncate" style="font-size: 0.82rem;" title="<?= esc($t['staf']['nama_lengkap']) ?>"><?= esc($t['staf']['nama_lengkap']) ?></span>
+                                            <?php if(($t['staf']['status_pegawai'] ?? '') === 'mutasi'): ?>
+                                                <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;">Mutasi</span>
+                                            <?php elseif(($t['staf']['status_pegawai'] ?? '') === 'pensiun'): ?>
+                                                <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;">Pensiun</span>
+                                            <?php endif; ?>
+                                        </div>
                                         <div class="text-muted text-truncate" style="font-size: 0.72rem; margin-top: 1px;" title="<?= esc(trim($t['staf']['jabatan'] ?? '') ?: '-') ?>"><?= esc(trim($t['staf']['jabatan'] ?? '') ?: '-') ?></div>
                                     </td>
                                     <td class="text-end border-bottom border-light" style="padding: 12px 16px;">
-                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1 shadow-sm border border-success num-tabular" style="font-size: 0.78rem; font-weight: 700;"><?= number_format((float)$t['rata_rata'], 2, ',', '.') ?></span>
+                                        <?php if ((float)$t['rata_rata'] == 0 || empty($t['dinilai'])): ?>
+                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2.5 py-1 shadow-sm num-tabular" style="font-size: 0.74rem; font-weight: 600;">Belum Dinilai</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1 shadow-sm border border-success num-tabular" style="font-size: 0.78rem; font-weight: 700;"><?= number_format((float)$t['rata_rata'], 2, ',', '.') ?></span>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -258,11 +269,22 @@
                                         <div class="d-flex justify-content-center align-items-center mx-auto fw-bold text-danger bg-danger bg-opacity-10 rounded-circle" style="width: 24px; height: 24px; font-size: 0.75rem;"><?= $i+1 ?></div>
                                     </td>
                                     <td class="border-bottom border-light" style="padding: 12px 16px; max-width: 0; width: 100%;">
-                                        <div class="fw-bold text-dark text-truncate" style="font-size: 0.82rem;" title="<?= esc($b['staf']['nama_lengkap']) ?>"><?= esc($b['staf']['nama_lengkap']) ?></div>
+                                        <div class="d-flex align-items-center gap-1 flex-wrap">
+                                            <span class="fw-bold text-dark text-truncate" style="font-size: 0.82rem;" title="<?= esc($b['staf']['nama_lengkap']) ?>"><?= esc($b['staf']['nama_lengkap']) ?></span>
+                                            <?php if(($b['staf']['status_pegawai'] ?? '') === 'mutasi'): ?>
+                                                <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;">Mutasi</span>
+                                            <?php elseif(($b['staf']['status_pegawai'] ?? '') === 'pensiun'): ?>
+                                                <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;">Pensiun</span>
+                                            <?php endif; ?>
+                                        </div>
                                         <div class="text-muted text-truncate" style="font-size: 0.72rem; margin-top: 1px;" title="<?= esc(trim($b['staf']['jabatan'] ?? '') ?: '-') ?>"><?= esc(trim($b['staf']['jabatan'] ?? '') ?: '-') ?></div>
                                     </td>
                                     <td class="text-end border-bottom border-light" style="padding: 12px 16px;">
-                                        <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2.5 py-1 shadow-sm border border-danger num-tabular" style="font-size: 0.78rem; font-weight: 700;"><?= number_format((float)$b['rata_rata'], 2, ',', '.') ?></span>
+                                        <?php if ((float)$b['rata_rata'] == 0 || empty($b['dinilai'])): ?>
+                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2.5 py-1 shadow-sm num-tabular" style="font-size: 0.74rem; font-weight: 600;">Belum Dinilai</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2.5 py-1 shadow-sm border border-danger num-tabular" style="font-size: 0.78rem; font-weight: 700;"><?= number_format((float)$b['rata_rata'], 2, ',', '.') ?></span>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -480,7 +502,8 @@ async function updateKinerjaData() {
                     data.sebaranKinerja.baik || 0,
                     data.sebaranKinerja.butuh_perbaikan || 0,
                     data.sebaranKinerja.kurang || 0,
-                    data.sebaranKinerja.sangat_kurang || 0
+                    data.sebaranKinerja.sangat_kurang || 0,
+                    (data.sebaranKinerja.belum_dinilai !== undefined ? data.sebaranKinerja.belum_dinilai : (data.sebaranKinerja.belum_mengisi || 0))
                 ];
                 window.pageCharts['sebaranChart'].update();
             }
@@ -509,17 +532,36 @@ async function updateKinerjaData() {
                     } else {
                         badge = `<div class="d-flex justify-content-center align-items-center mx-auto fw-bold text-danger" style="width:24px;height:24px;font-size:13px;">${i+1}</div>`;
                     }
-                    const scoreClass = isTop ? 'bg-success text-success border-success' : 'bg-danger text-danger border-danger';
-                    const rataStr = (item.rata_rata !== undefined && item.rata_rata !== null) ? Number(item.rata_rata).toFixed(2) : '0.00';
+
+                    let statusBadge = '';
+                    if (item.staf && item.staf.status_pegawai === 'mutasi') {
+                        statusBadge = ` <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-1.5 py-0.5 ms-1" style="font-size: 0.65rem;">Mutasi</span>`;
+                    } else if (item.staf && item.staf.status_pegawai === 'pensiun') {
+                        statusBadge = ` <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle rounded-pill px-1.5 py-0.5 ms-1" style="font-size: 0.65rem;">Pensiun</span>`;
+                    }
+
+                    const rataVal = (item.rata_rata !== undefined && item.rata_rata !== null) ? Number(item.rata_rata) : 0;
+                    const dinilaiVal = (item.dinilai !== undefined && item.dinilai !== null) ? Number(item.dinilai) : 1;
+
+                    let scoreBadgeHtml = '';
+                    if (rataVal === 0 || dinilaiVal === 0) {
+                        scoreBadgeHtml = `<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2.5 py-1 shadow-sm num-tabular" style="font-size: 0.74rem; font-weight: 600;">Belum Dinilai</span>`;
+                    } else {
+                        const scoreClass = isTop ? 'bg-success text-success border-success' : 'bg-danger text-danger border-danger';
+                        scoreBadgeHtml = `<span class="badge ${scoreClass} bg-opacity-10 rounded-pill px-2.5 py-1 shadow-sm border num-tabular" style="font-size: 0.78rem; font-weight: 700;">${rataVal.toFixed(2)}</span>`;
+                    }
+
                     html += `
                     <tr style="height: 56px;">
                         <td style="width: 50px;" class="text-center align-middle py-2 border-bottom border-light">${badge}</td>
                         <td class="py-2 border-bottom border-light" style="max-width: 0; width: 100%;">
-                            <div class="fw-bold text-dark text-truncate" style="font-size: 0.85rem;" title="${escapeHtml(item.staf.nama_lengkap)}">${escapeHtml(item.staf.nama_lengkap)}</div>
+                            <div class="fw-bold text-dark text-truncate d-flex align-items-center" style="font-size: 0.85rem;" title="${escapeHtml(item.staf.nama_lengkap)}">
+                                <span class="text-truncate">${escapeHtml(item.staf.nama_lengkap)}</span>${statusBadge}
+                            </div>
                             <div class="text-muted text-truncate" style="font-size: 0.75rem;" title="${escapeHtml(item.staf.jabatan || '-')}">${escapeHtml(item.staf.jabatan || '-')}</div>
                         </td>
                         <td class="text-end pe-3 py-2 border-bottom border-light">
-                            <span class="badge ${scoreClass} bg-opacity-10 rounded-pill px-2 py-1 shadow-sm border" style="font-size: 0.8rem;">${rataStr}</span>
+                            ${scoreBadgeHtml}
                         </td>
                     </tr>`;
                 });
@@ -808,16 +850,17 @@ document.addEventListener('DOMContentLoaded', function () {
         window.pageCharts['sebaranChart'] = new Chart(ctxSebaran, {
             type: 'doughnut',
             data: {
-                labels: ['Sangat Baik (> 100% - 150%)', 'Baik (> 90% - 100%)', 'Butuh Perbaikan (> 75% - 90%)', 'Kurang (> 25% - 75%)', 'Sangat Kurang (≤ 25%)'],
+                labels: ['Sangat Baik (> 100% - 150%)', 'Baik (> 90% - 100%)', 'Butuh Perbaikan (> 75% - 90%)', 'Kurang (> 25% - 75%)', 'Sangat Kurang (≤ 25%)', 'Belum Dinilai (0%)'],
                 datasets: [{
                     data: [
                         <?= esc($sebaranKinerja['sangat_baik']) ?>, 
                         <?= esc($sebaranKinerja['baik']) ?>, 
                         <?= esc($sebaranKinerja['butuh_perbaikan']) ?>, 
                         <?= esc($sebaranKinerja['kurang']) ?>,
-                        <?= esc($sebaranKinerja['sangat_kurang']) ?>
+                        <?= esc($sebaranKinerja['sangat_kurang']) ?>,
+                        <?= esc($sebaranKinerja['belum_dinilai'] ?? $sebaranKinerja['belum_mengisi'] ?? 0) ?>
                     ],
-                    backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444'],
+                    backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#94a3b8'],
                     borderWidth: 0,
                     hoverOffset: 6
                 }]
@@ -843,6 +886,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         else if (fullLabel.includes('Butuh Perbaikan')) realLabel = 'Butuh Perbaikan';
                         else if (fullLabel.includes('Baik')) realLabel = 'Baik';
                         else if (fullLabel.includes('Kurang')) realLabel = 'Kurang';
+                        else if (fullLabel.includes('Belum Dinilai') || fullLabel.includes('Belum Mengisi')) realLabel = 'Belum Dinilai';
                         
                         fetchChartDetail('sebaran', realLabel);
                     }
@@ -920,13 +964,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- HELPER BADGE PREDIKAT KINERJA (STANDAR ECC) ---
     function getPredikatBadgeClass(rata, dinilai = 1) {
-        if (!dinilai || Number(rata) === 0) return 'bg-secondary';
+        if (!dinilai || Number(rata) === 0) return 'bg-secondary-subtle text-secondary border border-secondary-subtle';
         const val = Number(rata);
-        if (val > 100) return 'bg-success';
-        if (val > 90) return 'bg-primary';
+        if (val > 100) return 'bg-success text-white';
+        if (val > 90) return 'bg-primary text-white';
         if (val > 75) return 'bg-info text-dark';
         if (val > 25) return 'bg-warning text-dark';
-        return 'bg-danger';
+        return 'bg-danger text-white';
     }
 
     // --- CHART DETAIL MODAL LOGIC ---
@@ -974,14 +1018,22 @@ document.addEventListener('DOMContentLoaded', function () {
                     
                     res.data.forEach(p => {
                         const badgeColor = getPredikatBadgeClass(p.rata_rata, p.dinilai !== undefined ? p.dinilai : 1);
-                        const scoreDetailStr = Number(p.rata_rata || 0).toFixed(2);
+                        const isBelum = (p.dinilai === 0 || Number(p.rata_rata || 0) === 0);
+                        const scoreDetailStr = isBelum ? 'Belum Dinilai' : Number(p.rata_rata || 0).toFixed(2);
+                        let statusTag = '';
+                        if (p.status_pegawai === 'mutasi') {
+                            statusTag = ` <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-1.5 py-0.5 ms-1" style="font-size: 0.65rem;">Mutasi</span>`;
+                        } else if (p.status_pegawai === 'pensiun') {
+                            statusTag = ` <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle rounded-pill px-1.5 py-0.5 ms-1" style="font-size: 0.65rem;">Pensiun</span>`;
+                        }
+
                         html += `<tr>
                                     <td class="ps-3">
-                                        <div class="fw-bold text-dark">${escapeHtml(p.nama)}</div>
+                                        <div class="fw-bold text-dark d-flex align-items-center"><span class="text-truncate">${escapeHtml(p.nama)}</span>${statusTag}</div>
                                         <div class="text-muted small">${escapeHtml(p.jabatan || '-')} • ${escapeHtml(p.unit || '-')}</div>
                                     </td>
                                     <td class="text-center">
-                                        <span class="badge ${badgeColor} rounded-pill px-3 py-2" style="font-size:0.85rem">${scoreDetailStr}</span>
+                                        <span class="badge ${badgeColor} rounded-pill px-2.5 py-1 shadow-sm num-tabular" style="font-size:0.75rem">${scoreDetailStr}</span>
                                     </td>
                                  </tr>`;
                     });

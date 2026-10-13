@@ -51,21 +51,62 @@ class Dashboard extends BaseController
         // ----------------------------------------------------------------
         // 1. DATA KINERJA HARIAN PEGAWAI & UNIT (SINGLE-PASS BATCH O(N))
         // ----------------------------------------------------------------
-        $userSelect = 'id, nama_lengkap, nip, username, jabatan, unit, role';
+        $userSelect = 'id, nama_lengkap, nip, username, jabatan, unit, role, status_pegawai, tmt_selesai, foto';
         $userQuery = $this->userModel->select($userSelect)->where('role !=', 'admin');
+
+        $adminPivotIds = array_column(
+            $this->db->table('user_roles')->select('user_id')->where('role_name', 'admin')->get()->getResultArray(),
+            'user_id'
+        );
+        if (!empty($adminPivotIds)) {
+            $userQuery->whereNotIn('id', $adminPivotIds);
+        }
+
         if ($this->db->fieldExists('status_pegawai', 'users')) {
-            $userQuery->where('status_pegawai', 'aktif');
+            if ($bulan_kinerja !== 'all' && !empty($bulan_kinerja)) {
+                $periodMonth = sprintf('%04d-%02d-01', (int)$tahun_kinerja, (int)$bulan_kinerja);
+                $userQuery->groupStart()
+                          ->where('status_pegawai', 'aktif')
+                          ->orGroupStart()
+                              ->whereIn('status_pegawai', ['mutasi_keluar', 'pensiun', 'nonaktif'])
+                              ->where('tmt_selesai IS NOT NULL')
+                              ->where('tmt_selesai >=', $periodMonth)
+                          ->groupEnd()
+                          ->groupEnd();
+            } else {
+                $userQuery->groupStart()
+                          ->where('status_pegawai', 'aktif')
+                          ->orGroupStart()
+                              ->whereIn('status_pegawai', ['mutasi_keluar', 'pensiun', 'nonaktif'])
+                              ->where('tmt_selesai IS NOT NULL')
+                              ->where('YEAR(tmt_selesai) >=', (int)$tahun_kinerja)
+                          ->groupEnd()
+                          ->groupEnd();
+            }
         }
 
         if ($canSeeAll) {
             $daftarSemuaUser = $userQuery->orderBy('nama_lengkap', 'ASC')->findAll();
         } else {
-            $daftarSemuaUser = $this->userModel->getAllStaf($user_id, $role);
+            $bulanCek = ($bulan_kinerja !== 'all' && !empty($bulan_kinerja)) ? (int)$bulan_kinerja : (int)date('n');
+            $periodDate = sprintf('%04d-%02d-01', (int)$tahun_kinerja, $bulanCek);
+            $daftarSemuaUser = $this->userModel->getAllStaf($user_id, $role, $periodDate);
             $me = $this->userModel->select($userSelect)->find($user_id);
             if ($me) {
                 array_unshift($daftarSemuaUser, $me); // Sertakan pimpinan unit itu sendiri
             }
         }
+
+        // Penyelarasan Jabatan & Unit Kerja Dinamis Berdasarkan Periode (Pindah Unit / Rotasi Jabatan)
+        $bulanCek = ($bulan_kinerja !== 'all' && !empty($bulan_kinerja)) ? (int)$bulan_kinerja : (int)date('n');
+        foreach ($daftarSemuaUser as &$staf) {
+            $penugasan = $this->userModel->getPenugasanPeriode($staf['id'], $bulanCek, (int)$tahun_kinerja);
+            if ($penugasan) {
+                $staf['jabatan'] = $penugasan['jabatan'] ?: $staf['jabatan'];
+                $staf['unit']    = $penugasan['unit'] ?: $staf['unit'];
+            }
+        }
+        unset($staf);
 
         // BATCH LOAD: Ambil seluruh data target dan tugas tambahan tahun bersangkutan dalam 2 query efisien (in-memory O(1))
         [$batchTargets, $batchTambahan] = $this->loadBatchKinerjaData($tahun_kinerja);
@@ -134,33 +175,47 @@ class Dashboard extends BaseController
         // ----------------------------------------------------------------
         // 3. ANALITIK SEBARAN PREDIKAT & TINGKAT PARTISIPASI
         // ----------------------------------------------------------------
-        $sebaranKinerja = ['sangat_baik' => 0, 'baik' => 0, 'butuh_perbaikan' => 0, 'kurang' => 0, 'sangat_kurang' => 0];
+        $sebaranKinerja = [
+            'sangat_baik'     => 0,
+            'baik'            => 0,
+            'butuh_perbaikan' => 0,
+            'kurang'          => 0,
+            'sangat_kurang'   => 0,
+            'belum_dinilai'   => 0,
+            'belum_mengisi'   => 0
+        ];
         $partisipasiAktif = 0;
         $totalPegawai = count($rekapDashboard);
 
         foreach ($rekapDashboard as $r) {
-            if ($r['rata_rata'] > 0) {
+            $rr = (float)$r['rata_rata'];
+            $dinilai = (int)($r['dinilai'] ?? 0);
+
+            if ($dinilai > 0 && $rr > 0) {
                 $partisipasiAktif++;
-            }
-            
-            $rr = $r['rata_rata'];
-            if ($rr > 100) {
-                $sebaranKinerja['sangat_baik']++;
-            } else if ($rr > 90) {
-                $sebaranKinerja['baik']++;
-            } else if ($rr > 75) {
-                $sebaranKinerja['butuh_perbaikan']++;
-            } else if ($rr > 25) {
-                $sebaranKinerja['kurang']++;
+                if ($rr > 100) {
+                    $sebaranKinerja['sangat_baik']++;
+                } else if ($rr > 90) {
+                    $sebaranKinerja['baik']++;
+                } else if ($rr > 75) {
+                    $sebaranKinerja['butuh_perbaikan']++;
+                } else if ($rr > 25) {
+                    $sebaranKinerja['kurang']++;
+                } else {
+                    $sebaranKinerja['sangat_kurang']++;
+                }
             } else {
-                $sebaranKinerja['sangat_kurang']++;
+                $sebaranKinerja['belum_dinilai']++;
+                $sebaranKinerja['belum_mengisi']++;
             }
         }
 
         // ----------------------------------------------------------------
         // 4. LEADERBOARD TOP 5 & PERLU PERHATIAN KHUSUS (BOTTOM 5)
         // ----------------------------------------------------------------
-        $top5Data = $rekapDashboard;
+        $top5Data = array_values(array_filter($rekapDashboard, function($r) {
+            return (float)$r['rata_rata'] > 0 && (int)($r['dinilai'] ?? 0) > 0;
+        }));
         usort($top5Data, function($a, $b) {
             if ($b['rata_rata'] != $a['rata_rata']) {
                 return $b['rata_rata'] <=> $a['rata_rata'];
@@ -172,8 +227,11 @@ class Dashboard extends BaseController
         });
         $top5 = array_slice($top5Data, 0, 5);
         
+        // Perlu Perhatian Khusus: Pegawai dengan nilai <= 25 (Sangat Kurang), tidak termasuk 0 / belum dinilai
         $bottom5Data = array_values(array_filter($rekapDashboard, function($r) {
-            return (float)$r['rata_rata'] < 90;
+            $rr = (float)$r['rata_rata'];
+            $dinilai = (int)($r['dinilai'] ?? 0);
+            return $dinilai > 0 && $rr > 0 && $rr <= 25;
         }));
         usort($bottom5Data, function($a, $b) {
             if ($a['rata_rata'] != $b['rata_rata']) {
@@ -317,12 +375,50 @@ class Dashboard extends BaseController
         [$batchTargets, $batchTambahan] = $this->loadBatchKinerjaData($tahun);
 
         $userBuilder = $this->userModel
-            ->select('id, nama_lengkap, nip, username, jabatan, unit, role')
+            ->select('id, nama_lengkap, nip, username, jabatan, unit, role, status_pegawai, tmt_selesai')
             ->where('role !=', 'admin');
+
+        $adminPivotIds = array_column(
+            $this->db->table('user_roles')->select('user_id')->where('role_name', 'admin')->get()->getResultArray(),
+            'user_id'
+        );
+        if (!empty($adminPivotIds)) {
+            $userBuilder->whereNotIn('id', $adminPivotIds);
+        }
+
         if ($this->db->fieldExists('status_pegawai', 'users')) {
-            $userBuilder->where('status_pegawai', 'aktif');
+            if ($bulan !== 'all' && !empty($bulan)) {
+                $periodMonth = sprintf('%04d-%02d-01', (int)$tahun, (int)$bulan);
+                $userBuilder->groupStart()
+                            ->where('status_pegawai', 'aktif')
+                            ->orGroupStart()
+                                ->whereIn('status_pegawai', ['mutasi_keluar', 'pensiun', 'nonaktif'])
+                                ->where('tmt_selesai IS NOT NULL')
+                                ->where('tmt_selesai >=', $periodMonth)
+                            ->groupEnd()
+                            ->groupEnd();
+            } else {
+                $userBuilder->groupStart()
+                            ->where('status_pegawai', 'aktif')
+                            ->orGroupStart()
+                                ->whereIn('status_pegawai', ['mutasi_keluar', 'pensiun', 'nonaktif'])
+                                ->where('tmt_selesai IS NOT NULL')
+                                ->where('YEAR(tmt_selesai) >=', (int)$tahun)
+                            ->groupEnd()
+                            ->groupEnd();
+            }
         }
         $allUsers = $userBuilder->findAll();
+
+        $bulanCek = ($bulan !== 'all' && !empty($bulan)) ? (int)$bulan : (int)date('n');
+        foreach ($allUsers as &$u) {
+            $penugasan = $this->userModel->getPenugasanPeriode($u['id'], $bulanCek, $tahun);
+            if ($penugasan) {
+                $u['jabatan'] = $penugasan['jabatan'] ?: $u['jabatan'];
+                $u['unit']    = $penugasan['unit'] ?: $u['unit'];
+            }
+        }
+        unset($u);
 
         if ($mode === 'sebaran') {
             $result = [];
@@ -330,22 +426,28 @@ class Dashboard extends BaseController
             foreach ($allUsers as $u) {
                 $stat = $this->hitungKinerjaPegawai($u['id'], $bulan, $tahun, $batchTargets, $batchTambahan);
                 $rata_rata = $stat['rata_rata'];
+                $dinilai = $stat['dinilai'];
                 
                 $match = false;
-                if ($normalizedKey === 'sangat_baik' && $rata_rata > 100) $match = true;
-                else if ($normalizedKey === 'baik' && $rata_rata > 90 && $rata_rata <= 100) $match = true;
-                else if ($normalizedKey === 'butuh_perbaikan' && $rata_rata > 75 && $rata_rata <= 90) $match = true;
-                else if ($normalizedKey === 'kurang' && $rata_rata > 25 && $rata_rata <= 75) $match = true;
-                else if ($normalizedKey === 'sangat_kurang' && $rata_rata <= 25) $match = true;
+                if (($normalizedKey === 'belum_dinilai' || $normalizedKey === 'belum_mengisi' || $normalizedKey === 'belum_ada_catatan') && ($dinilai == 0 || $rata_rata == 0)) {
+                    $match = true;
+                } else if ($dinilai > 0 && $rata_rata > 0) {
+                    if ($normalizedKey === 'sangat_baik' && $rata_rata > 100) $match = true;
+                    else if ($normalizedKey === 'baik' && $rata_rata > 90 && $rata_rata <= 100) $match = true;
+                    else if ($normalizedKey === 'butuh_perbaikan' && $rata_rata > 75 && $rata_rata <= 90) $match = true;
+                    else if ($normalizedKey === 'kurang' && $rata_rata > 25 && $rata_rata <= 75) $match = true;
+                    else if ($normalizedKey === 'sangat_kurang' && $rata_rata <= 25) $match = true;
+                }
                 
                 if ($match) {
                     $result[] = [
-                        'nama' => $u['nama_lengkap'],
-                        'jabatan' => $u['jabatan'] ?? '-',
-                        'unit' => $u['unit'] ?? '-',
-                        'dinilai' => $stat['dinilai'],
-                        'total_laporan' => $stat['total_laporan'],
-                        'rata_rata' => $rata_rata
+                        'nama'           => $u['nama_lengkap'],
+                        'jabatan'        => $u['jabatan'] ?? '-',
+                        'unit'           => $u['unit'] ?? '-',
+                        'dinilai'        => $stat['dinilai'],
+                        'total_laporan'  => $stat['total_laporan'],
+                        'rata_rata'      => $rata_rata,
+                        'status_pegawai' => $u['status_pegawai'] ?? 'aktif'
                     ];
                 }
             }
