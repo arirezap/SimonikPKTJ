@@ -1027,4 +1027,258 @@ class UserController extends BaseController
             return redirect()->back()->with('error', 'Gagal mereset data kinerja: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Mengambil daftar riwayat penugasan seorang pegawai (AJAX GET).
+     */
+    public function getRiwayatPenugasan($userId)
+    {
+        if (!hasAnyRole(['admin', 'kepegawaian'])) {
+            return $this->response->setStatusCode(403)->setJSON([
+                'success' => false,
+                'message' => 'Akses ditolak.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        $userId = (int)$userId;
+        $user = $this->userModel->select('id, nama_lengkap, nip, unit, jabatan, role')->find($userId);
+        if (!$user) {
+            return $this->response->setStatusCode(404)->setJSON([
+                'success' => false,
+                'message' => 'Pegawai tidak ditemukan.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        $riwayatModel = new \App\Models\RiwayatAtasan();
+        $riwayatList = $riwayatModel->select('riwayat_atasan.*, atasan.nama_lengkap as nama_atasan, atasan.nip as nip_atasan, atasan.jabatan as jabatan_atasan')
+                                    ->join('users as atasan', 'atasan.id = riwayat_atasan.atasan_id', 'left')
+                                    ->where('riwayat_atasan.user_id', $userId)
+                                    ->orderBy('riwayat_atasan.tahun', 'DESC')
+                                    ->orderBy('riwayat_atasan.bulan_mulai', 'ASC')
+                                    ->findAll();
+
+        return $this->response->setJSON([
+            'success'   => true,
+            'user'      => $user,
+            'data'      => $riwayatList,
+            'csrf_hash' => csrf_hash()
+        ]);
+    }
+
+    /**
+     * Menyimpan riwayat penugasan baru atau memperbarui yang ada (AJAX POST).
+     */
+    public function storeRiwayatPenugasan()
+    {
+        if (!hasAnyRole(['admin', 'kepegawaian'])) {
+            return $this->response->setStatusCode(403)->setJSON([
+                'success' => false,
+                'message' => 'Akses ditolak.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        $id           = $this->request->getPost('id');
+        $userId       = (int)$this->request->getPost('user_id');
+        $atasanId     = (int)$this->request->getPost('atasan_id');
+        $unit         = trim((string)$this->request->getPost('unit'));
+        $jabatan      = trim((string)$this->request->getPost('jabatan'));
+        $role         = trim((string)$this->request->getPost('role')) ?: 'pegawai';
+        $tahun        = (int)$this->request->getPost('tahun') ?: (int)date('Y');
+        $bulanMulai   = (int)$this->request->getPost('bulan_mulai') ?: 1;
+        $bulanSelesai = (int)$this->request->getPost('bulan_selesai') ?: 12;
+        $keterangan   = trim((string)($this->request->getPost('keterangan') ?? $this->request->getPost('keterangan_sk') ?? '')) ?: null;
+
+        // Failsafe jika form lama mengirim dalam bentuk tanggal
+        $tanggalMulai   = trim((string)$this->request->getPost('tanggal_mulai'));
+        $tanggalSelesai = trim((string)$this->request->getPost('tanggal_selesai'));
+        if (!empty($tanggalMulai) && (empty($this->request->getPost('bulan_mulai')) || empty($this->request->getPost('tahun')))) {
+            $tahun = (int)date('Y', strtotime($tanggalMulai));
+            $bulanMulai = (int)date('n', strtotime($tanggalMulai));
+            $bulanSelesai = !empty($tanggalSelesai) ? (int)date('n', strtotime($tanggalSelesai)) : 12;
+        }
+
+        if ($userId <= 0 || $atasanId <= 0 || empty($unit) || empty($jabatan) || empty($tahun) || empty($bulanMulai) || empty($bulanSelesai)) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Mohon lengkapi seluruh isian wajib.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        // Proteksi self-atasan
+        if ($atasanId === $userId) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Pegawai tidak dapat menjadi atasan langsung untuk dirinya sendiri.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        // Validasi urutan bulan
+        if ($bulanSelesai < $bulanMulai) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Bulan selesai tidak boleh lebih awal dari bulan mulai.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        $riwayatModel = new \App\Models\RiwayatAtasan();
+        
+        // Validasi anti-overlapping
+        $excludeId = !empty($id) ? (int)$id : null;
+        if ($riwayatModel->checkOverlapping($userId, $tahun, $bulanMulai, $bulanSelesai, $excludeId)) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Periode penugasan tumpang tindih dengan riwayat yang sudah ada pada tahun ' . $tahun . '.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        // Cari unit_id
+        $unitKerjaModel = new \App\Models\UnitKerja();
+        $unitDb = $unitKerjaModel->where('nama_unit', $unit)->first();
+        $unitId = $unitDb ? (int)$unitDb['id'] : null;
+
+        $payload = [
+            'user_id'       => $userId,
+            'atasan_id'     => $atasanId,
+            'unit_id'       => $unitId,
+            'unit'          => $unit,
+            'jabatan'       => $jabatan,
+            'role'          => $role,
+            'tahun'         => $tahun,
+            'bulan_mulai'   => $bulanMulai,
+            'bulan_selesai' => $bulanSelesai,
+            'is_aktif'      => 1,
+            'keterangan'    => $keterangan,
+        ];
+
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        try {
+            if (!empty($id)) {
+                $oldData = $riwayatModel->find($id);
+                $riwayatModel->update($id, $payload);
+                log_audit('UPDATE', 'riwayat_atasan', (int)$id, $oldData, $payload);
+            } else {
+                $insertedId = $riwayatModel->insert($payload);
+                log_audit('CREATE', 'riwayat_atasan', (int)$insertedId, null, $payload);
+            }
+
+            // Sinkronisasi otomatis ke profil tabel users jika periode mencakup bulan dan tahun saat ini
+            $curYear = (int)date('Y');
+            $curMonth = (int)date('n');
+            $isActiveNow = ($tahun === $curYear && $bulanMulai <= $curMonth && $bulanSelesai >= $curMonth);
+            if ($isActiveNow) {
+                $this->userModel->update($userId, [
+                    'atasan_id' => $atasanId,
+                    'unit'      => $unit,
+                    'unit_id'   => $unitId,
+                    'jabatan'   => $jabatan,
+                    'role'      => $role,
+                ]);
+            }
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Gagal menyimpan riwayat penugasan. Silakan coba lagi.',
+                    'csrf_hash' => csrf_hash()
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success'   => true,
+                'message'   => 'Riwayat penugasan berhasil disimpan.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        } catch (\Throwable $e) {
+            try { @$db->transRollback(); } catch (\Throwable $t) {}
+            log_message('error', 'Error storeRiwayatPenugasan: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success'   => false,
+                'message'   => 'Gagal menyimpan riwayat penugasan. Silakan coba lagi.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+    }
+
+    /**
+     * Menghapus catatan riwayat penugasan (AJAX POST).
+     */
+    public function deleteRiwayatPenugasan($id)
+    {
+        if (!hasAnyRole(['admin', 'kepegawaian'])) {
+            return $this->response->setStatusCode(403)->setJSON([
+                'success' => false,
+                'message' => 'Akses ditolak.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        $id = (int)$id;
+        $riwayatModel = new \App\Models\RiwayatAtasan();
+        $record = $riwayatModel->find($id);
+
+        if (!$record) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Riwayat penugasan tidak ditemukan.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+
+        $userId = (int)$record['user_id'];
+
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        try {
+            $riwayatModel->delete($id);
+            log_audit('DELETE', 'riwayat_atasan', $id, $record, null);
+
+            // Re-sync: Ambil penugasan aktif hari ini berikutnya jika ada
+            $penugasanAktif = $riwayatModel->getPenugasanAktif($userId, (int)date('n'), (int)date('Y'));
+            if ($penugasanAktif) {
+                $this->userModel->update($userId, [
+                    'atasan_id' => $penugasanAktif['atasan_id'],
+                    'unit'      => $penugasanAktif['unit'],
+                    'unit_id'   => $penugasanAktif['unit_id'],
+                    'jabatan'   => $penugasanAktif['jabatan'],
+                    'role'      => $penugasanAktif['role'],
+                ]);
+            }
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Gagal menghapus riwayat penugasan. Silakan coba lagi.',
+                    'csrf_hash' => csrf_hash()
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success'   => true,
+                'message'   => 'Riwayat penugasan berhasil dihapus.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        } catch (\Throwable $e) {
+            try { @$db->transRollback(); } catch (\Throwable $t) {}
+            log_message('error', 'Error deleteRiwayatPenugasan: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success'   => false,
+                'message'   => 'Gagal menghapus riwayat penugasan. Silakan coba lagi.',
+                'csrf_hash' => csrf_hash()
+            ]);
+        }
+    }
 }

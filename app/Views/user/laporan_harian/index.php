@@ -380,12 +380,17 @@
                                 $cId = !empty($oldClientId[$i]) ? $oldClientId[$i] : ('c_row_old_' . $i);
                                 $dbStatusApproval = null;
                                 $dbStatus = 'draft';
+                                $dbApprovedBy = null;
+                                $dbApprovedAt = null;
 
                                 if ($rowId && !empty($rekap_data_sendiri)) {
                                     foreach ($rekap_data_sendiri as $r) {
                                         if ((int)$r['id'] === $rowId) {
                                             $dbStatusApproval = $r['status_approval'];
                                             $dbStatus = $r['status'] ?? 'draft';
+                                            $dbApprovedBy = $r['approved_by'] ?? null;
+                                            $dbApprovedAt = $r['approved_at'] ?? null;
+                                            $dbNamaPenyetuju = $r['nama_penyetuju'] ?? null;
                                             break;
                                         }
                                     }
@@ -399,6 +404,9 @@
                                     'target_bulanan' => $oldTarget[$i] ?? '',
                                     'satuan' => (string)($oldSatuan[$i] ?? ''),
                                     'status_approval' => $dbStatusApproval,
+                                    'approved_by' => $dbApprovedBy,
+                                    'approved_at' => $dbApprovedAt,
+                                    'nama_penyetuju' => $dbNamaPenyetuju ?? null,
                                     'status' => $dbStatus
                                 ];
                             }
@@ -412,6 +420,9 @@
                                     'target_bulanan' => $r['target_bulanan'] ?? '',
                                     'satuan' => $r['satuan'] ?? '',
                                     'status_approval' => $r['status_approval'] ?? null,
+                                    'approved_by' => $r['approved_by'] ?? null,
+                                    'approved_at' => $r['approved_at'] ?? null,
+                                    'nama_penyetuju' => $r['nama_penyetuju'] ?? null,
                                     'status' => $r['status'] ?? 'draft'
                                 ];
                             }
@@ -541,6 +552,11 @@
                                             <td class="text-center">
                                                 <?php if($isRowApproved): ?>
                                                     <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 status-badge"><i class="bi bi-check-circle me-1"></i> Disetujui</span>
+                                                    <?php if (!empty($row['nama_penyetuju'])): ?>
+                                                        <div class="small text-muted mt-1" style="font-size: 0.72rem;" title="Disetujui oleh <?= esc($row['nama_penyetuju']) ?>">
+                                                            <span class="d-block text-truncate text-secondary fw-medium" style="max-width: 150px; font-size: 0.68rem;"><i class="bi bi-person-check me-0.5"></i> <?= esc($row['nama_penyetuju']) ?></span>
+                                                        </div>
+                                                    <?php endif; ?>
                                                 <?php elseif(($row['status'] ?? '') === 'terkirim'): ?>
                                                     <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2.5 py-1 status-badge"><i class="bi bi-hourglass-split me-1"></i> Menunggu Persetujuan</span>
                                                 <?php elseif(empty($row['id'])): ?>
@@ -693,12 +709,18 @@
                                     $cId = !empty($oldClientId[$i]) ? $oldClientId[$i] : ('c_row_staf_old_' . $i);
                                     $dbStatusApproval = null;
                                     $dbStatus = 'draft';
+                                    $dbApprovedBy = null;
+                                    $dbApprovedAt = null;
+                                    $dbNamaPenyetuju = null;
 
                                     if ($rowId && !empty($rekap_data_staf)) {
                                         foreach ($rekap_data_staf as $r) {
                                             if ((int)$r['id'] === $rowId) {
                                                 $dbStatusApproval = $r['status_approval'];
                                                 $dbStatus = $r['status'] ?? 'draft';
+                                                $dbApprovedBy = $r['approved_by'] ?? null;
+                                                $dbApprovedAt = $r['approved_at'] ?? null;
+                                                $dbNamaPenyetuju = $r['nama_penyetuju'] ?? null;
                                                 break;
                                             }
                                         }
@@ -712,6 +734,9 @@
                                         'target_bulanan' => $oldTarget[$i] ?? '',
                                         'satuan' => (string)($oldSatuan[$i] ?? ''),
                                         'status_approval' => $dbStatusApproval,
+                                        'approved_by' => $dbApprovedBy,
+                                        'approved_at' => $dbApprovedAt,
+                                        'nama_penyetuju' => $dbNamaPenyetuju ?? null,
                                         'status' => $dbStatus
                                     ];
                                 }
@@ -725,6 +750,9 @@
                                         'target_bulanan' => $r['target_bulanan'] ?? '',
                                         'satuan' => $r['satuan'] ?? '',
                                         'status_approval' => $r['status_approval'] ?? null,
+                                        'approved_by' => $r['approved_by'] ?? null,
+                                        'approved_at' => $r['approved_at'] ?? null,
+                                        'nama_penyetuju' => $r['nama_penyetuju'] ?? null,
                                         'status' => $r['status'] ?? 'draft'
                                     ];
                                 }
@@ -792,6 +820,11 @@
                                                 <td class="text-center">
                                                     <?php if($isStafApproved): ?>
                                                         <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 status-badge"><i class="bi bi-check-circle me-1"></i> Disetujui</span>
+                                                        <?php if (!empty($row['nama_penyetuju'])): ?>
+                                                            <div class="small text-muted mt-1" style="font-size: 0.72rem;" title="Disetujui oleh <?= esc($row['nama_penyetuju']) ?>">
+                                                                <span class="d-block text-truncate text-secondary fw-medium" style="max-width: 150px; font-size: 0.68rem;"><i class="bi bi-person-check me-0.5"></i> <?= esc($row['nama_penyetuju']) ?></span>
+                                                            </div>
+                                                        <?php endif; ?>
                                                     <?php elseif(($row['status'] ?? '') === 'terkirim'): ?>
                                                         <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2.5 py-1 status-badge"><i class="bi bi-hourglass-split me-1"></i> Menunggu Persetujuan</span>
                                                     <?php elseif(empty($row['id'])): ?>

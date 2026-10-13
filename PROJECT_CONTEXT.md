@@ -7,7 +7,7 @@ Aplikasi ini adalah **Evidence Command Center (ECC)** (sebelumnya bernama Simoni
 
 ## 2. Technology Stack & Environment
 - **Backend Framework**: CodeIgniter 4 (PHP 8.1+)
-- **Database**: MySQL 5.7 / 8.0 (24 Tabel Utama di `ekinerja_kinerja`)
+- **Database**: MySQL 5.7 / 8.0 (25 Tabel Utama di `ekinerja_kinerja`)
 - **Frontend**: HTML5, Vanilla CSS / CSS Custom Tokens, JavaScript (ES6 / jQuery 3.6+)
 - **CSS Framework**: Bootstrap 5.3 + Bootstrap Icons (`bi bi-...`)
 - **Data Visualization**: Chart.js (Bar, Horizontal Bar, Doughnut, Polar Area, Line, Radar Chart)
@@ -139,8 +139,9 @@ Menu tree Kepegawaian di sidebar memiliki 2 submodul terpadu untuk Tim Kepegawai
 
 ### F. Modul Profil Saya (`/profile`):
 - Controller: `app/Controllers/Profile.php` | View: `app/Views/profile.php`.
-- Pegawai dapat memperbarui nomor handphone, memilih unit kerja, mengatur atasan langsung, dan mengganti Kata Sandi secara mandiri.
-- **Mekanisme Dual-Sync Unit Kerja**: Saat unit kerja diperbarui, sistem otomatis menyinkronkan `unit_id` sekaligus teks nama `unit` untuk konsistensi data institusional.
+- Pegawai dapat memperbarui nomor handphone dan mengganti Kata Sandi secara mandiri.
+- **Smart Lock Profil & Fleksibilitas Unit Kerja Pimpinan**: Field unit kerja dan atasan langsung dikunci bagi staf biasa untuk menjaga validitas evaluasi SKP. Khusus akun pimpinan institusi (`direktur`, `wadir`, `admin`) yang tidak terikat pada satu unit kerja tertentu, validasi unit di backend bersifat opsional (`permit_empty`) dan di UI ditampilkan representasi *"Pimpinan Institusi"*.
+- **Mekanisme Dual-Sync Unit Kerja**: Saat unit kerja diperbarui oleh admin/kepegawaian, sistem otomatis menyinkronkan `unit_id` sekaligus teks nama `unit` untuk konsistensi data institusional.
 - **Failsafe Sesi Ganda & Proteksi Self-Atasan Loop**: Validasi sesi (`id` dan `user_id`) serta pencegahan pegawai memilih dirinya sendiri sebagai atasan langsung (`$atasanId !== $userId`).
 - **Preservasi Formulir (*Form State Preservation*)**: Menggunakan `old()` pada seluruh field input agar data yang baru diketik pengguna tidak hilang saat terjadi kegagalan validasi kata sandi.
 
@@ -167,6 +168,16 @@ Menu tree Kepegawaian di sidebar memiliki 2 submodul terpadu untuk Tim Kepegawai
 - **Kriptografi Token Remember-Me**: Menggunakan HMAC-SHA256 dengan regenerasi ID sesi otomatis dan pencatatan audit log `LOGIN_REMEMBER_ME`.
 - **Ergonomi Sentuh Mobile**: Tombol mata toggle kata sandi diselaraskan ke area sentuh minimal 44px (`min-width: 44px; min-height: 36px;`).
 
+### J. Modul Riwayat Penugasan, Rotasi Jabatan & Hierarki Multi-Periode (`/users` & `riwayat_atasan`):
+- Model: `app/Models/RiwayatAtasan.php` | Controller: `app/Controllers/Admin/UserController.php`.
+- **Tabel `riwayat_atasan`**: Menyimpan riwayat penugasan resmi pegawai (`user_id`, `atasan_id`, `jabatan`, `unit_id`, `unit`, `role`, `tahun`, `bulan_mulai`, `bulan_selesai`, `is_aktif`, `keterangan`).
+- **Resolusi Hierarki Berbasis Periode**: Method `User::getStaf($atasanId, $periodDate)` dan `User::getPenugasanPeriode($userId, $bulan, $tahun)` menyelesaikan hierarki atasan-staf secara dinamis sesuai rentang bulan dan tahun penugasan dengan seamless backward compatibility ke kolom `users.*`.
+- **Integrasi Siklus Status Pegawai**: Pegawai `mutasi_keluar` atau `pensiun` tetap terpantau pada daftar staf atasan lama selama bulan yang dipantau berada dalam rentang masa dinasnya (`tmt_selesai`) dan masa dispensasi.
+- **Smart Lock Edit Profil Pegawai (`/profile`)**: Mengunci pengubahan mandiri Jabatan, Unit Kerja, dan Atasan Langsung bagi pegawai yang telah memiliki riwayat penugasan resmi dari kepegawaian dengan pesan informatif singkat *"Ditetapkan Kepegawaian. Hubungi Kepegawaian jika ada perubahan."*
+- **Penyelarasan Kebijakan Otorisasi (`PenilaianKinerjaPolicy`)**: Validasi persetujuan target bulanan, evaluasi kinerja bulanan, izin revisi, dan pembatalan target memperhitungkan konteks bulan dan tahun penugasan pejabat yang sah.
+- **Penyelarasan Dokumen Cetak PDF Dinas**: Pejabat penilai dan penyetuju pada lembar cetak PDF rekap kinerja tahunan (`rekap_kinerja_pdf.php`) dan monitoring target (`monitoring_target_pdf.php`) otomatis disesuaikan dengan riwayat masa dinas masing-masing periode bulan sesuai standar resmi PermenPAN-RB No. 6 Tahun 2022.
+- **Digital Approval & Grading Audit Trail**: Kolom `approved_by`, `approved_at`, `penilai_id`, `penilaian_at` mencatat riwayat persetujuan target dan penilaian kinerja secara atomik di database. Pada antarmuka pengguna (UI/UX), hanya nama pejabat penyetuju/penilai yang ditampilkan tanpa mengekspos stempel waktu tanggal dan jam guna memitigasi risiko temuan pemeriksaan auditor (Itjen / BPK).
+
 ---
 
 ## 7. Arsitektur Perutean (Routing Rules - `app/Config/Routes.php`)
@@ -178,15 +189,15 @@ Menu tree Kepegawaian di sidebar memiliki 2 submodul terpadu untuk Tim Kepegawai
 ---
 
 ## 8. Sinkronisasi Database (Local vs cPanel Production)
-- Database: `ekinerja_kinerja` (24 Tabel Aktif Basis Data).
+- Database: `ekinerja_kinerja` (25 Tabel Aktif Basis Data).
 - Presisi Tinggi: `target_bulanan` dan `jumlah_capaian` menggunakan `DECIMAL(10,4)`, `nilai_capaian` menggunakan `DECIMAL(5,2)`.
-- Status Paritas: Seluruh perubahan skema lokal tercatat di file migrasi `app/Database/Migrations/` dan `database_updates_cpanel.sql`.
+- Status Paritas: Seluruh perubahan skema lokal tercatat di file migrasi `app/Database/Migrations/` (hingga Batch 46) dan `database_updates_cpanel.sql`.
 
 ---
 
 ## 9. Status Graphify Knowledge Graph
-- Tanggal Pembaruan: 11 Oktober 2026.
+- Tanggal Pembaruan: 13 Oktober 2026.
 - Korpus Terindeks: 232 berkas kode utama.
-- Simpul & Relasi: 10.093 nodes, 20.874 edges, 586 communities.
+- Simpul & Relasi: 10.117 nodes, 20.921 edges, 588 communities.
 - Berkas Artefak: `graphify-out/graph.json`, `graphify-out/graph.html`, dan `graphify-out/GRAPH_REPORT.md`.
 

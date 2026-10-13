@@ -653,9 +653,24 @@ class MonitoringTargetController extends BaseController
                 }
             }
 
-            // Lookup atasan langsung
+            // Lookup atasan langsung & penugasan dinamis periode
             $atasanInfo = null;
-            if (!empty($p['atasan_id']) && isset($userMap[$p['atasan_id']])) {
+            if ($bulanTerpilih !== 'all' && !empty($bulanTerpilih)) {
+                $penugasanBulan = $userModel->getPenugasanPeriode($pId, (int)$bulanTerpilih, (int)$tahunTerpilih);
+                if ($penugasanBulan) {
+                    $p['jabatan'] = $penugasanBulan['jabatan'] ?: $p['jabatan'];
+                    $p['unit']    = $penugasanBulan['unit'] ?: $p['unit'];
+                    if (!empty($penugasanBulan['atasan_id'])) {
+                        $atasanIdPeriode = (int)$penugasanBulan['atasan_id'];
+                        if (isset($userMap[$atasanIdPeriode])) {
+                            $atasanInfo = $userMap[$atasanIdPeriode];
+                        } else {
+                            $atasanInfo = $userModel->select('id, nama_lengkap, nip, unit, jabatan')->find($atasanIdPeriode);
+                        }
+                    }
+                }
+            }
+            if (!$atasanInfo && !empty($p['atasan_id']) && isset($userMap[$p['atasan_id']])) {
                 $atasanInfo = $userMap[$p['atasan_id']];
             }
 

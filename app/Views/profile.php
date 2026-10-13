@@ -457,21 +457,48 @@
                                 <label class="form-label text-muted small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.3px;">
                                     Jabatan <span class="text-danger">*</span>
                                 </label>
-                                <input type="text" name="jabatan" id="inputJabatan" class="form-control form-control-sm" value="<?= esc(old('jabatan', $user['jabatan'])) ?>" required maxlength="100">
+                                <?php if (!empty($has_riwayat)): ?>
+                                    <div class="input-group input-group-sm">
+                                        <input type="text" name="jabatan" id="inputJabatan" class="form-control bg-light text-dark fw-semibold" value="<?= esc($user['jabatan']) ?>" readonly>
+                                        <span class="input-group-text bg-light text-muted small"><i class="bi bi-lock-fill"></i></span>
+                                    </div>
+                                    <div class="form-text small mt-1 text-muted" style="font-size: 0.72rem;">
+                                        Ditetapkan Kepegawaian. Hubungi Kepegawaian jika ada perubahan.
+                                    </div>
+                                <?php else: ?>
+                                    <input type="text" name="jabatan" id="inputJabatan" class="form-control form-control-sm" value="<?= esc(old('jabatan', $user['jabatan'])) ?>" required maxlength="100">
+                                <?php endif; ?>
                             </div>
+                            <?php 
+                                $isPimpinan = (!empty($is_pimpinan_institusi) || in_array(strtolower(trim($user['role'] ?? '')), ['direktur', 'wadir', 'admin'])); 
+                            ?>
                             <div class="col-md-6">
                                 <label class="form-label text-muted small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.3px;">
-                                    Unit Kerja <span class="text-danger">*</span>
+                                    Unit Kerja <?= $isPimpinan ? '<span class="text-secondary fw-normal text-lowercase">(opsional)</span>' : '<span class="text-danger">*</span>' ?>
                                 </label>
-                                <?php $selectedUnit = old('unit', $user['unit']); ?>
-                                <select name="unit" id="selectUnitKerja" class="form-select form-select-sm select2" required>
-                                    <option value="">-- Pilih Unit Kerja --</option>
-                                    <?php foreach ($unit_kerja_list as $uk): ?>
-                                        <option value="<?= esc($uk['nama_unit']) ?>" <?= ($selectedUnit == $uk['nama_unit']) ? 'selected' : '' ?>>
-                                            <?= esc($uk['nama_unit']) ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
+                                <?php if (!empty($has_riwayat)): ?>
+                                    <?php 
+                                        $displayUnit = !empty($user['unit']) ? $user['unit'] : ($isPimpinan ? 'Pimpinan Institusi' : '-');
+                                    ?>
+                                    <div class="input-group input-group-sm">
+                                        <input type="text" class="form-control bg-light text-dark fw-semibold" value="<?= esc($displayUnit) ?>" readonly>
+                                        <span class="input-group-text bg-light text-muted small"><i class="bi bi-lock-fill"></i></span>
+                                    </div>
+                                    <input type="hidden" name="unit" value="<?= esc($user['unit'] ?? '') ?>">
+                                    <div class="form-text small mt-1 text-muted" style="font-size: 0.72rem;">
+                                        Ditetapkan Kepegawaian. Hubungi Kepegawaian jika ada perubahan.
+                                    </div>
+                                <?php else: ?>
+                                    <?php $selectedUnit = old('unit', $user['unit']); ?>
+                                    <select name="unit" id="selectUnitKerja" class="form-select form-select-sm select2" <?= $isPimpinan ? '' : 'required' ?>>
+                                        <option value="">-- <?= $isPimpinan ? 'Pimpinan Institusi / Tanpa Unit' : 'Pilih Unit Kerja' ?> --</option>
+                                        <?php foreach ($unit_kerja_list as $uk): ?>
+                                            <option value="<?= esc($uk['nama_unit']) ?>" <?= ($selectedUnit == $uk['nama_unit']) ? 'selected' : '' ?>>
+                                                <?= esc($uk['nama_unit']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                <?php endif; ?>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label text-muted small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.3px;">
@@ -484,6 +511,26 @@
                                             <strong class="d-block text-dark" style="font-size: 0.78rem;">Pimpinan Tertinggi Institusi</strong>
                                             <span style="font-size: 0.71rem;">Akun Direktur bertindak sebagai pimpinan tertinggi tanpa atasan langsung.</span>
                                         </div>
+                                    </div>
+                                <?php elseif (!empty($has_riwayat)): ?>
+                                    <?php
+                                        $namaAtasanAktif = '-';
+                                        if (!empty($user['atasan_id'])) {
+                                            foreach ($potential_bosses as $boss) {
+                                                if ((int)$boss['id'] === (int)$user['atasan_id']) {
+                                                    $namaAtasanAktif = $boss['nama_lengkap'] . (!empty($boss['jabatan']) ? ' (' . $boss['jabatan'] . ')' : '');
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    ?>
+                                    <div class="input-group input-group-sm">
+                                        <input type="text" class="form-control bg-light text-dark fw-semibold" value="<?= esc($namaAtasanAktif) ?>" readonly>
+                                        <span class="input-group-text bg-light text-muted small"><i class="bi bi-lock-fill"></i></span>
+                                    </div>
+                                    <input type="hidden" name="atasan_id" value="<?= esc($user['atasan_id'] ?? '') ?>">
+                                    <div class="form-text small mt-1 text-muted" style="font-size: 0.72rem;">
+                                        Ditetapkan Kepegawaian. Hubungi Kepegawaian jika ada perubahan.
                                     </div>
                                 <?php else: ?>
                                     <?php $selectedAtasan = old('atasan_id', $user['atasan_id']); ?>

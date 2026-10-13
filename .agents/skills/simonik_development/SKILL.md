@@ -90,10 +90,25 @@ Panduan ini berisi pedoman lengkap arsitektur sistem, peta modul, basis data, da
 
 ### H. Modul Profil Saya (`/profile`)
 - **Pengelolaan Data Diri Mandiri (`Profile.php` & `app/Views/profile.php`):**
-  - Pegawai dapat memperbarui nomor handphone, memilih unit kerja, mengatur atasan langsung, dan mengganti Kata Sandi mandiri.
-  - **Mekanisme Dual-Sync Unit Kerja:** Saat pegawai memilih unit kerja, sistem otomatis menyinkronkan `unit_id` sekaligus teks nama `unit` untuk menjamin konsistensi data institusional.
+  - Pegawai dapat memperbarui nomor handphone dan mengganti Kata Sandi mandiri.
+  - **Smart Lock Unit Kerja & Atasan Langsung:** Field unit kerja dan atasan langsung dikunci (*disabled*) bagi staf biasa untuk menjaga validitas penilaian SKP multi-periode. Perubahan penugasan dikelola terpusat oleh Admin atau Kepegawaian, dengan pesan bantuan singkat untuk menghubungi Kepegawaian.
+  - **Fleksibilitas Unit Kerja Pimpinan Institusi:** Akun pimpinan institusi (`direktur`, `wadir`, `admin`) tidak terikat pada unit pelaksana tertentu, sehingga validasi unit kerja di backend bersifat opsional (`permit_empty`) dan di UI ditampilkan representasi *"Pimpinan Institusi"*.
+  - **Mekanisme Dual-Sync Unit Kerja:** Saat admin/kepegawaian mengubah unit kerja pegawai, sistem otomatis menyinkronkan `unit_id` sekaligus teks nama `unit` untuk menjamin konsistensi data institusional.
   - **Failsafe Identitas Sesi & Proteksi Self-Atasan Loop:** Sistem memvalidasi ganda sesi (`id` dan `user_id`) serta secara defensif memblokir pemilihan diri sendiri sebagai atasan langsung (`$atasanId !== $userId`).
   - **Preservasi Formulir (*Form State Preservation*):** Menggunakan `old()` pada seluruh field input agar data yang baru diketik pengguna tidak hilang saat terjadi galat validasi kata sandi.
+
+### I. Modul Riwayat Penugasan, Rotasi Jabatan & Hierarki Multi-Periode
+- **Tabel Fisik `riwayat_atasan` (Total 25 Tabel Sistem):**
+  - Merekam mutasi, promosi, dan pergantian atasan staf secara temporal (`user_id`, `atasan_id`, `unit_id`, `jabatan`, `tanggal_mulai`, `tanggal_selesai`, `is_aktif`).
+- **Resolusi Relasi Multi-Periode (`app/Models/User.php`):**
+  - `User::getPenugasanPeriode($userId, $bulan, $tahun)`: Mengambil unit, jabatan, dan atasan langsung yang sah pada bulan/tahun yang dipilih berdasarkan tanggal aktif di `riwayat_atasan` (dengan fallback defensif ke tabel `users`).
+  - `User::getStaf($atasanId, $bulan, $tahun)`: Mengambil daftar staf yang berada di bawah komando atasan pada periode bulan/tahun yang dievaluasi.
+- **Penyelarasan Ekspor PDF & SKP Tahunan:**
+  - Lembar cetak PDF laporan bulanan dan rekapitulasi tahunan (`rekap_kinerja_pdf.php`, `DashboardKepegawaian.php`, `MonitoringTargetController.php`) otomatis menyelaraskan tanda tangan pejabat penilai dan atasan penilai sesuai riwayat jabatan periode tersebut (PermenPAN-RB No. 6 Tahun 2022).
+- **Audit Trail Digital Persetujuan & Penilaian Kinerja (Mitigasi Temuan Auditor Itjen / BPK):**
+  - Kolom `approved_by` & `approved_at` pada `target_kinerja_bulanan`, serta `penilai_id` & `penilaian_at` pada `target_kinerja_bulanan` dan `log_tugas_tambahan`.
+  - **Stempel Waktu Database-Only:** Tanggal dan jam persetujuan serta penilaian (`approved_at`, `penilaian_at`) **hanya disimpan di basis data** sebagai jejak audit digital internal.
+  - **Kebijakan UI/UX:** Tampilan antarmuka (UI/UX) pada menu target dan rekapitulasi penilaian kinerja **hanya menampilkan nama pejabat yang menyetujui / menilai** tanpa mengekspos tanggal dan jam, guna mencegah temuan diskrepansi administrasi pada audit pengawasan Itjen / BPK.
 
 ---
 

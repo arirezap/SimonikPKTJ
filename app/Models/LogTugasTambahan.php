@@ -22,7 +22,9 @@ class LogTugasTambahan extends Model
         'status',
         'status_approval',
         'nilai_capaian',
-        'status_penilaian'
+        'status_penilaian',
+        'penilai_id',
+        'penilaian_at'
     ];
 
     // Dates

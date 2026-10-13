@@ -97,6 +97,16 @@ Seluruh modul perhitungan predikat (Controller, Modal AJAX, Desktop Table, Mobil
 - Ambang batas predikat resmi dioperkan langsung dari backend ke antarmuka klien (JavaScript) sebagai satu sumber kebenaran (*single source of truth*), mencegah duplikasi atau desinkronisasi logika kalkulasi di peramban.
 - Formulir mandiri Direktur (`#formPenilaianMandiri`) dan formulir staf (`#formPenilaian`) wajib diisolasi secara ketat dalam penamaan selector, validasi rentang 0–150%, dan reset nilai.
 
+### K. Modul Riwayat Penugasan, Rotasi Jabatan & Hierarki Multi-Periode
+- Penugasan staf dan atasan bersifat temporal/multi-periode berbasis tabel `riwayat_atasan` (total 25 tabel sistem). Evaluasi kinerja dan cetak dokumen SKP mengacu pada relasi penugasan yang aktif pada bulan/tahun terkait via `User::getPenugasanPeriode()` dan `User::getStaf()`.
+- **Smart Lock Profil Staf (`/profile`)**: Field atasan langsung dan unit kerja pada menu profil dikunci (*disabled*) bagi staf biasa. Perubahan penugasan dikelola secara terpusat oleh Admin atau Kepegawaian untuk menjamin konsistensi rekam jejak SKP institusi.
+- **Penyelarasan Cetak PDF Tahunan**: Lembar cetak PDF laporan bulanan dan rekapitulasi tahunan (`rekap_kinerja_pdf.php`, `DashboardKepegawaian.php`, `MonitoringTargetController.php`) wajib menyelaraskan pejabat penilai dan atasan penilai sesuai riwayat jabatan periode bersangkutan (PermenPAN-RB No. 6 Tahun 2022).
+
+### L. Audit Trail Digital Persetujuan & Penilaian (Mitigasi Temuan Itjen / BPK)
+- Kolom audit persetujuan dan penilaian (`approved_by`, `approved_at`, `penilai_id`, `penilaian_at`) pada `target_kinerja_bulanan` dan `log_tugas_tambahan` wajib tercatat lengkap di basis data.
+- **Stempel Waktu Database-Only**: Tanggal dan jam persetujuan serta penilaian (`approved_at`, `penilaian_at`) **hanya disimpan di basis data** sebagai jejak audit digital internal.
+- **Larangan Menampilkan Tanggal & Jam di UI**: Antarmuka pengguna (UI/UX) pada menu target dan rekapitulasi penilaian kinerja **hanya menampilkan nama pejabat yang menyetujui / menilai** tanpa mengekspos tanggal dan jam, guna memitigasi risiko temuan diskrepansi waktu administrasi pada audit pengawasan Itjen / BPK.
+
 ---
 
 ## 5. UI/UX, 8-Point Grid & Interaction Design Standards

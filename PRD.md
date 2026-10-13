@@ -65,6 +65,13 @@ Modul ini merupakan *core engine* untuk evaluasi bulanan yang terdiri dari dua s
 - **Web Server Hardening (`.htaccess`):** Melumpuhkan mesin PHP (`php_flag engine off`) dan memblokir eksekusi seluruh skrip web pada direktori berkas publik (`public/assets/uploads/`).
 - **Penghapusan Berkas Terproteksi:** Sanitasi nama berkas via `basename()` dan verifikasi `file_exists(FCPATH . ...)` sebelum penghapusan.
 
+#### 3.10. Modul Riwayat Penugasan, Rotasi Jabatan & Audit Trail Digital Kinerja
+- **Tabel Riwayat Penugasan (`riwayat_atasan`):** Menyimpan rekam jejak relasi atasan-staf, unit kerja, jabatan, dan role dinamis per rentang bulan dan tahun dengan validasi anti-overlapping dan smart indexing ganda.
+- **Hierarki Multi-Periode & Proteksi Rotasi:** Memungkinkan pegawai yang mengalami mutasi, rotasi, atau promosi dinilai oleh atasan yang sah sesuai masa dinas periode bulan bersangkutan. Mendukung siklus status pegawai (`aktif`, `mutasi_keluar`, `pensiun`).
+- **Smart Lock Form Profil Pegawai:** Mengunci pengubahan mandiri Jabatan, Unit Kerja, dan Atasan pada form profil jika pegawai telah memiliki penetapan resmi dari kepegawaian.
+- **Penyelarasan Tanda Tangan Cetak PDF SKP:** Lembar cetak PDF rekap tahunan mengakumulasikan nilai kinerja dan mencantumkan tanda tangan pejabat penilai secara proporsional sesuai masa dinas per periode (PermenPAN-RB No. 6 Tahun 2022).
+- **Digital Approval & Grading Audit Trail:** Mencatat `approved_by`, `approved_at`, `penilai_id`, dan `penilaian_at` di database untuk integritas data, dengan tampilan antarmuka yang bersih tanpa mengekspos tanggal/jam guna memitigasi temuan pemeriksaan auditor (Itjen / BPK).
+
 ### 4. Pedoman Desain (UI/UX Guidelines)
 Aplikasi ini dikembangkan dengan berpegang teguh pada prinsip **ui-ux-pro-max**:
 - **Pendekatan Bento / Card:** Semua tabel, *form*, dan *widget* dibungkus ke dalam *card* membulat (`rounded`, `shadow-sm`) dengan latar belakang putih.
@@ -99,4 +106,5 @@ Sistem menerapkan konsep pemisahan tugas menggunakan arsitektur **Tabel Pivot (M
 - [x] Rilis Resmi Versi 1.4: Penyelesaian Audit 8-Pilar Modul Kelola Tim, Kelola Pengguna, Profil Saya, dan Pengerasan Rute POST (3 September 2026).
 - [x] Audit & Pemolesan 8-Point Grid Modul Direktori Pegawai & Profil Saya, Pengamanan Berkas Ganda 2MB, Script Execution Barrier `.htaccess`, dan Pembakuan Istilah Non-Teknis (7 September 2026).
 - [x] Rilis Resmi Versi 1.5: Penyelesaian Audit 8-Pilar Modul Monitoring Target Kinerja, Monitoring Penilaian Kinerja, Profil Saya, dan Dashboard Admin & User (11 Oktober 2026).
+- [x] Rilis Resmi Versi 1.6: Riwayat Penugasan & Rotasi Multi-Periode Atasan-Staf, Penyelarasan SKP Multi-Periode PDF, dan Digital Audit Trail Kinerja (13 Oktober 2026).
 

@@ -553,6 +553,9 @@
                                 <a href="<?= site_url('users/edit/'.$user['id']) . $qs ?>" class="btn btn-outline-warning btn-tactile rounded-circle d-inline-flex align-items-center justify-content-center p-0" style="width: 32px; height: 32px;" title="Edit Data Pengguna">
                                     <i class="bi bi-pencil-square" style="font-size: 0.75rem;"></i>
                                 </a>
+                                <button type="button" class="btn btn-outline-primary btn-tactile rounded-circle d-inline-flex align-items-center justify-content-center p-0 btn-riwayat-penugasan" style="width: 32px; height: 32px;" data-user-id="<?= $user['id'] ?>" data-user-name="<?= esc($user['nama_lengkap']) ?>" data-user-nip="<?= esc($user['nip'] ?: '-') ?>" data-user-unit="<?= esc($user['unit'] ?: '') ?>" data-user-jabatan="<?= esc($user['jabatan'] ?: '') ?>" data-user-role="<?= esc($user['role'] ?: 'pegawai') ?>" data-user-atasan="<?= esc($user['atasan_id'] ?? '') ?>" title="Riwayat Penugasan & Atasan">
+                                    <i class="bi bi-clock-history" style="font-size: 0.75rem;"></i>
+                                </button>
                                 <?php if (!$isSuperAdminAccount): ?>
                                     <form action="<?= site_url('users/delete/'.$user['id']) ?>" method="POST" class="d-inline form-delete-user">
                                         <?= csrf_field() ?>
@@ -651,13 +654,16 @@
 
                     <div class="d-flex justify-content-end gap-1.5 pt-2 border-top">
                         <?php $qs = !empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : ''; ?>
-                        <a href="<?= site_url('users/edit/'.$user['id']) . $qs ?>" class="btn btn-sm btn-outline-warning btn-tactile py-1 px-3 rounded-pill" style="font-size: 0.78rem;">
+                        <a href="<?= site_url('users/edit/'.$user['id']) . $qs ?>" class="btn btn-sm btn-outline-warning btn-tactile py-1 px-2.5 rounded-pill" style="font-size: 0.78rem;">
                             <i class="bi bi-pencil-square me-1"></i> Edit
                         </a>
+                        <button type="button" class="btn btn-sm btn-outline-primary btn-tactile py-1 px-2.5 rounded-pill btn-riwayat-penugasan" data-user-id="<?= $user['id'] ?>" data-user-name="<?= esc($user['nama_lengkap']) ?>" data-user-nip="<?= esc($user['nip'] ?: '-') ?>" data-user-unit="<?= esc($user['unit'] ?: '') ?>" data-user-jabatan="<?= esc($user['jabatan'] ?: '') ?>" data-user-role="<?= esc($user['role'] ?: 'pegawai') ?>" data-user-atasan="<?= esc($user['atasan_id'] ?? '') ?>" style="font-size: 0.78rem;">
+                            <i class="bi bi-clock-history me-1"></i> Penugasan
+                        </button>
                         <?php if (!$isSuperAdminAccount): ?>
                             <form action="<?= site_url('users/delete/'.$user['id']) ?>" method="POST" class="d-inline form-delete-user">
                                 <?= csrf_field() ?>
-                                <button type="button" class="btn btn-sm btn-outline-danger btn-tactile py-1 px-3 rounded-pill btn-delete-user" data-user-name="<?= esc($user['nama_lengkap']) ?>" style="font-size: 0.78rem;">
+                                <button type="button" class="btn btn-sm btn-outline-danger btn-tactile py-1 px-2.5 rounded-pill btn-delete-user" data-user-name="<?= esc($user['nama_lengkap']) ?>" style="font-size: 0.78rem;">
                                     <i class="bi bi-trash me-1"></i> Hapus
                                 </button>
                             </form>
@@ -760,6 +766,164 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL RIWAYAT PENUGASAN & ATASAN LANGSUNG -->
+<div class="modal fade" id="modalRiwayatPenugasan" tabindex="-1" aria-labelledby="modalRiwayatPenugasanLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden" style="border-top: 4px solid var(--ecc-primary, #0d6efd) !important;">
+            <div class="modal-header bg-light border-bottom px-3 px-md-4 py-3 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center" style="gap: 12px;">
+                    <div class="bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0 shadow-xs" style="width: 40px; height: 40px; border-radius: 12px;">
+                        <i class="bi bi-clock-history fs-5"></i>
+                    </div>
+                    <div>
+                        <h6 class="modal-title fw-bold text-dark mb-0" id="modalRiwayatPenugasanLabel" style="font-size: 1rem;">Riwayat Penugasan & Atasan Langsung</h6>
+                        <small class="text-secondary" style="font-size: 0.75rem;">
+                            <span id="riwayatModalUserName" class="fw-bold text-dark">-</span> 
+                            (<span id="riwayatModalUserNip" class="font-monospace">-</span>)
+                        </small>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1 fw-bold d-inline-flex align-items-center gap-1 btn-tactile" id="btnToggleFormRiwayat" style="font-size: 0.78rem;">
+                        <i class="bi bi-plus-lg"></i> <span id="labelToggleForm">Tambah Periode</span>
+                    </button>
+                    <button type="button" class="btn-close btn-tactile" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+
+            <div class="modal-body p-3 p-md-4">
+                <!-- FORM CONTAINER (COLLAPSIBLE) -->
+                <div id="containerFormRiwayat" class="d-none mb-4 p-3 rounded-3 bg-light border">
+                    <div class="d-flex align-items-center justify-content-between pb-2 mb-3 border-bottom">
+                        <span class="fw-bold text-dark small" id="formRiwayatTitle">
+                            <i class="bi bi-journal-plus text-primary me-1"></i> Form Periode Penugasan
+                        </span>
+                        <button type="button" class="btn-close small" id="btnCloseFormRiwayat" aria-label="Tutup form" style="font-size: 0.7rem;"></button>
+                    </div>
+
+                    <form id="formRiwayatPenugasan" autocomplete="off">
+                        <input type="hidden" name="id" id="inputRiwayatId" value="">
+                        <input type="hidden" name="user_id" id="inputRiwayatUserId" value="">
+                        
+                        <div class="row g-2.5">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.72rem;">TAHUN <span class="text-danger">*</span></label>
+                                <input type="number" name="tahun" id="inputRiwayatTahun" class="form-control form-control-sm" min="2020" max="2099" value="<?= date('Y') ?>" required style="border-radius: 8px;">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.72rem;">BULAN MULAI <span class="text-danger">*</span></label>
+                                <select name="bulan_mulai" id="inputRiwayatBulanMulai" class="form-select form-select-sm" required style="border-radius: 8px;">
+                                    <?php 
+                                    $bulanNames = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
+                                    foreach ($bulanNames as $bNum => $bName): ?>
+                                        <option value="<?= $bNum ?>"><?= $bName ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.72rem;">BULAN SELESAI <span class="text-danger">*</span></label>
+                                <select name="bulan_selesai" id="inputRiwayatBulanSelesai" class="form-select form-select-sm" required style="border-radius: 8px;">
+                                    <?php foreach ($bulanNames as $bNum => $bName): ?>
+                                        <option value="<?= $bNum ?>" <?= $bNum === 12 ? 'selected' : '' ?>><?= $bName ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.72rem;">UNIT KERJA <span class="text-danger">*</span></label>
+                                <select name="unit" id="inputRiwayatUnit" class="form-select form-select-sm" required style="border-radius: 8px;">
+                                    <option value="">-- Pilih Unit Kerja --</option>
+                                    <?php if (!empty($unit_kerja_list)): ?>
+                                        <?php foreach ($unit_kerja_list as $uk): ?>
+                                            <option value="<?= esc($uk['nama_unit']) ?>"><?= esc($uk['nama_unit']) ?></option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.72rem;">JABATAN DINAS <span class="text-danger">*</span></label>
+                                <input type="text" name="jabatan" id="inputRiwayatJabatan" class="form-control form-control-sm" placeholder="Contoh: Kapokja Humas / Dosen" required maxlength="100" style="border-radius: 8px;">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.72rem;">ATASAN LANGSUNG <span class="text-danger">*</span></label>
+                                <select name="atasan_id" id="inputRiwayatAtasanId" class="form-select form-select-sm" required style="border-radius: 8px;">
+                                    <option value="">-- Pilih Atasan Langsung --</option>
+                                    <?php if (!empty($potential_bosses)): ?>
+                                        <?php foreach ($potential_bosses as $boss): ?>
+                                            <option value="<?= $boss['id'] ?>"><?= esc($boss['nama_lengkap']) ?> - <?= esc($boss['jabatan'] ?? 'Pimpinan') ?></option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.72rem;">ROLE AKUN <span class="text-muted fw-normal">(opsional)</span></label>
+                                <select name="role" id="inputRiwayatRole" class="form-select form-select-sm" style="border-radius: 8px;">
+                                    <option value="pegawai">Pegawai</option>
+                                    <option value="dosen">Dosen</option>
+                                    <option value="katim">Katim</option>
+                                    <option value="kapokja">Kapokja</option>
+                                    <option value="kanit">Kanit</option>
+                                    <option value="kabag">Kabag</option>
+                                    <option value="kabag_aak">Kabag AAK</option>
+                                    <option value="kabag_kuk">Kabag KUK</option>
+                                    <option value="wadir">Wakil Direktur</option>
+                                    <option value="manajemen">Manajemen</option>
+                                    <option value="tugas_belajar">Tugas Belajar</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.72rem;">NO. SK / KETERANGAN PENUGASAN <span class="text-muted fw-normal">(opsional)</span></label>
+                                <input type="text" name="keterangan" id="inputRiwayatKeterangan" class="form-control form-control-sm" placeholder="Contoh: SK Direktur No. 04/2025 tentang Rotasi Jabatan" maxlength="255" style="border-radius: 8px;">
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-3 pt-2 border-top">
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 btn-tactile" id="btnCancelFormRiwayat" style="font-size: 0.78rem;">Batal</button>
+                            <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3.5 py-1 fw-bold btn-tactile d-inline-flex align-items-center gap-1" id="btnSaveRiwayat" style="font-size: 0.78rem;">
+                                <i class="bi bi-check-lg"></i> <span id="labelSaveRiwayat">Simpan Penugasan</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- LOADING SPINNER -->
+                <div id="loadingRiwayatList" class="text-center py-4 d-none">
+                    <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
+                    <div class="text-muted small" style="font-size: 0.75rem;">Memuat riwayat penugasan...</div>
+                </div>
+
+                <!-- DAFTAR RIWAYAT CONTAINER -->
+                <div id="contentRiwayatList">
+                    <div class="table-responsive rounded-3 border">
+                        <table class="table table-hover align-middle mb-0" style="font-size: 0.8125rem;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="min-width: 140px;">Periode Dinas</th>
+                                    <th>Jabatan & Unit Kerja</th>
+                                    <th>Atasan Langsung</th>
+                                    <th class="text-center" style="width: 110px;">Status</th>
+                                    <th class="text-center" style="width: 70px;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyRiwayatList">
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">Belum ada riwayat penugasan tercatat.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer border-top bg-light px-3 px-md-4 py-2.5">
+                <button type="button" class="btn btn-outline-secondary btn-tactile rounded-pill px-3.5 py-1.5 fw-semibold shadow-xs" data-bs-dismiss="modal" style="height: 36px; font-size: 0.8125rem;">Tutup</button>
+            </div>
         </div>
     </div>
 </div>
@@ -978,6 +1142,364 @@ document.addEventListener('DOMContentLoaded', function() {
             isLoading = false;
             checkRemainingRows();
         }, 300);
+    }
+
+    // =========================================================================
+    // MODAL RIWAYAT PENUGASAN & ATASAN LANGSUNG (AJAX LOGIC)
+    // =========================================================================
+    const modalRiwayatEl = document.getElementById('modalRiwayatPenugasan');
+    const modalRiwayat = modalRiwayatEl ? new bootstrap.Modal(modalRiwayatEl) : null;
+    const containerFormRiwayat = document.getElementById('containerFormRiwayat');
+    const formRiwayat = document.getElementById('formRiwayatPenugasan');
+    const tbodyRiwayat = document.getElementById('tbodyRiwayatList');
+    const loadingRiwayat = document.getElementById('loadingRiwayatList');
+    const contentRiwayat = document.getElementById('contentRiwayatList');
+    const btnToggleFormRiwayat = document.getElementById('btnToggleFormRiwayat');
+    const labelToggleForm = document.getElementById('labelToggleForm');
+
+    let currentRiwayatUserId = null;
+
+    // Buka Modal Riwayat Penugasan
+    $(document).on('click', '.btn-riwayat-penugasan', function(e) {
+        e.preventDefault();
+        const userId = $(this).data('userId');
+        const userName = $(this).data('userName') || '-';
+        const userNip = $(this).data('userNip') || '-';
+        const userUnit = $(this).data('userUnit') || '';
+        const userJabatan = $(this).data('userJabatan') || '';
+        const userRole = $(this).data('userRole') || 'pegawai';
+        const userAtasan = $(this).data('userAtasan') || '';
+
+        currentRiwayatUserId = userId;
+        $('#riwayatModalUserName').text(userName);
+        $('#riwayatModalUserNip').text(userNip);
+
+        // Reset Form
+        resetFormRiwayat();
+        $('#inputRiwayatUserId').val(userId);
+        $('#inputRiwayatUnit').val(userUnit);
+        $('#inputRiwayatJabatan').val(userJabatan);
+        $('#inputRiwayatRole').val(userRole);
+        $('#inputRiwayatAtasanId').val(userAtasan);
+
+        // Sembunyikan form dulu saat modal pertama dibuka
+        hideFormRiwayat();
+
+        if (modalRiwayat) {
+            modalRiwayat.show();
+        }
+
+        loadRiwayatData(userId);
+    });
+
+    // Toggle Tampilkan / Sembunyikan Form
+    if (btnToggleFormRiwayat) {
+        btnToggleFormRiwayat.addEventListener('click', function() {
+            if (containerFormRiwayat.classList.contains('d-none')) {
+                showFormRiwayat();
+            } else {
+                hideFormRiwayat();
+            }
+        });
+    }
+
+    $('#btnCloseFormRiwayat, #btnCancelFormRiwayat').on('click', function() {
+        hideFormRiwayat();
+    });
+
+    function showFormRiwayat(isEdit = false) {
+        containerFormRiwayat.classList.remove('d-none');
+        if (isEdit) {
+            $('#formRiwayatTitle').html('<i class="bi bi-pencil-square text-warning me-1"></i> Edit Periode Penugasan');
+            $('#labelSaveRiwayat').text('Perbarui Penugasan');
+        } else {
+            $('#formRiwayatTitle').html('<i class="bi bi-journal-plus text-primary me-1"></i> Form Periode Penugasan');
+            $('#labelSaveRiwayat').text('Simpan Penugasan');
+        }
+        if (labelToggleForm) labelToggleForm.textContent = 'Tutup Form';
+    }
+
+    function hideFormRiwayat() {
+        containerFormRiwayat.classList.add('d-none');
+        if (labelToggleForm) labelToggleForm.textContent = 'Tambah Periode';
+        resetFormRiwayat();
+    }
+
+    function resetFormRiwayat() {
+        $('#inputRiwayatId').val('');
+        $('#inputRiwayatTahun').val(new Date().getFullYear());
+        $('#inputRiwayatBulanMulai').val('1');
+        $('#inputRiwayatBulanSelesai').val('12');
+        $('#inputRiwayatKeterangan').val('');
+    }
+
+    // Ambil data riwayat via AJAX
+    function loadRiwayatData(userId) {
+        if (!userId) return;
+        loadingRiwayat.classList.remove('d-none');
+        contentRiwayat.classList.add('d-none');
+
+        fetch('<?= site_url('users/riwayat-penugasan') ?>/' + userId, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => res.json())
+        .then(res => {
+            loadingRiwayat.classList.add('d-none');
+            contentRiwayat.classList.remove('d-none');
+
+            if (res.csrf_hash) {
+                updateCsrfTokens(res.csrf_hash);
+            }
+
+            renderRiwayatTable(res.data || []);
+        })
+        .catch(err => {
+            console.error('Error load riwayat:', err);
+            loadingRiwayat.classList.add('d-none');
+            contentRiwayat.classList.remove('d-none');
+            tbodyRiwayat.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-danger">Gagal memuat riwayat penugasan.</td></tr>';
+        });
+    }
+
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str).replace(/[&<>"']/g, function(m) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+        });
+    }
+
+    function renderRiwayatTable(list) {
+        if (!list || list.length === 0) {
+            tbodyRiwayat.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted"><i class="bi bi-info-circle me-1"></i>Belum ada riwayat penugasan tercatat. Klik "Tambah Periode" untuk menetapkan penugasan resmi.</td></tr>';
+            return;
+        }
+
+        const namaBulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        const curDate = new Date();
+        const curYear = curDate.getFullYear();
+        const curMonth = curDate.getMonth() + 1; // 1-12
+        let html = '';
+
+        list.forEach(item => {
+            const tahun = parseInt(item.tahun) || curYear;
+            const blnMulai = parseInt(item.bulan_mulai) || 1;
+            const blnSelesai = parseInt(item.bulan_selesai) || 12;
+
+            // Tentukan status badge
+            let statusBadge = '';
+            if (tahun === curYear && blnMulai <= curMonth && blnSelesai >= curMonth) {
+                statusBadge = '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 fw-semibold small">Aktif</span>';
+            } else if (tahun < curYear || (tahun === curYear && blnSelesai < curMonth)) {
+                statusBadge = '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2.5 py-1 small">Lampau</span>';
+            } else {
+                statusBadge = '<span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-2.5 py-1 fw-semibold small">Mendatang</span>';
+            }
+
+            const periodeStr = (blnMulai === blnSelesai)
+                ? (namaBulan[blnMulai] || blnMulai) + ' ' + tahun
+                : (namaBulan[blnMulai] || blnMulai) + ' &mdash; ' + (namaBulan[blnSelesai] || blnSelesai) + ' ' + tahun;
+
+            const namaAtasan = item.nama_atasan ? escapeHtml(item.nama_atasan) : 'ID #' + item.atasan_id;
+            const jabatanAtasan = item.jabatan_atasan ? '<small class="d-block text-muted" style="font-size:0.71rem;">' + escapeHtml(item.jabatan_atasan) + '</small>' : '';
+            const ketSk = item.keterangan ? '<div class="text-muted small mt-0.5" style="font-size:0.7rem;"><i class="bi bi-file-text me-1"></i>' + escapeHtml(item.keterangan) + '</div>' : '';
+
+            // Item encoded for edit button
+            const itemAttr = escapeHtml(JSON.stringify(item));
+
+            html += `<tr>
+                <td class="num-tabular font-monospace small">
+                    <span class="fw-semibold text-dark">${periodeStr}</span>
+                    ${ketSk}
+                </td>
+                <td>
+                    <strong class="text-dark d-block lh-sm">${escapeHtml(item.jabatan) || '-'}</strong>
+                    <span class="text-secondary small">${escapeHtml(item.unit) || '-'}</span>
+                </td>
+                <td>
+                    <span class="fw-semibold text-dark d-block lh-sm">${namaAtasan}</span>
+                    ${jabatanAtasan}
+                </td>
+                <td class="text-center">${statusBadge}</td>
+                <td class="text-center">
+                    <div class="d-inline-flex align-items-center gap-1">
+                        <button type="button" class="btn btn-outline-warning btn-sm rounded-circle d-inline-flex align-items-center justify-content-center p-0 btn-edit-riwayat" style="width: 28px; height: 28px;" data-item='${itemAttr}' title="Edit Penugasan">
+                            <i class="bi bi-pencil" style="font-size: 0.7rem;"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm rounded-circle d-inline-flex align-items-center justify-content-center p-0 btn-delete-riwayat" style="width: 28px; height: 28px;" data-id="${item.id}" title="Hapus Riwayat">
+                            <i class="bi bi-trash" style="font-size: 0.7rem;"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>`;
+        });
+
+        tbodyRiwayat.innerHTML = html;
+    }
+
+    // Handler tombol Edit Penugasan
+    $(document).on('click', '.btn-edit-riwayat', function(e) {
+        e.preventDefault();
+        const raw = $(this).attr('data-item');
+        if (!raw) return;
+        try {
+            const item = JSON.parse(raw);
+            $('#inputRiwayatId').val(item.id);
+            $('#inputRiwayatTahun').val(item.tahun);
+            $('#inputRiwayatBulanMulai').val(item.bulan_mulai);
+            $('#inputRiwayatBulanSelesai').val(item.bulan_selesai);
+            $('#inputRiwayatUnit').val(item.unit);
+            $('#inputRiwayatJabatan').val(item.jabatan);
+            $('#inputRiwayatRole').val(item.role || 'pegawai');
+            $('#inputRiwayatAtasanId').val(item.atasan_id);
+            $('#inputRiwayatKeterangan').val(item.keterangan || '');
+            showFormRiwayat(true);
+        } catch (err) {
+            console.error('Error parse data-item:', err);
+        }
+    });
+
+    // Submit Form Simpan Riwayat Penugasan
+    if (formRiwayat) {
+        formRiwayat.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btnSave = document.getElementById('btnSaveRiwayat');
+            btnSave.disabled = true;
+            btnSave.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Menyimpan...';
+
+            const csrfTokenName = '<?= csrf_token() ?>';
+            const csrfInput = document.querySelector('input[name="' + csrfTokenName + '"]');
+            const csrfHash = csrfInput ? csrfInput.value : '';
+
+            const formData = new FormData(formRiwayat);
+            formData.append('user_id', currentRiwayatUserId);
+            formData.append(csrfTokenName, csrfHash);
+
+            fetch('<?= site_url('users/riwayat-penugasan/store') ?>', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(res => {
+                btnSave.disabled = false;
+                btnSave.innerHTML = '<i class="bi bi-check-lg me-1"></i> Simpan Penugasan';
+
+                if (res.csrf_hash) {
+                    updateCsrfTokens(res.csrf_hash);
+                }
+
+                if (res.success) {
+                    hideFormRiwayat();
+                    loadRiwayatData(currentRiwayatUserId);
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Tersimpan',
+                            text: res.message || 'Riwayat penugasan berhasil disimpan.',
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false,
+                            customClass: { popup: 'rounded-4' }
+                        });
+                    }
+                } else {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Gagal Menyimpan',
+                            text: res.message || 'Periksa kembali data penugasan.',
+                            icon: 'error',
+                            confirmButtonColor: '#0d6efd',
+                            customClass: { popup: 'rounded-4' }
+                        });
+                    } else {
+                        alert(res.message || 'Gagal menyimpan riwayat penugasan.');
+                    }
+                }
+            })
+            .catch(err => {
+                console.error('Error simpan riwayat:', err);
+                btnSave.disabled = false;
+                btnSave.innerHTML = '<i class="bi bi-check-lg me-1"></i> Simpan Penugasan';
+                alert('Gagal menyimpan riwayat penugasan. Silakan coba lagi.');
+            });
+        });
+    }
+
+    // Hapus baris riwayat
+    $(document).on('click', '.btn-delete-riwayat', function(e) {
+        e.preventDefault();
+        const id = $(this).data('id');
+        if (!id) return;
+
+        const executeDelete = () => {
+            const csrfTokenName = '<?= csrf_token() ?>';
+            const csrfInput = document.querySelector('input[name="' + csrfTokenName + '"]');
+            const csrfHash = csrfInput ? csrfInput.value : '';
+
+            const formData = new FormData();
+            formData.append(csrfTokenName, csrfHash);
+
+            fetch('<?= site_url('users/riwayat-penugasan/delete') ?>/' + id, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.csrf_hash) {
+                    updateCsrfTokens(res.csrf_hash);
+                }
+
+                if (res.success) {
+                    loadRiwayatData(currentRiwayatUserId);
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Terhapus',
+                            text: res.message || 'Riwayat penugasan berhasil dihapus.',
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false,
+                            customClass: { popup: 'rounded-4' }
+                        });
+                    }
+                } else {
+                    alert(res.message || 'Gagal menghapus riwayat penugasan.');
+                }
+            })
+            .catch(err => {
+                console.error('Error delete riwayat:', err);
+                alert('Gagal menghapus riwayat penugasan.');
+            });
+        };
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Hapus Riwayat?',
+                text: 'Riwayat penugasan ini akan dihapus.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, Hapus',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+                customClass: { popup: 'rounded-4' }
+            }).then(result => {
+                if (result.isConfirmed) {
+                    executeDelete();
+                }
+            });
+        } else {
+            if (confirm('Hapus riwayat penugasan ini?')) {
+                executeDelete();
+            }
+        }
+    });
+
+    function updateCsrfTokens(newHash) {
+        const csrfTokenName = '<?= csrf_token() ?>';
+        document.querySelectorAll('input[name="' + csrfTokenName + '"]').forEach(input => {
+            input.value = newHash;
+        });
     }
 });
 </script>

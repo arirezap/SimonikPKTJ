@@ -629,7 +629,16 @@
                                                     </div>
                                                 <?php endif; ?>
                                             <?php else: ?>
-                                                <?= $isTerbit ? str_replace('.', ',', (float)$row['nilai_capaian']) . '%' : '<span class="text-muted fw-normal" title="Belum diterbitkan atasan">-</span>' ?>
+                                                <?php if ($isTerbit): ?>
+                                                    <span class="fw-bold text-primary num-tabular"><?= str_replace('.', ',', (float)$row['nilai_capaian']) ?>%</span>
+                                                    <?php if (!empty($row['nama_penilai'])): ?>
+                                                        <div class="small text-muted mt-0.5" style="font-size: 0.68rem;" title="Dinilai oleh <?= esc($row['nama_penilai']) ?>">
+                                                            <span class="d-block text-truncate text-secondary fw-medium" style="max-width: 140px; font-size: 0.65rem;"><i class="bi bi-person-check me-0.5"></i> <?= esc($row['nama_penilai']) ?></span>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                <?php else: ?>
+                                                    <span class="text-muted fw-normal" title="Belum diterbitkan atasan">-</span>
+                                                <?php endif; ?>
                                             <?php endif; ?>
                                         </td>
                                     </tr>

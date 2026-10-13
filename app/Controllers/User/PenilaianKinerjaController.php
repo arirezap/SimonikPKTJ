@@ -483,7 +483,7 @@ class PenilaianKinerjaController extends BaseController
             if (!$stafUser) {
                 return redirect()->back()->with('error', 'Staf tidak ditemukan.');
             }
-            if (!PenilaianKinerjaPolicy::canEvaluateStaf($currentUser, $stafUser)) {
+            if (!PenilaianKinerjaPolicy::canEvaluateStaf($currentUser, $stafUser, $evalMonth, $evalYear)) {
                 return redirect()->back()->with('error', 'Akses ditolak. Anda tidak memiliki izin menilai kinerja staf ini.');
             }
             $targetUserId = (int)$stafPostId;
@@ -494,7 +494,8 @@ class PenilaianKinerjaController extends BaseController
 
         // 3. Validasi Prasyarat Target Kinerja: Target Staf harus sudah disetujui (kecuali reset atau evaluasi mandiri)
         if (!$isSelfEval && !empty($targetUserId) && $action !== 'reset') {
-            $targetUserHasAtasan = $targetUserRecord && !empty($targetUserRecord['atasan_id']) && $targetUserRecord['role'] !== 'direktur';
+            $penugasanStaf = $userModel->getPenugasanPeriode($targetUserId, $evalMonth, $evalYear);
+            $targetUserHasAtasan = !empty($penugasanStaf['atasan_id']) && ($penugasanStaf['role'] ?? '') !== 'direktur';
             if ($targetUserHasAtasan) {
                 $checkTargets = $laporanModel->where('user_id', $targetUserId)
                                              ->where('bulan', $evalMonth)
@@ -628,6 +629,8 @@ class PenilaianKinerjaController extends BaseController
 
                 $valScore = null;
                 $rowStatusPenilaian = $statusPenilaian;
+                $rowPenilaiId = null;
+                $rowPenilaianAt = null;
 
                 if ($action !== 'reset' && $valRaw !== '') {
                     $valClean = str_replace(',', '.', $valRaw);
@@ -639,15 +642,21 @@ class PenilaianKinerjaController extends BaseController
                         return redirect()->back()->withInput()->with('error', 'Nilai capaian harus berada pada rentang 0 sampai 150.');
                     }
                     $valScore = $numVal;
+                    $rowPenilaiId = (int)$userId;
+                    $rowPenilaianAt = date('Y-m-d H:i:s');
                 } else {
                     $valScore = null;
                     $rowStatusPenilaian = null;
+                    $rowPenilaiId = null;
+                    $rowPenilaianAt = null;
                 }
 
                 $dataToUpdate[] = [
                     'id'               => $idLaporan,
                     'nilai_capaian'    => $valScore,
                     'status_penilaian' => $rowStatusPenilaian,
+                    'penilai_id'       => $rowPenilaiId,
+                    'penilaian_at'     => $rowPenilaianAt,
                 ];
             }
         }
@@ -722,6 +731,8 @@ class PenilaianKinerjaController extends BaseController
 
                 $rowTmbStatus = $statusPenilaian;
                 $rowTmbAppr = 'menunggu_persetujuan';
+                $rowTmbPenilaiId = null;
+                $rowTmbPenilaianAt = null;
 
                 if ($action !== 'reset' && $rawScoreTmb !== null && $rawScoreTmb !== '') {
                     if (is_numeric($rawScoreTmb)) {
@@ -741,17 +752,23 @@ class PenilaianKinerjaController extends BaseController
                     $valScore = $cleanedTmb;
                     $rowTmbStatus = $statusPenilaian;
                     $rowTmbAppr = ($statusPenilaian === 'terbit') ? 'disetujui' : 'menunggu_persetujuan';
+                    $rowTmbPenilaiId = (int)$userId;
+                    $rowTmbPenilaianAt = date('Y-m-d H:i:s');
                 } else {
                     $valScore = null;
                     $rowTmbStatus = null;
                     $rowTmbAppr = 'menunggu_persetujuan';
+                    $rowTmbPenilaiId = null;
+                    $rowTmbPenilaianAt = null;
                 }
 
                 $dataTambahanToUpdate[] = [
                     'id'               => $idTambahan,
                     'nilai_capaian'    => $valScore,
                     'status_penilaian' => $rowTmbStatus,
-                    'status_approval'  => $rowTmbAppr
+                    'status_approval'  => $rowTmbAppr,
+                    'penilai_id'       => $rowTmbPenilaiId,
+                    'penilaian_at'     => $rowTmbPenilaianAt,
                 ];
             }
         }
@@ -963,7 +980,7 @@ class PenilaianKinerjaController extends BaseController
         }
 
         // Proteksi IDOR & Otorisasi Hierarki via PenilaianKinerjaPolicy
-        if (!PenilaianKinerjaPolicy::canViewStafRekap($currentUser, $targetUser)) {
+        if (!PenilaianKinerjaPolicy::canViewStafRekap($currentUser, $targetUser, $bulan, $tahun)) {
             return $this->response->setStatusCode(403)->setJSON(['error' => 'Akses ditolak. Anda tidak berhak melihat data kinerja pegawai ini.']);
         }
 

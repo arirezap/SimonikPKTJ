@@ -33,6 +33,7 @@ class Profile extends BaseController
         
         // PRF-05: Deteksi role Direktur (Pimpinan Tertinggi tanpa atasan langsung)
         $isDirektur = (strtolower(trim($user['role'] ?? '')) === 'direktur');
+        $isPimpinanInstitusi = in_array(strtolower(trim($user['role'] ?? '')), ['direktur', 'wadir', 'admin']);
 
         // PRF-04: Filter kandidat atasan hanya pegawai aktif (status_pegawai = 'aktif')
         $potential_bosses = [];
@@ -64,13 +65,18 @@ class Profile extends BaseController
             }
         }
 
+        $riwayatAtasanModel = new \App\Models\RiwayatAtasan();
+        $hasRiwayat = ($riwayatAtasanModel->where('user_id', $userId)->countAllResults() > 0);
+
         $data = [
-            'title'            => 'Profil Saya',
-            'user'             => $user,
-            'is_direktur'      => $isDirektur,
-            'unit_kerja_list'  => $unit_kerja_list,
-            'potential_bosses' => $potential_bosses,
-            'validation'       => \Config\Services::validation()
+            'title'                 => 'Profil Saya',
+            'user'                  => $user,
+            'is_direktur'           => $isDirektur,
+            'is_pimpinan_institusi' => $isPimpinanInstitusi,
+            'has_riwayat'           => $hasRiwayat,
+            'unit_kerja_list'       => $unit_kerja_list,
+            'potential_bosses'      => $potential_bosses,
+            'validation'            => \Config\Services::validation()
         ];
 
         return view('profile', $data);
@@ -80,7 +86,23 @@ class Profile extends BaseController
     {
         $userId = session()->get('id') ?? session()->get('user_id');
         
-        // 1. Validasi Input Dasar
+        // 1. Ambil data user saat ini untuk verifikasi & proteksi
+        $user = $this->userModel->find($userId);
+        if (!$user) {
+            return redirect()->to('logout');
+        }
+
+        $isDirektur = (strtolower(trim($user['role'] ?? '')) === 'direktur');
+        $isPimpinanInstitusi = in_array(strtolower(trim($user['role'] ?? '')), ['direktur', 'wadir', 'admin']);
+
+        // Proteksi Penugasan Resmi Kepegawaian (Smart Lock)
+        $riwayatAtasanModel = new \App\Models\RiwayatAtasan();
+        $hasRiwayat = ($riwayatAtasanModel->where('user_id', $userId)->countAllResults() > 0);
+
+        // Aturan validasi unit: Opsional bagi pimpinan institusi atau pengguna dengan penugasan kepegawaian resmi
+        $unitRule = ($isPimpinanInstitusi || $hasRiwayat) ? 'permit_empty|max_length[100]' : 'required|max_length[100]';
+
+        // 2. Validasi Input Dasar
         $rules = [
             'nama_lengkap' => [
                 'rules'  => 'required|max_length[100]',
@@ -112,7 +134,7 @@ class Profile extends BaseController
                 ]
             ],
             'unit' => [
-                'rules'  => 'required|max_length[100]',
+                'rules'  => $unitRule,
                 'errors' => [
                     'required'   => 'Pilih unit kerja.',
                     'max_length' => 'Unit kerja maksimal 100 karakter.'
@@ -135,12 +157,6 @@ class Profile extends BaseController
 
         if (!$this->validate($rules)) {
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
-        }
-
-        // 2. Ambil data user saat ini untuk verifikasi & proteksi
-        $user = $this->userModel->find($userId);
-        if (!$user) {
-            return redirect()->to('logout');
         }
 
         $emailPost   = trim((string)$this->request->getPost('email'));
@@ -185,6 +201,16 @@ class Profile extends BaseController
                     $atasanId = (int)$atasanIdPost;
                 }
             }
+        }
+
+        // Proteksi Penugasan Resmi Kepegawaian (Smart Lock)
+        $riwayatAtasanModel = new \App\Models\RiwayatAtasan();
+        $hasRiwayat = ($riwayatAtasanModel->where('user_id', $userId)->countAllResults() > 0);
+        if ($hasRiwayat) {
+            $jabatanPost = $user['jabatan'];
+            $unitPost    = $user['unit'];
+            $unitId      = $user['unit_id'];
+            $atasanId    = $user['atasan_id'];
         }
 
         $data = [

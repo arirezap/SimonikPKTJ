@@ -34,6 +34,8 @@ Aplikasi berbasis web yang diakses setiap hari kerja melalui laptop, komputer ka
 - **Direktori Pegawai & Profil Mandiri**: Fasilitas katalog profil pegawai institusi (`/daftar-pegawai`) dengan query selektif tanpa hash kata sandi, serta modul profil mandiri (`/profile`) dengan proteksi self-atasan loop dan form state preservation (`old()`).
 - **Upload Hardening & Security Layer**: Pengamanan berkas unggahan maksimal 2MB, inspeksi MIME/magic bytes, random renaming, pembatasan eksekusi skrip via `public/assets/uploads/.htaccess`, dan penghapusan berkas aman.
 - **Standar Istilah Mutlak**: Menggunakan istilah baku **"staf"** (tidak menggunakan "bawahan" atau "staff"), nama resmi **"Evidence Command Center (ECC)"**, serta pembakuan istilah antarmuka (*"Kata Sandi"*, *"Alamat Email"*, *"Keluar"*, *"Simpan Profil"*).
+- **Hierarki Multi-Periode & Rotasi Jabatan**: Pengelolaan riwayat penugasan resmi (`riwayat_atasan`) yang memetakan atasan langsung, unit kerja, jabatan, dan role dinamis per rentang bulan dan tahun, sinkronisasi otomatis status pegawai mutasi/pensiun, smart lock form profil pegawai, serta penyesuaian penandatangan dokumen PDF dinas sesuai PermenPAN-RB No. 6 Tahun 2022.
+- **Audit Trail Digital Persetujuan & Penilaian**: Perekaman data `approved_by`, `approved_at`, `penilai_id`, dan `penilaian_at` secara atomik di database dengan visualisasi netral di UI/UX (menampilkan identitas pejabat tanpa tanggal/jam untuk memitigasi temuan auditor Itjen/BPK).
 
 ## Brand Commitments
 
@@ -45,7 +47,7 @@ Aplikasi berbasis web yang diakses setiap hari kerja melalui laptop, komputer ka
 
 ## Evidence on Hand
 
-- Basis data operasional dengan 24 tabel MySQL termigrasi dan ternormalisasi.
+- Basis data operasional dengan 25 tabel MySQL termigrasi dan ternormalisasi.
 - Template dokumen cetak standar A4 untuk Kontrak Kinerja dan Pakta Integritas.
 - Ekspor rekapitulasi data remunerasi berformat CSV BOM UTF-8 ramah Microsoft Excel.
 - Dokumentasi teknis lengkap di `PRD.md`, `DESIGN.md`, `PROJECT_CONTEXT.md`, `CHANGELOG.md`, dan `daftar_pekerjaan.md`.

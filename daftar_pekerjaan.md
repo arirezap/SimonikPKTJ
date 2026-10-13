@@ -312,12 +312,68 @@ Dokumen ini adalah lembar kerja resmi pelacakan pekerjaan pengembangan, perbaika
 
 ---
 
+### 📌 HALAMAN 15: RIWAYAT PENUGASAN, ROTASI JABATAN & HIERARKI MULTI-PERIODE ATASAN-STAF
+
+- [x] **TUGAS 15.1: Desain Skema Basis Data & Migrasi `riwayat_atasan` (Periodized Hierarchy)**
+  - **Uraian Pekerjaan**:
+    - Perancangan tabel `riwayat_atasan` (`id`, `user_id`, `atasan_id`, `jabatan`, `unit_id`, `unit`, `role`, `tahun`, `bulan_mulai`, `bulan_selesai`, `is_aktif`, `keterangan`, `created_at`, `updated_at`).
+    - *Smart Indexing* pada kombinasi `(user_id, tahun, bulan_mulai, bulan_selesai)` dan `(atasan_id, tahun, bulan_mulai, bulan_selesai)`.
+    - Mekanisme *seamless backward compatibility*: Bila pegawai belum memiliki catatan riwayat di tabel ini, sistem otomatis fallback ke kolom bawaan `users.atasan_id`, `users.unit`, `users.jabatan`, dan `users.role` (0 breaking changes untuk data existing).
+    - Penambahan kolom audit digital `approved_by`, `approved_at`, `penilai_id`, `penilaian_at` pada `target_kinerja_bulanan` dan `log_tugas_tambahan`.
+    - Sinkronisasi DDL cPanel di `database_updates_cpanel.sql` dan pemodelan `RiwayatAtasan.php`.
+  - **Status**: Selesai ✅ *(13 Oktober 2026)*
+
+- [x] **TUGAS 15.2: Integrasi Model & Helper Resolusi Atasan Berbasis Periode (`User.php`, `Profile.php` & Helper)**
+  - **Uraian Pekerjaan**:
+    - Penyesuaian method `User::getStaf($atasanId, $periodDate)` agar mampu mencari daftar staf bawahan yang aktif di bawah `$atasanId` pada rentang bulan & tahun spesifik melalui `riwayat_atasan` dengan fallback ke `users.atasan_id`.
+    - Integrasi penuh dengan siklus `status_pegawai`: Pegawai `mutasi_keluar` atau `pensiun` tetap tampil di daftar staf atasan lama selama bulan yang dipantau berada dalam rentang masa dinasnya (`tmt_selesai`) dan masa dispensasi.
+    - Pembuatan method pembantu `getPenugasanPeriode($userId, $bulan, $tahun)` untuk mengembalikan data atasan langsung, unit kerja, jabatan, dan role fungsional pegawai pada bulan bersangkutan.
+    - Penerapan proteksi Smart Lock pada form edit profil (`Profile.php` & `profile.php`): Mengunci pengubahan mandiri Jabatan, Unit Kerja, dan Atasan Langsung bagi pegawai yang telah memiliki riwayat penugasan resmi dengan pesan mikro singkat *"Ditetapkan Kepegawaian. Hubungi Kepegawaian jika ada perubahan."*
+  - **Status**: Selesai ✅ *(13 Oktober 2026)*
+
+- [x] **TUGAS 15.3: Pembaruan Otorisasi Kebijakan Persetujuan & Penilaian (`PenilaianKinerjaPolicy.php`)**
+  - **Uraian Pekerjaan**:
+    - Penambahan parameter konteks `$bulan` dan `$tahun` pada method `canApproveTarget()`, `canEvaluateStaf()`, `canViewStafRekap()`, `canOpenRevision()`, `canViewTarget()`, `canEditTarget()`, dan `canDeleteTarget()`.
+    - Resolusi hierarki multi-periode via `resolveAtasanId(array $staf, ?int $bulan, ?int $tahun)` memanfaatkan model `User::getPenugasanPeriode()`.
+    - Penegakan wewenang atasan yang sah sesuai periode: Atasan lama hanya berwenang menyetujui/menilai target pada rentang bulan masa dinasnya, sementara atasan baru berwenang pada bulan setelah promosi/mutasi/rotasi.
+    - Penanganan promosi kenaikan peran (misal Dosen naik ke Wadir 2): Target dan evaluasi saat peran Dosen dinilai oleh Kaprodi, sedangkan saat peran Wadir 2 dinilai oleh Direktur.
+  - **Status**: Selesai ✅ *(13 Oktober 2026)*
+
+- [x] **TUGAS 15.4: Antarmuka Kelola Riwayat Penugasan di Menu Kelola Pengguna (`UserController.php` & Views)**
+  - **Uraian Pekerjaan**:
+    - Penambahan tombol aksi Bento *"Riwayat Penugasan"* pada daftar pengguna desktop dan mobile card di menu Kelola Pengguna (`/users`).
+    - Modal interaktif `#modalRiwayatPenugasan` lengkap dengan form tambah/edit riwayat penugasan (Atasan Langsung, Unit Kerja, Jabatan, Role, Tahun, Rentang Bulan Mulai - Selesai, Status Aktif, dan Keterangan).
+    - Tabel riwayat penugasan dengan badge status dinamis (Aktif, Lampau, Mendatang) dan tombol hapus riwayat.
+    - Validasi anti-overlapping di backend: Mencegah tumpang tindih rentang bulan penugasan untuk pengguna yang sama dalam 1 tahun anggaran.
+    - Proteksi self-atasan loop (`atasan_id !== user_id`) dan auto-sync ke tabel utama `users.*` jika penugasan mencakup tanggal hari ini.
+    - Dialog konfirmasi SweetAlert2 dengan mikro-kopi padat dan non-teknis, serta pembaruan token CSRF dinamis.
+  - **Status**: Selesai ✅ *(13 Oktober 2026)*
+
+- [x] **TUGAS 15.5: Penyelarasan Rekapitulasi Tahunan & Tanda Tangan Cetak PDF (`rekap_kinerja_pdf.php` & Modul Kepegawaian)**
+  - **Uraian Pekerjaan**:
+    - Penyelarasan controller export PDF (`DashboardKepegawaian.php` & `MonitoringTargetController.php`) untuk menggunakan `getPenugasanPeriode()` sehingga nama, NIP, unit, dan jabatan atasan langsung yang menandatangani dokumen PDF sesuai dengan periode bulan yang dicetak.
+    - Lembar cetak PDF rekap tahunan mengakumulasikan nilai 12 bulan secara proporsional dengan riwayat pejabat penilai masing-masing periode, mematuhi standar resmi PermenPAN-RB No. 6 Tahun 2022 (SKP Multi-Periode ASN).
+    - Integrasi perhitungan proporsional (prorata) otomatis untuk pegawai berstatus `mutasi_keluar` di pertengahan tahun sesuai batas `tmt_selesai`.
+  - **Status**: Selesai ✅ *(13 Oktober 2026)*
+
+- [x] **TUGAS 15.6: Pencatatan Identitas Penyetuju & Penilai Beserta Tanggal Jam (Digital Approval & Grading Audit Trail)**
+  - **Uraian Pekerjaan**:
+    - Penambahan kolom `approved_by` (INT) dan `approved_at` (DATETIME) pada tabel `target_kinerja_bulanan`.
+    - Penambahan kolom `penilai_id` (INT) dan `penilaian_at` (DATETIME) pada tabel `target_kinerja_bulanan` dan `log_tugas_tambahan`.
+    - Pembaruan `LaporanHarianController::approve()` dan `approveAll()` untuk merekam user penyetuju dan tanggal jam saat persetujuan target, serta mengosongkannya (`NULL`) saat `cancelApprove()`.
+    - Pembaruan `PenilaianKinerjaController::store()` untuk merekam user penilai dan tanggal jam saat penerbitan nilai (`terbit`), serta mengosongkannya (`NULL`) saat aksi `reset`.
+    - Penampilan informasi akuntabilitas (Nama Penyetuju/Penilai) pada antarmuka Target Saya, Target Staf, dan ringkasan penilaian kinerja, dengan stempel waktu tanggal dan jam tersimpan aman di database (tidak diekspos di UI untuk memitigasi risiko temuan pemeriksaan auditor).
+  - **Status**: Selesai ✅ *(13 Oktober 2026)*
+
+---
+
 ## 📊 Status Progres Pelaksanaan
 
 ```text
-[████████████████████████████████████████████] 100% Selesai (14 dari 14 Modul Ter-audit & Ter-optimasi)
+[████████████████████████████████████████████] 100.0% Selesai (15 dari 15 Modul Terlaksana Penuh)
 ```
 
 *(Dokumen ini diperbarui secara real-time setiap kali satu halaman selesai diaudit dan dioptimasi)*
+
 
 

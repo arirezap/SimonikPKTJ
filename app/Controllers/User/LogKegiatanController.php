@@ -1169,8 +1169,11 @@ class LogKegiatanController extends BaseController
             ]);
         }
 
+        $revBulan = (int)date('n', strtotime($tanggal));
+        $revTahun = (int)date('Y', strtotime($tanggal));
+
         // Otorisasi via PenilaianKinerjaPolicy: Admin, Direktur, Kepegawaian (Tugas Belajar), dan Atasan Langsung
-        if (!PenilaianKinerjaPolicy::canOpenRevision($currentUser, $targetUser)) {
+        if (!PenilaianKinerjaPolicy::canOpenRevision($currentUser, $targetUser, $revBulan, $revTahun)) {
             return $this->response->setJSON([
                 'success' => false,
                 'message' => 'Akses ditolak. Izin revisi hanya untuk atasan langsung atau pimpinan.',

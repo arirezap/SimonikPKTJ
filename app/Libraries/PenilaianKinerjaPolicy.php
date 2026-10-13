@@ -31,6 +31,28 @@ class PenilaianKinerjaPolicy
     }
 
     /**
+     * Resolusi Atasan Langsung staf pada periode bulan/tahun tertentu.
+     * Mengutamakan catatan di tabel riwayat_atasan, dengan fallback ke users.atasan_id.
+     */
+    public static function resolveAtasanId(array $staf, ?int $bulan = null, ?int $tahun = null): ?int
+    {
+        $stafId = (int)($staf['id'] ?? 0);
+        if ($stafId <= 0) {
+            return !empty($staf['atasan_id']) ? (int)$staf['atasan_id'] : null;
+        }
+
+        try {
+            $userModel = new \App\Models\User();
+            $penugasan = $userModel->getPenugasanPeriode($stafId, $bulan, $tahun);
+            if (!empty($penugasan['atasan_id'])) {
+                return (int)$penugasan['atasan_id'];
+            }
+        } catch (\Throwable $e) {}
+
+        return !empty($staf['atasan_id']) ? (int)$staf['atasan_id'] : null;
+    }
+
+    /**
      * Cek apakah evaluator berhak memberikan penilaian kinerja kepada staf tertentu.
      * 
      * Aturan Matriks:
@@ -40,9 +62,9 @@ class PenilaianKinerjaPolicy
      * - Kepegawaian HANYA berhak menilai:
      *     a. Staf langsung di bawahnya (atasan_id == evaluatorId)
      *     b. Pegawai berstatus Tugas Belajar (role 'tugas_belajar' atau di user_roles)
-     * - Atasan Langsung berhak menilai staf langsung di bawahnya (atasan_id == evaluatorId).
+     * - Atasan Langsung pada periode terkait berhak menilai staf langsung di bawahnya.
      */
-    public static function canEvaluateStaf(array $evaluator, array $staf): bool
+    public static function canEvaluateStaf(array $evaluator, array $staf, ?int $bulan = null, ?int $tahun = null): bool
     {
         $evaluatorId = (int)($evaluator['id'] ?? 0);
         $stafId = (int)($staf['id'] ?? 0);
@@ -62,8 +84,9 @@ class PenilaianKinerjaPolicy
             return true;
         }
 
-        // Cek relasi atasan langsung
-        $isAtasanLangsung = !empty($staf['atasan_id']) && ((int)$staf['atasan_id'] === $evaluatorId);
+        // Cek relasi atasan langsung pada periode terkait
+        $atasanIdEfektif = self::resolveAtasanId($staf, $bulan, $tahun);
+        $isAtasanLangsung = !empty($atasanIdEfektif) && ($atasanIdEfektif === $evaluatorId);
         if ($isAtasanLangsung) {
             return true;
         }
@@ -85,7 +108,7 @@ class PenilaianKinerjaPolicy
      * - Atasan Langsung (termasuk Kabag, Katim, Koordinator): berhak melihat data staf langsungnya.
      * - Wadir dan pegawai biasa: TIDAK berhak melihat data detail staf lain.
      */
-    public static function canViewStafRekap(array $viewer, array $staf): bool
+    public static function canViewStafRekap(array $viewer, array $staf, ?int $bulan = null, ?int $tahun = null): bool
     {
         $viewerId = (int)($viewer['id'] ?? 0);
         $stafId = (int)($staf['id'] ?? 0);
@@ -114,7 +137,11 @@ class PenilaianKinerjaPolicy
             return true;
         }
 
-        // Atasan Langsung berhak melihat staf langsungnya
+        // Atasan Langsung berhak melihat staf langsungnya (baik pada periode terkait maupun penugasan profil saat ini)
+        $atasanIdEfektif = self::resolveAtasanId($staf, $bulan, $tahun);
+        if (!empty($atasanIdEfektif) && $atasanIdEfektif === $viewerId) {
+            return true;
+        }
         if (!empty($staf['atasan_id']) && ((int)$staf['atasan_id'] === $viewerId)) {
             return true;
         }
@@ -130,7 +157,7 @@ class PenilaianKinerjaPolicy
      * - Kepegawaian: berhak membuka untuk staf langsungnya dan pegawai tugas belajar.
      * - Atasan Langsung: berhak membuka untuk staf langsungnya.
      */
-    public static function canOpenRevision(array $operator, array $staf): bool
+    public static function canOpenRevision(array $operator, array $staf, ?int $bulan = null, ?int $tahun = null): bool
     {
         $operatorId = (int)($operator['id'] ?? 0);
         $stafId = (int)($staf['id'] ?? 0);
@@ -145,7 +172,9 @@ class PenilaianKinerjaPolicy
             return true;
         }
 
-        $isAtasanLangsung = !empty($staf['atasan_id']) && ((int)$staf['atasan_id'] === $operatorId);
+        $atasanIdEfektif = self::resolveAtasanId($staf, $bulan, $tahun);
+        $isAtasanLangsung = (!empty($atasanIdEfektif) && $atasanIdEfektif === $operatorId)
+                        || (!empty($staf['atasan_id']) && (int)$staf['atasan_id'] === $operatorId);
         if ($isAtasanLangsung) {
             return true;
         }
@@ -228,7 +257,7 @@ class PenilaianKinerjaPolicy
     /**
      * Cek apakah user berhak melihat target kinerja pegawai tertentu.
      */
-    public static function canViewTarget(array $currentUser, array $targetUser): bool
+    public static function canViewTarget(array $currentUser, array $targetUser, ?int $bulan = null, ?int $tahun = null): bool
     {
         $currentUserId = (int)($currentUser['id'] ?? 0);
         $targetUserId  = (int)($targetUser['id'] ?? 0);
@@ -253,9 +282,12 @@ class PenilaianKinerjaPolicy
             return true;
         }
 
-        // Atasan langsung
-        $isAtasan = !empty($targetUser['atasan_id']) && ((int)$targetUser['atasan_id'] === $currentUserId);
-        if ($isAtasan) {
+        // Atasan langsung pada periode terkait atau profil saat ini
+        $atasanIdEfektif = self::resolveAtasanId($targetUser, $bulan, $tahun);
+        if (!empty($atasanIdEfektif) && $atasanIdEfektif === $currentUserId) {
+            return true;
+        }
+        if (!empty($targetUser['atasan_id']) && ((int)$targetUser['atasan_id'] === $currentUserId)) {
             return true;
         }
 
@@ -270,7 +302,7 @@ class PenilaianKinerjaPolicy
     /**
      * Cek apakah user berhak menyunting/merevisi target kinerja pegawai tertentu.
      */
-    public static function canEditTarget(array $currentUser, array $targetUser): bool
+    public static function canEditTarget(array $currentUser, array $targetUser, ?int $bulan = null, ?int $tahun = null): bool
     {
         $currentUserId = (int)($currentUser['id'] ?? 0);
         $targetUserId  = (int)($targetUser['id'] ?? 0);
@@ -295,9 +327,9 @@ class PenilaianKinerjaPolicy
             return true;
         }
 
-        // Atasan langsung berhak
-        $isAtasan = !empty($targetUser['atasan_id']) && ((int)$targetUser['atasan_id'] === $currentUserId);
-        if ($isAtasan) {
+        // Atasan langsung pada periode terkait berhak
+        $atasanIdEfektif = self::resolveAtasanId($targetUser, $bulan, $tahun);
+        if (!empty($atasanIdEfektif) && $atasanIdEfektif === $currentUserId) {
             return true;
         }
 
@@ -312,7 +344,7 @@ class PenilaianKinerjaPolicy
     /**
      * Cek apakah user berhak menyetujui target kinerja pegawai tertentu.
      */
-    public static function canApproveTarget(array $currentUser, array $targetUser): bool
+    public static function canApproveTarget(array $currentUser, array $targetUser, ?int $bulan = null, ?int $tahun = null): bool
     {
         $currentUserId = (int)($currentUser['id'] ?? 0);
         $targetUserId  = (int)($targetUser['id'] ?? 0);
@@ -338,9 +370,9 @@ class PenilaianKinerjaPolicy
             return true;
         }
 
-        // Atasan langsung
-        $isAtasan = !empty($targetUser['atasan_id']) && ((int)$targetUser['atasan_id'] === $currentUserId);
-        if ($isAtasan) {
+        // Atasan langsung pada periode terkait
+        $atasanIdEfektif = self::resolveAtasanId($targetUser, $bulan, $tahun);
+        if (!empty($atasanIdEfektif) && $atasanIdEfektif === $currentUserId) {
             return true;
         }
 
@@ -355,13 +387,20 @@ class PenilaianKinerjaPolicy
     /**
      * Cek apakah user berhak menghapus baris target kinerja.
      */
-    public static function canDeleteTarget(array $currentUser, array $targetUser, ?array $targetRow = null): bool
+    public static function canDeleteTarget(array $currentUser, array $targetUser, ?array $targetRow = null, ?int $bulan = null, ?int $tahun = null): bool
     {
         $currentUserId = (int)($currentUser['id'] ?? 0);
         $targetUserId  = (int)($targetUser['id'] ?? 0);
 
         if ($currentUserId === 0 || $targetUserId === 0) {
             return false;
+        }
+
+        if ($bulan === null && $targetRow && !empty($targetRow['bulan'])) {
+            $bulan = (int)$targetRow['bulan'];
+        }
+        if ($tahun === null && $targetRow && !empty($targetRow['tahun'])) {
+            $tahun = (int)$targetRow['tahun'];
         }
 
         $currentRoles = self::getUserRolesList($currentUser);
@@ -387,9 +426,9 @@ class PenilaianKinerjaPolicy
             return true;
         }
 
-        // Atasan langsung
-        $isAtasan = !empty($targetUser['atasan_id']) && ((int)$targetUser['atasan_id'] === $currentUserId);
-        if ($isAtasan) {
+        // Atasan langsung pada periode terkait
+        $atasanIdEfektif = self::resolveAtasanId($targetUser, $bulan, $tahun);
+        if (!empty($atasanIdEfektif) && $atasanIdEfektif === $currentUserId) {
             if ($targetRow && ($targetRow['status_approval'] ?? '') === 'disetujui') {
                 return false;
             }

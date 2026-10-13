@@ -28,8 +28,12 @@ class TargetKinerja extends Model
         'target_bulanan',
         'satuan',
         'status_approval',
+        'approved_by',
+        'approved_at',
         'nilai_capaian',
         'status_penilaian',
+        'penilai_id',
+        'penilaian_at',
         'status'
     ];
 
@@ -44,7 +48,8 @@ class TargetKinerja extends Model
      */
     public function getTargetWithRealization($userId, $bulan, $tahun, $onlySubmitted = false)
     {
-        $builder = $this->select('target_kinerja_bulanan.*, IFNULL(SUM(log_kegiatan_harian.jumlah_capaian), 0) as total_realisasi')
+        $builder = $this->select('target_kinerja_bulanan.*, IFNULL(SUM(log_kegiatan_harian.jumlah_capaian), 0) as total_realisasi, penilai.nama_lengkap as nama_penilai')
+                    ->join('users as penilai', 'penilai.id = target_kinerja_bulanan.penilai_id', 'left')
                     ->join('log_kegiatan_harian', "log_kegiatan_harian.target_id = target_kinerja_bulanan.id AND log_kegiatan_harian.status = 'terkirim'", 'left')
                     ->where('target_kinerja_bulanan.user_id', $userId)
                     ->where('target_kinerja_bulanan.tahun', $tahun);

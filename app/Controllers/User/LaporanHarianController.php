@@ -139,11 +139,12 @@ class LaporanHarianController extends BaseController
         $namaBulan = $bulanIndo[$bulanTerpilih - 1];
 
         // Ambil data laporan/target pada bulan tersebut untuk user ini (Target Saya)
-        $rekapDataSendiri = $laporanModel->select('id, user_id, sasaran_program, indikator_kinerja, target_bulanan, satuan, status_approval, status, nilai_capaian, status_penilaian')
-                                         ->where('user_id', $userId)
-                                         ->where('bulan', $bulanTerpilih)
-                                         ->where('tahun', $tahunTerpilih)
-                                         ->orderBy('id', 'ASC')
+        $rekapDataSendiri = $laporanModel->select('target_kinerja_bulanan.id, target_kinerja_bulanan.user_id, target_kinerja_bulanan.sasaran_program, target_kinerja_bulanan.indikator_kinerja, target_kinerja_bulanan.target_bulanan, target_kinerja_bulanan.satuan, target_kinerja_bulanan.status_approval, target_kinerja_bulanan.status, target_kinerja_bulanan.nilai_capaian, target_kinerja_bulanan.status_penilaian, target_kinerja_bulanan.approved_by, target_kinerja_bulanan.approved_at, approver.nama_lengkap as nama_penyetuju')
+                                         ->join('users as approver', 'approver.id = target_kinerja_bulanan.approved_by', 'left')
+                                         ->where('target_kinerja_bulanan.user_id', $userId)
+                                         ->where('target_kinerja_bulanan.bulan', $bulanTerpilih)
+                                         ->where('target_kinerja_bulanan.tahun', $tahunTerpilih)
+                                         ->orderBy('target_kinerja_bulanan.id', 'ASC')
                                          ->findAll();
 
         // Cek apakah user punya staf atau akses pimpinan eksekutif (Admin, Direktur)
@@ -228,12 +229,13 @@ class LaporanHarianController extends BaseController
             }
             if ($isValidStaf) {
                 $isPenyetuju = true;
-                $rekapDataStaf = $laporanModel->select('id, user_id, sasaran_program, indikator_kinerja, target_bulanan, satuan, status_approval, status, nilai_capaian, status_penilaian')
-                                              ->where('user_id', $stafIdTerpilih)
-                                              ->where('bulan', $bulanTerpilih)
-                                              ->where('tahun', $tahunTerpilih)
-                                              ->where('status', 'terkirim')
-                                              ->orderBy('id', 'ASC')
+                $rekapDataStaf = $laporanModel->select('target_kinerja_bulanan.id, target_kinerja_bulanan.user_id, target_kinerja_bulanan.sasaran_program, target_kinerja_bulanan.indikator_kinerja, target_kinerja_bulanan.target_bulanan, target_kinerja_bulanan.satuan, target_kinerja_bulanan.status_approval, target_kinerja_bulanan.status, target_kinerja_bulanan.nilai_capaian, target_kinerja_bulanan.status_penilaian, target_kinerja_bulanan.approved_by, target_kinerja_bulanan.approved_at, approver.nama_lengkap as nama_penyetuju')
+                                              ->join('users as approver', 'approver.id = target_kinerja_bulanan.approved_by', 'left')
+                                              ->where('target_kinerja_bulanan.user_id', $stafIdTerpilih)
+                                              ->where('target_kinerja_bulanan.bulan', $bulanTerpilih)
+                                              ->where('target_kinerja_bulanan.tahun', $tahunTerpilih)
+                                              ->where('target_kinerja_bulanan.status', 'terkirim')
+                                              ->orderBy('target_kinerja_bulanan.id', 'ASC')
                                               ->findAll();
             } else {
                 $stafIdTerpilih = '';
@@ -348,7 +350,7 @@ class LaporanHarianController extends BaseController
                 return redirect()->back()->with('error', $msg);
             }
 
-            if (!PenilaianKinerjaPolicy::canEditTarget($currentUser, $targetUser)) {
+            if (!PenilaianKinerjaPolicy::canEditTarget($currentUser, $targetUser, $bulan, $tahun)) {
                 $msg = 'Akses ditolak. Anda tidak memiliki izin menyunting target staf ini.';
                 if ($this->request->isAJAX()) {
                     return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
@@ -968,7 +970,7 @@ class LaporanHarianController extends BaseController
             ]);
         }
 
-        if (!PenilaianKinerjaPolicy::canApproveTarget($currentUser, $targetUser)) {
+        if (!PenilaianKinerjaPolicy::canApproveTarget($currentUser, $targetUser, (int)($laporan['bulan'] ?? null), (int)($laporan['tahun'] ?? null))) {
             return $this->response->setJSON([
                 'success' => false,
                 'message' => 'Akses ditolak. Anda tidak memiliki izin menyetujui target ini.',
@@ -1007,7 +1009,9 @@ class LaporanHarianController extends BaseController
         try {
             $laporanModel->update($id, [
                 'status_approval' => 'disetujui',
-                'status'          => 'terkirim'
+                'status'          => 'terkirim',
+                'approved_by'     => $currentUserId,
+                'approved_at'     => date('Y-m-d H:i:s'),
             ]);
 
             $db->transComplete();
@@ -1089,7 +1093,7 @@ class LaporanHarianController extends BaseController
             return redirect()->back()->with('error', 'Pegawai target tidak ditemukan.');
         }
 
-        if (!PenilaianKinerjaPolicy::canApproveTarget($currentUser, $targetUser)) {
+        if (!PenilaianKinerjaPolicy::canApproveTarget($currentUser, $targetUser, (int)$bulan, (int)$tahun)) {
             return redirect()->back()->with('error', 'Akses ditolak. Anda tidak memiliki izin menyetujui target staf ini.');
         }
 
@@ -1113,7 +1117,11 @@ class LaporanHarianController extends BaseController
 
         try {
             $laporanModel->whereIn('id', $targetIdsToApprove)
-                         ->set(['status_approval' => 'disetujui'])
+                         ->set([
+                             'status_approval' => 'disetujui',
+                             'approved_by'     => $currentUserId,
+                             'approved_at'     => date('Y-m-d H:i:s'),
+                         ])
                          ->update();
 
             $db->transComplete();
@@ -1425,6 +1433,10 @@ class LaporanHarianController extends BaseController
                               'status'           => 'draft',
                               'nilai_capaian'    => null,
                               'status_penilaian' => null,
+                              'approved_by'      => null,
+                              'approved_at'      => null,
+                              'penilai_id'       => null,
+                              'penilaian_at'     => null,
                          ])
                          ->update();
 
@@ -1435,6 +1447,8 @@ class LaporanHarianController extends BaseController
                              ->set([
                                  'nilai_capaian'    => null,
                                  'status_penilaian' => null,
+                                 'penilai_id'       => null,
+                                 'penilaian_at'     => null,
                              ])
                              ->update();
 

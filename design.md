@@ -1,7 +1,7 @@
 # 🎨 DESIGN SYSTEM & UI/UX GUIDELINES
 ## Evidence Command Center (ECC)
 **Official Application Name:** Evidence Command Center (ECC) (formerly Simonik)  
-**Version:** 1.5.0 (Enterprise Production Release - 11 Oktober 2026)  
+**Version:** 1.6.0 (Enterprise Production Release - 13 Oktober 2026)  
 **Design Philosophy:** Modern Enterprise Bento Grid, Visual Excellence, Micro-Interactions, Mobile-First Touch Experience, 3-Tier Data Guards, and High-Performance Ergonomics.
 
 ---
@@ -672,6 +672,23 @@ Untuk menjamin keamanan berkas yang diunggah pegawai pada modul Profil Saya (`/p
      - Menonaktifkan penelusuran direktori: `Options -Indexes -ExecCGI`.
 5. **Form State Preservation (`old()`)**:
    - Seluruh input profil dibungkus `old('field', $user['field'])` sehingga masukan tidak pernah hilang ketika terjadi kegagalan validasi.
+
+---
+
+## 20. 🏛️ Penyelarasan Hierarki Multi-Periode, Smart Lock Profil & Audit Trail Digital (Mitigasi Temuan Itjen / BPK)
+
+1. **Smart Lock Profil Staf (`/profile`)**:
+   - Field atasan langsung dan unit kerja pada menu profil dikunci (*disabled*) bagi staf biasa.
+   - Pilihan penugasan hanya dapat diubah oleh peran berwenang (`admin` atau `kepegawaian`) guna melindungi integritas rantai komando dan validitas penilaian SKP multi-periode.
+   - Staf diberikan arahan mikro-kopi yang ringkas: *"Hubungi kepegawaian untuk perubahan unit kerja atau atasan."*.
+2. **Resolusi Temporal Penugasan & Rotasi Jabatan**:
+   - Sistem membaca penugasan temporal per bulan dan tahun (`riwayat_atasan`). Relasi atasan-staf dan penugasan unit kerja bersifat dinamis mengikuti periode evaluasi yang dipilih.
+3. **Penyelarasan Ekspor Dokumen Resmi & SKP Tahunan**:
+   - Lembar cetak PDF laporan bulanan dan rekapitulasi tahunan (`rekap_kinerja_pdf.php`) otomatis menyelaraskan tanda tangan pejabat penilai dan atasan penilai sesuai riwayat jabatan periode bersangkutan (PermenPAN-RB No. 6 Tahun 2022).
+4. **Audit Trail Digital Persetujuan & Penilaian Kinerja (Mitigasi Temuan Auditor Itjen / BPK)**:
+   - Kolom audit persetujuan dan penilaian (`approved_by`, `approved_at`, `penilai_id`, `penilaian_at`) tersimpan lengkap di basis data sebagai jejak integritas digital sistem.
+   - **Stempel Waktu Database-Only**: Tanggal dan jam persetujuan serta penilaian hanya disimpan di basis data dan tidak dipajang di tampilan antarmuka (UI/UX).
+   - **Pencegahan Diskrepansi Administrasi di UI/UX**: Antarmuka pengguna pada menu target bulanan dan rekapitulasi penilaian kinerja hanya menampilkan nama pejabat yang menyetujui / menilai (misal: *"Disetujui oleh: [Nama Pejabat]"* atau *"Dinilai oleh: [Nama Penilai]"*) untuk mengantisipasi potensi temuan ketidaksesuaian administrasi oleh auditor pengawasan Itjen / BPK.
 
 ---
 

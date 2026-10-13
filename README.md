@@ -16,19 +16,20 @@ Dibangun dengan fokus pada kecepatan dan kenyamanan pengguna, sistem ini memasti
 ## ✨ Fitur Utama
 
 - **🔐 Arsitektur Multi-Role Pivot:** Memungkinkan sistem untuk menangani berbagai jenis peran pengguna secara dinamis dan berlapis tanpa konflik hak akses.
-- **🛡️ Log Keamanan (Audit Trail):** Perekaman otomatis (*invisible*) terhadap setiap perubahan krusial di dalam sistem (Login, Kelola Pengguna, Penilaian, Master Data) lengkap dengan *IP Address*, *User Agent*, dan riwayat data JSON untuk menjamin integritas.
+- **🛡️ Log Keamanan & Audit Trail Digital:** Perekaman otomatis terhadap setiap perubahan krusial di dalam sistem lengkap dengan IP Address, User Agent, riwayat data JSON, serta stempel waktu digital approval & penilaian kinerja di tingkat basis data.
+- **👥 Hierarki Multi-Periode & Rotasi Jabatan:** Pencatatan penugasan temporal pegawai berbasis riwayat rotasi jabatan (`riwayat_atasan`) dengan penyelarasan otomatis penilai SKP tahunan dan lembar ekspor PDF resmi (PermenPAN-RB No. 6 Tahun 2022).
 - **📊 Penilaian Kinerja Berjenjang:** Alur validasi dan *approval* otomatis dari atasan secara hierarkis untuk memastikan transparansi dan integritas data.
 - **🏢 Manajemen Bukti (Evidence Management):** Modul pengumpulan dokumen dan target kinerja yang tersinkronisasi antar-divisi.
-- **💼 Modul Pelaporan & Rekapitulasi:** Dasbor khusus untuk melacak tren fluktuasi kinerja dengan dukungan ekspor data (Excel/CSV) yang akurat.
-- **🎨 UI/UX Modern:** Mengadopsi tata letak responsif, sistem dibekali dengan interaksi dinamis untuk pengalaman penggunaan yang mulus (*seamless*).
+- **💼 Modul Pelaporan & Rekapitulasi:** Dasbor khusus untuk melacak tren fluktuasi kinerja dengan dukungan ekspor data (Excel Multi-Sheet & PDF A4) yang akurat.
+- **🎨 UI/UX Modern:** Mengadopsi tata letak responsif berbasis 8-Point Grid System dan interaksi dinamis untuk pengalaman penggunaan yang mulus (*seamless*).
 
 ---
 
 ## 🛠️ Tech Stack
 - **Framework Core:** CodeIgniter 4 (PHP 8.1+)
-- **Database:** MySQL
+- **Database:** MySQL (25 Tabel Utama, Batch 46)
 - **Frontend / UI:** HTML5, CSS 3, Bootstrap 5.3
-- **Javascript:** jQuery, SweetAlert2
+- **Javascript:** jQuery, SweetAlert2, Flatpickr, Chart.js
 
 ---
 
@@ -62,7 +63,7 @@ Dibangun dengan fokus pada kecepatan dan kenyamanan pengguna, sistem ini memasti
 ---
 
 ## 📌 Versi Terbaru & Dokumentasi
-- **Versi Rilis:** `v1.5` (11 Oktober 2026)
+- **Versi Rilis:** `v1.6` (13 Oktober 2026)
 - **Ringkasan Perubahan:** Lihat [CHANGELOG.md](CHANGELOG.md), [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md), [audit_code.md](audit_code.md), dan [daftar_pekerjaan.md](daftar_pekerjaan.md) untuk detail audit 100% komprehensif seluruh modul sistem.
 
 ---

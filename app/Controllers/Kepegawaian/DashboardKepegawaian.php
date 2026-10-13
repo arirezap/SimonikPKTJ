@@ -373,9 +373,29 @@ class DashboardKepegawaian extends BaseController
 
         foreach ($semuaPegawai as $pegawai) {
             $uId = $pegawai['id'];
-            $atasanNama = isset($pegawai['atasan_id']) && isset($userMap[$pegawai['atasan_id']]) 
-                ? $userMap[$pegawai['atasan_id']]['nama_lengkap'] 
-                : '-';
+            $atasanNama = '-';
+
+            // Penyelarasan Atasan Langsung & Penugasan Berdasarkan Periode Bulan/Tahun Terpilih
+            if ($bulanTerpilih !== 'all' && $bulanTerpilih !== '') {
+                $penugasanBulan = $userModel->getPenugasanPeriode($uId, (int)$bulanTerpilih, (int)$tahunTerpilih);
+                if ($penugasanBulan) {
+                    $pegawai['jabatan'] = $penugasanBulan['jabatan'] ?: $pegawai['jabatan'];
+                    $pegawai['unit']    = $penugasanBulan['unit'] ?: $pegawai['unit'];
+                    if (!empty($penugasanBulan['atasan_id'])) {
+                        $atasanIdPeriode = (int)$penugasanBulan['atasan_id'];
+                        if (isset($userMap[$atasanIdPeriode])) {
+                            $atasanNama = $userMap[$atasanIdPeriode]['nama_lengkap'];
+                        } else {
+                            $bossRow = $userModel->select('nama_lengkap')->find($atasanIdPeriode);
+                            $atasanNama = $bossRow['nama_lengkap'] ?? '-';
+                        }
+                    }
+                }
+            }
+
+            if ($atasanNama === '-' && isset($pegawai['atasan_id']) && isset($userMap[$pegawai['atasan_id']])) {
+                $atasanNama = $userMap[$pegawai['atasan_id']]['nama_lengkap'];
+            }
             $pegawai['atasan_nama'] = $atasanNama;
 
             $userTargets = $targetsByUser[$uId] ?? [];

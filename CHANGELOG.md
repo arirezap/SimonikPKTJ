@@ -1,5 +1,23 @@
 # CHANGELOG: Pembaruan Sistem Evidence Command Center (ECC)
 
+## Versi 1.6.0 (13 Oktober 2026)
+- **Modul Riwayat Penugasan & Rotasi Multi-Periode Atasan-Staf (`riwayat_atasan`):**
+  - Perancangan tabel `riwayat_atasan` (`id, user_id, atasan_id, jabatan, unit_id, unit, role, tahun, bulan_mulai, bulan_selesai, is_aktif, keterangan`) dengan smart indexing ganda.
+  - Implementasi metode resolusi hierarki dinamis `User::getStaf($atasanId, $periodDate)` dan `User::getPenugasanPeriode($userId, $bulan, $tahun)` dengan fallback mulus ke kolom bawaan `users.*` (0 breaking changes).
+  - Integrasi siklus status pegawai (`aktif`, `mutasi_keluar`, `pensiun`): Pegawai mutasi/pensiun tetap tampil di daftar staf atasan lama selama bulan yang dipantau berada dalam rentang masa dinasnya (`tmt_selesai`) dan masa dispensasi.
+  - Pembaruan otorisasi `PenilaianKinerjaPolicy` (persetujuan target, evaluasi kinerja bulanan, izin revisi, pembatalan target) yang peka terhadap konteks bulan dan tahun penugasan pejabat yang sah.
+  - Antarmuka Bento modal kelola riwayat penugasan di menu Kelola Pengguna (`/users`) dengan validasi anti-overlapping dan badge status otomatis (Aktif, Lampau, Mendatang).
+  - Proteksi Smart Lock form edit profil pegawai (`/profile`): Mengunci pengubahan mandiri Jabatan, Unit Kerja, dan Atasan Langsung bagi pegawai yang telah memiliki riwayat penugasan resmi dari kepegawaian dengan pesan mikro singkat *"Ditetapkan Kepegawaian. Hubungi Kepegawaian jika ada perubahan."*
+- **Penyelarasan Lembar Cetak Dokumen PDF Dinas (SKP Multi-Periode):**
+  - Ekspor PDF rekap kinerja tahunan (`rekap_kinerja_pdf.php`) dan monitoring target (`monitoring_target_pdf.php`) mencantumkan tanda tangan pejabat penilai dan penyetuju sesuai riwayat masa dinas masing-masing periode bulan, mematuhi standar resmi PermenPAN-RB No. 6 Tahun 2022.
+  - Perhitungan akumulasi proporsional (prorata) otomatis untuk pegawai yang mengalami mutasi keluar di pertengahan tahun anggaran.
+- **Audit Trail Digital Persetujuan Target & Penilaian Kinerja:**
+  - Penambahan kolom `approved_by` dan `approved_at` pada tabel `target_kinerja_bulanan`, serta `penilai_id` dan `penilaian_at` pada `target_kinerja_bulanan` dan `log_tugas_tambahan`.
+  - Perekaman mutasi atomik saat persetujuan (`approve`, `approveAll`) dan penerbitan nilai (`terbit`), serta pengosongan kembali (`NULL`) saat pembatalan persetujuan (`cancelApprove`) dan reset nilai.
+  - Tampilan UI/UX bersih dan netral: Menampilkan identitas nama pejabat penyetuju/penilai pada tooltip/badge tanpa mengekspos stempel waktu tanggal dan jam demi memitigasi risiko temuan pemeriksaan auditor (Itjen / BPK).
+- **Sinkronisasi Database cPanel Produksi (Batch 46):**
+  - Pembaruan berkas `database_updates_cpanel.sql` menjadi 3 bagian terstruktur yang siap dieksekusi tanpa error duplikasi kolom, mencakup DDL tabel `riwayat_atasan`, alter kolom audit, pembaruan VIEW `laporan_harian`, dan pencatatan migrasi CI4 Batch 46.
+
 ## Versi 1.5.0 (11 Oktober 2026)
 - **Audit & Pengetatan `.gitignore` (Anti-Kebocoran Data Sensitif):**
   - Mengabaikan seluruh foto profil dinamis pegawai (`public/assets/uploads/profile/*`) dan media upload dengan tetap menjaga aset bawaan (`default.png` dan `.htaccess`).
