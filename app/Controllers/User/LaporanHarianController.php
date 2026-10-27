@@ -270,6 +270,30 @@ class LaporanHarianController extends BaseController
             // Bulan ke depan ($targetMonth > $currentMonth) DIPERBOLEHKAN (tidak dikunci)
         }
 
+        // Cek Pembatasan Batas Penugasan (TMT Selesai) untuk Pegawai Mutasi, Pensiun, atau Nonaktif
+        $targetUserContext = $userModel->select('id, nama_lengkap, nip, username, role, status_pegawai, tmt_selesai, dispensasi_lampau_sampai')->find($targetUserIdContext);
+        $targetUserStatus = $targetUserContext['status_pegawai'] ?? 'aktif';
+        $targetTmtSelesai = $targetUserContext['tmt_selesai'] ?? null;
+        
+        $isPostTmt = false;
+        $postTmtReason = '';
+        if ($targetUserStatus !== 'aktif' && !empty($targetTmtSelesai)) {
+            $selectedPeriodStr = sprintf('%04d-%02d-01', (int)$tahunTerpilih, (int)$bulanTerpilih);
+            $tmtPeriodStr = date('Y-m-01', strtotime($targetTmtSelesai));
+            if ($selectedPeriodStr > $tmtPeriodStr) {
+                $isLocked = true;
+                $isPostTmt = true;
+                $tmtMonthFormatted = ($bulanIndo[(int)date('n', strtotime($targetTmtSelesai)) - 1] ?? '') . ' ' . date('Y', strtotime($targetTmtSelesai));
+                $tmtDateFormatted = date('d/m/Y', strtotime($targetTmtSelesai));
+                $labelStatus = ($targetUserStatus === 'pensiun') ? 'Pensiun' : (($targetUserStatus === 'nonaktif') ? 'Nonaktif' : 'Mutasi Keluar');
+                if (!empty($stafIdTerpilih)) {
+                    $postTmtReason = "Pegawai telah berstatus {$labelStatus} per {$tmtDateFormatted}. Pengisian target kinerja hanya dapat dilakukan sampai periode {$tmtMonthFormatted}.";
+                } else {
+                    $postTmtReason = "Akun Anda telah berstatus {$labelStatus} per {$tmtDateFormatted}. Pengisian target kinerja hanya dapat dilakukan sampai periode {$tmtMonthFormatted}.";
+                }
+            }
+        }
+
         $data = [
             'title' => 'Target Kinerja Bulanan',
             'bulan_terpilih' => $bulanTerpilih,
@@ -282,6 +306,8 @@ class LaporanHarianController extends BaseController
             'batas_target' => $batasTarget,
             'is_locked' => $isLocked,
             'is_revision' => $isRevision,
+            'is_post_tmt' => $isPostTmt,
+            'post_tmt_reason' => $postTmtReason,
             'is_atasan' => $isAtasan,
             'is_penyetuju' => $isPenyetuju,
             'daftar_staf' => $daftarStaf,
@@ -373,16 +399,20 @@ class LaporanHarianController extends BaseController
         $tmtSelesaiStr = !empty($targetUser['tmt_selesai']) ? date('Y-m-01', strtotime($targetUser['tmt_selesai'])) : null;
 
         if ($targetUserStatus !== 'aktif') {
-            if (!$hasDispensasi) {
-                $msg = 'Akun dalam status arsip kepegawaian. Tidak dapat menambah atau mengubah target kinerja.';
+            // Batas mutlak: periode target tidak boleh melampaui bulan dan tahun masa penugasan (TMT)
+            if ($tmtSelesaiStr !== null && $targetPeriodeStr > $tmtSelesaiStr) {
+                $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                $tmtMonthFormatted = ($bulanIndo[(int)date('n', strtotime($targetUser['tmt_selesai'])) - 1] ?? '') . ' ' . date('Y', strtotime($targetUser['tmt_selesai']));
+                $msg = "Target kinerja tidak dapat dibuat untuk periode setelah akhir masa tugas pegawai ({$tmtMonthFormatted}).";
                 if ($this->request->isAJAX()) {
                     return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
                 }
                 return redirect()->back()->with('error', $msg);
             }
 
-            if ($tmtSelesaiStr !== null && $targetPeriodeStr > $tmtSelesaiStr) {
-                $msg = 'Target tidak dapat diajukan untuk periode setelah tanggal akhir masa penugasan.';
+            // Jika status non-aktif tanpa TMT dan tidak ada dispensasi
+            if (empty($targetUser['tmt_selesai']) && !$hasDispensasi) {
+                $msg = 'Akun dalam status arsip kepegawaian. Tidak dapat menambah atau mengubah target kinerja.';
                 if ($this->request->isAJAX()) {
                     return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
                 }

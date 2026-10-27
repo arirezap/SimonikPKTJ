@@ -381,6 +381,14 @@ Dokumen ini adalah lembar kerja resmi pelacakan pekerjaan pengembangan, perbaika
     - Penampilan informasi akuntabilitas (Nama Penyetuju/Penilai) pada antarmuka Target Saya, Target Staf, dan ringkasan penilaian kinerja, dengan stempel waktu tanggal dan jam tersimpan aman di database (tidak diekspos di UI untuk memitigasi risiko temuan pemeriksaan auditor).
   - **Status**: Selesai ✅ *(13 Oktober 2026)*
 
+- [x] **TUGAS 15.7: Pembatasan Dinamis Target Kinerja & Laporan Kegiatan Pegawai Mutasi/Pensiun (`tmt_selesai`)**
+  - **Uraian Pekerjaan**:
+    - Penerapan validasi batas akhir penugasan dinamis berbasis `users.tmt_selesai` untuk pegawai dengan status selain aktif (`mutasi_keluar`, `pensiun`, `nonaktif`).
+    - **Target Kinerja Bulanan (`LaporanHarianController.php` & `index.php`)**: Periode target setelah bulan TMT otomatis terkunci dengan alert kontekstual (*"Akun Anda telah berstatus [Mutasi Keluar/Pensiun] per [DD/MM/YYYY]. Pengisian target kinerja hanya dapat dilakukan sampai periode [Bulan Tahun]."*), serta tombol input dinonaktifkan.
+    - **Lapor Kegiatan Harian (`LogKegiatanController.php` & `index.php`)**: Capping tanggal maksimal (`maxAllowedDate`) dan Flatpickr `maxDate` hingga `tmt_selesai`. Pegawai hanya diizinkan mengisi kegiatan pada tanggal aktif penugasan (`<= tmt_selesai`).
+    - **Adaptasi Dinamis**: Perubahan tanggal TMT di menu Kelola Pengguna (`/users`) langsung berdampak seketika pada pembatasan target dan kalender kegiatan tanpa jeda.
+  - **Status**: Selesai ✅ *(27 Oktober 2026)*
+
 ---
 
 ## 📊 Status Progres Pelaksanaan

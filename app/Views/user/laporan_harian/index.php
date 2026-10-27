@@ -338,7 +338,14 @@
                     </div>
                 </form>
 
-                <?php if ($is_locked): ?>
+                <?php if (!empty($is_post_tmt)): ?>
+                    <div class="alert alert-warning mb-3 py-2.5 px-3 small rounded-4 d-flex align-items-center gap-2">
+                        <i class="bi bi-exclamation-triangle-fill text-warning-emphasis fs-5 flex-shrink-0"></i>
+                        <div>
+                            <?= esc($post_tmt_reason) ?>
+                        </div>
+                    </div>
+                <?php elseif ($is_locked): ?>
                     <div class="alert alert-warning mb-3 py-2.5 px-3 small rounded-4 d-flex align-items-center gap-2">
                         <i class="bi bi-lock-fill text-warning-emphasis fs-5 flex-shrink-0"></i>
                         <div>

@@ -19,6 +19,8 @@ class LogKegiatanController extends BaseController
         $targetModel = new TargetKinerja();
 
         $userId = session()->get('id') ?? session()->get('user_id');
+        $userModel = new User();
+        $currentUser = $userModel->find($userId);
         
         // Ambil parameter tanggal dari GET atau POST, sinkronkan ke session
         $reqTanggal = $this->request->getVar('tanggal');
@@ -26,7 +28,20 @@ class LogKegiatanController extends BaseController
             session()->set('log_kegiatan_tanggal', $reqTanggal);
             $tanggalTerpilih = $reqTanggal;
         } else {
-            $tanggalTerpilih = session()->get('log_kegiatan_tanggal') ?? date('Y-m-d');
+            $sessTanggal = session()->get('log_kegiatan_tanggal');
+            if (!empty($sessTanggal) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $sessTanggal)) {
+                $tanggalTerpilih = $sessTanggal;
+            } else {
+                $tanggalTerpilih = date('Y-m-d');
+            }
+
+            // Jika pegawai berstatus mutasi/pensiun/nonaktif dan tanggal default melampaui tmt_selesai, arahkan ke tmt_selesai
+            if (($currentUser['status_pegawai'] ?? 'aktif') !== 'aktif' && !empty($currentUser['tmt_selesai'])) {
+                if ($tanggalTerpilih > $currentUser['tmt_selesai']) {
+                    $tanggalTerpilih = $currentUser['tmt_selesai'];
+                    session()->set('log_kegiatan_tanggal', $tanggalTerpilih);
+                }
+            }
         }
         
         $bulanTerpilih = (int) date('n', strtotime($tanggalTerpilih));
@@ -38,8 +53,6 @@ class LogKegiatanController extends BaseController
                                   ->where('tahun', $tahunTerpilih)
                                   ->findAll();
 
-        $userModel = new User();
-        $currentUser = $userModel->find($userId);
         $hasAtasan = $currentUser && !empty($currentUser['atasan_id']) && $currentUser['role'] !== 'direktur';
 
         $targetStatus = 'disetujui';
@@ -75,6 +88,13 @@ class LogKegiatanController extends BaseController
         $endOfMonth = date('Y-m-t', strtotime($today));
         $maxAllowedDate = ($endOfMonth > $tomorrow) ? $endOfMonth : $tomorrow;
 
+        // Batasi tanggal maksimal jika pegawai berstatus mutasi/pensiun/nonaktif dengan tmt_selesai
+        if (($currentUser['status_pegawai'] ?? 'aktif') !== 'aktif' && !empty($currentUser['tmt_selesai'])) {
+            if ($maxAllowedDate > $currentUser['tmt_selesai']) {
+                $maxAllowedDate = $currentUser['tmt_selesai'];
+            }
+        }
+
         $isFutureDate = ($tanggalTerpilih > $today);
         $isTomorrow = ($tanggalTerpilih === $tomorrow);
 
@@ -104,10 +124,14 @@ class LogKegiatanController extends BaseController
             }
         }
 
-        // 1. Aturan Khusus: Tanggal di luar batas masa depan bulan berjalan DILARANG KERAS
+        // 1. Aturan Khusus: Tanggal di luar batas masa depan / melewati TMT DILARANG KERAS
         if ($tanggalTerpilih > $maxAllowedDate) {
             $isLocked = true;
-            $lockReason = 'Laporan kegiatan hanya dapat diisi untuk tanggal di bulan ini.';
+            if (($currentUser['status_pegawai'] ?? 'aktif') !== 'aktif' && !empty($currentUser['tmt_selesai']) && $tanggalTerpilih > $currentUser['tmt_selesai']) {
+                $lockReason = 'Batas pengisian laporan adalah sampai akhir masa penugasan Anda (' . date('d/m/Y', strtotime($currentUser['tmt_selesai'])) . ').';
+            } else {
+                $lockReason = 'Laporan kegiatan hanya dapat diisi untuk tanggal di bulan ini.';
+            }
         } else {
             // 2. Cek pembatasan deadline masa lalu / bulan sebelumnya dari Pengaturan Sistem Admin
             $lockCheck = $this->checkDateLockStatus($tanggalTerpilih, $currentUser, $isFutureDate, $isRevision);
@@ -1295,30 +1319,39 @@ class LogKegiatanController extends BaseController
         $userStatus = $currentUser['status_pegawai'] ?? 'aktif';
         $hasDispensasi = !empty($currentUser['dispensasi_lampau_sampai']) && $currentUser['dispensasi_lampau_sampai'] >= $today;
 
-        // 0. Cek Status Arsip Kepegawaian (Mutasi Keluar, Pensiun, Nonaktif)
+        // 0. Cek Status Pegawai (Mutasi Keluar, Pensiun, Nonaktif) & Batas Akhir Penugasan (TMT)
         if ($userStatus !== 'aktif') {
-            if (!$hasDispensasi) {
+            if (!empty($currentUser['tmt_selesai'])) {
+                if ($tanggal > $currentUser['tmt_selesai']) {
+                    $tglTmt = date('d/m/Y', strtotime($currentUser['tmt_selesai']));
+                    return [
+                        'is_locked' => true,
+                        'reason'    => "Tanggal kegiatan melebihi batas akhir penugasan Anda ({$tglTmt})."
+                    ];
+                }
+            } elseif (!$hasDispensasi) {
                 return [
                     'is_locked' => true,
                     'reason'    => 'Akun dalam status arsip kepegawaian. Tidak dapat menambah atau mengubah laporan kegiatan.'
                 ];
             }
+        }
 
-            // Jika ada dispensasi, pastikan tanggal kegiatan tidak melampaui tanggal akhir masa penugasan
-            if (!empty($currentUser['tmt_selesai']) && $tanggal > $currentUser['tmt_selesai']) {
-                $tglTmt = date('d/m/Y', strtotime($currentUser['tmt_selesai']));
-                return [
-                    'is_locked' => true,
-                    'reason'    => "Tanggal kegiatan melebihi batas akhir penugasan Anda ({$tglTmt})."
-                ];
+        // Sesuaikan batas maksimal jika akun memiliki tmt_selesai
+        if ($userStatus !== 'aktif' && !empty($currentUser['tmt_selesai'])) {
+            if ($maxAllowedDate > $currentUser['tmt_selesai']) {
+                $maxAllowedDate = $currentUser['tmt_selesai'];
             }
         }
 
-        // 1. Tanggal kegiatan melebihi batas bulan berjalan DILARANG KERAS
+        // 1. Tanggal kegiatan melebihi batas DILARANG KERAS
         if ($tanggal > $maxAllowedDate) {
+            $lockMsg = ($userStatus !== 'aktif' && !empty($currentUser['tmt_selesai']))
+                ? 'Batas pengisian laporan adalah sampai akhir masa penugasan Anda (' . date('d/m/Y', strtotime($currentUser['tmt_selesai'])) . ').'
+                : 'Laporan kegiatan hanya dapat diisi untuk tanggal di bulan ini.';
             return [
                 'is_locked' => true,
-                'reason'    => 'Laporan kegiatan hanya dapat diisi untuk tanggal di bulan ini.'
+                'reason'    => $lockMsg
             ];
         }
 
@@ -1330,8 +1363,10 @@ class LogKegiatanController extends BaseController
             ];
         }
 
-        // Jika laporan merupakan revisi yang telah diizinkan atau memiliki dispensasi lampau aktif, lewati penguncian batas waktu lampau
-        if ($isRevision || $hasDispensasi) {
+        // Jika laporan merupakan revisi yang telah diizinkan, memiliki dispensasi lampau aktif,
+        // ATAU pegawai mutasi/pensiun yang mengisi kegiatan dalam masa aktif penugasannya (tanggal <= tmt_selesai)
+        $isWithinTmtPenugasan = ($userStatus !== 'aktif' && !empty($currentUser['tmt_selesai']) && $tanggal <= $currentUser['tmt_selesai']);
+        if ($isRevision || $hasDispensasi || $isWithinTmtPenugasan) {
             return ['is_locked' => false, 'reason' => ''];
         }
 

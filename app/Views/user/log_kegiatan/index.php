@@ -546,7 +546,7 @@
                             </a>
 
                             <!-- Today Quick Jump Button -->
-                            <?php if ($tanggal_terpilih !== $today): ?>
+                            <?php if ($tanggal_terpilih !== $today && $today <= $maxAllowedDate): ?>
                                 <a href="<?= site_url('log-kegiatan') ?>?tanggal=<?= $today ?>" class="btn btn-sm btn-primary date-today-btn btn-tactile shadow-xs text-nowrap ms-1" title="Kembali ke Hari Ini" aria-label="Kembali ke Hari Ini">
                                     Hari Ini
                                 </a>
