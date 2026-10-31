@@ -467,6 +467,22 @@ Dokumen ini adalah lembar kerja resmi pelacakan pekerjaan pengembangan, perbaika
     - **Aksesibilitas DOM & Form Guard**: Perbaikan kontainer label menjadi `<div>` pada opsi pilihan majemuk, pencegahan karakter non-angka pada kolom Usia (No. 4), integrasi event `onClose` dan `onValueUpdate` pada Flatpickr (No. 9), serta sinkronisasi otomatis Masa Kerja (No. 10).
     - **Penyelarasan Responsif Mobile Action Bar**: Tata letak bilah tombol bawah yang kokoh dengan ruang aman (*safe-area-inset*) hingga layar 360px tanpa menutupi konten pertanyaan.
   - **Status**: Selesai ✅ *(31 Oktober 2026)*
+
+- [x] **TUGAS 16.9: Perbaikan Inisialisasi & Lingkup Leksikal Grafik Chart.js Hasil Survei (`hasil_survei.php`)**
+  - **Uraian Pekerjaan**:
+    - **Penyelarasan Lingkup Leksikal JavaScript**: Memindahkan deklarasi fungsi `initAnalyticsCharts()` ke dalam cakupan `DOMContentLoaded` agar dapat mengakses keempat callback klik grafik (`handleKompetensiChartClick`, `handleBluChartClick`, `handleKapasitasChartClick`, `handlePelatihanChartClick`) dan meniadakan `Uncaught ReferenceError`.
+    - **Pembersihan Instance Grafik Dinamis**: Menerapkan manajemen instance pada objek kamus `activeAnalyticsCharts` dengan eksekusi `destroy()` sebelum inisialisasi canvas ulang demi mencegah tabrakan instansiasi.
+    - **Multi-Trigger Rendering yang Tangguh**: Mengaktifkan pemicu inisialisasi pada event `shown.bs.tab`, event `click` tombol tab, status aktif saat halaman dimuat, serta kartu KPI eksekutif atas dengan mekanisme *retry timeout* jika CDN Chart.js sedang diunduh.
+    - **Fallback Visual Data Kosong**: Menyediakan visualisasi placeholder (*gray doughnut*) berlabel *"Belum ada data"* saat nilai kapasitas masih 0 sehingga tampilan tetap elegan dan tidak melompong.
+  - **Status**: Selesai ✅ *(31 Oktober 2026)*
+
+- [x] **TUGAS 16.10: Penataan Simetri & Polishing UI/UX Tab 3 Hasil Survei (`hasil_survei.php`)**
+  - **Uraian Pekerjaan**:
+    - **Pembagian Kolom Simetris (50:50 Grid Split)**: Menyesuaikan tata letak grid dari `col-lg-7` dan `col-lg-5` menjadi `col-12 col-lg-6` di kedua sisi sehingga kartu kiri (*Indeks Perilaku*) dan kartu kanan (*Persepsi Sistem Kinerja* & *Hambatan Produktivitas*) memiliki lebar proporsional yang seimbang.
+    - **Penyelarasan Vertikal Presisi Berbasis Flexbox**: Menambahkan class `align-items-stretch` pada baris induk, `d-flex flex-column h-100` pada kartu kiri, serta `gap-3` dan `flex-grow-1` pada kartu kanan bawah sehingga tepi bawah kartu kiri dan kanan sejajar sempurna (*pixel-perfect*).
+    - **Harmonisasi Desain Bento Strip & Bar Capaian**: Mengubah tampilan butir pertanyaan pada *Persepsi Sistem Kinerja* (No. 73, 76, 77, 82) dari teks garis bawah biasa menjadi modul strip bento berlatar `#f8fafc` lengkap dengan indikator progres berwarna biru muda (*sky blue* `#0284c7`), selaras dengan bahasa desain kartu di sebelahnya.
+    - **Bilah Gulir Ramping (*Custom Slim Scrollbar*)**: Mengganti bilah gulir bawaan peramban Windows yang tebal dan memiliki panah menjadi bilah gulir ramping 6px tanpa panah (`.custom-scroll`) dengan sudut membulat elegan pada kontainer daftar perilaku, hambatan kerja, masukan esai, serta tabel komparasi.
+  - **Status**: Selesai ✅ *(31 Oktober 2026)*
 ---
 ## 📊 Status Progres Pelaksanaan
 

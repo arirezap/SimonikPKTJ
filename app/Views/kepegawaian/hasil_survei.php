@@ -227,6 +227,36 @@
         color: #ffffff;
     }
 
+    /* Custom Modern Slim Scrollbar (ECC Standard) */
+    .custom-scroll,
+    .table-bento-scroll,
+    .compare-table-wrapper {
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 transparent;
+    }
+    .custom-scroll::-webkit-scrollbar,
+    .table-bento-scroll::-webkit-scrollbar,
+    .compare-table-wrapper::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track,
+    .table-bento-scroll::-webkit-scrollbar-track,
+    .compare-table-wrapper::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb,
+    .table-bento-scroll::-webkit-scrollbar-thumb,
+    .compare-table-wrapper::-webkit-scrollbar-thumb {
+        background-color: #cbd5e1;
+        border-radius: 9999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover,
+    .table-bento-scroll::-webkit-scrollbar-thumb:hover,
+    .compare-table-wrapper::-webkit-scrollbar-thumb:hover {
+        background-color: #94a3b8;
+    }
+
     /* Interaktivitas Kartu & Grafik ECC */
     .card-interactive {
         cursor: pointer;
@@ -1492,21 +1522,21 @@ $exportQuery = http_build_query([
     <!-- TAB 3: PERILAKU KERJA, SISTEM PENGHARGAAN & MASUKAN STRATEGIS       -->
     <!-- =================================================================== -->
     <div class="tab-pane fade" id="paneAspirasi" role="tabpanel">
-        <div class="row g-3 mb-3">
+        <div class="row g-3 mb-3 align-items-stretch">
             <!-- Rata-Rata Skor Perilaku Kerja (No. 43 - 55) -->
-            <div class="col-12 col-lg-7">
-                <div class="card-bento-ecc h-100">
-                    <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+            <div class="col-12 col-lg-6 d-flex flex-column">
+                <div class="card-bento-ecc h-100 d-flex flex-column">
+                    <div class="d-flex align-items-center justify-content-between gap-2 mb-3 flex-shrink-0">
                         <div>
                             <h2 class="h6 fw-bold text-dark mb-0">Indeks Perilaku &amp; Inisiatif Kerja (No. 43&ndash;55)</h2>
                             <div class="text-secondary" style="font-size: 0.75rem;">Rata-rata skala 1,00 s.d. 5,00 dari responden terkirim.</div>
                         </div>
-                        <span class="status-pill-compact bg-primary-subtle text-primary tabular-nums">
+                        <span class="status-pill-compact bg-primary-subtle text-primary tabular-nums flex-shrink-0">
                             Rata-rata: <?= number_format((float) $kpi['overall_behavior_avg'], 2, ',', '.') ?> / 5,00
                         </span>
                     </div>
 
-                    <div class="d-flex flex-column gap-2" style="max-height: 440px; overflow-y: auto; padding-right: 4px;">
+                    <div class="d-flex flex-column gap-2 flex-grow-1 custom-scroll" style="max-height: 540px; overflow-y: auto; padding-right: 6px;">
                         <?php foreach (($insights['likert_perilaku'] ?? []) as $lp): ?>
                             <div class="p-2 px-3 rounded-3 border" style="background: #f8fafc;">
                                 <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
@@ -1527,38 +1557,48 @@ $exportQuery = http_build_query([
             </div>
 
             <!-- Persepsi Sistem Penghargaan & Hambatan Utama -->
-            <div class="col-12 col-lg-5">
-                <div class="card-bento-ecc mb-3">
-                    <h2 class="h6 fw-bold text-dark mb-2">Persepsi Sistem Kinerja &amp; Komitmen BLU</h2>
+            <div class="col-12 col-lg-6 d-flex flex-column gap-3">
+                <div class="card-bento-ecc flex-shrink-0">
+                    <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
+                        <h2 class="h6 fw-bold text-dark mb-0">Persepsi Sistem Kinerja &amp; Komitmen BLU</h2>
+                        <span class="badge rounded-pill bg-light text-secondary border fw-normal" style="font-size: 0.6875rem;">Skala 1&ndash;5</span>
+                    </div>
+                    <div class="text-secondary mb-3" style="font-size: 0.75rem;">
+                        Penilaian keterkaitan capaian kerja, skema penghargaan, dan komitmen institusi.
+                    </div>
                     <div class="d-flex flex-column gap-2">
                         <?php foreach (($insights['skor_penghargaan'] ?? []) as $sp): ?>
-                            <div class="d-flex align-items-center justify-content-between gap-3 py-2 border-bottom">
-                                <div class="text-secondary" style="font-size: 0.8125rem;">
-                                    <strong class="text-dark tabular-nums">No. <?= (int) $sp['no'] ?>:</strong>
-                                    <?= esc(mb_strimwidth($sp['label'], 0, 95, '...')) ?>
+                            <div class="p-2 px-3 rounded-3 border" style="background: #f8fafc;">
+                                <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
+                                    <div class="text-dark" style="font-size: 0.8125rem;">
+                                        <strong class="tabular-nums">No. <?= (int) $sp['no'] ?>:</strong> <?= esc($sp['label']) ?>
+                                    </div>
+                                    <span class="fw-bold tabular-nums flex-shrink-0" style="font-size: 0.8125rem; color: #0284c7;">
+                                        <?= number_format((float) $sp['avg'], 2, ',', '.') ?>
+                                    </span>
                                 </div>
-                                <span class="status-pill-compact bg-primary-subtle text-primary tabular-nums">
-                                    <?= number_format((float) $sp['avg'], 2, ',', '.') ?> / 5
-                                </span>
+                                <div class="progress rounded-pill" style="height: 5px; background: #e2e8f0;">
+                                    <div class="progress-bar rounded-pill" style="width: <?= min(100, round(((float) $sp['avg'] / 5) * 100, 1)) ?>%; background: #0284c7;"></div>
+                                </div>
                             </div>
                         <?php endforeach; ?>
                     </div>
                 </div>
 
-                <div class="card-bento-ecc">
-                    <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
+                <div class="card-bento-ecc flex-grow-1 d-flex flex-column">
+                    <div class="d-flex align-items-center justify-content-between gap-2 mb-1 flex-shrink-0">
                         <h2 class="h6 fw-bold text-dark mb-0">Hambatan Produktivitas (No. 57)</h2>
                         <span class="badge rounded-pill text-danger border border-danger-subtle fw-semibold" style="background: #fef2f2; padding: 4px 10px; font-size: 0.6875rem;">
                             Fokus Analitik 4
                         </span>
                     </div>
-                    <div class="text-secondary mb-3" style="font-size: 0.75rem;">
+                    <div class="text-secondary mb-3 flex-shrink-0" style="font-size: 0.75rem;">
                         Peringkat faktor utama penghambat produktivitas kerja pegawai di lingkungan PKTJ.
                     </div>
                     <?php if (empty($insights['hambatan_ranked'])): ?>
                         <div class="text-secondary" style="font-size: 0.8125rem;">Belum ada data hambatan terkirim.</div>
                     <?php else: ?>
-                        <div class="d-flex flex-column gap-2" style="max-height: 380px; overflow-y: auto;">
+                        <div class="d-flex flex-column gap-2 flex-grow-1 custom-scroll" style="max-height: 250px; overflow-y: auto; padding-right: 6px;">
                             <?php foreach ($insights['hambatan_ranked'] as $hRank => $hItem): ?>
                                 <div class="p-2 px-3 rounded-3 border" style="background: #f8fafc;">
                                     <div class="d-flex align-items-center justify-content-between gap-2 mb-1" style="font-size: 0.8125rem;">
@@ -1603,7 +1643,7 @@ $exportQuery = http_build_query([
                     <?php if (empty($eList)): ?>
                         <div class="text-center text-secondary py-4" style="font-size: 0.875rem;">Belum ada jawaban terbuka pada butir pertanyaan ini.</div>
                     <?php else: ?>
-                        <div class="row g-2" style="max-height: 440px; overflow-y: auto;">
+                        <div class="row g-2 custom-scroll" style="max-height: 440px; overflow-y: auto; padding-right: 4px;">
                             <?php foreach ($eList as $eItem): ?>
                                 <div class="col-12 col-md-6">
                                     <div class="p-3 rounded-3 border h-100" style="background: #f8fafc;">
@@ -1876,7 +1916,7 @@ $exportQuery = http_build_query([
 <?= $this->section('scripts') ?>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 (function () {
     'use strict';
@@ -1974,112 +2014,6 @@ $exportQuery = http_build_query([
         });
     }
 
-    function initAnalyticsCharts() {
-        if (chartsInitialized || typeof Chart === 'undefined') return;
-        chartsInitialized = true;
-
-        function buildHorizontalBar(canvasId, objMap, barColor, onBarClick) {
-            const el = document.getElementById(canvasId);
-            if (!el) return;
-            const fullKeys = Object.keys(objMap || {});
-            const labels = fullKeys.map(l => l.length > 38 ? l.slice(0, 36) + '...' : l);
-            const values = Object.values(objMap || {});
-            new Chart(el, {
-                type: 'bar',
-                data: {
-                    labels: labels.length ? labels : ['Belum ada data'],
-                    datasets: [{
-                        label: 'Responden',
-                        data: values.length ? values : [0],
-                        backgroundColor: barColor,
-                        borderRadius: 6,
-                        maxBarThickness: 22
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                afterBody: () => onBarClick ? ['Klik untuk melihat / menyaring data'] : []
-                            }
-                        }
-                    },
-                    scales: {
-                        x: { beginAtZero: true, ticks: { precision: 0 } },
-                        y: { ticks: { font: { size: 11 } } }
-                    },
-                    onClick: (evt, elements, chart) => {
-                        if (!elements || elements.length === 0 || !onBarClick) return;
-                        const idx = elements[0].index;
-                        const fullKey = fullKeys[idx] || chart.data.labels[idx];
-                        if (fullKey && fullKey !== 'Belum ada data') {
-                            onBarClick(fullKey);
-                        }
-                    },
-                    onHover: (evt, elements) => {
-                        if (evt.native && evt.native.target) {
-                            evt.native.target.style.cursor = (elements && elements.length > 0 && onBarClick) ? 'pointer' : 'default';
-                        }
-                    }
-                }
-            });
-        }
-
-        buildHorizontalBar('chartKompetensiCanvas', CHARTS_DATA.top_kompetensi, '#1d4ed8', handleKompetensiChartClick);
-        buildHorizontalBar('chartBluCanvas', CHARTS_DATA.top_blu, '#0284c7', handleBluChartClick);
-        buildHorizontalBar('chartPelatihanCanvas', CHARTS_DATA.top_pelatihan, '#4f46e5', handlePelatihanChartClick);
-
-        const kapEl = document.getElementById('chartKapasitasCanvas');
-        if (kapEl) {
-            const kapMap = CHARTS_DATA.kapasitas || {};
-            const kapKeys = Object.keys(kapMap);
-            new Chart(kapEl, {
-                type: 'doughnut',
-                data: {
-                    labels: kapKeys,
-                    datasets: [{
-                        data: Object.values(kapMap),
-                        backgroundColor: ['#16a34a', '#2563eb', '#0ea5e9', '#f59e0b', '#94a3b8'],
-                        borderWidth: 2,
-                        borderColor: '#ffffff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: { boxWidth: 12, font: { size: 11 } }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                afterBody: () => ['Klik untuk menyaring kapasitas di tabel talenta']
-                            }
-                        }
-                    },
-                    onClick: (evt, elements) => {
-                        if (!elements || elements.length === 0) return;
-                        const idx = elements[0].index;
-                        const selectedLabel = kapKeys[idx];
-                        if (selectedLabel) {
-                            handleKapasitasChartClick(selectedLabel);
-                        }
-                    },
-                    onHover: (evt, elements) => {
-                        if (evt.native && evt.native.target) {
-                            evt.native.target.style.cursor = (elements && elements.length > 0) ? 'pointer' : 'default';
-                        }
-                    }
-                }
-            });
-        }
-    }
-
     function renderDelegatesTable(delegates) {
         const tbody = document.getElementById('tbodyActiveDelegates');
         const badge = document.getElementById('badgeCountDelegasi');
@@ -2133,6 +2067,12 @@ $exportQuery = http_build_query([
         document.getElementById('tab-talenta-btn')?.addEventListener('shown.bs.tab', function () {
             initAnalyticsCharts();
         });
+        document.getElementById('tab-talenta-btn')?.addEventListener('click', function () {
+            setTimeout(initAnalyticsCharts, 80);
+        });
+        if (document.getElementById('paneTalenta')?.classList.contains('active') || document.getElementById('tab-talenta-btn')?.classList.contains('active')) {
+            setTimeout(initAnalyticsCharts, 100);
+        }
 
         // Salin Tautan Survei
         document.getElementById('btnCopyShareLink')?.addEventListener('click', async function () {
@@ -2640,6 +2580,133 @@ $exportQuery = http_build_query([
             }
         });
 
+        // =================================================================
+        // INISIALISASI GRAFIK CHART.JS (PETA TALENTA LINTAS UNIT & BLU)
+        // =================================================================
+        let activeAnalyticsCharts = {};
+
+        function initAnalyticsCharts() {
+            if (typeof Chart === 'undefined') {
+                setTimeout(initAnalyticsCharts, 120);
+                return;
+            }
+            if (chartsInitialized) return;
+
+            function buildHorizontalBar(canvasId, objMap, barColor, onBarClick) {
+                const el = document.getElementById(canvasId);
+                if (!el) return;
+
+                if (activeAnalyticsCharts[canvasId]) {
+                    try { activeAnalyticsCharts[canvasId].destroy(); } catch (e) {}
+                    delete activeAnalyticsCharts[canvasId];
+                }
+
+                const fullKeys = Object.keys(objMap || {});
+                const labels = fullKeys.map(l => l.length > 38 ? l.slice(0, 36) + '...' : l);
+                const values = Object.values(objMap || {});
+                activeAnalyticsCharts[canvasId] = new Chart(el, {
+                    type: 'bar',
+                    data: {
+                        labels: labels.length ? labels : ['Belum ada data'],
+                        datasets: [{
+                            label: 'Responden',
+                            data: values.length ? values : [0],
+                            backgroundColor: barColor,
+                            borderRadius: 6,
+                            maxBarThickness: 22
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    afterBody: () => onBarClick ? ['Klik untuk melihat / menyaring data'] : []
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { beginAtZero: true, ticks: { precision: 0 } },
+                            y: { ticks: { font: { size: 11 } } }
+                        },
+                        onClick: (evt, elements, chart) => {
+                            if (!elements || elements.length === 0 || !onBarClick) return;
+                            const idx = elements[0].index;
+                            const fullKey = fullKeys[idx] || chart.data.labels[idx];
+                            if (fullKey && fullKey !== 'Belum ada data') {
+                                onBarClick(fullKey);
+                            }
+                        },
+                        onHover: (evt, elements) => {
+                            if (evt.native && evt.native.target) {
+                                evt.native.target.style.cursor = (elements && elements.length > 0 && onBarClick) ? 'pointer' : 'default';
+                            }
+                        }
+                    }
+                });
+            }
+
+            buildHorizontalBar('chartKompetensiCanvas', CHARTS_DATA.top_kompetensi, '#1d4ed8', handleKompetensiChartClick);
+            buildHorizontalBar('chartBluCanvas', CHARTS_DATA.top_blu, '#0284c7', handleBluChartClick);
+            buildHorizontalBar('chartPelatihanCanvas', CHARTS_DATA.top_pelatihan, '#4f46e5', handlePelatihanChartClick);
+
+            const kapEl = document.getElementById('chartKapasitasCanvas');
+            if (kapEl) {
+                if (activeAnalyticsCharts['chartKapasitasCanvas']) {
+                    try { activeAnalyticsCharts['chartKapasitasCanvas'].destroy(); } catch (e) {}
+                    delete activeAnalyticsCharts['chartKapasitasCanvas'];
+                }
+                const kapMap = CHARTS_DATA.kapasitas || {};
+                const kapKeys = Object.keys(kapMap);
+                const hasData = Object.values(kapMap).some(v => Number(v) > 0);
+                activeAnalyticsCharts['chartKapasitasCanvas'] = new Chart(kapEl, {
+                    type: 'doughnut',
+                    data: {
+                        labels: hasData ? kapKeys : ['Belum ada data'],
+                        datasets: [{
+                            data: hasData ? Object.values(kapMap) : [1],
+                            backgroundColor: hasData ? ['#16a34a', '#2563eb', '#0ea5e9', '#f59e0b', '#94a3b8'] : ['#e2e8f0'],
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { boxWidth: 12, font: { size: 11 } }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    afterBody: () => hasData ? ['Klik untuk menyaring kapasitas di tabel talenta'] : []
+                                }
+                            }
+                        },
+                        onClick: (evt, elements) => {
+                            if (!elements || elements.length === 0 || !hasData) return;
+                            const idx = elements[0].index;
+                            const selectedLabel = kapKeys[idx];
+                            if (selectedLabel) {
+                                handleKapasitasChartClick(selectedLabel);
+                            }
+                        },
+                        onHover: (evt, elements) => {
+                            if (evt.native && evt.native.target) {
+                                evt.native.target.style.cursor = (elements && elements.length > 0 && hasData) ? 'pointer' : 'default';
+                            }
+                        }
+                    }
+                });
+            }
+
+            chartsInitialized = true;
+        }
+
         // Interaksi Klik 4 Kartu KPI Kontributor BLU
         document.getElementById('cardBluTier1')?.addEventListener('click', function () {
             document.querySelector('#bluTierFilterPills [data-blu-tier="1"]')?.click();
@@ -2714,6 +2781,7 @@ $exportQuery = http_build_query([
         document.getElementById('cardKpiKerjaLebih')?.addEventListener('click', function () {
             const tabBtn = document.getElementById('tab-talenta-btn');
             if (tabBtn) bootstrap.Tab.getOrCreateInstance(tabBtn).show();
+            setTimeout(initAnalyticsCharts, 80);
             setTimeout(() => {
                 document.querySelector('#talentQuickFilterPills [data-quick-filter="kerja_lebih"]')?.click();
                 document.getElementById('tableTalentFinder')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2723,6 +2791,7 @@ $exportQuery = http_build_query([
         document.getElementById('cardKpiLintasUnit')?.addEventListener('click', function () {
             const tabBtn = document.getElementById('tab-talenta-btn');
             if (tabBtn) bootstrap.Tab.getOrCreateInstance(tabBtn).show();
+            setTimeout(initAnalyticsCharts, 80);
             setTimeout(() => {
                 document.querySelector('#talentQuickFilterPills [data-quick-filter="lintas"]')?.click();
                 document.getElementById('tableTalentFinder')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2732,6 +2801,7 @@ $exportQuery = http_build_query([
         document.getElementById('cardKpiBlu')?.addEventListener('click', function () {
             const tabBtn = document.getElementById('tab-talenta-btn');
             if (tabBtn) bootstrap.Tab.getOrCreateInstance(tabBtn).show();
+            setTimeout(initAnalyticsCharts, 80);
             setTimeout(() => {
                 document.getElementById('secMuaraKontributorBlu')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 120);
