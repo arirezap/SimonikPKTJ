@@ -40,6 +40,18 @@ $routes->get('login', 'Auth::login');
 $routes->post('login', 'Auth::processLogin');
 $routes->match(['get', 'post'], 'logout', 'Auth::logout');
 
+// Survei Pemetaan SDM (Eksklusif via Share Link — Khusus Pegawai ASN PKTJ)
+$routes->group('survei-pemetaan', function ($routes) {
+    $routes->get('/', 'User\SurveiPemetaanController::index');
+    $routes->get('ringkasan', 'User\SurveiPemetaanController::ringkasan');
+    $routes->get('ping-csrf', 'User\SurveiPemetaanController::pingCsrf');
+    $routes->post('cek-identitas', 'User\SurveiPemetaanController::cekIdentitas');
+    $routes->post('verifikasi-akun', 'User\SurveiPemetaanController::verifikasiAkun');
+    $routes->post('save-step', 'User\SurveiPemetaanController::saveStep');
+    $routes->post('submit', 'User\SurveiPemetaanController::submit');
+    $routes->post('keluar-sesi', 'User\SurveiPemetaanController::keluarSesi');
+});
+
 // Authenticated Routes (Group)
 $routes->group('', ['filter' => 'auth'], function ($routes) {
     // Profile Routes
@@ -237,6 +249,19 @@ $routes->group('kepegawaian', ['filter' => 'auth'], function ($routes) {
     $routes->get('export-excel', 'Kepegawaian\DashboardKepegawaian::exportExcel');
     $routes->get('export-pdf', 'Kepegawaian\DashboardKepegawaian::exportPdf');
     $routes->get('detail-pegawai', 'Kepegawaian\DashboardKepegawaian::getDetailPegawai');
+
+    // Submenu 3: Hasil Survei Pemetaan SDM & Delegasi Staf Kabag KUK
+    $routes->get('survei-pemetaan', 'Kepegawaian\HasilSurveiController::index');
+    $routes->get('survei-pemetaan/detail-responden', 'Kepegawaian\HasilSurveiController::detailResponden');
+    $routes->get('survei-pemetaan/compare-responden', 'Kepegawaian\HasilSurveiController::compareResponden');
+    $routes->get('survei-pemetaan/export-excel', 'Kepegawaian\HasilSurveiController::exportExcel');
+    $routes->post('survei-pemetaan/delegasi/store', 'Kepegawaian\HasilSurveiController::storeDelegasi');
+    $routes->post('survei-pemetaan/delegasi/revoke', 'Kepegawaian\HasilSurveiController::revokeDelegasi');
+    $routes->post('survei-pemetaan/toggle-periode', 'Kepegawaian\HasilSurveiController::togglePeriode');
+    $routes->post('survei-pemetaan/sync-profil', 'Kepegawaian\HasilSurveiController::syncProfil');
+    $routes->post('survei-pemetaan/reset-draf', 'Kepegawaian\HasilSurveiController::resetDraf');
+    $routes->post('survei-pemetaan/buka-kunci', 'Kepegawaian\HasilSurveiController::bukaKunci');
+    $routes->post('survei-pemetaan/arsipkan', 'Kepegawaian\HasilSurveiController::arsipkanRespon');
 });
 
 /*

@@ -127,6 +127,7 @@ class Auth extends BaseController
                     'isLoggedIn'             => TRUE
                 ];
                 $session->set($ses_data);
+                \App\Libraries\SurveiPemetaanPolicy::syncPendingProfileOnLogin((int) $data['id']);
                 
                 // --- FITUR REMEMBER ME (HMAC-SHA256 Token & HttpOnly Flag for Security) ---
                 helper('cookie');

@@ -97,12 +97,25 @@ $isKepegawaian = hasRole('kepegawaian');
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="<?= site_url('kepegawaian') ?>" class="nav-link sub-link <?= ($current_uri === 'kepegawaian' || str_starts_with($current_uri, 'kepegawaian/monitoring-penilaian') || (str_starts_with($current_uri, 'kepegawaian') && !str_starts_with($current_uri, 'kepegawaian/target-kinerja'))) ? 'active' : '' ?>">
+                                <a href="<?= site_url('kepegawaian') ?>" class="nav-link sub-link <?= ($current_uri === 'kepegawaian' || str_starts_with($current_uri, 'kepegawaian/monitoring-penilaian') || (str_starts_with($current_uri, 'kepegawaian') && !str_starts_with($current_uri, 'kepegawaian/target-kinerja') && !str_starts_with($current_uri, 'kepegawaian/survei-pemetaan'))) ? 'active' : '' ?>">
                                     <span>Monitoring Penilaian Kinerja</span>
                                 </a>
                             </li>
+                            <?php if (\App\Libraries\SurveiPemetaanPolicy::canViewResults()): ?>
+                                <li class="nav-item">
+                                    <a href="<?= site_url('kepegawaian/survei-pemetaan') ?>" class="nav-link sub-link <?= str_starts_with($current_uri, 'kepegawaian/survei-pemetaan') ? 'active' : '' ?>">
+                                        <span>Hasil Survei SDM</span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
                         </ul>
                     </div>
+                </li>
+            <?php elseif (\App\Libraries\SurveiPemetaanPolicy::canViewResults()): ?>
+                <li class="nav-item">
+                    <a class="nav-link <?= str_starts_with($current_uri, 'kepegawaian/survei-pemetaan') ? 'active' : '' ?>" href="<?= site_url('kepegawaian/survei-pemetaan') ?>">
+                        <i class="bi bi-clipboard-data-fill"></i><span>Hasil Survei SDM</span>
+                    </a>
                 </li>
             <?php endif; ?>
 

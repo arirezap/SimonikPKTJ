@@ -391,10 +391,68 @@ Dokumen ini adalah lembar kerja resmi pelacakan pekerjaan pengembangan, perbaika
 
 ---
 
+### 📌 HALAMAN 16: SURVEI PEMETAAN POTENSI, KOMPETENSI & KAPASITAS SDM ASN (`/survei-pemetaan` & `/kepegawaian/survei-pemetaan`)
+
+- [x] **TUGAS 16.1: Instrumen Survei 10 Bagian 83 Butir Pertanyaan & Validasi 100% Khusus ASN (`SurveiPemetaanConfig.php` & `SurveiPemetaanController.php`)**
+  - **Uraian Pekerjaan**:
+    - Definisi instrumen survei 10 Bagian (83 Pertanyaan) sebagai *Single Source of Truth* mencakup Identitas ASN, Mobilitas, Kompetensi (No. 20–26), Lintas Unit (No. 27–35), Pengembangan (No. 36–42), Perilaku Kerja (No. 43–55), Pendapatan BLU (No. 60–67), Beban & Kapasitas (No. 68–72), Sistem Penghargaan (No. 73–77), dan Evaluasi Diri/Saran (No. 78–83).
+    - Pembatasan formulir pengisian eksklusif bagi ASN (PNS & PPPK) dengan validasi NIP 18 digit, opsi status kepegawaian ASN, serta auto-suggest pangkat Romawi PPPK (`IX`, `X`, dst.).
+    - Fitur *Auto-fill* dan *Editable Profile Sync*: Kolom profil kosong (No. 6 Pangkat, No. 7 Jabatan, No. 8 Unit Kerja) dapat diisi dan otomatis tersinkronisasi ke akun `users` dan baris aktif `riwayat_atasan`.
+    - Bypass login ECC: Pengguna yang telah memiliki sesi login aktif di ECC langsung membuka formulir tanpa diminta NIP/kata sandi ulang.
+    - Pernyataan persetujuan wajib (*mandatory declaration*) pada Bagian X sebelum survei dapat dikirim (validasi ganda sisi klien & server HTTP 422).
+  - **Status**: Selesai ✅ *(30 Oktober 2026)*
+
+- [x] **TUGAS 16.2: Dashboard Hasil Survei SDM, Analitik 4 Fokus & Pemetaan Kontributor BLU (`HasilSurveiController.php` & `hasil_survei.php`)**
+  - **Uraian Pekerjaan**:
+    - 4 Kartu KPI Eksekutif teratas: *Keterisian Pegawai ASN*, *Mau & Siap Bekerja Lebih*, *Siap Diperbantukan Lintas Unit*, dan *Mau & Siap Membantu BLU*.
+    - Tabel Rekapitulasi Keterisian ASN per Unit Kerja dengan bilah progres persentase.
+    - 4 Fokus Analitik Pak KBU: Quick filter kesiapan bekerja lebih (No. 33 & 70), sorotan keahlian tambahan No. 21–25, kesiapan lintas unit No. 27 & 32, serta visualisasi peringkat hambatan produktivitas No. 57 disandingkan usulan No. 58/83.
+    - Pemetaan Kontributor BLU (Muara Analitik): Algoritma scoring 0–100% dengan klasifikasi Prioritas I (Tim Inti Penggerak), Prioritas II (Potensial), dan Prioritas III (Pendukung), dilengkapi filter bidang layanan No. 61 dan tabel peringkat terurut.
+  - **Status**: Selesai ✅ *(30 Oktober 2026)*
+
+- [x] **TUGAS 16.3: Pembacaan Isian Lengkap Pegawai (A, B, C) di Website & Export Excel Multi-Sheet 5 Sheet (`HasilSurveiController.php` & `hasil_survei.php`)**
+  - **Uraian Pekerjaan**:
+    - Antarmuka Website: Checkbox pilihan pegawai pada daftar responden dan tabel kontributor BLU, *Floating Action Bar* cerdas di bagian bawah, serta modal `#modalBandingkanResponden` untuk membandingkan isian lengkap seluruh 83 pertanyaan secara berdampingan (*side-by-side*) dengan sticky header dan fitur pencarian butir.
+    - Ekspor Excel Multi-Sheet (5 Sheet) dengan dukungan filter pegawai terpilih (`?respon_ids=A,B,C`):
+      - *Sheet 1*: `Rekap Keterisian Unit` (Metrik Keterisian 100% ASN per unit kerja).
+      - *Sheet 2*: `Peta Kontributor BLU` (Prioritas, skor kesiapan, dan rincian aset penggerak).
+      - *Sheet 3*: `Isian Vertikal Pegawai` (Vertikal No. 1–83 per baris dengan kolom Pegawai A, B, C berdampingan untuk kenyamanan membaca jawaban uraian panjang).
+      - *Sheet 4*: `Master Jawaban 83 Butir` (Format matriks horizontal baris per pegawai Q1–Q83).
+      - *Sheet 5*: `Ringkasan Analitik SDM` (Peringkat kompetensi, pelatihan, hambatan, motivasi, dan kapasitas).
+  - **Status**: Selesai ✅ *(30 Oktober 2026)*
+
+
+- [x] **TUGAS 16.4: Interaktivitas Penuh Kartu Metrik, Filter Silang (Cross-Filtering) & Drill-Down Grafik Visual (HasilSurveiController.php & hasil_survei.php)**
+  - **Uraian Pekerjaan**:
+    - **4 Kartu KPI Baris Teratas Interaktif**: Klik kartu Keterisian, Kerja Lebih, Lintas Unit, atau BLU langsung berpindah tab, menyaring data, dan bergulir halus (*smooth scroll*) ke tabel terkait; klik teks Draf/Belum Mulai langsung menyaring data draf atau menyorot tabel pegawai belum mulai.
+    - **Kartu Mini & Unit Kerja**: Klik baris unit pada tabel Rekapitulasi langsung memfilter responden unit tersebut; klik kartu keahlian tambahan No. 21 langsung menyaring produk/portofolio; klik kartu BLU langsung menyaring peringkat kandidat.
+    - **Grafik Chart.js Interaktif (Drill-Down & Cross-Filter)**: Klik batang Kompetensi (No. 20) dan Layanan BLU (No. 61) langsung menyaring tabel talenta/kontributor secara real-time; klik donat Kapasitas (No. 68 & 70) menyaring kelompok kapasitas; klik batang Pelatihan (No. 37) memunculkan modal daftar pegawai yang mengusulkan pelatihan lengkap dengan fitur pencarian dan tombol salin ke clipboard.
+    - **Umpan Balik Visual ECC**: Efek kursor penunjuk (*pointer*), elevasi bento halus saat disentuh, aksen border aktif, dan banner *pill* filter aktif dengan tombol silang (*clear filter*) tanpa perlu me-refresh halaman.
+  - **Status**: Selesai ✅ *(30 Oktober 2026)*
+
+- [x] **TUGAS 16.5: Audit 8 Pilar & Penguatan Keandalan Halaman Pengisian Survei Pemetaan (`/survei-pemetaan`)**
+  - **Uraian Pekerjaan**:
+    - Audit mendalam 8 Pilar terhadap formulir kuesioner survei pemetaan (`SurveiPemetaanController.php`, `index.php`, `ringkasan.php`, `SurveiPemetaanConfig.php`, `public_survei.php`).
+    - **Visual Highlighting Matriks Likert**: Penambahan kelas CSS `.matrix-row.has-missing` agar penanda latar kemerahan lembut (`#fef2f2`) menyala presisi saat ada pernyataan Likert No. 43–55 yang terlewat.
+    - **Sinkronisasi Bersih State Memori Klien (`answersState`)**: Penggantian `Object.assign({}, res.answers)` saat pembaruan draf sehingga pembersihan orphan answers dari cabang kondisional server langsung mencerminkan data bersih tanpa residu di memori peramban.
+    - **Pemulihan Cadangan Lokal Tangguh**: Pemeriksaan defensif isi server pada `mountSession()` agar draf ketikan yang belum terkirim akibat gangguan koneksi lokal dapat dipulihkan secara otomatis tanpa menimpa data yang valid.
+    - **Petunjuk Pengisian No. 78**: Penambahan helper penjelasan pada pertanyaan 3 kelebihan/kemampuan utama (`triple_text`) agar responden memahami bahwa ketiga kolom wajib terisi sebelum pengiriman survei.
+    - **Defensive Type Checking Backend**: Pendaftaran eksplisit tipe `identitas` pada sanitasi pengontrol backend.
+  - **Status**: Selesai ✅ *(30 Oktober 2026)*
+
+- [x] **TUGAS 16.6: Audit 8 Pilar Kesiapan Produksi & Optimasi Halaman Hasil Survei Pemetaan SDM (`/kepegawaian/survei-pemetaan`)**
+  - **Uraian Pekerjaan**:
+    - Audit mendalam 8 Pilar terhadap modul analitik hasil survei (`HasilSurveiController.php`, `hasil_survei.php`, `SurveiPemetaanPolicy.php`, `SurveiPemetaanConfig.php`).
+    - **Penyelarasan Agregasi KPI**: Penambahan elemen array `'total_submitted' => $totalSubmittedFiltered` pada method `prepareAnalyticsDataset()` di `HasilSurveiController.php` sehingga selaras dengan konsumsi view.
+    - **Penguatan Fallback Bertingkat**: Pemasangan fallback ganda pada baris 823 `hasil_survei.php` (`$kpi['total_submitted'] ?? $kpi['submitted_filtered'] ?? $kpi['asn_submitted'] ?? 0`) guna menjamin teks jumlah responden keahlian tambahan tidak pernah menampilkan nilai 0.
+    - **Verifikasi Keamanan & Otorisasi**: Pemeriksaan ketat hak akses (`canViewResults`, `canManageSurvey`, `canUnlockSurvey`, `canExportResults`), proteksi CSRF di seluruh mutasi AJAX, escaping XSS penuh (`esc()`), serta audit logging mutasi via `log_audit()`.
+    - **Verifikasi Render Tanpa Eror**: Pengujian simulasi render tampilan data lengkap dan kondisi *empty state* dengan hasil 0 syntax error dan 0 warning.
+  - **Status**: Selesai ✅ *(30 Oktober 2026)*
+---
 ## 📊 Status Progres Pelaksanaan
 
 ```text
-[████████████████████████████████████████████] 100.0% Selesai (15 dari 15 Modul Terlaksana Penuh)
+[████████████████████████████████████████████] 100.0% Selesai (16 dari 16 Modul Terlaksana Penuh)
 ```
 
 *(Dokumen ini diperbarui secara real-time setiap kali satu halaman selesai diaudit dan dioptimasi)*
