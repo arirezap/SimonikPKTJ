@@ -39,6 +39,19 @@ $jabatan       = trim((string) ($respon['snapshot_jabatan'] ?? ($answersMap[7]['
 $unitKerja     = trim((string) ($respon['snapshot_unit'] ?? ($answersMap[8]['jawaban_teks'] ?? '-')));
 ?>
 
+<?php if (session()->getFlashdata('error')): ?>
+    <div class="alert alert-danger border-0 shadow-sm rounded-3 py-3 px-3 mb-3 d-flex align-items-start gap-2" style="font-size: 0.8125rem;" role="alert">
+        <i class="bi bi-exclamation-circle-fill text-danger flex-shrink-0 mt-1"></i>
+        <div><?= esc(session()->getFlashdata('error')) ?></div>
+    </div>
+<?php endif; ?>
+<?php if (session()->getFlashdata('info')): ?>
+    <div class="alert alert-info border-0 shadow-sm rounded-3 py-3 px-3 mb-3 d-flex align-items-start gap-2" style="font-size: 0.8125rem;" role="alert">
+        <i class="bi bi-info-circle-fill text-primary flex-shrink-0 mt-1"></i>
+        <div><?= esc(session()->getFlashdata('info')) ?></div>
+    </div>
+<?php endif; ?>
+
 <div class="summary-hero mb-4">
     <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
         <div>

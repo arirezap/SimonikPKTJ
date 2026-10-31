@@ -1211,7 +1211,7 @@ class SurveiPemetaanConfig
 
         if ($qNo === 28) {
             $q27 = trim((string) ($answersMap[27]['jawaban_teks'] ?? ''));
-            if ($q27 === 'Tidak bersedia') {
+            if ($q27 === '' || $q27 === 'Tidak bersedia') {
                 return false;
             }
             return true;
@@ -1429,18 +1429,23 @@ class SurveiPemetaanConfig
     }
 
     /**
-     * Memberikan saran awal editable Jenis Kelamin (No. 3) dan Usia (No. 4) dari NIP 18 digit standar ASN.
+     * Memberikan saran awal editable Jenis Kelamin (No. 3), Usia (No. 4), dan Jenis Kepegawaian (No. 5) dari NIP 18 digit standar ASN.
      */
     public static function suggestFromNip18(string $nip): array
     {
         $clean = preg_replace('/\D+/', '', $nip);
         if (strlen($clean) !== 18) {
-            return ['gender' => null, 'age' => null];
+            return [
+                'gender'             => null,
+                'age'                => null,
+                'status_kepegawaian' => null,
+            ];
         }
 
         $birthYear  = (int) substr($clean, 0, 4);
         $birthMonth = (int) substr($clean, 4, 2);
         $birthDay   = (int) substr($clean, 6, 2);
+        $tmtCode    = substr($clean, 12, 2);
         $genderCode = substr($clean, 14, 1);
 
         $gender = null;
@@ -1463,10 +1468,71 @@ class SurveiPemetaanConfig
             }
         }
 
+        // Deteksi status kepegawaian standar BKN dari 18 digit NIP:
+        // Digit 13-14 = '21' menandakan pengangkatan PPPK; '01'-'12' menandakan bulan pengangkatan CPNS/PNS.
+        $suggestedStatus = null;
+        if ($tmtCode === '21') {
+            $suggestedStatus = 'PPPK';
+        } elseif ((int) $tmtCode >= 1 && (int) $tmtCode <= 12) {
+            $suggestedStatus = 'PNS';
+        }
+
         return [
-            'gender' => $gender,
-            'age'    => $age,
+            'gender'             => $gender,
+            'age'                => $age,
+            'status_kepegawaian' => $suggestedStatus,
         ];
+    }
+
+    /**
+     * Memberikan pesan umpan balik ramah dan spesifik saat suatu butir pertanyaan belum lengkap.
+     */
+    public static function describeMissingQuestion(int $qNo, array $answersMap): string
+    {
+        $questions = self::getQuestions();
+        $meta      = $questions[$qNo] ?? null;
+        if (!$meta) {
+            return 'Mohon lengkapi Pertanyaan Nomor ' . $qNo . '.';
+        }
+
+        if ($qNo === 78) {
+            $row = $answersMap[78] ?? null;
+            $arr = $row['pilihan_array'] ?? [];
+            if (empty($arr) && !empty($row['jawaban_pilihan'])) {
+                $dec = json_decode((string) $row['jawaban_pilihan'], true);
+                if (is_array($dec)) {
+                    $arr = $dec;
+                }
+            }
+            $filledCount = count(array_filter(array_map('trim', (array) $arr)));
+            if ($filledCount < 3) {
+                return 'Mohon lengkapi ketiga kolom kelebihan atau kemampuan utama pada Pertanyaan Nomor 78.';
+            }
+        }
+
+        if (!empty($meta['has_other'])) {
+            $otherVal = $meta['other_value'] ?? 'Lainnya';
+            $row      = $answersMap[$qNo] ?? null;
+            $selected = false;
+            if ($meta['type'] === 'checkbox') {
+                $arr = $row['pilihan_array'] ?? [];
+                if (empty($arr) && !empty($row['jawaban_pilihan'])) {
+                    $dec = json_decode((string) $row['jawaban_pilihan'], true);
+                    if (is_array($dec)) {
+                        $arr = $dec;
+                    }
+                }
+                $selected = in_array($otherVal, $arr, true);
+            } else {
+                $selected = trim((string) ($row['jawaban_teks'] ?? '')) === $otherVal;
+            }
+
+            if ($selected && trim((string) ($row['jawaban_lainnya'] ?? '')) === '') {
+                return 'Tuliskan keterangan lainnya pada Pertanyaan Nomor ' . $qNo . '.';
+            }
+        }
+
+        return 'Mohon lengkapi Pertanyaan Nomor ' . $qNo . ' sebelum melanjutkan.';
     }
 
     /**

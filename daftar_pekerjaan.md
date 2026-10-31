@@ -448,6 +448,25 @@ Dokumen ini adalah lembar kerja resmi pelacakan pekerjaan pengembangan, perbaika
     - **Verifikasi Keamanan & Otorisasi**: Pemeriksaan ketat hak akses (`canViewResults`, `canManageSurvey`, `canUnlockSurvey`, `canExportResults`), proteksi CSRF di seluruh mutasi AJAX, escaping XSS penuh (`esc()`), serta audit logging mutasi via `log_audit()`.
     - **Verifikasi Render Tanpa Eror**: Pengujian simulasi render tampilan data lengkap dan kondisi *empty state* dengan hasil 0 syntax error dan 0 warning.
   - **Status**: Selesai ✅ *(30 Oktober 2026)*
+
+- [x] **TUGAS 16.7: Akses Pengisian Survei Bebas Kata Sandi Berbasis Validasi NIP Pribadi (`SurveiPemetaanController.php` & `index.php`)**
+  - **Uraian Pekerjaan**:
+    - **Akses Pengisian Instan (*Frictionless UX*)**: Menghilangkan kewajiban verifikasi Kata Sandi akun ECC saat pegawai ASN melanjutkan survei di perangkat atau peramban berbeda. Pengguna cukup memasukkan 18 digit NIP unik pribadinya.
+    - **Pemuatan Draf Otomatis**: Jika draf sudah ada, sistem langsung menerbitkan resume cookie dan memuat kembali isian jawaban (`state => 'resumed'`) tanpa pop-up modal kata sandi.
+    - **Pengalihan Ringkasan Cerdas**: Jika survei sudah terkirim (*submitted*), sistem langsung mengarahkan pegawai ke halaman ringkasan jawaban.
+    - **Pembersihan Kode & DOM**: Menghapus modal `#modalVerifikasiAsn`, form verifikasi kata sandi, toggle tampil kata sandi, serta event listener terkait di JavaScript antarmuka.
+  - **Status**: Selesai ✅ *(31 Oktober 2026)*
+
+- [x] **TUGAS 16.8: Penguatan Arsitektur Seluruh Persona Pengguna & Zero-Error Hardening Pengisian Survei Pemetaan (`Routes.php`, `SurveiPemetaanConfig.php`, `SurveiPemetaanController.php`, `index.php`, `ringkasan.php`)**
+  - **Uraian Pekerjaan**:
+    - **Dukungan Seluruh Persona Pengguna Institusi**: Menyediakan pengalaman tanpa hambatan bagi seluruh tipe akun pegawai ASN (`user`, `direktur`, `wadir`, `kabag_kuk`, `kabag_aak`, `manajemen`, `kepegawaian`, `spm`, `tugas_belajar`, delegasi staf), tautan langsung publik via NIP 18 digit, alur ganti pegawai pada komputer bersama, penanganan profil master kosong, serta notifikasi informatif khusus bagi akun `admin`.
+    - **Proteksi Kontaminasi Data Antar-Tab & Sesi Komputer Bersama**: Validasi pencocokan ID respon aktif (`respon_id`) pada sisi server di method `saveStep()` dan `submit()` untuk mencegah tertimpa data saat pengguna membuka beberapa tab sekaligus atau berpindah akun di satu peramban.
+    - **Deteksi Cerdas NIP 18 Digit & Status Kepegawaian**: Analisis digit 13-14 NIP (kode 21 untuk PPPK, 01-12 untuk PNS) dan pencocokan regex nama pangkat guna mengisi otomatis status kepegawaian kosong dan menyelaraskan kunci profil master.
+    - **Perbaikan Alur Logika Kondisional & Pesan Validasi Terinci**: Penyesuaian aturan wajib jawab butir No. 28 agar hanya aktif setelah No. 27 diisi dan bukan 'Tidak bersedia', serta penambahan fungsi `describeMissingQuestion()` untuk memberikan pesan peringatan yang ramah dan spesifik bagi pengguna.
+    - **Auto-Retry CSRF & Sinkronisasi Token Latar Belakang**: Mekanisme percobaan ulang otomatis satu kali (*auto-retry*) saat terjadi HTTP 403 akibat kedaluwarsa CSRF, pembaruan token otomatis saat tab peramban kembali aktif (`visibilitychange`), dan penanganan ramah saat pemeliharaan sistem (HTTP 503).
+    - **Aksesibilitas DOM & Form Guard**: Perbaikan kontainer label menjadi `<div>` pada opsi pilihan majemuk, pencegahan karakter non-angka pada kolom Usia (No. 4), integrasi event `onClose` dan `onValueUpdate` pada Flatpickr (No. 9), serta sinkronisasi otomatis Masa Kerja (No. 10).
+    - **Penyelarasan Responsif Mobile Action Bar**: Tata letak bilah tombol bawah yang kokoh dengan ruang aman (*safe-area-inset*) hingga layar 360px tanpa menutupi konten pertanyaan.
+  - **Status**: Selesai ✅ *(31 Oktober 2026)*
 ---
 ## 📊 Status Progres Pelaksanaan
 

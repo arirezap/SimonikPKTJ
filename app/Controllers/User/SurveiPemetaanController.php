@@ -84,6 +84,39 @@ class SurveiPemetaanController extends BaseController
                                ->orderBy('nama_unit', 'ASC')
                                ->findAll();
 
+        $loggedInNotice = null;
+        if (session()->get('isLoggedIn')) {
+            $uid = SurveiPemetaanPolicy::getCurrentUserId();
+            if ($uid > 0) {
+                $db   = \Config\Database::connect();
+                $uRow = $db->table('users')
+                           ->select('id, role, status_pegawai, tmt_selesai')
+                           ->where('id', $uid)
+                           ->get()
+                           ->getRowArray();
+                if ($uRow) {
+                    $isAdmin = ($uRow['role'] === 'admin');
+                    if (!$isAdmin && $db->tableExists('user_roles')) {
+                        $isAdmin = $db->table('user_roles')
+                                      ->where('user_id', $uid)
+                                      ->where('role_name', 'admin')
+                                      ->countAllResults() > 0;
+                    }
+                    if ($isAdmin) {
+                        $loggedInNotice = [
+                            'type'    => 'admin',
+                            'message' => 'Akun Administrator dikecualikan dari sasaran responden survei pemetaan SDM institusi.',
+                        ];
+                    } elseif (!SurveiPemetaanPolicy::isUserEligibleForSurvey($uRow)) {
+                        $loggedInNotice = [
+                            'type'    => 'ineligible',
+                            'message' => 'Status kepegawaian akun Anda tercatat telah menyelesaikan masa tugas pada periode survei ini.',
+                        ];
+                    }
+                }
+            }
+        }
+
         $initialSession = null;
         if ($isOpen && $activeRespon && ($activeRespon['status'] ?? '') === 'draft') {
             $initialSession = $this->buildClientSessionPayload($activeRespon);
@@ -97,6 +130,7 @@ class SurveiPemetaanController extends BaseController
             'questions'      => SurveiPemetaanConfig::getQuestions(),
             'unitList'       => $unitList,
             'initialSession' => $initialSession,
+            'loggedInNotice' => $loggedInNotice,
         ]);
     }
 
@@ -187,7 +221,14 @@ class SurveiPemetaanController extends BaseController
 
         $tahun       = SurveiPemetaanPolicy::getActiveSurveyYear();
         $responModel = new SurveiResponModel();
-        $cookieRow   = $this->resolveResponFromCookie($tahun);
+
+        // Cek apakah NIP milik akun Administrator
+        if ($this->isNipBelongsToAdmin($nomorIdentitas)) {
+            return $this->jsonResponse([
+                'status'  => 'error',
+                'message' => 'Akun Administrator dikecualikan dari sasaran responden survei pemetaan.',
+            ], 403);
+        }
 
         // Cek kecocokan dengan akun pegawai aktif di tabel users (kolom selektif)
         $matchedUser = $this->findAsnUserByNip($nomorIdentitas);
@@ -215,46 +256,31 @@ class SurveiPemetaanController extends BaseController
 
         if ($existing && (int) ($existing['is_valid'] ?? 1) === 1) {
             $existingId = (int) $existing['id'];
-            $hasCookie  = $cookieRow && ((int) $cookieRow['id'] === $existingId);
 
-            if ($hasCookie || $isSameLogin) {
-                if ($isSameLogin && (int) ($existing['filled_via_auth'] ?? 0) === 0) {
-                    $responModel->update($existingId, ['filled_via_auth' => 1]);
-                    $existing['filled_via_auth'] = 1;
-                }
-                if ($isSameLogin && (int) ($existing['pending_profile_sync'] ?? 0) === 1) {
-                    SurveiPemetaanPolicy::syncEmptyProfileFields($userId, $existing, true, true);
-                    $existing['pending_profile_sync'] = 0;
-                }
+            if ($isSameLogin && (int) ($existing['filled_via_auth'] ?? 0) === 0) {
+                $responModel->update($existingId, ['filled_via_auth' => 1]);
+                $existing['filled_via_auth'] = 1;
+            }
+            if ($isSameLogin && (int) ($existing['pending_profile_sync'] ?? 0) === 1) {
+                SurveiPemetaanPolicy::syncEmptyProfileFields($userId, $existing, true, true);
+                $existing['pending_profile_sync'] = 0;
+            }
 
-                $this->issueResumeCookie($existing);
+            $this->issueResumeCookie($existing);
 
-                if (($existing['status'] ?? '') === 'submitted') {
-                    return $this->jsonResponse([
-                        'status'       => 'success',
-                        'state'        => 'already_submitted_redirect',
-                        'redirect_url' => site_url('survei-pemetaan/ringkasan'),
-                    ]);
-                }
-
+            if (($existing['status'] ?? '') === 'submitted') {
                 return $this->jsonResponse([
-                    'status'  => 'success',
-                    'state'   => 'resumed',
-                    'message' => 'Progres survei Anda berhasil dimuat kembali.',
-                    'session' => $this->buildClientSessionPayload($existing),
+                    'status'       => 'success',
+                    'state'        => 'already_submitted_redirect',
+                    'redirect_url' => site_url('survei-pemetaan/ringkasan'),
                 ]);
             }
 
-            // Progres sudah ada di perangkat lain -> minta verifikasi Kata Sandi akun ECC
-            $isSubmitted = ($existing['status'] ?? '') === 'submitted';
             return $this->jsonResponse([
                 'status'  => 'success',
-                'state'   => 'require_asn_login',
-                'mode'    => $isSubmitted ? 'view_submitted' : 'resume_draft',
-                'nip'     => $cleanUserNip,
-                'message' => $isSubmitted
-                    ? 'Survei untuk NIP ini sudah terkirim. Masukkan Kata Sandi akun ECC jika ingin melihat ringkasan jawaban Anda.'
-                    : 'Progres pengisian ditemukan. Masukkan Kata Sandi akun ECC Anda untuk melanjutkan.',
+                'state'   => 'resumed',
+                'message' => 'Progres survei Anda berhasil dimuat kembali.',
+                'session' => $this->buildClientSessionPayload($existing),
             ]);
         }
 
@@ -270,112 +296,24 @@ class SurveiPemetaanController extends BaseController
                 'session' => $this->buildClientSessionPayload($newRespon),
             ]);
         } catch (\Throwable $e) {
+            // Failsafe pemulihan jika terjadi tabrakan kueri unik ganda
+            $retryExisting = $responModel->findByUserTahun($userId, $tahun)
+                          ?: $responModel->findByIdentitasTahun($cleanUserNip, $tahun);
+            if ($retryExisting && (int) ($retryExisting['is_valid'] ?? 1) === 1) {
+                $this->issueResumeCookie($retryExisting);
+                return $this->jsonResponse([
+                    'status'  => 'success',
+                    'state'   => 'ready',
+                    'message' => 'Data akun pegawai ditemukan. Silakan lengkapi survei berikut.',
+                    'session' => $this->buildClientSessionPayload($retryExisting),
+                ]);
+            }
             log_message('error', 'SurveiPemetaanController::cekIdentitas ASN draft error: ' . $e->getMessage());
             return $this->jsonResponse([
                 'status'  => 'error',
                 'message' => 'Gagal memulai sesi survei. Silakan coba lagi.',
             ], 500);
         }
-    }
-
-    /**
-     * Verifikasi Kata Sandi Akun ECC bagi ASN yang melanjutkan progres di perangkat/peramban berbeda.
-     */
-    public function verifikasiAkun()
-    {
-        $this->applyNoIndexHeaders();
-
-        $rawNip    = trim((string) $this->request->getPost('nomor_identitas'));
-        $cleanNip  = preg_replace('/\D+/', '', $rawNip);
-        $kataSandi = (string) $this->request->getPost('kata_sandi');
-
-        if ($cleanNip === '' || $kataSandi === '') {
-            return $this->jsonResponse([
-                'status'  => 'error',
-                'message' => 'NIP dan Kata Sandi wajib diisi.',
-            ], 422);
-        }
-
-        $throttler   = \Config\Services::throttler();
-        $ipAddress   = (string) $this->request->getIPAddress();
-        $throttleKey = md5('survei_verif_asn_' . $ipAddress . '_' . $cleanNip);
-        if ($throttler->check($throttleKey, 5, MINUTE) === false) {
-            return $this->jsonResponse([
-                'status'  => 'error',
-                'message' => 'Terlalu banyak percobaan kata sandi. Silakan tunggu 1 menit.',
-            ], 429);
-        }
-
-        $user = $this->findAsnUserByNip($cleanNip, true);
-        if (!$user || !$this->verifyUserPassword($user, $kataSandi)) {
-            return $this->jsonResponse([
-                'status'  => 'error',
-                'message' => 'Kata sandi akun ECC tidak sesuai.',
-            ], 401);
-        }
-
-        if (!SurveiPemetaanPolicy::isUserEligibleForSurvey($user)) {
-            return $this->jsonResponse([
-                'status'  => 'error',
-                'message' => 'Akun pegawai tersebut sudah tidak aktif pada periode survei ini.',
-            ], 403);
-        }
-
-        $tahun       = SurveiPemetaanPolicy::getActiveSurveyYear();
-        $userId      = (int) $user['id'];
-        $responModel = new SurveiResponModel();
-        $respon      = $responModel->findByUserTahun($userId, $tahun)
-                    ?: $responModel->findByIdentitasTahun($cleanNip, $tahun);
-
-        if (!$respon || (int) ($respon['is_valid'] ?? 1) === 0) {
-            if (!SurveiPemetaanPolicy::isSurveyOpen()) {
-                return $this->jsonResponse([
-                    'status'  => 'error',
-                    'message' => 'Periode pengisian survei saat ini telah ditutup.',
-                ], 403);
-            }
-            try {
-                $respon = $this->createOrResetAsnDraft($user, $cleanNip, $tahun, true, $respon);
-            } catch (\Throwable $e) {
-                log_message('error', 'SurveiPemetaanController::verifikasiAkun draft error: ' . $e->getMessage());
-                return $this->jsonResponse([
-                    'status'  => 'error',
-                    'message' => 'Gagal memulai sesi survei. Silakan coba lagi.',
-                ], 500);
-            }
-        } else {
-            $responModel->update((int) $respon['id'], ['filled_via_auth' => 1]);
-            $respon['filled_via_auth'] = 1;
-
-            if ((int) ($respon['pending_profile_sync'] ?? 0) === 1) {
-                SurveiPemetaanPolicy::syncEmptyProfileFields($userId, $respon, true, true);
-                $respon['pending_profile_sync'] = 0;
-            }
-        }
-
-        $this->issueResumeCookie($respon);
-
-        if (($respon['status'] ?? '') === 'submitted') {
-            return $this->jsonResponse([
-                'status'       => 'success',
-                'state'        => 'already_submitted_redirect',
-                'redirect_url' => site_url('survei-pemetaan/ringkasan'),
-            ]);
-        }
-
-        if (!SurveiPemetaanPolicy::isSurveyOpen()) {
-            return $this->jsonResponse([
-                'status'  => 'error',
-                'message' => 'Periode pengisian survei saat ini telah ditutup.',
-            ], 403);
-        }
-
-        return $this->jsonResponse([
-            'status'  => 'success',
-            'state'   => 'resumed',
-            'message' => 'Verifikasi berhasil. Silakan lanjutkan pengisian survei Anda.',
-            'session' => $this->buildClientSessionPayload($respon),
-        ]);
     }
 
     /**
@@ -399,6 +337,14 @@ class SurveiPemetaanController extends BaseController
             return $this->jsonResponse([
                 'status'  => 'session_expired',
                 'message' => 'Sesi pengisian perlu dipulihkan. Masukkan kembali 18 digit NIP Anda untuk melanjutkan.',
+            ], 401);
+        }
+
+        $postedResponId = (int) $this->request->getPost('respon_id');
+        if ($postedResponId > 0 && (int) ($respon['id'] ?? 0) !== $postedResponId) {
+            return $this->jsonResponse([
+                'status'  => 'session_expired',
+                'message' => 'Sesi peramban Anda telah beralih ke responden lain. Masukkan kembali 18 digit NIP Anda.',
             ], 401);
         }
 
@@ -464,6 +410,14 @@ class SurveiPemetaanController extends BaseController
             ], 401);
         }
 
+        $postedResponId = (int) $this->request->getPost('respon_id');
+        if ($postedResponId > 0 && (int) ($respon['id'] ?? 0) !== $postedResponId) {
+            return $this->jsonResponse([
+                'status'  => 'session_expired',
+                'message' => 'Sesi peramban Anda telah beralih ke responden lain. Masukkan kembali 18 digit NIP Anda.',
+            ], 401);
+        }
+
         if (($respon['status'] ?? '') === 'submitted') {
             return $this->jsonResponse([
                 'status'       => 'already_submitted',
@@ -488,6 +442,7 @@ class SurveiPemetaanController extends BaseController
         foreach ($progress['missing_by_step'] as $stepNo => $missingList) {
             if (!empty($missingList)) {
                 $firstMissing = (int) $missingList[0];
+                $missingMsg   = SurveiPemetaanConfig::describeMissingQuestion($firstMissing, $saveResult['answers'] ?? []);
                 return $this->jsonResponse([
                     'status'        => 'incomplete_survey',
                     'step'          => (int) $stepNo,
@@ -495,7 +450,7 @@ class SurveiPemetaanController extends BaseController
                     'missing'       => $missingList,
                     'progress'      => $progress,
                     'answers'       => $saveResult['answers'],
-                    'message'       => 'Masih ada pertanyaan yang belum lengkap pada Bagian ' . $stepNo . ' (Nomor ' . $firstMissing . ').',
+                    'message'       => 'Masih ada pertanyaan belum lengkap pada Bagian ' . $stepNo . ': ' . $missingMsg,
                 ], 200);
             }
         }
@@ -778,14 +733,11 @@ class SurveiPemetaanController extends BaseController
     }
 
     /**
-     * Cari akun pegawai ASN berdasarkan NIP dengan kolom selektif (hanya ambil password saat verifikasi).
+     * Cari akun pegawai ASN berdasarkan NIP dengan kolom selektif (tanpa menyertakan password).
      */
-    private function findAsnUserByNip(string $cleanNip, bool $includePassword = false): ?array
+    private function findAsnUserByNip(string $cleanNip): ?array
     {
         $cols = 'id, nama_lengkap, nip, username, jabatan, pangkat, unit, unit_id, role, status_pegawai, tmt_selesai';
-        if ($includePassword) {
-            $cols .= ', password';
-        }
 
         $db      = \Config\Database::connect();
         $builder = $db->table('users')
@@ -819,40 +771,39 @@ class SurveiPemetaanController extends BaseController
     }
 
     /**
-     * Verifikasi kata sandi akun ECC dengan dukungan penuh BCRYPT + upgrade hash lama (selaras Auth.php).
+     * Mengecek apakah nomor identitas (NIP) merupakan akun Administrator (utama maupun multi-role).
      */
-    private function verifyUserPassword(array $userRow, string $password): bool
+    private function isNipBelongsToAdmin(string $cleanNip): bool
     {
-        $stored = (string) ($userRow['password'] ?? '');
-        if ($stored === '') {
+        $db   = \Config\Database::connect();
+        $user = $db->table('users')
+                   ->select('id, role')
+                   ->where('nip IS NOT NULL', null, false)
+                   ->where("TRIM(nip) != ''", null, false)
+                   ->groupStart()
+                       ->where('nip', $cleanNip)
+                       ->orWhere("REPLACE(REPLACE(TRIM(nip), ' ', ''), '-', '') =", $cleanNip)
+                   ->groupEnd()
+                   ->limit(1)
+                   ->get()
+                   ->getRowArray();
+
+        if (!$user) {
             return false;
         }
 
-        $verified     = password_verify($password, $stored);
-        $isLegacyHash = false;
-
-        if (!$verified && hash_equals($stored, $password)) {
-            $verified     = true;
-            $isLegacyHash = true;
+        if ($user['role'] === 'admin') {
+            return true;
         }
 
-        if (!$verified && strlen($stored) === 32 && hash_equals($stored, md5($password))) {
-            $verified     = true;
-            $isLegacyHash = true;
+        if ($db->tableExists('user_roles')) {
+            return $db->table('user_roles')
+                      ->where('user_id', (int) $user['id'])
+                      ->where('role_name', 'admin')
+                      ->countAllResults() > 0;
         }
 
-        if ($verified && ($isLegacyHash || password_needs_rehash($stored, PASSWORD_DEFAULT))) {
-            try {
-                $userModel = new User();
-                $userModel->update((int) $userRow['id'], [
-                    'password' => password_hash($password, PASSWORD_DEFAULT),
-                ]);
-            } catch (\Throwable $e) {
-                // Jangan gagalkan verifikasi apabila upgrade hash menemui kendala minor
-            }
-        }
-
-        return $verified;
+        return false;
     }
 
     /**
@@ -918,7 +869,28 @@ class SurveiPemetaanController extends BaseController
             }
         }
 
-        $unitValue = $hasUnit ? trim((string) $user['unit']) : ($isLeadership ? 'Pimpinan Institusi' : '');
+        $unitModel = new UnitKerja();
+        $unitValue = '';
+        if ($isLeadership) {
+            $unitValue = 'Pimpinan Institusi';
+            $hasUnit   = true;
+        } else {
+            $matchedUnitRow = null;
+            if (!empty($user['unit_id'])) {
+                $matchedUnitRow = $unitModel->find((int) $user['unit_id']);
+            }
+            if (!$matchedUnitRow && $hasUnit) {
+                $matchedUnitRow = $unitModel->where('nama_unit', trim((string) $user['unit']))->first();
+            }
+
+            if ($matchedUnitRow) {
+                $unitValue = (string) $matchedUnitRow['nama_unit'];
+                $hasUnit   = true;
+            } else {
+                $hasUnit   = false;
+                $unitValue = '';
+            }
+        }
 
         // Nama lengkap (No. 1) selalu dibuka agar ASN dapat melengkapi gelar atau mengisi jika kosong.
         // Pangkat (No. 6), Jabatan (No. 7), dan Unit Kerja (No. 8) otomatis dibuka jika di profil masih kosong.
@@ -972,24 +944,35 @@ class SurveiPemetaanController extends BaseController
         $nama    = !SurveiPemetaanPolicy::isEmptyProfileValue($user['nama_lengkap'] ?? '') ? trim((string) $user['nama_lengkap']) : null;
         $pangkat = !SurveiPemetaanPolicy::isEmptyProfileValue($user['pangkat'] ?? '') ? trim((string) $user['pangkat']) : null;
         $jabatan = !SurveiPemetaanPolicy::isEmptyProfileValue($user['jabatan'] ?? '') ? trim((string) $user['jabatan']) : null;
-        $unit    = !SurveiPemetaanPolicy::isEmptyProfileValue($user['unit'] ?? '') ? trim((string) $user['unit']) : ($isLeadership ? 'Pimpinan Institusi' : null);
-        $unitId  = !empty($user['unit_id']) ? (int) $user['unit_id'] : null;
 
-        if ($unit !== null && $unitId === null && $unit !== 'Pimpinan Institusi') {
-            $uMatch = $unitModel->where('nama_unit', $unit)->first();
-            if ($uMatch) {
-                $unitId = (int) $uMatch['id'];
+        $unit   = null;
+        $unitId = null;
+        if ($isLeadership) {
+            $unit = 'Pimpinan Institusi';
+        } else {
+            $matchedUnitRow = null;
+            if (!empty($user['unit_id'])) {
+                $matchedUnitRow = $unitModel->find((int) $user['unit_id']);
+            }
+            if (!$matchedUnitRow && !SurveiPemetaanPolicy::isEmptyProfileValue($user['unit'] ?? '')) {
+                $matchedUnitRow = $unitModel->where('nama_unit', trim((string) $user['unit']))->first();
+            }
+            if ($matchedUnitRow) {
+                $unit   = (string) $matchedUnitRow['nama_unit'];
+                $unitId = (int) $matchedUnitRow['id'];
             }
         }
 
         $nipSuggest = SurveiPemetaanConfig::suggestFromNip18($cleanNip);
 
         // Deteksi saran awal jenis kepegawaian (PNS / PPPK)
-        $suggestedStatus = null;
-        if ($pangkat !== null && (stripos($pangkat, 'PPPK') !== false || preg_match('/^(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII)$/i', trim($pangkat)) || preg_match('/Golongan\s+(IX|X|XI|XII|VII|VIII)/i', $pangkat))) {
-            $suggestedStatus = 'PPPK';
-        } elseif ($pangkat !== null && preg_match('/\((I|II|III|IV)\/[a-e]\)/i', $pangkat)) {
-            $suggestedStatus = 'PNS';
+        $suggestedStatus = $nipSuggest['status_kepegawaian'] ?? null;
+        if ($pangkat !== null) {
+            if (stripos($pangkat, 'PPPK') !== false || preg_match('/^(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII|XIII|XIV|XV|XVI|XVII)$/i', trim($pangkat)) || preg_match('/Golongan\s+(IX|X|XI|XII|VII|VIII)/i', $pangkat)) {
+                $suggestedStatus = 'PPPK';
+            } elseif (preg_match('/\((I|II|III|IV)\/[a-e]\)/i', $pangkat) || preg_match('/(Penata|Pembina|Pengatur|Juru)/i', $pangkat)) {
+                $suggestedStatus = 'PNS';
+            }
         }
 
         $db->transStart();
@@ -1497,7 +1480,8 @@ class SurveiPemetaanController extends BaseController
             }
 
             if ($strictStepValidation && !empty($missingInCurrentStep)) {
-                $firstNo = (int) $missingInCurrentStep[0];
+                $firstNo    = (int) $missingInCurrentStep[0];
+                $missingMsg = SurveiPemetaanConfig::describeMissingQuestion($firstNo, $currentMap);
                 return [
                     'status'        => 'incomplete_step',
                     'step'          => $currentStep,
@@ -1505,7 +1489,7 @@ class SurveiPemetaanController extends BaseController
                     'missing'       => $missingInCurrentStep,
                     'progress'      => $progress,
                     'answers'       => $this->serializeAnswersForClient($currentMap),
-                    'message'       => 'Mohon lengkapi Pertanyaan Nomor ' . $firstNo . ' sebelum melanjutkan.',
+                    'message'       => $missingMsg,
                 ];
             }
 

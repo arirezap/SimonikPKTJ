@@ -46,7 +46,6 @@ $routes->group('survei-pemetaan', function ($routes) {
     $routes->get('ringkasan', 'User\SurveiPemetaanController::ringkasan');
     $routes->get('ping-csrf', 'User\SurveiPemetaanController::pingCsrf');
     $routes->post('cek-identitas', 'User\SurveiPemetaanController::cekIdentitas');
-    $routes->post('verifikasi-akun', 'User\SurveiPemetaanController::verifikasiAkun');
     $routes->post('save-step', 'User\SurveiPemetaanController::saveStep');
     $routes->post('submit', 'User\SurveiPemetaanController::submit');
     $routes->post('keluar-sesi', 'User\SurveiPemetaanController::keluarSesi');

@@ -337,6 +337,9 @@
             margin-top: 0;
             font-size: 0.8125rem;
         }
+        #surveyWizardView {
+            padding-bottom: 76px;
+        }
         .wizard-action-bar {
             position: fixed;
             bottom: 0;
@@ -344,9 +347,15 @@
             right: 0;
             margin-top: 0;
             border-radius: 16px 16px 0 0;
-            padding: 12px 16px;
+            padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
             box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.08);
             z-index: 1015;
+        }
+        .wizard-action-bar .btn {
+            font-size: 0.8125rem;
+            padding: 4px 12px !important;
+            height: 38px !important;
+            white-space: nowrap;
         }
     }
 </style>
@@ -370,6 +379,14 @@
     <!-- TAHAP 0: KARTU CEK IDENTITAS (KHUSUS 18 DIGIT NIP PEGAWAI ASN PKTJ) -->
     <!-- =================================================================== -->
     <div id="identityCheckView" class="<?= $initialSession ? 'd-none' : '' ?>">
+        <?php if (!empty($loggedInNotice)): ?>
+            <div class="alert alert-info border-0 shadow-sm rounded-3 py-3 px-3 mb-3 d-flex align-items-start gap-2" style="font-size: 0.8125rem;" role="alert">
+                <i class="bi bi-info-circle-fill text-primary flex-shrink-0 mt-1"></i>
+                <div class="text-dark">
+                    <strong>Pemberitahuan:</strong> <?= esc($loggedInNotice['message']) ?>
+                </div>
+            </div>
+        <?php endif; ?>
         <div class="card-bento-survei mb-3">
             <span class="badge rounded-pill text-primary border border-primary-subtle fw-semibold mb-2" style="background: #eff6ff; padding: 4px 12px; font-size: 0.75rem;">
                 Pemetaan SDM PKTJ
@@ -588,12 +605,21 @@
                             data-other-value="<?= esc((string) ($meta['other_value'] ?? 'Lainnya')) ?>"
                         >
                             <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
-                                <label class="d-flex align-items-start gap-2 mb-0" for="qInput_<?= (int) $qNo ?>">
-                                    <span class="q-number-badge tabular-nums"><?= (int) $qNo ?></span>
-                                    <span class="fw-semibold text-dark" style="font-size: 0.9375rem; line-height: 1.45;">
-                                        <?= esc($meta['label']) ?>
-                                    </span>
-                                </label>
+                                <?php if (in_array($type, ['text', 'identitas', 'datalist', 'unit_select', 'number', 'date', 'auto_tenure', 'textarea'], true)): ?>
+                                    <label class="d-flex align-items-start gap-2 mb-0" for="qInput_<?= (int) $qNo ?>">
+                                        <span class="q-number-badge tabular-nums"><?= (int) $qNo ?></span>
+                                        <span class="fw-semibold text-dark" style="font-size: 0.9375rem; line-height: 1.45;">
+                                            <?= esc($meta['label']) ?>
+                                        </span>
+                                    </label>
+                                <?php else: ?>
+                                    <div class="d-flex align-items-start gap-2 mb-0">
+                                        <span class="q-number-badge tabular-nums"><?= (int) $qNo ?></span>
+                                        <span class="fw-semibold text-dark" style="font-size: 0.9375rem; line-height: 1.45;">
+                                            <?= esc($meta['label']) ?>
+                                        </span>
+                                    </div>
+                                <?php endif; ?>
                                 <span class="badge bg-light text-secondary border rounded-pill d-none flex-shrink-0" id="qLockBadge_<?= (int) $qNo ?>" style="padding: 4px 12px; font-size: 0.6875rem;">
                                     Terisi Otomatis
                                 </span>
@@ -854,45 +880,6 @@
         </form>
     </div>
 
-    <!-- =================================================================== -->
-    <!-- MODAL VERIFIKASI KATA SANDI AKUN ECC (KHUSUS ASN PINDAH PERANGKAT)   -->
-    <!-- =================================================================== -->
-    <div class="modal fade" id="modalVerifikasiAsn" tabindex="-1" aria-labelledby="modalVerifikasiAsnLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
-            <div class="modal-content border-0 shadow rounded-4">
-                <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
-                    <h5 class="modal-title fw-bold text-dark" id="modalVerifikasiAsnLabel">Lanjutkan dengan Akun ECC</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
-                </div>
-                <form id="formVerifikasiAsn" novalidate>
-                    <div class="modal-body px-4 py-3">
-                        <p id="verifAsnInfoText" class="text-secondary mb-3" style="font-size: 0.8125rem;">
-                            Progres pengisian ditemukan. Masukkan Kata Sandi akun ECC Anda untuk melanjutkan.
-                        </p>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold text-dark" style="font-size: 0.8125rem;">NIP Pegawai</label>
-                            <input type="text" id="verifAsnNip" class="form-control locked-input-bg tabular-nums" readonly>
-                        </div>
-                        <div class="mb-2">
-                            <label for="verifAsnPassword" class="form-label fw-semibold text-dark" style="font-size: 0.8125rem;">Kata Sandi Akun ECC</label>
-                            <div class="input-group">
-                                <input type="password" id="verifAsnPassword" class="form-control" placeholder="Masukkan Kata Sandi ECC" required>
-                                <button type="button" class="btn btn-outline-secondary btn-tactile" id="btnToggleVerifPass" style="min-height: 40px; min-width: 44px;" aria-label="Tampilkan Kata Sandi">
-                                    <i class="bi bi-eye"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div id="verifAsnErrorBox" class="alert alert-danger d-none py-2 px-3 mt-3 mb-0 rounded-3" style="font-size: 0.8125rem;"></div>
-                    </div>
-                    <div class="modal-footer border-top-0 px-4 pb-4 pt-1">
-                        <button type="button" class="btn btn-light border rounded-pill fw-semibold px-3" style="height: 36px;" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" id="btnSubmitVerifAsn" class="btn btn-primary rounded-pill fw-semibold px-4 btn-tactile" style="height: 36px;">Lanjutkan</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
 <?php endif; ?>
 
 <?= $this->endSection() ?>
@@ -905,7 +892,6 @@
 
     const URLS = {
         cekIdentitas:   <?= json_encode(site_url('survei-pemetaan/cek-identitas')) ?>,
-        verifikasiAkun: <?= json_encode(site_url('survei-pemetaan/verifikasi-akun')) ?>,
         saveStep:       <?= json_encode(site_url('survei-pemetaan/save-step')) ?>,
         submitFinal:    <?= json_encode(site_url('survei-pemetaan/submit')) ?>,
         keluarSesi:     <?= json_encode(site_url('survei-pemetaan/keluar-sesi')) ?>,
@@ -922,6 +908,7 @@
     let currentStep = 1;
     let answersState = {};
     let isSaving = false;
+    let hasPendingLocalBackup = false;
     let q9Picker = null;
 
     function updateCsrf(data) {
@@ -963,7 +950,7 @@
         return Promise.resolve({ isConfirmed: true });
     }
 
-    function postForm(url, params) {
+    function postForm(url, params, isRetry = false) {
         const body = new URLSearchParams();
         body.append(csrfTokenName, csrfHash);
         Object.keys(params).forEach(k => {
@@ -981,6 +968,22 @@
             },
             body: body.toString()
         }).then(async (res) => {
+            // Pemulihan otomatis jika token CSRF kadaluarsa saat formulir dikirim
+            if (res.status === 403 && !isRetry) {
+                try {
+                    const pingRes = await fetch(URLS.pingCsrf, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                    const pingJson = await pingRes.json();
+                    updateCsrf(pingJson);
+                    return postForm(url, params, true);
+                } catch (retryErr) {
+                    // Fallthrough to standard error handling
+                }
+            }
+
+            if (res.status === 503) {
+                return { status: 'error', message: 'Layanan sedang dalam pemeliharaan berkala. Silakan coba beberapa saat lagi.', _httpStatus: 503 };
+            }
+
             let json = {};
             try {
                 json = await res.json();
@@ -1068,7 +1071,7 @@
         const showSkillBranch = (q21 === 'Ya, memiliki beberapa keahlian tambahan' || q21 === 'Ya, memiliki satu keahlian tambahan');
         [22, 23, 24, 25].forEach(no => toggleBlock(no, showSkillBranch));
 
-        toggleBlock(28, q27 !== 'Tidak bersedia');
+        toggleBlock(28, q27 !== '' && q27 !== 'Tidak bersedia');
         toggleBlock(30, q29 !== '' && q29 !== 'Belum pernah');
     }
 
@@ -1321,6 +1324,7 @@
                             );
                             if (!hasServerVal && parsedBk.answers[qKey]) {
                                 answersState[qKey] = parsedBk.answers[qKey];
+                                hasPendingLocalBackup = true;
                             }
                         });
                     }
@@ -1456,8 +1460,9 @@
         if (btnDraft) btnDraft.disabled = true;
 
         try {
-            const stepAnswers = collectStepAnswersPayload(currentStep);
+            const stepAnswers = hasPendingLocalBackup ? collectAllAnswersPayload() : collectStepAnswersPayload(currentStep);
             const res = await postForm(URLS.saveStep, {
+                respon_id: activeSession?.respon?.id || 0,
                 step: currentStep,
                 target_step: targetStep,
                 mode: mode,
@@ -1484,6 +1489,7 @@
 
             if (res.answers) {
                 answersState = Object.assign({}, res.answers);
+                hydrateDomFromAnswers();
             }
             if (res.progress) {
                 renderProgressHeader(res.progress);
@@ -1501,6 +1507,7 @@
             }
 
             if (res.status === 'success') {
+                hasPendingLocalBackup = false;
                 clearLocalBackup();
                 if (ind) ind.textContent = 'Draf tersimpan';
 
@@ -1580,10 +1587,23 @@
 
         try {
             const res = await postForm(URLS.submitFinal, {
+                respon_id: activeSession?.respon?.id || 0,
                 step: currentStep,
                 pernyataan_setuju: chkDecl.checked ? '1' : '0',
                 answers_json: JSON.stringify(collectAllAnswersPayload())
             });
+
+            if (res.status === 'session_expired') {
+                saveLocalBackup();
+                await showDialog({
+                    title: 'Sesi Perlu Dipulihkan',
+                    text: res.message || 'Masukkan kembali 18 digit NIP Anda untuk melanjutkan.',
+                    icon: 'warning'
+                });
+                document.getElementById('surveyWizardView')?.classList.add('d-none');
+                document.getElementById('identityCheckView')?.classList.remove('d-none');
+                return;
+            }
 
             if (res.progress) {
                 renderProgressHeader(res.progress);
@@ -1654,7 +1674,36 @@
                     if (q10) q10.value = computeTenureDisplay(dateStr);
                     document.getElementById('qBlock_9')?.classList.remove('has-missing');
                     saveLocalBackup();
+                },
+                onValueUpdate: function (selectedDates, dateStr) {
+                    answersState[9] = { teks: dateStr, angka: null, pilihan: [], lainnya: '' };
+                    const q10 = document.getElementById('qInput_10');
+                    if (q10) q10.value = computeTenureDisplay(dateStr);
+                    document.getElementById('qBlock_9')?.classList.remove('has-missing');
+                },
+                onClose: function (selectedDates, dateStr) {
+                    if (dateStr) {
+                        answersState[9] = { teks: dateStr, angka: null, pilihan: [], lainnya: '' };
+                        const q10 = document.getElementById('qInput_10');
+                        if (q10) q10.value = computeTenureDisplay(dateStr);
+                        document.getElementById('qBlock_9')?.classList.remove('has-missing');
+                        saveLocalBackup();
+                    }
                 }
+            });
+        }
+
+        // Pembatasan Input Usia (Nomor 4)
+        const q4Input = document.getElementById('qInput_4');
+        if (q4Input) {
+            q4Input.addEventListener('keydown', function (e) {
+                if (['e', 'E', '+', '-', '.', ','].includes(e.key)) {
+                    e.preventDefault();
+                }
+            });
+            q4Input.addEventListener('input', function () {
+                const clean = this.value.replace(/\D+/g, '');
+                if (this.value !== clean) this.value = clean;
             });
         }
 
@@ -1718,83 +1767,9 @@
                         return;
                     }
 
-                    if (res.state === 'require_asn_login') {
-                        document.getElementById('verifAsnNip').value = res.nip || val;
-                        document.getElementById('verifAsnPassword').value = '';
-                        document.getElementById('verifAsnInfoText').textContent = res.message || 'Masukkan Kata Sandi akun ECC Anda untuk melanjutkan.';
-                        document.getElementById('verifAsnErrorBox')?.classList.add('d-none');
-                        const modalEl = document.getElementById('modalVerifikasiAsn');
-                        if (modalEl && typeof bootstrap !== 'undefined') {
-                            bootstrap.Modal.getOrCreateInstance(modalEl).show();
-                        }
-                        return;
-                    }
-
                     if (alertBox) {
                         alertBox.className = 'alert alert-danger py-2 px-3 mb-3 rounded-3';
                         alertBox.textContent = res.message || 'NIP tidak dapat diproses.';
-                    }
-                } finally {
-                    if (btn) btn.disabled = false;
-                }
-            });
-        }
-
-        // Toggle tampil/sembunyi Kata Sandi pada Modal Verifikasi ASN
-        const btnTogglePass = document.getElementById('btnToggleVerifPass');
-        if (btnTogglePass) {
-            btnTogglePass.addEventListener('click', function () {
-                const inp = document.getElementById('verifAsnPassword');
-                if (!inp) return;
-                const isPwd = inp.type === 'password';
-                inp.type = isPwd ? 'text' : 'password';
-                this.innerHTML = isPwd ? '<i class="bi bi-eye-slash"></i>' : '<i class="bi bi-eye"></i>';
-            });
-        }
-
-        // Submit Modal Verifikasi Kata Sandi ECC (ASN)
-        const formVerifAsn = document.getElementById('formVerifikasiAsn');
-        if (formVerifAsn) {
-            formVerifAsn.addEventListener('submit', async function (e) {
-                e.preventDefault();
-                const nip = document.getElementById('verifAsnNip')?.value || '';
-                const pwd = document.getElementById('verifAsnPassword')?.value || '';
-                const errBox = document.getElementById('verifAsnErrorBox');
-                const btn = document.getElementById('btnSubmitVerifAsn');
-
-                if (errBox) errBox.classList.add('d-none');
-                if (!pwd) {
-                    if (errBox) {
-                        errBox.textContent = 'Masukkan Kata Sandi akun ECC Anda.';
-                        errBox.classList.remove('d-none');
-                    }
-                    return;
-                }
-
-                if (btn) btn.disabled = true;
-                try {
-                    const res = await postForm(URLS.verifikasiAkun, {
-                        nomor_identitas: nip,
-                        kata_sandi: pwd
-                    });
-
-                    if (res.state === 'already_submitted_redirect' && res.redirect_url) {
-                        window.location.href = res.redirect_url;
-                        return;
-                    }
-
-                    if (res.status === 'success' && res.session) {
-                        const modalEl = document.getElementById('modalVerifikasiAsn');
-                        if (modalEl && typeof bootstrap !== 'undefined') {
-                            bootstrap.Modal.getInstance(modalEl)?.hide();
-                        }
-                        mountSession(res.session);
-                        return;
-                    }
-
-                    if (errBox) {
-                        errBox.textContent = res.message || 'Kata sandi akun ECC tidak sesuai.';
-                        errBox.classList.remove('d-none');
                     }
                 } finally {
                     if (btn) btn.disabled = false;
@@ -1974,6 +1949,16 @@
                 .then(d => updateCsrf(d))
                 .catch(() => {});
         }, 900000);
+
+        // Penyegar Token CSRF saat Tab Difokuskan Kembali
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'visible') {
+                fetch(URLS.pingCsrf, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(r => r.json())
+                    .then(d => updateCsrf(d))
+                    .catch(() => {});
+            }
+        });
 
         // Apabila halaman dimuat dengan sesi aktif dari Cookie, langsung pasang!
         if (INITIAL_SESSION) {
