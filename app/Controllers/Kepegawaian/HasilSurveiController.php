@@ -500,13 +500,29 @@ class HasilSurveiController extends BaseController
         }
 
         $syncedCount = 0;
+        $userModel   = new \App\Models\User();
+
         foreach ($rows as $r) {
             $uid = (int) ($r['user_id'] ?? 0);
+
+            // Defensive lookup jika user_id pada survei_pemetaan_respon belum terhubung
+            if ($uid <= 0 && !empty($r['nomor_identitas'])) {
+                $cleanNip = preg_replace('/\D+/', '', (string) $r['nomor_identitas']);
+                $matchedUser = $userModel->select('id')->where('nip', $cleanNip)->first();
+                if ($matchedUser) {
+                    $uid = (int) $matchedUser['id'];
+                    $responModel->update((int) $r['id'], ['user_id' => $uid]);
+                }
+            }
+
             if ($uid > 0) {
                 $res = SurveiPemetaanPolicy::syncEmptyProfileFields($uid, $r, false, true);
                 if (!empty($res['updated'])) {
                     $syncedCount++;
                 }
+            } else {
+                // Bersihkan flag jika akun tidak ditemukan di master users
+                $responModel->update((int) $r['id'], ['pending_profile_sync' => 0]);
             }
         }
 

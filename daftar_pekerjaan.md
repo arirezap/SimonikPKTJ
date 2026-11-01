@@ -483,6 +483,14 @@ Dokumen ini adalah lembar kerja resmi pelacakan pekerjaan pengembangan, perbaika
     - **Harmonisasi Desain Bento Strip & Bar Capaian**: Mengubah tampilan butir pertanyaan pada *Persepsi Sistem Kinerja* (No. 73, 76, 77, 82) dari teks garis bawah biasa menjadi modul strip bento berlatar `#f8fafc` lengkap dengan indikator progres berwarna biru muda (*sky blue* `#0284c7`), selaras dengan bahasa desain kartu di sebelahnya.
     - **Bilah Gulir Ramping (*Custom Slim Scrollbar*)**: Mengganti bilah gulir bawaan peramban Windows yang tebal dan memiliki panah menjadi bilah gulir ramping 6px tanpa panah (`.custom-scroll`) dengan sudut membulat elegan pada kontainer daftar perilaku, hambatan kerja, masukan esai, serta tabel komparasi.
   - **Status**: Selesai ✅ *(31 Oktober 2026)*
+
+- [x] **TUGAS 16.11: Optimasi Tampilan Scrollable Usulan Profil & Hardening Sinkronisasi Profil Pegawai (`hasil_survei.php` & `HasilSurveiController.php`)**
+  - **Uraian Pekerjaan**:
+    - **Pemberian Akses Penuh Seluruh Akun Terusul (Uncapped Render)**: Menghapus batas pemotongan `array_slice(..., 0, 5)` pada tampilan antrean Usulan Pelengkapan Profil Pegawai sehingga seluruh 24 akun (atau berapapun jumlah antrean) dirender secara lengkap ke HTML.
+    - **Kontainer Penggulir Ramping Modern (`.custom-scroll`)**: Membungkus antrean akun ke dalam kontainer berukuran `max-height: 280px; overflow-y: auto;` dengan styling bilah gulir ramping 6px tanpa panah tebal, memungkinkan pengelola melakukan peninjauan seluruh data dengan mulus.
+    - **Proteksi Anti-Klik Ganda & Indikator Loading**: Mengaktifkan status `disabled = true` serta indikator animasi (*spinner*) pada tombol *"Terapkan Semua ke Profil Pegawai"* dan tombol *"Terapkan"* satuan selama proses pengiriman AJAX berlangsung.
+    - **Hardening Defensif Resolusi Akun (`HasilSurveiController::syncProfil`)**: Menyediakan mekanisme cadangan pencocokan NIP 18 digit untuk mengaitkan `user_id` apabila data survei awal belum terhubung ke master user, serta pembersihan otomatis flag antrean jika data akun tidak ditemukan di basis data master.
+  - **Status**: Selesai ✅ *(31 Oktober 2026)*
 ---
 ## 📊 Status Progres Pelaksanaan
 

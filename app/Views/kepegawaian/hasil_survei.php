@@ -537,6 +537,8 @@ $exportQuery = http_build_query([
         </div>
         <div class="d-flex flex-column gap-2 mt-2">
             <?php foreach (array_slice($pendingSyncList, 0, 5) as $ps): ?>
+        <div class="d-flex flex-column gap-2 mt-2 custom-scroll" style="max-height: 280px; overflow-y: auto; padding-right: 6px;">
+            <?php foreach ($pendingSyncList as $ps): ?>
                 <div class="bg-white rounded-3 border p-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
                     <div style="font-size: 0.8125rem;">
                         <span class="fw-semibold text-dark"><?= esc($ps['nama']) ?></span>
@@ -2144,16 +2146,49 @@ $exportQuery = http_build_query([
                 showDialog({ title: 'Gagal', text: res.message || 'Gagal menerapkan profil.', icon: 'error' });
             }
         });
+            const btn = this;
+            const origHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Menerapkan...';
 
         document.querySelectorAll('.btn-sync-single').forEach(btn => {
             btn.addEventListener('click', async function () {
                 const rid = this.dataset.responId;
                 const res = await postAction(URLS.syncProfil, { mode: 'single', respon_id: rid });
+            try {
+                const res = await postAction(URLS.syncProfil, { mode: 'all' });
                 if (res.status === 'success') {
                     await showDialog({ title: 'Tersimpan', text: res.message, icon: 'success' });
                     window.location.reload();
                 } else {
                     showDialog({ title: 'Gagal', text: res.message || 'Gagal menerapkan profil.', icon: 'error' });
+                }
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+            }
+        });
+
+        document.querySelectorAll('.btn-sync-single').forEach(btn => {
+            btn.addEventListener('click', async function () {
+                const singleBtn = this;
+                const origText = singleBtn.textContent;
+                const rid = singleBtn.dataset.responId;
+
+                singleBtn.disabled = true;
+                singleBtn.textContent = 'Menyimpan...';
+
+                try {
+                    const res = await postAction(URLS.syncProfil, { mode: 'single', respon_id: rid });
+                    if (res.status === 'success') {
+                        await showDialog({ title: 'Tersimpan', text: res.message, icon: 'success' });
+                        window.location.reload();
+                    } else {
+                        showDialog({ title: 'Gagal', text: res.message || 'Gagal menerapkan profil.', icon: 'error' });
+                    }
+                } finally {
+                    singleBtn.disabled = false;
+                    singleBtn.textContent = origText;
                 }
             });
         });
