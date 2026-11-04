@@ -535,8 +535,6 @@ $exportQuery = http_build_query([
                 Terapkan Semua ke Profil Pegawai
             </button>
         </div>
-        <div class="d-flex flex-column gap-2 mt-2">
-            <?php foreach (array_slice($pendingSyncList, 0, 5) as $ps): ?>
         <div class="d-flex flex-column gap-2 mt-2 custom-scroll" style="max-height: 280px; overflow-y: auto; padding-right: 6px;">
             <?php foreach ($pendingSyncList as $ps): ?>
                 <div class="bg-white rounded-3 border p-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
