@@ -1,7 +1,7 @@
 # 🎨 DESIGN SYSTEM & UI/UX GUIDELINES
 ## Evidence Command Center (ECC)
 **Official Application Name:** Evidence Command Center (ECC) (formerly Simonik)  
-**Version:** 1.6.0 (Enterprise Production Release - 13 Oktober 2026)  
+**Version:** 2.1.0 (Baseline UI/UX ECC 1.5 Dikunci + Integrasi ECC 2.0 - 4 November 2026)  
 **Design Philosophy:** Modern Enterprise Bento Grid, Visual Excellence, Micro-Interactions, Mobile-First Touch Experience, 3-Tier Data Guards, and High-Performance Ergonomics.
 
 ---
@@ -16,9 +16,11 @@ The Evidence Command Center (ECC) UI/UX is built to deliver a **world-class, hig
 3. **No Redundancy & No Ambiguity**: Eliminates duplicate action buttons and ambiguous form affordances.
 4. **3-Tier Protection & Data Guarding**: Visual highlight feedback on frontend (e.g. `.table-danger` on duplicate rows), instant client-side validation, and server-side atomic validation.
 5. **Mobile-First & Touch-Friendly**: Dual-view paradigm where wide desktop tables seamlessly collapse into touch cards on smartphones (<768px), maintaining minimum 44px touch targets.
-6. **Corporate Tone & Strict Terminology**: Strictly use **"staf"** across all UI labels, buttons, documentation, and variables (never use "staf").
+6. **Corporate Tone & Strict Terminology**: Strictly use **"staf"** across all UI labels, buttons, documentation, and variables (never use "staff" or "bawahan").
 7. **Simplicity & Clear Microcopy**: Gunakan kalimat yang ringkas, simpel, padat, tidak berbelit-belit, dan hindari bahasa teknis yang kepanjangan baik pada UI labels maupun dokumentasi.
 8. **Clean UI & Minimalist Icon Policy**: Dilarang menggunakan banyak ikon pada antarmuka pengguna. Gunakan ikon jika memang sangat dibutuhkan saja (navigasi utama, tombol aksi fungsional, dan indikator status kritis) agar aplikasi selalu berpenampilan bersih (*clean*), rapi, elegan, dan profesional tanpa *visual clutter*.
+9. **UI/UX Preservation & Seamless Continuity (ECC 2.0 Integration)**: Mempertahankan kebiasaan visual dan ergonomi antarmuka yang sudah ada pada ECC. Seluruh modul baru (Ketarunaan & Alumni) dibangun menggunakan fondasi visual, token warna, elevasi kartu bento, tipografi Inter, dan komponen interaktif yang identik, sehingga pengguna tidak mengalami disorientasi atau perubahan drastis pada pengalaman penggunaan aplikasi.
+10. **Baseline UI/UX ECC 1.5 adalah Acuan Tunggal**: Tampilan ECC 1.5 yang berjalan saat ini (8-point grid, token warna, bento card, shell sidebar/topbar/footer, komponen interaktif) sudah rapi dan wajib dipertahankan. Mock-up ECC 2.0 hanya panduan susunan informasi, **bukan** spesifikasi visual yang disalin mentah. Rincian aturan ada di §21.0.
 
 ---
 
@@ -689,6 +691,139 @@ Untuk menjamin keamanan berkas yang diunggah pegawai pada modul Profil Saya (`/p
    - Kolom audit persetujuan dan penilaian (`approved_by`, `approved_at`, `penilai_id`, `penilaian_at`) tersimpan lengkap di basis data sebagai jejak integritas digital sistem.
    - **Stempel Waktu Database-Only**: Tanggal dan jam persetujuan serta penilaian hanya disimpan di basis data dan tidak dipajang di tampilan antarmuka (UI/UX).
    - **Pencegahan Diskrepansi Administrasi di UI/UX**: Antarmuka pengguna pada menu target bulanan dan rekapitulasi penilaian kinerja hanya menampilkan nama pejabat yang menyetujui / menilai (misal: *"Disetujui oleh: [Nama Pejabat]"* atau *"Dinilai oleh: [Nama Penilai]"*) untuk mengantisipasi potensi temuan ketidaksesuaian administrasi oleh auditor pengawasan Itjen / BPK.
+
+---
+
+
+---
+
+## 21. 🎓 Standarisasi UI/UX Modul ECC 2.0 (Ketarunaan & Alumni)
+
+Untuk menjamin transisi yang mulus dan mencegah disorientasi pengguna, modul **ECC 2.0 (Ketarunaan & Alumni)** dirancang secara harmonis di atas standar desain ECC yang sudah berjalan:
+
+### 21.0 Baseline UI/UX ECC 1.5 & Kedudukan Mock-up ECC 2.0
+
+> [!IMPORTANT]
+> **Sumber kebenaran UI/UX adalah ECC 1.5** (tampilan aplikasi yang berjalan saat ini + dokumen ini). Berkas di `ECC 2.0/Mock-up tampilan website/` hanya **panduan susunan informasi**: data apa yang ditampilkan, urutan blok, dan pengelompokan. Mock-up **bukan** spesifikasi visual. Dilarang mengimplementasikan mock-up secara mentah (*pixel-copy*).
+
+**Pemetaan Mock-up → ECC 1.5**
+
+| Aspek | Boleh diambil dari mock-up | Wajib mengikuti ECC 1.5 |
+| :--- | :--- | :--- |
+| Shell (sidebar, topbar, footer) | Tidak ada | `.sidebar`, `.header-promax`, `.footer-promax` identik ECC 1.5. Branding header mock-up (logo besar, tagline PKTJ, badge *"Mock-up · Data Simulasi"*) tidak dipakai. |
+| Struktur konten | Urutan blok, pengelompokan metrik, nama label | Wadah `.bento-card` (padding 24px desktop / 16px mobile). |
+| Spasi & ukuran | Tidak ada | 8-point grid (§2.4, §2.5). Nilai hasil tafsiran mock-up seperti `14px`, `18px`, `20px`, `44px` tidak diizinkan. |
+| Warna | Makna semantik status | Token ECC §2. Warna khusus status taruna mengikuti tabel §21.5 B. |
+| Ikon | Tidak ada | Kebijakan ikon minimalis (§3.2). Ikon dekoratif mock-up (judul kartu, kolom tabel, setiap baris) tidak disalin. |
+| Tipografi | Tidak ada | Inter, skala §3.1, `tabular-nums` untuk angka. |
+| Komponen | Jenis komponen (tabel, donut, daftar antrean) | Komponen ECC yang sudah ada: Select2, Flatpickr, SweetAlert2, tombol 32/36/40px, badge `px-3 py-1`. |
+| Mikro-kopi | Maksud informasi | Aturan bahasa §18 (singkat, non-teknis). |
+
+**Prosedur Menerjemahkan Mock-up**
+1. Identifikasi informasi dan aksi yang dibutuhkan dari mock-up.
+2. Petakan ke komponen ECC 1.5 yang sudah ada. Gunakan ulang kelas dan partial yang ada sebelum membuat yang baru.
+3. Jika komponen belum ada, buat dengan token yang ada lalu dokumentasikan di dokumen ini.
+4. Jika mock-up bertentangan dengan dokumen ini, **dokumen ini yang berlaku**.
+
+### 21.1 Prinsip Preservasi & Harmonisasi UI/UX
+1. **Tidak Mengubah Kebiasaan Pengguna**: Seluruh pola interaksi yang sudah familiar di ECC (tata letak Bento Grid, gaya dropdown Select2, Flatpickr datepicker, tinggi tombol CTA 40px, SweetAlert2 modal konfirmasi, dan tipografi angka tabular) dipertahankan 100%.
+2. **Visual Consistency**: Menggunakan palet dasar aplikasi yang sama (Canvas `#f8fafc`, Surface `#ffffff`, Border `1px solid rgba(0,0,0,0.05)`, Primary Blue `#0284c7`/`#0d6efd`, Navy `#0f172a`).
+3. **No Visual Clutter**: Mematuhi kebijakan ikon minimalis. Ikon hanya disematkan pada fungsi navigasi utama, tombol aksi esensial, dan status kritis.
+
+### 21.2 Arsitektur Multi-Role & Hak Akses ECC 2.0
+Modul ECC 2.0 terintegrasi langsung dengan sistem multi-role ECC (`user_roles`) tanpa pembuatan akun ganda:
+1. **Klaster Pimpinan**: `direktur`, `wadir`, `kabag_aak`, `manajemen` (Hak akses pemantauan institusional dan ekspor laporan).
+2. **Klaster Pengelola Ketarunaan**:
+   - `ketarunaan`: Operator/PIC Data Taruna, Beasiswa, dan Status Pendidikan.
+   - `ketarunaan_validator`: Validator pengesahan perubahan status dan beasiswa.
+3. **Pusat Pengembangan Karakter (`pusbangkar`)**:
+   - Pencatat resmi kasus pelanggaran/disiplin taruna, pembinaan karakter, dan validasi prestasi ketarunaan.
+4. **Klaster Karier & Alumni**:
+   - `karir_alumni`: Pengelola bursa lowongan kerja, relasi perusahaan mitra, dan database alumni.
+5. **Klaster Layanan Mandiri (*Self-Service*)**:
+   - `taruna`: Akun mandiri taruna aktif untuk verifikasi profil kontak, klaim prestasi, dan pengajuan beasiswa.
+   - `alumni`: Akun mandiri lulusan untuk pembaruan rekam jejak karier dan pengisian instrumen *tracer study*.
+   - `pengguna_lulusan`: Akun stakeholder mitra (Dinas Perhubungan, BPTD, industri transportasi) untuk pengisian survei kepuasan pengguna lulusan.
+
+### 21.3 Struktur Navigasi Sidebar Terpadu & Seamless Switcher
+Sidebar navigasi ECC 2.0 disusun ke dalam 4 kelompok menu terstruktur:
+1. **DASHBOARD**:
+   - `Ringkasan` (Rute: `/ketarunaan/dashboard`) — Tampilan komprehensif seluruh indikator ketarunaan dan alumni.
+2. **DATA KETARUNAAN**:
+   - `Database Taruna` (Rute: `/ketarunaan/taruna`) — Master data seluruh taruna dengan 6 status pendidikan.
+   - `Rekam Jejak Taruna` (Rute: `/ketarunaan/rekam-jejak`) — Kronologi terpadu per taruna.
+   - `Prestasi` (Rute: `/ketarunaan/prestasi`) — Pencatatan prestasi individu & tim.
+   - `Pelanggaran` (Rute: `/ketarunaan/pelanggaran`) — Pengelolaan laporan dugaan, pemeriksaan, penetapan, dan sanksi.
+   - `Beasiswa` (Rute: `/ketarunaan/beasiswa`) — 4 program beasiswa (Apresiasi, Prestasi, Daerah 3TP, Tidak Mampu).
+3. **KARIER & ALUMNI**:
+   - `Lowongan Pekerjaan` (Rute: `/ketarunaan/lowongan`) — Informasi karier terverifikasi dengan sasaran prodi dan batas waktu pendaftaran.
+   - `Alumni` (Rute: `/ketarunaan/alumni`) — Profil dasar lulusan tervalidasi dengan tag visual *"Profil dasar"*.
+4. **TATA KELOLA**:
+   - `Validasi Data` (Rute: `/ketarunaan/validasi`) — Antrean validasi terpusat.
+   - `Laporan` (Rute: `/ketarunaan/laporan`) — Rekapitulasi dan ekspor resmi.
+   - `Pengaturan` (Rute: `/ketarunaan/pengaturan`) — Referensi prodi, angkatan, kelas, dan parameter.
+
+### 21.4 Penyelarasan Shell: Sidebar, Topbar, dan Footer Identik ECC 1.0
+Seluruh subsistem ECC 2.0 wajib mematuhi model arsitektur shell ECC 1.0 yang sudah ada (*mock-up visual hanya referensi tata letak konten bento, bukan pengubah shell*):
+1. **Topbar Header (`.header-promax`)**: 100% identik dengan ECC 1.0 (salam *"Selamat datang, [Nama]"*, role badge resmi, tanggal kalender, lonceng notifikasi dinamis, serta dropdown avatar profil dengan aksi *"Profil Saya"* dan *"Keluar"* terproteksi CSRF).
+2. **Sidebar (`.sidebar`)**: Menggunakan struktur dan kelas `.sidebar` serta `.nav-link` yang sama persis.
+3. **Footer (`.footer-promax`)**: 100% identik dengan ECC 1.0 (`&copy; [Tahun] Evidence Command Center (ECC) - PKTJ Tegal` dengan badge versi tabular).
+4. **Tombol Navigasi Modul di Paling Bawah Sidebar**:
+   - Pada sidebar ECC 1.0: Diletakkan di **paling bawah** dengan teks ringkas sederhana: **`Modul Ketarunaan`** (ikon `bi-mortarboard-fill`).
+   - Pada sidebar ECC 2.0: Diletakkan di **paling bawah** dengan teks ringkas sederhana: **`Modul Kinerja`** (ikon `bi-grid-fill`).
+
+### 21.5 Standar Visual Dashboard Ringkasan ECC 2.0
+Mock-up `Dashboard ECC 2.0 status pendidikan taruna.png` dipakai sebagai panduan susunan informasi. Ukuran, jarak, radius, warna, dan ikon tetap mengikuti token ECC 1.5 (§21.0). Elemen tampilan Ringkasan:
+
+#### A. Header & Filter Bar
+- **Judul Halaman**: `Dashboard ECC 2.0` (H1, 28px, Bold, Navy `#0f172a`), Subjudul: *"Ringkasan status pendidikan, capaian, dan kualitas data"* (Caption, 14px, Slate `#64748b`).
+- **Toolbar Filter**:
+  - Dropdown Program Studi (`Semua Program Studi`, `RSTJ`, `TRO`, `TO`).
+  - Dropdown Angkatan (`Semua Angkatan`, `2023`, `2024`, `2025`, `2026`).
+  - Datepicker Tanggal Acuan (*as-of date*) terintegrasi Flatpickr: *"Tanggal acuan: [Hari, Tanggal Bulan Tahun]"*.
+  - Tombol Aksi: `Unduh Laporan` (Pill button, Primary Blue `#0284c7`, ikon `bi-download`).
+
+#### B. Posisi Status Pendidikan Taruna (6 Status Pilar)
+Ditampilkan dalam 1 Bento Card besar dengan 6 kotak metrik status yang memiliki identitas visual tegas dan latar lembut:
+| Status | Warna Utama | Soft Background | Ikon BS | Penjelasan & Aturan |
+| :--- | :--- | :--- | :--- | :--- |
+| **Aktif** | `#0284c7` (Sky) | `#eff6ff` (Blue 50) | `bi-people-fill` | Taruna yang aktif menjalani pendidikan |
+| **Skorsing** | `#d97706` (Amber) | `#fef3c7` (Amber 50) | `bi-pause-circle-fill` | Pembinaan sementara; tidak aktif; ada rencana kembali |
+| **Cuti Akademik** | `#10b981` (Emerald) | `#ecfdf5` (Emerald 50) | `bi-file-text-fill` | Izin cuti resmi; tidak aktif; ada rencana kembali |
+| **Mengundurkan Diri**| `#ea580c` (Orange) | `#fff7ed` (Orange 50) | `bi-box-arrow-right` | Berhenti atas permohonan resmi; bukan lulusan |
+| **Drop Out** | `#dc2626` (Red) | `#fef2f2` (Red 50) | `bi-x-circle-fill` | Diberhentikan secara resmi; bukan lulusan |
+| **Lulus** | `#8b5cf6` (Purple) | `#f5f3ff` (Purple 50) | `bi-mortarboard-fill` | Lulusan resmi tervalidasi; membentuk profil alumni |
+
+**Baris Ringkasan Agregat (Bottom Bar)**:
+`Dalam pendidikan: [X]  •  Berhenti pendidikan: [Y]  •  Lulusan: [Z]  •  Seluruh rekaman: [N]`
+Menggunakan tipografi angka tabular (`tabular-nums`) untuk keselarasan vertikal.
+
+#### C. Baris 4 Kartu Metrik Operasional
+Empat kartu ringkas horizontal dengan elevasi bento halus (`p-3`, `border-radius: 16px`):
+1. **Prestasi Tervalidasi**: Big Number `[N] prestasi`, Subtext: `[X] taruna berprestasi` (Ikon `bi-trophy-fill`, Aksen Gold `#f59e0b`).
+2. **Pelanggaran Terbukti**: Big Number `[N] kasus`, Subtext: `[X] selesai • [Y] proses` (Ikon `bi-shield-fill-exclamation`, Aksen Red `#dc2626`).
+3. **Penerima Beasiswa**: Big Number `[N] taruna`, Subtext: `[X] program aktif` (Ikon `bi-mortarboard-fill`, Aksen Emerald `#10b981`).
+4. **Lowongan Aktif**: Big Number `[N] lowongan`, Subtext: `[X] segera berakhir` (Ikon `bi-briefcase-fill`, Aksen Purple `#8b5cf6`).
+
+#### D. Bento Grid Tengah (3 Kolom Seimbang)
+- **Sebaran Status per Program Studi** (`col-lg-5`):
+  Tabel matriks ringkas memetakan Prodi (RSTJ, TRO, TO) terhadap 6 status pendidikan, dilengkapi tautan teks *"Lihat Database Taruna →"*.
+- **Kualitas Data** (`col-lg-4`):
+  Visualisasi Donut Chart Chart.js persentase kelengkapan data (`92% Lengkap`) berdampingan dengan progress bar *Kelengkapan* dan *Tervalidasi*.
+- **Perlu Tindak Lanjut** (`col-lg-3`):
+  Wadah bento kontras tinggi dengan latar Navy gelap (`#0f172a`), memuat item antrean penting (*Menunggu validasi*, *Perlu perbaikan*, *Rencana kembali perlu ditinjau*) dan tombol aksi CTA kuning emas *"Buka Antrean Validasi >"*.
+
+#### E. Bento Grid Bawah (2 Kolom Seimbang)
+- **Aktivitas Terbaru** (`col-lg-7`):
+  Tabel 3 kolom (Modul, Aktivitas, Status Badge: `Diajukan`, `Tervalidasi`, `Dikembalikan`).
+- **Akses Cepat** (`col-lg-5`):
+  Grid 4 tombol pintas interaktif (`Tambah Data`, `Impor Excel`, `Ubah Status`, `Lihat Laporan`) dengan efek hover lift yang responsif.
+
+### 21.6 Standar Mikro-Kopi & Gaya Bahasa Non-Teknis
+- Kalimat pada notifikasi, badge, modal pop-up, dan pesan error tetap wajib **singkat, padat, jelas, ramah pengguna, dan bebas dari istilah teknis** (*database, SQL, exception, server error*).
+- Tetap patuh 100% pada aturan pembakuan:
+  - Wajib menggunakan istilah resmi **"staf"** (tidak boleh bawahan/staff).
+  - Wajib menggunakan identitas resmi **"Evidence Command Center (ECC)"** (tidak boleh menggunakan nama lama).
 
 ---
 

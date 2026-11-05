@@ -171,3 +171,9 @@ Panduan ini berisi pedoman lengkap arsitektur sistem, peta modul, basis data, da
 - **Kepatuhan Mutlak Terminologi & Branding**:
   - Wajib 100% menggunakan istilah resmi **"staf"** (tidak boleh menggunakan "bawahan" atau "staff").
   - Wajib 100% menggunakan identitas resmi **"Evidence Command Center (ECC)"** (tidak boleh menggunakan "Simonik").
+
+---
+
+## Standar Kualitas Kode & Baseline UI (Wajib Dibaca Sebelum Coding)
+- **Baseline UI/UX ECC 1.5**: Tampilan yang berjalan saat ini adalah acuan tunggal. Mock-up ECC 2.0 hanya panduan susunan informasi, tidak boleh disalin mentah. Lihat `design.md` §21.0 dan `.agents/AGENTS.md` §5.
+- **Clean Code**: Terapkan SOLID (secara pragmatis), KISS, YAGNI, DRY, penamaan deskriptif, PSR-12, error handling yang aman, validasi input server-side, dan kode yang mudah diuji. Rincian dan checklist ada di `.agents/AGENTS.md` §7.

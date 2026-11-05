@@ -48,6 +48,8 @@ $isKepegawaian = hasRole('kepegawaian');
                 </a>
             </li>
 
+
+
             <li class="nav-item">
                 <a class="nav-link <?= $isEccActive ? 'active' : 'collapsed' ?>" href="#eccSubmenu" role="button" data-bs-toggle="collapse" aria-expanded="<?= $isEccActive ? 'true' : 'false' ?>" aria-controls="eccSubmenu">
                     <i class="bi bi-display-fill"></i><span>ECC</span>
@@ -175,6 +177,16 @@ $isKepegawaian = hasRole('kepegawaian');
             <?php if ($isAdmin): ?>
                 <li class="nav-item"><a href="<?= site_url('admin/audit-logs') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/audit-logs')) ? 'active' : '' ?>"><i class="bi bi-shield-check"></i><span>Log Aktivitas Sistem</span></a></li>
                 <li class="nav-item"><a href="<?= site_url('settings') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/settings') || str_starts_with($current_uri, 'settings')) ? 'active' : '' ?>"><i class="bi bi-gear-fill"></i><span>Pengaturan Sistem</span></a></li>
+            <?php endif; ?>
+
+            <?php if (hasAnyRole(['admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'manajemen', 'ketarunaan', 'ketarunaan_validator', 'pusbangkar', 'karir_alumni'])): ?>
+                <li class="menu-divider my-2"></li>
+                <li class="nav-item">
+                    <a class="nav-link text-primary fw-semibold" href="<?= site_url('ketarunaan/dashboard') ?>">
+                        <i class="bi bi-mortarboard-fill text-primary"></i>
+                        <span>Modul Ketarunaan</span>
+                    </a>
+                </li>
             <?php endif; ?>
 
         </ul>

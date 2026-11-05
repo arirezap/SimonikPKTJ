@@ -78,9 +78,16 @@
                                 
                                 <?php 
                                     $availableSecondary = [
-                                        'kepegawaian' => 'Kepegawaian (Rekap & Approval)',
-                                        'spm' => 'SPM (Penjaminan Mutu)',
-                                        'tugas_belajar' => 'Tugas Belajar (Laporan Studi)'
+                                        'kepegawaian'          => 'Kepegawaian (Rekap & Approval)',
+                                        'spm'                  => 'SPM (Penjaminan Mutu)',
+                                        'tugas_belajar'        => 'Tugas Belajar (Laporan Studi)',
+                                        'pusbangkar'           => 'Pusbangkar (Pengembangan Karakter & Disiplin)',
+                                        'ketarunaan'           => 'Ketarunaan (Operator / PIC Data Taruna)',
+                                        'ketarunaan_validator' => 'Validator Ketarunaan (Pengesahan Data)',
+                                        'karir_alumni'         => 'Karier & Alumni (Lowongan & Mitra)',
+                                        'taruna'               => 'Taruna (Layanan Mandiri)',
+                                        'alumni'               => 'Alumni (Karier & Tracer Study)',
+                                        'pengguna_lulusan'     => 'Pengguna Lulusan (Survei Mitra Kerja)'
                                     ];
                                     $oldSecondary = old('secondary_roles') ?? [];
                                 ?>

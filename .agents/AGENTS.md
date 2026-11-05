@@ -110,6 +110,10 @@ Seluruh modul perhitungan predikat (Controller, Modal AJAX, Desktop Table, Mobil
 ---
 
 ## 5. UI/UX, 8-Point Grid & Interaction Design Standards
+- **Baseline UI/UX ECC 1.5 (Wajib Dipertahankan)**:
+  - Tampilan ECC 1.5 yang berjalan saat ini adalah acuan tunggal UI/UX: 8-point grid, token warna, bento card, shell `.sidebar` / `.header-promax` / `.footer-promax`, serta komponen Select2, Flatpickr, dan SweetAlert2.
+  - Mock-up di `ECC 2.0/Mock-up tampilan website/` hanya panduan susunan informasi (data apa, urutan, pengelompokan). **Dilarang mengimplementasikan mock-up secara mentah** (ukuran, warna, ikon, header branding, atau jarak yang tidak sesuai token ECC 1.5).
+  - Jika mock-up bertentangan dengan `design.md`, maka `design.md` yang berlaku. Prosedur penerjemahan mock-up ada di `design.md` §21.0.
 - **8-Point Grid System (Strict Spacing, Sizing & Asset Scale)**:
   - All layout spacing (`padding`, `margin`, `gap`), component dimensions, and asset containers **MUST** strictly adhere to the **8-Point Grid Scale** (or `4px` half-step for micro badges/tags):
     - `4px` (0.5x), `8px` (1x base), `12px` (1.5x), `16px` (2x), `24px` (3x), `32px` (4x), `40px` (5x), `48px` (6x), `56px` (7x), `64px` (8x), `80px` (10x).
@@ -182,4 +186,69 @@ Seluruh modul perhitungan predikat (Controller, Modal AJAX, Desktop Table, Mobil
     - Selalu gunakan **"Keluar"** pada navigasi/dropdown profil (dilarang menggunakan "Logout").
     - Selalu gunakan **"Simpan Profil"** pada formulir profil (bukan "Simpan Perubahan").
 
+---
 
+## 7. Prinsip Rekayasa Perangkat Lunak & Kualitas Kode (Clean Code Standards)
+Berlaku untuk seluruh kode **baru dan kode yang diubah** (ECC 1.x dan ECC 2.0). Kode lama yang tidak disentuh tidak perlu di-refactor massal; rapikan hanya area yang sedang dikerjakan.
+
+### A. Prinsip SOLID
+- **Single Responsibility (SRP)**: Satu kelas atau fungsi hanya punya satu alasan untuk diubah.
+  - Controller hanya mengatur alur: terima request → validasi → panggil service/model → kirim response.
+  - Logika bisnis (kalkulasi, aturan transisi status, agregasi dashboard) ditempatkan di `app/Libraries/` (Service/Policy) atau `app/Helpers/`. Contoh yang sudah ada: `PenilaianKinerjaPolicy`, `kinerja_helper.php`.
+  - Model hanya untuk akses data. View tidak boleh menjalankan query basis data.
+- **Open/Closed (OCP)**: Tambah perilaku lewat kelas, konfigurasi, atau data referensi baru, bukan dengan menambah cabang `if/elseif` pada kode yang sudah stabil. Daftar status, jenis beasiswa, dan sejenisnya diambil dari tabel `ref_*`, bukan di-hardcode.
+- **Liskov Substitution (LSP)**: Subkelas `BaseController` / `Model` tidak boleh mengubah kontrak induk (signature, tipe return, perilaku callback).
+- **Interface Segregation (ISP)**: Buat interface kecil per kemampuan (mis. `ExportableInterface`), bukan satu interface besar yang memaksa kelas mengimplementasikan metode yang tidak dipakai.
+- **Dependency Inversion (DIP)**: Service menerima dependensi lewat constructor (dengan default dari `model()` / `service()`), bukan `new` yang tersebar di dalam method. Service bersama didaftarkan di `app/Config/Services.php`.
+- **Pragmatis**: Buat interface/abstraksi hanya jika ada minimal dua implementasi nyata atau dibutuhkan untuk pengujian (selaras dengan KISS & YAGNI).
+
+### B. Efisiensi & Kesederhanaan Kode
+- **KISS**: Pilih solusi paling sederhana yang benar. Gunakan fitur bawaan CodeIgniter 4 (Query Builder, Validation, Model callbacks) sebelum menulis abstraksi sendiri.
+- **YAGNI**: Jangan menambah kolom, endpoint, parameter, atau opsi konfigurasi "untuk jaga-jaga". Modul ECC 2.0 dikerjakan satu per satu sesuai PRD dan rencana implementasi yang disetujui.
+- **DRY**: Logika yang berulang wajib berada di satu tempat:
+  - Predikat, label/warna status, format tanggal Indonesia, sanitasi desimal, dan pengecekan role → helper/library/Policy.
+  - Label dan kelompok status taruna diambil dari `ref_status_taruna`, tidak diketik ulang di view atau JavaScript.
+  - Nilai ambang batas dikirim dari backend ke JavaScript (*single source of truth*).
+  - Potongan view yang berulang → partial `$this->include()` atau View Cells.
+- **Query Efisien**: Hindari N+1 query. Gunakan join/agregasi dan kolom selektif (lihat §3).
+
+### C. Keterbacaan & Struktur (Readability)
+- **Penamaan Deskriptif**:
+  - Kelas `PascalCase` (`TarunaController`, `StatusTarunaService`).
+  - Method dan variabel `camelCase` (`$totalPrestasi`, `hitungStatusPerTanggal()`).
+  - Tabel dan kolom basis data `snake_case` (`nomor_taruna`, `status_validasi`).
+  - Konstanta `UPPER_SNAKE_CASE`.
+  - Boolean diawali `is` / `has` / `can` (`$isAktif`, `$canSeeAll`).
+  - Gunakan istilah domain yang konsisten (taruna, staf, prestasi). Dilarang nama kabur seperti `$x`, `$tp`, `$d`, `$data2`.
+- **Komentar yang Tepat**: Jelaskan **mengapa** (aturan bisnis, rujukan PRD/regulasi, trik khusus), bukan **apa** yang dilakukan kode. Tulis docblock untuk method publik service/library (`@param`, `@return`, `@throws`). Jangan menghapus komentar lama yang tidak terkait perubahan.
+- **Konsistensi Format**:
+  - PHP mengikuti **PSR-12** dan autoload **PSR-4** (indentasi 4 spasi, satu kelas per file, namespace sesuai folder), serta deklarasi tipe parameter dan return (PHP 8.1+).
+  - JavaScript: gunakan `const` / `let` (tanpa `var`), `camelCase`.
+  - CSS: nama kelas `kebab-case`, nilai mengikuti token ECC dan 8-point grid.
+- **Ukuran Wajar**: Method fokus dan pendek. View yang terlalu panjang dipecah menjadi partial.
+
+### D. Keamanan & Ketahanan (Robustness)
+- **Error Handling yang Baik**:
+  - Operasi mutasi dibungkus `try...catch (\Throwable $e)` beserta transaksi (§3).
+  - Detail teknis dicatat dengan `log_message('error', ...)`; pengguna hanya menerima pesan singkat non-teknis (§6).
+  - Dilarang menampilkan stack trace atau pesan exception mentah. Produksi wajib `CI_ENVIRONMENT = production`.
+  - Respons AJAX konsisten: `{ status, message, csrf_hash }` dengan kode HTTP yang sesuai.
+  - Efek samping non-kritis (notifikasi, log tambahan) bersifat *fail-safe* dan tidak boleh menggagalkan proses utama.
+- **Validasi Input**:
+  - Semua input dari luar (form, query string, AJAX, impor Excel, API) divalidasi di server dengan CodeIgniter Validation, meskipun sudah divalidasi di klien. Gunakan aturan *whitelist* (`in_list`, `is_natural_no_zero`, `valid_date`, `max_length`).
+  - Gunakan Query Builder / parameter binding. **Dilarang** menyusun SQL dengan menyambung input pengguna.
+  - Escape output dengan `esc()`, cek otorisasi dan kepemilikan data (IDOR) di server (§3).
+- **Mudah Diuji (Testability)**:
+  - Logika bisnis ditulis di service/helper yang tidak bergantung langsung pada `$this->request` atau session, sehingga bisa diuji dengan PHPUnit (`tests/`).
+  - Hindari state statis dan dependensi tersembunyi. Nilai "hari ini" atau tanggal acuan diterima sebagai parameter, bukan di-hardcode di dalam fungsi.
+  - Kode wajib *mudah diuji*, tetapi **menjalankan** pengujian otomatis tetap tunduk pada §4.G (perlu izin pengguna).
+
+### E. Checklist Sebelum Menyelesaikan Perubahan
+- [ ] Tidak ada logika bisnis atau query di view; controller tetap ringkas.
+- [ ] Tidak ada duplikasi logika yang sudah tersedia di helper/library/Policy.
+- [ ] Tidak ada fitur atau parameter di luar kebutuhan yang disetujui.
+- [ ] Penamaan jelas, format PSR-12, tipe parameter dan return dideklarasikan.
+- [ ] Input divalidasi di server, output di-escape, otorisasi dicek.
+- [ ] Error ditangani dengan pesan ramah pengguna dan dicatat di log.
+- [ ] UI mengikuti baseline ECC 1.5 dan `design.md`, bukan salinan mentah mock-up.
+- [ ] `php -l` lulus untuk file PHP yang diubah, lalu jalankan `graphify update .`.

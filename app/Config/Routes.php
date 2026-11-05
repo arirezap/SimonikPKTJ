@@ -187,7 +187,48 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
         $routes->get('jadwal', 'User\AkademikController::jadwal');
     });
 
-    $routes->get('ketarunaan', 'User\KetarunaanController::index');
+    // --- Modul ECC 2.0 (Ketarunaan & Alumni) ---
+    $routes->group('ketarunaan', function ($routes) {
+        $routes->get('/', 'Ketarunaan\DashboardController::index');
+        $routes->get('dashboard', 'Ketarunaan\DashboardController::index');
+        $routes->post('dashboard/filter-data', 'Ketarunaan\DashboardController::filterData');
+
+        // Placeholder route endpoints untuk sub-modul lanjutan
+        // Modul 1: Database Taruna
+        $routes->get('taruna', 'Ketarunaan\TarunaController::index');
+        $routes->post('taruna/store', 'Ketarunaan\TarunaController::store');
+        $routes->get('taruna/impor', 'Ketarunaan\TarunaController::impor');
+        $routes->post('taruna/impor/preview', 'Ketarunaan\TarunaController::previewImpor');
+        $routes->post('taruna/impor/proses', 'Ketarunaan\TarunaController::prosesImpor');
+        $routes->get('taruna/impor/template', 'Ketarunaan\TarunaController::unduhTemplate');
+        $routes->get('taruna/profil/(:segment)', 'Ketarunaan\TarunaController::profil/$1');
+        $routes->post('taruna/profil/(:segment)/identitas', 'Ketarunaan\TarunaController::updateIdentitas/$1');
+        $routes->post('taruna/profil/(:segment)/pendidikan', 'Ketarunaan\TarunaController::updatePendidikan/$1');
+        $routes->post('taruna/profil/(:segment)/kontak', 'Ketarunaan\TarunaController::updateKontak/$1');
+        $routes->post('taruna/profil/(:segment)/riwayat-pendidikan', 'Ketarunaan\TarunaController::storeRiwayatPendidikan/$1');
+        $routes->get('taruna/ubah-status/(:segment)', 'Ketarunaan\TarunaController::formUbahStatus/$1');
+        $routes->post('taruna/ubah-status/(:segment)', 'Ketarunaan\TarunaController::storeUbahStatus/$1');
+        // Modul 2: Rekam Jejak Taruna
+        $routes->get('rekam-jejak', 'Ketarunaan\RekamJejakController::index');
+        $routes->get('rekam-jejak/ekspor', 'Ketarunaan\RekamJejakController::ekspor');
+        $routes->get('rekam-jejak/tambah-capaian', 'Ketarunaan\RekamJejakController::createCapaian');
+        $routes->get('rekam-jejak/tambah-capaian/(:segment)', 'Ketarunaan\RekamJejakController::createCapaian/$1');
+        $routes->post('rekam-jejak/simpan-capaian', 'Ketarunaan\RekamJejakController::storeCapaian');
+        $routes->get('rekam-jejak/detail/(:segment)', 'Ketarunaan\RekamJejakController::detail/$1');
+        $routes->get('rekam-jejak/capaian/(:num)', 'Ketarunaan\RekamJejakController::showCapaian/$1');
+        $routes->get('rekam-jejak/edit-capaian/(:num)', 'Ketarunaan\RekamJejakController::editCapaian/$1');
+        $routes->post('rekam-jejak/update-capaian/(:num)', 'Ketarunaan\RekamJejakController::updateCapaian/$1');
+        $routes->post('rekam-jejak/validasi-capaian/(:num)', 'Ketarunaan\RekamJejakController::validateCapaian/$1');
+        $routes->get('rekam-jejak/unduh-bukti/(:segment)/(:num)', 'Ketarunaan\RekamJejakController::unduhBukti/$1/$2');
+        $routes->get('prestasi', 'Ketarunaan\DashboardController::index');
+        $routes->get('pelanggaran', 'Ketarunaan\DashboardController::index');
+        $routes->get('beasiswa', 'Ketarunaan\DashboardController::index');
+        $routes->get('lowongan', 'Ketarunaan\DashboardController::index');
+        $routes->get('alumni', 'Ketarunaan\DashboardController::index');
+        $routes->get('validasi', 'Ketarunaan\DashboardController::index');
+        $routes->get('laporan', 'Ketarunaan\DashboardController::index');
+        $routes->get('pengaturan', 'Ketarunaan\DashboardController::index');
+    });
     $routes->get('diklat', 'User\DiklatController::index');
     // --- Kelola Tim ---
     $routes->get('tim', 'User\TimController::index');

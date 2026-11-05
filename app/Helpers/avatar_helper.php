@@ -72,9 +72,16 @@ if (!function_exists('render_role_badge')) {
             'manajemen'     => 'Kanit/Katim (Level 4)',
             'user'          => 'Staf (Level 5)',
             'tugas_belajar' => 'Tugas Belajar (Level 5)',
-            'admin'         => 'Superadmin',
-            'kepegawaian'   => 'Kepegawaian',
-            'spm'           => 'SPM'
+            'admin'                => 'Superadmin',
+            'kepegawaian'          => 'Kepegawaian',
+            'spm'                  => 'SPM',
+            'pusbangkar'           => 'Pusbangkar',
+            'ketarunaan'           => 'Ketarunaan',
+            'ketarunaan_validator' => 'Validator Ketarunaan',
+            'karir_alumni'         => 'Karier & Alumni',
+            'taruna'               => 'Taruna',
+            'alumni'               => 'Alumni',
+            'pengguna_lulusan'     => 'Pengguna Lulusan'
         ];
 
         $roleText = $roleLabels[$role] ?? ucfirst($role);

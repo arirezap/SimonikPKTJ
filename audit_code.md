@@ -1,6 +1,6 @@
 # Panduan Audit & Optimasi Evidence Command Center (ECC)
 
-**Versi panduan:** 3.2.0 · **Diperbarui:** 13 Oktober 2026
+**Versi panduan:** 3.3.0 · **Diperbarui:** 4 November 2026
 
 **Lingkungan:** Laragon lokal dan cPanel produksi. Catat hasil keduanya secara terpisah.
 
@@ -8,12 +8,43 @@ Dokumen ini adalah panduan kerja berulang untuk memeriksa kode, logika bisnis, k
 
 ## 1. Cara menggunakan
 
-Contoh instruksi:
+### Panggilan cepat
 
-- `Gunakan audit_code.md untuk audit modul /log-kegiatan dan susun rencana perbaikannya.`
-- `Gunakan audit_code.md untuk memeriksa kueri dashboard dan peluang optimasinya.`
-- `Gunakan audit_code.md untuk audit seluruh proyek secara bertahap.`
+Cukup sebut berkas ini, jenis audit, dan sasarannya:
+
+```text
+@audit_code.md audit <jenis> <sasaran>
+```
+
+| Jenis | Kapan dipakai | Bagian yang wajib dipakai |
+| --- | --- | --- |
+| `halaman` | Satu halaman/route utuh: tampilan, controller, kueri, akses | §3, pilar 1–9, §5 A–D, §6, §7 |
+| `fitur` | Satu alur lintas halaman (mis. impor Excel, persetujuan target) | §3, pilar 1–6 dan 9, §5 A, B, D, §7 |
+| `code` | Berkas/kelas/method tertentu | Pilar 1, 3, 4, 6, 9, §5 A, B, D |
+| `ui-ux` | Tampilan, interaksi, bahasa, responsif | Pilar 7–8, §5 C, `design.md` (§21.0 untuk ECC 2.0) |
+| `keamanan` | Akses, CSRF, XSS, IDOR, unggahan, sesi | Pilar 4 dan 6, §5 A, §8 |
+| `kueri` | Kelambatan, beban basis data, indeks | Pilar 5, §6 |
+| `menyeluruh` | Seluruh proyek secara bertahap | Semua bagian, mulai dari risiko tertinggi |
+
+Jika jenis tidak disebut, gunakan `halaman` untuk route/URL, `code` untuk path berkas, dan `fitur` untuk nama alur.
+
+Contoh:
+
+- `@audit_code.md audit halaman /ketarunaan/dashboard`
+- `@audit_code.md audit ui-ux /log-kegiatan`
+- `@audit_code.md audit code app/Controllers/Ketarunaan/DashboardController.php`
+- `@audit_code.md audit fitur persetujuan target bulanan`
+- `@audit_code.md audit keamanan /users`
+- `@audit_code.md audit kueri dashboard kepegawaian`
+- `@audit_code.md audit menyeluruh`
 - `Laksanakan rencana perbaikan ECC-001 yang sudah disetujui dengan panduan audit_code.md.`
+
+### Alur otomatis setelah dipanggil
+
+1. Tentukan jenis dan sasaran, lalu petakan berkas terkait melalui §7 (dan Graphify bila tersedia).
+2. Jalankan bagian yang wajib untuk jenis tersebut. Bagian lain boleh dipakai jika temuan mengarah ke sana.
+3. Sajikan laporan dengan format §9 dan rencana implementasi §10.
+4. **Berhenti dan tunggu persetujuan** sebelum mengubah kode, skema, data, atau konfigurasi (aturan `.agents/AGENTS.md` §4.G).
 
 Jika audit diminta tanpa sasaran tertentu, petakan seluruh proyek dan prioritaskan keamanan akses, integritas data, serta alur kinerja. Lanjutkan penelusuran bertahap tanpa meminta konfirmasi untuk setiap berkas. Jika sasaran disebutkan, periksa modul tersebut dan dependensi yang memengaruhinya. Catat bagian yang belum diperiksa.
 
@@ -23,10 +54,12 @@ Jika audit diminta tanpa sasaran tertentu, petakan seluruh proyek dan prioritask
 
 | Acuan | Kegunaan |
 | --- | --- |
-| [.agents/AGENTS.md](.agents/AGENTS.md) | Aturan kerja, keamanan, istilah, dan batas pengujian |
+| [.agents/AGENTS.md](.agents/AGENTS.md) | Aturan kerja, keamanan, istilah, batas pengujian, dan standar kualitas kode (§7) |
 | [Skill ECC Development](.agents/skills/simonik_development/SKILL.md) | Arsitektur dan ketentuan khusus ECC |
 | [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md), [PRODUCT.md](PRODUCT.md), [PRD.md](PRD.md) | Tujuan produk, peran, dan alur bisnis |
-| [design.md](design.md) | Standar tampilan, ukuran, bahasa, dan interaksi |
+| [design.md](design.md) | Standar tampilan, ukuran, bahasa, dan interaksi. Baseline UI/UX ECC 1.5 di §21.0 |
+| [ECC 2.0/PRD.md](ECC%202.0/PRD.md) | Kebutuhan modul Ketarunaan & Alumni (ECC 2.0) |
+| `ECC 2.0/Mock-up tampilan website/` | Panduan susunan informasi saja, **bukan** acuan visual (lihat `design.md` §21.0) |
 | [CHECKLIST_OPTIMASI_ECC.md](CHECKLIST_OPTIMASI_ECC.md) | Riwayat pekerjaan optimasi |
 | [CHANGELOG.md](CHANGELOG.md), [daftar_pekerjaan.md](daftar_pekerjaan.md) | Riwayat pengembangan dan audit |
 | `composer.json`, `composer.lock`, kode, migrasi, konfigurasi lingkungan | Bukti implementasi pada revisi yang diperiksa |
@@ -50,7 +83,7 @@ Jika audit diminta tanpa sasaran tertentu, petakan seluruh proyek dan prioritask
 7. **Jika implementasi diizinkan:** kerjakan perubahan terkecil yang menyelesaikan akar masalah. Lindungi kontrak respons, hak akses, hasil perhitungan, dan kompatibilitas lingkungan.
 8. **Laporkan hasil:** tinjau diff, catat pemeriksaan yang benar-benar dilakukan, risiko tersisa, dan langkah uji pengguna. Pembacaan kode tidak boleh dilaporkan sebagai pengujian runtime.
 
-## 4. Delapan pilar pemeriksaan
+## 4. Sembilan pilar pemeriksaan
 
 | No | Pilar | Yang diperiksa |
 | --- | --- | --- |
@@ -60,8 +93,9 @@ Jika audit diminta tanpa sasaran tertentu, petakan seluruh proyek dan prioritask
 | 4 | Keamanan | Route privat, CSRF, XSS, IDOR, multi-role, unggahan, sesi, header, pembatasan permintaan |
 | 5 | Performa | Jumlah/bentuk kueri, indeks, baris dimuat, memori, cache, ukuran respons, polling, ekspor |
 | 6 | Penanganan kegagalan dan jejak aktivitas | Data kosong, pembagian nol, gagal transaksi/notifikasi, galat dan audit tanpa membocorkan rahasia |
-| 7 | Antarmuka dan aksesibilitas | Responsivitas, keterbacaan, sentuhan, keyboard/fokus, label, keadaan memuat/kosong/gagal |
+| 7 | Antarmuka dan aksesibilitas | Kesesuaian baseline ECC 1.5 (8-point grid, token, shell), responsivitas, keterbacaan, sentuhan, keyboard/fokus, label, keadaan memuat/kosong/gagal |
 | 8 | Bahasa dan operasional | Identitas ECC, istilah staf, pesan sederhana, lokal-produksi, cadangan, pemulihan, retensi |
+| 9 | Kualitas kode dan prinsip rekayasa | SOLID (pragmatis), KISS, YAGNI, DRY, penamaan, komentar, PSR-12, kemudahan pengujian (`.agents/AGENTS.md` §7) |
 
 Gunakan pilar yang relevan; tulis alasan jika tidak berlaku. Pemeriksaan kerentanan dependensi terbaru membutuhkan sumber resmi terkini dan tanggal pemeriksaan. `composer.lock` saja tidak membuktikan dependensi aman. Jangan memperbarui paket massal sebagai efek samping audit.
 
@@ -97,6 +131,11 @@ Gunakan pilar yang relevan; tulis alasan jika tidak berlaku. Pemeriksaan kerenta
 ### C. Antarmuka dan bahasa
 
 - [ ] Gunakan Bootstrap 5.3, Bootstrap Icons seperlunya, angka tabular, dan ukuran menurut `design.md`. Hindari perubahan desain di luar sasaran.
+- [ ] **Baseline ECC 1.5:** spasi, ukuran, dan radius memakai skala 8-point grid (4, 8, 12, 16, 24, 32, 40, 48, 56, 64, 80px). Nilai seperti `7px`, `13px`, `14px`, `18px`, `20px` dicatat sebagai temuan, kecuali pengecualian yang tertulis di `design.md` (mis. kontrol form 36px, area sentuh 44px).
+- [ ] Shell `.sidebar`, `.header-promax`, dan `.footer-promax` identik dengan ECC 1.5 di semua modul, termasuk ECC 2.0. Tombol pindah modul berada di paling bawah sidebar.
+- [ ] Halaman ECC 2.0 tidak menyalin mock-up mentah (ukuran, warna, ikon, branding header). Bandingkan dengan tabel pemetaan `design.md` §21.0.
+- [ ] Ikon hanya untuk navigasi, aksi fungsional, dan status penting. Ikon dekoratif di setiap judul kartu, kolom tabel, atau label dicatat sebagai temuan P3.
+- [ ] Gaya inline (`style="..."`) dan CSS khusus halaman tidak menggandakan token yang sudah ada di `public/assets/css/style.css`.
 - [ ] Periksa desktop/seluler, teks panjang, tabel lebar, kontrol tetap, keadaan kosong/memuat/gagal, dan pemulihan input setelah validasi gagal (`old()` untuk field yang aman; jangan mengisi ulang kata sandi).
 - [ ] Kontrol dapat digunakan lewat keyboard, fokus terlihat, label terbaca, status tidak hanya dibedakan dengan warna, dan gerakan menghormati `prefers-reduced-motion`.
 - [ ] Bedakan ukuran visual tombol kompak dari area sentuhnya; periksa area sentuh seluler minimal 44px menurut pedoman proyek.
@@ -105,6 +144,21 @@ Gunakan pilar yang relevan; tulis alasan jika tidak berlaku. Pemeriksaan kerenta
 - [ ] Teks pengguna singkat, tenang, dan memberi langkah berikutnya tanpa galat internal. Contoh: “Gagal menyimpan laporan. Silakan coba lagi.”
 - [ ] Dialog memakai judul 2–4 kata, satu kalimat penjelasan, dan aksi jelas: “Hapus Kegiatan?”, “Kegiatan ini akan dihapus.”, “Ya, Hapus”, “Batal”.
 - [ ] Boleh menambahkan atau mengganti animasi sederhana saja pada halaman hanya jika dibutuhkan. Periksa terlebih dahulu animasi yang sudah ada dan sesuaikan secara hemat sesuai kebutuhan (hindari animasi berlebihan dan jaga kesederhanaan visual).
+
+### D. Kualitas kode dan prinsip rekayasa
+
+Acuan lengkap: `.agents/AGENTS.md` §7. Terapkan pada kode yang diaudit; jangan menuntut refactor massal kode lama di luar sasaran.
+
+- [ ] **SRP:** controller hanya mengatur alur (request → validasi → service/model → response). Logika bisnis dan agregasi berada di `app/Libraries/` atau `app/Helpers/`. View tidak menjalankan kueri.
+- [ ] **OCP:** daftar status, jenis, dan label diambil dari tabel `ref_*` atau konfigurasi, bukan rantai `if/elseif` yang terus ditambah.
+- [ ] **LSP/ISP/DIP:** override tidak mengubah kontrak induk; interface kecil dan hanya dibuat bila ada kebutuhan nyata; dependensi masuk lewat constructor dengan default `model()`/`service()`.
+- [ ] **KISS/YAGNI:** tidak ada abstraksi, kolom, endpoint, atau parameter yang belum dibutuhkan.
+- [ ] **DRY:** rumus, label status, format tanggal, sanitasi desimal, dan pengecekan role tidak ditulis ulang di banyak tempat (controller, view, JavaScript).
+- [ ] **Angka/tanggal tertanam:** tidak ada nilai bisnis atau tanggal yang di-hardcode di controller/view (mis. persentase tetap, jumlah antrean tetap, tanggal acuan tetap). Nilai harus dihitung dari data atau diterima sebagai parameter.
+- [ ] **Penamaan dan format:** PascalCase kelas, camelCase method/variabel, snake_case tabel/kolom, boolean `is/has/can`, PSR-12, deklarasi tipe parameter dan return.
+- [ ] **Komentar:** menjelaskan alasan atau aturan bisnis, bukan mengulang isi kode. Komentar lama yang tidak terkait tidak dihapus.
+- [ ] **Error handling:** mutasi memakai transaksi dan `try...catch (\Throwable $e)`, detail teknis ke `log_message()`, pesan pengguna singkat non-teknis, respons AJAX `{ status, message, csrf_hash }`.
+- [ ] **Testability:** logika bisnis dapat diuji tanpa `$this->request`/session; tidak ada state statis tersembunyi.
 
 ## 6. Kueri, basis data, dan performa
 
@@ -167,6 +221,10 @@ Konfirmasi keberadaan berkas/route pada revisi yang diperiksa. Semua modul mengi
 | Notifikasi/audit log | `app/Controllers/NotificationController.php`, `app/Controllers/Admin/AuditLogController.php`, `app/Helpers/audit_helper.php` | Pemilik, polling, CSRF, filter/pagination, data sensitif, biaya pencatatan |
 | Pengaturan/pemeliharaan | `app/Controllers/Admin/SettingsController.php`, `app/Models/SettingModel.php`, `app/Filters/MaintenanceFilter.php` | Cache, nilai sah, akses admin, 503, cadangan, retensi |
 | Shell/route/fitur lain | `app/Config/Routes.php`, `app/Config/Filters.php`, `app/Views/layouts/main.php`, `app/Views/layouts/sidebar.php` | Menu dan otorisasi, token, aset, route fitur tersembunyi, modul tambahan hasil pemetaan |
+| ECC 2.0 — Shell | `app/Views/layouts/ecc2_layout.php`, `app/Views/layouts/ecc2_sidebar.php` | Identik dengan `main.php`/`sidebar.php`, kategori menu, tombol *Modul Ketarunaan*/*Modul Kinerja* di paling bawah, menu sesuai peran |
+| ECC 2.0 — Dashboard Ringkasan | `app/Controllers/Ketarunaan/DashboardController.php`, `app/Views/ketarunaan/dashboard.php` | Angka dihitung dari data per tanggal acuan, filter prodi/angkatan/tanggal via AJAX + CSRF, tidak ada angka tertanam, 8-point grid |
+| ECC 2.0 — Data & model | `app/Models/Ketarunaan/*`, `app/Database/Migrations/*CreateEcc2Tables.php`, `app/Database/Seeds/Ecc2SimulasiSeeder.php` | `$allowedFields`, kunci `nomor_taruna` (teks), indeks, tidak menduplikasi `users`/`unit_kerja`, seeder hanya untuk simulasi |
+| ECC 2.0 — Peran | `app/Views/admin/user_create.php`, `app/Views/admin/user_edit.php`, `app/Helpers/avatar_helper.php` | Peran `ketarunaan`, `ketarunaan_validator`, `pusbangkar`, `karir_alumni`, `taruna`, `alumni`, `pengguna_lulusan`; pemeriksaan akses di backend, bukan hanya menu |
 
 ### Aturan bisnis yang harus dijaga
 
@@ -181,6 +239,10 @@ Konfirmasi keberadaan berkas/route pada revisi yang diperiksa. Semua modul mengi
 - **Proteksi integritas profil staf (*Smart Lock*):** Input pilihan atasan langsung dan unit kerja pada menu profil (`/profile`) dikunci bagi staf biasa. Penyesuaian hierarki penugasan dan rotasi mutasi dikelola secara terpusat oleh Admin atau Kepegawaian untuk menjamin konsistensi audit trail institusi.
 - **Filter tahun dan penanganan nilai kosong/0 di dashboard:** Dropdown filter tahun wajib menghimpun seluruh riwayat tahun (misal: 2025 dan 2026). Capaian dengan nilai 0 atau belum berstatus terbit dilabeli **"Belum Dinilai"**, sedangkan daftar evaluasi perhatian khusus dibatasi secara ketat hanya untuk nilai ≤ 25% (tidak mencampur pegawai yang belum dinilai).
 - **Konflik teridentifikasi saat penyusunan panduan:** `.agents/AGENTS.md` dan `PROJECT_CONTEXT.md` menetapkan “Baik” pada `> 90`, sedangkan skill ECC dan `design.md` memakai `>= 90`. Dokumen juga perlu membedakan nol yang sudah dinilai dari belum dinilai. Periksa apakah konflik masih ada; jangan mengubah ambang tanpa keputusan kebijakan pengguna.
+- **ECC 2.0 — integritas data taruna:** satu taruna satu `nomor_taruna` (teks, angka nol di depan tetap). Pegawai/operator tetap memakai `users` dan `unit_kerja`; tidak ada tabel pegawai ganda.
+- **ECC 2.0 — status pendidikan:** enam status (Aktif, Skorsing, Cuti Akademik, Mengundurkan Diri, Drop Out, Lulus) dihitung menurut tanggal acuan dari riwayat status. Status pendidikan terpisah dari status validasi data.
+- **ECC 2.0 — dashboard:** angka adalah hasil olahan data sumber, bukan input terpisah. Prestasi dihitung ganda (jumlah prestasi dan taruna unik); pelanggaran hanya yang `terbukti`; alumni hanya dari status Lulus yang tervalidasi.
+- **ECC 2.0 — privasi:** NIK, kontak keluarga, dan berkas pelanggaran hanya untuk peran yang berwenang; diperiksa di backend.
 - Skenario batas nilai: `NULL`, kosong, `0`, `25`, `25.01`, `75`, `75.01`, `89.99`, `90`, `90.01`, `100`, `100.01`, `150`, dan nilai di luar rentang. Tambahkan tanpa target, hanya tugas tambahan, sebagian belum dinilai, serta rata-rata tahunan dengan bulan bernilai nol.
 
 ## 8. Lingkungan dan operasional
@@ -224,7 +286,7 @@ Prioritas, kepastian, usaha, dan risiko perubahan adalah hal berbeda. Jangan mem
 ```text
 ID: ECC-001
 Judul dan prioritas:
-Kategori: bug / keamanan / data / performa / antarmuka / dokumentasi
+Kategori: bug / keamanan / data / performa / antarmuka / kualitas kode / dokumentasi
 Status pemeriksaan dan tingkat kepastian:
 Lokasi: berkas:baris, method/route
 Pemicu: peran, periode, masukan, volume data
@@ -280,6 +342,13 @@ php -l app/Controllers/User/LaporanHarianController.php
 $LASTEXITCODE
 ```
 
+Untuk audit `ui-ux`, cari nilai piksel di luar 8-point grid pada berkas sasaran, lalu tinjau setiap hasil secara manual (pengecualian `design.md` tetap berlaku):
+
+```powershell
+rg -n '\b(5|6|7|9|10|11|13|14|15|17|18|19|20|22|26|28|30|44|52|60)px' app/Views/ketarunaan/dashboard.php
+rg -c 'style="' app/Views/ketarunaan/dashboard.php
+```
+
 ### Pemeriksaan yang memuat aplikasi
 
 Jika sesuai lingkup pemeriksaan lingkungan, `php spark routes` menampilkan pendaftaran route dan `php spark migrate:status` membaca status migrasi. Keduanya memuat aplikasi; tinjau bootstrap/custom commands serta lingkungan sebelum menjalankan. Daftar route bukan pengujian seluruh endpoint; status migrasi bukan bukti kesamaan seluruh kolom/indeks.
@@ -291,6 +360,8 @@ PHPUnit, browser testing, dan pengujian beban hanya dijalankan setelah diizinkan
 `php spark migrate`, seeder, `php spark cache:clear`, perubahan skema/data, restore, dan pembersihan log adalah tindakan perubahan. Tempatkan dalam rencana implementasi yang diizinkan, bukan paket perintah audit.
 
 ## 12. Catatan revisi
+
+Versi 3.3.0 (4 November 2026) menambahkan panggilan cepat `@audit_code.md audit <jenis> <sasaran>` dengan tujuh jenis audit (halaman, fitur, code, ui-ux, keamanan, kueri, menyeluruh), pilar ke-9 kualitas kode (SOLID, KISS, YAGNI, DRY, keterbacaan, testability), checklist baseline UI/UX ECC 1.5 dan larangan menyalin mock-up mentah, serta peta cakupan dan aturan bisnis modul ECC 2.0 (Ketarunaan & Alumni).
 
 Versi 3.2.0 (13 Oktober 2026) menambahkan panduan audit dan aturan bisnis penanganan pegawai dinamis (pensiun, mutasi keluar, rotasi jabatan, pindah unit kerja, dan pergantian atasan langsung) berbasis riwayat penugasan multi-periode (`riwayat_atasan`), preservasi data kinerja lampau berbasis `tmt_selesai`, standardisasi label "Belum Dinilai", pembatasan daftar perhatian khusus (≤ 25%), serta perluasan cakupan filter tahun lintas periode (2025/2026).
 
