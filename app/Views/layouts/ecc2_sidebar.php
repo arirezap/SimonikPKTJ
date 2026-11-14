@@ -68,12 +68,14 @@ $isPengaturanActive  = str_starts_with($current_uri, 'ketarunaan/pengaturan');
                 </a>
             </li>
 
+            <?php if (\App\Libraries\Ketarunaan\KetarunaanPolicy::canAccessPelanggaranModule()): ?>
             <li class="nav-item">
                 <a class="nav-link <?= $isPelanggaranActive ? 'active' : '' ?>" href="<?= site_url('ketarunaan/pelanggaran') ?>">
                     <i class="bi bi-shield-fill-exclamation"></i>
                     <span>Pelanggaran</span>
                 </a>
             </li>
+            <?php endif; ?>
 
             <li class="nav-item">
                 <a class="nav-link <?= $isBeasiswaActive ? 'active' : '' ?>" href="<?= site_url('ketarunaan/beasiswa') ?>">

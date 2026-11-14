@@ -413,4 +413,265 @@ if (!function_exists('ketarunaan_modul_sumber_badge')) {
     }
 }
 
+if (!function_exists('ketarunaan_jenis_prestasi_catalog')) {
+    /**
+     * Katalog jenis dan tingkat prestasi resmi ECC 2.0.
+     *
+     * @return array<string, string>
+     */
+    function ketarunaan_jenis_prestasi_catalog(): array
+    {
+        return [
+            'akademik'     => 'Akademik',
+            'non_akademik' => 'Non-Akademik',
+            'olahraga'     => 'Olahraga',
+            'seni'         => 'Seni & Budaya',
+        ];
+    }
+}
+
+if (!function_exists('ketarunaan_tingkat_prestasi_catalog')) {
+    /**
+     * Katalog tingkat prestasi resmi ECC 2.0.
+     *
+     * @return array<string, string>
+     */
+    function ketarunaan_tingkat_prestasi_catalog(): array
+    {
+        return [
+            'internal'      => 'Internal',
+            'daerah'        => 'Daerah',
+            'nasional'      => 'Nasional',
+            'internasional' => 'Internasional',
+        ];
+    }
+}
+
+if (!function_exists('ketarunaan_keikutsertaan_badge')) {
+    /**
+     * Merender badge keikutsertaan (Tim / Individu) sesuai 8-Point Grid.
+     *
+     * @param string $jenis
+     * @return string
+     */
+    function ketarunaan_keikutsertaan_badge(string $jenis): string
+    {
+        $isTim = strtolower(trim($jenis)) === 'tim';
+        if ($isTim) {
+            return '<span class="badge rounded-pill px-3 py-1 fw-semibold" style="background-color:#eff6ff; color:#0284c7; border:1px solid #bfdbfe; font-size:0.75rem;">Tim</span>';
+        }
+
+        return '<span class="badge rounded-pill px-3 py-1 fw-semibold" style="background-color:#f8fafc; color:#475569; border:1px solid #cbd5e1; font-size:0.75rem;">Individu</span>';
+    }
+}
+
+if (!function_exists('ketarunaan_generate_simple_pdf')) {
+    /**
+     * Menghasilkan dokumen PDF 1 halaman standar untuk pratinjau/unduhan dokumen ringkas ECC 2.0.
+     *
+     * @param string               $subjudul
+     * @param string               $judul
+     * @param array<string,string> $barisInfo
+     * @return string
+     */
+    function ketarunaan_generate_simple_pdf(string $subjudul, string $judul, array $barisInfo = []): string
+    {
+        $cleanText = static function (string $txt): string {
+            $cleaned = preg_replace('/[^A-Za-z0-9 \-.,:\/()#]/', '', $txt);
+            $cleaned = $cleaned !== null && $cleaned !== '' ? $cleaned : '-';
+            return str_replace(['(', ')', '\\'], ['\\(', '\\)', '\\\\'], $cleaned);
+        };
+
+        $linesPdf = [
+            "BT /F1 16 Tf 50 750 Td (EVIDENCE COMMAND CENTER \\(ECC\\) - PKTJ TEGAL) Tj",
+            "0 -26 Td /F1 13 Tf (" . $cleanText($subjudul) . ") Tj",
+            "0 -32 Td /F1 11 Tf (" . $cleanText($judul) . ") Tj",
+        ];
+
+        $gap = -24;
+        foreach ($barisInfo as $label => $val) {
+            $linesPdf[] = "0 {$gap} Td (" . $cleanText($label . ' : ' . $val) . ") Tj";
+            $gap = -18;
+        }
+        $linesPdf[] = "0 -28 Td (Dokumen ini tercatat dan terhubung pada basis data ECC 2.0.) Tj ET";
+
+        $stream = implode(' ', $linesPdf);
+        $len    = strlen($stream);
+
+        return "%PDF-1.4\n"
+            . "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n"
+            . "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n"
+            . "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >> endobj\n"
+            . "4 0 obj << /Length {$len} >> stream\n{$stream}\nendstream endobj\n"
+            . "5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj\n"
+            . "xref\n0 6\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \n0000000241 00000 n \n"
+            . sprintf("%010d 00000 n \n", 293 + $len)
+            . "trailer << /Size 6 /Root 1 0 R >>\nstartxref\n" . (363 + $len) . "\n%%EOF";
+    }
+}
+
+if (!function_exists('ketarunaan_mask_nomor_taruna')) {
+    /**
+     * Menyamarkan Nomor Taruna secara konsisten untuk peran pemantau non-disiplin.
+     *
+     * @param string|null $nomorTaruna
+     * @param bool        $canViewFull
+     * @return string
+     */
+    function ketarunaan_mask_nomor_taruna(?string $nomorTaruna, bool $canViewFull = false): string
+    {
+        $clean = trim((string) $nomorTaruna);
+        if ($clean === '') {
+            return '-';
+        }
+        if ($canViewFull || strlen($clean) <= 4) {
+            return $clean;
+        }
+
+        return substr($clean, 0, 2) . '••' . substr($clean, -3);
+    }
+}
+
+if (!function_exists('ketarunaan_penetapan_meta')) {
+    /**
+     * Metadata 4 status penetapan kasus pelanggaran sesuai PRD PEL-03.
+     *
+     * @param string $status
+     * @return array<string, string>
+     */
+    function ketarunaan_penetapan_meta(string $status): array
+    {
+        $key = strtolower(trim($status));
+        $map = [
+            'dugaan' => [
+                'label' => 'Dugaan',
+                'class' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle',
+            ],
+            'terbukti' => [
+                'label' => 'Terbukti',
+                'class' => 'bg-danger-subtle text-danger border border-danger-subtle',
+            ],
+            'tidak_terbukti' => [
+                'label' => 'Tidak Terbukti',
+                'class' => 'bg-success-subtle text-success border border-success-subtle',
+            ],
+            'dibatalkan' => [
+                'label' => 'Dibatalkan',
+                'class' => 'bg-secondary-subtle text-secondary border border-secondary-subtle',
+            ],
+        ];
+
+        return $map[$key] ?? [
+            'label' => ucwords(str_replace('_', ' ', $key)),
+            'class' => 'bg-light text-dark border',
+        ];
+    }
+}
+
+if (!function_exists('ketarunaan_penetapan_badge')) {
+    /**
+     * Merender badge HTML status penetapan kasus sesuai 8-Point Grid.
+     *
+     * @param string $status
+     * @return string
+     */
+    function ketarunaan_penetapan_badge(string $status): string
+    {
+        $meta = ketarunaan_penetapan_meta($status);
+
+        return sprintf(
+            '<span class="badge rounded-pill px-3 py-1 fw-semibold %s" style="font-size:0.75rem;">%s</span>',
+            esc($meta['class']),
+            esc($meta['label'])
+        );
+    }
+}
+
+if (!function_exists('ketarunaan_penyelesaian_meta')) {
+    /**
+     * Metadata 3 status penyelesaian kasus pelanggaran sesuai PRD PEL-04.
+     *
+     * @param string $status
+     * @return array<string, string>
+     */
+    function ketarunaan_penyelesaian_meta(string $status): array
+    {
+        $key = strtolower(trim($status));
+        $map = [
+            'proses' => [
+                'label' => 'Proses',
+                'class' => 'bg-primary-subtle text-primary border border-primary-subtle',
+            ],
+            'selesai' => [
+                'label' => 'Selesai',
+                'class' => 'bg-success-subtle text-success border border-success-subtle',
+            ],
+            'banding' => [
+                'label' => 'Banding',
+                'class' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle',
+            ],
+        ];
+
+        return $map[$key] ?? [
+            'label' => ucfirst($key),
+            'class' => 'bg-light text-dark border',
+        ];
+    }
+}
+
+if (!function_exists('ketarunaan_penyelesaian_badge')) {
+    /**
+     * Merender badge HTML status penyelesaian kasus sesuai 8-Point Grid.
+     *
+     * @param string $status
+     * @return string
+     */
+    function ketarunaan_penyelesaian_badge(string $status): string
+    {
+        $meta = ketarunaan_penyelesaian_meta($status);
+
+        return sprintf(
+            '<span class="badge rounded-pill px-3 py-1 fw-semibold %s" style="font-size:0.75rem;">%s</span>',
+            esc($meta['class']),
+            esc($meta['label'])
+        );
+    }
+}
+
+if (!function_exists('ketarunaan_kategori_pelanggaran_catalog')) {
+    /**
+     * Katalog kategori pelanggaran resmi ECC 2.0.
+     *
+     * @return array<string, string>
+     */
+    function ketarunaan_kategori_pelanggaran_catalog(): array
+    {
+        return [
+            'Kedisiplinan'    => 'Kedisiplinan',
+            'Tata Kehidupan'  => 'Tata Kehidupan',
+            'Akademik'        => 'Akademik',
+            'Etika & Perilaku'=> 'Etika & Perilaku',
+            'Keselamatan'     => 'Keselamatan',
+        ];
+    }
+}
+
+if (!function_exists('ketarunaan_tingkat_pelanggaran_catalog')) {
+    /**
+     * Katalog tingkat pelanggaran resmi ECC 2.0.
+     *
+     * @return array<string, string>
+     */
+    function ketarunaan_tingkat_pelanggaran_catalog(): array
+    {
+        return [
+            'belum_ditetapkan' => 'Belum Ditetapkan',
+            'ringan'           => 'Ringan',
+            'sedang'           => 'Sedang',
+            'berat'            => 'Berat',
+        ];
+    }
+}
+
+
 

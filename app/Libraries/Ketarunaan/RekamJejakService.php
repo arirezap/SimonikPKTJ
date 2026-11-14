@@ -421,8 +421,8 @@ class RekamJejakService
                 'status_validasi'   => $pl['status_validasi'],
                 'kode_status_didik' => null,
                 'tahun_akademik_id' => '',
-                'detail_url'        => base_url('ketarunaan/pelanggaran'),
-                'action_label'      => 'Buka Modul',
+                'detail_url'        => base_url('ketarunaan/pelanggaran/detail/' . $pl['id']),
+                'action_label'      => 'Lihat Detail',
             ];
         }
 
@@ -484,7 +484,7 @@ class RekamJejakService
                 'can_access'    => true,
                 'preview_url'   => base_url('ketarunaan/rekam-jejak/unduh-bukti/prestasi/' . $pr['id'] . '?inline=1'),
                 'download_url'  => base_url('ketarunaan/rekam-jejak/unduh-bukti/prestasi/' . $pr['id']),
-                'modul_url'     => base_url('ketarunaan/prestasi'),
+                'modul_url'     => base_url('ketarunaan/prestasi/detail/' . $pr['id']),
             ];
         }
 
@@ -505,6 +505,25 @@ class RekamJejakService
                 'preview_url'   => base_url('ketarunaan/rekam-jejak/unduh-bukti/beasiswa/' . $bs['id'] . '?inline=1'),
                 'download_url'  => base_url('ketarunaan/rekam-jejak/unduh-bukti/beasiswa/' . $bs['id']),
                 'modul_url'     => base_url('ketarunaan/beasiswa'),
+            ];
+        }
+
+        foreach ($pelanggaranList as $pl) {
+            if (empty($pl['bukti_berkas'])) {
+                continue;
+            }
+            $dokumenItems[] = [
+                'id_sumber'     => (int) $pl['id'],
+                'nama_berkas'   => $pl['bukti_berkas'],
+                'modul_sumber'  => 'pelanggaran',
+                'jenis_dokumen' => 'berita_acara',
+                'kegiatan'      => $pl['nomor_perkara'] . ' - ' . ($pl['jenis_pelanggaran'] ?: 'Disiplin'),
+                'tanggal'       => substr((string) $pl['tanggal_kejadian'], 0, 10),
+                'akses'         => 'terbatas',
+                'can_access'    => $canViewDiscipline,
+                'preview_url'   => base_url('ketarunaan/rekam-jejak/unduh-bukti/pelanggaran/' . $pl['id'] . '?inline=1'),
+                'download_url'  => base_url('ketarunaan/rekam-jejak/unduh-bukti/pelanggaran/' . $pl['id']),
+                'modul_url'     => base_url('ketarunaan/pelanggaran/detail/' . $pl['id']),
             ];
         }
 

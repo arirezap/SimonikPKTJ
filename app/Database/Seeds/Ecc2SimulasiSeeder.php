@@ -94,6 +94,12 @@ class Ecc2SimulasiSeeder extends Seeder
         $db->table('alumni_profil')->truncate();
         $db->table('taruna_peserta_prestasi')->truncate();
         $db->table('taruna_prestasi')->truncate();
+        if ($db->tableExists('taruna_pelanggaran_tindak_lanjut')) {
+            $db->table('taruna_pelanggaran_tindak_lanjut')->truncate();
+        }
+        if ($db->tableExists('taruna_pelanggaran_pihak')) {
+            $db->table('taruna_pelanggaran_pihak')->truncate();
+        }
         $db->table('taruna_pelanggaran')->truncate();
         $db->table('taruna_penerima_beasiswa')->truncate();
         $db->table('taruna_program_beasiswa')->truncate();
@@ -388,56 +394,125 @@ class Ecc2SimulasiSeeder extends Seeder
             }
         }
 
-        // 8. Prestasi Tervalidasi (32 Prestasi Tervalidasi, 24 Taruna Berprestasi Unik)
-        $prestasiList = [
-            ['nama_prestasi' => 'Juara 1 Lomba Inovasi RSTJ Nasional 2026', 'jenis' => 'akademik', 'tingkat' => 'nasional', 'peringkat' => 'Juara 1', 'tim' => 'tim', 'nama_tim' => 'Tim Inovasi RSTJ'],
-            ['nama_prestasi' => 'Juara 2 Kategori Desain Otomotif Ramah Lingkungan', 'jenis' => 'akademik', 'tingkat' => 'nasional', 'peringkat' => 'Juara 2', 'tim' => 'tim', 'nama_tim' => 'OtoGreen PKTJ'],
-            ['nama_prestasi' => 'Juara 1 Karya Tulis Ilmiah Keselamatan Jalan BPTD', 'jenis' => 'akademik', 'tingkat' => 'daerah', 'peringkat' => 'Juara 1', 'tim' => 'individu', 'nama_tim' => null],
-            ['nama_prestasi' => 'Medali Emas Kejuaraan Pencak Silat Antar Perguruan Tinggi Kedinasan', 'jenis' => 'olahraga', 'tingkat' => 'nasional', 'peringkat' => 'Juara 1', 'tim' => 'individu', 'nama_tim' => null],
+        // 8. Prestasi Tervalidasi (32 Prestasi Tervalidasi: 10 Tim, 22 Individu, 24 Taruna Berprestasi Unik)
+        $prestasiTimTemplates = [
+            ['nama_prestasi' => 'Lomba Inovasi Transportasi', 'jenis' => 'akademik', 'bidang' => 'Inovasi Keselamatan Jalan', 'tingkat' => 'nasional', 'peringkat' => 'Juara II', 'penyelenggara' => 'Forum Keselamatan Transportasi', 'lokasi' => 'Jakarta', 'nama_tim' => 'Tim Inovasi RSTJ', 'tgl' => '2025-11-15', 'tgl_mulai' => '2025-11-14'],
+            ['nama_prestasi' => 'Kejuaraan Futsal Antar Kampus', 'jenis' => 'olahraga', 'bidang' => 'Olahraga & Kedinasan', 'tingkat' => 'daerah', 'peringkat' => 'Juara I', 'penyelenggara' => 'BAPOMI Jawa Tengah', 'lokasi' => 'Semarang', 'nama_tim' => 'Tim Futsal PKTJ', 'tgl' => '2026-09-20', 'tgl_mulai' => '2026-09-18'],
+            ['nama_prestasi' => 'Juara 1 Lomba Inovasi RSTJ Nasional 2026', 'jenis' => 'akademik', 'bidang' => 'Keselamatan & Transportasi', 'tingkat' => 'nasional', 'peringkat' => 'Juara I', 'penyelenggara' => 'Kementerian Perhubungan RI', 'lokasi' => 'Jakarta', 'nama_tim' => 'Tim Rekayasa RSTJ', 'tgl' => '2026-08-14', 'tgl_mulai' => '2026-08-10'],
+            ['nama_prestasi' => 'Juara 2 Kategori Desain Otomotif Ramah Lingkungan', 'jenis' => 'akademik', 'bidang' => 'Teknologi Otomotif', 'tingkat' => 'nasional', 'peringkat' => 'Juara II', 'penyelenggara' => 'Kementerian Perhubungan RI', 'lokasi' => 'Bandung', 'nama_tim' => 'OtoGreen PKTJ', 'tgl' => '2026-07-22', 'tgl_mulai' => '2026-07-20'],
+        ];
+        $prestasiIndividuTemplates = [
+            ['nama_prestasi' => 'Juara 1 Karya Tulis Ilmiah Keselamatan Jalan BPTD', 'jenis' => 'akademik', 'bidang' => 'Karya Tulis Ilmiah', 'tingkat' => 'daerah', 'peringkat' => 'Juara I', 'penyelenggara' => 'BPTD Kelas II Jateng', 'lokasi' => 'Tegal'],
+            ['nama_prestasi' => 'Medali Emas Kejuaraan Pencak Silat Perguruan Kedinasan', 'jenis' => 'olahraga', 'bidang' => 'Olahraga & Kedinasan', 'tingkat' => 'nasional', 'peringkat' => 'Medali Emas', 'penyelenggara' => 'FORKEDINAS RI', 'lokasi' => 'Jakarta'],
+            ['nama_prestasi' => 'Kompetisi Audit Keselamatan Ruas Jalan Nasional', 'jenis' => 'akademik', 'bidang' => 'Inovasi Keselamatan Jalan', 'tingkat' => 'nasional', 'peringkat' => 'Juara II', 'penyelenggara' => 'Ditjen Hubdat Kemenhub', 'lokasi' => 'Yogyakarta'],
+            ['nama_prestasi' => 'Festival Paduan Suara & Musik Kedinasan', 'jenis' => 'seni', 'bidang' => 'Seni & Budaya', 'tingkat' => 'daerah', 'peringkat' => 'Juara III', 'penyelenggara' => 'Disdikbud Jateng', 'lokasi' => 'Semarang'],
         ];
 
-        $tarunaAktif = $db->table('master_taruna')->select('nomor_taruna')->where('status_terkini', 'aktif')->limit(24)->get()->getResultArray();
-        $taruna24 = array_column($tarunaAktif, 'nomor_taruna');
+        $tarunaAktif = $db->table('master_taruna')
+            ->select('nomor_taruna')
+            ->where('status_terkini', 'aktif')
+            ->where('nomor_taruna !=', '2401001')
+            ->limit(23)
+            ->get()
+            ->getResultArray();
+        $taruna24 = array_merge(['2401001'], array_column($tarunaAktif, 'nomor_taruna'));
+
+        $riwayatContoh = json_encode([
+            ['tanggal' => '2026-10-30', 'waktu' => '2026-10-30 10:00', 'pelaku' => 'Validator Unit', 'aksi' => 'Menyetujui', 'status' => 'tervalidasi', 'catatan' => 'Data dan bukti sesuai.'],
+            ['tanggal' => '2026-10-30', 'waktu' => '2026-10-30 08:30', 'pelaku' => 'PIC Ketarunaan', 'aksi' => 'Mengajukan ulang', 'status' => 'diajukan', 'catatan' => 'Bukti piagam dilengkapi.'],
+            ['tanggal' => '2026-10-29', 'waktu' => '2026-10-29 14:00', 'pelaku' => 'Validator Unit', 'aksi' => 'Mengembalikan', 'status' => 'perlu_perbaikan', 'catatan' => 'Lengkapi bukti piagam.'],
+            ['tanggal' => '2026-10-29', 'waktu' => '2026-10-29 09:00', 'pelaku' => 'PIC Ketarunaan', 'aksi' => 'Mengajukan', 'status' => 'diajukan', 'catatan' => 'Pengajuan awal.'],
+            ['tanggal' => '2026-10-28', 'waktu' => '2026-10-28 15:00', 'pelaku' => 'PIC Ketarunaan', 'aksi' => 'Menyimpan Draf', 'status' => 'draf', 'catatan' => 'Pencatatan awal.'],
+        ], JSON_UNESCAPED_UNICODE);
 
         for ($p = 1; $p <= 32; $p++) {
-            $template = $prestasiList[($p - 1) % count($prestasiList)];
-            $isTim = ($template['tim'] === 'tim');
-            $isAdityaInovasi = ($p === 22);
+            $isTim = ($p <= 10);
+
+            if ($isTim) {
+                $tpl = $prestasiTimTemplates[($p - 1) % count($prestasiTimTemplates)];
+                $isMainInovasi = ($p === 1);
+                $namaPrestasi  = ($p <= 2) ? $tpl['nama_prestasi'] : ($tpl['nama_prestasi'] . ' #' . $p);
+                $tglMulai      = $tpl['tgl_mulai'];
+                $tglSelesai    = $tpl['tgl'];
+                $namaTim       = $tpl['nama_tim'];
+                $lokasi        = $tpl['lokasi'];
+                $noSert        = $isMainInovasi ? 'PIAGAM/115/2025' : ('SERT/PRESTASI/2026/' . sprintf('%03d', $p));
+                $buktiBerkas   = $isMainInovasi ? 'Piagam_Prestasi.pdf' : ('sertifikat_prestasi_' . $p . '.pdf');
+            } else {
+                $tpl = $prestasiIndividuTemplates[($p - 11) % count($prestasiIndividuTemplates)];
+                $namaPrestasi  = ($p > 14) ? ($tpl['nama_prestasi'] . ' #' . $p) : $tpl['nama_prestasi'];
+                $tglMulai      = '2026-08-' . sprintf('%02d', (($p % 20) + 5));
+                $tglSelesai    = $tglMulai;
+                $namaTim       = null;
+                $lokasi        = $tpl['lokasi'];
+                $noSert        = 'SERT/PRESTASI/2026/' . sprintf('%03d', $p);
+                $buktiBerkas   = 'sertifikat_prestasi_' . $p . '.pdf';
+            }
 
             $db->table('taruna_prestasi')->insert([
-                'nama_prestasi'       => $isAdityaInovasi ? 'Lomba Inovasi Transportasi' : ($template['nama_prestasi'] . ($p > 4 ? " Seri #$p" : '')),
-                'jenis_prestasi'      => $template['jenis'],
-                'bidang_prestasi'     => 'Keselamatan & Transportasi',
-                'tingkat_prestasi'    => $template['tingkat'],
-                'peringkat'           => $isAdityaInovasi ? 'Juara 2' : $template['peringkat'],
-                'penyelenggara'       => 'Kementerian Perhubungan RI',
-                'tanggal_mulai'       => $isAdityaInovasi ? '2025-11-15' : '2026-08-10',
-                'tanggal_selesai'     => $isAdityaInovasi ? '2025-11-15' : '2026-08-14',
-                'jenis_keikutsertaan' => $template['tim'],
-                'nama_tim'            => $template['nama_tim'],
-                'nomor_sertifikat'    => 'SERT/PRESTASI/2026/' . sprintf('%03d', $p),
-                'bukti_berkas'        => $isAdityaInovasi ? 'Piagam_Prestasi.pdf' : ('sertifikat_prestasi_' . $p . '.pdf'),
-                'status_validasi'     => 'tervalidasi',
-                'created_at'          => $now,
-                'updated_at'          => $now,
+                'nama_prestasi'         => $namaPrestasi,
+                'jenis_prestasi'        => $tpl['jenis'],
+                'bidang_prestasi'       => $tpl['bidang'],
+                'tingkat_prestasi'      => $tpl['tingkat'],
+                'peringkat'             => $tpl['peringkat'],
+                'penyelenggara'         => $tpl['penyelenggara'],
+                'lokasi_kegiatan'       => $lokasi,
+                'tanggal_mulai'         => $tglMulai,
+                'tanggal_selesai'       => $tglSelesai,
+                'jenis_keikutsertaan'   => $isTim ? 'tim' : 'individu',
+                'nama_tim'              => $namaTim,
+                'pembimbing'            => 'Pembina Ketarunaan',
+                'unit_pemilik'          => 'Ketarunaan',
+                'sumber_data'           => 'Piagam Penghargaan',
+                'nomor_sertifikat'      => $noSert,
+                'bukti_berkas'          => $buktiBerkas,
+                'ukuran_berkas_kb'      => ($p === 1) ? 420 : 680,
+                'dokumentasi_json'      => ($p === 1) ? json_encode(['Foto_Kegiatan_01.jpg', 'Foto_Kegiatan_02.jpg']) : null,
+                'status_validasi'       => 'tervalidasi',
+                'diajukan_oleh'         => 'PIC Ketarunaan',
+                'divalidasi_oleh'       => 'Validator Unit',
+                'tanggal_validasi'      => '2026-10-30',
+                'riwayat_validasi_json' => ($p === 1) ? $riwayatContoh : json_encode([
+                    ['tanggal' => '2026-10-30', 'waktu' => '2026-10-30 09:00', 'pelaku' => 'Validator Unit', 'aksi' => 'Menyetujui', 'status' => 'tervalidasi', 'catatan' => 'Data dan bukti terverifikasi.'],
+                    ['tanggal' => '2026-10-29', 'waktu' => '2026-10-29 10:00', 'pelaku' => 'PIC Ketarunaan', 'aksi' => 'Mengajukan', 'status' => 'diajukan', 'catatan' => 'Pengajuan prestasi.'],
+                ], JSON_UNESCAPED_UNICODE),
+                'created_at'            => $now,
+                'updated_at'            => $now,
             ]);
             $prestasiId = $db->insertID();
 
             if ($isTim) {
-                for ($m = 0; $m < 3; $m++) {
-                    $assignedTaruna = $taruna24[($p + $m) % count($taruna24)];
+                if ($p === 1) {
+                    // Aditya Pratama (2401001) Ketua Tim + 2 anggota
+                    $memberIndices = [0, 1, 2];
+                } elseif ($p === 2) {
+                    // Kejuaraan Futsal Antar Kampus: 10 anggota unik (index 3..12)
+                    $memberIndices = range(3, 12);
+                } else {
+                    // Tim 3..10: 3 anggota tiap tim dari index 1..23 (tanpa index 0)
+                    $base = (($p - 3) * 3) % 23 + 1;
+                    $memberIndices = [
+                        (($base - 1) % 23) + 1,
+                        ($base % 23) + 1,
+                        (($base + 1) % 23) + 1,
+                    ];
+                }
+
+                $memberIndices = array_values(array_unique($memberIndices));
+                foreach ($memberIndices as $idxOrder => $mIdx) {
                     $db->table('taruna_peserta_prestasi')->insert([
                         'prestasi_id'  => $prestasiId,
-                        'nomor_taruna' => $assignedTaruna,
-                        'peran'        => ($m === 0) ? 'Ketua Tim' : 'Anggota',
+                        'nomor_taruna' => $taruna24[$mIdx],
+                        'peran'        => ($idxOrder === 0) ? 'Ketua Tim' : 'Anggota',
                         'created_at'   => $now,
                     ]);
                 }
             } else {
-                $assignedTaruna = $taruna24[$p % count($taruna24)];
+                // p=11 milik Aditya Pratama (total 2 prestasi tervalidasi), p=12..32 bergilir index 1..23
+                $targetIdx = ($p === 11) ? 0 : ((($p - 12) % 23) + 1);
                 $db->table('taruna_peserta_prestasi')->insert([
                     'prestasi_id'  => $prestasiId,
-                    'nomor_taruna' => $assignedTaruna,
+                    'nomor_taruna' => $taruna24[$targetIdx],
                     'peran'        => 'Peserta Utama',
                     'created_at'   => $now,
                 ]);
@@ -446,63 +521,337 @@ class Ecc2SimulasiSeeder extends Seeder
 
         // Tambah 5 prestasi berstatus 'diajukan' & 2 'perlu_perbaikan' untuk antrean validasi
         for ($pd = 1; $pd <= 7; $pd++) {
+            $statusAntrean = ($pd <= 5) ? 'diajukan' : 'perlu_perbaikan';
+            $namaAntrean = match ($pd) {
+                1       => 'Lomba Karya Tulis Keselamatan',
+                6       => 'Kompetisi Poster Keselamatan',
+                default => 'Usulan Prestasi Kompetisi Transportasi #' . $pd,
+            };
+            $peringkatAntrean = match ($pd) {
+                1       => 'Juara III',
+                6       => 'Finalis',
+                default => 'Juara Harapan',
+            };
+            $tingkatAntrean = ($pd === 6) ? 'internal' : 'nasional';
+            $tglAntrean     = ($pd === 1) ? '2026-10-12' : (($pd === 6) ? '2026-10-18' : '2026-10-15');
+
             $db->table('taruna_prestasi')->insert([
-                'nama_prestasi'       => 'Usulan Prestasi Kompetisi Transportasi #' . $pd,
-                'jenis_prestasi'      => 'akademik',
-                'bidang_prestasi'     => 'Keselamatan Jalan',
-                'tingkat_prestasi'    => 'nasional',
-                'peringkat'           => 'Juara Harapan',
-                'penyelenggara'       => 'BPTD',
-                'tanggal_mulai'       => '2026-10-15',
-                'tanggal_selesai'     => '2026-10-17',
-                'jenis_keikutsertaan' => 'individu',
-                'nomor_sertifikat'    => 'SERT/USUL/2026/' . $pd,
-                'status_validasi'     => ($pd <= 5) ? 'diajukan' : 'perlu_perbaikan',
-                'created_at'          => $now,
-                'updated_at'          => $now,
+                'nama_prestasi'         => $namaAntrean,
+                'jenis_prestasi'        => ($pd === 6) ? 'seni' : 'akademik',
+                'bidang_prestasi'       => 'Keselamatan Jalan',
+                'tingkat_prestasi'      => $tingkatAntrean,
+                'peringkat'             => $peringkatAntrean,
+                'penyelenggara'         => 'BPTD',
+                'lokasi_kegiatan'       => 'Tegal',
+                'tanggal_mulai'         => $tglAntrean,
+                'tanggal_selesai'       => $tglAntrean,
+                'jenis_keikutsertaan'   => 'individu',
+                'pembimbing'            => 'Pembina Ketarunaan',
+                'unit_pemilik'          => 'Ketarunaan',
+                'sumber_data'           => 'Sertifikat',
+                'nomor_sertifikat'      => 'SERT/USUL/2026/' . $pd,
+                'bukti_berkas'          => 'usulan_prestasi_' . $pd . '.pdf',
+                'ukuran_berkas_kb'      => 310,
+                'status_validasi'       => $statusAntrean,
+                'catatan_validasi'      => ($statusAntrean === 'perlu_perbaikan') ? 'Lengkapi lampiran piagam atau sertifikat resmi.' : null,
+                'diajukan_oleh'         => 'PIC Ketarunaan',
+                'divalidasi_oleh'       => ($statusAntrean === 'perlu_perbaikan') ? 'Validator Unit' : null,
+                'riwayat_validasi_json' => json_encode([
+                    ['tanggal' => '2026-10-29', 'waktu' => '2026-10-29 09:00', 'pelaku' => 'PIC Ketarunaan', 'aksi' => 'Mengajukan', 'status' => $statusAntrean, 'catatan' => 'Pengajuan prestasi.'],
+                ], JSON_UNESCAPED_UNICODE),
+                'created_at'            => $now,
+                'updated_at'            => $now,
+            ]);
+            $usulanId = $db->insertID();
+
+            $db->table('taruna_peserta_prestasi')->insert([
+                'prestasi_id'  => $usulanId,
+                'nomor_taruna' => $taruna24[$pd],
+                'peran'        => 'Peserta Utama',
+                'created_at'   => $now,
             ]);
         }
 
-        // 9. Pelanggaran Terbukti (12 Kasus Terbukti: 9 Selesai, 3 Proses)
+        // 9. Pelanggaran Taruna (12 Terbukti: 9 Selesai & 3 Proses, 4 Dugaan, 1 Tidak Terbukti, 1 Dibatalkan)
+        $hasPihakTable  = $db->tableExists('taruna_pelanggaran_pihak');
+        $hasTindakTable = $db->tableExists('taruna_pelanggaran_tindak_lanjut');
+
         for ($k = 1; $k <= 12; $k++) {
-            $isSelesai = ($k <= 9);
+            $isSelesai  = ($k <= 9);
+            $tglKejadian = '2026-09-' . sprintf('%02d', ($k % 20 + 5));
+            $tglPeriksa  = '2026-09-' . sprintf('%02d', ($k % 20 + 6));
+            $tglPutus    = '2026-09-' . sprintf('%02d', ($k % 20 + 8));
+            $noPerkara   = 'PKR/2026/' . sprintf('%04d', $k);
+            $noSk        = 'SK.SANKSI/2026/' . sprintf('%04d', $k);
+            $tarunaRow   = $tarunaBatch[$k];
+
+            $dokJson = [
+                [
+                    'nama_berkas'    => 'Laporan_Awal_' . sprintf('%02d', $k) . '.pdf',
+                    'jenis_dokumen'  => 'Laporan',
+                    'klasifikasi'    => 'terbatas',
+                    'tanggal_unggah' => $tglKejadian,
+                    'ukuran_kb'      => 420,
+                ],
+                [
+                    'nama_berkas'    => 'BAP_Kasus_' . sprintf('%02d', $k) . '.pdf',
+                    'jenis_dokumen'  => 'Pemeriksaan',
+                    'klasifikasi'    => 'sangat_terbatas',
+                    'tanggal_unggah' => $tglPeriksa,
+                    'ukuran_kb'      => 1180,
+                ],
+                [
+                    'nama_berkas'    => 'ba_kasus_' . $k . '.pdf',
+                    'jenis_dokumen'  => 'Penetapan',
+                    'klasifikasi'    => 'sangat_terbatas',
+                    'tanggal_unggah' => $tglPutus,
+                    'ukuran_kb'      => 740,
+                ],
+            ];
+
+            $riwayatValidasi = [
+                [
+                    'tanggal' => $tglPutus,
+                    'waktu'   => $tglPutus . ' 10:00',
+                    'pelaku'  => 'Validator Unit',
+                    'aksi'    => 'Menyetujui',
+                    'status'  => 'tervalidasi',
+                    'catatan' => 'Dokumen pemeriksaan dan penetapan sesuai ketentuan.',
+                ],
+                [
+                    'tanggal' => $tglPeriksa,
+                    'waktu'   => $tglPeriksa . ' 14:30',
+                    'pelaku'  => 'PIC Ketarunaan',
+                    'aksi'    => 'Mengajukan',
+                    'status'  => 'diajukan',
+                    'catatan' => 'Pemeriksaan dan penetapan dicatat.',
+                ],
+                [
+                    'tanggal' => $tglKejadian,
+                    'waktu'   => $tglKejadian . ' 09:00',
+                    'pelaku'  => 'PIC Ketarunaan',
+                    'aksi'    => 'Menyimpan Draf',
+                    'status'  => 'draf',
+                    'catatan' => 'Laporan awal dicatat.',
+                ],
+            ];
+
             $db->table('taruna_pelanggaran')->insert([
-                'nomor_perkara'       => 'PKR/2026/' . sprintf('%04d', $k),
-                'nomor_taruna'        => $tarunaBatch[$k]['nomor_taruna'],
-                'tanggal_kejadian'    => '2026-09-' . sprintf('%02d', ($k % 25 + 1)) . ' 06:30:00',
-                'lokasi'              => 'Kampus I PKTJ Tegal',
-                'uraian'              => 'Keterlambatan apel pagi pembinaan karakter taruna',
-                'jenis_pelanggaran'   => 'Kedisiplinan',
-                'tingkat_pelanggaran' => 'ringan',
-                'pelapor'             => 'Pusbangkar',
-                'status_penetapan'    => 'terbukti',
-                'status_penyelesaian' => $isSelesai ? 'selesai' : 'proses',
-                'sanksi'              => 'Pembinaan fisik terukur dan apel tambahan selama 3 hari',
-                'bukti_berkas'        => 'ba_kasus_' . $k . '.pdf',
-                'status_validasi'     => 'tervalidasi',
-                'created_at'          => $now,
-                'updated_at'          => $now,
+                'nomor_perkara'         => $noPerkara,
+                'nomor_taruna'          => $tarunaRow['nomor_taruna'],
+                'tanggal_kejadian'      => $tglKejadian . ' 06:30:00',
+                'lokasi'                => 'Kampus I PKTJ Tegal',
+                'uraian'                => 'Keterlambatan apel pagi pembinaan karakter taruna.',
+                'jenis_pelanggaran'     => ($k % 3 === 0) ? 'Tata Kehidupan' : 'Kedisiplinan',
+                'tingkat_pelanggaran'   => ($k % 4 === 0) ? 'sedang' : 'ringan',
+                'pelapor'               => 'Pusbangkar',
+                'unit_pemilik'          => 'Ketarunaan',
+                'sumber_data'           => 'Laporan petugas',
+                'tingkat_kerahasiaan'   => 'terbatas',
+                'tanggal_pemeriksaan'   => $tglPeriksa,
+                'pemeriksa'             => 'Tim Pemeriksa Unit',
+                'dasar_peraturan'       => 'Pedoman Tata Tertib Taruna PKTJ',
+                'ringkasan_klarifikasi' => 'Taruna memberikan keterangan klarifikasi dan mengakui keterlambatan saat apel.',
+                'hasil_pemeriksaan'     => 'Terbukti melanggar ketentuan tata tertib apel pagi.',
+                'berkas_bap'            => 'BAP_Kasus_' . sprintf('%02d', $k) . '.pdf',
+                'status_penetapan'      => 'terbukti',
+                'status_penyelesaian'   => $isSelesai ? 'selesai' : 'proses',
+                'sanksi'                => 'Pembinaan fisik terukur dan apel tambahan selama 3 hari.',
+                'jenis_sanksi'          => 'Pembinaan',
+                'nomor_keputusan'       => $noSk,
+                'tanggal_keputusan'     => $tglPutus,
+                'tindak_lanjut'         => 'Pembinaan sesuai ketentuan yang berlaku dan pemantauan perkembangan oleh Unit Ketarunaan.',
+                'tanggal_selesai'       => $isSelesai ? '2026-10-' . sprintf('%02d', ($k % 15 + 1)) : null,
+                'pic_tindak_lanjut'     => 'Unit Ketarunaan',
+                'status_pemantauan'     => $isSelesai ? 'selesai' : 'proses',
+                'catatan_pemantauan'    => $isSelesai ? 'Pembinaan telah diselesaikan dengan baik.' : 'Dalam proses pelaksanaan pembinaan.',
+                'bukti_berkas'          => 'ba_kasus_' . $k . '.pdf',
+                'dokumen_bukti_json'    => json_encode($dokJson, JSON_UNESCAPED_UNICODE),
+                'status_validasi'       => 'tervalidasi',
+                'diajukan_oleh'         => 'PIC Ketarunaan',
+                'divalidasi_oleh'       => 'Validator Unit',
+                'tanggal_validasi'      => $tglPutus,
+                'riwayat_validasi_json' => json_encode($riwayatValidasi, JSON_UNESCAPED_UNICODE),
+                'created_at'            => $now,
+                'updated_at'            => $now,
+            ]);
+            $pelId = $db->insertID();
+
+            if ($hasPihakTable) {
+                $db->table('taruna_pelanggaran_pihak')->insert([
+                    'pelanggaran_id' => $pelId,
+                    'nomor_taruna'   => $tarunaRow['nomor_taruna'],
+                    'nama_pihak'     => $tarunaRow['nama_lengkap'],
+                    'jenis_pihak'    => 'taruna',
+                    'peran'          => 'Terlapor',
+                    'keterangan'     => 'Taruna bersangkutan pada laporan kasus.',
+                    'created_at'     => $now,
+                    'updated_at'     => $now,
+                ]);
+                if ($k <= 3) {
+                    $db->table('taruna_pelanggaran_pihak')->insert([
+                        'pelanggaran_id' => $pelId,
+                        'nomor_taruna'   => null,
+                        'nama_pihak'     => 'Petugas Piket Pusbangkar',
+                        'jenis_pihak'    => 'eksternal',
+                        'peran'          => 'Pelapor / Saksi',
+                        'keterangan'     => 'Petugas piket pencatat laporan lapangan.',
+                        'created_at'     => $now,
+                        'updated_at'     => $now,
+                    ]);
+                }
+            }
+
+            if ($hasTindakTable) {
+                $db->table('taruna_pelanggaran_tindak_lanjut')->insert([
+                    'pelanggaran_id'              => $pelId,
+                    'tanggal_tindakan'            => $tglPutus,
+                    'jenis_tindakan'              => 'penetapan',
+                    'status_penetapan_saat_itu'   => 'terbukti',
+                    'status_penyelesaian_saat_itu'=> 'proses',
+                    'nomor_dasar'                 => $noSk,
+                    'sanksi_tindakan'             => 'Pembinaan fisik terukur dan apel tambahan selama 3 hari.',
+                    'pic'                         => 'Unit Ketarunaan',
+                    'target_selesai'              => null,
+                    'berkas_pendukung'            => 'ba_kasus_' . $k . '.pdf',
+                    'dicatat_oleh'                => 'Tim Pusbangkar',
+                    'created_at'                  => $now,
+                    'updated_at'                  => $now,
+                ]);
+                if ($isSelesai) {
+                    $db->table('taruna_pelanggaran_tindak_lanjut')->insert([
+                        'pelanggaran_id'              => $pelId,
+                        'tanggal_tindakan'            => '2026-10-' . sprintf('%02d', ($k % 15 + 1)),
+                        'jenis_tindakan'              => 'selesai',
+                        'status_penetapan_saat_itu'   => 'terbukti',
+                        'status_penyelesaian_saat_itu'=> 'selesai',
+                        'nomor_dasar'                 => $noSk,
+                        'sanksi_tindakan'             => 'Pembinaan selesai dilaksanakan sesuai laporan pemantauan.',
+                        'pic'                         => 'Unit Ketarunaan',
+                        'target_selesai'              => '2026-10-' . sprintf('%02d', ($k % 15 + 1)),
+                        'berkas_pendukung'            => null,
+                        'dicatat_oleh'                => 'Unit Ketarunaan',
+                        'created_at'                  => $now,
+                        'updated_at'                  => $now,
+                    ]);
+                }
+            }
+        }
+
+        // Tambah 4 kasus dugaan (3 diajukan agar antrean Dashboard tetap 19, dan 1 draf agar total dugaan = 4)
+        for ($d = 13; $d <= 16; $d++) {
+            $statusValidDugaan = ($d <= 15) ? 'diajukan' : 'draf';
+            $tglKejDugaan      = ($d === 16) ? '2026-10-29' : '2026-10-28';
+            $tarunaRow         = $tarunaBatch[$d];
+
+            $db->table('taruna_pelanggaran')->insert([
+                'nomor_perkara'         => 'PKR/2026/' . sprintf('%04d', $d),
+                'nomor_taruna'          => $tarunaRow['nomor_taruna'],
+                'tanggal_kejadian'      => $tglKejDugaan . ' 19:30:00',
+                'lokasi'                => 'Asrama Taruna',
+                'uraian'                => 'Laporan awal memerlukan klarifikasi dan pemeriksaan.',
+                'jenis_pelanggaran'     => 'Tata Kehidupan',
+                'tingkat_pelanggaran'   => 'belum_ditetapkan',
+                'pelapor'               => 'Petugas Jaga Pusbangkar',
+                'unit_pemilik'          => 'Ketarunaan',
+                'sumber_data'           => 'Laporan petugas',
+                'tingkat_kerahasiaan'   => 'terbatas',
+                'tanggal_pemeriksaan'   => '2026-10-29',
+                'pemeriksa'             => 'Tim Pemeriksa Unit',
+                'dasar_peraturan'       => 'Pedoman Tata Tertib Taruna PKTJ',
+                'ringkasan_klarifikasi' => 'Keterangan pihak terkait dan bukti sedang diperiksa.',
+                'hasil_pemeriksaan'     => 'Belum ada penetapan akhir.',
+                'berkas_bap'            => 'BAP_Dugaan_' . $d . '.pdf',
+                'status_penetapan'      => 'dugaan',
+                'status_penyelesaian'   => 'proses',
+                'sanksi'                => null,
+                'jenis_sanksi'          => null,
+                'nomor_keputusan'       => null,
+                'tanggal_keputusan'     => null,
+                'tindak_lanjut'         => null,
+                'pic_tindak_lanjut'     => 'Unit Ketarunaan',
+                'status_pemantauan'     => 'proses',
+                'bukti_berkas'          => 'laporan_dugaan_' . $d . '.pdf',
+                'dokumen_bukti_json'    => json_encode([
+                    ['nama_berkas' => 'laporan_dugaan_' . $d . '.pdf', 'jenis_dokumen' => 'Laporan', 'klasifikasi' => 'terbatas', 'tanggal_unggah' => $tglKejDugaan, 'ukuran_kb' => 380],
+                    ['nama_berkas' => 'BAP_Dugaan_' . $d . '.pdf', 'jenis_dokumen' => 'Pemeriksaan', 'klasifikasi' => 'sangat_terbatas', 'tanggal_unggah' => '2026-10-29', 'ukuran_kb' => 1220],
+                ], JSON_UNESCAPED_UNICODE),
+                'status_validasi'       => $statusValidDugaan,
+                'diajukan_oleh'         => 'PIC Ketarunaan',
+                'riwayat_validasi_json' => json_encode([
+                    ['tanggal' => '2026-10-29', 'waktu' => '2026-10-29 10:00', 'pelaku' => 'PIC Ketarunaan', 'aksi' => ($statusValidDugaan === 'diajukan' ? 'Mengajukan' : 'Menyimpan Draf'), 'status' => $statusValidDugaan, 'catatan' => 'Pencatatan awal dugaan pelanggaran.'],
+                ], JSON_UNESCAPED_UNICODE),
+                'created_at'            => $now,
+                'updated_at'            => $now,
             ]);
         }
 
-        // Tambah 3 kasus dugaan (status_validasi = diajukan)
-        for ($d = 13; $d <= 15; $d++) {
+        // Tambah 1 kasus Tidak Terbukti & 1 kasus Dibatalkan (tervalidasi) sebagai bukti nyata UAT-07 (tidak masuk 12 Terbukti)
+        $kasusNonTerbukti = [
+            [
+                'nomor_perkara'     => 'PKR/2026/0017',
+                'taruna'            => $tarunaBatch[17],
+                'tanggal'           => '2026-10-24',
+                'kategori'          => 'Kedisiplinan',
+                'status_penetapan'  => 'tidak_terbukti',
+                'uraian'            => 'Dugaan keterlambatan apel setelah diperiksa terbukti memiliki surat tugas praktikum.',
+                'hasil'             => 'Tidak terbukti melakukan pelanggaran; izin kegiatan praktikum sah.',
+                'tindak_lanjut'     => 'Kasus ditutup dan nama baik taruna dipulihkan.',
+                'no_sk'             => 'BA.KLARIF/2026/0017',
+            ],
+            [
+                'nomor_perkara'     => 'PKR/2026/0018',
+                'taruna'            => $tarunaBatch[18],
+                'tanggal'           => '2026-10-25',
+                'kategori'          => 'Akademik',
+                'status_penetapan'  => 'dibatalkan',
+                'uraian'            => 'Laporan kesalahan input absensi ujian laboratorium dibatalkan setelah verifikasi presensi.',
+                'hasil'             => 'Laporan dibatalkan karena kekeliruan pencatatan awal.',
+                'tindak_lanjut'     => 'Pencatatan dibatalkan dan diarsipkan.',
+                'no_sk'             => 'BA.BATAL/2026/0018',
+            ],
+        ];
+        foreach ($kasusNonTerbukti as $non) {
             $db->table('taruna_pelanggaran')->insert([
-                'nomor_perkara'       => 'PKR/2026/' . sprintf('%04d', $d),
-                'nomor_taruna'        => $tarunaBatch[$d]['nomor_taruna'],
-                'tanggal_kejadian'    => '2026-10-28 19:30:00',
-                'lokasi'              => 'Asrama Taruna',
-                'uraian'              => 'Laporan dugaan izin bermalam tanpa kartu kontrol',
-                'jenis_pelanggaran'   => 'Tata Kehidupan',
-                'tingkat_pelanggaran' => 'sedang',
-                'pelapor'             => 'Petugas Jaga Pusbangkar',
-                'status_penetapan'    => 'dugaan',
-                'status_penyelesaian' => 'proses',
-                'sanksi'              => null,
-                'bukti_berkas'        => 'laporan_dugaan_' . $d . '.pdf',
-                'status_validasi'     => 'diajukan',
-                'created_at'          => $now,
-                'updated_at'          => $now,
+                'nomor_perkara'         => $non['nomor_perkara'],
+                'nomor_taruna'          => $non['taruna']['nomor_taruna'],
+                'tanggal_kejadian'      => $non['tanggal'] . ' 08:00:00',
+                'lokasi'                => 'Kampus I PKTJ Tegal',
+                'uraian'                => $non['uraian'],
+                'jenis_pelanggaran'     => $non['kategori'],
+                'tingkat_pelanggaran'   => 'belum_ditetapkan',
+                'pelapor'               => 'Unit Ketarunaan',
+                'unit_pemilik'          => 'Ketarunaan',
+                'sumber_data'           => 'Laporan petugas',
+                'tingkat_kerahasiaan'   => 'terbatas',
+                'tanggal_pemeriksaan'   => $non['tanggal'],
+                'pemeriksa'             => 'Tim Pemeriksa Unit',
+                'dasar_peraturan'       => 'Pedoman Tata Tertib Taruna PKTJ',
+                'ringkasan_klarifikasi' => $non['uraian'],
+                'hasil_pemeriksaan'     => $non['hasil'],
+                'status_penetapan'      => $non['status_penetapan'],
+                'status_penyelesaian'   => 'selesai',
+                'sanksi'                => 'Tidak ada sanksi.',
+                'jenis_sanksi'          => 'Tidak Ada Sanksi / Dibebaskan',
+                'nomor_keputusan'       => $non['no_sk'],
+                'tanggal_keputusan'     => $non['tanggal'],
+                'tindak_lanjut'         => $non['tindak_lanjut'],
+                'tanggal_selesai'       => $non['tanggal'],
+                'pic_tindak_lanjut'     => 'Unit Ketarunaan',
+                'status_pemantauan'     => 'selesai',
+                'bukti_berkas'          => 'klarifikasi_' . strtolower(str_replace('/', '_', $non['nomor_perkara'])) . '.pdf',
+                'dokumen_bukti_json'    => json_encode([
+                    ['nama_berkas' => 'klarifikasi_' . strtolower(str_replace('/', '_', $non['nomor_perkara'])) . '.pdf', 'jenis_dokumen' => 'Penetapan', 'klasifikasi' => 'terbatas', 'tanggal_unggah' => $non['tanggal'], 'ukuran_kb' => 310],
+                ], JSON_UNESCAPED_UNICODE),
+                'status_validasi'       => 'tervalidasi',
+                'diajukan_oleh'         => 'PIC Ketarunaan',
+                'divalidasi_oleh'       => 'Validator Unit',
+                'tanggal_validasi'      => $non['tanggal'],
+                'riwayat_validasi_json' => json_encode([
+                    ['tanggal' => $non['tanggal'], 'waktu' => $non['tanggal'] . ' 11:00', 'pelaku' => 'Validator Unit', 'aksi' => 'Menyetujui', 'status' => 'tervalidasi', 'catatan' => 'Hasil klarifikasi sah.'],
+                ], JSON_UNESCAPED_UNICODE),
+                'created_at'            => $now,
+                'updated_at'            => $now,
             ]);
         }
 

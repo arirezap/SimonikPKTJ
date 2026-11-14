@@ -466,6 +466,16 @@ class RekamJejakController extends BaseController
             }
             $fileName = basename((string) ($row['bukti_berkas'] ?: 'Piagam_Prestasi.pdf'));
             $judul    = $row['nama_prestasi'];
+
+            $physicalPrestasi = FCPATH . 'assets/uploads/ketarunaan/prestasi/' . $fileName;
+            if (is_file($physicalPrestasi)) {
+                $inline = ((int) $this->request->getGet('inline') === 1);
+                $mime   = mime_content_type($physicalPrestasi) ?: 'application/pdf';
+                return $this->response
+                    ->setHeader('Content-Type', $mime)
+                    ->setHeader('Content-Disposition', ($inline ? 'inline' : 'attachment') . '; filename="' . $fileName . '"')
+                    ->setBody((string) file_get_contents($physicalPrestasi));
+            }
         } elseif ($modulClean === 'beasiswa') {
             $row = $db->table('taruna_penerima_beasiswa tpb')
                 ->select('tpb.*, prog.nama_program')
@@ -482,13 +492,37 @@ class RekamJejakController extends BaseController
             }
             $fileName = 'Keputusan_Beasiswa.pdf';
             $judul    = $row['nama_program'] ?? 'Beasiswa';
+        } elseif ($modulClean === 'pelanggaran') {
+            $row = $db->table('taruna_pelanggaran')->where('id', $id)->get()->getRowArray();
+            if (!$row) {
+                return redirect()->back()->with('error', 'Dokumen kasus tidak ditemukan.');
+            }
+            $nomorTaruna = $row['nomor_taruna'];
+            if (!KetarunaanPolicy::canViewRestrictedDocument('pelanggaran', $nomorTaruna)) {
+                return redirect()->back()->with('error', 'Dokumen ini bersifat terbatas untuk petugas berwenang.');
+            }
+            $fileName = basename((string) ($row['bukti_berkas'] ?: ('BA_' . $row['nomor_perkara'] . '.pdf')));
+            $judul    = 'Kasus ' . $row['nomor_perkara'] . ' - ' . $row['jenis_pelanggaran'];
+
+            $physicalPelanggaran = FCPATH . 'assets/uploads/ketarunaan/pelanggaran/' . $fileName;
+            if (is_file($physicalPelanggaran)) {
+                $inline = ((int) $this->request->getGet('inline') === 1);
+                $mime   = mime_content_type($physicalPelanggaran) ?: 'application/pdf';
+                return $this->response
+                    ->setHeader('Content-Type', $mime)
+                    ->setHeader('Content-Disposition', ($inline ? 'inline' : 'attachment') . '; filename="' . $fileName . '"')
+                    ->setBody((string) file_get_contents($physicalPelanggaran));
+            }
         } else {
             return redirect()->back()->with('error', 'Modul dokumen tidak dikenali.');
         }
 
         // Hasilkan PDF ringkas resmi untuk berkas simulasi yang belum memiliki file fisik
         $inline = ((int) $this->request->getGet('inline') === 1);
-        $pdfContent = $this->generateSimplePdfDocument($judul, $fileName, $nomorTaruna ?: '-');
+        $pdfContent = ketarunaan_generate_simple_pdf('Dokumen Bukti Rekam Jejak Taruna', $judul, [
+            'Nama Berkas'  => $fileName,
+            'Nomor Taruna' => $nomorTaruna ?: '-',
+        ]);
 
         return $this->response
             ->setHeader('Content-Type', 'application/pdf')
@@ -549,35 +583,6 @@ class RekamJejakController extends BaseController
             ->setHeader('Content-Type', 'text/csv; charset=utf-8')
             ->setHeader('Content-Disposition', 'attachment; filename="' . $fileName . '"')
             ->setBody($csvContent);
-    }
-
-    /**
-     * Membuat dokumen PDF standar 1 halaman untuk pratinjau/unduhan bukti simulasi.
-     */
-    private function generateSimplePdfDocument(string $judul, string $namaBerkas, string $nomorTaruna): string
-    {
-        $safeJudul  = preg_replace('/[^A-Za-z0-9 \-.,\/()]/', '', $judul) ?: 'Dokumen Bukti';
-        $safeBerkas = preg_replace('/[^A-Za-z0-9 \-._]/', '', $namaBerkas) ?: 'Dokumen.pdf';
-        $safeNomor  = preg_replace('/[^A-Za-z0-9\-]/', '', $nomorTaruna) ?: '-';
-
-        $stream = "BT /F1 16 Tf 50 750 Td (EVIDENCE COMMAND CENTER \\(ECC\\) - PKTJ TEGAL) Tj "
-            . "0 -28 Td /F1 13 Tf (Dokumen Bukti Rekam Jejak Taruna) Tj "
-            . "0 -36 Td /F1 11 Tf (Kegiatan : {$safeJudul}) Tj "
-            . "0 -20 Td (Nama Berkas : {$safeBerkas}) Tj "
-            . "0 -20 Td (Nomor Taruna : {$safeNomor}) Tj "
-            . "0 -32 Td (Dokumen ini tercatat dan terhubung pada basis data ECC 2.0.) Tj ET";
-
-        $len = strlen($stream);
-
-        return "%PDF-1.4\n"
-            . "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n"
-            . "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n"
-            . "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >> endobj\n"
-            . "4 0 obj << /Length {$len} >> stream\n{$stream}\nendstream endobj\n"
-            . "5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj\n"
-            . "xref\n0 6\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \n0000000241 00000 n \n"
-            . sprintf("%010d 00000 n \n", 293 + $len)
-            . "trailer << /Size 6 /Root 1 0 R >>\nstartxref\n" . (363 + $len) . "\n%%EOF";
     }
 }
 

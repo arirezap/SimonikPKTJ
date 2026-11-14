@@ -188,7 +188,8 @@ class DashboardService
                 SUM(CASE WHEN pl.status_penyelesaian = 'proses' THEN 1 ELSE 0 END) AS proses
             ")
             ->join('pendidikan_taruna pt', 'pt.nomor_taruna = pl.nomor_taruna', 'left')
-            ->where('pl.status_penetapan', 'terbukti');
+            ->where('pl.status_penetapan', 'terbukti')
+            ->where('pl.status_validasi', 'tervalidasi');
 
         if ($prodiId !== null && $prodiId > 0) {
             $builder->where('pt.program_studi_id', $prodiId);

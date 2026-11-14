@@ -161,5 +161,59 @@ class KetarunaanPolicy
 
         return self::canAccessModule();
     }
+
+    /**
+     * Periksa apakah pengguna berhak mengakses modul Pelanggaran Taruna.
+     * Hanya peran pimpinan, ketarunaan, validator, pusbangkar, dan admin.
+     *
+     * @return bool
+     */
+    public static function canAccessPelanggaranModule(): bool
+    {
+        return function_exists('hasAnyRole') && hasAnyRole([
+            'admin',
+            'direktur',
+            'wadir',
+            'kabag',
+            'kabag_aak',
+            'manajemen',
+            'ketarunaan',
+            'ketarunaan_validator',
+            'pusbangkar',
+        ]);
+    }
+
+    /**
+     * Periksa apakah pengguna berhak mencatat dugaan pelanggaran dan mengelola pemeriksaan kasus.
+     *
+     * @return bool
+     */
+    public static function canManagePelanggaran(): bool
+    {
+        return function_exists('hasAnyRole') && hasAnyRole([
+            'admin',
+            'pusbangkar',
+            'ketarunaan_validator',
+            'ketarunaan',
+            'manajemen',
+        ]);
+    }
+
+    /**
+     * Periksa apakah pengguna berhak menetapkan sanksi/keputusan atau memvalidasi pencatatan kasus.
+     *
+     * @return bool
+     */
+    public static function canDecidePelanggaran(): bool
+    {
+        return function_exists('hasAnyRole') && hasAnyRole([
+            'admin',
+            'direktur',
+            'kabag',
+            'kabag_aak',
+            'pusbangkar',
+            'ketarunaan_validator',
+        ]);
+    }
 }
 
