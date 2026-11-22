@@ -826,6 +826,49 @@ if (!function_exists('ketarunaan_program_beasiswa_status_badge')) {
     }
 }
 
+if (!function_exists('ketarunaan_is_program_beasiswa_open')) {
+    /**
+     * Memeriksa apakah suatu program beasiswa jalur klaim sedang dibuka untuk pengajuan baru taruna.
+     * Syarat: jenis termasuk jalur klaim (prestasi, daerah_3tp, tidak_mampu), status_program = 'dibuka',
+     * tanggal hari ini berada dalam rentang periode_mulai s.d. periode_selesai (jika diisi),
+     * serta kuota penerima ditetapkan belum penuh.
+     *
+     * @param array<string, mixed> $program
+     * @param string|null          $today Format Y-m-d
+     * @return bool
+     */
+    function ketarunaan_is_program_beasiswa_open(array $program, ?string $today = null): bool
+    {
+        $jenis = strtolower(trim((string) ($program['jenis_beasiswa'] ?? '')));
+        if (!in_array($jenis, ['prestasi', 'daerah_3tp', 'tidak_mampu'], true)) {
+            return false;
+        }
+
+        $status = strtolower(trim((string) ($program['status_program'] ?? '')));
+        if ($status !== 'dibuka') {
+            return false;
+        }
+
+        $acuan   = $today !== null && trim($today) !== '' ? substr(trim($today), 0, 10) : date('Y-m-d');
+        $mulai   = trim((string) ($program['periode_mulai'] ?? ''));
+        $selesai = trim((string) ($program['periode_selesai'] ?? ''));
+
+        if ($mulai !== '' && $mulai !== '0000-00-00' && $acuan < substr($mulai, 0, 10)) {
+            return false;
+        }
+        if ($selesai !== '' && $selesai !== '0000-00-00' && $acuan > substr($selesai, 0, 10)) {
+            return false;
+        }
+
+        $kuota = (int) ($program['kuota'] ?? 0);
+        if ($kuota > 0 && array_key_exists('ditetapkan_count', $program) && (int) $program['ditetapkan_count'] >= $kuota) {
+            return false;
+        }
+
+        return true;
+    }
+}
+
 if (!function_exists('ketarunaan_verifikasi_beasiswa_badge')) {
     /**
      * Merender badge hasil verifikasi berkas/kelayakan beasiswa (terpisah dari penetapan).
@@ -1931,6 +1974,176 @@ if (!function_exists('ketarunaan_compress_foto_taruna')) {
         return $success;
     }
 }
+
+if (!function_exists('ketarunaan_tracer_status_periode_badge')) {
+    /**
+     * Merender badge status periode Tracer Study (draf / dibuka / ditutup).
+     *
+     * @param string $status
+     * @return string
+     */
+    function ketarunaan_tracer_status_periode_badge(string $status): string
+    {
+        $key = strtolower(trim($status));
+        $map = [
+            'draf'    => ['label' => 'Draf',    'class' => 'bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle'],
+            'dibuka'  => ['label' => 'Dibuka',  'class' => 'bg-success-subtle text-success-emphasis border border-success-subtle'],
+            'ditutup' => ['label' => 'Ditutup', 'class' => 'bg-danger-subtle text-danger-emphasis border border-danger-subtle'],
+        ];
+        $meta = $map[$key] ?? ['label' => ucfirst($key), 'class' => 'bg-light text-dark border'];
+
+        return sprintf(
+            '<span class="badge rounded-pill px-3 py-1 fw-semibold %s" style="font-size:0.75rem; white-space:nowrap;">%s</span>',
+            esc($meta['class']),
+            esc($meta['label'])
+        );
+    }
+}
+
+if (!function_exists('ketarunaan_is_tracer_periode_open')) {
+    /**
+     * Memeriksa apakah periode Tracer Study sedang terbuka untuk pengisian responden.
+     *
+     * @param array<string, mixed> $periode
+     * @param string|null          $today Format Y-m-d
+     * @return bool
+     */
+    function ketarunaan_is_tracer_periode_open(array $periode, ?string $today = null): bool
+    {
+        if (strtolower(trim((string) ($periode['status_periode'] ?? ''))) !== 'dibuka') {
+            return false;
+        }
+
+        $acuan   = ($today !== null && trim($today) !== '') ? substr(trim($today), 0, 10) : date('Y-m-d');
+        $mulai   = trim((string) ($periode['tanggal_mulai'] ?? ''));
+        $selesai = trim((string) ($periode['tanggal_selesai'] ?? ''));
+
+        if ($mulai !== '' && $mulai !== '0000-00-00' && $acuan < substr($mulai, 0, 10)) {
+            return false;
+        }
+        if ($selesai !== '' && $selesai !== '0000-00-00' && $acuan > substr($selesai, 0, 10)) {
+            return false;
+        }
+
+        return true;
+    }
+}
+
+if (!function_exists('ketarunaan_tracer_tipe_jawaban_catalog')) {
+    /**
+     * Katalog tipe pertanyaan dinamis Tracer Study.
+     *
+     * @return array<string, string>
+     */
+    function ketarunaan_tracer_tipe_jawaban_catalog(): array
+    {
+        return [
+            'pilihan_tunggal' => 'Pilihan Tunggal (Radio)',
+            'pilihan_ganda'   => 'Pilihan Ganda (Centang)',
+            'skala_likert'    => 'Skala Penilaian (1 - 5)',
+            'teks_singkat'    => 'Teks Singkat',
+            'teks_panjang'    => 'Uraian / Saran',
+            'angka'           => 'Angka',
+            'tanggal'         => 'Tanggal',
+        ];
+    }
+}
+
+if (!function_exists('ketarunaan_tracer_status_transisi_catalog')) {
+    /**
+     * Katalog status transisi lulusan pada Tracer Study.
+     *
+     * @return array<string, array<string, string>>
+     */
+    function ketarunaan_tracer_status_transisi_catalog(): array
+    {
+        return [
+            'bekerja'            => ['label' => 'Bekerja',            'badge_class' => 'bg-success-subtle text-success-emphasis border border-success-subtle'],
+            'wirausaha'          => ['label' => 'Wirausaha',          'badge_class' => 'bg-primary-subtle text-primary-emphasis border border-primary-subtle'],
+            'studi_lanjut'       => ['label' => 'Studi Lanjut',       'badge_class' => 'bg-info-subtle text-info-emphasis border border-info-subtle'],
+            'mencari_kerja'      => ['label' => 'Mencari Kerja',      'badge_class' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'],
+            'belum_memungkinkan' => ['label' => 'Belum Memungkinkan', 'badge_class' => 'bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle'],
+        ];
+    }
+}
+
+if (!function_exists('ketarunaan_tracer_kesesuaian_bidang_catalog')) {
+    /**
+     * Katalog kesesuaian bidang kerja dengan program studi PKTJ.
+     *
+     * @return array<string, string>
+     */
+    function ketarunaan_tracer_kesesuaian_bidang_catalog(): array
+    {
+        return [
+            'sangat_sesuai' => 'Sangat Sesuai',
+            'sesuai'        => 'Sesuai',
+            'kurang_sesuai' => 'Kurang Sesuai',
+            'tidak_sesuai'  => 'Tidak Sesuai',
+        ];
+    }
+}
+
+if (!function_exists('ketarunaan_tracer_kesesuaian_jenjang_catalog')) {
+    /**
+     * Katalog kesesuaian jenjang pendidikan terhadap posisi pekerjaan.
+     *
+     * @return array<string, string>
+     */
+    function ketarunaan_tracer_kesesuaian_jenjang_catalog(): array
+    {
+        return [
+            'lebih_tinggi' => 'Tingkat Lebih Tinggi',
+            'setingkat'    => 'Setingkat',
+            'lebih_rendah' => 'Tingkat Lebih Rendah',
+        ];
+    }
+}
+
+if (!function_exists('ketarunaan_tracer_sektor_catalog')) {
+    /**
+     * Katalog sektor industri pekerjaan lulusan PKTJ.
+     *
+     * @return array<int, string>
+     */
+    function ketarunaan_tracer_sektor_catalog(): array
+    {
+        return [
+            'Instansi Pemerintah / Kemenhub / Dishub',
+            'BUMN / BUMD Transportasi & Infrastruktur',
+            'Perusahaan Swasta Transportasi & Logistik',
+            'Industri Otomotif & Manufaktur',
+            'Konsultan Rekayasa & Keselamatan Jalan',
+            'Pendidikan / Penelitian',
+            'Wirausaha / Mandiri',
+            'Lainnya',
+        ];
+    }
+}
+
+if (!function_exists('ketarunaan_tracer_public_url')) {
+    /**
+     * Menghasilkan URL tautan singkat publik Tracer Study (contoh: domain/tracerstudy2026).
+     *
+     * @param string $slug
+     * @param string $suffix Opsional, mis. '/verifikasi', '/simpan', '/selesai'
+     * @return string
+     */
+    function ketarunaan_tracer_public_url(string $slug, string $suffix = ''): string
+    {
+        $clean = trim($slug);
+        if ($clean === '') {
+            return base_url('ketarunaan/tracer-study');
+        }
+        $sfx = $suffix !== '' ? ('/' . ltrim($suffix, '/')) : '';
+        if (preg_match('/^tracer[a-z0-9\-]{2,48}$/', $clean)) {
+            return base_url($clean . $sfx);
+        }
+
+        return base_url('tracer/' . urlencode($clean) . $sfx);
+    }
+}
+
 
 
 

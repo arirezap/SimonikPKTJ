@@ -19,6 +19,22 @@ foreach ($tabs as $t) {
         break;
     }
 }
+
+$allNavPrograms     = $refs['programs'] ?? ($programRows ?? ($programs ?? []));
+$openClaimTypesNav  = [];
+foreach (['prestasi', 'daerah_3tp', 'tidak_mampu'] as $claimTypeKey) {
+    foreach ($allNavPrograms as $navProg) {
+        if (($navProg['jenis_beasiswa'] ?? '') === $claimTypeKey && ketarunaan_is_program_beasiswa_open($navProg)) {
+            $openClaimTypesNav[$claimTypeKey] = true;
+            break;
+        }
+    }
+}
+$firstOpenClaimType = !empty($openClaimTypesNav) ? (string) array_key_first($openClaimTypesNav) : null;
+$canShowTopSubmit   = !empty($perms['can_submit_claim'])
+    && in_array($activeTab, ['ringkasan', 'klaim'], true)
+    && (!$isSelfTaruna || $firstOpenClaimType !== null);
+$topSubmitJenis     = $isSelfTaruna ? ($firstOpenClaimType ?? 'prestasi') : 'prestasi';
 ?>
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
@@ -48,8 +64,8 @@ foreach ($tabs as $t) {
                     <i class="bi bi-plus-lg" aria-hidden="true"></i> Program Baru
                 </a>
             <?php endif; ?>
-            <?php if (!empty($perms['can_submit_claim']) && in_array($activeTab, ['ringkasan', 'klaim'], true)): ?>
-                <a href="<?= base_url('ketarunaan/beasiswa/klaim/ajukan/prestasi') ?>" class="btn btn-primary ecc-control-sm px-3 fw-semibold d-inline-flex align-items-center justify-content-center gap-2 text-nowrap btn-tactile bea-touch-ctrl shadow-sm">
+            <?php if ($canShowTopSubmit): ?>
+                <a href="<?= base_url('ketarunaan/beasiswa/klaim/ajukan/' . esc($topSubmitJenis)) ?>" class="btn btn-primary ecc-control-sm px-3 fw-semibold d-inline-flex align-items-center justify-content-center gap-2 text-nowrap btn-tactile bea-touch-ctrl shadow-sm">
                     <i class="bi bi-plus-lg" aria-hidden="true"></i> Ajukan Klaim
                 </a>
             <?php endif; ?>

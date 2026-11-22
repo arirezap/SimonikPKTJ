@@ -223,8 +223,8 @@ $exportUrl = base_url('ketarunaan/beasiswa/ekspor')
                                             <a href="<?= base_url('ketarunaan/beasiswa/detail/' . (int) $mySub['id']) ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3" aria-label="Lihat status pengajuan saya untuk <?= esc($prog['nama_program']) ?>">
                                                 Status Saya
                                             </a>
-                                        <?php elseif (($prog['jenis_beasiswa'] ?? '') !== 'apresiasi' && ($prog['status_program'] ?? '') !== 'selesai'): ?>
-                                            <a href="<?= base_url('ketarunaan/beasiswa/klaim/ajukan/' . esc($prog['jenis_beasiswa'])) ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3" aria-label="Ajukan klaim untuk <?= esc($prog['nama_program']) ?>">
+                                        <?php elseif (ketarunaan_is_program_beasiswa_open($prog)): ?>
+                                            <a href="<?= base_url('ketarunaan/beasiswa/klaim/ajukan/' . esc($prog['jenis_beasiswa']) . '?program_id=' . (int) $prog['id']) ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3" aria-label="Ajukan klaim untuk <?= esc($prog['nama_program']) ?>">
                                                 Ajukan
                                             </a>
                                         <?php else: ?>
@@ -275,8 +275,8 @@ $exportUrl = base_url('ketarunaan/beasiswa/ekspor')
                             <?php if ($isSelfTaruna): ?>
                                 <?php if ($mySub): ?>
                                     <a href="<?= base_url('ketarunaan/beasiswa/detail/' . (int) $mySub['id']) ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 bea-touch-ctrl d-inline-flex align-items-center">Status Saya</a>
-                                <?php elseif (($prog['jenis_beasiswa'] ?? '') !== 'apresiasi' && ($prog['status_program'] ?? '') !== 'selesai'): ?>
-                                    <a href="<?= base_url('ketarunaan/beasiswa/klaim/ajukan/' . esc($prog['jenis_beasiswa'])) ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 bea-touch-ctrl d-inline-flex align-items-center">Ajukan</a>
+                                <?php elseif (ketarunaan_is_program_beasiswa_open($prog)): ?>
+                                    <a href="<?= base_url('ketarunaan/beasiswa/klaim/ajukan/' . esc($prog['jenis_beasiswa']) . '?program_id=' . (int) $prog['id']) ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 bea-touch-ctrl d-inline-flex align-items-center">Ajukan</a>
                                 <?php endif; ?>
                             <?php else: ?>
                                 <a href="<?= base_url('ketarunaan/beasiswa/penerima?program_beasiswa_id=' . (int) $prog['id']) ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 bea-touch-ctrl d-inline-flex align-items-center">Penerima</a>

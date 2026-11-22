@@ -10,21 +10,47 @@
 
 <?= $this->section('content') ?>
 <?php
-$jenis          = (string) ($jenis ?? 'prestasi');
-$existing       = $existing ?? null;
-$refs           = $refs ?? [];
-$selectedNim    = (string) ($selectedNim ?? '');
-$prestasiTaruna = $prestasiTaruna ?? [];
-$isSelfTaruna   = !empty($isSelfTaruna);
+$jenis              = (string) ($jenis ?? 'prestasi');
+$existing           = $existing ?? null;
+$refs               = $refs ?? [];
+$selectedNim        = (string) ($selectedNim ?? '');
+$prestasiTaruna     = $prestasiTaruna ?? [];
+$isSelfTaruna       = !empty($isSelfTaruna);
+$requestedProgramId = (int) ($requestedProgramId ?? 0);
+$editId             = $existing ? (int) $existing['id'] : 0;
 
 $jenisMeta      = ketarunaan_jenis_beasiswa_catalog()[$jenis] ?? ['label' => 'Beasiswa'];
 $matchingProgs  = array_values(array_filter(
     $refs['programs'] ?? [],
-    static fn ($p) => ($p['jenis_beasiswa'] ?? '') === $jenis
+    static function (array $p) use ($jenis, $isSelfTaruna, $editId, $existing): bool {
+        if (($p['jenis_beasiswa'] ?? '') !== $jenis) {
+            return false;
+        }
+        if (!$isSelfTaruna) {
+            return true;
+        }
+        if ($editId > 0 && (int) ($p['id'] ?? 0) === (int) ($existing['program_beasiswa_id'] ?? 0)) {
+            return ($p['status_program'] ?? '') !== 'selesai';
+        }
+        return ketarunaan_is_program_beasiswa_open($p);
+    }
 ));
-$selProgId      = (string) old('program_beasiswa_id', (string) ($existing['program_beasiswa_id'] ?? ($matchingProgs[0]['id'] ?? '')));
+$openSwitcherMap = [];
+foreach (['prestasi', 'daerah_3tp', 'tidak_mampu'] as $jkKey) {
+    if (!$isSelfTaruna) {
+        $openSwitcherMap[$jkKey] = true;
+        continue;
+    }
+    foreach (($refs['programs'] ?? []) as $rp) {
+        if (($rp['jenis_beasiswa'] ?? '') === $jkKey && ketarunaan_is_program_beasiswa_open($rp)) {
+            $openSwitcherMap[$jkKey] = true;
+            break;
+        }
+    }
+}
+$defaultProgId  = (string) ($existing['program_beasiswa_id'] ?? ($requestedProgramId > 0 ? $requestedProgramId : ($matchingProgs[0]['id'] ?? '')));
+$selProgId      = (string) old('program_beasiswa_id', $defaultProgId);
 $selSumber      = $isSelfTaruna ? 'taruna' : (string) old('sumber_klaim', (string) ($existing['sumber_klaim'] ?? 'pic'));
-$editId         = $existing ? (int) $existing['id'] : 0;
 
 $existingSertRaw = trim((string) ($existing['sertifikat_berkas'] ?? ''));
 $existingDokRaw  = trim((string) ($existing['dokumentasi_berkas'] ?? ''));
@@ -41,10 +67,16 @@ $existingPendRaw = trim((string) ($existing['dokumen_pendukung_3tp'] ?? ''));
         <?php if ($editId === 0): ?>
             <div class="d-flex flex-wrap gap-2">
                 <?php foreach (['prestasi' => 'Prestasi', 'daerah_3tp' => 'Daerah 3TP', 'tidak_mampu' => 'Tidak Mampu'] as $jk => $jl): ?>
-                    <a href="<?= base_url('ketarunaan/beasiswa/klaim/ajukan/' . $jk) ?>"
-                       class="btn btn-sm rounded-pill px-3 bea-touch-ctrl d-inline-flex align-items-center <?= $jenis === $jk ? 'btn-primary' : 'btn-light border' ?>">
-                        <?= esc($jl) ?>
-                    </a>
+                    <?php if (!empty($openSwitcherMap[$jk])): ?>
+                        <a href="<?= base_url('ketarunaan/beasiswa/klaim/ajukan/' . $jk) ?>"
+                           class="btn btn-sm rounded-pill px-3 bea-touch-ctrl d-inline-flex align-items-center <?= $jenis === $jk ? 'btn-primary' : 'btn-light border' ?>">
+                            <?= esc($jl) ?>
+                        </a>
+                    <?php else: ?>
+                        <button type="button" class="btn btn-sm rounded-pill px-3 bea-touch-ctrl d-inline-flex align-items-center btn-light border text-muted" disabled aria-disabled="true" title="Belum ada program yang sedang dibuka">
+                            <?= esc($jl) ?> (Tutup)
+                        </button>
+                    <?php endif; ?>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>

@@ -56,25 +56,49 @@ $getSortIcon = static function (string $col) use ($sortBy, $sortOrder): string {
     <?= $this->include('ketarunaan/beasiswa/_nav_tabs') ?>
 
     <?php if ($canSubmit): ?>
+        <?php
+        $klaimShortcuts = [
+            'prestasi'    => ['label' => 'Klaim Prestasi',    'btn_class' => 'btn-outline-primary'],
+            'daerah_3tp'  => ['label' => 'Klaim Daerah 3TP',  'btn_class' => 'btn-outline-success'],
+            'tidak_mampu' => ['label' => 'Klaim Tidak Mampu', 'btn_class' => 'btn-outline-danger'],
+        ];
+        $openKlaimMap = [];
+        foreach (array_keys($klaimShortcuts) as $jk) {
+            if (!$isSelfTaruna) {
+                $openKlaimMap[$jk] = true;
+                continue;
+            }
+            foreach (($refs['programs'] ?? []) as $rp) {
+                if (($rp['jenis_beasiswa'] ?? '') === $jk && ketarunaan_is_program_beasiswa_open($rp)) {
+                    $openKlaimMap[$jk] = true;
+                    break;
+                }
+            }
+        }
+        ?>
         <!-- Pintasan Ajukan 3 Jenis Klaim (WCAG AA Contrast) -->
         <div class="ecc-bea-card mb-4 py-3">
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
                 <div>
                     <div class="fw-bold text-dark">Ajukan Klaim Beasiswa Baru</div>
                     <div class="ecc-text-muted-aa small">
-                        Pilih jalur pengajuan klaim yang sesuai disertai tautan Google Drive berkas bukti.
+                        <?= $isSelfTaruna
+                            ? 'Pengajuan baru hanya tersedia untuk jalur program beasiswa yang sedang dibuka.'
+                            : 'Pilih jalur pengajuan klaim yang sesuai disertai tautan Google Drive berkas bukti.' ?>
                     </div>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
-                    <a href="<?= base_url('ketarunaan/beasiswa/klaim/ajukan/prestasi') ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 btn-tactile bea-touch-ctrl d-inline-flex align-items-center">
-                        + Klaim Prestasi
-                    </a>
-                    <a href="<?= base_url('ketarunaan/beasiswa/klaim/ajukan/daerah_3tp') ?>" class="btn btn-outline-success btn-sm rounded-pill px-3 btn-tactile bea-touch-ctrl d-inline-flex align-items-center">
-                        + Klaim Daerah 3TP
-                    </a>
-                    <a href="<?= base_url('ketarunaan/beasiswa/klaim/ajukan/tidak_mampu') ?>" class="btn btn-outline-danger btn-sm rounded-pill px-3 btn-tactile bea-touch-ctrl d-inline-flex align-items-center">
-                        + Klaim Tidak Mampu
-                    </a>
+                    <?php foreach ($klaimShortcuts as $jk => $sc): ?>
+                        <?php if (!empty($openKlaimMap[$jk])): ?>
+                            <a href="<?= base_url('ketarunaan/beasiswa/klaim/ajukan/' . $jk) ?>" class="btn <?= esc($sc['btn_class']) ?> btn-sm rounded-pill px-3 btn-tactile bea-touch-ctrl d-inline-flex align-items-center">
+                                + <?= esc($sc['label']) ?>
+                            </a>
+                        <?php else: ?>
+                            <button type="button" class="btn btn-light border text-muted btn-sm rounded-pill px-3 bea-touch-ctrl d-inline-flex align-items-center" disabled aria-disabled="true" title="Belum ada program yang sedang dibuka">
+                                <?= esc($sc['label']) ?> (Belum Dibuka)
+                            </button>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>

@@ -15,6 +15,24 @@ class AuthFilter implements FilterInterface
     {
         // 1. Cek apakah pengguna sudah login
         if (!session()->get('isLoggedIn')) {
+            // Simpan tujuan tautan internal untuk permintaan GET non-AJAX agar otomatis kembali setelah login
+            if (strtolower((string) $request->getMethod()) === 'get' && !$request->isAJAX()) {
+                $uri   = $request->getUri();
+                $path  = '/' . ltrim((string) $uri->getPath(), '/');
+                $query = (string) $uri->getQuery();
+                $full  = $path . ($query !== '' ? ('?' . $query) : '');
+
+                if (
+                    $path !== '/'
+                    && strpos($path, '/login') !== 0
+                    && strpos($path, '/logout') !== 0
+                    && strpos($path, '//') !== 0
+                    && !preg_match('/[\r\n]/', $full)
+                ) {
+                    session()->set('intended_url', $full);
+                }
+            }
+
             return redirect()->to('/login');
         }
 

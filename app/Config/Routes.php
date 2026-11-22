@@ -40,6 +40,22 @@ $routes->get('login', 'Auth::login');
 $routes->post('login', 'Auth::processLogin');
 $routes->match(['get', 'post'], 'logout', 'Auth::logout');
 
+// Tautan Singkat & Publik Tracer Study Alumni (contoh: /tracerstudy2026 atau /tracer/{token})
+$routes->group('tracer', static function ($routes) {
+    $routes->get('([a-zA-Z0-9\-]+)', 'Ketarunaan\TracerStudyPublicController::index/$1');
+    $routes->post('([a-zA-Z0-9\-]+)/verifikasi', 'Ketarunaan\TracerStudyPublicController::verify/$1');
+    $routes->post('([a-zA-Z0-9\-]+)/daftar', 'Ketarunaan\TracerStudyPublicController::register/$1');
+    $routes->post('([a-zA-Z0-9\-]+)/simpan', 'Ketarunaan\TracerStudyPublicController::submit/$1');
+    $routes->get('([a-zA-Z0-9\-]+)/selesai', 'Ketarunaan\TracerStudyPublicController::selesai/$1');
+    $routes->post('([a-zA-Z0-9\-]+)/ganti-alumni', 'Ketarunaan\TracerStudyPublicController::resetSession/$1');
+});
+$routes->get('(tracer[a-z0-9\-]{2,48})', 'Ketarunaan\TracerStudyPublicController::index/$1');
+$routes->post('(tracer[a-z0-9\-]{2,48})/verifikasi', 'Ketarunaan\TracerStudyPublicController::verify/$1');
+$routes->post('(tracer[a-z0-9\-]{2,48})/daftar', 'Ketarunaan\TracerStudyPublicController::register/$1');
+$routes->post('(tracer[a-z0-9\-]{2,48})/simpan', 'Ketarunaan\TracerStudyPublicController::submit/$1');
+$routes->get('(tracer[a-z0-9\-]{2,48})/selesai', 'Ketarunaan\TracerStudyPublicController::selesai/$1');
+$routes->post('(tracer[a-z0-9\-]{2,48})/ganti-alumni', 'Ketarunaan\TracerStudyPublicController::resetSession/$1');
+
 // Survei Pemetaan SDM (Eksklusif via Share Link — Khusus Pegawai ASN PKTJ)
 $routes->group('survei-pemetaan', ['filter' => 'employee_only'], function ($routes) {
     $routes->get('/', 'User\SurveiPemetaanController::index');
@@ -362,6 +378,30 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
         $routes->get('alumni/koreksi', 'Ketarunaan\AlumniController::koreksi');
         $routes->post('alumni/koreksi/ajukan', 'Ketarunaan\AlumniController::ajukanKoreksi');
         $routes->post('alumni/koreksi/putuskan/(:num)', 'Ketarunaan\AlumniController::putuskanKoreksi/$1');
+
+        // Modul 7B: Tracer Study (Bundel Pertanyaan Reusable, Kontrol Buka/Tutup Periode, Progres & Hasil)
+        $routes->get('tracer-study', 'Ketarunaan\TracerStudyController::index');
+        $routes->get('tracer-study/ekspor', 'Ketarunaan\TracerStudyController::ekspor');
+        $routes->get('tracer-study/periode', 'Ketarunaan\TracerStudyController::periode');
+        $routes->post('tracer-study/periode/simpan', 'Ketarunaan\TracerStudyController::savePeriode');
+        $routes->post('tracer-study/periode/(:num)/status', 'Ketarunaan\TracerStudyController::changePeriodeStatus/$1');
+        $routes->post('tracer-study/periode/(:num)/reset-token', 'Ketarunaan\TracerStudyController::resetPublicToken/$1');
+        $routes->get('tracer-study/periode/(:num)/pertanyaan', 'Ketarunaan\TracerStudyController::pertanyaanPeriode/$1');
+        $routes->post('tracer-study/periode/(:num)/pertanyaan/simpan', 'Ketarunaan\TracerStudyController::savePertanyaanPeriode/$1');
+        $routes->post('tracer-study/periode/(:num)/pertanyaan/(:num)/hapus', 'Ketarunaan\TracerStudyController::deletePertanyaanPeriode/$1/$2');
+        $routes->post('tracer-study/periode/(:num)/simpan-bundel', 'Ketarunaan\TracerStudyController::savePeriodeAsBundle/$1');
+        $routes->get('tracer-study/bundel', 'Ketarunaan\TracerStudyController::bundel');
+        $routes->post('tracer-study/bundel/simpan', 'Ketarunaan\TracerStudyController::saveBundle');
+        $routes->post('tracer-study/bundel/(:num)/duplikat', 'Ketarunaan\TracerStudyController::duplicateBundle/$1');
+        $routes->get('tracer-study/bundel/(:num)', 'Ketarunaan\TracerStudyController::bundelDetail/$1');
+        $routes->post('tracer-study/bundel/(:num)/pertanyaan/simpan', 'Ketarunaan\TracerStudyController::savePertanyaanBundle/$1');
+        $routes->post('tracer-study/bundel/(:num)/pertanyaan/(:num)/hapus', 'Ketarunaan\TracerStudyController::deletePertanyaanBundle/$1/$2');
+        $routes->get('tracer-study/responden', 'Ketarunaan\TracerStudyController::responden');
+        $routes->get('tracer-study/respons/(:num)', 'Ketarunaan\TracerStudyController::detailRespons/$1');
+        $routes->post('tracer-study/respons/(:num)/setujui', 'Ketarunaan\TracerStudyController::approveRespons/$1');
+        $routes->post('tracer-study/respons/(:num)/tolak', 'Ketarunaan\TracerStudyController::rejectRespons/$1');
+        $routes->get('tracer-study/isi/(:num)', 'Ketarunaan\TracerStudyController::formIsi/$1');
+        $routes->post('tracer-study/isi/(:num)/simpan', 'Ketarunaan\TracerStudyController::simpanRespons/$1');
 
         // Modul 8: Tata Kelola ECC 2.0 (Validasi Data, Laporan, Pengaturan)
         $routes->get('validasi', 'Ketarunaan\ValidasiController::index');

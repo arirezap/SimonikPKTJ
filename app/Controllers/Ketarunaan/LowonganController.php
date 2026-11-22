@@ -511,8 +511,8 @@ class LowonganController extends BaseController
      */
     public function ekspor()
     {
-        if (!KetarunaanPolicy::canAccessLowonganModule()) {
-            return redirect()->to(base_url('dashboard'))->with('error', 'Akses ditolak.');
+        if (!KetarunaanPolicy::canAccessLowonganModule() || KetarunaanPolicy::isSelfAccountOnly()) {
+            return $this->denyAccess('Anda tidak memiliki hak akses untuk mengekspor data lowongan kerja.');
         }
 
         $filters = [

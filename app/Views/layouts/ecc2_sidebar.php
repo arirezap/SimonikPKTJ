@@ -12,6 +12,7 @@ $isPelanggaranActive = str_starts_with($current_uri, 'ketarunaan/pelanggaran');
 $isBeasiswaActive    = str_starts_with($current_uri, 'ketarunaan/beasiswa');
 $isLowonganActive    = str_starts_with($current_uri, 'ketarunaan/lowongan');
 $isAlumniActive      = str_starts_with($current_uri, 'ketarunaan/alumni');
+$isTracerStudyActive = str_starts_with($current_uri, 'ketarunaan/tracer-study');
 $isValidasiActive    = str_starts_with($current_uri, 'ketarunaan/validasi');
 $isLaporanActive     = str_starts_with($current_uri, 'ketarunaan/laporan');
 $isPengaturanActive  = str_starts_with($current_uri, 'ketarunaan/pengaturan');
@@ -111,6 +112,15 @@ $sidebarHome   = ketarunaan_home_url();
                 <a class="nav-link <?= $isAlumniActive ? 'active' : '' ?>" href="<?= site_url('ketarunaan/alumni') ?>">
                     <i class="bi bi-mortarboard" aria-hidden="true"></i>
                     <span>Alumni</span>
+                </a>
+            </li>
+            <?php endif; ?>
+
+            <?php if (\App\Libraries\Ketarunaan\KetarunaanPolicy::canAccessTracerStudyModule()): ?>
+            <li class="nav-item">
+                <a class="nav-link <?= $isTracerStudyActive ? 'active' : '' ?>" href="<?= site_url('ketarunaan/tracer-study') ?>">
+                    <i class="bi bi-clipboard2-data-fill" aria-hidden="true"></i>
+                    <span>Tracer Study</span>
                 </a>
             </li>
             <?php endif; ?>

@@ -153,8 +153,8 @@ $getSortIcon = static function (string $col) use ($sortBy, $sortOrder): string {
                                             Seleksi Kelas
                                         </a>
                                     <?php endif; ?>
-                                    <?php if ($isSelfTaruna && ($prog['jenis_beasiswa'] ?? '') !== 'apresiasi' && ($prog['status_program'] ?? '') !== 'selesai'): ?>
-                                        <a href="<?= base_url('ketarunaan/beasiswa/klaim/ajukan/' . esc($prog['jenis_beasiswa'])) ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3" aria-label="Ajukan klaim <?= esc($prog['nama_program']) ?>">
+                                    <?php if ($isSelfTaruna && ketarunaan_is_program_beasiswa_open($prog)): ?>
+                                        <a href="<?= base_url('ketarunaan/beasiswa/klaim/ajukan/' . esc($prog['jenis_beasiswa']) . '?program_id=' . (int) $prog['id']) ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3" aria-label="Ajukan klaim <?= esc($prog['nama_program']) ?>">
                                             Ajukan
                                         </a>
                                     <?php endif; ?>
@@ -202,8 +202,8 @@ $getSortIcon = static function (string $col) use ($sortBy, $sortOrder): string {
                                 <?php if (($prog['jenis_beasiswa'] ?? '') === 'apresiasi' && !$isSelfTaruna): ?>
                                     <a href="<?= base_url('ketarunaan/beasiswa/apresiasi?program_id=' . (int) $prog['id']) ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 bea-touch-ctrl d-inline-flex align-items-center">Seleksi Kelas</a>
                                 <?php endif; ?>
-                                <?php if ($isSelfTaruna && ($prog['jenis_beasiswa'] ?? '') !== 'apresiasi' && ($prog['status_program'] ?? '') !== 'selesai'): ?>
-                                    <a href="<?= base_url('ketarunaan/beasiswa/klaim/ajukan/' . esc($prog['jenis_beasiswa'])) ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 bea-touch-ctrl d-inline-flex align-items-center">Ajukan</a>
+                                <?php if ($isSelfTaruna && ketarunaan_is_program_beasiswa_open($prog)): ?>
+                                    <a href="<?= base_url('ketarunaan/beasiswa/klaim/ajukan/' . esc($prog['jenis_beasiswa']) . '?program_id=' . (int) $prog['id']) ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 bea-touch-ctrl d-inline-flex align-items-center">Ajukan</a>
                                 <?php endif; ?>
                                 <?php if (!empty($perms['can_manage'])): ?>
                                     <a href="<?= base_url('ketarunaan/beasiswa/kelola-program/' . (int) $prog['id']) ?>" class="btn btn-light border btn-sm rounded-pill px-3 bea-touch-ctrl d-inline-flex align-items-center">Ubah</a>

@@ -108,6 +108,8 @@
                             <i class="bi bi-calendar3 me-1"></i> <?= date('d M Y') ?>
                         </div>
                         
+                        <?php $isSelfAccount = \App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfAccountOnly(); ?>
+                        <?php if (!$isSelfAccount): ?>
                         <!-- NOTIFICATION BELL -->
                         <div class="dropdown" id="notifDropdownContainer">
                             <a href="#" class="text-decoration-none position-relative d-inline-block btn-tactile" data-bs-toggle="dropdown" aria-expanded="false" id="notifDropdownToggle" aria-label="Lihat notifikasi">
@@ -138,6 +140,7 @@
                                 </div>
                             </div>
                         </div>
+                        <?php endif; ?>
 
                         <div class="dropdown">
                             <a href="#" class="text-decoration-none d-inline-block btn-tactile" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Menu profil pengguna">
@@ -156,11 +159,25 @@
                             <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 rounded-3" style="min-width: 200px;">
                                 <li><h6 class="dropdown-header text-primary"><?= esc($formattedName) ?></h6></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item btn-tactile" href="<?= site_url('profile') ?>">
-                                        <i class="bi bi-person-circle me-2"></i> Profil Saya
-                                    </a>
-                                </li>
+                                <?php if ($isSelfAccount): ?>
+                                    <?php $selfPortalHref = site_url(ltrim(\App\Libraries\Ketarunaan\KetarunaanPolicy::getSelfPortalUrl(), '/')); ?>
+                                    <li>
+                                        <a class="dropdown-item btn-tactile" href="<?= esc($selfPortalHref) ?>">
+                                            <i class="bi bi-person-circle me-2"></i> Profil Saya
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item btn-tactile" href="<?= site_url('ketarunaan/keamanan-akun') ?>">
+                                            <i class="bi bi-key me-2"></i> Ubah Kata Sandi
+                                        </a>
+                                    </li>
+                                <?php else: ?>
+                                    <li>
+                                        <a class="dropdown-item btn-tactile" href="<?= site_url('profile') ?>">
+                                            <i class="bi bi-person-circle me-2"></i> Profil Saya
+                                        </a>
+                                    </li>
+                                <?php endif; ?>
                                 <li>
                                     <a class="dropdown-item text-danger btn-tactile" href="<?= site_url('logout') ?>" onclick="confirmLogout(event)">
                                         <i class="bi bi-box-arrow-right me-2"></i> Keluar
@@ -252,7 +269,9 @@
         }
     });
 </script>
+    <?php if (!$isSelfAccount): ?>
     <?= $this->include('layouts/_notification_script') ?>
+    <?php endif; ?>
 <script>
 
     function confirmLogout(event) {

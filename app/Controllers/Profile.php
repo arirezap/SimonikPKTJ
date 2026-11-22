@@ -18,6 +18,10 @@ class Profile extends BaseController
 
     public function index()
     {
+        if (\App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfAccountOnly()) {
+            return redirect()->to(\App\Libraries\Ketarunaan\KetarunaanPolicy::getSelfPortalUrl());
+        }
+
         helper(['avatar', 'audit']);
 
         $userId = session()->get('id') ?? session()->get('user_id');
@@ -84,6 +88,10 @@ class Profile extends BaseController
 
     public function update()
     {
+        if (\App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfAccountOnly()) {
+            return redirect()->to(\App\Libraries\Ketarunaan\KetarunaanPolicy::getSelfPortalUrl());
+        }
+
         $userId = session()->get('id') ?? session()->get('user_id');
         
         // 1. Ambil data user saat ini untuk verifikasi & proteksi

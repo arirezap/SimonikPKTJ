@@ -82,7 +82,11 @@ class BeasiswaService
             ->getResultArray();
 
         $programs = $this->db->table('taruna_program_beasiswa prog')
-            ->select('prog.*, ta.kode_tahun AS tahun_akademik_label, pn.kode_tahun AS periode_nilai_label')
+            ->select("prog.*, ta.kode_tahun AS tahun_akademik_label, pn.kode_tahun AS periode_nilai_label,
+                      (SELECT COUNT(*) FROM taruna_penerima_beasiswa tpb_cnt
+                       WHERE tpb_cnt.program_beasiswa_id = prog.id
+                         AND tpb_cnt.status_penetapan = 'ditetapkan'
+                         AND tpb_cnt.status_validasi = 'tervalidasi') AS ditetapkan_count", false)
             ->join('ref_tahun_akademik ta', 'ta.id = prog.tahun_akademik_id', 'left')
             ->join('ref_tahun_akademik pn', 'pn.id = prog.periode_nilai_id', 'left')
             ->orderBy('prog.id', 'ASC')
@@ -1386,6 +1390,26 @@ class BeasiswaService
     }
 
     /**
+     * Memeriksa apakah program beasiswa sedang dibuka untuk pengajuan klaim baru oleh taruna.
+     *
+     * @param array<string, mixed> $program
+     * @param string|null          $today Format Y-m-d
+     * @return bool
+     */
+    public function isProgramOpenForClaim(array $program, ?string $today = null): bool
+    {
+        if (!array_key_exists('ditetapkan_count', $program) && !empty($program['id'])) {
+            $program['ditetapkan_count'] = (int) $this->db->table('taruna_penerima_beasiswa')
+                ->where('program_beasiswa_id', (int) $program['id'])
+                ->where('status_penetapan', 'ditetapkan')
+                ->where('status_validasi', 'tervalidasi')
+                ->countAllResults();
+        }
+
+        return ketarunaan_is_program_beasiswa_open($program, $today);
+    }
+
+    /**
      * Menyimpan pengajuan klaim Beasiswa Prestasi, Daerah 3TP, atau Tidak Mampu (baru / revisi draf & perbaikan).
      *
      * @param string               $jenis
@@ -1417,6 +1441,9 @@ class BeasiswaService
         if ($editId === null && ($program['status_program'] ?? '') === 'selesai') {
             return ['status' => false, 'message' => 'Program beasiswa yang dipilih sudah selesai dan tidak menerima pengajuan baru.'];
         }
+        if ($isSelfTaruna && $editId === null && !$this->isProgramOpenForClaim($program)) {
+            return ['status' => false, 'message' => 'Pengajuan hanya dapat dilakukan pada program beasiswa yang sedang dibuka.'];
+        }
 
         $nomorTaruna = trim((string) ($input['nomor_taruna'] ?? ''));
         $tarunaRow   = $nomorTaruna !== ''
@@ -1443,6 +1470,14 @@ class BeasiswaService
             }
             if (!in_array((string) ($existing['status_validasi'] ?? ''), ['draf', 'perlu_perbaikan'], true)) {
                 return ['status' => false, 'message' => 'Pengajuan yang sedang diverifikasi atau sudah tervalidasi tidak dapat diubah.'];
+            }
+            if ($isSelfTaruna) {
+                if (($program['status_program'] ?? '') === 'selesai') {
+                    return ['status' => false, 'message' => 'Program beasiswa yang dipilih sudah selesai dan tidak dapat diubah.'];
+                }
+                if ((int) ($existing['program_beasiswa_id'] ?? 0) !== $programId && !$this->isProgramOpenForClaim($program)) {
+                    return ['status' => false, 'message' => 'Program beasiswa tujuan sedang tidak dibuka untuk pengajuan.'];
+                }
             }
         }
 

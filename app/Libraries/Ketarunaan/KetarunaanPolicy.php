@@ -474,6 +474,43 @@ class KetarunaanPolicy
     ];
 
     /**
+     * Hak akses membuka Modul Tracer Study (pimpinan, pengelola, manajemen/kerjasama, serta alumni mandiri).
+     * Akun taruna aktif secara eksplisit ditolak.
+     */
+    public static function canAccessTracerStudyModule(): bool
+    {
+        if (self::isSelfTarunaOnly()) {
+            return false;
+        }
+        if (self::isSelfAlumniOnly()) {
+            return true;
+        }
+        if (self::canManageTracerStudy()) {
+            return true;
+        }
+
+        return function_exists('hasAnyRole') && hasAnyRole([
+            'wadir',
+            'kabag_kuk',
+            'manajemen',
+            'kerjasama',
+            'kepegawaian',
+        ]);
+    }
+
+    /**
+     * Hak memantau progres, analitik, dan hasil Tracer Study setiap periode pembukaan.
+     */
+    public static function canViewTracerStudyAnalytics(): bool
+    {
+        if (self::isSelfAccountOnly()) {
+            return false;
+        }
+
+        return self::canAccessTracerStudyModule();
+    }
+
+    /**
      * Hak PIC Alumni & Tracer Study (Tim Ketarunaan & Alumni serta pimpinan terkait).
      */
     public static function canManageTracerStudy(): bool
@@ -487,6 +524,14 @@ class KetarunaanPolicy
             'ketarunaan_validator',
             'karir_alumni',
         ]);
+    }
+
+    /**
+     * Hak pegawai berwenang untuk membuka, menutup, atau mengembalikan periode Tracer Study ke draf.
+     */
+    public static function canToggleTracerStudyPeriode(): bool
+    {
+        return self::canManageTracerStudy();
     }
 
     /**

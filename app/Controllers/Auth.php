@@ -153,6 +153,21 @@ class Auth extends BaseController
                     'user_agent' => (string) $this->request->getUserAgent()
                 ]);
 
+                // Arahkan kembali ke tautan tujuan yang sempat dibuka sebelum login (jika aman & sesuai peran)
+                $intendedUrl = (string) ($session->get('intended_url') ?? '');
+                $session->remove('intended_url');
+                if (
+                    $intendedUrl !== ''
+                    && strpos($intendedUrl, '/') === 0
+                    && strpos($intendedUrl, '//') !== 0
+                    && !preg_match('/[\r\n]/', $intendedUrl)
+                ) {
+                    $isSelfOnly = \App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfAccountOnly();
+                    if (!$isSelfOnly || strpos($intendedUrl, '/ketarunaan/') === 0) {
+                        return redirect()->to(site_url(ltrim($intendedUrl, '/')));
+                    }
+                }
+
                 return redirect()->to(site_url('dashboard'));
                 
             } else {

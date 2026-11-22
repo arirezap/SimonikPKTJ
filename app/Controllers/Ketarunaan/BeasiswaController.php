@@ -507,6 +507,27 @@ class BeasiswaController extends BaseController
         }
 
         $refs = $this->beasiswaService->getReferenceOptions(!$isSelfTaruna || $editId > 0, $jenisClean === 'daerah_3tp');
+        if ($isSelfTaruna) {
+            if ($editId === 0) {
+                $openForJenis = array_values(array_filter(
+                    $refs['programs'] ?? [],
+                    fn (array $p): bool => ($p['jenis_beasiswa'] ?? '') === $jenisClean && $this->beasiswaService->isProgramOpenForClaim($p)
+                ));
+                if (empty($openForJenis)) {
+                    return redirect()->to(base_url('ketarunaan/beasiswa/program'))
+                        ->with('warning', 'Belum ada program beasiswa yang sedang dibuka pada jalur tersebut.');
+                }
+            } elseif ($existing !== null) {
+                $existingProgId = (int) ($existing['program_beasiswa_id'] ?? 0);
+                foreach (($refs['programs'] ?? []) as $progRow) {
+                    if ((int) ($progRow['id'] ?? 0) === $existingProgId && ($progRow['status_program'] ?? '') === 'selesai') {
+                        return redirect()->to(base_url('ketarunaan/beasiswa/detail/' . $editId))
+                            ->with('warning', 'Program beasiswa sudah selesai dan pengajuan tidak dapat diubah.');
+                    }
+                }
+            }
+        }
+
         $selectedNim = $isSelfTaruna
             ? (string) ($viewerNim ?? '')
             : (string) ($existing['nomor_taruna'] ?? ($this->request->getGet('nomor_taruna') ?? ''));
@@ -516,15 +537,16 @@ class BeasiswaController extends BaseController
             : [];
 
         return view('ketarunaan/beasiswa/form_klaim', [
-            'title'          => 'Formulir Klaim ' . (ketarunaan_jenis_beasiswa_catalog()[$jenisClean]['label'] ?? 'Beasiswa') . ' - Evidence Command Center (ECC)',
-            'activeTab'      => 'klaim',
-            'jenis'          => $jenisClean,
-            'existing'       => $existing,
-            'refs'           => $refs,
-            'selectedNim'    => $selectedNim,
-            'prestasiTaruna' => $prestasiTaruna,
-            'isSelfTaruna'   => $isSelfTaruna,
-            'perms'          => $this->getPermissions(),
+            'title'              => 'Formulir Klaim ' . (ketarunaan_jenis_beasiswa_catalog()[$jenisClean]['label'] ?? 'Beasiswa') . ' - Evidence Command Center (ECC)',
+            'activeTab'          => 'klaim',
+            'jenis'              => $jenisClean,
+            'existing'           => $existing,
+            'refs'               => $refs,
+            'selectedNim'        => $selectedNim,
+            'prestasiTaruna'     => $prestasiTaruna,
+            'isSelfTaruna'       => $isSelfTaruna,
+            'requestedProgramId' => (int) ($this->request->getGet('program_id') ?? 0),
+            'perms'              => $this->getPermissions(),
         ]);
     }
 
