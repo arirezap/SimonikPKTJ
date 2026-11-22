@@ -39,6 +39,8 @@ class PelanggaranController extends BaseController
             'status_penetapan'    => trim((string) ($this->request->getGet('status_penetapan') ?? 'all')),
             'status_penyelesaian' => trim((string) ($this->request->getGet('status_penyelesaian') ?? 'all')),
             'status_validasi'     => trim((string) ($this->request->getGet('status_validasi') ?? 'all')),
+            'sort_by'             => trim((string) ($this->request->getGet('sort_by') ?? '')),
+            'sort_order'          => strtolower(trim((string) ($this->request->getGet('sort_order') ?? 'desc'))) === 'asc' ? 'asc' : 'desc',
         ];
         $page = max(1, (int) ($this->request->getGet('page') ?? 1));
 
@@ -124,7 +126,10 @@ class PelanggaranController extends BaseController
 
         $kasusId = (int) ($result['id'] ?? 0);
         if (function_exists('log_audit')) {
-            log_audit('CREATE', 'Mencatat dugaan kasus pelanggaran ID #' . $kasusId);
+            log_audit('CREATE', 'taruna_pelanggaran', (string) $kasusId, null, [
+                'nomor_perkara'     => $this->request->getPost('nomor_perkara'),
+                'jenis_pelanggaran' => $this->request->getPost('jenis_pelanggaran'),
+            ]);
         }
 
         $aksiSubmit = trim((string) ($this->request->getPost('aksi_submit') ?? 'next'));
@@ -210,7 +215,10 @@ class PelanggaranController extends BaseController
         }
 
         if (function_exists('log_audit')) {
-            log_audit('UPDATE', 'Memperbarui pencatatan awal kasus pelanggaran ID #' . $id);
+            log_audit('UPDATE', 'taruna_pelanggaran', (string) $id, null, [
+                'nomor_perkara'     => $this->request->getPost('nomor_perkara'),
+                'jenis_pelanggaran' => $this->request->getPost('jenis_pelanggaran'),
+            ]);
         }
 
         $aksiSubmit = trim((string) ($this->request->getPost('aksi_submit') ?? 'next'));
@@ -250,7 +258,7 @@ class PelanggaranController extends BaseController
     }
 
     /**
-     * Proses simpan Tahap 2 Pemeriksaan Kasus dan unggahan BAP opsional.
+     * Proses simpan Tahap 2 Pemeriksaan Kasus dan tautan BAP opsional (Opsi A - Google Drive).
      */
     public function savePemeriksaan(int $id)
     {
@@ -267,27 +275,15 @@ class PelanggaranController extends BaseController
             'hasil_pemeriksaan'     => 'required|max_length[1000]',
         ];
 
-        $fileBap = $this->request->getFile('berkas_bap');
-        if ($fileBap && $fileBap->isValid() && !$fileBap->hasMoved()) {
-            $rules['berkas_bap'] = 'max_size[berkas_bap,5120]|ext_in[berkas_bap,pdf]|mime_in[berkas_bap,application/pdf]';
-        }
-
         if (!$this->validate($rules)) {
             return redirect()->back()->withInput()
-                ->with('error', 'Lengkapi data pemeriksaan dan pastikan berkas BAP berformat PDF maksimal 5 MB.');
+                ->with('error', 'Lengkapi seluruh kolom wajib pada data pemeriksaan.');
         }
 
-        $uploadedBapName = null;
-        $uploadedBapSize = 0;
-
-        if ($fileBap && $fileBap->isValid() && !$fileBap->hasMoved()) {
-            $uploadDir = FCPATH . 'assets/uploads/ketarunaan/pelanggaran';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
-            $uploadedBapName = $fileBap->getRandomName();
-            $uploadedBapSize = max(1, (int) round($fileBap->getSize() / 1024));
-            $fileBap->move($uploadDir, $uploadedBapName);
+        $bapUrl = trim((string) ($this->request->getPost('berkas_bap') ?? ''));
+        if ($bapUrl !== '' && !ketarunaan_is_http_url($bapUrl, 255)) {
+            return redirect()->back()->withInput()
+                ->with('error', 'Tautan BAP harus diawali http:// atau https:// (maksimal 255 karakter).');
         }
 
         $result = $this->pelanggaranService->savePemeriksaan($id, [
@@ -297,8 +293,8 @@ class PelanggaranController extends BaseController
             'tingkat_pelanggaran'   => $this->request->getPost('tingkat_pelanggaran'),
             'ringkasan_klarifikasi' => $this->request->getPost('ringkasan_klarifikasi'),
             'hasil_pemeriksaan'     => $this->request->getPost('hasil_pemeriksaan'),
-            'berkas_bap'            => $uploadedBapName,
-            'bap_size_kb'           => $uploadedBapSize,
+            'berkas_bap'            => $bapUrl !== '' ? $bapUrl : null,
+            'bap_size_kb'           => 0,
         ], $this->resolveActorLabel('Tim Pemeriksa'));
 
         if (!$result['status']) {
@@ -306,7 +302,10 @@ class PelanggaranController extends BaseController
         }
 
         if (function_exists('log_audit')) {
-            log_audit('UPDATE', 'Memperbarui hasil pemeriksaan kasus pelanggaran ID #' . $id);
+            log_audit('UPDATE', 'taruna_pelanggaran', (string) $id, null, [
+                'tahap'               => 'pemeriksaan',
+                'tingkat_pelanggaran' => $this->request->getPost('tingkat_pelanggaran'),
+            ]);
         }
 
         $aksiSubmit = trim((string) ($this->request->getPost('aksi_submit') ?? 'next'));
@@ -338,7 +337,10 @@ class PelanggaranController extends BaseController
         ]);
 
         if ($result['status'] && function_exists('log_audit')) {
-            log_audit('CREATE', 'Menambah pihak terkait pada kasus pelanggaran ID #' . $id);
+            log_audit('CREATE', 'taruna_pelanggaran_pihak', (string) $id, null, [
+                'jenis_pihak' => $this->request->getPost('jenis_pihak'),
+                'peran'       => $this->request->getPost('peran'),
+            ]);
         }
 
         return redirect()->to(base_url('ketarunaan/pelanggaran/pemeriksaan/' . $id))
@@ -358,7 +360,9 @@ class PelanggaranController extends BaseController
         $result = $this->pelanggaranService->removePihak($id, $pihakId);
 
         if ($result['status'] && function_exists('log_audit')) {
-            log_audit('DELETE', 'Menghapus pihak ID #' . $pihakId . ' dari kasus pelanggaran ID #' . $id);
+            log_audit('DELETE', 'taruna_pelanggaran_pihak', (string) $pihakId, null, [
+                'pelanggaran_id' => $id,
+            ]);
         }
 
         return redirect()->to(base_url('ketarunaan/pelanggaran/pemeriksaan/' . $id))
@@ -426,14 +430,18 @@ class PelanggaranController extends BaseController
             'tanggal_selesai'     => $this->request->getPost('tanggal_selesai'),
             'pic_tindak_lanjut'   => $this->request->getPost('pic_tindak_lanjut'),
             'catatan_pemantauan'  => $this->request->getPost('catatan_pemantauan'),
-        ], $this->resolveActorLabel('PIC Ketarunaan'));
+        ], $this->resolveActorLabel('PIC Ketarunaan'), KetarunaanPolicy::canDecidePelanggaran());
 
         if (!$result['status']) {
             return redirect()->back()->withInput()->with('error', $result['message']);
         }
 
         if (function_exists('log_audit')) {
-            log_audit('UPDATE', 'Menyimpan penetapan & tindak lanjut kasus pelanggaran ID #' . $id);
+            log_audit('UPDATE', 'taruna_pelanggaran', (string) $id, null, [
+                'tahap'               => 'penetapan',
+                'status_penetapan'    => $this->request->getPost('status_penetapan'),
+                'status_penyelesaian' => $this->request->getPost('status_penyelesaian'),
+            ]);
         }
 
         $aksiSubmit = trim((string) ($this->request->getPost('aksi_submit') ?? 'next'));
@@ -472,7 +480,7 @@ class PelanggaranController extends BaseController
     }
 
     /**
-     * Menyimpan dokumen unggahan dan opsional mengajukan kasus ke validasi pencatatan.
+     * Menyimpan tautan dokumen bukti (Opsi A - Google Drive) dan opsional mengajukan kasus ke validasi pencatatan.
      */
     public function saveDokumen(int $id)
     {
@@ -487,42 +495,32 @@ class PelanggaranController extends BaseController
                 ->with('error', 'Data kasus tidak ditemukan.');
         }
 
-        $fileBukti   = $this->request->getFile('dokumen_file');
+        $dokUrl      = trim((string) ($this->request->getPost('dokumen_url') ?? ''));
         $uploadedDoc = null;
 
-        if ($fileBukti && $fileBukti->isValid() && !$fileBukti->hasMoved()) {
-            $ext  = strtolower($fileBukti->getExtension());
-            $mime = strtolower((string) $fileBukti->getMimeType());
-            $size = $fileBukti->getSize();
-
-            if (!in_array($ext, ['pdf', 'jpg', 'jpeg', 'png'], true)
-                || !in_array($mime, ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'], true)
-                || $size > 5 * 1024 * 1024
-            ) {
+        if ($dokUrl !== '') {
+            if (!ketarunaan_is_http_url($dokUrl, 500)) {
                 return redirect()->back()->withInput()
-                    ->with('error', 'Berkas dokumen harus berformat PDF, JPG, atau PNG maksimal 5 MB.');
+                    ->with('error', 'Tautan dokumen harus diawali http:// atau https:// (maksimal 500 karakter).');
             }
-
-            $uploadDir = FCPATH . 'assets/uploads/ketarunaan/pelanggaran';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
-            $randomName = $fileBukti->getRandomName();
-            $fileBukti->move($uploadDir, $randomName);
 
             $jenisDok    = trim((string) ($this->request->getPost('jenis_dokumen') ?? 'Laporan'));
             $klasifikasi = ($this->request->getPost('klasifikasi') === 'sangat_terbatas') ? 'sangat_terbatas' : 'terbatas';
 
             $uploadedDoc = [
-                'nama_berkas'    => $randomName,
+                'nama_berkas'    => $dokUrl,
                 'jenis_dokumen'  => in_array($jenisDok, ['Laporan', 'Pemeriksaan', 'Penetapan', 'Pendukung'], true) ? $jenisDok : 'Pendukung',
                 'klasifikasi'    => $klasifikasi,
                 'tanggal_unggah' => date('Y-m-d'),
-                'ukuran_kb'      => max(1, (int) round($size / 1024)),
+                'ukuran_kb'      => 0,
             ];
         }
 
         $aksiSubmit = trim((string) ($this->request->getPost('aksi_submit') ?? 'draf'));
+        if (!in_array($aksiSubmit, ['draf', 'diajukan'], true)) {
+            $aksiSubmit = 'draf';
+        }
+
         $result = $this->pelanggaranService->saveDokumenAndSubmit($id, [
             'uploaded_doc' => $uploadedDoc,
             'aksi_submit'  => $aksiSubmit,
@@ -534,7 +532,11 @@ class PelanggaranController extends BaseController
         }
 
         if (function_exists('log_audit')) {
-            log_audit('UPDATE', 'Memperbarui dokumen bukti kasus pelanggaran ID #' . $id . ' (' . $aksiSubmit . ')');
+            log_audit('UPDATE', 'taruna_pelanggaran', (string) $id, null, [
+                'tahap'       => 'dokumen',
+                'aksi_submit' => $aksiSubmit,
+                'has_new_doc' => $uploadedDoc !== null,
+            ]);
         }
 
         if ($aksiSubmit === 'diajukan') {
@@ -547,7 +549,7 @@ class PelanggaranController extends BaseController
     }
 
     /**
-     * Menghapus satu file bukti kasus.
+     * Menghapus satu tautan/berkas bukti kasus.
      */
     public function removeDokumen(int $id)
     {
@@ -560,7 +562,9 @@ class PelanggaranController extends BaseController
         $result   = $this->pelanggaranService->removeDokumen($id, $filename);
 
         if ($result['status'] && function_exists('log_audit')) {
-            log_audit('DELETE', 'Menghapus berkas dokumen pada kasus pelanggaran ID #' . $id);
+            log_audit('DELETE', 'taruna_pelanggaran', (string) $id, null, [
+                'dokumen_dihapus' => $filename,
+            ]);
         }
 
         return redirect()->to(base_url('ketarunaan/pelanggaran/dokumen/' . $id))
@@ -610,40 +614,48 @@ class PelanggaranController extends BaseController
                 ->with('error', 'Anda tidak memiliki wewenang mencatat tindak lanjut.');
         }
 
-        $fileBukti   = $this->request->getFile('berkas_pendukung');
-        $uploadedDoc = null;
+        $rules = [
+            'tanggal_tindakan'    => 'required|valid_date[Y-m-d]',
+            'status_penyelesaian' => 'required|in_list[proses,selesai,banding]',
+            'sanksi_tindakan'     => 'required|max_length[1000]',
+            'nomor_dasar'         => 'permit_empty|max_length[100]',
+            'pic'                 => 'permit_empty|max_length[120]',
+            'target_selesai'      => 'permit_empty|valid_date[Y-m-d]',
+        ];
 
-        if ($fileBukti && $fileBukti->isValid() && !$fileBukti->hasMoved()) {
-            $ext  = strtolower($fileBukti->getExtension());
-            $mime = strtolower((string) $fileBukti->getMimeType());
-            $size = $fileBukti->getSize();
-            if (!in_array($ext, ['pdf', 'jpg', 'jpeg', 'png'], true)
-                || !in_array($mime, ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'], true)
-                || $size > 5 * 1024 * 1024
-            ) {
-                return redirect()->back()
-                    ->with('error', 'Lampiran tindak lanjut harus berformat PDF, JPG, atau PNG maksimal 5 MB.');
-            }
-            $uploadDir = FCPATH . 'assets/uploads/ketarunaan/pelanggaran';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
-            $uploadedDoc = $fileBukti->getRandomName();
-            $fileBukti->move($uploadDir, $uploadedDoc);
+        if (!$this->validate($rules)) {
+            return redirect()->back()
+                ->with('error', 'Lengkapi tanggal tindakan, status penyelesaian, dan uraian tindak lanjut dengan benar.');
+        }
+
+        $tglTindakan   = trim((string) ($this->request->getPost('tanggal_tindakan') ?? ''));
+        $targetSelesai = trim((string) ($this->request->getPost('target_selesai') ?? ''));
+        if ($targetSelesai !== '' && $targetSelesai < $tglTindakan) {
+            return redirect()->back()
+                ->with('error', 'Target selesai tidak boleh lebih awal dari tanggal tindakan.');
+        }
+
+        $lampiranUrl = trim((string) ($this->request->getPost('berkas_pendukung') ?? ''));
+        if ($lampiranUrl !== '' && !ketarunaan_is_http_url($lampiranUrl, 255)) {
+            return redirect()->back()
+                ->with('error', 'Tautan lampiran tindak lanjut harus diawali http:// atau https:// (maksimal 255 karakter).');
         }
 
         $result = $this->pelanggaranService->addTindakLanjutRecord($id, [
-            'tanggal_tindakan'    => $this->request->getPost('tanggal_tindakan'),
+            'tanggal_tindakan'    => $tglTindakan,
             'status_penyelesaian' => $this->request->getPost('status_penyelesaian'),
             'nomor_dasar'         => $this->request->getPost('nomor_dasar'),
             'sanksi_tindakan'     => $this->request->getPost('sanksi_tindakan'),
             'pic'                 => $this->request->getPost('pic'),
-            'target_selesai'      => $this->request->getPost('target_selesai'),
-            'berkas_pendukung'    => $uploadedDoc,
+            'target_selesai'      => $targetSelesai !== '' ? $targetSelesai : null,
+            'berkas_pendukung'    => $lampiranUrl !== '' ? $lampiranUrl : null,
         ], $this->resolveActorLabel('Tim Pembina'));
 
         if ($result['status'] && function_exists('log_audit')) {
-            log_audit('UPDATE', 'Mencatat tindak lanjut / pemantauan kasus pelanggaran ID #' . $id);
+            log_audit('CREATE', 'taruna_pelanggaran_tindak_lanjut', (string) $id, null, [
+                'status_penyelesaian' => $this->request->getPost('status_penyelesaian'),
+                'tanggal_tindakan'    => $tglTindakan,
+            ]);
         }
 
         return redirect()->to(base_url('ketarunaan/pelanggaran/detail/' . $id . '?tab=penetapan'))
@@ -660,21 +672,31 @@ class PelanggaranController extends BaseController
                 ->with('error', 'Anda tidak memiliki wewenang memvalidasi pencatatan kasus.');
         }
 
-        $keputusan = trim((string) ($this->request->getPost('keputusan') ?? 'tervalidasi'));
+        $keputusan = trim((string) ($this->request->getPost('keputusan') ?? ''));
         $catatan   = trim((string) ($this->request->getPost('catatan_validasi') ?? ''));
+
+        if (!in_array($keputusan, ['tervalidasi', 'perlu_perbaikan'], true)) {
+            return redirect()->back()
+                ->with('error', 'Keputusan validasi tidak valid.');
+        }
 
         if ($keputusan === 'perlu_perbaikan' && $catatan === '') {
             return redirect()->back()
                 ->with('error', 'Isi catatan perbaikan sebelum mengembalikan data kasus.');
         }
 
-        $result = $this->pelanggaranService->processValidation($id, $keputusan, $catatan, 'Validator Unit');
+        $validatorLabel = $this->resolveActorLabel('Validator');
+        $result = $this->pelanggaranService->processValidation($id, $keputusan, $catatan, $validatorLabel);
         if (!$result['status']) {
             return redirect()->back()->with('error', $result['message']);
         }
 
         if (function_exists('log_audit')) {
-            log_audit('APPROVE', 'Validasi pencatatan kasus pelanggaran ID #' . $id . ' menjadi ' . $keputusan);
+            $auditAction = ($keputusan === 'tervalidasi') ? 'APPROVE' : 'RETURN_PELANGGARAN';
+            log_audit($auditAction, 'taruna_pelanggaran', (string) $id, null, [
+                'keputusan' => $keputusan,
+                'catatan'   => $catatan,
+            ]);
         }
 
         return redirect()->to(base_url('ketarunaan/pelanggaran/detail/' . $id . '?tab=riwayat'))
@@ -697,7 +719,9 @@ class PelanggaranController extends BaseController
         }
 
         if (function_exists('log_audit')) {
-            log_audit('DELETE', 'Menghapus draf kasus pelanggaran ID #' . $id);
+            log_audit('DELETE', 'taruna_pelanggaran', (string) $id, null, [
+                'aksi' => 'hapus_draf_kasus',
+            ]);
         }
 
         return redirect()->to(base_url('ketarunaan/pelanggaran'))
@@ -710,8 +734,8 @@ class PelanggaranController extends BaseController
     public function unduhDokumen(int $id)
     {
         if (!KetarunaanPolicy::canAccessPelanggaranModule()) {
-            return redirect()->to(base_url('ketarunaan/dashboard'))
-                ->with('error', 'Akses tidak diizinkan.');
+            return $this->response->setStatusCode(403, 'Akses tidak diizinkan.')
+                ->setBody('Akses ditolak. Dokumen kasus hanya untuk pejabat berwenang.');
         }
 
         $canViewFull = KetarunaanPolicy::canViewDisciplinaryRecord();
@@ -726,47 +750,62 @@ class PelanggaranController extends BaseController
                 ->setBody('Dokumen kasus bersifat terbatas hanya bagi petugas berwenang.');
         }
 
-        $requested = basename(trim((string) ($this->request->getGet('file') ?? '')));
-        $allowed   = array_map(static fn ($d) => basename((string) ($d['nama_berkas'] ?? '')), $detail['dokumen']);
-        if (!empty($kasus['bukti_berkas'])) {
-            $allowed[] = basename((string) $kasus['bukti_berkas']);
-        }
-        if (!empty($kasus['berkas_bap'])) {
-            $allowed[] = basename((string) $kasus['berkas_bap']);
-        }
-        foreach (($detail['tindak_lanjut'] ?? []) as $tlItem) {
-            if (!empty($tlItem['berkas_pendukung'])) {
-                $allowed[] = basename((string) $tlItem['berkas_pendukung']);
+        $requestedRaw = trim((string) ($this->request->getGet('file') ?? ''));
+        $allowedItems = [];
+        foreach ($detail['dokumen'] as $d) {
+            $raw = trim((string) ($d['nama_berkas'] ?? ''));
+            if ($raw !== '') {
+                $allowedItems[] = $raw;
             }
         }
+        foreach (['bukti_berkas', 'berkas_bap'] as $col) {
+            $raw = trim((string) ($kasus[$col] ?? ''));
+            if ($raw !== '') {
+                $allowedItems[] = $raw;
+            }
+        }
+        foreach (($detail['tindak_lanjut'] ?? []) as $tlItem) {
+            $raw = trim((string) ($tlItem['berkas_pendukung'] ?? ''));
+            if ($raw !== '') {
+                $allowedItems[] = $raw;
+            }
+        }
+        $allowedItems = array_values(array_unique($allowedItems));
 
-        $fileName = ($requested !== '' && in_array($requested, $allowed, true))
-            ? $requested
-            : basename((string) ($kasus['bukti_berkas'] ?: ('Dokumen_Kasus_' . $kasus['id'] . '.pdf')));
+        $matchedTarget = '';
+        if ($requestedRaw !== '') {
+            foreach ($allowedItems as $item) {
+                if ($item === $requestedRaw || (!ketarunaan_is_http_url($item, 2000) && basename($item) === basename($requestedRaw))) {
+                    $matchedTarget = $item;
+                    break;
+                }
+            }
+        } elseif (!empty($kasus['bukti_berkas'])) {
+            $matchedTarget = trim((string) $kasus['bukti_berkas']);
+        }
 
+        if ($matchedTarget === '') {
+            return redirect()->back()->with('error', 'Dokumen bukti kasus tidak ditemukan.');
+        }
+
+        if (ketarunaan_is_http_url($matchedTarget, 2000)) {
+            return redirect()->to($matchedTarget);
+        }
+
+        $fileName     = basename($matchedTarget);
         $inline       = ((int) $this->request->getGet('inline') === 1);
         $physicalPath = FCPATH . 'assets/uploads/ketarunaan/pelanggaran/' . $fileName;
 
         if (is_file($physicalPath)) {
             $mime = mime_content_type($physicalPath) ?: 'application/pdf';
             return $this->response
+                ->setHeader('X-Content-Type-Options', 'nosniff')
                 ->setHeader('Content-Type', $mime)
                 ->setHeader('Content-Disposition', ($inline ? 'inline' : 'attachment') . '; filename="' . $fileName . '"')
                 ->setBody((string) file_get_contents($physicalPath));
         }
 
-        $pdf = ketarunaan_generate_simple_pdf('Dokumen Kasus Pelanggaran Terbatas', (string) $kasus['nomor_perkara'], [
-            'Nama Berkas'        => $fileName,
-            'Taruna'             => (string) ($kasus['nama_lengkap'] ?? '-') . ' (' . (string) $kasus['nomor_taruna'] . ')',
-            'Kategori'           => (string) ($kasus['jenis_pelanggaran'] ?? '-'),
-            'Status Penetapan'   => strtoupper((string) ($kasus['status_penetapan'] ?? '-')),
-            'Status Penyelesaian'=> strtoupper((string) ($kasus['status_penyelesaian'] ?? '-')),
-        ]);
-
-        return $this->response
-            ->setHeader('Content-Type', 'application/pdf')
-            ->setHeader('Content-Disposition', ($inline ? 'inline' : 'attachment') . '; filename="' . $fileName . '"')
-            ->setBody($pdf);
+        return redirect()->back()->with('error', 'Berkas dokumen tidak tersedia di server.');
     }
 
     /**
@@ -775,8 +814,8 @@ class PelanggaranController extends BaseController
     public function unduhRingkasan(int $id)
     {
         if (!KetarunaanPolicy::canViewDisciplinaryRecord()) {
-            return redirect()->back()
-                ->with('error', 'Ringkasan kasus hanya dapat diunduh oleh petugas berwenang.');
+            return $this->response->setStatusCode(403, 'Akses ditolak.')
+                ->setBody('Ringkasan kasus hanya dapat diunduh oleh petugas berwenang.');
         }
 
         $detail = $this->pelanggaranService->getDetail($id, true);
@@ -784,10 +823,16 @@ class PelanggaranController extends BaseController
             return redirect()->back()->with('error', 'Data kasus tidak ditemukan.');
         }
 
-        $k   = $detail['kasus'];
+        $k      = $detail['kasus'];
+        $angLbl = !empty($k['angkatan'])
+            ? ketarunaan_format_angkatan([
+                'tahun_masuk' => $k['angkatan'],
+                'kode_romawi' => $k['angkatan_romawi'] ?? '',
+            ])
+            : '-';
         $pdf = ketarunaan_generate_simple_pdf('Ringkasan Resmi Kasus Pelanggaran', (string) $k['nomor_perkara'], [
             'Taruna'              => (string) ($k['nama_lengkap'] ?? '-') . ' (' . (string) $k['nomor_taruna'] . ')',
-            'Program Studi'       => (string) ($k['kode_prodi'] ?? '-') . ' - Angkatan ' . (string) ($k['angkatan'] ?? '-'),
+            'Program Studi'       => (string) ($k['kode_prodi'] ?? '-') . ' - Angkatan ' . $angLbl,
             'Kategori & Tingkat'  => (string) $k['jenis_pelanggaran'] . ' (' . ucwords(str_replace('_', ' ', (string) $k['tingkat_pelanggaran'])) . ')',
             'Tanggal Kejadian'    => substr((string) $k['tanggal_kejadian'], 0, 10),
             'Status Penetapan'    => ucwords(str_replace('_', ' ', (string) $k['status_penetapan'])),
@@ -810,8 +855,8 @@ class PelanggaranController extends BaseController
     public function ekspor()
     {
         if (!KetarunaanPolicy::canViewDisciplinaryRecord()) {
-            return redirect()->to(base_url('ketarunaan/pelanggaran'))
-                ->with('error', 'Ekspor terbatas hanya diizinkan bagi petugas berwenang.');
+            return $this->response->setStatusCode(403, 'Akses ditolak.')
+                ->setBody('Ekspor terbatas hanya diizinkan bagi petugas berwenang.');
         }
 
         $filters = [
@@ -821,12 +866,17 @@ class PelanggaranController extends BaseController
             'status_penetapan'    => trim((string) ($this->request->getGet('status_penetapan') ?? 'all')),
             'status_penyelesaian' => trim((string) ($this->request->getGet('status_penyelesaian') ?? 'all')),
             'status_validasi'     => trim((string) ($this->request->getGet('status_validasi') ?? 'all')),
+            'sort_by'             => trim((string) ($this->request->getGet('sort_by') ?? '')),
+            'sort_order'          => strtolower(trim((string) ($this->request->getGet('sort_order') ?? 'desc'))) === 'asc' ? 'asc' : 'desc',
         ];
 
-        $dataDir = $this->pelanggaranService->getDirectoryData($filters, 1, 2000, true);
+        $dataDir = $this->pelanggaranService->getDirectoryData($filters, 1, 0, true);
 
         if (function_exists('log_audit')) {
-            log_audit('EXPORT', 'Ekspor terbatas daftar kasus pelanggaran taruna ECC 2.0');
+            log_audit('EXPORT_CSV_PELANGGARAN', 'taruna_pelanggaran', 'all', null, [
+                'total_rows' => count($dataDir['rows']),
+                'filters'    => $filters,
+            ]);
         }
 
         $fh = fopen('php://temp', 'r+');
@@ -846,17 +896,17 @@ class PelanggaranController extends BaseController
 
         foreach ($dataDir['rows'] as $row) {
             fputcsv($fh, [
-                $this->safeCsv((string) ($row['nomor_perkara'] ?? '-')),
-                $this->safeCsv((string) ($row['nomor_taruna'] ?? '-')),
-                $this->safeCsv((string) ($row['nama_lengkap'] ?? '-')),
-                $this->safeCsv((string) ($row['kode_prodi'] ?? '-')),
-                $this->safeCsv((string) ($row['jenis_pelanggaran'] ?? '-')),
-                $this->safeCsv(ucwords(str_replace('_', ' ', (string) ($row['tingkat_pelanggaran'] ?? '-')))),
-                substr((string) ($row['tanggal_kejadian'] ?? ''), 0, 10),
-                $this->safeCsv(ucwords(str_replace('_', ' ', (string) ($row['status_penetapan'] ?? '-')))),
-                $this->safeCsv(ucfirst((string) ($row['status_penyelesaian'] ?? '-'))),
-                $this->safeCsv(ucwords(str_replace('_', ' ', (string) ($row['status_validasi'] ?? '-')))),
-                $this->safeCsv((string) ($row['nomor_keputusan'] ?: '-')),
+                ketarunaan_csv_safe((string) ($row['nomor_perkara'] ?? '-')),
+                ketarunaan_csv_safe((string) ($row['nomor_taruna'] ?? '-')),
+                ketarunaan_csv_safe((string) ($row['nama_lengkap'] ?? '-')),
+                ketarunaan_csv_safe((string) ($row['kode_prodi'] ?? '-')),
+                ketarunaan_csv_safe((string) ($row['jenis_pelanggaran'] ?? '-')),
+                ketarunaan_csv_safe(ucwords(str_replace('_', ' ', (string) ($row['tingkat_pelanggaran'] ?? '-')))),
+                ketarunaan_csv_safe(substr((string) ($row['tanggal_kejadian'] ?? ''), 0, 10)),
+                ketarunaan_csv_safe(ucwords(str_replace('_', ' ', (string) ($row['status_penetapan'] ?? '-')))),
+                ketarunaan_csv_safe(ucfirst((string) ($row['status_penyelesaian'] ?? '-'))),
+                ketarunaan_csv_safe(ucwords(str_replace('_', ' ', (string) ($row['status_validasi'] ?? '-')))),
+                ketarunaan_csv_safe((string) ($row['nomor_keputusan'] ?: '-')),
             ]);
         }
 
@@ -874,14 +924,5 @@ class PelanggaranController extends BaseController
     {
         $nama = trim((string) (session()->get('nama_lengkap') ?? ''));
         return $nama !== '' ? $nama : ('PIC ' . $fallbackUnit);
-    }
-
-    private function safeCsv(string $value): string
-    {
-        $trimmed = trim($value);
-        if ($trimmed !== '' && in_array($trimmed[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
-            return "'" . $trimmed;
-        }
-        return $trimmed;
     }
 }

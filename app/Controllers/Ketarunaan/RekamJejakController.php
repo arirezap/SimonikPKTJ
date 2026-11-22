@@ -30,12 +30,29 @@ class RekamJejakController extends BaseController
                 ->with('error', 'Anda tidak memiliki akses ke Modul Ketarunaan.');
         }
 
+        if (KetarunaanPolicy::isSelfAccountOnly()) {
+            $ownNomor = KetarunaanPolicy::resolveSelfNomorTaruna();
+            if ($ownNomor !== null && KetarunaanPolicy::isSelfTarunaOnly()) {
+                return redirect()->to(base_url('ketarunaan/rekam-jejak/detail/' . rawurlencode($ownNomor)));
+            }
+            return $this->response->setStatusCode(403, 'Akses ditolak.')
+                ->setBody('Direktori rekam jejak hanya tersedia untuk staf dan pimpinan.');
+        }
+
+        $allowedSorts = ['nomor_taruna', 'nama_lengkap', 'prodi_angkatan', 'status_terkini', 'jumlah_capaian', 'jumlah_prestasi', 'pembaruan'];
+        $sortByRaw    = trim((string) ($this->request->getGet('sort_by') ?? 'jumlah_capaian'));
+        $sortBy       = in_array($sortByRaw, $allowedSorts, true) ? $sortByRaw : 'jumlah_capaian';
+        $sortOrderRaw = strtolower(trim((string) ($this->request->getGet('sort_order') ?? 'desc')));
+        $sortOrder    = ($sortOrderRaw === 'asc') ? 'asc' : 'desc';
+
         $filters = [
-            'q'        => trim((string) $this->request->getGet('q')),
-            'prodi'    => trim((string) ($this->request->getGet('prodi') ?? 'all')),
-            'angkatan' => trim((string) ($this->request->getGet('angkatan') ?? 'all')),
-            'status'   => trim((string) ($this->request->getGet('status') ?? 'all')),
-            'periode'  => trim((string) ($this->request->getGet('periode') ?? 'all')),
+            'q'          => trim((string) $this->request->getGet('q')),
+            'prodi'      => trim((string) ($this->request->getGet('prodi') ?? 'all')),
+            'angkatan'   => trim((string) ($this->request->getGet('angkatan') ?? 'all')),
+            'status'     => trim((string) ($this->request->getGet('status') ?? 'all')),
+            'periode'    => trim((string) ($this->request->getGet('periode') ?? 'all')),
+            'sort_by'    => $sortBy,
+            'sort_order' => $sortOrder,
         ];
         $page = max(1, (int) ($this->request->getGet('page') ?? 1));
 
@@ -62,6 +79,11 @@ class RekamJejakController extends BaseController
         if (!KetarunaanPolicy::canAccessModule()) {
             return redirect()->to(base_url('dashboard'))
                 ->with('error', 'Anda tidak memiliki akses ke Modul Ketarunaan.');
+        }
+
+        if (KetarunaanPolicy::isSelfAccountOnly() && !KetarunaanPolicy::isOwnNomorTaruna($nomorTaruna)) {
+            return $this->response->setStatusCode(403, 'Akses ke rekam jejak taruna lain ditolak.')
+                ->setBody('Anda hanya dapat mengakses rekam jejak milik Anda sendiri.');
         }
 
         $tab = strtolower(trim((string) ($this->request->getGet('tab') ?? 'ringkasan')));
@@ -99,15 +121,18 @@ class RekamJejakController extends BaseController
         $refs = $this->rekamJejakService->getReferenceOptions();
 
         return view('ketarunaan/rekam_jejak/detail', [
-            'title'              => 'Rekam Jejak ' . $detail['taruna']['nama_lengkap'] . ' - Evidence Command Center (ECC)',
-            'active_menu'        => 'rekam_jejak',
-            'active_tab'         => $tab,
-            'filters'            => $filters,
-            'refs'               => $refs,
-            'detail'             => $detail,
-            'canManageTaruna'    => KetarunaanPolicy::canManageTaruna(),
-            'canValidate'        => KetarunaanPolicy::canValidate(),
-            'canViewDiscipline'  => $canViewDiscipline,
+            'title'             => 'Rekam Jejak ' . $detail['taruna']['nama_lengkap'] . ' - Evidence Command Center (ECC)',
+            'active_menu'       => 'rekam_jejak',
+            'active_tab'        => $tab,
+            'filters'           => $filters,
+            'refs'              => $refs,
+            'detail'            => $detail,
+            'canManageTaruna'   => KetarunaanPolicy::canManageTaruna(),
+            'canSubmitCapaian'  => KetarunaanPolicy::canSubmitCapaianMandiri($nomorTaruna),
+            'canValidate'       => KetarunaanPolicy::canValidate(),
+            'canViewDiscipline' => $canViewDiscipline,
+            'isSelfOnly'        => KetarunaanPolicy::isSelfAccountOnly(),
+            'ownNomorTaruna'    => KetarunaanPolicy::resolveSelfNomorTaruna(),
         ]);
     }
 
@@ -116,18 +141,31 @@ class RekamJejakController extends BaseController
      */
     public function createCapaian(?string $nomorTaruna = null)
     {
-        if (!KetarunaanPolicy::canManageTaruna()) {
+        $isSelfTaruna = KetarunaanPolicy::isSelfTarunaOnly();
+
+        if (!KetarunaanPolicy::canSubmitCapaianMandiri($nomorTaruna)) {
+            if ($isSelfTaruna) {
+                return $this->response->setStatusCode(403, 'Akses ditolak.')
+                    ->setBody('Anda hanya dapat mengajukan capaian untuk Nomor Taruna Anda sendiri.');
+            }
             return redirect()->to(base_url('ketarunaan/rekam-jejak'))
                 ->with('error', 'Anda tidak memiliki wewenang menambah data capaian.');
         }
 
+        if ($isSelfTaruna) {
+            $nomorTaruna = KetarunaanPolicy::resolveSelfNomorTaruna();
+            if ($nomorTaruna === null) {
+                return redirect()->to(base_url('ketarunaan/rekam-jejak'))
+                    ->with('error', 'Nomor Taruna akun Anda tidak ditemukan.');
+            }
+        }
+
         $refs       = $this->rekamJejakService->getReferenceOptions();
-        $tarunaList = $this->rekamJejakService->getTarunaDropdownList();
+        $tarunaList = $isSelfTaruna ? [] : $this->rekamJejakService->getTarunaDropdownList();
 
         $selectedTaruna = null;
         if ($nomorTaruna !== null && $nomorTaruna !== '') {
-            $detail = $this->rekamJejakService->getDetailRekamJejak($nomorTaruna);
-            $selectedTaruna = $detail['taruna'] ?? null;
+            $selectedTaruna = $this->rekamJejakService->getTarunaHeader($nomorTaruna);
         }
 
         return view('ketarunaan/rekam_jejak/form_capaian', [
@@ -138,6 +176,7 @@ class RekamJejakController extends BaseController
             'selectedTaruna' => $selectedTaruna,
             'tarunaList'     => $tarunaList,
             'refs'           => $refs,
+            'isSelfTaruna'   => $isSelfTaruna,
         ]);
     }
 
@@ -146,82 +185,77 @@ class RekamJejakController extends BaseController
      */
     public function storeCapaian()
     {
-        if (!KetarunaanPolicy::canManageTaruna()) {
+        $isSelfTaruna = KetarunaanPolicy::isSelfTarunaOnly();
+        $postedNomor  = trim((string) $this->request->getPost('nomor_taruna'));
+
+        if ($isSelfTaruna) {
+            $ownNomor = KetarunaanPolicy::resolveSelfNomorTaruna();
+            if ($ownNomor === null || ($postedNomor !== '' && strcasecmp($postedNomor, $ownNomor) !== 0)) {
+                return $this->response->setStatusCode(403, 'Akses ditolak.')
+                    ->setBody('Anda hanya dapat mengajukan capaian untuk Nomor Taruna Anda sendiri.');
+            }
+            $nomorTaruna = $ownNomor;
+        } else {
+            $nomorTaruna = $postedNomor;
+        }
+
+        if (!KetarunaanPolicy::canSubmitCapaianMandiri($nomorTaruna)) {
             return redirect()->to(base_url('ketarunaan/rekam-jejak'))
                 ->with('error', 'Anda tidak memiliki wewenang menambah data capaian.');
         }
 
-        $rules = [
-            'nomor_taruna'     => 'required|max_length[30]',
-            'kategori'         => 'required|in_list[kompetensi_sertifikasi,organisasi,pengembangan_diri,akademik]',
-            'nama_capaian'     => 'required|min_length[3]|max_length[180]',
-            'tanggal_kegiatan' => 'required|valid_date[Y-m-d]',
-            'penyelenggara'    => 'required|min_length[2]|max_length[160]',
-            'hasil_capaian'    => 'required|max_length[60]',
-        ];
-
-        $file = $this->request->getFile('bukti_berkas');
-        if ($file && $file->isValid() && !$file->hasMoved()) {
-            $rules['bukti_berkas'] = 'max_size[bukti_berkas,5120]|ext_in[bukti_berkas,pdf,jpg,jpeg,png]|mime_in[bukti_berkas,application/pdf,image/jpeg,image/jpg,image/png]';
-        }
+        $rules = $this->getCapaianValidationRules(true);
 
         if (!$this->validate($rules)) {
             return redirect()->back()->withInput()
-                ->with('error', 'Mohon lengkapi isian wajib dan pastikan format berkas PDF/JPG/PNG maksimal 5 MB.');
+                ->with('error', 'Isian wajib belum lengkap atau tidak sesuai ketentuan.');
         }
 
-        $uploadedFileName = null;
-        $uploadedSizeKb   = 250;
-
-        if ($file && $file->isValid() && !$file->hasMoved()) {
-            $uploadDir = FCPATH . 'assets/uploads/ketarunaan/capaian';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
-            $uploadedFileName = $file->getRandomName();
-            $uploadedSizeKb   = max(1, (int) round($file->getSize() / 1024));
-            $file->move($uploadDir, $uploadedFileName);
+        if (!$this->isValidOptionalNumeric($this->request->getPost('nilai_angka'))) {
+            return redirect()->back()->withInput()
+                ->with('error', 'Nilai angka harus berupa angka antara 0 sampai 999.999,99.');
         }
 
-        $aksiSubmit = trim((string) ($this->request->getPost('aksi_submit') ?? 'diajukan'));
+        $aksiSubmit     = trim((string) ($this->request->getPost('aksi_submit') ?? 'diajukan'));
         $statusValidasi = ($aksiSubmit === 'draf') ? 'draf' : 'diajukan';
 
-        $unitPemilik = trim((string) ($this->request->getPost('unit_pemilik') ?? 'Ketarunaan'));
-        $diajukanOleh = match ($unitPemilik) {
-            'Pusbangkar'    => 'PIC Pusbangkar',
-            'Program Studi' => 'PIC Prodi',
-            default         => 'PIC Ketarunaan',
-        };
+        $buktiLink = trim((string) ($this->request->getPost('bukti_berkas') ?? ''));
+        if ($buktiLink !== '' && !ketarunaan_is_http_url($buktiLink, 255)) {
+            return redirect()->back()->withInput()
+                ->with('error', 'Tautan bukti pendukung harus berupa URL http:// atau https:// yang valid (maksimal 255 karakter).');
+        }
 
-        $nomorTaruna = trim((string) $this->request->getPost('nomor_taruna'));
-        $result = $this->rekamJejakService->saveCapaian([
-            'nomor_taruna'      => $nomorTaruna,
-            'kategori'          => $this->request->getPost('kategori'),
-            'nama_capaian'      => $this->request->getPost('nama_capaian'),
-            'tanggal_kegiatan'  => $this->request->getPost('tanggal_kegiatan'),
-            'tahun_akademik_id' => $this->request->getPost('tahun_akademik_id'),
-            'semester'          => $this->request->getPost('semester'),
-            'penyelenggara'     => $this->request->getPost('penyelenggara'),
-            'tingkat_kegiatan'  => $this->request->getPost('tingkat_kegiatan'),
-            'uraian_capaian'    => $this->request->getPost('uraian_capaian'),
-            'hasil_capaian'     => $this->request->getPost('hasil_capaian'),
-            'nilai_angka'       => $this->request->getPost('nilai_angka'),
-            'satuan_nilai'      => $this->request->getPost('satuan_nilai'),
-            'nomor_dokumen'     => $this->request->getPost('nomor_dokumen'),
-            'unit_pemilik'      => $unitPemilik,
-            'sumber_dokumen'    => $this->request->getPost('sumber_dokumen'),
-            'bukti_berkas'      => $uploadedFileName,
-            'ukuran_berkas_kb'  => $uploadedSizeKb,
-            'status_validasi'   => $statusValidasi,
-            'diajukan_oleh'     => $diajukanOleh,
-        ]);
+        if ($isSelfTaruna && $statusValidasi === 'diajukan' && $buktiLink === '') {
+            return redirect()->back()->withInput()
+                ->with('error', 'Masukkan tautan bukti pendukung (mis. Google Drive) sebelum mengajukan validasi.');
+        }
+
+        $unitPemilik = $isSelfTaruna
+            ? 'Ketarunaan'
+            : trim((string) ($this->request->getPost('unit_pemilik') ?? 'Ketarunaan'));
+
+        $payload = $this->buildCapaianPayload(
+            $nomorTaruna,
+            $unitPemilik,
+            $statusValidasi,
+            $buktiLink !== '' ? $buktiLink : null,
+            0
+        );
+
+        $result = $this->rekamJejakService->saveCapaian($payload);
 
         if (!$result['status']) {
             return redirect()->back()->withInput()->with('error', $result['message']);
         }
 
+        $savedId = (int) ($result['id'] ?? 0);
         if (function_exists('log_audit')) {
-            log_audit('CREATE', 'Menambahkan capaian rekam jejak taruna ' . $nomorTaruna . ' (ID #' . ($result['id'] ?? 0) . ')');
+            log_audit('CREATE', 'taruna_capaian', (string) $savedId, null, [
+                'nomor_taruna'    => $nomorTaruna,
+                'nama_capaian'    => $payload['nama_capaian'],
+                'status_validasi' => $statusValidasi,
+                'diajukan_oleh'   => $payload['diajukan_oleh'],
+            ]);
         }
 
         return redirect()->to(base_url('ketarunaan/rekam-jejak/detail/' . rawurlencode($nomorTaruna) . '?tab=capaian'))
@@ -244,12 +278,19 @@ class RekamJejakController extends BaseController
                 ->with('error', 'Data capaian tidak ditemukan.');
         }
 
+        if (KetarunaanPolicy::isSelfAccountOnly() && !KetarunaanPolicy::isOwnNomorTaruna((string) ($capaian['nomor_taruna'] ?? ''))) {
+            return $this->response->setStatusCode(403, 'Akses ke rincian capaian taruna lain ditolak.')
+                ->setBody('Anda hanya dapat mengakses capaian milik Anda sendiri.');
+        }
+
         return view('ketarunaan/rekam_jejak/detail_capaian', [
             'title'           => 'Detail Capaian - Evidence Command Center (ECC)',
             'active_menu'     => 'rekam_jejak',
             'capaian'         => $capaian,
             'canManageTaruna' => KetarunaanPolicy::canManageTaruna(),
+            'canEditCapaian'  => KetarunaanPolicy::canEditCapaian($capaian),
             'canValidate'     => KetarunaanPolicy::canValidate(),
+            'isSelfOnly'      => KetarunaanPolicy::isSelfAccountOnly(),
         ]);
     }
 
@@ -258,34 +299,42 @@ class RekamJejakController extends BaseController
      */
     public function editCapaian(int $id)
     {
-        if (!KetarunaanPolicy::canManageTaruna()) {
-            return redirect()->to(base_url('ketarunaan/rekam-jejak'))
-                ->with('error', 'Anda tidak memiliki wewenang mengubah data capaian.');
-        }
-
         $capaian = $this->rekamJejakService->getCapaianDetail($id);
         if (!$capaian) {
             return redirect()->to(base_url('ketarunaan/rekam-jejak'))
                 ->with('error', 'Data capaian tidak ditemukan.');
         }
 
-        $refs       = $this->rekamJejakService->getReferenceOptions();
-        $tarunaList = $this->rekamJejakService->getTarunaDropdownList();
+        if (!KetarunaanPolicy::canEditCapaian($capaian)) {
+            if (KetarunaanPolicy::isSelfTarunaOnly() && !KetarunaanPolicy::isOwnNomorTaruna((string) ($capaian['nomor_taruna'] ?? ''))) {
+                return $this->response->setStatusCode(403, 'Akses ditolak.')
+                    ->setBody('Anda tidak dapat mengubah capaian milik taruna lain.');
+            }
+            return redirect()->to(base_url('ketarunaan/rekam-jejak/capaian/' . $id))
+                ->with('error', 'Capaian tidak dapat diubah pada status atau peran ini.');
+        }
+
+        $isSelfTaruna = KetarunaanPolicy::isSelfTarunaOnly();
+        $refs         = $this->rekamJejakService->getReferenceOptions();
+        $tarunaList   = $isSelfTaruna ? [] : $this->rekamJejakService->getTarunaDropdownList();
 
         return view('ketarunaan/rekam_jejak/form_capaian', [
-            'title'          => 'Koreksi Capaian Taruna - Evidence Command Center (ECC)',
+            'title'          => $isSelfTaruna ? 'Perbaiki Capaian Saya - Evidence Command Center (ECC)' : 'Koreksi Capaian Taruna - Evidence Command Center (ECC)',
             'active_menu'    => 'rekam_jejak',
             'mode'           => 'edit',
             'capaian'        => $capaian,
             'selectedTaruna' => [
-                'nomor_taruna'   => $capaian['nomor_taruna'],
-                'nama_lengkap'   => $capaian['nama_lengkap'],
-                'kode_prodi'     => $capaian['kode_prodi'],
-                'angkatan'       => $capaian['angkatan'],
-                'status_terkini' => $capaian['status_terkini'],
+                'nomor_taruna'    => $capaian['nomor_taruna'],
+                'nama_lengkap'    => $capaian['nama_lengkap'],
+                'foto'            => $capaian['foto'] ?? null,
+                'kode_prodi'      => $capaian['kode_prodi'],
+                'angkatan'        => $capaian['angkatan'],
+                'angkatan_romawi' => $capaian['angkatan_romawi'] ?? '',
+                'status_terkini'  => $capaian['status_terkini'],
             ],
-            'tarunaList'     => $tarunaList,
-            'refs'           => $refs,
+            'tarunaList'   => $tarunaList,
+            'refs'         => $refs,
+            'isSelfTaruna' => $isSelfTaruna,
         ]);
     }
 
@@ -294,67 +343,232 @@ class RekamJejakController extends BaseController
      */
     public function updateCapaian(int $id)
     {
-        if (!KetarunaanPolicy::canManageTaruna()) {
-            return redirect()->to(base_url('ketarunaan/rekam-jejak'))
-                ->with('error', 'Anda tidak memiliki wewenang mengubah data capaian.');
-        }
-
         $existing = $this->rekamJejakService->getCapaianDetail($id);
         if (!$existing) {
             return redirect()->to(base_url('ketarunaan/rekam-jejak'))
                 ->with('error', 'Data capaian tidak ditemukan.');
         }
 
-        $rules = [
-            'kategori'         => 'required|in_list[kompetensi_sertifikasi,organisasi,pengembangan_diri,akademik]',
-            'nama_capaian'     => 'required|min_length[3]|max_length[180]',
-            'tanggal_kegiatan' => 'required|valid_date[Y-m-d]',
-            'penyelenggara'    => 'required|min_length[2]|max_length[160]',
-            'hasil_capaian'    => 'required|max_length[60]',
-        ];
-
-        $file = $this->request->getFile('bukti_berkas');
-        if ($file && $file->isValid() && !$file->hasMoved()) {
-            $rules['bukti_berkas'] = 'max_size[bukti_berkas,5120]|ext_in[bukti_berkas,pdf,jpg,jpeg,png]|mime_in[bukti_berkas,application/pdf,image/jpeg,image/jpg,image/png]';
+        if (!KetarunaanPolicy::canEditCapaian($existing)) {
+            if (KetarunaanPolicy::isSelfTarunaOnly() && !KetarunaanPolicy::isOwnNomorTaruna((string) ($existing['nomor_taruna'] ?? ''))) {
+                return $this->response->setStatusCode(403, 'Akses ditolak.')
+                    ->setBody('Anda tidak dapat mengubah capaian milik taruna lain.');
+            }
+            return redirect()->to(base_url('ketarunaan/rekam-jejak/capaian/' . $id))
+                ->with('error', 'Capaian tidak dapat diubah pada status atau peran ini.');
         }
+
+        $isSelfTaruna = KetarunaanPolicy::isSelfTarunaOnly();
+        $rules        = $this->getCapaianValidationRules(false);
 
         if (!$this->validate($rules)) {
             return redirect()->back()->withInput()
-                ->with('error', 'Mohon lengkapi isian wajib dan pastikan format berkas PDF/JPG/PNG maksimal 5 MB.');
+                ->with('error', 'Isian wajib belum lengkap atau tidak sesuai ketentuan.');
         }
 
-        $uploadedFileName = null;
-        $uploadedSizeKb   = (int) ($existing['ukuran_berkas_kb'] ?? 250);
-
-        if ($file && $file->isValid() && !$file->hasMoved()) {
-            $uploadDir = FCPATH . 'assets/uploads/ketarunaan/capaian';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
-            $uploadedFileName = $file->getRandomName();
-            $uploadedSizeKb   = max(1, (int) round($file->getSize() / 1024));
-            $file->move($uploadDir, $uploadedFileName);
-
-            if (!empty($existing['bukti_berkas'])) {
-                $oldPath = $uploadDir . '/' . basename((string) $existing['bukti_berkas']);
-                if (is_file($oldPath)) {
-                    @unlink($oldPath);
-                }
-            }
+        if (!$this->isValidOptionalNumeric($this->request->getPost('nilai_angka'))) {
+            return redirect()->back()->withInput()
+                ->with('error', 'Nilai angka harus berupa angka antara 0 sampai 999.999,99.');
         }
 
         $aksiSubmit     = trim((string) ($this->request->getPost('aksi_submit') ?? 'diajukan'));
         $statusValidasi = ($aksiSubmit === 'draf') ? 'draf' : 'diajukan';
 
-        $unitPemilik = trim((string) ($this->request->getPost('unit_pemilik') ?? $existing['unit_pemilik']));
-        $diajukanOleh = match ($unitPemilik) {
-            'Pusbangkar'    => 'PIC Pusbangkar',
-            'Program Studi' => 'PIC Prodi',
-            default         => 'PIC Ketarunaan',
-        };
+        $buktiLink     = trim((string) ($this->request->getPost('bukti_berkas') ?? ''));
+        $existingBukti = trim((string) ($existing['bukti_berkas'] ?? ''));
+        $hadLegacyFile = ($existingBukti !== '' && !ketarunaan_is_http_url($existingBukti, 2000));
 
-        $result = $this->rekamJejakService->saveCapaian([
-            'nomor_taruna'      => $existing['nomor_taruna'],
+        if ($buktiLink !== '' && !ketarunaan_is_http_url($buktiLink, 255)) {
+            return redirect()->back()->withInput()
+                ->with('error', 'Tautan bukti pendukung harus berupa URL http:// atau https:// yang valid (maksimal 255 karakter).');
+        }
+
+        if ($buktiLink !== '') {
+            $finalBukti   = $buktiLink;
+            $finalSizeKb  = 0;
+        } elseif ($hadLegacyFile) {
+            $finalBukti   = $existingBukti;
+            $finalSizeKb  = (int) ($existing['ukuran_berkas_kb'] ?? 0);
+        } else {
+            $finalBukti   = null;
+            $finalSizeKb  = 0;
+        }
+
+        if ($isSelfTaruna && $statusValidasi === 'diajukan' && ($finalBukti === null || $finalBukti === '')) {
+            return redirect()->back()->withInput()
+                ->with('error', 'Masukkan tautan bukti pendukung (mis. Google Drive) sebelum mengajukan validasi.');
+        }
+
+        $unitPemilik = $isSelfTaruna
+            ? 'Ketarunaan'
+            : trim((string) ($this->request->getPost('unit_pemilik') ?? $existing['unit_pemilik']));
+
+        $payload = $this->buildCapaianPayload(
+            (string) $existing['nomor_taruna'],
+            $unitPemilik,
+            $statusValidasi,
+            $finalBukti,
+            $finalSizeKb
+        );
+
+        $result = $this->rekamJejakService->saveCapaian($payload, $id);
+
+        if (!$result['status']) {
+            return redirect()->back()->withInput()->with('error', $result['message']);
+        }
+
+        if ($hadLegacyFile && $buktiLink !== '') {
+            $this->unlinkCapaianFile($existingBukti);
+        }
+
+        if (function_exists('log_audit')) {
+            log_audit(
+                'UPDATE',
+                'taruna_capaian',
+                (string) $id,
+                ['status_validasi' => $existing['status_validasi'] ?? 'draf'],
+                ['status_validasi' => $statusValidasi, 'diajukan_oleh' => $payload['diajukan_oleh']]
+            );
+        }
+
+        return redirect()->to(base_url('ketarunaan/rekam-jejak/capaian/' . $id))
+            ->with('success', $result['message']);
+    }
+
+    /**
+     * Menghapus draf capaian atau capaian yang dikembalikan untuk perbaikan.
+     */
+    public function deleteCapaian(int $id)
+    {
+        $existing = $this->rekamJejakService->getCapaianDetail($id);
+        if (!$existing) {
+            return redirect()->to(base_url('ketarunaan/rekam-jejak'))
+                ->with('error', 'Data capaian tidak ditemukan.');
+        }
+
+        if (!KetarunaanPolicy::canEditCapaian($existing)) {
+            if (KetarunaanPolicy::isSelfTarunaOnly() && !KetarunaanPolicy::isOwnNomorTaruna((string) ($existing['nomor_taruna'] ?? ''))) {
+                return $this->response->setStatusCode(403, 'Akses ditolak.')
+                    ->setBody('Anda tidak dapat menghapus capaian milik taruna lain.');
+            }
+            return redirect()->to(base_url('ketarunaan/rekam-jejak/capaian/' . $id))
+                ->with('error', 'Anda tidak memiliki wewenang menghapus capaian ini.');
+        }
+
+        $status = (string) ($existing['status_validasi'] ?? '');
+        if (!in_array($status, ['draf', 'perlu_perbaikan', 'dikembalikan'], true)) {
+            return redirect()->to(base_url('ketarunaan/rekam-jejak/capaian/' . $id))
+                ->with('error', 'Hanya draf atau capaian yang dikembalikan yang dapat dihapus.');
+        }
+
+        $result = $this->rekamJejakService->deleteCapaian($id);
+        if (!$result['status']) {
+            return redirect()->back()->with('error', $result['message']);
+        }
+
+        if (!empty($existing['bukti_berkas'])) {
+            $this->unlinkCapaianFile((string) $existing['bukti_berkas']);
+        }
+
+        if (function_exists('log_audit')) {
+            log_audit('DELETE', 'taruna_capaian', (string) $id, [
+                'nomor_taruna'    => $existing['nomor_taruna'] ?? null,
+                'nama_capaian'    => $existing['nama_capaian'] ?? null,
+                'status_validasi' => $status,
+            ], null);
+        }
+
+        $nomorTaruna = (string) ($existing['nomor_taruna'] ?? '');
+        return redirect()->to(base_url('ketarunaan/rekam-jejak/detail/' . rawurlencode($nomorTaruna) . '?tab=capaian'))
+            ->with('success', $result['message']);
+    }
+
+    /**
+     * Proses validasi / pengembalian data capaian oleh validator.
+     */
+    public function validateCapaian(int $id)
+    {
+        if (!KetarunaanPolicy::canValidate()) {
+            return redirect()->back()
+                ->with('error', 'Anda tidak memiliki wewenang memvalidasi data capaian.');
+        }
+
+        $keputusan = trim((string) ($this->request->getPost('keputusan') ?? ''));
+        $catatan   = trim((string) ($this->request->getPost('catatan_validasi') ?? ''));
+
+        if (!in_array($keputusan, ['tervalidasi', 'perlu_perbaikan'], true)) {
+            return redirect()->back()
+                ->with('error', 'Keputusan validasi tidak valid.');
+        }
+
+        if ($keputusan === 'perlu_perbaikan' && $catatan === '') {
+            return redirect()->back()
+                ->with('error', 'Isi catatan perbaikan terlebih dahulu.');
+        }
+
+        $result = $this->rekamJejakService->processValidation(
+            $id,
+            $keputusan,
+            $catatan,
+            $this->resolveValidatorLabel()
+        );
+
+        if (!$result['status']) {
+            return redirect()->back()->with('error', $result['message']);
+        }
+
+        if (function_exists('log_audit')) {
+            $auditAction = ($keputusan === 'tervalidasi') ? 'APPROVE' : 'RETURN_CAPAIAN';
+            log_audit($auditAction, 'taruna_capaian', (string) $id, null, [
+                'keputusan' => $keputusan,
+                'catatan'   => $catatan,
+            ]);
+        }
+
+        return redirect()->to(base_url('ketarunaan/rekam-jejak/capaian/' . $id))
+            ->with('success', $result['message']);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function getCapaianValidationRules(bool $withNomorTaruna): array
+    {
+        $rules = [
+            'kategori'          => 'required|in_list[kompetensi_sertifikasi,organisasi,pengembangan_diri,akademik]',
+            'nama_capaian'      => 'required|min_length[3]|max_length[180]',
+            'tanggal_kegiatan'  => 'required|valid_date[Y-m-d]',
+            'tahun_akademik_id' => 'permit_empty|is_natural_no_zero',
+            'semester'          => 'permit_empty|integer|greater_than_equal_to[1]|less_than_equal_to[8]',
+            'penyelenggara'     => 'required|min_length[2]|max_length[160]',
+            'tingkat_kegiatan'  => 'permit_empty|in_list[Kampus / Internal,Daerah / Provinsi,Nasional,Internasional]',
+            'uraian_capaian'    => 'permit_empty|max_length[2000]',
+            'hasil_capaian'     => 'required|max_length[60]',
+            'satuan_nilai'      => 'permit_empty|max_length[30]',
+            'nomor_dokumen'     => 'permit_empty|max_length[100]',
+            'unit_pemilik'      => 'permit_empty|in_list[Ketarunaan,Pusbangkar,Program Studi]',
+            'sumber_dokumen'    => 'permit_empty|in_list[Sertifikat,Surat Tugas,Surat Keputusan (SK),Piagam]',
+        ];
+
+        if ($withNomorTaruna) {
+            $rules['nomor_taruna'] = 'required|max_length[30]';
+        }
+
+        return $rules;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildCapaianPayload(
+        string $nomorTaruna,
+        string $unitPemilik,
+        string $statusValidasi,
+        ?string $uploadedFileName,
+        ?int $uploadedSizeKb
+    ): array {
+        return [
+            'nomor_taruna'      => $nomorTaruna,
             'kategori'          => $this->request->getPost('kategori'),
             'nama_capaian'      => $this->request->getPost('nama_capaian'),
             'tanggal_kegiatan'  => $this->request->getPost('tanggal_kegiatan'),
@@ -372,56 +586,64 @@ class RekamJejakController extends BaseController
             'bukti_berkas'      => $uploadedFileName,
             'ukuran_berkas_kb'  => $uploadedSizeKb,
             'status_validasi'   => $statusValidasi,
-            'diajukan_oleh'     => $diajukanOleh,
-        ], $id);
-
-        if (!$result['status']) {
-            return redirect()->back()->withInput()->with('error', $result['message']);
-        }
-
-        if (function_exists('log_audit')) {
-            log_audit('UPDATE', 'Memperbarui capaian rekam jejak taruna ID #' . $id);
-        }
-
-        return redirect()->to(base_url('ketarunaan/rekam-jejak/capaian/' . $id))
-            ->with('success', $result['message']);
+            'diajukan_oleh'     => $this->resolveActorLabel($unitPemilik),
+        ];
     }
 
-    /**
-     * Proses validasi / pengembalian data capaian oleh validator.
-     */
-    public function validateCapaian(int $id)
+    private function isValidOptionalNumeric($val): bool
     {
-        if (!KetarunaanPolicy::canValidate()) {
-            return redirect()->back()
-                ->with('error', 'Anda tidak memiliki wewenang memvalidasi data capaian.');
+        $raw = trim((string) $val);
+        if ($raw === '') {
+            return true;
+        }
+        $normalized = str_replace(',', '.', $raw);
+        if (!is_numeric($normalized)) {
+            return false;
+        }
+        $num = (float) $normalized;
+
+        return $num >= 0 && $num <= 999999.99;
+    }
+
+    private function resolveActorLabel(string $unitPemilik): string
+    {
+        if (KetarunaanPolicy::isSelfTarunaOnly()) {
+            $ownNomor = KetarunaanPolicy::resolveSelfNomorTaruna() ?? '-';
+            $nama     = trim((string) (session()->get('nama_lengkap') ?: session()->get('nama') ?: $ownNomor));
+
+            return mb_substr('Taruna - ' . $nama . ' (' . $ownNomor . ')', 0, 100);
         }
 
-        $keputusan = trim((string) ($this->request->getPost('keputusan') ?? 'tervalidasi'));
-        $catatan   = trim((string) ($this->request->getPost('catatan_validasi') ?? ''));
+        return match ($unitPemilik) {
+            'Pusbangkar'    => 'PIC Pusbangkar',
+            'Program Studi' => 'PIC Prodi',
+            default         => 'PIC Ketarunaan',
+        };
+    }
 
-        if ($keputusan === 'perlu_perbaikan' && $catatan === '') {
-            return redirect()->back()
-                ->with('error', 'Mohon isi alasan pengembalian agar petugas dapat memperbaiki data.');
+    private function resolveValidatorLabel(): string
+    {
+        $nama = trim((string) (session()->get('nama_lengkap') ?: session()->get('nama') ?: session()->get('username') ?: 'Validator Unit'));
+
+        return mb_substr($nama, 0, 100);
+    }
+
+    private function unlinkCapaianFile(?string $fileName): void
+    {
+        $raw = trim((string) $fileName);
+        if ($raw === '' || ketarunaan_is_http_url($raw, 2000)) {
+            return;
         }
 
-        $result = $this->rekamJejakService->processValidation(
-            $id,
-            $keputusan,
-            $catatan,
-            'Validator Unit'
-        );
-
-        if (!$result['status']) {
-            return redirect()->back()->with('error', $result['message']);
+        $clean = basename($raw);
+        if ($clean === '') {
+            return;
         }
 
-        if (function_exists('log_audit')) {
-            log_audit('APPROVE', 'Validasi capaian rekam jejak ID #' . $id . ' menjadi ' . $keputusan);
+        $path = FCPATH . 'assets/uploads/ketarunaan/capaian/' . $clean;
+        if (is_file($path)) {
+            @unlink($path);
         }
-
-        return redirect()->to(base_url('ketarunaan/rekam-jejak/capaian/' . $id))
-            ->with('success', $result['message']);
     }
 
     /**
@@ -430,52 +652,83 @@ class RekamJejakController extends BaseController
     public function unduhBukti(string $modul, int $id)
     {
         if (!KetarunaanPolicy::canAccessModule()) {
-            return redirect()->to(base_url('dashboard'))
-                ->with('error', 'Anda tidak memiliki akses ke Modul Ketarunaan.');
+            return $this->response->setStatusCode(403, 'Akses ditolak.')
+                ->setBody('Anda tidak memiliki akses ke Modul Ketarunaan.');
         }
 
         $modulClean = strtolower(trim($modul));
-        $nomorTaruna = null;
-        $fileName    = 'Dokumen_Bukti.pdf';
-        $judul       = 'Dokumen Bukti Rekam Jejak';
-
-        $db = \Config\Database::connect();
+        $db         = \Config\Database::connect();
+        $inline     = ((int) $this->request->getGet('inline') === 1);
 
         if ($modulClean === 'capaian') {
             $row = $this->rekamJejakService->getCapaianDetail($id);
             if (!$row) {
                 return redirect()->back()->with('error', 'Dokumen tidak ditemukan.');
             }
-            $nomorTaruna = $row['nomor_taruna'];
-            $fileName    = basename((string) ($row['bukti_berkas'] ?: 'Sertifikat.pdf'));
-            $judul       = $row['nama_capaian'];
-
+            $nomorTaruna = (string) ($row['nomor_taruna'] ?? '');
+            if (KetarunaanPolicy::isSelfAccountOnly() && !KetarunaanPolicy::isOwnNomorTaruna($nomorTaruna)) {
+                return $this->response->setStatusCode(403, 'Akses ditolak.')
+                    ->setBody('Dokumen bukti milik taruna lain tidak dapat diakses.');
+            }
+            $rawBukti = trim((string) ($row['bukti_berkas'] ?? ''));
+            if ($rawBukti === '') {
+                return redirect()->back()->with('error', 'Belum ada bukti pendukung yang tersedia.');
+            }
+            if (ketarunaan_is_http_url($rawBukti, 2000)) {
+                return redirect()->to($rawBukti);
+            }
+            $fileName     = basename($rawBukti);
             $physicalPath = FCPATH . 'assets/uploads/ketarunaan/capaian/' . $fileName;
             if (is_file($physicalPath)) {
-                $inline = ((int) $this->request->getGet('inline') === 1);
-                $mime   = mime_content_type($physicalPath) ?: 'application/pdf';
+                $mime = mime_content_type($physicalPath) ?: 'application/pdf';
                 return $this->response
+                    ->setHeader('X-Content-Type-Options', 'nosniff')
                     ->setHeader('Content-Type', $mime)
                     ->setHeader('Content-Disposition', ($inline ? 'inline' : 'attachment') . '; filename="' . $fileName . '"')
                     ->setBody((string) file_get_contents($physicalPath));
             }
+            return redirect()->back()->with('error', 'Berkas bukti tidak ditemukan.');
         } elseif ($modulClean === 'prestasi') {
             $row = $db->table('taruna_prestasi')->where('id', $id)->get()->getRowArray();
             if (!$row) {
                 return redirect()->back()->with('error', 'Dokumen prestasi tidak ditemukan.');
             }
-            $fileName = basename((string) ($row['bukti_berkas'] ?: 'Piagam_Prestasi.pdf'));
-            $judul    = $row['nama_prestasi'];
-
+            if (KetarunaanPolicy::isSelfAccountOnly()) {
+                $pesertaRows = $db->table('taruna_peserta_prestasi')
+                    ->select('nomor_taruna')
+                    ->where('prestasi_id', $id)
+                    ->get()
+                    ->getResultArray();
+                $isOwnParticipant = false;
+                foreach ($pesertaRows as $pr) {
+                    if (KetarunaanPolicy::isOwnNomorTaruna((string) ($pr['nomor_taruna'] ?? ''))) {
+                        $isOwnParticipant = true;
+                        break;
+                    }
+                }
+                if (!$isOwnParticipant) {
+                    return $this->response->setStatusCode(403, 'Akses ditolak.')
+                        ->setBody('Dokumen prestasi milik taruna lain tidak dapat diakses.');
+                }
+            }
+            $rawBukti = trim((string) ($row['bukti_berkas'] ?? ''));
+            if ($rawBukti === '') {
+                return redirect()->back()->with('error', 'Belum ada berkas bukti prestasi yang tersedia.');
+            }
+            if (ketarunaan_is_http_url($rawBukti, 2000)) {
+                return redirect()->to($rawBukti);
+            }
+            $fileName         = basename($rawBukti);
             $physicalPrestasi = FCPATH . 'assets/uploads/ketarunaan/prestasi/' . $fileName;
             if (is_file($physicalPrestasi)) {
-                $inline = ((int) $this->request->getGet('inline') === 1);
-                $mime   = mime_content_type($physicalPrestasi) ?: 'application/pdf';
+                $mime = mime_content_type($physicalPrestasi) ?: 'application/pdf';
                 return $this->response
+                    ->setHeader('X-Content-Type-Options', 'nosniff')
                     ->setHeader('Content-Type', $mime)
                     ->setHeader('Content-Disposition', ($inline ? 'inline' : 'attachment') . '; filename="' . $fileName . '"')
                     ->setBody((string) file_get_contents($physicalPrestasi));
             }
+            return redirect()->back()->with('error', 'Berkas bukti prestasi tidak ditemukan.');
         } elseif ($modulClean === 'beasiswa') {
             $row = $db->table('taruna_penerima_beasiswa tpb')
                 ->select('tpb.*, prog.nama_program')
@@ -486,48 +739,60 @@ class RekamJejakController extends BaseController
             if (!$row) {
                 return redirect()->back()->with('error', 'Dokumen beasiswa tidak ditemukan.');
             }
-            $nomorTaruna = $row['nomor_taruna'];
+            $nomorTaruna = (string) ($row['nomor_taruna'] ?? '');
             if (!KetarunaanPolicy::canViewRestrictedDocument('beasiswa', $nomorTaruna)) {
-                return redirect()->back()->with('error', 'Dokumen ini bersifat terbatas untuk peran yang berwenang.');
+                return $this->response->setStatusCode(403)
+                    ->setBody('Dokumen ini bersifat terbatas untuk peran yang berwenang.');
             }
-            $fileName = 'Keputusan_Beasiswa.pdf';
-            $judul    = $row['nama_program'] ?? 'Beasiswa';
+            $rawDok = trim((string) ($row['dokumen_keputusan'] ?? ''));
+            if ($rawDok === '') {
+                return redirect()->back()->with('error', 'Belum ada dokumen keputusan beasiswa yang tersedia.');
+            }
+            if (ketarunaan_is_http_url($rawDok, 2000)) {
+                return redirect()->to($rawDok);
+            }
+            $fileName         = basename($rawDok);
+            $physicalBeasiswa = FCPATH . 'assets/uploads/ketarunaan/beasiswa/' . $fileName;
+            if (is_file($physicalBeasiswa)) {
+                $mime = mime_content_type($physicalBeasiswa) ?: 'application/pdf';
+                return $this->response
+                    ->setHeader('X-Content-Type-Options', 'nosniff')
+                    ->setHeader('Content-Type', $mime)
+                    ->setHeader('Content-Disposition', ($inline ? 'inline' : 'attachment') . '; filename="' . $fileName . '"')
+                    ->setBody((string) file_get_contents($physicalBeasiswa));
+            }
+            return redirect()->back()->with('error', 'Berkas keputusan beasiswa tidak ditemukan.');
         } elseif ($modulClean === 'pelanggaran') {
             $row = $db->table('taruna_pelanggaran')->where('id', $id)->get()->getRowArray();
             if (!$row) {
                 return redirect()->back()->with('error', 'Dokumen kasus tidak ditemukan.');
             }
-            $nomorTaruna = $row['nomor_taruna'];
+            $nomorTaruna = (string) ($row['nomor_taruna'] ?? '');
             if (!KetarunaanPolicy::canViewRestrictedDocument('pelanggaran', $nomorTaruna)) {
-                return redirect()->back()->with('error', 'Dokumen ini bersifat terbatas untuk petugas berwenang.');
+                return $this->response->setStatusCode(403, 'Akses ditolak.')
+                    ->setBody('Dokumen ini bersifat terbatas untuk petugas berwenang.');
             }
-            $fileName = basename((string) ($row['bukti_berkas'] ?: ('BA_' . $row['nomor_perkara'] . '.pdf')));
-            $judul    = 'Kasus ' . $row['nomor_perkara'] . ' - ' . $row['jenis_pelanggaran'];
-
+            $rawBukti = trim((string) ($row['bukti_berkas'] ?? ''));
+            if ($rawBukti === '') {
+                return redirect()->back()->with('error', 'Belum ada berkas dokumen kasus yang tersedia.');
+            }
+            if (ketarunaan_is_http_url($rawBukti, 2000)) {
+                return redirect()->to($rawBukti);
+            }
+            $fileName            = basename($rawBukti);
             $physicalPelanggaran = FCPATH . 'assets/uploads/ketarunaan/pelanggaran/' . $fileName;
             if (is_file($physicalPelanggaran)) {
-                $inline = ((int) $this->request->getGet('inline') === 1);
-                $mime   = mime_content_type($physicalPelanggaran) ?: 'application/pdf';
+                $mime = mime_content_type($physicalPelanggaran) ?: 'application/pdf';
                 return $this->response
+                    ->setHeader('X-Content-Type-Options', 'nosniff')
                     ->setHeader('Content-Type', $mime)
                     ->setHeader('Content-Disposition', ($inline ? 'inline' : 'attachment') . '; filename="' . $fileName . '"')
                     ->setBody((string) file_get_contents($physicalPelanggaran));
             }
-        } else {
-            return redirect()->back()->with('error', 'Modul dokumen tidak dikenali.');
+            return redirect()->back()->with('error', 'Berkas dokumen kasus tidak ditemukan.');
         }
 
-        // Hasilkan PDF ringkas resmi untuk berkas simulasi yang belum memiliki file fisik
-        $inline = ((int) $this->request->getGet('inline') === 1);
-        $pdfContent = ketarunaan_generate_simple_pdf('Dokumen Bukti Rekam Jejak Taruna', $judul, [
-            'Nama Berkas'  => $fileName,
-            'Nomor Taruna' => $nomorTaruna ?: '-',
-        ]);
-
-        return $this->response
-            ->setHeader('Content-Type', 'application/pdf')
-            ->setHeader('Content-Disposition', ($inline ? 'inline' : 'attachment') . '; filename="' . $fileName . '"')
-            ->setBody($pdfContent);
+        return redirect()->back()->with('error', 'Modul dokumen tidak dikenali.');
     }
 
     /**
@@ -535,20 +800,28 @@ class RekamJejakController extends BaseController
      */
     public function ekspor()
     {
-        if (!KetarunaanPolicy::canAccessModule()) {
-            return redirect()->to(base_url('dashboard'))
-                ->with('error', 'Anda tidak memiliki akses ke Modul Ketarunaan.');
+        if (!KetarunaanPolicy::canAccessModule() || KetarunaanPolicy::isSelfAccountOnly()) {
+            return $this->response->setStatusCode(403, 'Akses ditolak.')
+                ->setBody('Ekspor direktori rekam jejak tidak diizinkan untuk akun layanan mandiri.');
         }
 
+        $allowedSorts = ['nomor_taruna', 'nama_lengkap', 'prodi_angkatan', 'status_terkini', 'jumlah_capaian', 'jumlah_prestasi', 'pembaruan'];
+        $sortByRaw    = trim((string) ($this->request->getGet('sort_by') ?? 'jumlah_capaian'));
+        $sortBy       = in_array($sortByRaw, $allowedSorts, true) ? $sortByRaw : 'jumlah_capaian';
+        $sortOrderRaw = strtolower(trim((string) ($this->request->getGet('sort_order') ?? 'desc')));
+        $sortOrder    = ($sortOrderRaw === 'asc') ? 'asc' : 'desc';
+
         $filters = [
-            'q'        => trim((string) $this->request->getGet('q')),
-            'prodi'    => trim((string) ($this->request->getGet('prodi') ?? 'all')),
-            'angkatan' => trim((string) ($this->request->getGet('angkatan') ?? 'all')),
-            'status'   => trim((string) ($this->request->getGet('status') ?? 'all')),
-            'periode'  => trim((string) ($this->request->getGet('periode') ?? 'all')),
+            'q'          => trim((string) $this->request->getGet('q')),
+            'prodi'      => trim((string) ($this->request->getGet('prodi') ?? 'all')),
+            'angkatan'   => trim((string) ($this->request->getGet('angkatan') ?? 'all')),
+            'status'     => trim((string) ($this->request->getGet('status') ?? 'all')),
+            'periode'    => trim((string) ($this->request->getGet('periode') ?? 'all')),
+            'sort_by'    => $sortBy,
+            'sort_order' => $sortOrder,
         ];
 
-        $dir = $this->rekamJejakService->getDirectoryData($filters, 1, 1000);
+        $dir = $this->rekamJejakService->getDirectoryData($filters, 1, 0);
 
         $lines = [];
         $lines[] = implode(',', [
@@ -564,15 +837,28 @@ class RekamJejakController extends BaseController
 
         foreach ($dir['rows'] as $r) {
             $statusLabel = ketarunaan_status_meta($r['status_terkini'])['label'];
+            $angkatanFormatted = !empty($r['angkatan'])
+                ? ketarunaan_format_angkatan([
+                    'tahun_masuk' => $r['angkatan'],
+                    'kode_romawi' => $r['angkatan_romawi'] ?? '',
+                ])
+                : '-';
             $lines[] = implode(',', [
-                '"' . str_replace('"', '""', (string) $r['nomor_taruna']) . '"',
-                '"' . str_replace('"', '""', (string) $r['nama_lengkap']) . '"',
-                '"' . str_replace('"', '""', (string) ($r['kode_prodi'] ?? '-')) . '"',
-                '"' . str_replace('"', '""', (string) ($r['angkatan'] ?? '-')) . '"',
-                '"' . str_replace('"', '""', $statusLabel) . '"',
+                '"' . str_replace('"', '""', ketarunaan_csv_safe((string) $r['nomor_taruna'])) . '"',
+                '"' . str_replace('"', '""', ketarunaan_csv_safe((string) $r['nama_lengkap'])) . '"',
+                '"' . str_replace('"', '""', ketarunaan_csv_safe((string) ($r['kode_prodi'] ?? '-'))) . '"',
+                '"' . str_replace('"', '""', ketarunaan_csv_safe($angkatanFormatted)) . '"',
+                '"' . str_replace('"', '""', ketarunaan_csv_safe($statusLabel)) . '"',
                 (int) $r['jumlah_capaian'],
                 (int) $r['jumlah_prestasi'],
-                '"' . str_replace('"', '""', (string) $r['tanggal_pembaruan']) . '"',
+                '"' . str_replace('"', '""', ketarunaan_csv_safe((string) $r['tanggal_pembaruan'])) . '"',
+            ]);
+        }
+
+        if (function_exists('log_audit')) {
+            log_audit('EXPORT_CSV_REKAM_JEJAK', 'taruna_capaian', 'all', null, [
+                'filters'    => $filters,
+                'total_rows' => count($dir['rows']),
             ]);
         }
 

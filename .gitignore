@@ -147,7 +147,7 @@ phpunit
 #-------------------------
 # Composer & Node Dependencies
 #-------------------------
-vendor/
+/vendor/
 node_modules/
 npm-debug.log*
 yarn-debug.log*

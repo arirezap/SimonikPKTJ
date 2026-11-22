@@ -311,6 +311,13 @@
                         <option value="kepegawaian" <?= (isset($filter_role) && $filter_role == 'kepegawaian') ? 'selected' : '' ?>>Kepegawaian</option>
                         <option value="spm" <?= (isset($filter_role) && $filter_role == 'spm') ? 'selected' : '' ?>>SPM</option>
                         <option value="tugas_belajar" <?= (isset($filter_role) && $filter_role == 'tugas_belajar') ? 'selected' : '' ?>>Tugas Belajar</option>
+                        <option value="ketarunaan" <?= (isset($filter_role) && $filter_role == 'ketarunaan') ? 'selected' : '' ?>>Ketarunaan (PIC Taruna)</option>
+                        <option value="ketarunaan_validator" <?= (isset($filter_role) && $filter_role == 'ketarunaan_validator') ? 'selected' : '' ?>>Validator Ketarunaan</option>
+                        <option value="pusbangkar" <?= (isset($filter_role) && $filter_role == 'pusbangkar') ? 'selected' : '' ?>>Pusbangkar</option>
+                        <option value="karir_alumni" <?= (isset($filter_role) && $filter_role == 'karir_alumni') ? 'selected' : '' ?>>Karier & Alumni</option>
+                        <option value="kerjasama" <?= (isset($filter_role) && $filter_role == 'kerjasama') ? 'selected' : '' ?>>Kerjasama &amp; Mitra</option>
+                        <option value="taruna" <?= (isset($filter_role) && $filter_role == 'taruna') ? 'selected' : '' ?>>Taruna</option>
+                        <option value="alumni" <?= (isset($filter_role) && $filter_role == 'alumni') ? 'selected' : '' ?>>Alumni</option>
                     </select>
                 </div>
                 <div class="col-12 col-sm-6 col-md-3">
@@ -409,9 +416,9 @@
                                 <?php endif; ?>
                             </a>
                         </th>
-                        <th style="width: 130px;">
+                        <th style="min-width: 165px;">
                             <a href="<?= getSortUrl('users.role', $queryParams, $sortBy, $sortOrder) ?>" class="text-dark text-decoration-none d-inline-flex align-items-center gap-1" title="Urutkan berdasar Role">
-                                <span>Role Utama</span>
+                                <span>Role &amp; Peran</span>
                                 <?php if ($sortBy === 'users.role'): ?>
                                     <i class="bi bi-sort-alpha-<?= ($sortOrder === 'asc') ? 'down' : 'down-alt' ?> text-primary fw-bold"></i>
                                 <?php else: ?>
@@ -524,7 +531,16 @@
                             <?php endif; ?>
                         </td>
                         <td>
-                            <?= render_role_badge($user['role']) ?>
+                            <div class="d-flex flex-column align-items-start gap-1">
+                                <?= render_role_badge($user['role']) ?>
+                                <?php if (!empty($user['secondary_roles'])): ?>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <?php foreach ($user['secondary_roles'] as $secRole): ?>
+                                            <?= render_role_badge($secRole) ?>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
                         </td>
                         <td class="text-center">
                             <?= render_unit_kabag_badge($user['unit_kabag'] ?? null) ?>
@@ -610,8 +626,15 @@
                                 <?= esc($user['nip'] ?: ($user['username'] ?: '-')) ?>
                             </span>
                         </div>
-                        <div>
+                        <div class="d-flex flex-column align-items-end gap-1">
                             <?= render_role_badge($user['role']) ?>
+                            <?php if (!empty($user['secondary_roles'])): ?>
+                                <div class="d-flex flex-wrap justify-content-end gap-1">
+                                    <?php foreach ($user['secondary_roles'] as $secRole): ?>
+                                        <?= render_role_badge($secRole) ?>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
 

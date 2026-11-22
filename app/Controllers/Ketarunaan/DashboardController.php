@@ -37,8 +37,18 @@ class DashboardController extends BaseController
             return redirect()->to('/dashboard')->with('error', 'Anda belum memiliki akses ke Modul Ketarunaan.');
         }
 
-        $rawTanggal   = trim((string) ($this->request->getGet('tanggal_acuan') ?? '2026-10-30'));
-        $tanggalAcuan = preg_match('/^\d{4}-\d{2}-\d{2}$/', $rawTanggal) ? $rawTanggal : '2026-10-30';
+        if (!KetarunaanPolicy::canAccessDashboard()) {
+            $redirect = redirect()->to(KetarunaanPolicy::getSelfPortalUrl());
+            if ($err = session()->getFlashdata('error')) {
+                $redirect->with('error', $err);
+            } elseif ($ok = session()->getFlashdata('success')) {
+                $redirect->with('success', $ok);
+            }
+            return $redirect;
+        }
+
+        $rawTanggal   = trim((string) ($this->request->getGet('tanggal_acuan') ?? date('Y-m-d')));
+        $tanggalAcuan = preg_match('/^\d{4}-\d{2}-\d{2}$/', $rawTanggal) ? $rawTanggal : date('Y-m-d');
         $prodiId      = !empty($this->request->getGet('prodi_id')) ? (int) $this->request->getGet('prodi_id') : null;
         $angkatanId   = !empty($this->request->getGet('angkatan_id')) ? (int) $this->request->getGet('angkatan_id') : null;
 
@@ -46,7 +56,7 @@ class DashboardController extends BaseController
         $refs  = $this->tarunaService->getReferenceData();
 
         $data = array_merge($stats, [
-            'page_title'    => 'Dashboard ECC 2.0',
+            'page_title'    => 'Dashboard Ketarunaan',
             'tanggal_acuan' => $tanggalAcuan,
             'prodi_id'      => $prodiId,
             'angkatan_id'   => $angkatanId,
@@ -64,7 +74,7 @@ class DashboardController extends BaseController
      */
     public function filterData(): ResponseInterface
     {
-        if (!KetarunaanPolicy::canAccessModule()) {
+        if (!KetarunaanPolicy::canAccessDashboard()) {
             return $this->response->setStatusCode(403)->setJSON([
                 'status'    => 'error',
                 'message'   => 'Akses tidak diizinkan.',
@@ -72,8 +82,8 @@ class DashboardController extends BaseController
             ]);
         }
 
-        $rawTanggal   = trim((string) ($this->request->getPost('tanggal_acuan') ?? '2026-10-30'));
-        $tanggalAcuan = preg_match('/^\d{4}-\d{2}-\d{2}$/', $rawTanggal) ? $rawTanggal : '2026-10-30';
+        $rawTanggal   = trim((string) ($this->request->getPost('tanggal_acuan') ?? date('Y-m-d')));
+        $tanggalAcuan = preg_match('/^\d{4}-\d{2}-\d{2}$/', $rawTanggal) ? $rawTanggal : date('Y-m-d');
         $prodiId      = !empty($this->request->getPost('prodi_id')) ? (int) $this->request->getPost('prodi_id') : null;
         $angkatanId   = !empty($this->request->getPost('angkatan_id')) ? (int) $this->request->getPost('angkatan_id') : null;
 

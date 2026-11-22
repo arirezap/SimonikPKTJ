@@ -1,110 +1,95 @@
 # Product Requirements Document (PRD)
 ## Evidence Command Center (ECC)
 
-**Status:** Active Development
-**Stack:** CodeIgniter 4, MySQL, Bootstrap 5, jQuery
+**Institusi:** Politeknik Keselamatan Transportasi Jalan (PKTJ Tegal)
+**Versi Platform:** ECC 1.6 (Kinerja, LED & Pemetaan SDM) + ECC 2.0 (Ketarunaan, Karier & Alumni — Mode Operasional Tahap Awal RSTJ)
+**Status:** Operasional Bertahap & Pengembangan Lanjutan
+**Stack:** CodeIgniter 4 (PHP 8.1+), MySQL (56 tabel), Bootstrap 5.3, Chart.js, Flatpickr, SweetAlert2, jQuery
+**Terakhir Diperbarui:** 17 November 2026
+
+> Untuk rincian kriteria penerimaan fungsional level-butir (`GOV`, `TAR`, `RJK`, `PRE`, `PEL`, `BEA`, `LOW`, `ALM`, `DSH`, dan `UAT-01..20`) pada subsistem Ketarunaan & Alumni, lihat dokumen pendamping [`ECC 2.0/PRD.md`](file:///c:/laragon/www/SimonikPKTJ/ECC%202.0/PRD.md).
+
+---
 
 ### 1. Ringkasan Eksekutif (Executive Summary)
-Simonik PKTJ adalah sistem informasi internal yang didesain untuk memantau, merekapitulasi, dan menilai kinerja pegawai secara komprehensif. Sistem ini bertindak sebagai **Evidence Command Center (ECC)**, di mana seluruh bukti pekerjaan, pencapaian target, dan rekam jejak aktivitas harian staf bermuara, dievaluasi, dan divisualisasikan dalam bentuk *dashboard* analitik.
+**Evidence Command Center (ECC)** adalah sistem informasi internal terpadu PKTJ Tegal yang menyatukan tata kelola **kinerja dan kompetensi pegawai** bersama tata kelola **data ketarunaan, karier, dan alumni** dalam satu pangkalan data (*single source of truth*).
+Sistem memastikan setiap target kerja pegawai, capaian akreditasi program studi, hingga riwayat pendidikan, prestasi, pembinaan, beasiswa, dan penempatan kerja lulusan memiliki bukti terverifikasi, jejak audit lengkap, serta visualisasi dasbor berbasis data sumber nyata.
+
+---
 
 ### 2. Tujuan Produk (Product Goals)
-- **Sentralisasi Data Kinerja:** Menggantikan pencatatan manual dengan sistem pencatatan harian berbasis *cloud/server* yang disertai tautan bukti (*evidence-based*).
-- **Transparansi & Akuntabilitas:** Memberikan visibilitas langsung antara target yang dibebankan (Target Bulanan / RHK) dengan realisasi aktual yang dikerjakan pegawai.
-- **Evaluasi Objektif:** Memfasilitasi atasan dalam memberikan penilaian yang akurat dengan mengacu langsung pada bukti pekerjaan tanpa perlu *micromanagement*.
-- **Visualisasi Data Eksekutif:** Menyediakan *dashboard* berkinerja tinggi untuk memonitor metrik-metrik inti (Top Unit Kerja, Top Pegawai, dan Pegawai yang butuh perhatian).
+- **Sentralisasi Berbasis Bukti (*Evidence-Based*):** Menghilangkan pencatatan terpisah dengan mewajibkan tautan atau berkas bukti tervalidasi pada setiap target kinerja pegawai maupun rekam jejak taruna.
+- **Integritas & Akuntabilitas Berjenjang:** Memisahkan peran pelaksana/pengaju dari validator/pejabat penilai secara tegas pada seluruh proses bisnis kepegawaian maupun ketarunaan.
+- **Visibilitas Eksekutif Real-Time:** Menyajikan dasbor ringkasan kinerja unit/pegawai serta posisi 6 status pendidikan taruna berdasarkan tanggal acuan (*as-of date*) yang dapat ditelusuri hingga sumbernya.
+- **Kesiapan Ekosistem SDM & Lulusan PKTJ:** Menghubungkan profil potensi/kompetensi pegawai dengan pembinaan taruna hingga kesiapan karier, lowongan industri, dan pelacakan lulusan (*tracer study*).
 
-### 3. Modul Utama & Fitur (Core Modules & Features)
+---
 
-#### 3.1. Dashboard Eksekutif (Admin/Pimpinan)
-- **Top 5 Unit Kerja:** *Leaderboard* unit kerja dengan rata-rata capaian tertinggi.
-- **Top 5 Pegawai Berkinerja Terbaik:** *Leaderboard* individu yang paling banyak merealisasikan target bulanannya.
-- **Perlu Perhatian Khusus (Bottom 5):** Daftar pegawai dengan nilai capaian terendah sebagai bahan evaluasi dan *coaching* pimpinan.
-- *UI/UX Pattern:* Menggunakan sistem **Bento Grid** untuk menata widget metrik dengan batas tinggi dan lebar yang seragam agar terlihat simetris.
+### 3. Arsitektur Pengguna, Peran & Isolasi Portal
+Sistem menerapkan otorisasi multi-peran melalui tabel `users` dan `user_roles`:
+1. **Peran Struktural & Fungsional ECC 1.x (Kinerja, Kepegawaian, LED, Survei SDM):**
+   - `admin`, `direktur`, `wadir` (pengawas eksekutif tanpa hak menyetujui/menilai target staf), `kabag_aak`, `kabag_kuk`, `manajemen` (Kanit/Katim/Kaprodi), `user`, `tugas_belajar`, serta peran sekunder `kepegawaian` dan `spm`.
+2. **Pemetaan Peran Operasional ECC 2.0 (21 Pegawai Nyata pada 3 Unit Kerja):**
+   - **Tim Substansi Bidang Administrasi Ketarunaan & Alumni:** `ketarunaan`, `karir_alumni` (termasuk **PIC Tracer Study**), dan `ketarunaan_validator` (Katim).
+   - **Pusat Pengembangan Karakter:** `pusbangkar` (pembinaan disiplin/pelanggaran, prestasi karakter, dan validasi terkait).
+   - **Tim Substansi Bidang Kerjasama:** `kerjasama` (pengelola perusahaan mitra, lowongan industri, dan **share survei/informasi ke mitra pengguna lulusan**, terisolasi dari data pelanggaran, beasiswa, dan koreksi kelulusan alumni).
+3. **Akun Layanan Mandiri Terisolasi (`taruna` & `alumni`):**
+   - Dilindungi oleh `EmployeeOnlyFilter` agar 100% terisolasi dari seluruh rute ECC Kinerja, serta dikecualikan dari kueri pegawai (`User::SELF_SERVICE_ROLES`).
+   - Pada subsistem ECC 2.0, `KetarunaanPolicy::canAccessDashboard()` menutup akses Dashboard Ringkasan internal kampus dan mengarahkan akun mandiri langsung ke portal pribadinya.
 
-##### 3.2. Modul Laporan Harian & Log Kegiatan (Daily Activity)
-- **Pencatatan Aktivitas:** Pegawai wajib mencatat aktivitas harian, jumlah realisasi (`jumlah_capaian` minimal `0`), dan menyertakan tautan bukti pendukung (*link Google Drive / Dokumen*). Dukungan pecahan desimal menggunakan koma (`,`) dikonversi secara otomatis.
-- **Pemetaan Indikator:** Setiap aktivitas harian wajib dikaitkan dengan satu Indikator Kinerja / Rencana Hasil Kerja (RHK) utama.
-- **Tugas Tambahan & Penanganan Draf:** Mendukung pencatatan dan penghapusan tugas tambahan secara dinamis via AJAX dengan sinkronisasi ID otomatis (`allTambahanIds`) dan token CSRF dinamis.
+---
 
-#### 3.3. Modul Penilaian Kinerja (Evidence Command Center)
-Modul ini merupakan *core engine* untuk evaluasi bulanan yang terdiri dari dua sub-sistem (tab):
-- **Tab Target Bulanan Saya (Individu):** 
-  - Tempat pegawai melihat rekapitulasi realisasi bulanannya berdasarkan laporan harian.
-  - Menampilkan metrik Target vs Realisasi beserta Selisih (Gap) dan Nilai Capaian.
-- **Tab Penilaian Staf (Atasan):**
-  - *Dropdown* pencarian cerdas (menggunakan Select2) untuk memilih staf.
-  - Atasan dapat memvalidasi langsung laporan harian staf dengan mengklik *link* bukti.
-  - Atasan memberikan "Predikat" capaian, yang secara otomatis membatasi (min-max) skor penilaian untuk menghindari *human error*.
-  - Dilengkapi fitur perhitungan nilai *real-time* (Javascript) dan perlindungan data tidak disengaja terhapus menggunakan konfirmasi SweetAlert2.
+### 4. Modul yang Telah Dibangun & Beroperasi
 
-#### 3.4. Keamanan, Log & Deployment Safety
-- **CCTV Internal Sistem (Audit Trail):** Merekam jejak setiap aktivitas pengguna secara *invisible* (latar belakang) di seluruh titik krusial aplikasi.
-- **Data Tersimpan:** Mencatat aksi (`CREATE`, `UPDATE`, `DELETE`, `LOGIN`, dll), aktor (Pengguna), entitas yang diubah, IP Address, sistem operasi/browser (User Agent), serta merekam status data *sebelum* dan *sesudah* perubahan dalam format JSON.
-- **Resiliensi Database:** Menggunakan blok `try...catch` di setiap operasi penyimpanan massal untuk mencegah Error 500 dan menjaga aplikasi tetap responsif.
-- **Pendaftaran Rute Eksplisit:** Seluruh endpoint AJAX terdaftar pada `Routes.php` dalam grup filter otentikasi.
-- **Mekanisme Cache-Control:** Dilengkapi HTTP Cache-Control header di layout utama agar pengguna langsung mendapatkan update terbaru pasca deployment.
+#### 4.1. Subsistem Kinerja Pegawai, Remunerasi & Akreditasi (ECC 1.0 – 1.6)
+- **Dashboard Eksekutif & Pengguna:** Grafik historis kinerja, Top 5 Unit Kerja, Top 5 Pegawai, dan bottom leaderboard berbasis tanggal/periode.
+- **Target Kinerja Bulanan & Log Harian:** Dukungan pecahan desimal presisi 4 digit (`DECIMAL(10,4)`), notasi koma Indonesia, tugas tambahan skala `0–150%`, batas kunci akhir bulan, serta alur pengajuan revisi.
+- **Penilaian Kinerja & Hierarki Multi-Periode:** Penilaian staf oleh atasan langsung tervalidasi melalui `PenilaianKinerjaPolicy`, tabel penugasan historis `riwayat_atasan` (rotasi/mutasi/pensiun), Smart Lock form profil pegawai, serta cetak SKP tahunan PDF sesuai PermenPAN-RB No. 6 Tahun 2022 dengan digital audit trail yang netral di UI.
+- **Kepegawaian, Remunerasi & LED:** Monitoring target dan penilaian lintas unit, ekspor rekap Excel multi-sheet & PDF landscape A4, manajemen hak akun (`/users`), direktori pegawai selektif (`/daftar-pegawai`), master data berjenjang (`Dual-Sync unit_id`), mode pemeliharaan mandiri (`/settings`), notifikasi auto-sync hari libur, serta modul LED akreditasi prodi (SPM).
 
-#### 3.5. Modul Master Data & Relasi Unit Kerja Normalisasi
-- **Normalisasi Relasi (`users.unit_id`):** Tabel `users` dinormalkan dengan relasi foreign key `unit_id` ke tabel `unit_kerja` dengan mempertahankan sinkronisasi otomatis kolom teks `unit` (*Dual-Sync*).
-- **Cascading Update:** Pembaruan nama unit pada Master Data otomatis memperbarui seluruh profil pegawai terdaftar.
-#### 3.6. Modul Pengaturan Sistem Terpusat & Mode Pemeliharaan (Maintenance Mode)
-- **Mode Pemeliharaan Mandiri (Web-Based Maintenance Mode):** Administrator dapat mengaktifkan mode pemeliharaan dengan 1 klik melalui menu `/settings` tanpa perlu mengedit file `.htaccess` atau membuka cPanel.
-- **Perilaku Sistem:** Pengguna non-admin dialihkan ke `public/maintenance.html` (Bento layout, auto-refresh 30s, status 503), sedangkan Administrator tetap memiliki akses 100% dengan banner indikator peringatan di header.
-- **Kebijakan Batas Waktu Kinerja:** Mengatur batas input target bulanan, batas penilaian kinerja oleh atasan, batas kunci laporan bulan lalu (End-of-Month Cutoff), dan toleransi hari laporan harian.
+#### 4.2. Modul Survei Pemetaan Potensi, Kompetensi & Kapasitas SDM
+- **Instrumen 10 Bagian (83 Butir):** Halaman pengisian mandiri berbasis tautan bagikan (*Share-Link Only*) tanpa perlu login di depan, melayani ASN (NIP 18 digit dengan autofill & verifikasi kata sandi bila pindah perangkat) maupun Non-ASN (NIK 16 digit dengan *HttpOnly Signed Cookie* & verifikasi anti-*deadlock*).
+- **Protected Smart Profile Sync & Rekap Kabag KUK:** Pembaruan profil aman (`pending_profile_sync`), pemisahan KPI keterisian ASN vs partisipasi Non-ASN, delegasi staf pemeriksa, moderasi arsip data tidak valid, dan tombol saklar buka/tutup periode survei.
 
-#### 3.7. Presisi Desimal Tinggi & Skala Penilaian 0 - 150%
-- **Presisi Desimal 4 Digit (`DECIMAL(10,4)`):** Mendukung perhitungan target dan realisasi pecahan halus (contoh: `0.3333`, `0.1250`) tanpa pemotongan atau pembulatan paksa.
-- **Standardisasi Skala Tugas Tambahan:** Skala penilaian tugas tambahan diselaraskan menjadi `0 - 150%` setara dengan Target RHK bulanan.
+#### 4.3. Subsistem ECC 2.0 — Ketarunaan, Karier & Alumni
+Sistem kini beroperasi pada mode **`produksi` (*Data Operasional*)** dengan cakupan awal **427 taruna aktif Prodi RSTJ Tingkat 1–4** (`18` kelas riil `ref_kelas` dari ekspor `sim.pktj.ac.id` beserta `427` akun portal `taruna`), sementara Prodi `TRO` dan `TO` tetap aktif di aplikasi menunggu tahap impor data berikutnya:
+- **Dashboard Ringkasan Ketarunaan (`/ketarunaan/dashboard`):** Filter Prodi (`RSTJ`, `TRO`, `TO`), Angkatan, dan Tanggal Acuan (*as-of date*) secara dinamis via AJAX; metrik 6 status pendidikan (`Aktif`, `Skorsing`, `Cuti Akademik`, `Mengundurkan Diri`, `Drop Out`, `Lulus`), 4 metrik modul operasional, matriks sebaran prodi, indikator kualitas data, antrean tindak lanjut, dan akses cepat (eksklusif untuk staf & pimpinan).
+- **Database Taruna & Portal Profil Mandiri (`/ketarunaan/taruna`):** Identitas utama, data pendidikan, kontak & wali (NIK/kontak sensitif dibatasi sesuai peran), riwayat pendidikan, riwayat status berbukti SK, pengajuan perubahan status tanpa nilai dummy, serta impor multi-format (`.xls`/`.xlsx` ekspor 39 kolom SIM PKTJ maupun template CSV) dengan pratinjau validasi dan pembuatan `ref_kelas` otomatis mengikuti kelas riil masing-masing prodi. Taruna login dapat memperbarui biodata kontak aman & mengganti kata sandi di `/ketarunaan/keamanan-akun`.
+- **Rekam Jejak Taruna & Capaian Mandiri (`/ketarunaan/rekam-jejak`):** Kronologi terpadu lintas modul sumber plus pengajuan kegiatan/capaian tambahan oleh staf maupun langsung oleh taruna (`draf`/`diajukan`/`perlu_perbaikan`/`tervalidasi`) dengan kewajiban bukti saat pengajuan.
+- **Prestasi Taruna (`/ketarunaan/prestasi`):** Pencatatan prestasi individu maupun tim berbasis peristiwa (`rekap dua satuan`), lampiran sertifikat/foto dokumentasi, serta dukungan pengajuan mandiri taruna (otomatis tertaut sebagai peserta, anti-hapus diri sendiri, dan terkunci dari suntingan selama menunggu/sudah validasi).
+- **Pembinaan Karakter & Pelanggaran (`/ketarunaan/pelanggaran`):** Pemisahan tegas antara `Dugaan`, `Terbukti`, `Tidak Terbukti`, dan `Dibatalkan` serta penyelesaian (`Proses`, `Selesai`, `Banding`), tindak lanjut pembinaan Pusbangkar, dan perlindungan dokumen/berita acara terbatas.
+- **Beasiswa 4 Jenis (`/ketarunaan/beasiswa`):** Pengelolaan program untuk `Apresiasi` (seleksi 5 IP semester tertinggi per kelas beserta penyimpanan versi pemeringkatan), `Prestasi`, `Daerah 3TP`, dan `Tidak Mampu`; mendukung pengajuan klaim mandiri oleh `taruna`, pemeriksaan dokumen ekonomi berizin khusus, serta pemisahan status verifikasi dan penetapan SK penerima.
+- **Lowongan Pekerjaan & Perusahaan Mitra (`/ketarunaan/lowongan`):** Direktori perusahaan mitra terverifikasi, sasaran program studi, kontrol publikasi setelah validasi, penutupan manual beralasan, serta pemeriksaan tenggat otomatis terhadap waktu acuan.
+- **Alumni — Profil Dasar (`/ketarunaan/alumni`):** Pembentukan profil alumni hanya dari status `Lulus` tervalidasi (menolak `Mengundurkan Diri` & `Drop Out`), antrean kelulusan tanpa batas potongan daftar, serta koreksi SK kelulusan non-destruktif (`ralat_sk` / `batal_lulus`).
+- **Tata Kelola Lintas Modul:** Pusat antrean **Validasi Data** (`/ketarunaan/validasi`), **Laporan & Ekspor** resmi konsisten definisi satuan (`/ketarunaan/laporan`), dan **Pengaturan** data rujukan non-destruktif, matriks kewenangan, serta penanda mode data (`/ketarunaan/pengaturan`).
 
-#### 3.8. Modul Direktori Pegawai & Profil Mandiri
-- **Direktori Pegawai Seluruh Institusi (`/daftar-pegawai`):** Menyediakan daftar kontak dan profil seluruh pegawai PKTJ dengan pencarian instan nama/NIP/jabatan dan filter unit kerja dinamis. Menggunakan kueri selektif tanpa hash kata sandi demi privasi dan performa.
-- **Profil Mandiri Pegawai (`/profile`):** Pegawai dapat memperbarui nomor telepon, memilih unit kerja (tersinkron ganda `unit_id` & `unit`), mengatur atasan langsung (dengan proteksi self-atasan loop), dan memperbarui Kata Sandi dengan form state preservation (`old()`).
+---
 
-#### 3.9. Pengamanan Unggah Berkas (Upload Hardening & Security Layer)
-- **Validasi Berlapis Server-Side:** Batas ukuran 2MB (`max_size[foto,2048]`), inspeksi *magic bytes* MIME (`is_image[foto]|mime_in[...]`), dan penamaan acak kriptografis (`$file->getRandomName()`).
-- **Web Server Hardening (`.htaccess`):** Melumpuhkan mesin PHP (`php_flag engine off`) dan memblokir eksekusi seluruh skrip web pada direktori berkas publik (`public/assets/uploads/`).
-- **Penghapusan Berkas Terproteksi:** Sanitasi nama berkas via `basename()` dan verifikasi `file_exists(FCPATH . ...)` sebelum penghapusan.
+### 5. Pedoman Desain, Mikro-Kopi & Keamanan Sistem
+- **Baseline UI/UX:** Bento Grid ECC 1.5, palet warna resmi, tipografi Inter + `tabular-nums`, ritme **8-Point Grid**, responsif desktop-mobile, Bootstrap Icons selektif, serta `SweetAlert2` dengan fallback dialog native.
+- **Kebijakan Bahasa & Terminologi:** Menggunakan **Evidence Command Center (ECC)**, istilah baku **"staf"**, pembakuan *"Kata Sandi"*, *"Alamat Email"*, *"Keluar"*, *"Simpan Profil"*, serta teks non-teknis yang singkat, padat, dan jelas.
+- **Keamanan & Integritas:** `setAutoRoute(false)` eksplisit di `Routes.php`, CSRF token ganda pada form & AJAX, proteksi IDOR & kepemilikan data, sanitasi URL (`http://`/`https://`), pengamanan upload (`getRandomName()`, `.htaccess` anti-eksekusi skrip), transaksi atomik, dan `audit_logs`.
 
-#### 3.10. Modul Riwayat Penugasan, Rotasi Jabatan & Audit Trail Digital Kinerja
-- **Tabel Riwayat Penugasan (`riwayat_atasan`):** Menyimpan rekam jejak relasi atasan-staf, unit kerja, jabatan, dan role dinamis per rentang bulan dan tahun dengan validasi anti-overlapping dan smart indexing ganda.
-- **Hierarki Multi-Periode & Proteksi Rotasi:** Memungkinkan pegawai yang mengalami mutasi, rotasi, atau promosi dinilai oleh atasan yang sah sesuai masa dinas periode bulan bersangkutan. Mendukung siklus status pegawai (`aktif`, `mutasi_keluar`, `pensiun`).
-- **Smart Lock Form Profil Pegawai:** Mengunci pengubahan mandiri Jabatan, Unit Kerja, dan Atasan pada form profil jika pegawai telah memiliki penetapan resmi dari kepegawaian.
-- **Penyelarasan Tanda Tangan Cetak PDF SKP:** Lembar cetak PDF rekap tahunan mengakumulasikan nilai kinerja dan mencantumkan tanda tangan pejabat penilai secara proporsional sesuai masa dinas per periode (PermenPAN-RB No. 6 Tahun 2022).
-- **Digital Approval & Grading Audit Trail:** Mencatat `approved_by`, `approved_at`, `penilai_id`, dan `penilaian_at` di database untuk integritas data, dengan tampilan antarmuka yang bersih tanpa mengekspos tanggal/jam guna memitigasi temuan pemeriksaan auditor (Itjen / BPK).
+---
 
-### 4. Pedoman Desain (UI/UX Guidelines)
-Aplikasi ini dikembangkan dengan berpegang teguh pada prinsip **ui-ux-pro-max**:
-- **Pendekatan Bento / Card:** Semua tabel, *form*, dan *widget* dibungkus ke dalam *card* membulat (`rounded`, `shadow-sm`) dengan latar belakang putih.
-- **Tipografi Bersih & Hierarki Tegas:** Penggunaan warna yang bermakna (`text-primary`, `text-success` untuk hal positif, `text-danger` untuk perhatian khusus/peringatan) tanpa menggunakan kotak warna *solid* berukuran raksasa yang menyakiti mata.
-- **Interaksi Mikro & Halus:** Penghindaran *popup browser default* (menggunakan SweetAlert2), penambahan transisi saat memuat *tab*, *smart scroll topbar*, dan tombol aksi berbasis ikon bulat alih-alih tombol teks yang panjang.
-- **Konsistensi Arsitektur Informasi:** Penempatan indikator akhir (seperti "Nilai Kinerja") selalu di posisi pamungkas alur baca, yakni di *footer* kanan bawah tabel.
+### 6. Riwayat Pencapaian & Rencana Masa Depan (Project Roadmap)
 
-### 5. Arsitektur Keamanan & Multi-Role
-Sistem menerapkan konsep pemisahan tugas menggunakan arsitektur **Tabel Pivot (Multi-Role)**:
-- **Role Primer (Struktural):** Menentukan posisi jabatan dan hak akses dasar (misal: `user`, `manajemen`, `direktur`, `admin`). Role primer mendasari fungsi pencatatan kinerja dan validasi atasan-staf.
-- **Role Sekunder (Fungsional):** Peran tambahan yang bisa disematkan lebih dari satu ke pegawai tanpa menghapus peran strukturalnya.
-  - **Kepegawaian:** Akses *read-only* ke rekapitulasi nilai kinerja semua unit (untuk remunerasi) beserta fitur export Excel.
-  - **SPM (Satuan Penjaminan Mutu):** Akses khusus untuk mengendalikan **Simulasi Penilaian LED** di modul ECC.
-  - *Extensibility:* Sistem siap menampung peran masa depan seperti Auditor atau Reviewer dokumen khusus.
+#### A. Pencapaian Selesai (ECC 1.0 – ECC 2.0 Tahap Awal)
+- [x] **ECC 1.0 – 1.5 (Agustus – Oktober 2026):** Multi-Role Pivot (`user_roles`), Target & Log Kegiatan Harian desimal 4-digit, Penilaian Kinerja `0–150%`, Kepegawaian & Ekspor Excel/PDF, Audit Trail JSON, LED Prodi, Web-Based Maintenance Mode, Normalisasi Unit (`Dual-Sync`), Upload Hardening `.htaccess`, serta Audit 8-Pilar & 8-Point Grid.
+- [x] **ECC 1.6 (13 Oktober 2026):** Modul Riwayat Penugasan & Rotasi Multi-Periode Atasan-Staf (`riwayat_atasan`), Smart Lock Profil, Penyelarasan SKP PDF Multi-Periode, dan Digital Audit Trail Persetujuan/Penilaian netral auditor.
+- [x] **Survei Pemetaan SDM (30 Oktober 2026):** Instrumen 10 Bagian (83 butir) berbasis tautan bagikan untuk ASN & Non-ASN beserta rekap & *Protected Smart Profile Sync*.
+- [x] **ECC 2.0 Fondasi & 8 Modul Inti (4 – 14 November 2026):** Migrasi lengkap (total 56 tabel DB), shell ECC 2.0 selaras ECC 1.5, Dashboard as-of date, Database Taruna, Rekam Jejak, Prestasi, Pelanggaran, Beasiswa 4 jenis, Lowongan & Mitra, Alumni profil dasar, serta Tata Kelola (Validasi, Laporan, Pengaturan).
+- [x] **ECC 2.0 Operasional Tahap Awal & Portal Taruna (15 – 16 November 2026):** Impor penuh **427 taruna aktif Prodi RSTJ Tingkat 1–4** beserta 427 akun login `taruna`, isolasi penuh akun mandiri dari ECC Kinerja (`EmployeeOnlyFilter`) & Dashboard internal (`DashboardController`), pemetaan **21 pegawai nyata PKTJ** (Unit Ketarunaan & Alumni, Pusbangkar, Kerjasama), pembukaan pengajuan mandiri taruna pada **Prestasi**, **Capaian Rekam Jejak**, dan **Klaim Beasiswa**, serta pembersihan sisa tampilan simulasi pada UI.
 
-### 6. Rencana Masa Depan (Future Roadmap)
-- [x] Implementasi arsitektur Multi-Role (Tabel Pivot).
-- [x] Modul Kepegawaian (Rekap Nilai Remunerasi) & Export Excel.
-- [x] Log Aktivitas Sistem (Audit Trail) dengan Live Search, Date Range Filter, & JSON Viewer Modal.
-- [x] Normalisasi Relasi Unit Kerja (`users.unit_id`) & Cascading Sync.
-- [x] Smart Indexing & Optimasi Database v1.4.
-- [x] Refactoring & Optimalisasi Modul Laporan Kinerja & Log Kegiatan Harian.
-- [x] Modul Evidence Command Center (ECC LED & Simulasi Penilaian).
-- [x] Modul Notifikasi Auto-Sync Hari Libur Nasional API & History Retention.
-- [x] Sistem Layout Utama, Pembatasan Role Sidebar, & Dynamic CSRF Protection.
-- [x] Mekanisme Automatic Anti-Cache Busting v1.5 (`style.css?v=1.5.TIMESTAMP`).
-- [x] Grafik Historis (Chart.js) pada *dashboard* user untuk melihat tren kinerja pribadi selama setahun.
-- [x] Rilis Resmi Versi 1.3: Penyelesaian Audit 8-Pilar Menyeluruh Seluruh Modul Sistem (31 Agustus 2026).
-- [x] Fitur Mode Pemeliharaan Mandiri Administrator (Web-Based Maintenance Mode) via `/settings`.
-- [x] Presisi Desimal 4 Digit (`DECIMAL(10,4)`) & Standardisasi Penilaian Tugas Tambahan 0 - 150%.
-- [x] Engine Ekspor Rekap Kepegawaian Multi-Sheet Excel & PDF Landscape A4 dengan Pengurutan Hierarki 13-Tier Jabatan.
-- [x] Rilis Resmi Versi 1.4: Penyelesaian Audit 8-Pilar Modul Kelola Tim, Kelola Pengguna, Profil Saya, dan Pengerasan Rute POST (3 September 2026).
-- [x] Audit & Pemolesan 8-Point Grid Modul Direktori Pegawai & Profil Saya, Pengamanan Berkas Ganda 2MB, Script Execution Barrier `.htaccess`, dan Pembakuan Istilah Non-Teknis (7 September 2026).
-- [x] Rilis Resmi Versi 1.5: Penyelesaian Audit 8-Pilar Modul Monitoring Target Kinerja, Monitoring Penilaian Kinerja, Profil Saya, dan Dashboard Admin & User (11 Oktober 2026).
-- [x] Rilis Resmi Versi 1.6: Riwayat Penugasan & Rotasi Multi-Periode Atasan-Staf, Penyelarasan SKP Multi-Periode PDF, dan Digital Audit Trail Kinerja (13 Oktober 2026).
-
+#### B. Rencana Pengembangan & Operasional Ke Depan (*Future Roadmap*)
+- [ ] **Tahap 1 — Uji Penerimaan Pengguna (*Browser UAT* Lintas Peran RSTJ):** Pengujian alur penuh di peramban oleh staf operasional, validator (`ketarunaan_validator`, `pusbangkar`), tim `kerjasama`, pimpinan, dan perwakilan taruna RSTJ untuk memverifikasi alur pengajuan, pengembalian revisi, validasi, laporan, dan batasan akses sebelum operasional penuh.
+- [ ] **Tahap 2 — Impor Data Taruna Prodi `TRO` & `TO`:** Melengkapi populasi taruna aktif Prodi **D-IV TRO** dan **D-III TO** dari ekspor resmi `sim.pktj.ac.id` lengkap dengan pembentukan kelas riil otomatis pada `ref_kelas` dan pembukaan akun portal taruna masing-masing.
+- [ ] **Tahap 3 — Operasionalisasi Siklus Transaksi & Kebijakan Institusi:**
+  - Mengaktifkan pencatatan **Nilai IP per semester** (`taruna_nilai_ip`) untuk menjalankan seleksi **Beasiswa Apresiasi (5 IP tertinggi per kelas)**, serta membuka periode program beasiswa nyata (`Apresiasi`, `Prestasi`, `Daerah 3TP`, `Tidak Mampu`), pelaporan pembinaan Pusbangkar, dan lowongan mitra oleh Tim Kerjasama.
+  - Memfinalkan daftar **Keputusan Terbuka Institusi** (aturan pemecah seri peringkat kelima Apresiasi, acuan resmi wilayah 3TP, persyaratan dokumen ekonomi Tidak Mampu, kelayakan status Cuti/Skorsing terhadap beasiswa, batas jam tenggat lowongan, serta pengesahan SOP penggunaan ECC 2.0).
+- [ ] **Tahap 4 — Aktivasi Basis Data Alumni & Modul *Tracer Study* + Survei Pengguna Lulusan:**
+  - Pengisian data lulusan resmi (`Lulus` tervalidasi -> `alumni_profil`) dan pembukaan akses portal mandiri `alumni` tanpa mencampur taruna yang mengundurkan diri atau *drop out*.
+  - Pembangunan fitur penuh **Tracer Study** bagi lulusan (dikelola **Tim Ketarunaan & Alumni — Unit 6**) dan **Survei Kepuasan Pengguna Lulusan** untuk mitra instansi/industri (didistribusikan bersama **Tim Kerjasama — Unit 4**).
+- [ ] **Tahap 5 — Integrasi Sistem & Keandalan Jangka Panjang:**
+  - Kajian integrasi otomatis (sinkronisasi data taruna, nilai IP, dan kelulusan dengan sistem akademik `sim.pktj.ac.id` serta opsi SSO institusi).
+  - Penambahan analitik tren kohort antar-angkatan, otomatisasi jadwal pencadangan dan pemulihan (*RPO/RTO*), serta dukungan ekspansi fitur pasca-MVP lainnya (kesehatan/semapta bila diperlukan oleh Pusbangkar).

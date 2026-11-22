@@ -1161,8 +1161,9 @@ class HasilSurveiController extends BaseController
         $userModel = new User();
         $builder   = $userModel->select('id, nama_lengkap, nip, unit, jabatan, role, status_pegawai, tmt_selesai')
                                ->whereNotIn('role', ['admin', 'direktur', 'kabag_kuk'])
-                               ->where('status_pegawai !=', 'nonaktif')
-                               ->orderBy('nama_lengkap', 'ASC');
+                               ->where('status_pegawai !=', 'nonaktif');
+        User::excludeSelfServiceFromQuery($builder);
+        $builder->orderBy('nama_lengkap', 'ASC');
 
         if (!empty($adminUserIds)) {
             $builder->whereNotIn('id', $adminUserIds);
@@ -1195,8 +1196,9 @@ class HasilSurveiController extends BaseController
         }
 
         $uBuilder = $userModel->select('id, nama_lengkap, nip, jabatan, pangkat, unit, unit_id, role, status_pegawai, tmt_selesai, foto')
-                              ->where('role !=', 'admin')
-                              ->orderBy('nama_lengkap', 'ASC');
+                              ->where('role !=', 'admin');
+        User::excludeSelfServiceFromQuery($uBuilder);
+        $uBuilder->orderBy('nama_lengkap', 'ASC');
         if (!empty($adminPivotIds)) {
             $uBuilder->whereNotIn('id', $adminPivotIds);
         }

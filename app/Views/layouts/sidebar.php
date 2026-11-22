@@ -17,14 +17,17 @@ $isAdmin = hasRole('admin');
 $isTimLeader = hasAnyRole(['manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'kanit', 'katim', 'kapokja', 'admin']);
 $isDirektur = hasRole('direktur');
 $isKepegawaian = hasRole('kepegawaian');
+$isSelfServiceAccount = \App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfAccountOnly();
 ?>
 
 
 <div class="sidebar bg-white offcanvas-lg offcanvas-start border-end" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarOffcanvasLabel">
-    <i class="bi bi-list sidebar-toggle d-none d-lg-flex btn-tactile" id="sidebarToggle" title="Ciutkan / Lebarkan Navigasi" aria-label="Toggle Sidebar Navigation"></i>
+    <button type="button" class="sidebar-toggle d-none d-lg-flex btn-tactile" id="sidebarToggle" title="Ciutkan / Lebarkan Navigasi" aria-label="Ciutkan atau lebarkan navigasi" aria-expanded="true">
+        <i class="bi bi-list" aria-hidden="true"></i>
+    </button>
 
     <div class="sidebar-header d-none d-lg-flex">
-        <a href="<?= site_url('dashboard') ?>" title="Evidence Command Center (ECC) PKTJ" class="text-decoration-none">
+        <a href="<?= $isSelfServiceAccount ? site_url(ltrim(\App\Libraries\Ketarunaan\KetarunaanPolicy::getSelfPortalUrl(), '/')) : site_url('dashboard') ?>" title="Evidence Command Center (ECC) PKTJ" class="text-decoration-none">
             <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ Tegal" class="sidebar-logo" width="48" height="48" style="width: 48px; height: 48px; object-fit: contain;" loading="eager">
         </a>
     </div>
@@ -40,6 +43,14 @@ $isKepegawaian = hasRole('kepegawaian');
 
     <div class="sidebar-menu offcanvas-body p-0 d-block">
         <ul class="nav flex-column">
+            <?php if ($isSelfServiceAccount): ?>
+                <li class="nav-item">
+                    <a class="nav-link active text-primary fw-semibold" href="<?= site_url(ltrim(\App\Libraries\Ketarunaan\KetarunaanPolicy::getSelfPortalUrl(), '/')) ?>">
+                        <i class="bi bi-mortarboard-fill text-primary"></i>
+                        <span>Portal Ketarunaan</span>
+                    </a>
+                </li>
+            <?php else: ?>
             <li class="nav-item">
                 <a class="nav-link <?= ($segment1 == 'dashboard') ? 'active' : '' ?>"
                     href="<?= site_url('dashboard') ?>">
@@ -179,7 +190,7 @@ $isKepegawaian = hasRole('kepegawaian');
                 <li class="nav-item"><a href="<?= site_url('settings') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/settings') || str_starts_with($current_uri, 'settings')) ? 'active' : '' ?>"><i class="bi bi-gear-fill"></i><span>Pengaturan Sistem</span></a></li>
             <?php endif; ?>
 
-            <?php if (hasAnyRole(['admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'manajemen', 'ketarunaan', 'ketarunaan_validator', 'pusbangkar', 'karir_alumni'])): ?>
+            <?php if (\App\Libraries\Ketarunaan\KetarunaanPolicy::canAccessModule()): ?>
                 <li class="menu-divider my-2"></li>
                 <li class="nav-item">
                     <a class="nav-link text-primary fw-semibold" href="<?= site_url('ketarunaan/dashboard') ?>">
@@ -187,6 +198,7 @@ $isKepegawaian = hasRole('kepegawaian');
                         <span>Modul Ketarunaan</span>
                     </a>
                 </li>
+            <?php endif; ?>
             <?php endif; ?>
 
         </ul>

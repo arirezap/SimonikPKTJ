@@ -43,6 +43,7 @@ class DaftarPegawaiController extends BaseController
                            ->join('users as atasan', 'atasan.id = users.atasan_id', 'left')
                            ->where('users.role !=', 'admin')
                            ->where('users.username !=', 'admin');
+        User::excludeSelfServiceFromQuery($query, 'users');
 
         if (!empty($adminIds)) {
             $query->whereNotIn('users.id', $adminIds);

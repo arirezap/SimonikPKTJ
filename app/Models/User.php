@@ -6,6 +6,11 @@ use CodeIgniter\Model;
 
 class User extends Model
 {
+    /**
+     * Daftar peran akun layanan mandiri (non-pegawai) yang dikecualikan dari modul kinerja pegawai.
+     */
+    public const SELF_SERVICE_ROLES = ['taruna', 'alumni'];
+
     protected $table            = 'users';
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
@@ -37,6 +42,18 @@ class User extends Model
     protected $useTimestamps = false; // Ubah ke true jika ingin mencatat created_at/updated_at
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
+
+    /**
+     * Mengecualikan akun layanan mandiri (taruna & alumni) dari kueri data pegawai/unit kerja ECC Kinerja.
+     */
+    public static function excludeSelfServiceFromQuery(object $builder, string $tableAlias = ''): object
+    {
+        $col = $tableAlias !== '' ? $tableAlias . '.role' : 'role';
+        return $builder->groupStart()
+                       ->where("{$col} IS NULL", null, false)
+                       ->orWhereNotIn($col, self::SELF_SERVICE_ROLES)
+                       ->groupEnd();
+    }
 
     // Helper untuk mengambil data atasan (mendukung resolusi periode)
     public function getAtasan($userId, ?int $bulan = null, ?int $tahun = null)
@@ -243,6 +260,7 @@ class User extends Model
             $builder = $this->select('id, nama_lengkap, nip, username, jabatan, pangkat, unit, role, status_pegawai, tmt_selesai, foto, atasan_id')
                             ->where('id !=', $userId)
                             ->whereNotIn('role', ['admin', 'direktur']);
+            self::excludeSelfServiceFromQuery($builder);
 
             if ($periodDate !== null) {
                 $periodMonth = date('Y-m', strtotime($periodDate));

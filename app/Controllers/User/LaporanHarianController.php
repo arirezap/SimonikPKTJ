@@ -152,7 +152,9 @@ class LaporanHarianController extends BaseController
         $isSuper = hasAnyRole(['admin', 'direktur']);
         $daftarUnit = [];
         if ($isSuper) {
-            $units = $userModel->select('unit')->distinct()->where('unit !=', null)->where('unit !=', '')->orderBy('unit', 'ASC')->findAll();
+            $unitQuery = $userModel->select('unit')->distinct()->where('unit !=', null)->where('unit !=', '');
+            User::excludeSelfServiceFromQuery($unitQuery);
+            $units = $unitQuery->orderBy('unit', 'ASC')->findAll();
             foreach ($units as $u) {
                 $daftarUnit[] = $u['unit'];
             }
@@ -161,8 +163,9 @@ class LaporanHarianController extends BaseController
             $periodMonth = date('Y-m', strtotime($periodDate));
 
             $builder = $userModel->select('id, nama_lengkap, jabatan, unit, role, status_pegawai, tmt_selesai, atasan_id')
-                                 ->where('id !=', $userId)
-                                 ->groupStart()
+                                 ->where('id !=', $userId);
+            User::excludeSelfServiceFromQuery($builder);
+            $builder = $builder->groupStart()
                                      ->where('status_pegawai', 'aktif')
                                      ->orGroupStart()
                                          ->whereIn('status_pegawai', ['mutasi_keluar', 'pensiun'])

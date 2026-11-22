@@ -196,8 +196,13 @@ Menu tree Kepegawaian di sidebar memiliki 2 submodul terpadu untuk Tim Kepegawai
 ---
 
 ## 9. Status Graphify Knowledge Graph
-- Tanggal Pembaruan: 13 Oktober 2026.
-- Korpus Terindeks: 232 berkas kode utama.
-- Simpul & Relasi: 10.117 nodes, 20.921 edges, 588 communities.
+- Tanggal Pembaruan: 19 November 2026.
+- Simpul & Relasi: 7.837 nodes, 15.392 edges, 570 communities.
 - Berkas Artefak: `graphify-out/graph.json`, `graphify-out/graph.html`, dan `graphify-out/GRAPH_REPORT.md`.
+
+---
+
+## 10. Progres Audit & Hardening ECC 2.0 (Ketarunaan & Alumni)
+Catatan konteks lengkap, keputusan kebijakan pengguna (**Opsi A: Tautan Google Drive / cloud** untuk dokumen bukti), daftar modul selesai (**Dashboard Ringkasan**, **Database Taruna**, **Rekam Jejak Taruna**, **Prestasi Taruna** sisi Admin/Taruna/Alumni, **Pelanggaran Taruna**), serta antrean modul berikutnya (**Beasiswa**, **Lowongan**, **Alumni**, **Validasi Data**, **Laporan**, **Pengaturan**) dicatat terpusat di:
+- **`ECC 2.0/PROGRESS_AUDIT_ECC2.md`** (baca berkas ini terlebih dahulu saat memulai sesi/chat baru pengembangan ECC 2.0).
 

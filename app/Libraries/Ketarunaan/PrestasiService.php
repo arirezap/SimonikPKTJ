@@ -35,6 +35,8 @@ class PrestasiService
      */
     public function getReferenceOptions(): array
     {
+        ketarunaan_ensure_kalender_terkini($this->db);
+
         $prodiList = $this->db->table('ref_program_studi')
             ->select('id, kode_prodi, nama_prodi, jenjang')
             ->where('is_aktif', 1)
@@ -91,14 +93,19 @@ class PrestasiService
      *
      * @return array<int, array<string, mixed>>
      */
-    public function getTarunaSelectList(): array
+    public function getTarunaSelectList(bool $onlyAktif = false): array
     {
-        return $this->db->table('master_taruna mt')
-            ->select('mt.nomor_taruna, mt.nama_lengkap, mt.status_terkini, ps.kode_prodi, ang.tahun_masuk AS angkatan')
+        $builder = $this->db->table('master_taruna mt')
+            ->select('mt.nomor_taruna, mt.nama_lengkap, mt.status_terkini, ps.kode_prodi, ang.tahun_masuk AS angkatan, ang.kode_romawi AS angkatan_romawi')
             ->join('pendidikan_taruna pt', 'pt.nomor_taruna = mt.nomor_taruna', 'left')
             ->join('ref_program_studi ps', 'ps.id = pt.program_studi_id', 'left')
-            ->join('ref_angkatan ang', 'ang.id = pt.angkatan_id', 'left')
-            ->orderBy('mt.nomor_taruna', 'ASC')
+            ->join('ref_angkatan ang', 'ang.id = pt.angkatan_id', 'left');
+
+        if ($onlyAktif) {
+            $builder->where('mt.status_terkini', 'aktif');
+        }
+
+        return $builder->orderBy('mt.nomor_taruna', 'ASC')
             ->get()
             ->getResultArray();
     }
@@ -109,16 +116,27 @@ class PrestasiService
      * @param array<string, mixed> $filters
      * @param int                  $page
      * @param int                  $perPage
+     * @param bool                 $isSelfTarunaOnly
+     * @param string|null          $ownNomorTaruna
      * @return array<string, mixed>
      */
-    public function getDirectoryData(array $filters = [], int $page = 1, int $perPage = 15): array
-    {
-        $q       = trim((string) ($filters['q'] ?? ''));
-        $jenis   = trim((string) ($filters['jenis'] ?? 'all'));
-        $tingkat = trim((string) ($filters['tingkat'] ?? 'all'));
-        $prodi   = trim((string) ($filters['prodi'] ?? 'all'));
-        $periode = trim((string) ($filters['periode'] ?? 'all'));
-        $status  = trim((string) ($filters['status'] ?? 'all'));
+    public function getDirectoryData(
+        array $filters = [],
+        int $page = 1,
+        int $perPage = 15,
+        bool $isSelfTarunaOnly = false,
+        ?string $ownNomorTaruna = null
+    ): array {
+        $q             = trim((string) ($filters['q'] ?? ''));
+        $jenis         = trim((string) ($filters['jenis'] ?? 'all'));
+        $tingkat       = trim((string) ($filters['tingkat'] ?? 'all'));
+        $prodi         = trim((string) ($filters['prodi'] ?? 'all'));
+        $periode       = trim((string) ($filters['periode'] ?? 'all'));
+        $status        = trim((string) ($filters['status'] ?? 'all'));
+        $keikutsertaan = trim((string) ($filters['keikutsertaan'] ?? 'all'));
+        $milikSaya     = ((string) ($filters['milik_saya'] ?? '') === '1');
+        $sortBy        = trim((string) ($filters['sort_by'] ?? ''));
+        $sortOrder     = strtolower(trim((string) ($filters['sort_order'] ?? 'desc'))) === 'asc' ? 'ASC' : 'DESC';
 
         // 1. Empat kartu metrik dual-count dari sumber basis data
         $prestasiTervalidasi = (int) $this->db->table('taruna_prestasi')
@@ -137,21 +155,67 @@ class PrestasiService
             ->where('jenis_keikutsertaan', 'tim')
             ->countAllResults();
 
-        $menungguValidasi = (int) $this->db->table('taruna_prestasi')
-            ->where('status_validasi', 'diajukan')
-            ->countAllResults();
+        if ($isSelfTarunaOnly) {
+            $menungguValidasi = ($ownNomorTaruna !== null && trim($ownNomorTaruna) !== '')
+                ? (int) $this->db->table('taruna_prestasi tp')
+                    ->join('taruna_peserta_prestasi tpp_w', 'tpp_w.prestasi_id = tp.id', 'inner')
+                    ->where('tp.status_validasi', 'diajukan')
+                    ->where('tpp_w.nomor_taruna', trim($ownNomorTaruna))
+                    ->countAllResults()
+                : 0;
+        } else {
+            $menungguValidasi = (int) $this->db->table('taruna_prestasi')
+                ->where('status_validasi', 'diajukan')
+                ->countAllResults();
+        }
 
         // 2. Kueri daftar prestasi dengan jumlah peserta unik per prestasi
         $pesertaAggSql = "(SELECT tpp.prestasi_id, COUNT(DISTINCT tpp.nomor_taruna) AS jml_peserta
                            FROM taruna_peserta_prestasi tpp
                            GROUP BY tpp.prestasi_id) pagg";
 
+        $ownNomorClean = ($ownNomorTaruna !== null) ? trim($ownNomorTaruna) : '';
+        $isPesertaSelect = ($ownNomorClean !== '')
+            ? "EXISTS (SELECT 1 FROM taruna_peserta_prestasi tpp_me WHERE tpp_me.prestasi_id = tp.id AND tpp_me.nomor_taruna = " . $this->db->escape($ownNomorClean) . ") AS is_peserta_saya"
+            : "0 AS is_peserta_saya";
+
         $builder = $this->db->table('taruna_prestasi tp')
-            ->select('tp.id, tp.nama_prestasi, tp.jenis_prestasi, tp.bidang_prestasi, tp.tingkat_prestasi,
+            ->select("tp.id, tp.nama_prestasi, tp.jenis_prestasi, tp.bidang_prestasi, tp.tingkat_prestasi,
                       tp.peringkat, tp.penyelenggara, tp.tanggal_mulai, tp.tanggal_selesai,
                       tp.jenis_keikutsertaan, tp.nama_tim, tp.status_validasi,
-                      COALESCE(pagg.jml_peserta, 0) AS jumlah_peserta')
+                      COALESCE(pagg.jml_peserta, 0) AS jumlah_peserta,
+                      {$isPesertaSelect}", false)
             ->join($pesertaAggSql, 'pagg.prestasi_id = tp.id', 'left', false);
+
+        if ($isSelfTarunaOnly) {
+            if ($ownNomorClean !== '') {
+                $escapedOwn = $this->db->escape($ownNomorClean);
+                if ($milikSaya) {
+                    $builder->where(
+                        "EXISTS (SELECT 1 FROM taruna_peserta_prestasi tpp_own
+                                 WHERE tpp_own.prestasi_id = tp.id AND tpp_own.nomor_taruna = {$escapedOwn})",
+                        null,
+                        false
+                    );
+                } else {
+                    $builder->groupStart()
+                        ->where('tp.status_validasi', 'tervalidasi')
+                        ->orWhere(
+                            "EXISTS (SELECT 1 FROM taruna_peserta_prestasi tpp_own
+                                     WHERE tpp_own.prestasi_id = tp.id AND tpp_own.nomor_taruna = {$escapedOwn})",
+                            null,
+                            false
+                        )
+                        ->groupEnd();
+                }
+            } else {
+                if ($milikSaya) {
+                    $builder->where('1 = 0', null, false);
+                } else {
+                    $builder->where('tp.status_validasi', 'tervalidasi');
+                }
+            }
+        }
 
         if ($q !== '') {
             $escapedLike = '%' . $this->db->escapeLikeString($q) . '%';
@@ -182,6 +246,9 @@ class PrestasiService
                 $builder->where('tp.status_validasi', $status);
             }
         }
+        if (in_array($keikutsertaan, ['tim', 'individu'], true)) {
+            $builder->where('tp.jenis_keikutsertaan', $keikutsertaan);
+        }
         if ($prodi !== '' && $prodi !== 'all') {
             $escapedProdi = $this->db->escape($prodi);
             $builder->where(
@@ -206,14 +273,47 @@ class PrestasiService
         }
 
         $totalFiltered = $builder->countAllResults(false);
-        $totalPages    = max(1, (int) ceil($totalFiltered / $perPage));
-        $page          = max(1, min($page, $totalPages));
-        $offset        = ($page - 1) * $perPage;
+        $isUnlimited   = ($perPage <= 0);
+        $totalPages    = $isUnlimited ? 1 : max(1, (int) ceil($totalFiltered / $perPage));
+        $page          = $isUnlimited ? 1 : max(1, min($page, $totalPages));
+        $offset        = $isUnlimited ? 0 : ($page - 1) * $perPage;
+
+        switch ($sortBy) {
+            case 'nama_prestasi':
+                $builder->orderBy('tp.nama_prestasi', $sortOrder)->orderBy('tp.id', 'DESC');
+                break;
+            case 'tingkat_prestasi':
+                $builder->orderBy("FIELD(tp.tingkat_prestasi, 'internal', 'daerah', 'nasional', 'internasional')", $sortOrder, false)
+                    ->orderBy('tp.tanggal_mulai', 'DESC');
+                break;
+            case 'peringkat':
+                $builder->orderBy('tp.peringkat', $sortOrder)->orderBy('tp.tanggal_mulai', 'DESC');
+                break;
+            case 'jenis_keikutsertaan':
+                $builder->orderBy('tp.jenis_keikutsertaan', $sortOrder)->orderBy('tp.tanggal_mulai', 'DESC');
+                break;
+            case 'jumlah_peserta':
+                $builder->orderBy('COALESCE(pagg.jml_peserta, 0)', $sortOrder, false)->orderBy('tp.id', 'DESC');
+                break;
+            case 'tanggal_mulai':
+                $builder->orderBy('tp.tanggal_mulai', $sortOrder)->orderBy('tp.id', 'DESC');
+                break;
+            case 'status_validasi':
+                $builder->orderBy("FIELD(tp.status_validasi, 'diajukan', 'perlu_perbaikan', 'draf', 'tervalidasi')", $sortOrder, false)
+                    ->orderBy('tp.tanggal_mulai', 'DESC');
+                break;
+            default:
+                $builder->orderBy("FIELD(tp.status_validasi, 'diajukan', 'perlu_perbaikan', 'draf', 'tervalidasi')", '', false)
+                    ->orderBy('tp.tanggal_mulai', 'DESC')
+                    ->orderBy('tp.id', 'DESC');
+                break;
+        }
+
+        if (!$isUnlimited) {
+            $builder->limit($perPage, $offset);
+        }
 
         $rows = $builder
-            ->orderBy("FIELD(tp.status_validasi, 'diajukan', 'perlu_perbaikan', 'draf', 'tervalidasi')", '', false)
-            ->orderBy('tp.id', 'ASC')
-            ->limit($perPage, $offset)
             ->get()
             ->getResultArray();
 
@@ -227,11 +327,11 @@ class PrestasiService
             'rows'       => $rows,
             'pagination' => [
                 'page'           => $page,
-                'per_page'       => $perPage,
+                'per_page'       => $isUnlimited ? $totalFiltered : $perPage,
                 'total_filtered' => $totalFiltered,
                 'total_pages'    => $totalPages,
                 'from'           => $totalFiltered > 0 ? $offset + 1 : 0,
-                'to'             => min($offset + $perPage, $totalFiltered),
+                'to'             => $isUnlimited ? $totalFiltered : min($offset + $perPage, $totalFiltered),
             ],
         ];
     }
@@ -251,7 +351,7 @@ class PrestasiService
 
         $peserta = $this->db->table('taruna_peserta_prestasi tpp')
             ->select('tpp.id AS peserta_id, tpp.prestasi_id, tpp.nomor_taruna, tpp.peran,
-                      mt.nama_lengkap, mt.status_terkini, ps.kode_prodi, ang.tahun_masuk AS angkatan')
+                      mt.nama_lengkap, mt.status_terkini, ps.kode_prodi, ang.tahun_masuk AS angkatan, ang.kode_romawi AS angkatan_romawi')
             ->join('master_taruna mt', 'mt.nomor_taruna = tpp.nomor_taruna', 'inner')
             ->join('pendidikan_taruna pt', 'pt.nomor_taruna = mt.nomor_taruna', 'left')
             ->join('ref_program_studi ps', 'ps.id = pt.program_studi_id', 'left')
@@ -311,6 +411,22 @@ class PrestasiService
      */
     public function saveInformasi(array $input, ?int $id = null): array
     {
+        $namaPrestasi  = trim((string) ($input['nama_prestasi'] ?? ''));
+        $penyelenggara = trim((string) ($input['penyelenggara'] ?? ''));
+        $lokasi        = trim((string) ($input['lokasi_kegiatan'] ?? ''));
+        if (mb_strlen($namaPrestasi) < 3) {
+            return [
+                'status'  => false,
+                'message' => 'Nama prestasi minimal 3 karakter.',
+            ];
+        }
+        if ($penyelenggara === '' || $lokasi === '') {
+            return [
+                'status'  => false,
+                'message' => 'Penyelenggara dan lokasi kegiatan wajib diisi.',
+            ];
+        }
+
         $tglMulai   = trim((string) ($input['tanggal_mulai'] ?? ''));
         $tglSelesai = trim((string) ($input['tanggal_selesai'] ?? ''));
         if ($tglMulai !== '' && $tglSelesai !== '' && $tglSelesai < $tglMulai) {
@@ -356,7 +472,19 @@ class PrestasiService
             if ($id !== null && $id > 0) {
                 $existing = $this->prestasiModel->find($id);
                 if (!$existing) {
+                    $this->db->transRollback();
                     return ['status' => false, 'message' => 'Data prestasi tidak ditemukan.'];
+                }
+
+                if ($keikutsertaan === 'individu') {
+                    $jumlahPeserta = (int) $this->pesertaModel->where('prestasi_id', $id)->countAllResults();
+                    if ($jumlahPeserta > 1) {
+                        $this->db->transRollback();
+                        return [
+                            'status'  => false,
+                            'message' => 'Hapus peserta tambahan terlebih dahulu sebelum mengubah keikutsertaan menjadi Individu.',
+                        ];
+                    }
                 }
 
                 // Jika sebelumnya tervalidasi dan dilakukan koreksi, kembalikan ke draf untuk diajukan ulang
@@ -373,6 +501,19 @@ class PrestasiService
                 $this->prestasiModel->update($id, $payload);
                 $savedId = $id;
             } else {
+                $initialNomor = trim((string) ($input['initial_peserta_nomor'] ?? ''));
+                if ($initialNomor !== '') {
+                    $tarunaAda = $this->db->table('master_taruna')
+                        ->select('nomor_taruna')
+                        ->where('nomor_taruna', $initialNomor)
+                        ->get()
+                        ->getRowArray();
+                    if (!$tarunaAda) {
+                        $this->db->transRollback();
+                        return ['status' => false, 'message' => 'Data taruna pengaju tidak ditemukan.'];
+                    }
+                }
+
                 $payload['status_validasi']       = 'draf';
                 $payload['riwayat_validasi_json'] = $this->prependRiwayat(
                     null,
@@ -383,6 +524,16 @@ class PrestasiService
                 );
                 $this->prestasiModel->insert($payload);
                 $savedId = (int) $this->prestasiModel->getInsertID();
+
+                if ($initialNomor !== '') {
+                    $initialPeran = ($keikutsertaan === 'individu') ? 'Peserta Utama' : 'Ketua Tim';
+                    $this->pesertaModel->insert([
+                        'prestasi_id'  => $savedId,
+                        'nomor_taruna' => $initialNomor,
+                        'peran'        => $initialPeran,
+                        'created_at'   => date('Y-m-d H:i:s'),
+                    ]);
+                }
             }
 
             $this->db->transComplete();
@@ -410,7 +561,7 @@ class PrestasiService
      * @param string $peran
      * @return array{status: bool, message: string}
      */
-    public function addPeserta(int $prestasiId, string $nomorTaruna, string $peran = 'Anggota'): array
+    public function addPeserta(int $prestasiId, string $nomorTaruna, string $peran = 'Anggota', ?string $pelakuLabel = null): array
     {
         $prestasi = $this->prestasiModel->find($prestasiId);
         if (!$prestasi) {
@@ -425,7 +576,7 @@ class PrestasiService
             ->getRowArray();
 
         if (!$tarunaExists) {
-            return ['status' => false, 'message' => 'Taruna tidak ditemukan dalam basis data.'];
+            return ['status' => false, 'message' => 'Data taruna tidak ditemukan.'];
         }
 
         $existingSame = $this->pesertaModel
@@ -454,13 +605,30 @@ class PrestasiService
                 'peran'        => $peranClean,
                 'created_at'   => date('Y-m-d H:i:s'),
             ]);
+            if (($prestasi['status_validasi'] ?? '') === 'tervalidasi') {
+                $actor = trim((string) ($pelakuLabel ?: 'PIC Ketarunaan'));
+                $this->prestasiModel->update($prestasiId, [
+                    'status_validasi'       => 'draf',
+                    'riwayat_validasi_json' => $this->prependRiwayat(
+                        $prestasi['riwayat_validasi_json'] ?? null,
+                        $actor,
+                        'Mengajukan koreksi',
+                        'draf',
+                        'Penambahan peserta prestasi.'
+                    ),
+                ]);
+            }
             $this->db->transComplete();
 
             if ($this->db->transStatus() === false) {
                 return ['status' => false, 'message' => 'Gagal menambahkan peserta prestasi. Silakan coba lagi.'];
             }
 
-            return ['status' => true, 'message' => 'Peserta berhasil ditambahkan ke prestasi.'];
+            $msg = (($prestasi['status_validasi'] ?? '') === 'tervalidasi')
+                ? 'Peserta ditambahkan. Status prestasi dikembalikan ke Draf untuk validasi ulang.'
+                : 'Peserta berhasil ditambahkan ke prestasi.';
+
+            return ['status' => true, 'message' => $msg];
         } catch (\Throwable $e) {
             log_message('error', '[PrestasiService::addPeserta] ' . $e->getMessage());
             return ['status' => false, 'message' => 'Gagal menambahkan peserta prestasi. Silakan coba lagi.'];
@@ -470,27 +638,47 @@ class PrestasiService
     /**
      * Menghapus peserta dari prestasi dengan validasi kepemilikan prestasi_id.
      *
-     * @param int $prestasiId
-     * @param int $pesertaId
+     * @param int         $prestasiId
+     * @param int         $pesertaId
+     * @param string|null $pelakuLabel
      * @return array{status: bool, message: string}
      */
-    public function removePeserta(int $prestasiId, int $pesertaId): array
+    public function removePeserta(int $prestasiId, int $pesertaId, ?string $pelakuLabel = null): array
     {
         $row = $this->pesertaModel->find($pesertaId);
         if (!$row || (int) $row['prestasi_id'] !== $prestasiId) {
             return ['status' => false, 'message' => 'Data peserta tidak ditemukan pada prestasi ini.'];
         }
 
+        $prestasi = $this->prestasiModel->find($prestasiId);
+
         try {
             $this->db->transStart();
             $this->pesertaModel->delete($pesertaId);
+            if ($prestasi && ($prestasi['status_validasi'] ?? '') === 'tervalidasi') {
+                $actor = trim((string) ($pelakuLabel ?: 'PIC Ketarunaan'));
+                $this->prestasiModel->update($prestasiId, [
+                    'status_validasi'       => 'draf',
+                    'riwayat_validasi_json' => $this->prependRiwayat(
+                        $prestasi['riwayat_validasi_json'] ?? null,
+                        $actor,
+                        'Mengajukan koreksi',
+                        'draf',
+                        'Penghapusan peserta prestasi.'
+                    ),
+                ]);
+            }
             $this->db->transComplete();
 
             if ($this->db->transStatus() === false) {
                 return ['status' => false, 'message' => 'Gagal menghapus peserta. Silakan coba lagi.'];
             }
 
-            return ['status' => true, 'message' => 'Peserta berhasil dihapus dari daftar prestasi.'];
+            $msg = ($prestasi && ($prestasi['status_validasi'] ?? '') === 'tervalidasi')
+                ? 'Peserta dihapus. Status prestasi dikembalikan ke Draf untuk validasi ulang.'
+                : 'Peserta berhasil dihapus dari daftar prestasi.';
+
+            return ['status' => true, 'message' => $msg];
         } catch (\Throwable $e) {
             log_message('error', '[PrestasiService::removePeserta] ' . $e->getMessage());
             return ['status' => false, 'message' => 'Gagal menghapus peserta. Silakan coba lagi.'];
@@ -515,11 +703,20 @@ class PrestasiService
         $existingDok = $detail['dokumentasi'];
 
         $nomorSertifikat = trim((string) ($data['nomor_sertifikat'] ?? $prestasi['nomor_sertifikat'] ?? ''));
-        $buktiBerkas     = !empty($data['bukti_berkas']) ? (string) $data['bukti_berkas'] : (string) ($prestasi['bukti_berkas'] ?? '');
-        $ukuranKb        = !empty($data['bukti_berkas']) ? (int) ($data['ukuran_berkas_kb'] ?? 420) : (int) ($prestasi['ukuran_berkas_kb'] ?? 420);
 
-        $newFotos = is_array($data['dokumentasi_baru'] ?? null) ? $data['dokumentasi_baru'] : [];
-        $mergedDok = array_values(array_slice(array_merge($existingDok, $newFotos), 0, 5));
+        if (array_key_exists('bukti_berkas', $data)) {
+            $buktiVal    = trim((string) ($data['bukti_berkas'] ?? ''));
+            $buktiBerkas = $buktiVal;
+            $ukuranKb    = ($buktiVal !== '' && !ketarunaan_is_http_url($buktiVal, 2000))
+                ? max(1, (int) ($data['ukuran_berkas_kb'] ?? $prestasi['ukuran_berkas_kb'] ?? 1))
+                : 0;
+        } else {
+            $buktiBerkas = trim((string) ($prestasi['bukti_berkas'] ?? ''));
+            $ukuranKb    = (int) ($prestasi['ukuran_berkas_kb'] ?? 0);
+        }
+
+        $newItems  = is_array($data['dokumentasi_baru'] ?? null) ? $data['dokumentasi_baru'] : [];
+        $mergedDok = array_values(array_slice(array_unique(array_merge($existingDok, $newItems)), 0, 5));
 
         $aksiSubmit = trim((string) ($data['aksi_submit'] ?? 'draf'));
 
@@ -531,7 +728,7 @@ class PrestasiService
                 return ['status' => false, 'message' => 'Tambahkan minimal 1 peserta prestasi sebelum mengajukan validasi.'];
             }
             if ($nomorSertifikat === '' || $buktiBerkas === '') {
-                return ['status' => false, 'message' => 'Nomor sertifikat dan berkas bukti utama wajib diisi sebelum mengajukan validasi.'];
+                return ['status' => false, 'message' => 'Nomor sertifikat dan tautan bukti utama wajib diisi sebelum mengajukan validasi.'];
             }
         }
 
@@ -586,34 +783,60 @@ class PrestasiService
      * @param string $filename
      * @return array{status: bool, message: string}
      */
-    public function removeDokumentasi(int $prestasiId, string $filename): array
+    public function removeDokumentasi(int $prestasiId, string $filename, ?string $pelakuLabel = null): array
     {
         $prestasi = $this->prestasiModel->find($prestasiId);
         if (!$prestasi) {
             return ['status' => false, 'message' => 'Data prestasi tidak ditemukan.'];
         }
 
-        $target = basename($filename);
-        $list   = json_decode((string) ($prestasi['dokumentasi_json'] ?? '[]'), true);
+        $rawTarget = trim($filename);
+        $isUrl     = ketarunaan_is_http_url($rawTarget, 2000);
+        $target    = $isUrl ? $rawTarget : basename($rawTarget);
+        $list      = json_decode((string) ($prestasi['dokumentasi_json'] ?? '[]'), true);
+
         if (!is_array($list) || !in_array($target, $list, true)) {
-            return ['status' => false, 'message' => 'Berkas dokumentasi tidak ditemukan.'];
+            return ['status' => false, 'message' => 'Dokumentasi tidak ditemukan.'];
         }
 
-        $filtered = array_values(array_filter($list, static fn ($f) => $f !== $target));
+        $filtered = array_values(array_filter($list, static fn ($f) => (string) $f !== $target));
+
+        $updatePayload = [
+            'dokumentasi_json' => !empty($filtered) ? json_encode($filtered) : null,
+        ];
+        if (($prestasi['status_validasi'] ?? '') === 'tervalidasi') {
+            $actor = trim((string) ($pelakuLabel ?: 'PIC Ketarunaan'));
+            $updatePayload['status_validasi']       = 'draf';
+            $updatePayload['riwayat_validasi_json'] = $this->prependRiwayat(
+                $prestasi['riwayat_validasi_json'] ?? null,
+                $actor,
+                'Mengajukan koreksi',
+                'draf',
+                'Penghapusan dokumentasi prestasi.'
+            );
+        }
 
         try {
             $this->db->transStart();
-            $this->prestasiModel->update($prestasiId, [
-                'dokumentasi_json' => !empty($filtered) ? json_encode($filtered) : null,
-            ]);
+            $this->prestasiModel->update($prestasiId, $updatePayload);
             $this->db->transComplete();
 
-            $filePath = FCPATH . 'assets/uploads/ketarunaan/prestasi/dokumentasi/' . $target;
-            if (is_file($filePath)) {
-                @unlink($filePath);
+            if ($this->db->transStatus() === false) {
+                return ['status' => false, 'message' => 'Gagal menghapus dokumentasi. Silakan coba lagi.'];
             }
 
-            return ['status' => true, 'message' => 'Foto dokumentasi berhasil dihapus.'];
+            if (!$isUrl) {
+                $filePath = FCPATH . 'assets/uploads/ketarunaan/prestasi/dokumentasi/' . $target;
+                if (is_file($filePath)) {
+                    @unlink($filePath);
+                }
+            }
+
+            $msg = (($prestasi['status_validasi'] ?? '') === 'tervalidasi')
+                ? 'Dokumentasi dihapus. Status prestasi dikembalikan ke Draf untuk validasi ulang.'
+                : 'Dokumentasi berhasil dihapus.';
+
+            return ['status' => true, 'message' => $msg];
         } catch (\Throwable $e) {
             log_message('error', '[PrestasiService::removeDokumentasi] ' . $e->getMessage());
             return ['status' => false, 'message' => 'Gagal menghapus dokumentasi. Silakan coba lagi.'];
@@ -631,9 +854,21 @@ class PrestasiService
      */
     public function processValidation(int $prestasiId, string $keputusan, ?string $catatan, string $validatorLabel): array
     {
+        if (!in_array($keputusan, ['tervalidasi', 'perlu_perbaikan'], true)) {
+            return ['status' => false, 'message' => 'Keputusan validasi tidak valid.'];
+        }
+
         $prestasi = $this->prestasiModel->find($prestasiId);
         if (!$prestasi) {
             return ['status' => false, 'message' => 'Data prestasi tidak ditemukan.'];
+        }
+
+        $currentStatus = (string) ($prestasi['status_validasi'] ?? '');
+        if ($currentStatus === 'tervalidasi') {
+            return ['status' => false, 'message' => 'Prestasi ini sudah tervalidasi.'];
+        }
+        if ($currentStatus === 'draf') {
+            return ['status' => false, 'message' => 'Prestasi berstatus draf belum diajukan untuk validasi.'];
         }
 
         $isValid      = ($keputusan === 'tervalidasi');
@@ -689,8 +924,8 @@ class PrestasiService
             return ['status' => false, 'message' => 'Data prestasi tidak ditemukan.'];
         }
 
-        if ($prestasi['status_validasi'] === 'tervalidasi') {
-            return ['status' => false, 'message' => 'Prestasi yang sudah tervalidasi tidak dapat dihapus.'];
+        if (!in_array((string) ($prestasi['status_validasi'] ?? ''), ['draf', 'perlu_perbaikan'], true)) {
+            return ['status' => false, 'message' => 'Hanya draf atau pengajuan yang perlu perbaikan yang dapat dihapus.'];
         }
 
         try {

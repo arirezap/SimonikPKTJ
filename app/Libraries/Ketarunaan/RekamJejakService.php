@@ -29,6 +29,8 @@ class RekamJejakService
      */
     public function getReferenceOptions(): array
     {
+        ketarunaan_ensure_kalender_terkini($this->db);
+
         $prodiList = $this->db->table('ref_program_studi')
             ->select('id, kode_prodi, nama_prodi, jenjang')
             ->where('is_aktif', 1)
@@ -37,7 +39,7 @@ class RekamJejakService
             ->getResultArray();
 
         $angkatanList = $this->db->table('ref_angkatan')
-            ->select('id, tahun_masuk, perkiraan_lulus')
+            ->select('id, tahun_masuk, kode_romawi, perkiraan_lulus')
             ->where('is_aktif', 1)
             ->orderBy('tahun_masuk', 'DESC')
             ->get()
@@ -108,8 +110,8 @@ class RekamJejakService
                             GROUP BY tpp.nomor_taruna) pres";
 
         $builder = $this->db->table('master_taruna mt')
-            ->select('mt.nomor_taruna, mt.nama_lengkap, mt.status_terkini, mt.updated_at,
-                      ps.kode_prodi, ps.nama_prodi, ang.tahun_masuk AS angkatan,
+            ->select('mt.nomor_taruna, mt.nama_lengkap, mt.foto, mt.status_terkini, mt.updated_at,
+                      ps.kode_prodi, ps.nama_prodi, ang.tahun_masuk AS angkatan, ang.kode_romawi AS angkatan_romawi,
                       COALESCE(cap.jml_capaian, 0) AS jumlah_capaian,
                       COALESCE(pres.jml_prestasi, 0) AS jumlah_prestasi,
                       cap.tgl_capaian_terakhir, pres.tgl_prestasi_terakhir')
@@ -139,14 +141,50 @@ class RekamJejakService
         }
 
         $totalFiltered = $builder->countAllResults(false);
-        $totalPages    = max(1, (int) ceil($totalFiltered / $perPage));
-        $page          = max(1, min($page, $totalPages));
-        $offset        = ($page - 1) * $perPage;
+        $isUnlimited   = ($perPage <= 0);
+        $totalPages    = $isUnlimited ? 1 : max(1, (int) ceil($totalFiltered / $perPage));
+        $page          = $isUnlimited ? 1 : max(1, min($page, $totalPages));
+        $offset        = $isUnlimited ? 0 : ($page - 1) * $perPage;
+
+        $sortBy    = trim((string) ($filters['sort_by'] ?? 'jumlah_capaian'));
+        $sortOrder = strtolower(trim((string) ($filters['sort_order'] ?? 'desc'))) === 'asc' ? 'ASC' : 'DESC';
+
+        switch ($sortBy) {
+            case 'nomor_taruna':
+                $builder->orderBy('mt.nomor_taruna', $sortOrder);
+                break;
+            case 'nama_lengkap':
+                $builder->orderBy('mt.nama_lengkap', $sortOrder)->orderBy('mt.nomor_taruna', 'ASC');
+                break;
+            case 'prodi_angkatan':
+                $builder->orderBy('ps.kode_prodi', $sortOrder)
+                    ->orderBy('ang.tahun_masuk', $sortOrder)
+                    ->orderBy('mt.nomor_taruna', 'ASC');
+                break;
+            case 'status_terkini':
+                $builder->orderBy('mt.status_terkini', $sortOrder)->orderBy('mt.nomor_taruna', 'ASC');
+                break;
+            case 'jumlah_prestasi':
+                $builder->orderBy('COALESCE(pres.jml_prestasi, 0)', $sortOrder, false)->orderBy('mt.nomor_taruna', 'ASC');
+                break;
+            case 'pembaruan':
+                $builder->orderBy(
+                    "GREATEST(COALESCE(cap.tgl_capaian_terakhir, '1970-01-01'), COALESCE(pres.tgl_prestasi_terakhir, '1970-01-01'), COALESCE(DATE(mt.updated_at), '1970-01-01'))",
+                    $sortOrder,
+                    false
+                )->orderBy('mt.nomor_taruna', 'ASC');
+                break;
+            case 'jumlah_capaian':
+            default:
+                $builder->orderBy('COALESCE(cap.jml_capaian, 0)', $sortOrder, false)->orderBy('mt.nomor_taruna', 'ASC');
+                break;
+        }
+
+        if (!$isUnlimited) {
+            $builder->limit($perPage, $offset);
+        }
 
         $rows = $builder
-            ->orderBy('COALESCE(cap.jml_capaian, 0)', 'DESC', false)
-            ->orderBy('mt.nomor_taruna', 'ASC')
-            ->limit($perPage, $offset)
             ->get()
             ->getResultArray();
 
@@ -156,7 +194,7 @@ class RekamJejakService
                 $row['tgl_prestasi_terakhir'] ?? null,
                 !empty($row['updated_at']) ? substr((string) $row['updated_at'], 0, 10) : null,
             ]);
-            $row['tanggal_pembaruan'] = !empty($dates) ? max($dates) : '2026-10-30';
+            $row['tanggal_pembaruan'] = !empty($dates) ? max($dates) : date('Y-m-d');
         }
         unset($row);
 
@@ -170,13 +208,37 @@ class RekamJejakService
             'rows'       => $rows,
             'pagination' => [
                 'page'           => $page,
-                'per_page'       => $perPage,
+                'per_page'       => $isUnlimited ? $totalFiltered : $perPage,
                 'total_filtered' => $totalFiltered,
                 'total_pages'    => $totalPages,
                 'from'           => $totalFiltered > 0 ? $offset + 1 : 0,
-                'to'             => min($offset + $perPage, $totalFiltered),
+                'to'             => $isUnlimited ? $totalFiltered : min($offset + $perPage, $totalFiltered),
             ],
         ];
+    }
+
+    /**
+     * Mengambil ringkasan header 1 taruna secara ringan tanpa memuat seluruh kronologi lintas modul.
+     *
+     * @param string $nomorTaruna
+     * @return array<string, mixed>|null
+     */
+    public function getTarunaHeader(string $nomorTaruna): ?array
+    {
+        $row = $this->db->table('master_taruna mt')
+            ->select('mt.nomor_taruna, mt.nama_lengkap, mt.nama_panggilan, mt.jenis_kelamin, mt.foto, mt.status_terkini,
+                      pt.tingkat, pt.semester_aktif, pt.jalur_penerimaan, pt.asal_formasi,
+                      ps.kode_prodi, ps.nama_prodi, ps.jenjang,
+                      ang.tahun_masuk AS angkatan, ang.kode_romawi AS angkatan_romawi, kls.nama_kelas')
+            ->join('pendidikan_taruna pt', 'pt.nomor_taruna = mt.nomor_taruna', 'left')
+            ->join('ref_program_studi ps', 'ps.id = pt.program_studi_id', 'left')
+            ->join('ref_angkatan ang', 'ang.id = pt.angkatan_id', 'left')
+            ->join('ref_kelas kls', 'kls.id = pt.kelas_id', 'left')
+            ->where('mt.nomor_taruna', $nomorTaruna)
+            ->get()
+            ->getRowArray();
+
+        return $row ?: null;
     }
 
     /**
@@ -194,18 +256,7 @@ class RekamJejakService
         bool $canViewDiscipline = false,
         bool $canViewRestrictedBeasiswa = false
     ): ?array {
-        $taruna = $this->db->table('master_taruna mt')
-            ->select('mt.nomor_taruna, mt.nama_lengkap, mt.nama_panggilan, mt.jenis_kelamin, mt.foto, mt.status_terkini,
-                      pt.tingkat, pt.semester_aktif, pt.jalur_penerimaan, pt.asal_formasi,
-                      ps.kode_prodi, ps.nama_prodi, ps.jenjang,
-                      ang.tahun_masuk AS angkatan, kls.nama_kelas')
-            ->join('pendidikan_taruna pt', 'pt.nomor_taruna = mt.nomor_taruna', 'left')
-            ->join('ref_program_studi ps', 'ps.id = pt.program_studi_id', 'left')
-            ->join('ref_angkatan ang', 'ang.id = pt.angkatan_id', 'left')
-            ->join('ref_kelas kls', 'kls.id = pt.kelas_id', 'left')
-            ->where('mt.nomor_taruna', $nomorTaruna)
-            ->get()
-            ->getRowArray();
+        $taruna = $this->getTarunaHeader($nomorTaruna);
 
         if (!$taruna) {
             return null;
@@ -226,6 +277,7 @@ class RekamJejakService
             'tervalidasi'     => 0,
             'diajukan'        => 0,
             'perlu_perbaikan' => 0,
+            'draf'            => 0,
         ];
         $capaianTerbaru = [];
 
@@ -240,6 +292,8 @@ class RekamJejakService
                 $capaianCounts['diajukan']++;
             } elseif (in_array($st, ['perlu_perbaikan', 'dikembalikan'], true)) {
                 $capaianCounts['perlu_perbaikan']++;
+            } else {
+                $capaianCounts['draf']++;
             }
         }
 
@@ -308,19 +362,26 @@ class RekamJejakService
         }
 
         // 6. Susun Ringkasan Perjalanan (Tab 1) dari riwayat status tervalidasi
-        $ringkasanPerjalanan = [];
-        foreach ($riwayatStatus as $idx => $rs) {
+        $ringkasanPerjalanan   = [];
+        $hasFirstAktifValidated = false;
+        foreach ($riwayatStatus as $rs) {
             if (($rs['status_validasi'] ?? '') !== 'tervalidasi') {
                 continue;
             }
             $kodeSt = $rs['kode_status'];
-            $judulPerjalanan = match ($kodeSt) {
-                'aktif'    => ($idx === 0) ? ('Registrasi awal ' . ($taruna['kode_prodi'] ?? '')) : 'Aktif kembali setelah cuti',
-                'cuti'     => 'Cuti Akademik',
-                'skorsing' => 'Skorsing Pembinaan',
-                'lulus'    => 'Lulus Pendidikan',
-                default    => ketarunaan_status_meta($kodeSt)['label'],
-            };
+            if ($kodeSt === 'aktif') {
+                $judulPerjalanan = !$hasFirstAktifValidated
+                    ? ('Registrasi awal ' . ($taruna['kode_prodi'] ?? ''))
+                    : 'Aktif kembali mengikuti pendidikan';
+                $hasFirstAktifValidated = true;
+            } else {
+                $judulPerjalanan = match ($kodeSt) {
+                    'cuti'     => 'Cuti Akademik',
+                    'skorsing' => 'Skorsing Pembinaan',
+                    'lulus'    => 'Lulus Pendidikan',
+                    default    => ketarunaan_status_meta($kodeSt)['label'],
+                };
+            }
             $kategoriPerjalanan = ($kodeSt === 'aktif') ? 'Pendidikan' : 'Status Pendidikan';
 
             $ringkasanPerjalanan[] = [
@@ -354,23 +415,30 @@ class RekamJejakService
             ];
         }
 
-        foreach ($riwayatStatus as $idx => $rs) {
+        $hasFirstAktifKronologi = false;
+        foreach ($riwayatStatus as $rs) {
             $kodeSt = $rs['kode_status'];
             $isAwalAtauKembali = ($kodeSt === 'aktif');
+            if ($isAwalAtauKembali) {
+                $judulKron = !$hasFirstAktifKronologi
+                    ? ('Registrasi awal ' . ($taruna['kode_prodi'] ?? ''))
+                    : 'Aktif kembali mengikuti pendidikan';
+                $hasFirstAktifKronologi = true;
+            } else {
+                $judulKron = ketarunaan_status_meta($kodeSt)['label'];
+            }
             $kronologiItems[] = [
                 'tanggal'           => $rs['mulai_berlaku'],
                 'tanggal_selesai'   => $rs['akhir_berlaku'],
                 'modul'             => $isAwalAtauKembali ? 'pendidikan' : 'status_pendidikan',
                 'kategori_kode'     => $isAwalAtauKembali ? 'pendidikan' : 'status_pendidikan',
                 'kategori_label'    => $isAwalAtauKembali ? 'Pendidikan' : 'Status Pendidikan',
-                'judul'             => ($idx === 0 && $kodeSt === 'aktif')
-                    ? ('Registrasi awal ' . ($taruna['kode_prodi'] ?? ''))
-                    : (($kodeSt === 'aktif') ? 'Aktif kembali setelah cuti' : ketarunaan_status_meta($kodeSt)['label']),
+                'judul'             => $judulKron,
                 'uraian'            => $rs['alasan_perubahan'] ?: '-',
                 'status_validasi'   => $rs['status_validasi'],
                 'kode_status_didik' => $kodeSt,
                 'tahun_akademik_id' => '',
-                'detail_url'        => base_url('ketarunaan/taruna/profil/' . rawurlencode($nomorTaruna) . '?tab=status'),
+                'detail_url'        => base_url('ketarunaan/taruna/profil/' . rawurlencode($nomorTaruna) . '?tab=riwayat-status'),
                 'action_label'      => 'Lihat Riwayat Status',
             ];
         }
@@ -387,14 +455,17 @@ class RekamJejakService
                 'status_validasi'   => $pr['status_validasi'],
                 'kode_status_didik' => null,
                 'tahun_akademik_id' => '',
-                'detail_url'        => base_url('ketarunaan/rekam-jejak/detail/' . rawurlencode($nomorTaruna) . '?tab=dokumen&modul=prestasi'),
-                'action_label'      => 'Lihat Bukti',
+                'detail_url'        => base_url('ketarunaan/prestasi/detail/' . (int) $pr['id']),
+                'action_label'      => 'Lihat Detail',
             ];
         }
 
         foreach ($beasiswaList as $bs) {
+            $tglBeasiswa = !empty($bs['tanggal_penetapan'])
+                ? (string) $bs['tanggal_penetapan']
+                : (!empty($bs['created_at']) ? substr((string) $bs['created_at'], 0, 10) : '');
             $kronologiItems[] = [
-                'tanggal'           => $bs['tanggal_penetapan'] ?: '2025-10-01',
+                'tanggal'           => $tglBeasiswa,
                 'tanggal_selesai'   => null,
                 'modul'             => 'beasiswa',
                 'kategori_kode'     => 'beasiswa',
@@ -404,7 +475,7 @@ class RekamJejakService
                 'status_validasi'   => $bs['status_validasi'],
                 'kode_status_didik' => null,
                 'tahun_akademik_id' => '',
-                'detail_url'        => base_url('ketarunaan/rekam-jejak/detail/' . rawurlencode($nomorTaruna) . '?tab=dokumen&modul=beasiswa'),
+                'detail_url'        => base_url('ketarunaan/beasiswa/detail/' . $bs['id']),
                 'action_label'      => 'Lihat Detail',
             ];
         }
@@ -434,15 +505,40 @@ class RekamJejakService
         $perFilterKron = trim((string) ($filters['periode_kronologi'] ?? 'all'));
         $valFilterKron = trim((string) ($filters['validasi_kronologi'] ?? 'all'));
 
-        $filteredKronologi = array_values(array_filter($kronologiItems, static function (array $item) use ($katFilterKron, $perFilterKron, $valFilterKron): bool {
+        $periodeWindow = null;
+        if ($perFilterKron !== 'all' && $perFilterKron !== '' && ctype_digit($perFilterKron)) {
+            $periodeWindow = $this->db->table('ref_tahun_akademik')
+                ->select('id, tanggal_mulai, tanggal_selesai')
+                ->where('id', (int) $perFilterKron)
+                ->get()
+                ->getRowArray() ?: null;
+        }
+
+        $filteredKronologi = array_values(array_filter($kronologiItems, static function (array $item) use ($katFilterKron, $perFilterKron, $valFilterKron, $periodeWindow): bool {
             if ($katFilterKron !== 'all' && $katFilterKron !== '' && $item['kategori_kode'] !== $katFilterKron) {
                 return false;
             }
-            if ($perFilterKron !== 'all' && $perFilterKron !== '' && $item['tahun_akademik_id'] !== '' && $item['tahun_akademik_id'] !== $perFilterKron) {
-                return false;
+            if ($perFilterKron !== 'all' && $perFilterKron !== '') {
+                if ($item['tahun_akademik_id'] !== '') {
+                    if ($item['tahun_akademik_id'] !== $perFilterKron) {
+                        return false;
+                    }
+                } elseif ($periodeWindow !== null && !empty($periodeWindow['tanggal_mulai']) && !empty($periodeWindow['tanggal_selesai'])) {
+                    $tglItem = substr((string) ($item['tanggal'] ?? ''), 0, 10);
+                    if ($tglItem === '' || $tglItem < $periodeWindow['tanggal_mulai'] || $tglItem > $periodeWindow['tanggal_selesai']) {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
             }
-            if ($valFilterKron !== 'all' && $valFilterKron !== '' && $item['status_validasi'] !== $valFilterKron) {
-                return false;
+            if ($valFilterKron !== 'all' && $valFilterKron !== '') {
+                if ($valFilterKron === 'perlu_perbaikan' && !in_array($item['status_validasi'], ['perlu_perbaikan', 'dikembalikan'], true)) {
+                    return false;
+                }
+                if ($valFilterKron !== 'perlu_perbaikan' && $item['status_validasi'] !== $valFilterKron) {
+                    return false;
+                }
             }
             return true;
         }));
@@ -451,79 +547,98 @@ class RekamJejakService
         $dokumenItems = [];
 
         foreach ($allCapaian as $cap) {
-            if (empty($cap['bukti_berkas'])) {
+            $rawBukti = trim((string) ($cap['bukti_berkas'] ?? ''));
+            if ($rawBukti === '') {
                 continue;
             }
+            $isUrl = ketarunaan_is_http_url($rawBukti, 2000);
             $dokumenItems[] = [
-                'id_sumber'     => (int) $cap['id'],
-                'nama_berkas'   => $cap['bukti_berkas'],
-                'modul_sumber'  => 'capaian',
-                'jenis_dokumen' => strtolower((string) ($cap['sumber_dokumen'] ?: 'sertifikat')),
-                'kegiatan'      => $cap['nama_capaian'],
-                'tanggal'       => $cap['tanggal_kegiatan'],
-                'akses'         => 'internal',
-                'can_access'    => true,
-                'preview_url'   => base_url('ketarunaan/rekam-jejak/unduh-bukti/capaian/' . $cap['id'] . '?inline=1'),
-                'download_url'  => base_url('ketarunaan/rekam-jejak/unduh-bukti/capaian/' . $cap['id']),
-                'modul_url'     => base_url('ketarunaan/rekam-jejak/capaian/' . $cap['id']),
+                'id_sumber'       => (int) $cap['id'],
+                'raw_bukti'       => $rawBukti,
+                'nama_berkas'     => ketarunaan_format_bukti_label($rawBukti),
+                'is_external_url' => $isUrl,
+                'modul_sumber'    => 'capaian',
+                'jenis_dokumen'   => strtolower((string) ($cap['sumber_dokumen'] ?: 'sertifikat')),
+                'kegiatan'        => $cap['nama_capaian'],
+                'tanggal'         => $cap['tanggal_kegiatan'],
+                'akses'           => 'internal',
+                'can_access'      => true,
+                'preview_url'     => ketarunaan_resolve_bukti_url($rawBukti, 'capaian', (int) $cap['id'], true),
+                'download_url'    => ketarunaan_resolve_bukti_url($rawBukti, 'capaian', (int) $cap['id'], false),
+                'modul_url'       => base_url('ketarunaan/rekam-jejak/capaian/' . $cap['id']),
             ];
         }
 
         foreach ($prestasiList as $pr) {
-            if (empty($pr['bukti_berkas'])) {
+            $rawBukti = trim((string) ($pr['bukti_berkas'] ?? ''));
+            if ($rawBukti === '') {
                 continue;
             }
+            $isUrl = ketarunaan_is_http_url($rawBukti, 2000);
             $dokumenItems[] = [
-                'id_sumber'     => (int) $pr['id'],
-                'nama_berkas'   => $pr['bukti_berkas'],
-                'modul_sumber'  => 'prestasi',
-                'jenis_dokumen' => 'piagam',
-                'kegiatan'      => $pr['nama_prestasi'],
-                'tanggal'       => $pr['tanggal_mulai'],
-                'akses'         => 'internal',
-                'can_access'    => true,
-                'preview_url'   => base_url('ketarunaan/rekam-jejak/unduh-bukti/prestasi/' . $pr['id'] . '?inline=1'),
-                'download_url'  => base_url('ketarunaan/rekam-jejak/unduh-bukti/prestasi/' . $pr['id']),
-                'modul_url'     => base_url('ketarunaan/prestasi/detail/' . $pr['id']),
+                'id_sumber'       => (int) $pr['id'],
+                'raw_bukti'       => $rawBukti,
+                'nama_berkas'     => ketarunaan_format_bukti_label($rawBukti),
+                'is_external_url' => $isUrl,
+                'modul_sumber'    => 'prestasi',
+                'jenis_dokumen'   => 'piagam',
+                'kegiatan'        => $pr['nama_prestasi'],
+                'tanggal'         => $pr['tanggal_mulai'],
+                'akses'           => 'internal',
+                'can_access'      => true,
+                'preview_url'     => ketarunaan_resolve_bukti_url($rawBukti, 'prestasi', (int) $pr['id'], true),
+                'download_url'    => ketarunaan_resolve_bukti_url($rawBukti, 'prestasi', (int) $pr['id'], false),
+                'modul_url'       => base_url('ketarunaan/prestasi/detail/' . $pr['id']),
             ];
         }
 
         foreach ($beasiswaList as $bs) {
-            $namaBerkasBs = !empty($bs['nomor_keputusan']) && str_ends_with(strtolower((string) $bs['nomor_keputusan']), '.pdf')
-                ? $bs['nomor_keputusan']
-                : 'Keputusan_Beasiswa.pdf';
+            $rawDokBs = trim((string) ($bs['dokumen_keputusan'] ?? ''));
+            if ($rawDokBs === '') {
+                continue;
+            }
+            $isUrl = ketarunaan_is_http_url($rawDokBs, 2000);
+            $tglBeasiswa = !empty($bs['tanggal_penetapan'])
+                ? (string) $bs['tanggal_penetapan']
+                : (!empty($bs['created_at']) ? substr((string) $bs['created_at'], 0, 10) : '');
 
             $dokumenItems[] = [
-                'id_sumber'     => (int) $bs['id'],
-                'nama_berkas'   => $namaBerkasBs,
-                'modul_sumber'  => 'beasiswa',
-                'jenis_dokumen' => 'surat_keputusan',
-                'kegiatan'      => $bs['nama_program'],
-                'tanggal'       => $bs['tanggal_penetapan'] ?: '2025-10-01',
-                'akses'         => 'terbatas',
-                'can_access'    => $canViewRestrictedBeasiswa,
-                'preview_url'   => base_url('ketarunaan/rekam-jejak/unduh-bukti/beasiswa/' . $bs['id'] . '?inline=1'),
-                'download_url'  => base_url('ketarunaan/rekam-jejak/unduh-bukti/beasiswa/' . $bs['id']),
-                'modul_url'     => base_url('ketarunaan/beasiswa'),
+                'id_sumber'       => (int) $bs['id'],
+                'raw_bukti'       => $rawDokBs,
+                'nama_berkas'     => ketarunaan_format_bukti_label($rawDokBs),
+                'is_external_url' => $isUrl,
+                'modul_sumber'    => 'beasiswa',
+                'jenis_dokumen'   => 'surat_keputusan',
+                'kegiatan'        => $bs['nama_program'],
+                'tanggal'         => $tglBeasiswa,
+                'akses'           => 'terbatas',
+                'can_access'      => $canViewRestrictedBeasiswa,
+                'preview_url'     => ketarunaan_resolve_bukti_url($rawDokBs, 'beasiswa', (int) $bs['id'], true),
+                'download_url'    => ketarunaan_resolve_bukti_url($rawDokBs, 'beasiswa', (int) $bs['id'], false),
+                'modul_url'       => base_url('ketarunaan/beasiswa/detail/' . $bs['id']),
             ];
         }
 
         foreach ($pelanggaranList as $pl) {
-            if (empty($pl['bukti_berkas'])) {
+            $rawBukti = trim((string) ($pl['bukti_berkas'] ?? ''));
+            if ($rawBukti === '') {
                 continue;
             }
+            $isUrl = ketarunaan_is_http_url($rawBukti, 2000);
             $dokumenItems[] = [
-                'id_sumber'     => (int) $pl['id'],
-                'nama_berkas'   => $pl['bukti_berkas'],
-                'modul_sumber'  => 'pelanggaran',
-                'jenis_dokumen' => 'berita_acara',
-                'kegiatan'      => $pl['nomor_perkara'] . ' - ' . ($pl['jenis_pelanggaran'] ?: 'Disiplin'),
-                'tanggal'       => substr((string) $pl['tanggal_kejadian'], 0, 10),
-                'akses'         => 'terbatas',
-                'can_access'    => $canViewDiscipline,
-                'preview_url'   => base_url('ketarunaan/rekam-jejak/unduh-bukti/pelanggaran/' . $pl['id'] . '?inline=1'),
-                'download_url'  => base_url('ketarunaan/rekam-jejak/unduh-bukti/pelanggaran/' . $pl['id']),
-                'modul_url'     => base_url('ketarunaan/pelanggaran/detail/' . $pl['id']),
+                'id_sumber'       => (int) $pl['id'],
+                'raw_bukti'       => $rawBukti,
+                'nama_berkas'     => ketarunaan_format_bukti_label($rawBukti),
+                'is_external_url' => $isUrl,
+                'modul_sumber'    => 'pelanggaran',
+                'jenis_dokumen'   => 'berita_acara',
+                'kegiatan'        => $pl['nomor_perkara'] . ' - ' . ($pl['jenis_pelanggaran'] ?: 'Disiplin'),
+                'tanggal'         => substr((string) $pl['tanggal_kejadian'], 0, 10),
+                'akses'           => 'terbatas',
+                'can_access'      => $canViewDiscipline,
+                'preview_url'     => ketarunaan_resolve_bukti_url($rawBukti, 'pelanggaran', (int) $pl['id'], true),
+                'download_url'    => ketarunaan_resolve_bukti_url($rawBukti, 'pelanggaran', (int) $pl['id'], false),
+                'modul_url'       => base_url('ketarunaan/pelanggaran/detail/' . $pl['id']),
             ];
         }
 
@@ -542,7 +657,7 @@ class RekamJejakService
             if ($jnsFilterDok !== 'all' && $jnsFilterDok !== '' && !str_contains($doc['jenis_dokumen'], strtolower($jnsFilterDok))) {
                 return false;
             }
-            if ($qFilterDok !== '' && !str_contains(strtolower($doc['nama_berkas'] . ' ' . $doc['kegiatan']), $qFilterDok)) {
+            if ($qFilterDok !== '' && !str_contains(strtolower($doc['nama_berkas'] . ' ' . ($doc['raw_bukti'] ?? '') . ' ' . $doc['kegiatan']), $qFilterDok)) {
                 return false;
             }
             return true;
@@ -573,7 +688,7 @@ class RekamJejakService
         $row = $this->db->table('taruna_capaian tc')
             ->select('tc.*, ta.kode_tahun AS tahun_akademik_label,
                       mt.nama_lengkap, mt.foto, mt.status_terkini,
-                      ps.kode_prodi, ps.nama_prodi, ang.tahun_masuk AS angkatan')
+                      ps.kode_prodi, ps.nama_prodi, ang.tahun_masuk AS angkatan, ang.kode_romawi AS angkatan_romawi')
             ->join('master_taruna mt', 'mt.nomor_taruna = tc.nomor_taruna', 'inner')
             ->join('pendidikan_taruna pt', 'pt.nomor_taruna = mt.nomor_taruna', 'left')
             ->join('ref_program_studi ps', 'ps.id = pt.program_studi_id', 'left')
@@ -605,8 +720,23 @@ class RekamJejakService
         if (!$tarunaExists) {
             return [
                 'status'  => false,
-                'message' => 'Nomor Taruna tidak ditemukan dalam basis data.',
+                'message' => 'Nomor Taruna tidak ditemukan.',
             ];
+        }
+
+        $tahunAkademikId = !empty($data['tahun_akademik_id']) ? (int) $data['tahun_akademik_id'] : null;
+        if ($tahunAkademikId !== null) {
+            $taExists = $this->db->table('ref_tahun_akademik')
+                ->select('id')
+                ->where('id', $tahunAkademikId)
+                ->get()
+                ->getRowArray();
+            if (!$taExists) {
+                return [
+                    'status'  => false,
+                    'message' => 'Tahun akademik yang dipilih tidak valid.',
+                ];
+            }
         }
 
         $nilaiRaw = trim((string) ($data['nilai_angka'] ?? ''));
@@ -614,7 +744,14 @@ class RekamJejakService
         if ($nilaiRaw !== '') {
             $normalized = str_replace(',', '.', $nilaiRaw);
             if (is_numeric($normalized)) {
-                $nilaiSanitized = round((float) $normalized, 2);
+                $nilaiFloat = round((float) $normalized, 2);
+                if ($nilaiFloat < 0 || $nilaiFloat > 999999.99) {
+                    return [
+                        'status'  => false,
+                        'message' => 'Nilai angka harus berada pada rentang 0 sampai 999.999,99.',
+                    ];
+                }
+                $nilaiSanitized = $nilaiFloat;
             }
         }
 
@@ -623,7 +760,7 @@ class RekamJejakService
             'kategori'          => trim((string) ($data['kategori'] ?? 'kompetensi_sertifikasi')),
             'nama_capaian'      => trim((string) ($data['nama_capaian'] ?? '')),
             'tanggal_kegiatan'  => trim((string) ($data['tanggal_kegiatan'] ?? date('Y-m-d'))),
-            'tahun_akademik_id' => !empty($data['tahun_akademik_id']) ? (int) $data['tahun_akademik_id'] : null,
+            'tahun_akademik_id' => $tahunAkademikId,
             'semester'          => max(1, min(8, (int) ($data['semester'] ?? 1))),
             'penyelenggara'     => trim((string) ($data['penyelenggara'] ?? '')),
             'tingkat_kegiatan'  => trim((string) ($data['tingkat_kegiatan'] ?? 'Kampus / Internal')),
@@ -640,12 +777,27 @@ class RekamJejakService
             'diajukan_oleh'     => trim((string) ($data['diajukan_oleh'] ?? 'PIC Ketarunaan')),
         ];
 
-        if (!empty($data['bukti_berkas'])) {
-            $payload['bukti_berkas']     = $data['bukti_berkas'];
-            $payload['ukuran_berkas_kb'] = max(1, (int) ($data['ukuran_berkas_kb'] ?? 250));
-            $payload['jumlah_berkas']    = 1;
+        if (array_key_exists('bukti_berkas', $data)) {
+            $buktiVal = trim((string) ($data['bukti_berkas'] ?? ''));
+            if ($buktiVal !== '') {
+                $payload['bukti_berkas']     = $buktiVal;
+                $payload['ukuran_berkas_kb'] = ketarunaan_is_http_url($buktiVal, 2000)
+                    ? 0
+                    : max(1, (int) ($data['ukuran_berkas_kb'] ?? 1));
+                $payload['jumlah_berkas']    = 1;
+            } else {
+                $payload['bukti_berkas']     = null;
+                $payload['ukuran_berkas_kb'] = 0;
+                $payload['jumlah_berkas']    = 0;
+            }
+        } elseif ($id === null) {
+            $payload['ukuran_berkas_kb'] = 0;
+            $payload['jumlah_berkas']    = 0;
         }
 
+        if ($payload['status_validasi'] !== 'tervalidasi') {
+            $payload['divalidasi_oleh'] = null;
+        }
         if ($payload['status_validasi'] === 'diajukan') {
             $payload['catatan_validasi'] = null;
         }
@@ -698,6 +850,13 @@ class RekamJejakService
      */
     public function processValidation(int $id, string $keputusan, ?string $catatan, string $validatorLabel): array
     {
+        if (!in_array($keputusan, ['tervalidasi', 'perlu_perbaikan'], true)) {
+            return [
+                'status'  => false,
+                'message' => 'Keputusan validasi tidak valid.',
+            ];
+        }
+
         $existing = $this->capaianModel->find($id);
         if (!$existing) {
             return [
@@ -706,7 +865,21 @@ class RekamJejakService
             ];
         }
 
-        $statusBaru = ($keputusan === 'tervalidasi') ? 'tervalidasi' : 'perlu_perbaikan';
+        $currentStatus = (string) ($existing['status_validasi'] ?? '');
+        if ($currentStatus === 'tervalidasi') {
+            return [
+                'status'  => false,
+                'message' => 'Data capaian ini sudah tervalidasi.',
+            ];
+        }
+        if ($currentStatus === 'draf') {
+            return [
+                'status'  => false,
+                'message' => 'Data capaian berstatus draf belum diajukan untuk validasi.',
+            ];
+        }
+
+        $statusBaru = $keputusan;
 
         try {
             $this->db->transStart();
@@ -743,6 +916,49 @@ class RekamJejakService
     }
 
     /**
+     * Menghapus draf atau capaian yang perlu perbaikan dalam transaksi atomik.
+     *
+     * @param int $id
+     * @return array{status: bool, message: string, deleted?: array<string, mixed>}
+     */
+    public function deleteCapaian(int $id): array
+    {
+        $existing = $this->capaianModel->find($id);
+        if (!$existing) {
+            return [
+                'status'  => false,
+                'message' => 'Data capaian tidak ditemukan.',
+            ];
+        }
+
+        try {
+            $this->db->transStart();
+            $this->capaianModel->delete($id);
+            $this->db->transComplete();
+
+            if ($this->db->transStatus() === false) {
+                return [
+                    'status'  => false,
+                    'message' => 'Gagal menghapus data capaian. Silakan coba lagi.',
+                ];
+            }
+
+            return [
+                'status'  => true,
+                'message' => 'Draf capaian berhasil dihapus.',
+                'deleted' => $existing,
+            ];
+        } catch (\Throwable $e) {
+            log_message('error', '[RekamJejakService::deleteCapaian] ' . $e->getMessage());
+
+            return [
+                'status'  => false,
+                'message' => 'Gagal menghapus data capaian. Silakan coba lagi.',
+            ];
+        }
+    }
+
+    /**
      * Mengambil daftar taruna ringkas untuk pilihan pada form tambah capaian.
      *
      * @return array<int, array<string, mixed>>
@@ -750,12 +966,11 @@ class RekamJejakService
     public function getTarunaDropdownList(): array
     {
         return $this->db->table('master_taruna mt')
-            ->select('mt.nomor_taruna, mt.nama_lengkap, ps.kode_prodi, ang.tahun_masuk AS angkatan')
+            ->select('mt.nomor_taruna, mt.nama_lengkap, ps.kode_prodi, ang.tahun_masuk AS angkatan, ang.kode_romawi AS angkatan_romawi')
             ->join('pendidikan_taruna pt', 'pt.nomor_taruna = mt.nomor_taruna', 'left')
             ->join('ref_program_studi ps', 'ps.id = pt.program_studi_id', 'left')
             ->join('ref_angkatan ang', 'ang.id = pt.angkatan_id', 'left')
             ->orderBy('mt.nomor_taruna', 'ASC')
-            ->limit(150)
             ->get()
             ->getResultArray();
     }

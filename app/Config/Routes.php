@@ -41,7 +41,7 @@ $routes->post('login', 'Auth::processLogin');
 $routes->match(['get', 'post'], 'logout', 'Auth::logout');
 
 // Survei Pemetaan SDM (Eksklusif via Share Link — Khusus Pegawai ASN PKTJ)
-$routes->group('survei-pemetaan', function ($routes) {
+$routes->group('survei-pemetaan', ['filter' => 'employee_only'], function ($routes) {
     $routes->get('/', 'User\SurveiPemetaanController::index');
     $routes->get('ringkasan', 'User\SurveiPemetaanController::ringkasan');
     $routes->get('ping-csrf', 'User\SurveiPemetaanController::pingCsrf');
@@ -51,13 +51,14 @@ $routes->group('survei-pemetaan', function ($routes) {
     $routes->post('keluar-sesi', 'User\SurveiPemetaanController::keluarSesi');
 });
 
-// Authenticated Routes (Group)
-$routes->group('', ['filter' => 'auth'], function ($routes) {
+// Router Beranda Terautentikasi (Mengarahkan pegawai ke Dashboard Kinerja dan taruna/alumni ke Portal ECC 2.0)
+$routes->get('dashboard', 'DashboardController::index', ['filter' => 'auth']);
+
+// Authenticated Routes ECC 1.0 (Khusus Pegawai / Pimpinan / Admin — Terisolasi dari Taruna & Alumni)
+$routes->group('', ['filter' => ['auth', 'employee_only']], function ($routes) {
     // Profile Routes
     $routes->get('profile', 'Profile::index');
     $routes->post('profile/update', 'Profile::update');
-
-    $routes->get('dashboard', 'DashboardController::index');
 
 // Notifications
 $routes->get('notifications/fetch', 'NotificationController::fetch');
@@ -152,8 +153,8 @@ $routes->post('notifications/read-all', 'NotificationController::markAllAsRead')
     });
 });
 
-// User Routes (Group)
-$routes->group('', ['filter' => 'auth'], function ($routes) {
+// User Kinerja Routes (Khusus Pegawai / Pimpinan / Admin — Terisolasi dari Taruna & Alumni)
+$routes->group('', ['filter' => ['auth', 'employee_only']], function ($routes) {
     // $routes->get('dashboard', 'User\Dashboard::index'); // Ditangani oleh DashboardController
 
     // Kinerja Group
@@ -187,11 +188,47 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
         $routes->get('jadwal', 'User\AkademikController::jadwal');
     });
 
-    // --- Modul ECC 2.0 (Ketarunaan & Alumni) ---
+    $routes->get('diklat', 'User\DiklatController::index');
+    // --- Kelola Tim ---
+    $routes->get('tim', 'User\TimController::index');
+    $routes->post('tim/add', 'User\TimController::addStaf');
+    $routes->post('tim/remove', 'User\TimController::removeStaf');
+    $routes->post('tim/update_unit', 'User\TimController::updateUnit');
+
+    // --- Laporan Kinerja Harian ---
+    $routes->match(['get', 'post'], 'laporan-harian', 'User\LaporanHarianController::index');
+    $routes->post('laporan-harian/get-previous-targets', 'User\LaporanHarianController::getPreviousTargets');
+    $routes->post('laporan-harian/store', 'User\LaporanHarianController::store');
+    $routes->post('laporan-harian/hapus', 'User\LaporanHarianController::hapus');
+    $routes->post('laporan-harian/approve', 'User\LaporanHarianController::approve');
+    $routes->post('laporan-harian/approve-all', 'User\LaporanHarianController::approveAll');
+    $routes->post('laporan-harian/batal-approve', 'User\LaporanHarianController::cancelApprove'); // [SUPERADMIN] Batalkan persetujuan target
+
+    // --- Log Kegiatan Harian ---
+    $routes->match(['get', 'post'], 'log-kegiatan', 'User\LogKegiatanController::index');
+    $routes->post('log-kegiatan/store', 'User\LogKegiatanController::store');
+    $routes->post('log-kegiatan/hapus', 'User\LogKegiatanController::hapus');
+    $routes->post('log-kegiatan/storeTugasTambahan', 'User\LogKegiatanController::storeTugasTambahan');
+    $routes->post('log-kegiatan/hapusTugasTambahan', 'User\LogKegiatanController::hapusTugasTambahan');
+    $routes->post('log-kegiatan/buka-kunci', 'User\LogKegiatanController::bukaKunci'); // [SUPERADMIN] Buka kunci laporan
+
+    // --- Rekap & Penilaian Kinerja ---
+    $routes->match(['get', 'post'], 'penilaian-kinerja', 'User\PenilaianKinerjaController::index');
+    $routes->post('penilaian-kinerja/store', 'User\PenilaianKinerjaController::store');
+    $routes->get('penilaian-kinerja/api-chart', 'User\PenilaianKinerjaController::getChartDataApi');
+
+    // --- Panduan Penggunaan ---
+    $routes->get('panduan', 'User\PanduanController::index');
+});
+
+// --- Modul ECC 2.0 (Ketarunaan & Alumni — Mendukung Taruna, Alumni, dan Staf/Pimpinan) ---
+$routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->group('ketarunaan', function ($routes) {
         $routes->get('/', 'Ketarunaan\DashboardController::index');
         $routes->get('dashboard', 'Ketarunaan\DashboardController::index');
         $routes->post('dashboard/filter-data', 'Ketarunaan\DashboardController::filterData');
+        $routes->get('keamanan-akun', 'Ketarunaan\AkunController::index');
+        $routes->post('keamanan-akun/kata-sandi', 'Ketarunaan\AkunController::updateKataSandi');
 
         // Placeholder route endpoints untuk sub-modul lanjutan
         // Modul 1: Database Taruna
@@ -208,6 +245,9 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
         $routes->post('taruna/profil/(:segment)/riwayat-pendidikan', 'Ketarunaan\TarunaController::storeRiwayatPendidikan/$1');
         $routes->get('taruna/ubah-status/(:segment)', 'Ketarunaan\TarunaController::formUbahStatus/$1');
         $routes->post('taruna/ubah-status/(:segment)', 'Ketarunaan\TarunaController::storeUbahStatus/$1');
+        $routes->get('taruna/unduh-sk/(:num)', 'Ketarunaan\TarunaController::unduhSkStatus/$1');
+        $routes->post('taruna/status/(:num)/ajukan', 'Ketarunaan\TarunaController::ajukanDraftStatus/$1');
+        $routes->post('taruna/status/(:num)/hapus-draf', 'Ketarunaan\TarunaController::hapusDraftStatus/$1');
         // Modul 2: Rekam Jejak Taruna
         $routes->get('rekam-jejak', 'Ketarunaan\RekamJejakController::index');
         $routes->get('rekam-jejak/ekspor', 'Ketarunaan\RekamJejakController::ekspor');
@@ -218,6 +258,7 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
         $routes->get('rekam-jejak/capaian/(:num)', 'Ketarunaan\RekamJejakController::showCapaian/$1');
         $routes->get('rekam-jejak/edit-capaian/(:num)', 'Ketarunaan\RekamJejakController::editCapaian/$1');
         $routes->post('rekam-jejak/update-capaian/(:num)', 'Ketarunaan\RekamJejakController::updateCapaian/$1');
+        $routes->post('rekam-jejak/hapus-capaian/(:num)', 'Ketarunaan\RekamJejakController::deleteCapaian/$1');
         $routes->post('rekam-jejak/validasi-capaian/(:num)', 'Ketarunaan\RekamJejakController::validateCapaian/$1');
         $routes->get('rekam-jejak/unduh-bukti/(:segment)/(:num)', 'Ketarunaan\RekamJejakController::unduhBukti/$1/$2');
         // Modul 3: Prestasi Taruna
@@ -260,49 +301,86 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
         $routes->post('pelanggaran/hapus/(:num)', 'Ketarunaan\PelanggaranController::delete/$1');
         $routes->get('pelanggaran/unduh-dokumen/(:num)', 'Ketarunaan\PelanggaranController::unduhDokumen/$1');
         $routes->get('pelanggaran/unduh-ringkasan/(:num)', 'Ketarunaan\PelanggaranController::unduhRingkasan/$1');
-        $routes->get('beasiswa', 'Ketarunaan\DashboardController::index');
-        $routes->get('lowongan', 'Ketarunaan\DashboardController::index');
-        $routes->get('alumni', 'Ketarunaan\DashboardController::index');
-        $routes->get('validasi', 'Ketarunaan\DashboardController::index');
-        $routes->get('laporan', 'Ketarunaan\DashboardController::index');
-        $routes->get('pengaturan', 'Ketarunaan\DashboardController::index');
+        $routes->get('beasiswa', 'Ketarunaan\BeasiswaController::index');
+        $routes->get('beasiswa/program', 'Ketarunaan\BeasiswaController::program');
+        $routes->get('beasiswa/kelola-program', 'Ketarunaan\BeasiswaController::kelolaProgram');
+        $routes->get('beasiswa/kelola-program/(:num)', 'Ketarunaan\BeasiswaController::kelolaProgram/$1');
+        $routes->post('beasiswa/program/simpan', 'Ketarunaan\BeasiswaController::saveProgram');
+        $routes->get('beasiswa/apresiasi', 'Ketarunaan\BeasiswaController::apresiasi');
+        $routes->post('beasiswa/apresiasi/hitung', 'Ketarunaan\BeasiswaController::hitungApresiasi');
+        $routes->post('beasiswa/apresiasi/ajukan/(:num)', 'Ketarunaan\BeasiswaController::ajukanApresiasi/$1');
+        $routes->post('beasiswa/apresiasi/impor-ip/preview', 'Ketarunaan\BeasiswaController::previewIpCsv');
+        $routes->post('beasiswa/apresiasi/impor-ip/simpan', 'Ketarunaan\BeasiswaController::importIpCsv');
+        $routes->post('beasiswa/apresiasi/impor-ip/batal', 'Ketarunaan\BeasiswaController::cancelIpPreview');
+        $routes->get('beasiswa/apresiasi/impor-ip/templat', 'Ketarunaan\BeasiswaController::downloadIpCsvTemplate');
+        $routes->get('beasiswa/klaim', 'Ketarunaan\BeasiswaController::klaim');
+        $routes->get('beasiswa/klaim/ajukan/(:segment)', 'Ketarunaan\BeasiswaController::formKlaim/$1');
+        $routes->post('beasiswa/klaim/simpan/(:segment)', 'Ketarunaan\BeasiswaController::saveKlaim/$1');
+        $routes->get('beasiswa/verifikasi', 'Ketarunaan\BeasiswaController::verifikasi');
+        $routes->get('beasiswa/verifikasi/(:num)', 'Ketarunaan\BeasiswaController::verifikasiDetail/$1');
+        $routes->post('beasiswa/verifikasi/(:num)/simpan', 'Ketarunaan\BeasiswaController::saveVerifikasi/$1');
+        $routes->get('beasiswa/penerima', 'Ketarunaan\BeasiswaController::penerima');
+        $routes->get('beasiswa/detail/(:num)', 'Ketarunaan\BeasiswaController::detail/$1');
+        $routes->post('beasiswa/penetapan/(:num)/simpan', 'Ketarunaan\BeasiswaController::savePenetapan/$1');
+        $routes->post('beasiswa/penetapan/(:num)/batal', 'Ketarunaan\BeasiswaController::cancelPenetapan/$1');
+        $routes->post('beasiswa/hapus/(:num)', 'Ketarunaan\BeasiswaController::deleteDraft/$1');
+        $routes->get('beasiswa/unduh-dokumen/(:num)', 'Ketarunaan\BeasiswaController::unduhDokumen/$1');
+        $routes->get('beasiswa/ekspor', 'Ketarunaan\BeasiswaController::ekspor');
+        $routes->get('beasiswa/api/prestasi-taruna/(:segment)', 'Ketarunaan\BeasiswaController::apiPrestasiTaruna/$1');
+        // Modul 6: Lowongan Pekerjaan
+        $routes->get('lowongan', 'Ketarunaan\LowonganController::index');
+        $routes->get('lowongan/ekspor', 'Ketarunaan\LowonganController::ekspor');
+        $routes->get('lowongan/tambah', 'Ketarunaan\LowonganController::create');
+        $routes->post('lowongan/simpan', 'Ketarunaan\LowonganController::store');
+        $routes->get('lowongan/edit/(:num)', 'Ketarunaan\LowonganController::edit/$1');
+        $routes->post('lowongan/update/(:num)', 'Ketarunaan\LowonganController::update/$1');
+        $routes->get('lowongan/detail/(:num)', 'Ketarunaan\LowonganController::detail/$1');
+        $routes->get('lowongan/perusahaan', 'Ketarunaan\LowonganController::perusahaan');
+        $routes->post('lowongan/perusahaan/simpan', 'Ketarunaan\LowonganController::savePerusahaan');
+        $routes->get('lowongan/dokumen', 'Ketarunaan\LowonganController::dokumen');
+        $routes->get('lowongan/dokumen/(:num)', 'Ketarunaan\LowonganController::dokumen/$1');
+        $routes->post('lowongan/dokumen/(:num)/simpan', 'Ketarunaan\LowonganController::saveDokumen/$1');
+        $routes->post('lowongan/dokumen/hapus/(:num)', 'Ketarunaan\LowonganController::removeDokumen/$1');
+        $routes->get('lowongan/unduh-dokumen/(:num)', 'Ketarunaan\LowonganController::unduhDokumen/$1');
+        $routes->get('lowongan/verifikasi', 'Ketarunaan\LowonganController::verifikasi');
+        $routes->get('lowongan/verifikasi/(:num)', 'Ketarunaan\LowonganController::verifikasi/$1');
+        $routes->post('lowongan/verifikasi/(:num)/simpan', 'Ketarunaan\LowonganController::saveVerifikasi/$1');
+        $routes->post('lowongan/publikasi/(:num)', 'Ketarunaan\LowonganController::publikasi/$1');
+        $routes->post('lowongan/tutup/(:num)', 'Ketarunaan\LowonganController::tutup/$1');
+        $routes->get('lowongan/riwayat', 'Ketarunaan\LowonganController::riwayat');
+        $routes->get('lowongan/riwayat/(:num)', 'Ketarunaan\LowonganController::riwayat/$1');
+        // Modul 7: Alumni — Profil dasar (ALM-01..03, UAT-04, UAT-05, UAT-17)
+        $routes->get('alumni', 'Ketarunaan\AlumniController::index');
+        $routes->get('alumni/ekspor', 'Ketarunaan\AlumniController::ekspor');
+        $routes->get('alumni/detail/(:segment)', 'Ketarunaan\AlumniController::detail/$1');
+        $routes->post('alumni/kontak/(:segment)', 'Ketarunaan\AlumniController::updateKontak/$1');
+        $routes->get('alumni/kelulusan', 'Ketarunaan\AlumniController::kelulusan');
+        $routes->post('alumni/kelulusan/ajukan', 'Ketarunaan\AlumniController::ajukanKelulusan');
+        $routes->post('alumni/kelulusan/ajukan-batch', 'Ketarunaan\AlumniController::ajukanKelulusanBatch');
+        $routes->post('alumni/kelulusan/validasi/(:num)', 'Ketarunaan\AlumniController::validasiKelulusan/$1');
+        $routes->post('alumni/kelulusan/validasi-batch', 'Ketarunaan\AlumniController::validasiKelulusanBatch');
+        $routes->get('alumni/koreksi', 'Ketarunaan\AlumniController::koreksi');
+        $routes->post('alumni/koreksi/ajukan', 'Ketarunaan\AlumniController::ajukanKoreksi');
+        $routes->post('alumni/koreksi/putuskan/(:num)', 'Ketarunaan\AlumniController::putuskanKoreksi/$1');
+
+        // Modul 8: Tata Kelola ECC 2.0 (Validasi Data, Laporan, Pengaturan)
+        $routes->get('validasi', 'Ketarunaan\ValidasiController::index');
+        $routes->post('validasi/status/(:num)', 'Ketarunaan\ValidasiController::putuskanStatus/$1');
+        $routes->post('validasi/capaian/(:num)', 'Ketarunaan\ValidasiController::putuskanCapaian/$1');
+        $routes->post('validasi/foto/(:segment)', 'Ketarunaan\ValidasiController::putuskanFoto/$1');
+
+        $routes->get('laporan', 'Ketarunaan\LaporanController::index');
+        $routes->get('laporan/ekspor', 'Ketarunaan\LaporanController::ekspor');
+
+        $routes->get('pengaturan', 'Ketarunaan\PengaturanController::index');
+        $routes->post('pengaturan/referensi/simpan', 'Ketarunaan\PengaturanController::simpanReferensi');
+        $routes->post('pengaturan/referensi/toggle/([a-z0-9_]+)/(:num)', 'Ketarunaan\PengaturanController::toggleReferensi/$1/$2');
+        $routes->post('pengaturan/operasional/simpan', 'Ketarunaan\PengaturanController::simpanOperasional');
     });
-    $routes->get('diklat', 'User\DiklatController::index');
-    // --- Kelola Tim ---
-    $routes->get('tim', 'User\TimController::index');
-    $routes->post('tim/add', 'User\TimController::addStaf');
-    $routes->post('tim/remove', 'User\TimController::removeStaf');
-    $routes->post('tim/update_unit', 'User\TimController::updateUnit');
-
-    // --- Laporan Kinerja Harian ---
-    $routes->match(['get', 'post'], 'laporan-harian', 'User\LaporanHarianController::index');
-    $routes->post('laporan-harian/get-previous-targets', 'User\LaporanHarianController::getPreviousTargets');
-    $routes->post('laporan-harian/store', 'User\LaporanHarianController::store');
-    $routes->post('laporan-harian/hapus', 'User\LaporanHarianController::hapus');
-    $routes->post('laporan-harian/approve', 'User\LaporanHarianController::approve');
-    $routes->post('laporan-harian/approve-all', 'User\LaporanHarianController::approveAll');
-    $routes->post('laporan-harian/batal-approve', 'User\LaporanHarianController::cancelApprove'); // [SUPERADMIN] Batalkan persetujuan target
-
-    // --- Log Kegiatan Harian ---
-    $routes->match(['get', 'post'], 'log-kegiatan', 'User\LogKegiatanController::index');
-    $routes->post('log-kegiatan/store', 'User\LogKegiatanController::store');
-    $routes->post('log-kegiatan/hapus', 'User\LogKegiatanController::hapus');
-    $routes->post('log-kegiatan/storeTugasTambahan', 'User\LogKegiatanController::storeTugasTambahan');
-    $routes->post('log-kegiatan/hapusTugasTambahan', 'User\LogKegiatanController::hapusTugasTambahan');
-    $routes->post('log-kegiatan/buka-kunci', 'User\LogKegiatanController::bukaKunci'); // [SUPERADMIN] Buka kunci laporan
-
-    // --- Rekap & Penilaian Kinerja ---
-    $routes->match(['get', 'post'], 'penilaian-kinerja', 'User\PenilaianKinerjaController::index');
-    $routes->post('penilaian-kinerja/store', 'User\PenilaianKinerjaController::store');
-    $routes->get('penilaian-kinerja/api-chart', 'User\PenilaianKinerjaController::getChartDataApi');
-
-    // --- Panduan Penggunaan ---
-    $routes->get('panduan', 'User\PanduanController::index');
-
 });
 
-// ECC Routes
-$routes->group('ecc', ['filter' => 'auth'], function ($routes) {
+// ECC Routes (Khusus Pegawai / Pimpinan / Admin)
+$routes->group('ecc', ['filter' => ['auth', 'employee_only']], function ($routes) {
     $routes->get('led', 'Admin\MasterDataController::eccLed');
     $routes->post('led/store', 'EccController::storeLed');
     $routes->post('deleteLedLink/(:num)', 'EccController::deleteLedLink/$1');
@@ -314,7 +392,7 @@ $routes->group('ecc', ['filter' => 'auth'], function ($routes) {
 });
 
 // Kepegawaian Routes (Role-Restricted: kepegawaian, admin, direktur, wadir, kabag, kabag_aak, kabag_kuk)
-$routes->group('kepegawaian', ['filter' => 'auth'], function ($routes) {
+$routes->group('kepegawaian', ['filter' => ['auth', 'employee_only']], function ($routes) {
     // Submenu 1: Monitoring Target Kinerja Bulanan
     $routes->match(['get', 'post'], 'target-kinerja', 'Kepegawaian\MonitoringTargetController::index');
     $routes->get('target-kinerja/detail-pegawai', 'Kepegawaian\MonitoringTargetController::getDetailTarget');

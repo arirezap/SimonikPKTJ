@@ -15,7 +15,8 @@ class MasterTarunaModel extends Model
     protected $allowedFields    = [
         'nomor_taruna', 'nama_lengkap', 'nik', 'nama_panggilan',
         'jenis_kelamin', 'tempat_lahir', 'tanggal_lahir', 'agama',
-        'foto', 'nomor_hp', 'email', 'alamat_domisili', 'alamat_asal',
+        'foto', 'foto_pending', 'foto_pending_status', 'foto_pending_catatan', 'foto_pending_at',
+        'nomor_hp', 'email', 'alamat_domisili', 'alamat_asal',
         'nama_wali', 'hubungan_wali', 'nomor_hp_wali', 'status_terkini',
         'created_at', 'updated_at'
     ];

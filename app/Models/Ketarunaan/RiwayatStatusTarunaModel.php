@@ -15,6 +15,7 @@ class RiwayatStatusTarunaModel extends Model
         'nomor_taruna', 'kode_status', 'mulai_berlaku', 'akhir_berlaku',
         'rencana_kembali', 'alasan_perubahan', 'nomor_keputusan',
         'tanggal_keputusan', 'bukti_dokumen', 'status_validasi',
+        'divalidasi_oleh', 'catatan_validasi', 'tanggal_validasi',
         'created_at', 'updated_at'
     ];
 

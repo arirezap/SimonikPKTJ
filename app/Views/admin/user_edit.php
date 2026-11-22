@@ -73,14 +73,26 @@
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-dark mb-1">Role Primer</label>
                                 <select name="role" class="form-select form-select-sm">
-                                    <option value="direktur" <?= $user['role'] == 'direktur' ? 'selected' : '' ?>>Direktur (Level 1)</option>
-                                    <option value="wadir" <?= $user['role'] == 'wadir' ? 'selected' : '' ?>>Wakil Direktur (Level 2)</option>
-                                    <option value="kabag_aak" <?= $user['role'] == 'kabag_aak' ? 'selected' : '' ?>>Kabag AAK (Level 3)</option>
-                                    <option value="kabag_kuk" <?= $user['role'] == 'kabag_kuk' ? 'selected' : '' ?>>Kabag KUK (Level 3)</option>
-                                    <option value="manajemen" <?= $user['role'] == 'manajemen' ? 'selected' : '' ?>>Kanit / Katim / Kaprodi (Level 4)</option>
-                                    <option value="user" <?= $user['role'] == 'user' ? 'selected' : '' ?>>Staf / Pelaksana (Level 5)</option>
-                                    <option value="tugas_belajar" <?= $user['role'] == 'tugas_belajar' ? 'selected' : '' ?>>Tugas Belajar (Level 5)</option>
-                                    <option value="admin" <?= $user['role'] == 'admin' ? 'selected' : '' ?>>Administrator (Sistem)</option>
+                                    <optgroup label="Peran Organisasi ECC 1.0">
+                                        <option value="direktur" <?= $user['role'] == 'direktur' ? 'selected' : '' ?>>Direktur (Level 1)</option>
+                                        <option value="wadir" <?= $user['role'] == 'wadir' ? 'selected' : '' ?>>Wakil Direktur (Level 2)</option>
+                                        <option value="kabag_aak" <?= $user['role'] == 'kabag_aak' ? 'selected' : '' ?>>Kabag AAK (Level 3)</option>
+                                        <option value="kabag_kuk" <?= $user['role'] == 'kabag_kuk' ? 'selected' : '' ?>>Kabag KUK (Level 3)</option>
+                                        <option value="manajemen" <?= $user['role'] == 'manajemen' ? 'selected' : '' ?>>Kanit / Katim / Kaprodi (Level 4)</option>
+                                        <option value="user" <?= $user['role'] == 'user' ? 'selected' : '' ?>>Staf / Pelaksana (Level 5)</option>
+                                        <option value="tugas_belajar" <?= $user['role'] == 'tugas_belajar' ? 'selected' : '' ?>>Tugas Belajar (Level 5)</option>
+                                        <option value="admin" <?= $user['role'] == 'admin' ? 'selected' : '' ?>>Administrator (Sistem)</option>
+                                    </optgroup>
+                                    <optgroup label="Peran Ketarunaan &amp; Alumni">
+                                        <option value="ketarunaan" <?= $user['role'] == 'ketarunaan' ? 'selected' : '' ?>>Ketarunaan (PIC Data Taruna)</option>
+                                        <option value="ketarunaan_validator" <?= $user['role'] == 'ketarunaan_validator' ? 'selected' : '' ?>>Validator Ketarunaan</option>
+                                        <option value="pusbangkar" <?= $user['role'] == 'pusbangkar' ? 'selected' : '' ?>>Pusbangkar (Karakter &amp; Disiplin)</option>
+                                        <option value="karir_alumni" <?= $user['role'] == 'karir_alumni' ? 'selected' : '' ?>>Karier &amp; Alumni</option>
+                                        <option value="kerjasama" <?= $user['role'] == 'kerjasama' ? 'selected' : '' ?>>Kerjasama (Mitra &amp; Pengguna Lulusan)</option>
+                                        <option value="taruna" <?= $user['role'] == 'taruna' ? 'selected' : '' ?>>Taruna (Portal Mandiri)</option>
+                                        <option value="alumni" <?= $user['role'] == 'alumni' ? 'selected' : '' ?>>Alumni (Portal Mandiri)</option>
+                                        <option value="pengguna_lulusan" <?= $user['role'] == 'pengguna_lulusan' ? 'selected' : '' ?>>Pengguna Lulusan</option>
+                                    </optgroup>
                                 </select>
                             </div>
                             <div class="p-3 bg-white border rounded-3">
@@ -95,7 +107,8 @@
                                         'pusbangkar'           => 'Pusbangkar (Pengembangan Karakter & Disiplin)',
                                         'ketarunaan'           => 'Ketarunaan (Operator / PIC Data Taruna)',
                                         'ketarunaan_validator' => 'Validator Ketarunaan (Pengesahan Data)',
-                                        'karir_alumni'         => 'Karier & Alumni (Lowongan & Mitra)',
+                                        'karir_alumni'         => 'Karier & Alumni (Tracer Study, Lowongan & Mitra)',
+                                        'kerjasama'            => 'Kerjasama (Mitra & Pengguna Lulusan)',
                                         'taruna'               => 'Taruna (Layanan Mandiri)',
                                         'alumni'               => 'Alumni (Karier & Tracer Study)',
                                         'pengguna_lulusan'     => 'Pengguna Lulusan (Survei Mitra Kerja)'

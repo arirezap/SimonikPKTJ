@@ -8,7 +8,10 @@ class Home extends BaseController
     {
         // 1. Cek apakah User sudah Login (Session ada)
         if (session()->get('isLoggedIn')) {
-            
+            if (\App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfAccountOnly()) {
+                return redirect()->to(\App\Libraries\Ketarunaan\KetarunaanPolicy::getSelfPortalUrl());
+            }
+
             $role = session()->get('role');
 
             // 2. Cek Role untuk menentukan arah Dashboard

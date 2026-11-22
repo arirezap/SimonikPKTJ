@@ -12,7 +12,7 @@ class AngkatanModel extends Model
     protected $returnType       = 'array';
     protected $protectFields    = true;
     protected $allowedFields    = [
-        'tahun_masuk', 'perkiraan_lulus', 'is_aktif',
+        'tahun_masuk', 'angkatan_ke', 'kode_romawi', 'perkiraan_lulus', 'is_aktif',
         'created_at', 'updated_at'
     ];
 

@@ -22,9 +22,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link href="<?= base_url('assets/vendor/bootstrap/bootstrap.min.css') ?>" rel="stylesheet">
+    <link rel="stylesheet" href="<?= base_url('assets/vendor/bootstrap-icons/bootstrap-icons.min.css') ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/vendor/flatpickr/flatpickr.min.css') ?>">
     <meta name="X-CSRF-TOKEN" content="<?= csrf_hash() ?>">
 
     <style>
@@ -151,9 +151,9 @@
                     <div class="text-secondary" style="font-size: 0.75rem;">Politeknik Keselamatan Transportasi Jalan</div>
                 </div>
             </div>
-            <span class="badge rounded-pill text-primary border border-primary-subtle fw-semibold tabular-nums" style="background-color: var(--ecc-primary-soft); padding: 4px 12px; font-size: 0.75rem;">
+            <div class="text-secondary fw-semibold tabular-nums" style="font-size: 0.75rem;">
                 Survei SDM <?= esc((string) ($tahunSurvei ?? date('Y'))) ?>
-            </span>
+            </div>
         </div>
     </header>
 
@@ -167,10 +167,10 @@
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="<?= base_url('assets/vendor/bootstrap/bootstrap.bundle.min.js') ?>"></script>
+    <script src="<?= base_url('assets/vendor/flatpickr/flatpickr.min.js') ?>"></script>
+    <script src="<?= base_url('assets/vendor/flatpickr/l10n/id.js') ?>"></script>
+    <script src="<?= base_url('assets/vendor/sweetalert2/sweetalert2.all.min.js') ?>"></script>
     <script>
         document.addEventListener('wheel', function (e) {
             if (document.activeElement && document.activeElement.type === 'number') {

@@ -29,35 +29,9 @@ class DashboardService
      */
     public function getAggregatedStats(string $tanggalAcuan, ?int $prodiId = null, ?int $angkatanId = null): array
     {
-        // 1. Posisi 6 Status Pendidikan Taruna
-        $builderStatus = $this->db->table('master_taruna m')
-            ->select('m.status_terkini, COUNT(*) AS total')
-            ->join('pendidikan_taruna pt', 'pt.nomor_taruna = m.nomor_taruna', 'left');
-
-        if ($prodiId !== null && $prodiId > 0) {
-            $builderStatus->where('pt.program_studi_id', $prodiId);
-        }
-        if ($angkatanId !== null && $angkatanId > 0) {
-            $builderStatus->where('pt.angkatan_id', $angkatanId);
-        }
-
-        $statusRows = $builderStatus->groupBy('m.status_terkini')->get()->getResultArray();
-
-        $statusCounts = [
-            'aktif'             => 0,
-            'skorsing'          => 0,
-            'cuti'              => 0,
-            'mengundurkan_diri' => 0,
-            'drop_out'          => 0,
-            'lulus'             => 0,
-        ];
-
-        foreach ($statusRows as $row) {
-            $code = (string) $row['status_terkini'];
-            if (array_key_exists($code, $statusCounts)) {
-                $statusCounts[$code] = (int) $row['total'];
-            }
-        }
+        // 1. Posisi 6 Status Pendidikan Taruna berdasar riwayat tervalidasi hingga tanggal acuan (UAT-02)
+        $asOfResult = $this->getStatusCountsAsOf($tanggalAcuan, $prodiId, $angkatanId);
+        $statusCounts = $asOfResult['status_counts'];
 
         $dalamPendidikan    = $statusCounts['aktif'] + $statusCounts['skorsing'] + $statusCounts['cuti'];
         $berhentiPendidikan = $statusCounts['mengundurkan_diri'] + $statusCounts['drop_out'];
@@ -118,7 +92,8 @@ class DashboardService
 
         $builderLowongan = $this->db->table('lowongan_pekerjaan l')
             ->where('l.status_publikasi', 'terbit')
-            ->where('l.status_validasi', 'tervalidasi');
+            ->where('l.status_validasi', 'tervalidasi')
+            ->where('l.batas_pendaftaran >=', $awalTanggalAcuan);
 
         if ($prodiId !== null && $prodiId > 0) {
             $builderLowongan->join('lowongan_sasaran_prodi lsp', 'lsp.lowongan_id = l.id')
@@ -138,14 +113,14 @@ class DashboardService
         }
         $lowonganSegeraBerakhir = (int) $builderLowonganSegera->select('l.id')->distinct()->countAllResults();
 
-        // 6. Matriks Sebaran Status per Program Studi
-        $sebaranProdi = $this->getSebaranProdi($prodiId, $angkatanId);
+        // 6. Matriks Sebaran Status per Program Studi pada tanggal acuan
+        $sebaranProdi = $this->getSebaranProdi($tanggalAcuan, $prodiId, $angkatanId);
 
         // 7. Antrean Validasi & Rencana Kembali Cuti/Skorsing
         $antreanValidasi = $this->getAntreanValidasi($tanggalAcuan);
 
         // 8. Kualitas Data (Dihitung dari kelengkapan atribut profil & rasio validasi)
-        $kualitasData = $this->hitungKualitasData($antreanValidasi['menunggu'], $antreanValidasi['perlu_perbaikan']);
+        $kualitasData = $this->hitungKualitasData();
 
         // 9. Aktivitas Terbaru dari tabel transaksi ketarunaan
         $aktivitasTerbaru = $this->getAktivitasTerbaru();
@@ -156,6 +131,8 @@ class DashboardService
             'berhenti_pendidikan'      => $berhentiPendidikan,
             'lulusan'                  => $lulusan,
             'total_rekaman'            => $totalRekaman,
+            'tanpa_status_asof'        => $asOfResult['tanpa_status'],
+            'data_mode'                => ketarunaan_data_mode_info(),
             'total_prestasi'           => $totalPrestasi,
             'taruna_berprestasi'       => $tarunaBerprestasi,
             'pelanggaran_terbukti'     => $pelanggaranStats['terbukti'],
@@ -170,6 +147,118 @@ class DashboardService
             'antrean_validasi'         => $antreanValidasi,
             'aktivitas_terbaru'        => $aktivitasTerbaru,
         ];
+    }
+
+    /**
+     * Rekonstruksi jumlah 6 status pendidikan pada tanggal acuan dari riwayat tervalidasi (UAT-02, DSH-04).
+     * Dipakai bersama oleh DashboardService dan LaporanService agar angka selalu identik.
+     *
+     * @return array{status_counts: array<string, int>, total_tercatat: int, tanpa_status: int}
+     */
+    public function getStatusCountsAsOf(string $tanggalAcuan, ?int $prodiId = null, ?int $angkatanId = null): array
+    {
+        $rows = $this->getStatusAsOfRows($tanggalAcuan, $prodiId, $angkatanId);
+
+        $statusCounts = [
+            'aktif'             => 0,
+            'skorsing'          => 0,
+            'cuti'              => 0,
+            'mengundurkan_diri' => 0,
+            'drop_out'          => 0,
+            'lulus'             => 0,
+        ];
+
+        foreach ($rows as $row) {
+            $code = (string) ($row['kode_status'] ?? '');
+            if (array_key_exists($code, $statusCounts)) {
+                $statusCounts[$code]++;
+            }
+        }
+
+        $totalBuilder = $this->db->table('master_taruna m')
+            ->join('pendidikan_taruna pt', 'pt.nomor_taruna = m.nomor_taruna', 'left');
+        if ($prodiId !== null && $prodiId > 0) {
+            $totalBuilder->where('pt.program_studi_id', $prodiId);
+        }
+        if ($angkatanId !== null && $angkatanId > 0) {
+            $totalBuilder->where('pt.angkatan_id', $angkatanId);
+        }
+        $totalMaster = (int) $totalBuilder->countAllResults();
+        $totalTercatat = array_sum($statusCounts);
+
+        return [
+            'status_counts'  => $statusCounts,
+            'total_tercatat' => $totalTercatat,
+            'tanpa_status'   => max(0, $totalMaster - $totalTercatat),
+        ];
+    }
+
+    /**
+     * Mengambil baris taruna dengan status pendidikan terakhir yang sudah tervalidasi hingga tanggal acuan.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getStatusAsOfRows(
+        string $tanggalAcuan,
+        ?int $prodiId = null,
+        ?int $angkatanId = null,
+        ?string $kodeStatus = null
+    ): array {
+        $sql = "
+            SELECT
+                m.nomor_taruna,
+                m.nama_lengkap,
+                m.jenis_kelamin,
+                pt.program_studi_id,
+                pt.angkatan_id,
+                pt.tingkat,
+                p.kode_prodi,
+                p.nama_prodi,
+                a.tahun_masuk,
+                r.id AS riwayat_status_id,
+                r.kode_status,
+                r.mulai_berlaku,
+                r.akhir_berlaku,
+                r.rencana_kembali,
+                r.nomor_keputusan,
+                r.tanggal_keputusan,
+                r.divalidasi_oleh
+            FROM riwayat_status_taruna r
+            INNER JOIN master_taruna m ON m.nomor_taruna = r.nomor_taruna
+            LEFT JOIN pendidikan_taruna pt ON pt.nomor_taruna = m.nomor_taruna
+            LEFT JOIN ref_program_studi p ON p.id = pt.program_studi_id
+            LEFT JOIN ref_angkatan a ON a.id = pt.angkatan_id
+            WHERE r.status_validasi = 'tervalidasi'
+              AND r.mulai_berlaku <= ?
+              AND r.id = (
+                  SELECT r2.id
+                  FROM riwayat_status_taruna r2
+                  WHERE r2.nomor_taruna = r.nomor_taruna
+                    AND r2.status_validasi = 'tervalidasi'
+                    AND r2.mulai_berlaku <= ?
+                  ORDER BY r2.mulai_berlaku DESC, r2.id DESC
+                  LIMIT 1
+              )
+        ";
+
+        $params = [$tanggalAcuan, $tanggalAcuan];
+
+        if ($prodiId !== null && $prodiId > 0) {
+            $sql .= ' AND pt.program_studi_id = ?';
+            $params[] = $prodiId;
+        }
+        if ($angkatanId !== null && $angkatanId > 0) {
+            $sql .= ' AND pt.angkatan_id = ?';
+            $params[] = $angkatanId;
+        }
+        if ($kodeStatus !== null && $kodeStatus !== '') {
+            $sql .= ' AND r.kode_status = ?';
+            $params[] = $kodeStatus;
+        }
+
+        $sql .= ' ORDER BY p.id ASC, m.nomor_taruna ASC';
+
+        return $this->db->query($sql, $params)->getResultArray();
     }
 
     /**
@@ -208,44 +297,114 @@ class DashboardService
     }
 
     /**
-     * Mengambil matriks sebaran 6 status per Program Studi.
+     * Mengambil matriks sebaran 6 status per Program Studi pada tanggal acuan.
      *
+     * @param string   $tanggalAcuan
      * @param int|null $prodiId
      * @param int|null $angkatanId
      * @return array<int, array<string, mixed>>
      */
-    private function getSebaranProdi(?int $prodiId, ?int $angkatanId): array
+    private function getSebaranProdi(string $tanggalAcuan, ?int $prodiId, ?int $angkatanId): array
     {
-        $joinCond = 'pt.program_studi_id = p.id';
-        if ($angkatanId !== null && $angkatanId > 0) {
-            $joinCond .= ' AND pt.angkatan_id = ' . (int) $angkatanId;
-        }
-
-        $builder = $this->db->table('ref_program_studi p')
-            ->select("
-                p.id,
-                p.kode_prodi,
-                p.nama_prodi,
-                SUM(CASE WHEN m.status_terkini = 'aktif' THEN 1 ELSE 0 END) AS aktif,
-                SUM(CASE WHEN m.status_terkini = 'skorsing' THEN 1 ELSE 0 END) AS skorsing,
-                SUM(CASE WHEN m.status_terkini = 'cuti' THEN 1 ELSE 0 END) AS cuti,
-                SUM(CASE WHEN m.status_terkini = 'mengundurkan_diri' THEN 1 ELSE 0 END) AS mundur,
-                SUM(CASE WHEN m.status_terkini = 'drop_out' THEN 1 ELSE 0 END) AS do_count,
-                SUM(CASE WHEN m.status_terkini = 'lulus' THEN 1 ELSE 0 END) AS lulus
-            ")
-            ->join('pendidikan_taruna pt', $joinCond, 'left')
-            ->join('master_taruna m', 'm.nomor_taruna = pt.nomor_taruna', 'left')
-            ->where('p.is_aktif', 1);
+        $prodiBuilder = $this->db->table('ref_program_studi')
+            ->select('id, kode_prodi, nama_prodi')
+            ->where('is_aktif', 1)
+            ->orderBy('id', 'ASC');
 
         if ($prodiId !== null && $prodiId > 0) {
-            $builder->where('p.id', $prodiId);
+            $prodiBuilder->where('id', $prodiId);
         }
 
-        return $builder
-            ->groupBy('p.id, p.kode_prodi, p.nama_prodi')
-            ->orderBy('p.id', 'ASC')
-            ->get()
-            ->getResultArray();
+        $prodis = $prodiBuilder->get()->getResultArray();
+        $matrix = [];
+        foreach ($prodis as $p) {
+            $matrix[(int) $p['id']] = [
+                'id'         => (int) $p['id'],
+                'kode_prodi' => $p['kode_prodi'],
+                'nama_prodi' => $p['nama_prodi'],
+                'aktif'      => 0,
+                'skorsing'   => 0,
+                'cuti'       => 0,
+                'mundur'     => 0,
+                'do_count'   => 0,
+                'lulus'      => 0,
+            ];
+        }
+
+        $rows = $this->getStatusAsOfRows($tanggalAcuan, $prodiId, $angkatanId);
+        $columnMap = [
+            'aktif'             => 'aktif',
+            'skorsing'          => 'skorsing',
+            'cuti'              => 'cuti',
+            'mengundurkan_diri' => 'mundur',
+            'drop_out'          => 'do_count',
+            'lulus'             => 'lulus',
+        ];
+
+        foreach ($rows as $row) {
+            $pid = (int) ($row['program_studi_id'] ?? 0);
+            $col = $columnMap[(string) ($row['kode_status'] ?? '')] ?? null;
+            if ($pid > 0 && $col !== null && isset($matrix[$pid])) {
+                $matrix[$pid][$col]++;
+            }
+        }
+
+        return array_values($matrix);
+    }
+
+    /**
+     * Menghitung ringkasan antrean status validasi lintas modul ECC 2.0.
+     *
+     * @param bool $enforceRbac True untuk menyesuaikan hak akses antrean pada pengguna aktif
+     * @return array{menunggu: int, perlu_perbaikan: int, total_transaksi: int}
+     */
+    private function collectValidationSummary(bool $enforceRbac): array
+    {
+        $sources = [
+            ['table' => 'riwayat_status_taruna', 'pending' => ['diajukan', 'perlu_perbaikan'], 'fix_status' => 'perlu_perbaikan', 'allowed' => true],
+            ['table' => 'taruna_capaian', 'pending' => ['diajukan', 'perlu_perbaikan'], 'fix_status' => 'perlu_perbaikan', 'allowed' => true],
+            ['table' => 'taruna_prestasi', 'pending' => ['diajukan', 'perlu_perbaikan'], 'fix_status' => 'perlu_perbaikan', 'allowed' => true],
+            ['table' => 'lowongan_pekerjaan', 'pending' => ['diajukan', 'perlu_perbaikan'], 'fix_status' => 'perlu_perbaikan', 'allowed' => true],
+            ['table' => 'taruna_pelanggaran', 'pending' => ['diajukan', 'perlu_perbaikan'], 'fix_status' => 'perlu_perbaikan', 'allowed' => !$enforceRbac || KetarunaanPolicy::canAccessPelanggaranModule()],
+            ['table' => 'taruna_penerima_beasiswa', 'pending' => ['diajukan', 'perlu_perbaikan'], 'fix_status' => 'perlu_perbaikan', 'allowed' => !$enforceRbac || KetarunaanPolicy::canAccessBeasiswaModule()],
+            ['table' => 'alumni_riwayat_perubahan', 'pending' => ['diajukan', 'ditolak'], 'fix_status' => 'ditolak', 'allowed' => !$enforceRbac || KetarunaanPolicy::canAccessAlumniModule()],
+        ];
+
+        $menunggu = 0;
+        $perluPerbaikan = 0;
+        $totalTransaksi = 0;
+
+        foreach ($sources as $src) {
+            if (!$src['allowed']) {
+                continue;
+            }
+
+            $tbl = $src['table'];
+            if (!$enforceRbac) {
+                $totalTransaksi += (int) $this->db->table($tbl)->countAllResults();
+            }
+
+            $rows = $this->db->table($tbl)
+                ->select('status_validasi, COUNT(*) AS cnt')
+                ->whereIn('status_validasi', $src['pending'])
+                ->groupBy('status_validasi')
+                ->get()
+                ->getResultArray();
+
+            foreach ($rows as $r) {
+                if ($r['status_validasi'] === 'diajukan') {
+                    $menunggu += (int) $r['cnt'];
+                } elseif ($r['status_validasi'] === $src['fix_status']) {
+                    $perluPerbaikan += (int) $r['cnt'];
+                }
+            }
+        }
+
+        return [
+            'menunggu'        => $menunggu,
+            'perlu_perbaikan' => $perluPerbaikan,
+            'total_transaksi' => $totalTransaksi,
+        ];
     }
 
     /**
@@ -256,44 +415,19 @@ class DashboardService
      */
     private function getAntreanValidasi(string $tanggalAcuan): array
     {
-        $tables = [
-            'riwayat_status_taruna',
-            'taruna_prestasi',
-            'taruna_pelanggaran',
-            'taruna_penerima_beasiswa',
-            'lowongan_pekerjaan',
-        ];
-
-        $menunggu = 0;
-        $perluPerbaikan = 0;
-
-        foreach ($tables as $tbl) {
-            $rows = $this->db->table($tbl)
-                ->select('status_validasi, COUNT(*) AS cnt')
-                ->whereIn('status_validasi', ['diajukan', 'perlu_perbaikan'])
-                ->groupBy('status_validasi')
-                ->get()
-                ->getResultArray();
-
-            foreach ($rows as $r) {
-                if ($r['status_validasi'] === 'diajukan') {
-                    $menunggu += (int) $r['cnt'];
-                } elseif ($r['status_validasi'] === 'perlu_perbaikan') {
-                    $perluPerbaikan += (int) $r['cnt'];
-                }
-            }
-        }
+        $summary = $this->collectValidationSummary(true);
 
         $rencanaKembali = (int) $this->db->table('riwayat_status_taruna')
             ->whereIn('kode_status', ['cuti', 'skorsing'])
+            ->where('status_validasi', 'tervalidasi')
             ->where('akhir_berlaku IS NULL')
             ->where('rencana_kembali IS NOT NULL')
             ->where('rencana_kembali <=', $tanggalAcuan)
             ->countAllResults();
 
         return [
-            'menunggu'        => $menunggu,
-            'perlu_perbaikan' => $perluPerbaikan,
+            'menunggu'        => $summary['menunggu'],
+            'perlu_perbaikan' => $summary['perlu_perbaikan'],
             'rencana_kembali' => $rencanaKembali,
         ];
     }
@@ -301,11 +435,9 @@ class DashboardService
     /**
      * Menghitung persentase kelengkapan profil dan tingkat validasi data.
      *
-     * @param int $menunggu
-     * @param int $perluPerbaikan
      * @return array<string, int>
      */
-    private function hitungKualitasData(int $menunggu, int $perluPerbaikan): array
+    private function hitungKualitasData(): array
     {
         $totalTaruna = (int) $this->db->table('master_taruna')->countAllResults();
         if ($totalTaruna === 0) {
@@ -323,13 +455,9 @@ class DashboardService
 
         $persenLengkap = (int) round(($lengkapCount / $totalTaruna) * 100);
 
-        $totalTransaksi = (int) $this->db->table('taruna_prestasi')->countAllResults()
-            + (int) $this->db->table('taruna_pelanggaran')->countAllResults()
-            + (int) $this->db->table('taruna_penerima_beasiswa')->countAllResults()
-            + (int) $this->db->table('lowongan_pekerjaan')->countAllResults()
-            + ($menunggu + $perluPerbaikan + 96);
-
-        $belumTervalidasi = $menunggu + $perluPerbaikan;
+        $globalSummary = $this->collectValidationSummary(false);
+        $totalTransaksi = $globalSummary['total_transaksi'];
+        $belumTervalidasi = $globalSummary['menunggu'] + $globalSummary['perlu_perbaikan'];
         $persenTervalidasi = $totalTransaksi > 0
             ? (int) round((($totalTransaksi - $belumTervalidasi) / $totalTransaksi) * 100)
             : 100;
@@ -364,14 +492,14 @@ class DashboardService
                 'aktivitas' => 'Pengajuan ' . strtolower(ketarunaan_status_meta($statusItem['kode_status'])['label']),
                 'status'    => $meta['label'],
                 'badge'     => $meta['badge_class'],
-                'url'       => site_url('ketarunaan/taruna'),
+                'url'       => site_url('ketarunaan/validasi'),
             ];
         }
 
         $prestasiItem = $this->db->table('taruna_prestasi')
             ->select('jenis_keikutsertaan, status_validasi')
             ->where('status_validasi', 'tervalidasi')
-            ->orderBy('id', 'ASC')
+            ->orderBy('id', 'DESC')
             ->limit(1)
             ->get()
             ->getRowArray();
@@ -398,11 +526,11 @@ class DashboardService
         if ($perbaikanItem) {
             $meta = ketarunaan_validasi_meta('dikembalikan');
             $items[] = [
-                'modul'     => 'Database Taruna',
-                'aktivitas' => 'Koreksi identitas',
+                'modul'     => 'Status Taruna',
+                'aktivitas' => 'Perbaikan pengajuan status',
                 'status'    => $meta['label'],
                 'badge'     => $meta['badge_class'],
-                'url'       => site_url('ketarunaan/taruna'),
+                'url'       => site_url('ketarunaan/validasi?status=perlu_perbaikan'),
             ];
         }
 

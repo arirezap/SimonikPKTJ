@@ -73,6 +73,7 @@ class Dashboard extends BaseController
                     ->where('unit', $me['unit'])
                     ->where('id !=', $user_id)
                     ->where('role !=', 'admin');
+                UserModel::excludeSelfServiceFromQuery($peerQuery);
                 
                 if ($db->fieldExists('status_pegawai', 'users')) {
                     if ($db->fieldExists('tmt_selesai', 'users')) {

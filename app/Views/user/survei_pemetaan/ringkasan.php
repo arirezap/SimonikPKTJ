@@ -55,9 +55,9 @@ $unitKerja     = trim((string) ($respon['snapshot_unit'] ?? ($answersMap[8]['jaw
 <div class="summary-hero mb-4">
     <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
         <div>
-            <span class="badge rounded-pill text-success border border-success-subtle fw-semibold mb-2" style="background-color: #dcfce7; padding: 4px 12px; font-size: 0.75rem;">
-                <i class="bi bi-check-circle-fill me-1"></i> Survei Terkirim
-            </span>
+            <div class="text-success fw-semibold small mb-1">
+                <i class="bi bi-check-circle-fill me-1" aria-hidden="true"></i> Survei Terkirim
+            </div>
             <h1 class="h5 fw-bold text-dark mb-1">Terima kasih atas partisipasi Anda</h1>
             <p class="text-secondary mb-0" style="font-size: 0.875rem;">
                 Jawaban Survei Pemetaan Potensi, Kompetensi, dan Kapasitas Pegawai PKTJ Anda telah tercatat.

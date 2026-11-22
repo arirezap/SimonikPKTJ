@@ -79,6 +79,7 @@ if (!function_exists('render_role_badge')) {
             'ketarunaan'           => 'Ketarunaan',
             'ketarunaan_validator' => 'Validator Ketarunaan',
             'karir_alumni'         => 'Karier & Alumni',
+            'kerjasama'            => 'Kerjasama & Mitra',
             'taruna'               => 'Taruna',
             'alumni'               => 'Alumni',
             'pengguna_lulusan'     => 'Pengguna Lulusan'

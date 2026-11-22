@@ -53,6 +53,7 @@ class Dashboard extends BaseController
         // ----------------------------------------------------------------
         $userSelect = 'id, nama_lengkap, nip, username, jabatan, unit, role, status_pegawai, tmt_selesai, foto';
         $userQuery = $this->userModel->select($userSelect)->where('role !=', 'admin');
+        User::excludeSelfServiceFromQuery($userQuery);
 
         $adminPivotIds = array_column(
             $this->db->table('user_roles')->select('user_id')->where('role_name', 'admin')->get()->getResultArray(),
@@ -377,6 +378,7 @@ class Dashboard extends BaseController
         $userBuilder = $this->userModel
             ->select('id, nama_lengkap, nip, username, jabatan, unit, role, status_pegawai, tmt_selesai')
             ->where('role !=', 'admin');
+        User::excludeSelfServiceFromQuery($userBuilder);
 
         $adminPivotIds = array_column(
             $this->db->table('user_roles')->select('user_id')->where('role_name', 'admin')->get()->getResultArray(),

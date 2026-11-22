@@ -13,6 +13,18 @@ class NotificationController extends BaseController
             if (!session()->get('isLoggedIn')) {
                 return $this->response->setJSON(['status' => 'error', 'message' => 'Not logged in']);
             }
+
+            helper('role');
+            if (\App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfAccountOnly()) {
+                return $this->response->setStatusCode(403)->setJSON([
+                    'status'       => 'error',
+                    'message'      => 'Akses tidak diizinkan.',
+                    'unread_count' => 0,
+                    'count'        => 0,
+                    'total_count'  => 0,
+                    'data'         => [],
+                ]);
+            }
             
             // Auto-sync hari libur di background saat user pertama kali login di tahun berjalan
             $year = date('Y');
@@ -295,10 +307,22 @@ class NotificationController extends BaseController
         if (!session()->get('isLoggedIn')) {
             return $this->response->setJSON(['status' => 'error']);
         }
-        
-        if (!str_starts_with((string)$id, 'virtual_') && is_numeric($id)) {
+
+        helper('role');
+        if (\App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfAccountOnly()) {
+            return $this->response->setStatusCode(403)->setJSON([
+                'status'    => 'error',
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
+
+        $userId = session()->get('id') ?? session()->get('user_id');
+        if ($userId && !str_starts_with((string)$id, 'virtual_') && is_numeric($id)) {
             $notifModel = new NotificationModel();
-            $notifModel->update($id, ['is_read' => 1]);
+            $notifModel->where('id', (int) $id)
+                       ->where('user_id', (int) $userId)
+                       ->set(['is_read' => 1])
+                       ->update();
         }
         
         return $this->response->setJSON([
@@ -311,6 +335,15 @@ class NotificationController extends BaseController
     {
         if (!session()->get('isLoggedIn')) {
             return $this->response->setJSON(['status' => 'error', 'message' => 'Not logged in']);
+        }
+
+        helper('role');
+        if (\App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfAccountOnly()) {
+            return $this->response->setStatusCode(403)->setJSON([
+                'status'    => 'error',
+                'message'   => 'Akses tidak diizinkan.',
+                'csrf_hash' => csrf_hash(),
+            ]);
         }
         
         $userId = session()->get('id') ?? session()->get('user_id');

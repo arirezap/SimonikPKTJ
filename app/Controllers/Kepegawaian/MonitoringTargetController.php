@@ -48,7 +48,9 @@ class MonitoringTargetController extends BaseController
 
         // Ambil daftar unit kerja untuk filter dropdown
         $userModel = new User();
-        $units = $userModel->select('unit')->distinct()->where('unit !=', null)->where('unit !=', '')->orderBy('unit', 'ASC')->findAll();
+        $unitQuery = $userModel->select('unit')->distinct()->where('unit !=', null)->where('unit !=', '');
+        User::excludeSelfServiceFromQuery($unitQuery);
+        $units = $unitQuery->orderBy('unit', 'ASC')->findAll();
         $daftarUnit = array_column($units, 'unit');
 
         // Pengecekan informasi deadline target
@@ -489,6 +491,7 @@ class MonitoringTargetController extends BaseController
             'user_id'
         );
         $builder->where('role !=', 'admin');
+        User::excludeSelfServiceFromQuery($builder);
         if (!empty($adminPivotIds)) {
             $builder->whereNotIn('id', $adminPivotIds);
         }

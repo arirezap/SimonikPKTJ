@@ -30,13 +30,31 @@ class PrestasiController extends BaseController
                 ->with('error', 'Anda tidak memiliki akses ke Modul Ketarunaan.');
         }
 
+        $allowedSorts = ['nama_prestasi', 'tingkat_prestasi', 'peringkat', 'jenis_keikutsertaan', 'jumlah_peserta', 'tanggal_mulai', 'status_validasi'];
+        $sortByRaw    = trim((string) ($this->request->getGet('sort_by') ?? ''));
+        $sortBy       = in_array($sortByRaw, $allowedSorts, true) ? $sortByRaw : '';
+        $sortOrderRaw = strtolower(trim((string) ($this->request->getGet('sort_order') ?? 'desc')));
+        $sortOrder    = ($sortOrderRaw === 'asc') ? 'asc' : 'desc';
+
+        $keikutsertaanRaw = strtolower(trim((string) ($this->request->getGet('keikutsertaan') ?? 'all')));
+        $keikutsertaan    = in_array($keikutsertaanRaw, ['tim', 'individu'], true) ? $keikutsertaanRaw : 'all';
+
+        $isSelfOnly     = KetarunaanPolicy::isSelfAccountOnly();
+        $isSelfTaruna   = KetarunaanPolicy::isSelfTarunaOnly();
+        $ownNomorTaruna = KetarunaanPolicy::resolveSelfNomorTaruna();
+        $milikSaya      = ($isSelfOnly && trim((string) ($this->request->getGet('milik_saya') ?? '')) === '1') ? '1' : '';
+
         $filters = [
-            'q'       => trim((string) $this->request->getGet('q')),
-            'jenis'   => trim((string) ($this->request->getGet('jenis') ?? 'all')),
-            'tingkat' => trim((string) ($this->request->getGet('tingkat') ?? 'all')),
-            'prodi'   => trim((string) ($this->request->getGet('prodi') ?? 'all')),
-            'periode' => trim((string) ($this->request->getGet('periode') ?? 'all')),
-            'status'  => trim((string) ($this->request->getGet('status') ?? 'all')),
+            'q'             => trim((string) $this->request->getGet('q')),
+            'jenis'         => trim((string) ($this->request->getGet('jenis') ?? 'all')),
+            'tingkat'       => trim((string) ($this->request->getGet('tingkat') ?? 'all')),
+            'prodi'         => trim((string) ($this->request->getGet('prodi') ?? 'all')),
+            'periode'       => trim((string) ($this->request->getGet('periode') ?? 'all')),
+            'status'        => trim((string) ($this->request->getGet('status') ?? 'all')),
+            'keikutsertaan' => $keikutsertaan,
+            'milik_saya'    => $milikSaya,
+            'sort_by'       => $sortBy,
+            'sort_order'    => $sortOrder,
         ];
         $page    = max(1, (int) ($this->request->getGet('page') ?? 1));
         $perPage = (int) ($this->request->getGet('per_page') ?? 15);
@@ -45,17 +63,26 @@ class PrestasiController extends BaseController
         }
 
         $refs = $this->prestasiService->getReferenceOptions();
-        $dir  = $this->prestasiService->getDirectoryData($filters, $page, $perPage);
+        $dir  = $this->prestasiService->getDirectoryData(
+            $filters,
+            $page,
+            $perPage,
+            $isSelfOnly,
+            $ownNomorTaruna
+        );
 
         return view('ketarunaan/prestasi/index', [
-            'title'           => 'Prestasi Taruna - Evidence Command Center (ECC)',
-            'filters'         => $filters,
-            'refs'            => $refs,
-            'metrics'         => $dir['metrics'],
-            'rows'            => $dir['rows'],
-            'pagination'      => $dir['pagination'],
-            'canManageTaruna' => KetarunaanPolicy::canManageTaruna(),
-            'canValidate'     => KetarunaanPolicy::canValidate(),
+            'title'             => 'Prestasi Taruna - Evidence Command Center (ECC)',
+            'filters'           => $filters,
+            'refs'              => $refs,
+            'metrics'           => $dir['metrics'],
+            'rows'              => $dir['rows'],
+            'pagination'        => $dir['pagination'],
+            'canManageTaruna'   => KetarunaanPolicy::canManageTaruna(),
+            'canSubmitPrestasi' => KetarunaanPolicy::canSubmitPrestasiMandiri(),
+            'canValidate'       => KetarunaanPolicy::canValidate(),
+            'isSelfOnly'        => $isSelfOnly,
+            'isSelfTaruna'      => $isSelfTaruna,
         ]);
     }
 
@@ -64,16 +91,17 @@ class PrestasiController extends BaseController
      */
     public function create()
     {
-        if (!KetarunaanPolicy::canManageTaruna()) {
+        if (!KetarunaanPolicy::canSubmitPrestasiMandiri()) {
             return redirect()->to(base_url('ketarunaan/prestasi'))
                 ->with('error', 'Anda tidak memiliki wewenang menambah data prestasi.');
         }
 
         return view('ketarunaan/prestasi/form_informasi', [
-            'title'    => 'Tambah Prestasi - Evidence Command Center (ECC)',
-            'mode'     => 'create',
-            'prestasi' => null,
-            'refs'     => $this->prestasiService->getReferenceOptions(),
+            'title'        => 'Tambah Prestasi - Evidence Command Center (ECC)',
+            'mode'         => 'create',
+            'prestasi'     => null,
+            'refs'         => $this->prestasiService->getReferenceOptions(),
+            'isSelfTaruna' => KetarunaanPolicy::isSelfTarunaOnly(),
         ]);
     }
 
@@ -82,46 +110,36 @@ class PrestasiController extends BaseController
      */
     public function store()
     {
-        if (!KetarunaanPolicy::canManageTaruna()) {
+        if (!KetarunaanPolicy::canSubmitPrestasiMandiri()) {
             return redirect()->to(base_url('ketarunaan/prestasi'))
                 ->with('error', 'Anda tidak memiliki wewenang menambah data prestasi.');
         }
 
-        $rules = [
-            'nama_prestasi'       => 'required|min_length[3]|max_length[200]',
-            'jenis_prestasi'      => 'required|in_list[akademik,non_akademik,olahraga,seni]',
-            'tingkat_prestasi'    => 'required|in_list[internal,daerah,nasional,internasional]',
-            'peringkat'           => 'required|max_length[50]',
-            'penyelenggara'       => 'required|max_length[150]',
-            'lokasi_kegiatan'     => 'required|max_length[150]',
-            'tanggal_mulai'       => 'required|valid_date[Y-m-d]',
-            'tanggal_selesai'     => 'required|valid_date[Y-m-d]',
-            'jenis_keikutsertaan' => 'required|in_list[individu,tim]',
-        ];
-
-        if (!$this->validate($rules)) {
+        if (!$this->validate($this->getInformasiValidationRules())) {
             return redirect()->back()->withInput()
                 ->with('error', 'Mohon lengkapi seluruh kolom wajib pada informasi prestasi.');
         }
 
-        $unitPemilik = trim((string) ($this->request->getPost('unit_pemilik') ?? 'Ketarunaan'));
-        $result = $this->prestasiService->saveInformasi([
-            'nama_prestasi'       => $this->request->getPost('nama_prestasi'),
-            'jenis_prestasi'      => $this->request->getPost('jenis_prestasi'),
-            'bidang_prestasi'     => $this->request->getPost('bidang_prestasi'),
-            'tingkat_prestasi'    => $this->request->getPost('tingkat_prestasi'),
-            'peringkat'           => $this->request->getPost('peringkat'),
-            'penyelenggara'       => $this->request->getPost('penyelenggara'),
-            'lokasi_kegiatan'     => $this->request->getPost('lokasi_kegiatan'),
-            'tanggal_mulai'       => $this->request->getPost('tanggal_mulai'),
-            'tanggal_selesai'     => $this->request->getPost('tanggal_selesai'),
-            'jenis_keikutsertaan' => $this->request->getPost('jenis_keikutsertaan'),
-            'nama_tim'            => $this->request->getPost('nama_tim'),
-            'pembimbing'          => $this->request->getPost('pembimbing'),
-            'unit_pemilik'        => $unitPemilik,
-            'sumber_data'         => $this->request->getPost('sumber_data'),
-            'diajukan_oleh'       => $this->resolveActorLabel($unitPemilik),
-        ]);
+        $isSelfTaruna = KetarunaanPolicy::isSelfTarunaOnly();
+        $ownNomor     = null;
+        if ($isSelfTaruna) {
+            $ownNomor = KetarunaanPolicy::resolveSelfNomorTaruna();
+            if ($ownNomor === null) {
+                return redirect()->to(base_url('ketarunaan/prestasi'))
+                    ->with('error', 'Data taruna akun Anda tidak ditemukan.');
+            }
+        }
+
+        $unitPemilik = $isSelfTaruna
+            ? 'Ketarunaan'
+            : trim((string) ($this->request->getPost('unit_pemilik') ?? 'Ketarunaan'));
+
+        $payload = $this->buildInformasiPayload($unitPemilik);
+        if ($isSelfTaruna && $ownNomor !== null) {
+            $payload['initial_peserta_nomor'] = $ownNomor;
+        }
+
+        $result = $this->prestasiService->saveInformasi($payload);
 
         if (!$result['status']) {
             return redirect()->back()->withInput()->with('error', $result['message']);
@@ -129,11 +147,21 @@ class PrestasiController extends BaseController
 
         $newId = (int) ($result['id'] ?? 0);
         if (function_exists('log_audit')) {
-            log_audit('CREATE', 'Menambahkan draf prestasi baru ID #' . $newId);
+            log_audit('CREATE', 'taruna_prestasi', (string) $newId, null, [
+                'nama_prestasi' => $payload['nama_prestasi'],
+                'diajukan_oleh' => $payload['diajukan_oleh'],
+            ]);
+        }
+
+        if ($isSelfTaruna && ($payload['jenis_keikutsertaan'] ?? 'individu') === 'individu') {
+            return redirect()->to(base_url('ketarunaan/prestasi/dokumen/' . $newId))
+                ->with('success', 'Informasi prestasi disimpan dan akun Anda otomatis terdaftar. Lengkapi tautan bukti utama lalu ajukan validasi.');
         }
 
         return redirect()->to(base_url('ketarunaan/prestasi/peserta/' . $newId))
-            ->with('success', 'Informasi prestasi disimpan. Silakan tambahkan peserta.');
+            ->with('success', $isSelfTaruna
+                ? 'Informasi prestasi disimpan dan akun Anda otomatis terdaftar sebagai Ketua Tim. Tambahkan anggota tim bila diperlukan.'
+                : 'Informasi prestasi disimpan. Silakan tambahkan peserta.');
     }
 
     /**
@@ -141,22 +169,23 @@ class PrestasiController extends BaseController
      */
     public function edit(int $id)
     {
-        if (!KetarunaanPolicy::canManageTaruna()) {
-            return redirect()->to(base_url('ketarunaan/prestasi'))
-                ->with('error', 'Anda tidak memiliki wewenang mengubah data prestasi.');
-        }
-
         $detail = $this->prestasiService->getDetail($id);
         if (!$detail) {
             return redirect()->to(base_url('ketarunaan/prestasi'))
                 ->with('error', 'Data prestasi tidak ditemukan.');
         }
 
+        if (!KetarunaanPolicy::canEditPrestasi($detail)) {
+            return redirect()->to(base_url('ketarunaan/prestasi/detail/' . $id))
+                ->with('error', 'Data prestasi tidak dapat diubah pada status atau peran ini.');
+        }
+
         return view('ketarunaan/prestasi/form_informasi', [
-            'title'    => 'Ubah Informasi Prestasi - Evidence Command Center (ECC)',
-            'mode'     => 'edit',
-            'prestasi' => $detail['prestasi'],
-            'refs'     => $this->prestasiService->getReferenceOptions(),
+            'title'        => 'Ubah Informasi Prestasi - Evidence Command Center (ECC)',
+            'mode'         => 'edit',
+            'prestasi'     => $detail['prestasi'],
+            'refs'         => $this->prestasiService->getReferenceOptions(),
+            'isSelfTaruna' => KetarunaanPolicy::isSelfTarunaOnly(),
         ]);
     }
 
@@ -165,53 +194,39 @@ class PrestasiController extends BaseController
      */
     public function update(int $id)
     {
-        if (!KetarunaanPolicy::canManageTaruna()) {
+        $detail = $this->prestasiService->getDetail($id);
+        if (!$detail) {
             return redirect()->to(base_url('ketarunaan/prestasi'))
-                ->with('error', 'Anda tidak memiliki wewenang mengubah data prestasi.');
+                ->with('error', 'Data prestasi tidak ditemukan.');
         }
 
-        $rules = [
-            'nama_prestasi'       => 'required|min_length[3]|max_length[200]',
-            'jenis_prestasi'      => 'required|in_list[akademik,non_akademik,olahraga,seni]',
-            'tingkat_prestasi'    => 'required|in_list[internal,daerah,nasional,internasional]',
-            'peringkat'           => 'required|max_length[50]',
-            'penyelenggara'       => 'required|max_length[150]',
-            'lokasi_kegiatan'     => 'required|max_length[150]',
-            'tanggal_mulai'       => 'required|valid_date[Y-m-d]',
-            'tanggal_selesai'     => 'required|valid_date[Y-m-d]',
-            'jenis_keikutsertaan' => 'required|in_list[individu,tim]',
-        ];
+        if (!KetarunaanPolicy::canEditPrestasi($detail)) {
+            return redirect()->to(base_url('ketarunaan/prestasi/detail/' . $id))
+                ->with('error', 'Data prestasi tidak dapat diubah pada status atau peran ini.');
+        }
 
-        if (!$this->validate($rules)) {
+        if (!$this->validate($this->getInformasiValidationRules())) {
             return redirect()->back()->withInput()
                 ->with('error', 'Mohon lengkapi seluruh kolom wajib pada informasi prestasi.');
         }
 
-        $unitPemilik = trim((string) ($this->request->getPost('unit_pemilik') ?? 'Ketarunaan'));
-        $result = $this->prestasiService->saveInformasi([
-            'nama_prestasi'       => $this->request->getPost('nama_prestasi'),
-            'jenis_prestasi'      => $this->request->getPost('jenis_prestasi'),
-            'bidang_prestasi'     => $this->request->getPost('bidang_prestasi'),
-            'tingkat_prestasi'    => $this->request->getPost('tingkat_prestasi'),
-            'peringkat'           => $this->request->getPost('peringkat'),
-            'penyelenggara'       => $this->request->getPost('penyelenggara'),
-            'lokasi_kegiatan'     => $this->request->getPost('lokasi_kegiatan'),
-            'tanggal_mulai'       => $this->request->getPost('tanggal_mulai'),
-            'tanggal_selesai'     => $this->request->getPost('tanggal_selesai'),
-            'jenis_keikutsertaan' => $this->request->getPost('jenis_keikutsertaan'),
-            'nama_tim'            => $this->request->getPost('nama_tim'),
-            'pembimbing'          => $this->request->getPost('pembimbing'),
-            'unit_pemilik'        => $unitPemilik,
-            'sumber_data'         => $this->request->getPost('sumber_data'),
-            'diajukan_oleh'       => $this->resolveActorLabel($unitPemilik),
-        ], $id);
+        $isSelfTaruna = KetarunaanPolicy::isSelfTarunaOnly();
+        $unitPemilik  = $isSelfTaruna
+            ? 'Ketarunaan'
+            : trim((string) ($this->request->getPost('unit_pemilik') ?? 'Ketarunaan'));
+
+        $payload = $this->buildInformasiPayload($unitPemilik);
+        $result  = $this->prestasiService->saveInformasi($payload, $id);
 
         if (!$result['status']) {
             return redirect()->back()->withInput()->with('error', $result['message']);
         }
 
         if (function_exists('log_audit')) {
-            log_audit('UPDATE', 'Memperbarui informasi prestasi ID #' . $id);
+            log_audit('UPDATE', 'taruna_prestasi', (string) $id, null, [
+                'nama_prestasi' => $payload['nama_prestasi'],
+                'diajukan_oleh' => $payload['diajukan_oleh'],
+            ]);
         }
 
         $aksiSubmit = trim((string) ($this->request->getPost('aksi_submit') ?? 'next'));
@@ -229,22 +244,26 @@ class PrestasiController extends BaseController
      */
     public function peserta(int $id)
     {
-        if (!KetarunaanPolicy::canManageTaruna()) {
-            return redirect()->to(base_url('ketarunaan/prestasi/detail/' . $id))
-                ->with('error', 'Anda tidak memiliki wewenang mengelola peserta prestasi.');
-        }
-
         $detail = $this->prestasiService->getDetail($id);
         if (!$detail) {
             return redirect()->to(base_url('ketarunaan/prestasi'))
                 ->with('error', 'Data prestasi tidak ditemukan.');
         }
 
+        if (!KetarunaanPolicy::canEditPrestasi($detail)) {
+            return redirect()->to(base_url('ketarunaan/prestasi/detail/' . $id))
+                ->with('error', 'Peserta prestasi tidak dapat dikelola pada status atau peran ini.');
+        }
+
+        $isSelfTaruna = KetarunaanPolicy::isSelfTarunaOnly();
+
         return view('ketarunaan/prestasi/kelola_peserta', [
-            'title'      => 'Kelola Peserta Prestasi - Evidence Command Center (ECC)',
-            'detail'     => $detail,
-            'refs'       => $this->prestasiService->getReferenceOptions(),
-            'tarunaList' => $this->prestasiService->getTarunaSelectList(),
+            'title'          => 'Kelola Peserta Prestasi - Evidence Command Center (ECC)',
+            'detail'         => $detail,
+            'refs'           => $this->prestasiService->getReferenceOptions(),
+            'tarunaList'     => $this->prestasiService->getTarunaSelectList($isSelfTaruna),
+            'isSelfTaruna'   => $isSelfTaruna,
+            'ownNomorTaruna' => $isSelfTaruna ? KetarunaanPolicy::resolveSelfNomorTaruna() : null,
         ]);
     }
 
@@ -253,9 +272,23 @@ class PrestasiController extends BaseController
      */
     public function addPeserta(int $id)
     {
-        if (!KetarunaanPolicy::canManageTaruna()) {
+        $detail = $this->prestasiService->getDetail($id);
+        if (!$detail) {
             return redirect()->to(base_url('ketarunaan/prestasi'))
-                ->with('error', 'Anda tidak memiliki wewenang mengelola peserta prestasi.');
+                ->with('error', 'Data prestasi tidak ditemukan.');
+        }
+
+        if (!KetarunaanPolicy::canEditPrestasi($detail)) {
+            return redirect()->to(base_url('ketarunaan/prestasi/detail/' . $id))
+                ->with('error', 'Anda tidak memiliki wewenang mengelola peserta prestasi ini.');
+        }
+
+        if (
+            KetarunaanPolicy::isSelfTarunaOnly()
+            && ($detail['prestasi']['jenis_keikutsertaan'] ?? 'individu') === 'individu'
+        ) {
+            return redirect()->to(base_url('ketarunaan/prestasi/peserta/' . $id))
+                ->with('error', 'Prestasi individu otomatis memuat akun Anda saja.');
         }
 
         $nomorTaruna = trim((string) $this->request->getPost('nomor_taruna'));
@@ -265,13 +298,17 @@ class PrestasiController extends BaseController
             return redirect()->back()->with('error', 'Pilih taruna terlebih dahulu sebelum menambahkan peserta.');
         }
 
-        $result = $this->prestasiService->addPeserta($id, $nomorTaruna, $peran);
+        $pelaku = $this->resolveActorLabel((string) ($detail['prestasi']['unit_pemilik'] ?? 'Ketarunaan'));
+        $result = $this->prestasiService->addPeserta($id, $nomorTaruna, $peran, $pelaku);
         if (!$result['status']) {
             return redirect()->back()->with('error', $result['message']);
         }
 
         if (function_exists('log_audit')) {
-            log_audit('UPDATE', 'Menambahkan peserta ' . $nomorTaruna . ' pada prestasi ID #' . $id);
+            log_audit('UPDATE', 'taruna_prestasi', (string) $id, null, [
+                'aksi'         => 'tambah_peserta',
+                'nomor_taruna' => $nomorTaruna,
+            ]);
         }
 
         return redirect()->to(base_url('ketarunaan/prestasi/peserta/' . $id))
@@ -283,18 +320,39 @@ class PrestasiController extends BaseController
      */
     public function removePeserta(int $id, int $pesertaId)
     {
-        if (!KetarunaanPolicy::canManageTaruna()) {
+        $detail = $this->prestasiService->getDetail($id);
+        if (!$detail) {
             return redirect()->to(base_url('ketarunaan/prestasi'))
-                ->with('error', 'Anda tidak memiliki wewenang menghapus peserta prestasi.');
+                ->with('error', 'Data prestasi tidak ditemukan.');
         }
 
-        $result = $this->prestasiService->removePeserta($id, $pesertaId);
+        if (!KetarunaanPolicy::canEditPrestasi($detail)) {
+            return redirect()->to(base_url('ketarunaan/prestasi/detail/' . $id))
+                ->with('error', 'Anda tidak memiliki wewenang menghapus peserta prestasi ini.');
+        }
+
+        if (KetarunaanPolicy::isSelfTarunaOnly()) {
+            foreach (($detail['peserta'] ?? []) as $ps) {
+                if ((int) ($ps['peserta_id'] ?? 0) === $pesertaId
+                    && KetarunaanPolicy::isOwnNomorTaruna((string) ($ps['nomor_taruna'] ?? ''))
+                ) {
+                    return redirect()->to(base_url('ketarunaan/prestasi/peserta/' . $id))
+                        ->with('error', 'Anda tidak dapat menghapus akun sendiri dari pengajuan prestasi Anda.');
+                }
+            }
+        }
+
+        $pelaku = $this->resolveActorLabel((string) ($detail['prestasi']['unit_pemilik'] ?? 'Ketarunaan'));
+        $result = $this->prestasiService->removePeserta($id, $pesertaId, $pelaku);
         if (!$result['status']) {
             return redirect()->back()->with('error', $result['message']);
         }
 
         if (function_exists('log_audit')) {
-            log_audit('DELETE', 'Menghapus peserta ID #' . $pesertaId . ' dari prestasi ID #' . $id);
+            log_audit('UPDATE', 'taruna_prestasi', (string) $id, null, [
+                'aksi'       => 'hapus_peserta',
+                'peserta_id' => $pesertaId,
+            ]);
         }
 
         return redirect()->to(base_url('ketarunaan/prestasi/peserta/' . $id))
@@ -306,15 +364,15 @@ class PrestasiController extends BaseController
      */
     public function dokumen(int $id)
     {
-        if (!KetarunaanPolicy::canManageTaruna()) {
-            return redirect()->to(base_url('ketarunaan/prestasi/detail/' . $id))
-                ->with('error', 'Anda tidak memiliki wewenang mengelola dokumen bukti prestasi.');
-        }
-
         $detail = $this->prestasiService->getDetail($id);
         if (!$detail) {
             return redirect()->to(base_url('ketarunaan/prestasi'))
                 ->with('error', 'Data prestasi tidak ditemukan.');
+        }
+
+        if (!KetarunaanPolicy::canEditPrestasi($detail)) {
+            return redirect()->to(base_url('ketarunaan/prestasi/detail/' . $id))
+                ->with('error', 'Dokumen bukti tidak dapat dikelola pada status atau peran ini.');
         }
 
         return view('ketarunaan/prestasi/dokumen_bukti', [
@@ -328,92 +386,83 @@ class PrestasiController extends BaseController
      */
     public function saveDokumen(int $id)
     {
-        if (!KetarunaanPolicy::canManageTaruna()) {
-            return redirect()->to(base_url('ketarunaan/prestasi'))
-                ->with('error', 'Anda tidak memiliki wewenang mengelola dokumen bukti prestasi.');
-        }
-
         $detail = $this->prestasiService->getDetail($id);
         if (!$detail) {
             return redirect()->to(base_url('ketarunaan/prestasi'))
                 ->with('error', 'Data prestasi tidak ditemukan.');
         }
 
-        $rules = [
-            'nomor_sertifikat' => 'required|min_length[2]|max_length[100]',
-        ];
-
-        $fileBukti = $this->request->getFile('bukti_berkas');
-        if ($fileBukti && $fileBukti->isValid() && !$fileBukti->hasMoved()) {
-            $rules['bukti_berkas'] = 'max_size[bukti_berkas,10240]|ext_in[bukti_berkas,pdf]|mime_in[bukti_berkas,application/pdf]';
-        }
-
-        if (!$this->validate($rules)) {
-            return redirect()->back()->withInput()
-                ->with('error', 'Nomor sertifikat wajib diisi dan bukti utama harus berformat PDF maksimal 10 MB.');
-        }
-
-        $uploadedBuktiName = null;
-        $uploadedSizeKb    = (int) ($detail['prestasi']['ukuran_berkas_kb'] ?? 420);
-
-        if ($fileBukti && $fileBukti->isValid() && !$fileBukti->hasMoved()) {
-            $uploadDir = FCPATH . 'assets/uploads/ketarunaan/prestasi';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
-            $uploadedBuktiName = $fileBukti->getRandomName();
-            $uploadedSizeKb    = max(1, (int) round($fileBukti->getSize() / 1024));
-            $fileBukti->move($uploadDir, $uploadedBuktiName);
-
-            if (!empty($detail['prestasi']['bukti_berkas'])) {
-                $oldFile = $uploadDir . '/' . basename((string) $detail['prestasi']['bukti_berkas']);
-                if (is_file($oldFile)) {
-                    @unlink($oldFile);
-                }
-            }
-        }
-
-        // Proses foto dokumentasi opsional (maks 5 file JPG/PNG @ 5 MB)
-        $newFotos = [];
-        $filesDok = $this->request->getFileMultiple('dokumentasi_files');
-        if (is_array($filesDok)) {
-            $dokDir = FCPATH . 'assets/uploads/ketarunaan/prestasi/dokumentasi';
-            $sisaSlot = max(0, 5 - count($detail['dokumentasi']));
-
-            foreach ($filesDok as $foto) {
-                if ($sisaSlot <= 0) {
-                    break;
-                }
-                if (!$foto || !$foto->isValid() || $foto->hasMoved()) {
-                    continue;
-                }
-                $ext  = strtolower($foto->getExtension());
-                $mime = strtolower((string) $foto->getMimeType());
-                $size = $foto->getSize();
-                if (!in_array($ext, ['jpg', 'jpeg', 'png'], true)
-                    || !in_array($mime, ['image/jpeg', 'image/jpg', 'image/png'], true)
-                    || $size > 5 * 1024 * 1024
-                ) {
-                    return redirect()->back()->withInput()
-                        ->with('error', 'Berkas dokumentasi harus berformat JPG/PNG dan maksimal 5 MB per berkas.');
-                }
-
-                if (!is_dir($dokDir)) {
-                    mkdir($dokDir, 0755, true);
-                }
-                $randomFotoName = $foto->getRandomName();
-                $foto->move($dokDir, $randomFotoName);
-                $newFotos[] = $randomFotoName;
-                $sisaSlot--;
-            }
+        if (!KetarunaanPolicy::canEditPrestasi($detail)) {
+            return redirect()->to(base_url('ketarunaan/prestasi/detail/' . $id))
+                ->with('error', 'Dokumen bukti tidak dapat diubah pada status atau peran ini.');
         }
 
         $aksiSubmit = trim((string) ($this->request->getPost('aksi_submit') ?? 'draf'));
+        if (!in_array($aksiSubmit, ['draf', 'diajukan'], true)) {
+            $aksiSubmit = 'draf';
+        }
+
+        $rules = [
+            'nomor_sertifikat' => ($aksiSubmit === 'diajukan')
+                ? 'required|min_length[2]|max_length[100]'
+                : 'permit_empty|max_length[100]',
+        ];
+
+        if (!$this->validate($rules)) {
+            return redirect()->back()->withInput()
+                ->with('error', 'Nomor sertifikat wajib diisi (2–100 karakter) saat mengajukan validasi.');
+        }
+
+        $existingBukti = trim((string) ($detail['prestasi']['bukti_berkas'] ?? ''));
+        $hadLegacyFile = ($existingBukti !== '' && !ketarunaan_is_http_url($existingBukti, 2000));
+        $buktiLink     = trim((string) ($this->request->getPost('bukti_berkas') ?? ''));
+
+        if ($buktiLink !== '' && !ketarunaan_is_http_url($buktiLink, 255)) {
+            return redirect()->back()->withInput()
+                ->with('error', 'Tautan bukti utama harus berupa URL http:// atau https:// yang valid (maksimal 255 karakter).');
+        }
+
+        if ($buktiLink !== '') {
+            $finalBukti  = $buktiLink;
+            $finalSizeKb = 0;
+        } elseif ($hadLegacyFile) {
+            $finalBukti  = $existingBukti;
+            $finalSizeKb = (int) ($detail['prestasi']['ukuran_berkas_kb'] ?? 0);
+        } else {
+            $finalBukti  = '';
+            $finalSizeKb = 0;
+        }
+
+        // Validasi tautan dokumentasi tambahan (Opsi A: Google Drive / Cloud URL, maks. total 5 entri)
+        $rawLinks    = $this->request->getPost('dokumentasi_links');
+        $newDokLinks = [];
+        $sisaSlot    = max(0, 5 - count($detail['dokumentasi']));
+        if (is_array($rawLinks)) {
+            foreach ($rawLinks as $rawLink) {
+                $cleanLink = trim((string) $rawLink);
+                if ($cleanLink === '') {
+                    continue;
+                }
+                if ($sisaSlot <= 0) {
+                    return redirect()->back()->withInput()
+                        ->with('error', 'Jumlah tautan dokumentasi tambahan melebihi batas maksimal 5 entri.');
+                }
+                if (!ketarunaan_is_http_url($cleanLink, 500)) {
+                    return redirect()->back()->withInput()
+                        ->with('error', 'Setiap tautan dokumentasi harus berupa URL http:// atau https:// yang valid (maksimal 500 karakter).');
+                }
+                if (!in_array($cleanLink, $detail['dokumentasi'], true) && !in_array($cleanLink, $newDokLinks, true)) {
+                    $newDokLinks[] = $cleanLink;
+                    $sisaSlot--;
+                }
+            }
+        }
+
         $result = $this->prestasiService->saveDokumenAndSubmit($id, [
             'nomor_sertifikat' => $this->request->getPost('nomor_sertifikat'),
-            'bukti_berkas'     => $uploadedBuktiName,
-            'ukuran_berkas_kb' => $uploadedSizeKb,
-            'dokumentasi_baru' => $newFotos,
+            'bukti_berkas'     => $finalBukti,
+            'ukuran_berkas_kb' => $finalSizeKb,
+            'dokumentasi_baru' => $newDokLinks,
             'aksi_submit'      => $aksiSubmit,
             'pelaku'           => $this->resolveActorLabel((string) ($detail['prestasi']['unit_pemilik'] ?? 'Ketarunaan')),
         ]);
@@ -422,8 +471,21 @@ class PrestasiController extends BaseController
             return redirect()->back()->withInput()->with('error', $result['message']);
         }
 
+        if ($hadLegacyFile && $buktiLink !== '') {
+            $oldName = basename($existingBukti);
+            if ($oldName !== '') {
+                $oldFile = FCPATH . 'assets/uploads/ketarunaan/prestasi/' . $oldName;
+                if (is_file($oldFile)) {
+                    @unlink($oldFile);
+                }
+            }
+        }
+
         if (function_exists('log_audit')) {
-            log_audit('UPDATE', 'Memperbarui dokumen bukti prestasi ID #' . $id . ' (' . $aksiSubmit . ')');
+            log_audit('UPDATE', 'taruna_prestasi', (string) $id, null, [
+                'aksi'        => $aksiSubmit === 'diajukan' ? 'ajukan_validasi' : 'simpan_draf_dokumen',
+                'status_baru' => $aksiSubmit,
+            ]);
         }
 
         if ($aksiSubmit === 'diajukan') {
@@ -440,13 +502,27 @@ class PrestasiController extends BaseController
      */
     public function removeDokumentasi(int $id)
     {
-        if (!KetarunaanPolicy::canManageTaruna()) {
+        $detail = $this->prestasiService->getDetail($id);
+        if (!$detail) {
             return redirect()->to(base_url('ketarunaan/prestasi'))
+                ->with('error', 'Data prestasi tidak ditemukan.');
+        }
+
+        if (!KetarunaanPolicy::canEditPrestasi($detail)) {
+            return redirect()->to(base_url('ketarunaan/prestasi/detail/' . $id))
                 ->with('error', 'Anda tidak memiliki wewenang menghapus dokumentasi.');
         }
 
-        $file = trim((string) $this->request->getPost('filename'));
-        $result = $this->prestasiService->removeDokumentasi($id, $file);
+        $file   = trim((string) $this->request->getPost('filename'));
+        $pelaku = $this->resolveActorLabel((string) ($detail['prestasi']['unit_pemilik'] ?? 'Ketarunaan'));
+        $result = $this->prestasiService->removeDokumentasi($id, $file, $pelaku);
+
+        if ($result['status'] && function_exists('log_audit')) {
+            log_audit('DELETE', 'taruna_prestasi', (string) $id, null, [
+                'aksi'        => 'hapus_dokumentasi',
+                'dokumentasi' => $file,
+            ]);
+        }
 
         return redirect()->to(base_url('ketarunaan/prestasi/dokumen/' . $id))
             ->with($result['status'] ? 'success' : 'error', $result['message']);
@@ -468,17 +544,30 @@ class PrestasiController extends BaseController
                 ->with('error', 'Data prestasi tidak ditemukan.');
         }
 
+        if (
+            KetarunaanPolicy::isSelfAccountOnly()
+            && ($detail['prestasi']['status_validasi'] ?? '') !== 'tervalidasi'
+            && !$this->isPesertaPrestasi($detail)
+        ) {
+            return $this->response->setStatusCode(403, 'Akses ditolak.')
+                ->setBody('Data prestasi yang belum tervalidasi hanya dapat diakses oleh petugas atau peserta terkait.');
+        }
+
         $tab = strtolower(trim((string) ($this->request->getGet('tab') ?? 'ringkasan')));
         if (!in_array($tab, ['ringkasan', 'peserta', 'dokumen', 'riwayat'], true)) {
             $tab = 'ringkasan';
         }
 
         return view('ketarunaan/prestasi/detail', [
-            'title'           => 'Detail Prestasi - Evidence Command Center (ECC)',
-            'active_tab'      => $tab,
-            'detail'          => $detail,
-            'canManageTaruna' => KetarunaanPolicy::canManageTaruna(),
-            'canValidate'     => KetarunaanPolicy::canValidate(),
+            'title'            => 'Detail Prestasi - Evidence Command Center (ECC)',
+            'active_tab'       => $tab,
+            'detail'           => $detail,
+            'canManageTaruna'  => KetarunaanPolicy::canManageTaruna(),
+            'canEditPrestasi'  => KetarunaanPolicy::canEditPrestasi($detail),
+            'canValidate'      => KetarunaanPolicy::canValidate(),
+            'isSelfOnly'       => KetarunaanPolicy::isSelfAccountOnly(),
+            'isPesertaSendiri' => $this->isPesertaPrestasi($detail),
+            'ownNomorTaruna'   => KetarunaanPolicy::resolveSelfNomorTaruna(),
         ]);
     }
 
@@ -492,21 +581,30 @@ class PrestasiController extends BaseController
                 ->with('error', 'Anda tidak memiliki wewenang memvalidasi prestasi.');
         }
 
-        $keputusan = trim((string) ($this->request->getPost('keputusan') ?? 'tervalidasi'));
+        $keputusan = trim((string) ($this->request->getPost('keputusan') ?? ''));
         $catatan   = trim((string) ($this->request->getPost('catatan_validasi') ?? ''));
+
+        if (!in_array($keputusan, ['tervalidasi', 'perlu_perbaikan'], true)) {
+            return redirect()->back()
+                ->with('error', 'Keputusan validasi tidak valid.');
+        }
 
         if ($keputusan === 'perlu_perbaikan' && $catatan === '') {
             return redirect()->back()
-                ->with('error', 'Mohon isi catatan perbaikan sebelum mengembalikan data.');
+                ->with('error', 'Isi catatan perbaikan terlebih dahulu.');
         }
 
-        $result = $this->prestasiService->processValidation($id, $keputusan, $catatan, 'Validator Unit');
+        $result = $this->prestasiService->processValidation($id, $keputusan, $catatan, $this->resolveValidatorLabel());
         if (!$result['status']) {
             return redirect()->back()->with('error', $result['message']);
         }
 
         if (function_exists('log_audit')) {
-            log_audit('APPROVE', 'Validasi prestasi ID #' . $id . ' menjadi ' . $keputusan);
+            $auditAction = ($keputusan === 'tervalidasi') ? 'APPROVE' : 'RETURN_PRESTASI';
+            log_audit($auditAction, 'taruna_prestasi', (string) $id, null, [
+                'keputusan' => $keputusan,
+                'catatan'   => $catatan,
+            ]);
         }
 
         return redirect()->to(base_url('ketarunaan/prestasi/detail/' . $id . '?tab=riwayat'))
@@ -518,9 +616,15 @@ class PrestasiController extends BaseController
      */
     public function delete(int $id)
     {
-        if (!KetarunaanPolicy::canManageTaruna()) {
+        $detail = $this->prestasiService->getDetail($id);
+        if (!$detail) {
             return redirect()->to(base_url('ketarunaan/prestasi'))
-                ->with('error', 'Anda tidak memiliki wewenang menghapus data prestasi.');
+                ->with('error', 'Data prestasi tidak ditemukan.');
+        }
+
+        if (!KetarunaanPolicy::canEditPrestasi($detail)) {
+            return redirect()->to(base_url('ketarunaan/prestasi/detail/' . $id))
+                ->with('error', 'Data prestasi tidak dapat dihapus pada status atau peran ini.');
         }
 
         $result = $this->prestasiService->deleteDraftPrestasi($id);
@@ -528,8 +632,12 @@ class PrestasiController extends BaseController
             return redirect()->back()->with('error', $result['message']);
         }
 
+        $this->cleanupPrestasiFiles($detail);
+
         if (function_exists('log_audit')) {
-            log_audit('DELETE', 'Menghapus draf prestasi ID #' . $id);
+            log_audit('DELETE', 'taruna_prestasi', (string) $id, null, [
+                'nama_prestasi' => $detail['prestasi']['nama_prestasi'] ?? '-',
+            ]);
         }
 
         return redirect()->to(base_url('ketarunaan/prestasi'))
@@ -542,8 +650,8 @@ class PrestasiController extends BaseController
     public function unduhDokumen(int $id)
     {
         if (!KetarunaanPolicy::canAccessModule()) {
-            return redirect()->to(base_url('dashboard'))
-                ->with('error', 'Anda tidak memiliki akses ke Modul Ketarunaan.');
+            return $this->response->setStatusCode(403, 'Akses ditolak.')
+                ->setBody('Anda tidak memiliki akses ke Modul Ketarunaan.');
         }
 
         $detail = $this->prestasiService->getDetail($id);
@@ -551,54 +659,55 @@ class PrestasiController extends BaseController
             return redirect()->back()->with('error', 'Data prestasi tidak ditemukan.');
         }
 
+        if (KetarunaanPolicy::isSelfAccountOnly() && !$this->isPesertaPrestasi($detail)) {
+            return $this->response->setStatusCode(403, 'Akses ditolak.')
+                ->setBody('Berkas bukti prestasi hanya dapat diakses oleh staf berwenang atau peserta terkait.');
+        }
+
         $prestasi = $detail['prestasi'];
         $jenis    = trim((string) ($this->request->getGet('jenis') ?? 'utama'));
         $inline   = ((int) $this->request->getGet('inline') === 1);
 
         if ($jenis === 'foto') {
-            $fotoName = basename((string) ($this->request->getGet('file') ?? ''));
-            if ($fotoName !== '' && in_array($fotoName, $detail['dokumentasi'], true)) {
+            $rawFile = trim((string) ($this->request->getGet('file') ?? ''));
+            if ($rawFile !== '' && in_array($rawFile, $detail['dokumentasi'], true)) {
+                if (ketarunaan_is_http_url($rawFile, 2000)) {
+                    return redirect()->to($rawFile);
+                }
+                $fotoName     = basename($rawFile);
                 $physicalFoto = FCPATH . 'assets/uploads/ketarunaan/prestasi/dokumentasi/' . $fotoName;
                 if (is_file($physicalFoto)) {
                     $mime = mime_content_type($physicalFoto) ?: 'image/jpeg';
                     return $this->response
+                        ->setHeader('X-Content-Type-Options', 'nosniff')
                         ->setHeader('Content-Type', $mime)
                         ->setHeader('Content-Disposition', ($inline ? 'inline' : 'attachment') . '; filename="' . $fotoName . '"')
                         ->setBody((string) file_get_contents($physicalFoto));
                 }
             }
-            $pdfFoto = ketarunaan_generate_simple_pdf('Dokumentasi Kegiatan Prestasi', $prestasi['nama_prestasi'], [
-                'Nama Berkas'   => $fotoName ?: 'Foto_Kegiatan.jpg',
-                'Penyelenggara' => (string) $prestasi['penyelenggara'],
-            ]);
-            return $this->response
-                ->setHeader('Content-Type', 'application/pdf')
-                ->setHeader('Content-Disposition', 'inline; filename="Dokumentasi_Kegiatan.pdf"')
-                ->setBody($pdfFoto);
+            return redirect()->back()->with('error', 'Berkas dokumentasi tidak ditemukan.');
         }
 
-        $fileName = basename((string) ($prestasi['bukti_berkas'] ?: 'Piagam_Prestasi.pdf'));
+        $rawBukti = trim((string) ($prestasi['bukti_berkas'] ?? ''));
+        if ($rawBukti === '') {
+            return redirect()->back()->with('error', 'Belum ada bukti utama prestasi yang tersedia.');
+        }
+        if (ketarunaan_is_http_url($rawBukti, 2000)) {
+            return redirect()->to($rawBukti);
+        }
+
+        $fileName     = basename($rawBukti);
         $physicalPath = FCPATH . 'assets/uploads/ketarunaan/prestasi/' . $fileName;
         if (is_file($physicalPath)) {
             $mime = mime_content_type($physicalPath) ?: 'application/pdf';
             return $this->response
+                ->setHeader('X-Content-Type-Options', 'nosniff')
                 ->setHeader('Content-Type', $mime)
                 ->setHeader('Content-Disposition', ($inline ? 'inline' : 'attachment') . '; filename="' . $fileName . '"')
                 ->setBody((string) file_get_contents($physicalPath));
         }
 
-        $pesertaRingkas = array_map(static fn ($p) => $p['nomor_taruna'] . ' - ' . $p['nama_lengkap'], $detail['peserta']);
-        $pdfContent = ketarunaan_generate_simple_pdf('Bukti Utama Prestasi Taruna', (string) $prestasi['nama_prestasi'], [
-            'Tingkat / Peringkat' => ucfirst((string) $prestasi['tingkat_prestasi']) . ' - ' . $prestasi['peringkat'],
-            'Keikutsertaan'       => ucfirst((string) $prestasi['jenis_keikutsertaan']) . (!empty($prestasi['nama_tim']) ? ' (' . $prestasi['nama_tim'] . ')' : ''),
-            'Nomor Sertifikat'    => (string) ($prestasi['nomor_sertifikat'] ?: '-'),
-            'Peserta'             => !empty($pesertaRingkas) ? implode('; ', array_slice($pesertaRingkas, 0, 3)) : '-',
-        ]);
-
-        return $this->response
-            ->setHeader('Content-Type', 'application/pdf')
-            ->setHeader('Content-Disposition', ($inline ? 'inline' : 'attachment') . '; filename="' . $fileName . '"')
-            ->setBody($pdfContent);
+        return redirect()->back()->with('error', 'Berkas bukti prestasi tidak ditemukan.');
     }
 
     /**
@@ -607,8 +716,8 @@ class PrestasiController extends BaseController
     public function unduhRingkasan(int $id)
     {
         if (!KetarunaanPolicy::canAccessModule()) {
-            return redirect()->to(base_url('dashboard'))
-                ->with('error', 'Anda tidak memiliki akses ke Modul Ketarunaan.');
+            return $this->response->setStatusCode(403, 'Akses ditolak.')
+                ->setBody('Anda tidak memiliki akses ke Modul Ketarunaan.');
         }
 
         $detail = $this->prestasiService->getDetail($id);
@@ -616,14 +725,26 @@ class PrestasiController extends BaseController
             return redirect()->back()->with('error', 'Data prestasi tidak ditemukan.');
         }
 
-        $p = $detail['prestasi'];
+        if (
+            KetarunaanPolicy::isSelfAccountOnly()
+            && ($detail['prestasi']['status_validasi'] ?? '') !== 'tervalidasi'
+            && !$this->isPesertaPrestasi($detail)
+        ) {
+            return $this->response->setStatusCode(403, 'Akses ditolak.')
+                ->setBody('Ringkasan prestasi ini hanya tersedia untuk staf atau peserta terkait.');
+        }
+
+        $p           = $detail['prestasi'];
         $statusLabel = ketarunaan_validasi_meta((string) $p['status_validasi'])['label'];
+        $tglMulai    = ketarunaan_format_tanggal((string) ($p['tanggal_mulai'] ?? ''), true);
+        $tglSelesai  = ketarunaan_format_tanggal((string) ($p['tanggal_selesai'] ?? ''), true);
+        $rentangTgl  = ($tglSelesai !== '-' && $tglSelesai !== $tglMulai) ? ($tglMulai . ' - ' . $tglSelesai) : $tglMulai;
 
         $pdf = ketarunaan_generate_simple_pdf('Ringkasan Data Prestasi Taruna', (string) $p['nama_prestasi'], [
             'Jenis / Bidang'      => ucfirst((string) $p['jenis_prestasi']) . ' / ' . ($p['bidang_prestasi'] ?: '-'),
             'Tingkat / Peringkat' => ucfirst((string) $p['tingkat_prestasi']) . ' / ' . $p['peringkat'],
             'Penyelenggara'       => (string) $p['penyelenggara'],
-            'Lokasi & Tanggal'    => ($p['lokasi_kegiatan'] ?: '-') . ' (' . $p['tanggal_mulai'] . ')',
+            'Lokasi & Tanggal'    => ($p['lokasi_kegiatan'] ?: '-') . ' (' . $rentangTgl . ')',
             'Keikutsertaan'       => ucfirst((string) $p['jenis_keikutsertaan']) . ($p['nama_tim'] ? ' - ' . $p['nama_tim'] : ''),
             'Jumlah Peserta'      => count($detail['peserta']) . ' taruna',
             'Status Validasi'     => $statusLabel . ($p['divalidasi_oleh'] ? ' oleh ' . $p['divalidasi_oleh'] : ''),
@@ -640,21 +761,33 @@ class PrestasiController extends BaseController
      */
     public function ekspor()
     {
-        if (!KetarunaanPolicy::canAccessModule()) {
-            return redirect()->to(base_url('dashboard'))
-                ->with('error', 'Anda tidak memiliki akses ke Modul Ketarunaan.');
+        if (!KetarunaanPolicy::canAccessModule() || KetarunaanPolicy::isSelfAccountOnly()) {
+            return $this->response->setStatusCode(403, 'Akses ditolak.')
+                ->setBody('Ekspor daftar prestasi tidak diizinkan untuk akun layanan mandiri.');
         }
 
+        $allowedSorts = ['nama_prestasi', 'tingkat_prestasi', 'peringkat', 'jenis_keikutsertaan', 'jumlah_peserta', 'tanggal_mulai', 'status_validasi'];
+        $sortByRaw    = trim((string) ($this->request->getGet('sort_by') ?? ''));
+        $sortBy       = in_array($sortByRaw, $allowedSorts, true) ? $sortByRaw : '';
+        $sortOrderRaw = strtolower(trim((string) ($this->request->getGet('sort_order') ?? 'desc')));
+        $sortOrder    = ($sortOrderRaw === 'asc') ? 'asc' : 'desc';
+
+        $keikutsertaanRaw = strtolower(trim((string) ($this->request->getGet('keikutsertaan') ?? 'all')));
+        $keikutsertaan    = in_array($keikutsertaanRaw, ['tim', 'individu'], true) ? $keikutsertaanRaw : 'all';
+
         $filters = [
-            'q'       => trim((string) $this->request->getGet('q')),
-            'jenis'   => trim((string) ($this->request->getGet('jenis') ?? 'all')),
-            'tingkat' => trim((string) ($this->request->getGet('tingkat') ?? 'all')),
-            'prodi'   => trim((string) ($this->request->getGet('prodi') ?? 'all')),
-            'periode' => trim((string) ($this->request->getGet('periode') ?? 'all')),
-            'status'  => trim((string) ($this->request->getGet('status') ?? 'all')),
+            'q'             => trim((string) $this->request->getGet('q')),
+            'jenis'         => trim((string) ($this->request->getGet('jenis') ?? 'all')),
+            'tingkat'       => trim((string) ($this->request->getGet('tingkat') ?? 'all')),
+            'prodi'         => trim((string) ($this->request->getGet('prodi') ?? 'all')),
+            'periode'       => trim((string) ($this->request->getGet('periode') ?? 'all')),
+            'status'        => trim((string) ($this->request->getGet('status') ?? 'all')),
+            'keikutsertaan' => $keikutsertaan,
+            'sort_by'       => $sortBy,
+            'sort_order'    => $sortOrder,
         ];
 
-        $dir = $this->prestasiService->getDirectoryData($filters, 1, 1000);
+        $dir = $this->prestasiService->getDirectoryData($filters, 1, 0);
 
         $lines   = [];
         $lines[] = implode(',', [
@@ -669,18 +802,23 @@ class PrestasiController extends BaseController
         ]);
 
         foreach ($dir['rows'] as $r) {
-            $statusLabel = ketarunaan_validasi_meta(
-                $r['status_validasi'] === 'perlu_perbaikan' ? 'dikembalikan' : (string) $r['status_validasi']
-            )['label'];
+            $statusLabel = ketarunaan_validasi_meta((string) $r['status_validasi'])['label'];
             $lines[] = implode(',', [
-                '"' . str_replace('"', '""', (string) $r['nama_prestasi']) . '"',
-                '"' . str_replace('"', '""', ucfirst((string) $r['jenis_prestasi'])) . '"',
-                '"' . str_replace('"', '""', ucfirst((string) $r['tingkat_prestasi'])) . '"',
-                '"' . str_replace('"', '""', (string) $r['peringkat']) . '"',
-                '"' . str_replace('"', '""', ucfirst((string) $r['jenis_keikutsertaan'])) . '"',
+                '"' . str_replace('"', '""', ketarunaan_csv_safe((string) $r['nama_prestasi'])) . '"',
+                '"' . str_replace('"', '""', ketarunaan_csv_safe(ucfirst((string) $r['jenis_prestasi']))) . '"',
+                '"' . str_replace('"', '""', ketarunaan_csv_safe(ucfirst((string) $r['tingkat_prestasi']))) . '"',
+                '"' . str_replace('"', '""', ketarunaan_csv_safe((string) $r['peringkat'])) . '"',
+                '"' . str_replace('"', '""', ketarunaan_csv_safe(ucfirst((string) $r['jenis_keikutsertaan']))) . '"',
                 (int) $r['jumlah_peserta'],
-                '"' . str_replace('"', '""', (string) $r['tanggal_mulai']) . '"',
-                '"' . str_replace('"', '""', $statusLabel) . '"',
+                '"' . str_replace('"', '""', ketarunaan_csv_safe((string) $r['tanggal_mulai'])) . '"',
+                '"' . str_replace('"', '""', ketarunaan_csv_safe($statusLabel)) . '"',
+            ]);
+        }
+
+        if (function_exists('log_audit')) {
+            log_audit('EXPORT_CSV_PRESTASI', 'taruna_prestasi', 'all', null, [
+                'filters'    => $filters,
+                'total_rows' => count($dir['rows']),
             ]);
         }
 
@@ -694,14 +832,126 @@ class PrestasiController extends BaseController
     }
 
     /**
-     * Menentukan label peran pelaku berdasarkan unit pemilik.
+     * Memeriksa apakah akun aktif merupakan salah satu peserta pada prestasi ini.
+     *
+     * @param array<string, mixed> $detail
+     */
+    private function isPesertaPrestasi(array $detail): bool
+    {
+        foreach (($detail['peserta'] ?? []) as $peserta) {
+            if (KetarunaanPolicy::isOwnNomorTaruna((string) ($peserta['nomor_taruna'] ?? ''))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Aturan validasi bersama untuk Tahap 1 Informasi Prestasi.
+     *
+     * @return array<string, string>
+     */
+    private function getInformasiValidationRules(): array
+    {
+        return [
+            'nama_prestasi'       => 'required|min_length[3]|max_length[200]',
+            'jenis_prestasi'      => 'required|in_list[akademik,non_akademik,olahraga,seni]',
+            'bidang_prestasi'     => 'permit_empty|max_length[100]',
+            'tingkat_prestasi'    => 'required|in_list[internal,daerah,nasional,internasional]',
+            'peringkat'           => 'required|max_length[50]',
+            'penyelenggara'       => 'required|max_length[150]',
+            'lokasi_kegiatan'     => 'required|max_length[150]',
+            'tanggal_mulai'       => 'required|valid_date[Y-m-d]',
+            'tanggal_selesai'     => 'required|valid_date[Y-m-d]',
+            'jenis_keikutsertaan' => 'required|in_list[individu,tim]',
+            'nama_tim'            => 'permit_empty|max_length[120]',
+            'pembimbing'          => 'permit_empty|max_length[120]',
+            'unit_pemilik'        => 'permit_empty|in_list[Ketarunaan,Pusbangkar,Program Studi]',
+            'sumber_data'         => 'permit_empty|max_length[100]',
+        ];
+    }
+
+    /**
+     * Menyusun payload Tahap 1 dari POST request.
+     *
+     * @return array<string, mixed>
+     */
+    private function buildInformasiPayload(string $unitPemilik): array
+    {
+        return [
+            'nama_prestasi'       => $this->request->getPost('nama_prestasi'),
+            'jenis_prestasi'      => $this->request->getPost('jenis_prestasi'),
+            'bidang_prestasi'     => $this->request->getPost('bidang_prestasi'),
+            'tingkat_prestasi'    => $this->request->getPost('tingkat_prestasi'),
+            'peringkat'           => $this->request->getPost('peringkat'),
+            'penyelenggara'       => $this->request->getPost('penyelenggara'),
+            'lokasi_kegiatan'     => $this->request->getPost('lokasi_kegiatan'),
+            'tanggal_mulai'       => $this->request->getPost('tanggal_mulai'),
+            'tanggal_selesai'     => $this->request->getPost('tanggal_selesai'),
+            'jenis_keikutsertaan' => $this->request->getPost('jenis_keikutsertaan'),
+            'nama_tim'            => $this->request->getPost('nama_tim'),
+            'pembimbing'          => $this->request->getPost('pembimbing'),
+            'unit_pemilik'        => $unitPemilik,
+            'sumber_data'         => $this->request->getPost('sumber_data'),
+            'diajukan_oleh'       => $this->resolveActorLabel($unitPemilik),
+        ];
+    }
+
+    /**
+     * Menghapus berkas unggahan saat draf prestasi dihapus.
+     *
+     * @param array<string, mixed> $detail
+     */
+    private function cleanupPrestasiFiles(array $detail): void
+    {
+        $prestasi = $detail['prestasi'] ?? [];
+        $rawBukti = trim((string) ($prestasi['bukti_berkas'] ?? ''));
+        if ($rawBukti !== '' && !ketarunaan_is_http_url($rawBukti, 2000)) {
+            $buktiPath = FCPATH . 'assets/uploads/ketarunaan/prestasi/' . basename($rawBukti);
+            if (is_file($buktiPath)) {
+                @unlink($buktiPath);
+            }
+        }
+
+        foreach (($detail['dokumentasi'] ?? []) as $foto) {
+            $rawFoto = trim((string) $foto);
+            if ($rawFoto === '' || ketarunaan_is_http_url($rawFoto, 2000)) {
+                continue;
+            }
+            $fotoPath = FCPATH . 'assets/uploads/ketarunaan/prestasi/dokumentasi/' . basename($rawFoto);
+            if (is_file($fotoPath)) {
+                @unlink($fotoPath);
+            }
+        }
+    }
+
+    /**
+     * Menentukan label peran/identitas pelaku berdasarkan akun aktif.
      */
     private function resolveActorLabel(string $unitPemilik): string
     {
+        if (KetarunaanPolicy::isSelfTarunaOnly()) {
+            $ownNomor = KetarunaanPolicy::resolveSelfNomorTaruna() ?? '-';
+            $nama     = trim((string) (session()->get('nama_lengkap') ?: session()->get('nama') ?: $ownNomor));
+
+            return mb_substr('Taruna - ' . $nama . ' (' . $ownNomor . ')', 0, 100);
+        }
+
         return match ($unitPemilik) {
             'Pusbangkar'    => 'PIC Pusbangkar',
             'Program Studi' => 'PIC Prodi',
             default         => 'PIC Ketarunaan',
         };
+    }
+
+    /**
+     * Menentukan nama pejabat validator dari sesi aktif.
+     */
+    private function resolveValidatorLabel(): string
+    {
+        $nama = trim((string) (session()->get('nama_lengkap') ?: session()->get('nama') ?: session()->get('username') ?: 'Validator Unit'));
+
+        return mb_substr($nama, 0, 100);
     }
 }

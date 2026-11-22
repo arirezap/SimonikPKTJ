@@ -1,0 +1,275 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-17T09:49:00+07:00",
+  "title": "Design System: Evidence Command Center (ECC)",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Royal Cobalt",
+        "canonical": "#0d6efd",
+        "tonalRamp": ["#052c65", "#084298", "#0a58ca", "#0d6efd", "#3d8bfd", "#6ea8fe", "#9ec5fe", "#cfe2ff"]
+      },
+      "primary-dark": {
+        "role": "primary",
+        "displayName": "Executive Indigo",
+        "canonical": "#1e40af",
+        "tonalRamp": ["#0c1a47", "#172554", "#1e3a8a", "#1e40af", "#2563eb", "#60a5fa", "#93c5fd", "#dbeafe"]
+      },
+      "primary-navy": {
+        "role": "primary",
+        "displayName": "PKTJ Navy Accent",
+        "canonical": "#1e3a8a",
+        "tonalRamp": ["#0a1433", "#111f4d", "#172554", "#1e3a8a", "#1d4ed8", "#3b82f6", "#93c5fd", "#eff6ff"]
+      },
+      "sky-accent": {
+        "role": "secondary",
+        "displayName": "Sky Command",
+        "canonical": "#0284c7",
+        "tonalRamp": ["#082f49", "#0c4a6e", "#075985", "#0369a1", "#0284c7", "#38bdf8", "#7dd3fc", "#e0f2fe"]
+      },
+      "navy-header": {
+        "role": "neutral",
+        "displayName": "Deep Slate Navy",
+        "canonical": "#0f172a",
+        "tonalRamp": ["#020617", "#0f172a", "#1e293b", "#334155", "#475569", "#64748b", "#94a3b8", "#e2e8f0"]
+      },
+      "emerald-success": {
+        "role": "secondary",
+        "displayName": "Verification Emerald",
+        "canonical": "#10b981",
+        "tonalRamp": ["#022c22", "#064e3b", "#047857", "#059669", "#10b981", "#34d399", "#6ee7b7", "#ecfdf5"]
+      },
+      "amber-warning": {
+        "role": "secondary",
+        "displayName": "Amber Advisory",
+        "canonical": "#f59e0b",
+        "tonalRamp": ["#451a03", "#78350f", "#92400e", "#b45309", "#d97706", "#f59e0b", "#fcd34d", "#fef3c7"]
+      },
+      "amber-emphasis": {
+        "role": "secondary",
+        "displayName": "Deep Amber Ink",
+        "canonical": "#d97706",
+        "tonalRamp": ["#451a03", "#664d03", "#78350f", "#b45309", "#d97706", "#f59e0b", "#fde68a", "#fffbeb"]
+      },
+      "crimson-danger": {
+        "role": "secondary",
+        "displayName": "Crimson Alert",
+        "canonical": "#dc2626",
+        "tonalRamp": ["#450a0a", "#7f1d1d", "#991b1b", "#b91c1c", "#dc2626", "#ef4444", "#fca5a5", "#fef2f2"]
+      },
+      "purple-alumni": {
+        "role": "secondary",
+        "displayName": "Alumni Violet",
+        "canonical": "#7c3aed",
+        "tonalRamp": ["#2e1065", "#4c1d95", "#5b21b6", "#6d28d9", "#7c3aed", "#8b5cf6", "#c4b5fd", "#f5f3ff"]
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Cool Slate Canvas",
+        "canonical": "#f8fafc",
+        "tonalRamp": ["#1e293b", "#334155", "#64748b", "#94a3b8", "#cbd5e1", "#e2e8f0", "#f1f5f9", "#f8fafc"]
+      },
+      "canvas-subtle": {
+        "role": "neutral",
+        "displayName": "Muted Slate Canvas",
+        "canonical": "#f1f5f9",
+        "tonalRamp": ["#0f172a", "#334155", "#475569", "#64748b", "#94a3b8", "#cbd5e1", "#e2e8f0", "#f1f5f9"]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Pure Surface White",
+        "canonical": "#ffffff",
+        "tonalRamp": ["#64748b", "#94a3b8", "#cbd5e1", "#e2e8f0", "#f1f5f9", "#f8fafc", "#fcfdff", "#ffffff"]
+      },
+      "surface-tint": {
+        "role": "neutral",
+        "displayName": "Pastel Blue Surface Tint",
+        "canonical": "#eff6ff",
+        "tonalRamp": ["#1e3a8a", "#1d4ed8", "#3b82f6", "#60a5fa", "#93c5fd", "#bfdbfe", "#dbeafe", "#eff6ff"]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Slate Hairline",
+        "canonical": "#e2e8f0",
+        "tonalRamp": ["#1e293b", "#334155", "#475569", "#64748b", "#94a3b8", "#cbd5e1", "#e2e8f0", "#f1f5f9"]
+      },
+      "text-secondary": {
+        "role": "neutral",
+        "displayName": "Slate Secondary Text",
+        "canonical": "#475569",
+        "tonalRamp": ["#020617", "#0f172a", "#1e293b", "#334155", "#475569", "#64748b", "#94a3b8", "#cbd5e1"]
+      },
+      "text-muted": {
+        "role": "neutral",
+        "displayName": "Slate Muted Text",
+        "canonical": "#64748b",
+        "tonalRamp": ["#0f172a", "#1e293b", "#334155", "#475569", "#64748b", "#94a3b8", "#cbd5e1", "#f1f5f9"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Page headings (h1) and KPI hero metrics." },
+      "headline": { "displayName": "Headline", "purpose": "Bento card headers and modal titles." },
+      "title": { "displayName": "Title", "purpose": "Section subtitles and mobile touch-card headers." },
+      "body": { "displayName": "Body", "purpose": "Dense data tables, form inputs, and navigation links." },
+      "label": { "displayName": "Label", "purpose": "Sticky uppercase table headers, role pills, and micro timestamps." }
+    },
+    "shadows": [
+      { "name": "gov-card", "value": "0 4px 12px rgba(15, 23, 42, 0.04)", "purpose": "Subtle ambient depth on resting governance, alumni, and scholarship cards." },
+      { "name": "bento-rest", "value": "0 4px 15px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02)", "purpose": "Default elevation for dashboard Bento containers." },
+      { "name": "bento-hover", "value": "0 14px 28px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.03)", "purpose": "Hover state elevation with subtle -2.5px vertical lift." },
+      { "name": "notif-menu", "value": "0 20px 40px -12px rgba(15, 23, 42, 0.16), 0 4px 16px -2px rgba(15, 23, 42, 0.06)", "purpose": "Floating topbar notification dropdowns and confirmation modals." },
+      { "name": "focus-ring", "value": "0 0 0 3px rgba(13, 110, 253, 0.15)", "purpose": "Universal accessible focus halo on inputs, selects, and controls." }
+    ],
+    "motion": [
+      { "name": "ease-ecc-out", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Natural exponential deceleration across cards, rows, and tabs." },
+      { "name": "duration-tactile", "value": "150ms", "purpose": "Instant button press feedback (.btn-tactile)." },
+      { "name": "duration-hover", "value": "250ms", "purpose": "Card hover elevation and tab fade-ins." },
+      { "name": "duration-entrance", "value": "650ms", "purpose": "Staggered initial Bento grid entrance (.bento-stagger)." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "576px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "992px" },
+      { "name": "xl", "value": "1200px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Pill CTA Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main form submission and institutional download CTA button on the 8-Point Grid.",
+      "html": "<button type=\"button\" class=\"ds-btn-primary\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16\"/><path d=\"m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05\"/></svg><span>Ajukan Target</span></button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 8px 24px; border-radius: 9999px; border: 1px solid #0d6efd; background-color: #0d6efd; color: #ffffff; font-family: 'Inter', system-ui, sans-serif; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, box-shadow 0.2s ease; } .ds-btn-primary:hover { background-color: #1e40af; border-color: #1e40af; box-shadow: 0 4px 12px rgba(30, 64, 175, 0.25); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25); } .ds-btn-primary:active { transform: scale(0.97); }"
+    },
+    {
+      "name": "Compact Table Action Pill",
+      "kind": "button",
+      "refersTo": "button-pill-sm",
+      "description": "In-table action link button (Bukti, Revisi, Detail) at strict 32px desktop height.",
+      "html": "<button type=\"button\" class=\"ds-btn-pill-sm\">Lihat Detail</button>",
+      "css": ".ds-btn-pill-sm { display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 4px 12px; border-radius: 9999px; border: 1px solid #e2e8f0; background-color: #ffffff; color: #0f172a; font-family: 'Inter', system-ui, sans-serif; font-size: 0.8125rem; font-weight: 600; cursor: pointer; transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.15s cubic-bezier(0.16, 1, 0.3, 1); } .ds-btn-pill-sm:hover { background-color: #f8fafc; border-color: #cbd5e1; color: #0284c7; } .ds-btn-pill-sm:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15); } .ds-btn-pill-sm:active { transform: scale(0.97); }"
+    },
+    {
+      "name": "Bento Card Container",
+      "kind": "card",
+      "refersTo": "card-bento",
+      "description": "Primary white Bento Box panel for operational dashboards and governance tables.",
+      "html": "<div class=\"ds-bento-card\"><div class=\"ds-bento-title\">Ringkasan Status Pendidikan</div><div class=\"ds-bento-num\">427</div><div class=\"ds-bento-sub\">Taruna aktif tervalidasi</div></div>",
+      "css": ".ds-bento-card { background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; color: #0f172a; font-family: 'Inter', system-ui, sans-serif; box-shadow: 0 4px 15px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02); transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1); } .ds-bento-card:hover { transform: translateY(-2.5px); box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.03); } .ds-bento-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 8px; } .ds-bento-num { font-size: 1.75rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.2; } .ds-bento-sub { font-size: 0.75rem; color: #64748b; margin-top: 4px; }"
+    },
+    {
+      "name": "Executive Dark Action Bento",
+      "kind": "card",
+      "refersTo": "card-dark-action",
+      "description": "Single high-contrast navy callout card reserved for urgent validation queues.",
+      "html": "<div class=\"ds-dark-bento\"><div class=\"ds-dark-title\">Perlu Tindak Lanjut</div><div class=\"ds-dark-row\"><span>Menunggu validasi</span><span class=\"ds-dark-count\">12</span></div><button type=\"button\" class=\"ds-dark-cta\">Buka Antrean Validasi</button></div>",
+      "css": ".ds-dark-bento { background-color: #0f172a; color: #ffffff; border-radius: 16px; padding: 24px; font-family: 'Inter', system-ui, sans-serif; display: flex; flex-direction: column; gap: 12px; } .ds-dark-title { font-size: 0.95rem; font-weight: 700; } .ds-dark-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; color: rgba(255,255,255,0.75); } .ds-dark-count { background-color: #f59e0b; color: #0f172a; font-weight: 700; font-size: 0.75rem; padding: 4px 12px; border-radius: 9999px; font-variant-numeric: tabular-nums; } .ds-dark-cta { height: 36px; border: none; border-radius: 9999px; background-color: #f59e0b; color: #0f172a; font-weight: 700; font-size: 0.8125rem; cursor: pointer; transition: background-color 0.2s ease, transform 0.15s cubic-bezier(0.16, 1, 0.3, 1); } .ds-dark-cta:hover { background-color: #fbbf24; } .ds-dark-cta:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.45); } .ds-dark-cta:active { transform: scale(0.97); }"
+    },
+    {
+      "name": "ECC Standard Form Input",
+      "kind": "input",
+      "refersTo": "input-control",
+      "description": "Standardized 36px form select/input control with accessible cobalt focus halo.",
+      "html": "<input type=\"text\" class=\"ds-input\" placeholder=\"Cari nama staf atau nomor taruna...\" />",
+      "css": ".ds-input { width: 100%; height: 36px; padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background-color: #ffffff; color: #0f172a; font-family: 'Inter', system-ui, sans-serif; font-size: 0.875rem; transition: border-color 0.18s ease, box-shadow 0.18s ease; } .ds-input::placeholder { color: #64748b; } .ds-input:focus { outline: none; border-color: #0d6efd; box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15); }"
+    },
+    {
+      "name": "Sidebar Active Navigation Link",
+      "kind": "nav",
+      "refersTo": "nav-link-active",
+      "description": "Single-line 40px sidebar link with left cobalt accent indicator and tint gradient.",
+      "html": "<a href=\"#ringkasan\" class=\"ds-nav-link\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5z\"/></svg><span>Ringkasan</span></a>",
+      "css": ".ds-nav-link { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 8px 12px; border-radius: 0 8px 8px 0; border-left: 3px solid #0d6efd; background: linear-gradient(90deg, rgba(13, 110, 253, 0.10) 0%, rgba(13, 110, 253, 0.02) 100%); color: #1e40af; text-decoration: none; font-family: 'Inter', system-ui, sans-serif; font-size: 0.8125rem; font-weight: 600; white-space: nowrap; transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); } .ds-nav-link:hover { transform: translateX(2px); } .ds-nav-link:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15); }"
+    },
+    {
+      "name": "Governance Tab Pill",
+      "kind": "nav",
+      "refersTo": "tab-pill-active",
+      "description": "Switchable governance navigation pill used in Alumni, Beasiswa, Lowongan, and Validasi.",
+      "html": "<div class=\"ds-tabbar\"><a href=\"#daftar\" class=\"ds-tab is-active\">Daftar Tervalidasi</a><a href=\"#antrean\" class=\"ds-tab\">Antrean Pengajuan</a></div>",
+      "css": ".ds-tabbar { display: inline-flex; gap: 8px; padding: 8px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; font-family: 'Inter', system-ui, sans-serif; } .ds-tab { display: inline-flex; align-items: center; min-height: 36px; padding: 8px 16px; border-radius: 12px; font-size: 0.875rem; font-weight: 600; color: #475569; text-decoration: none; transition: background-color 0.18s ease, color 0.18s ease; } .ds-tab:hover { background-color: #f1f5f9; color: #0f172a; } .ds-tab.is-active { background-color: #0d6efd; color: #ffffff; } .ds-tab:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15); }"
+    },
+    {
+      "name": "Status Pillar Badge",
+      "kind": "chip",
+      "refersTo": "badge-status",
+      "description": "High-legibility semantic capsule badge for validation and education status.",
+      "html": "<span class=\"ds-badge-status\">Tervalidasi</span>",
+      "css": ".ds-badge-status { display: inline-flex; align-items: center; height: 24px; padding: 4px 12px; border-radius: 9999px; background-color: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; font-family: 'Inter', system-ui, sans-serif; font-size: 0.75rem; font-weight: 600; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Civic Command Bento",
+    "overview": "Evidence Command Center (ECC) dirancang agar bersih, tenang, lapang, dan langsung mudah digunakan oleh seluruh pimpinan, dosen, staf, taruna, maupun alumni PKTJ Tegal tanpa harus belajar aturan rumit. Setiap halaman memakai kartu Bento putih di atas latar abu-abu lembut dengan jarak napas lega berpola 4px Theory & 8-Point Grid sehingga informasi penting cepat ditemukan dalam sekali lihat.\n\nKesederhanaan visual dan bahasa menjadi fondasi utama: seluruh tampilan bebas emoji, hemat ikon (hanya dipakai pada tempat yang benar-benar membantu fungsi), memakai tipografi 'Inter' yang tajam untuk angka maupun tabel, mengikuti kepatuhan skala kelipatan 4px, serta menggunakan kalimat Indonesia sehari-hari yang singkat dan bebas istilah IT atau pemrograman. Pola tampilan ECC 1.5 yang sudah berjalan menjadi acuan tunggal; rancangan kasar atau mock-up hanya menentukan urutan isi informasi tanpa meniru ukuran, warna, atau hiasan berlebihan.",
+    "keyCharacteristics": [
+      "Tampilan bersih (clean) dan mudah digunakan (easy to use) dengan ruang putih lega serta alur tindakan yang jelas (filter di atas, tombol aksi utama di bawah)",
+      "Kepatuhan 4px Theory & 8-Point Grid: setiap padding, margin, gap, radius, tinggi kontrol, dan kotak ikon wajib merupakan kelipatan utuh 4px (4, 8, 12, 16, 24, 32, 36, 40, 44, 48, 56, 64, 80px) tanpa nilai ganjil/acak",
+      "100% bebas emoji di seluruh antarmuka pengguna—tidak ada emoji pada judul, tombol, badge status, notifikasi, pesan dialog, tabel, maupun kalender",
+      "Kebijakan ikon minimalis: ikon Bootstrap (bi bi-...) hanya dipakai bila sangat dibutuhkan untuk navigasi utama, tombol aksi, atau penanda status penting",
+      "100% bahasa non-teknis bagi pengguna: dilarang memunculkan istilah IT atau pemrograman pada label, penjelasan form, notifikasi, alert, dan pop-up konfirmasi",
+      "Kartu Bento putih (16px sudut membulat) di atas kanvas terang yang konsisten di ECC 1.x, Survei SDM, dan ECC 2.0",
+      "Adaptasi responsif mulus: tabel desktop ringkas berubah menjadi kartu sentuh ramah jempol (>= 44px, kelipatan 4px) di layar ponsel (< 768px)"
+    ],
+    "rules": [
+      {
+        "name": "The Baseline Preservation Rule",
+        "body": "Pertahankan tampilan latar terang kartu putih di seluruh modul; kartu gelap (navy-header) dibatasi maksimal satu kartu fokus penindaklanjutan pada halaman Ringkasan agar halaman tetap terasa ringan dan bersih.",
+        "section": "colors"
+      },
+      {
+        "name": "The Contrast Floor Rule",
+        "body": "Semua teks, angka, dan ikon penting di atas kartu berwarna pastel maupun sidebar putih harus mudah dibaca dengan kontras minimal standar keterbacaan (>= 4.5:1 untuk teks normal, >= 3.0:1 untuk ikon)—gunakan variasi warna teks gelap/emphasis dibandingkan kuning cerah atau abu-abu terlalu pucat.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Precision Rule",
+        "body": "Seluruh angka pada kartu metrik, kolom nilai kinerja, NIP, tanggal, dan hitungan populasi taruna wajib rata sejajar (tabular numerals) agar mudah dibandingkan antarbaris.",
+        "section": "typography"
+      },
+      {
+        "name": "The Single-Line Sidebar Rule",
+        "body": "Setiap nama menu sidebar (0.8125rem) tampil rapi dalam satu baris tunggal tanpa membungkus turun ke baris kedua pada mode lebar (256px) maupun ringkas (72px).",
+        "section": "typography"
+      },
+      {
+        "name": "The 4px Divisibility Rule",
+        "body": "Setiap ukuran spasi, lengkung sudut, tinggi kontrol, dan kotak ikon harus habis dibagi 4 dalam piksel; pilih kelipatan 8px untuk jarak antarblok dan gunakan langkah 4px (12px, 28px, 36px, 44px) hanya pada elemen mikro dan ergonomi sentuh.",
+        "section": "layout"
+      },
+      {
+        "name": "The Restrained Surface Rule",
+        "body": "Kartu tetap tenang tanpa guncangan saat diam; efek angkat tipis hanya muncul saat kursor mengarah ke kartu yang dapat diklik, dan seluruh gerak dinonaktifkan otomatis bagi pengguna dengan pengaturan Reduce Motion.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Simple Motion Rule",
+        "body": "Gerakan animasi dibuat sederhana, cepat (150ms–250ms), dan tidak mengubah ukuran lebar/tinggi layout secara mendadak agar halaman terasa responsif dan tidak memicu kedipan tata letak.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do gunakan nama \"Evidence Command Center (ECC)\" (atau ECC) dan kata \"staf\" secara konsisten di seluruh teks tampilan, tombol, label, variabel, dan dokumentasi.",
+      "Do terapkan 4px Theory & 8-Point Grid: pastikan seluruh padding, margin, gap, radius, tinggi kontrol, dan kotak ikon habis dibagi 4 (4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 56, 64, 72, 80px) dan patuhi acuan ECC 1.5.",
+      "Do jaga tampilan tetap bersih (clean), lapang, dan mudah digunakan (easy to use) tanpa penumpukan elemen yang membingungkan.",
+      "Do tulis seluruh label antarmuka, panduan, notifikasi, alert, dan pop-up menggunakan bahasa Indonesia sehari-hari yang singkat, padat, jelas, serta ramah pengguna.",
+      "Do batasi pemakaian ikon Bootstrap (bi bi-...) hanya untuk kebutuhan nyata (navigasi utama, tombol aksi penting, penanda status kritis, dan avatar).",
+      "Do gunakan kontrol tombol yang dapat diakses papan ketik (<button>), urutan heading runtut (h1 -> h2), label aksesibilitas yang jelas, dan kontras teks minimal 4.5:1 pada kartu terang maupun pastel.",
+      "Do tampilkan keadaan kosong (empty state) dengan kalimat singkat yang jelas pada setiap tabel atau daftar notifikasi agar pengguna tidak mengira halaman sedang macet.",
+      "Do nonaktifkan animasi secara otomatis ketika pengguna mengaktifkan preferensi gerak minimal (Reduce Motion).",
+      "Do jaga area judul halaman dan item menu sidebar tetap bersih—cukup tampilkan judul utama dan subjudul singkat tanpa ditempeli badge pill keterangan tambahan; jika informasi penanda data diperlukan, letakkan di pengaturan atau keterangan teks polos di catatan kaki."
+    ],
+    "donts": [
+      "Don't pasang desain badge pill konteks, status lingkungan, atau penanda lingkup di samping atau di bawah judul halaman serta item menu sidebar di halaman mana pun (dilarang pill seperti \"Data Operasional\", \"Data Simulasi\", \"Profil dasar\", \"PIC Tracer Study\", \"Akses Terbatas\", atau pill tahun di header). Pill hanya untuk lencana status baris tabel/data dan tombol aksi CTA.",
+      "Don't gunakan angka ukuran/spasi di luar kelipatan 4px (seperti 5px, 6px, 7px, 10px, 13px, 14px, 15px, 18px, 62px, 95px) pada komponen atau perbaikan antarmuka.",
+      "Don't gunakan emoji dalam bentuk apa pun di seluruh antarmuka (dilarang pada judul, tombol, status, notifikasi, tabel, sel kalender, pop-up konfirmasi, maupun pesan error).",
+      "Don't menumpuk ikon dekoratif di setiap judul kartu, setiap judul kolom tabel, setiap label form, atau di setiap baris daftar jika teksnya sudah cukup menjelaskan maksudnya.",
+      "Don't gunakan istilah teknis IT, bahasa pemrograman, atau istilah infrastruktur sistem (seperti database, basis data, server, jaringan, API, SQL, query, JSON, cache, session, token, script, exception, syntax, null, error code, backend, toleransi sistem) dalam pesan error, notifikasi, modal, tooltip, maupun label tampilan pengguna.",
+      "Don't sebutkan nama aplikasi lama atau kata selain \"staf\" (\"bawahan\", \"staff\") di mana pun pada tampilan maupun dokumentasi.",
+      "Don't meniru mock-up mentah (pixel-copy) yang melanggar jarak 8-Point Grid (14px, 18px, 20px), menyalin label simulasi, atau menyisipkan badge dekoratif tambahan.",
+      "Don't tampilkan tanggal dan jam persetujuan/penilaian di antarmuka target atau rekap kinerja—cukup tampilkan nama pejabat penilai/penyetuju untuk menjaga kepatuhan audit.",
+      "Don't ubah ukuran dimensi layout (width atau all) secara paksa di transisi atau membiarkan kegagalan permintaan halaman berlalu tanpa pesan ringkas kepada pengguna."
+    ]
+  }
+}

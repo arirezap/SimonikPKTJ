@@ -1,152 +1,63 @@
 <?= $this->extend('layouts/ecc2_layout') ?>
 
+<?= $this->section('title') ?>Detail Capaian<?= $this->endSection() ?>
+
+<?= $this->section('styles') ?>
+<?= $this->include('ketarunaan/rekam_jejak/_styles') ?>
+<?= $this->endSection() ?>
+
 <?= $this->section('content') ?>
 <?php
 $capaian     = $capaian ?? [];
 $idCapaian   = (int) ($capaian['id'] ?? 0);
 $nomorTaruna = (string) ($capaian['nomor_taruna'] ?? '');
 $namaLengkap = (string) ($capaian['nama_lengkap'] ?? '-');
-$inisial     = strtoupper(substr(trim($namaLengkap), 0, 1));
+$inisial     = strtoupper(mb_substr(trim($namaLengkap), 0, 1));
 $detailUrl   = base_url('ketarunaan/rekam-jejak/detail/' . rawurlencode($nomorTaruna));
-?>
 
-<style>
-    .ecc-rj-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        padding: 24px;
-        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
-    }
-    @media (max-width: 767.98px) {
-        .ecc-rj-card {
-            padding: 16px;
-        }
-    }
-    .ecc-avatar-lg {
-        width: 64px;
-        height: 64px;
-        border-radius: 16px;
-        background: linear-gradient(135deg, #0284c7 0%, #1d4ed8 100%);
-        color: #ffffff;
-        font-size: 1.5rem;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-    .ecc-tab-nav {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        border-bottom: 1px solid #e2e8f0;
-        padding-bottom: 12px;
-        margin-bottom: 24px;
-    }
-    .ecc-tab-link {
-        min-height: 36px;
-        padding: 8px 16px;
-        border-radius: 8px;
-        font-size: 0.875rem;
-        font-weight: 600;
-        color: #475569;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .ecc-tab-link:hover {
-        background-color: #f1f5f9;
-        color: #0f172a;
-    }
-    .ecc-tab-link.active {
-        background-color: #0284c7;
-        color: #ffffff;
-    }
-    .ecc-icon-48 {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.25rem;
-        flex-shrink: 0;
-    }
-    .ecc-attr-row {
-        display: flex;
-        padding: 8px 0;
-        border-bottom: 1px solid #f1f5f9;
-        font-size: 0.875rem;
-    }
-    .ecc-attr-row:last-child {
-        border-bottom: 0;
-    }
-    .ecc-attr-label {
-        width: 160px;
-        color: #64748b;
-        flex-shrink: 0;
-    }
-    .ecc-attr-value {
-        color: #0f172a;
-        font-weight: 500;
-    }
-    .ecc-preview-surface {
-        background-color: #f1f5f9;
-        border-radius: 12px;
-        padding: 24px;
-        min-height: 200px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .ecc-preview-sheet {
-        background: #ffffff;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        width: 160px;
-        padding: 16px;
-        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
-    }
-    .ecc-control-sm {
-        min-height: 36px;
-        border-radius: 8px;
-        font-size: 0.875rem;
-    }
-    .ecc-btn-pill-sm {
-        min-height: 32px;
-        padding: 4px 12px;
-        border-radius: 50rem;
-        font-size: 0.8125rem;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .ecc-num {
-        font-variant-numeric: tabular-nums;
-        font-feature-settings: "tnum";
-    }
-</style>
+$fotoFile    = basename((string) ($capaian['foto'] ?? ''));
+$fotoUrl     = ($fotoFile !== '' && is_file(FCPATH . 'assets/uploads/taruna/' . $fotoFile))
+    ? base_url('assets/uploads/taruna/' . $fotoFile)
+    : null;
+$angkatanTxt = !empty($capaian['angkatan'])
+    ? ketarunaan_format_angkatan([
+        'tahun_masuk' => $capaian['angkatan'],
+        'kode_romawi' => $capaian['angkatan_romawi'] ?? '',
+    ])
+    : '-';
+
+$namaBerkasRaw = trim((string) ($capaian['bukti_berkas'] ?? ''));
+$hasBerkas     = ($namaBerkasRaw !== '');
+$isExternalUrl = $hasBerkas && ketarunaan_is_http_url($namaBerkasRaw, 2000);
+$namaBerkas    = $hasBerkas ? ketarunaan_format_bukti_label($namaBerkasRaw) : '';
+$extBerkas     = ($hasBerkas && !$isExternalUrl) ? strtolower(pathinfo(basename($namaBerkasRaw), PATHINFO_EXTENSION)) : '';
+$isImageBerkas = ($hasBerkas && !$isExternalUrl) && in_array($extBerkas, ['jpg', 'jpeg', 'png'], true);
+$ukuranKb      = (int) ($capaian['ukuran_berkas_kb'] ?? 0);
+$canEditBtn    = isset($canEditCapaian) ? !empty($canEditCapaian) : !empty($canManageTaruna);
+$statusVal     = (string) ($capaian['status_validasi'] ?? 'draf');
+$canDeleteBtn  = $canEditBtn && in_array($statusVal, ['draf', 'perlu_perbaikan', 'dikembalikan'], true);
+$canDecideNow  = !empty($canValidate) && in_array($statusVal, ['diajukan', 'perlu_perbaikan', 'dikembalikan'], true);
+?>
 
 <!-- Header Halaman -->
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
         <nav aria-label="breadcrumb" class="mb-1">
             <ol class="breadcrumb mb-0" style="font-size: 0.75rem;">
-                <li class="breadcrumb-item"><a href="<?= base_url('ketarunaan/dashboard') ?>" class="text-decoration-none text-secondary">ECC 2.0</a></li>
-                <li class="breadcrumb-item"><a href="<?= base_url('ketarunaan/rekam-jejak') ?>" class="text-decoration-none text-secondary">Rekam Jejak Taruna</a></li>
+                <li class="breadcrumb-item"><a href="<?= esc(ketarunaan_home_url()) ?>" class="text-decoration-none text-secondary">Ketarunaan</a></li>
+                <?php if (empty($isSelfOnly)): ?>
+                    <li class="breadcrumb-item"><a href="<?= base_url('ketarunaan/rekam-jejak') ?>" class="text-decoration-none text-secondary">Rekam Jejak Taruna</a></li>
+                <?php endif; ?>
                 <li class="breadcrumb-item"><a href="<?= esc($detailUrl . '?tab=capaian') ?>" class="text-decoration-none text-secondary"><?= esc($namaLengkap) ?></a></li>
                 <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Detail Capaian</li>
             </ol>
         </nav>
-        <h4 class="fw-bold text-dark mb-1">Detail Capaian</h4>
-        <p class="text-secondary mb-0" style="font-size: 0.875rem;">Informasi lengkap terkait capaian taruna yang terintegrasi dalam satu data di ECC 2.0.</p>
+        <h1 class="h3 fw-bold text-dark mb-1">Detail Capaian</h1>
+        <p class="text-secondary mb-0 small">Informasi lengkap capaian taruna beserta bukti pendukungnya.</p>
     </div>
     <div>
-        <a href="<?= esc($detailUrl . '?tab=capaian') ?>" class="btn btn-light border ecc-control-sm px-3 fw-semibold d-inline-flex align-items-center gap-2">
-            <i class="bi bi-chevron-left"></i> Kembali ke Rekam Jejak
+        <a href="<?= esc($detailUrl . '?tab=capaian') ?>" class="btn btn-light border ecc-control-sm px-3 fw-semibold d-inline-flex align-items-center gap-2 btn-tactile rj-touch-ctrl">
+            <i class="bi bi-chevron-left" aria-hidden="true"></i> Kembali ke Rekam Jejak
         </a>
     </div>
 </div>
@@ -154,40 +65,46 @@ $detailUrl   = base_url('ketarunaan/rekam-jejak/detail/' . rawurlencode($nomorTa
 <!-- Flash Messages -->
 <?php if (session()->getFlashdata('success')): ?>
     <div class="alert alert-success border-0 rounded-3 mb-4 py-2 px-3 d-flex align-items-center justify-content-between" role="alert">
-        <span style="font-size: 0.875rem;"><?= esc(session()->getFlashdata('success')) ?></span>
+        <span class="small"><?= esc(session()->getFlashdata('success')) ?></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
     </div>
 <?php endif; ?>
 <?php if (session()->getFlashdata('error')): ?>
     <div class="alert alert-danger border-0 rounded-3 mb-4 py-2 px-3 d-flex align-items-center justify-content-between" role="alert">
-        <span style="font-size: 0.875rem;"><?= esc(session()->getFlashdata('error')) ?></span>
+        <span class="small"><?= esc(session()->getFlashdata('error')) ?></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
     </div>
 <?php endif; ?>
 
 <!-- Kartu Identitas Header Taruna -->
-<div class="ecc-rj-card mb-4">
+<div class="bento-card ecc-rj-card mb-4">
     <div class="row align-items-center g-3">
         <div class="col-12 col-md-4 d-flex align-items-center gap-3">
-            <div class="ecc-avatar-lg"><?= esc($inisial) ?></div>
+            <div class="ecc-avatar-lg">
+                <?php if ($fotoUrl !== null): ?>
+                    <img src="<?= esc($fotoUrl) ?>" alt="Foto <?= esc($namaLengkap) ?>" style="width: 100%; height: 100%; object-fit: cover;">
+                <?php else: ?>
+                    <?= esc($inisial) ?>
+                <?php endif; ?>
+            </div>
             <div>
-                <h5 class="fw-bold text-dark mb-1"><?= esc($namaLengkap) ?></h5>
-                <div class="text-secondary" style="font-size: 0.8125rem;">Detail Capaian Rekam Jejak</div>
+                <h2 class="h5 fw-bold text-dark mb-1"><?= esc($namaLengkap) ?></h2>
+                <div class="text-secondary small">Detail Capaian Rekam Jejak</div>
             </div>
         </div>
-        <div class="col-6 col-md-2 border-start ps-md-3">
+        <div class="col-6 col-md-2 border-md-start">
             <div class="text-secondary" style="font-size: 0.75rem;">Nomor Taruna</div>
-            <div class="fw-bold text-dark ecc-num"><?= esc($nomorTaruna) ?></div>
+            <div class="fw-bold text-dark ecc-num small"><?= esc($nomorTaruna) ?></div>
         </div>
-        <div class="col-6 col-md-2 border-start ps-md-3">
+        <div class="col-6 col-md-2 border-md-start">
             <div class="text-secondary" style="font-size: 0.75rem;">Program Studi</div>
-            <div class="fw-bold text-dark"><?= esc((string) ($capaian['kode_prodi'] ?? '-')) ?></div>
+            <div class="fw-bold text-dark small"><?= esc((string) ($capaian['kode_prodi'] ?? '-')) ?></div>
         </div>
-        <div class="col-6 col-md-2 border-start ps-md-3">
+        <div class="col-6 col-md-2 border-md-start">
             <div class="text-secondary" style="font-size: 0.75rem;">Angkatan</div>
-            <div class="fw-bold text-dark ecc-num"><?= esc((string) ($capaian['angkatan'] ?? '-')) ?></div>
+            <div class="fw-bold text-dark ecc-num small"><?= esc($angkatanTxt) ?></div>
         </div>
-        <div class="col-6 col-md-2 border-start ps-md-3">
+        <div class="col-6 col-md-2 border-md-start">
             <div class="text-secondary mb-1" style="font-size: 0.75rem;">Status Pendidikan</div>
             <div><?= ketarunaan_status_badge((string) ($capaian['status_terkini'] ?? 'aktif')) ?></div>
         </div>
@@ -195,24 +112,16 @@ $detailUrl   = base_url('ketarunaan/rekam-jejak/detail/' . rawurlencode($nomorTa
 </div>
 
 <!-- Kontainer Detail Capaian -->
-<div class="ecc-rj-card">
-    <div class="ecc-tab-nav">
-        <a href="<?= esc($detailUrl . '?tab=ringkasan') ?>" class="ecc-tab-link">
-            <i class="bi bi-clipboard-data"></i> Ringkasan
-        </a>
-        <a href="<?= esc($detailUrl . '?tab=kronologi') ?>" class="ecc-tab-link">
-            <i class="bi bi-clock-history"></i> Kronologi
-        </a>
-        <a href="<?= esc($detailUrl . '?tab=capaian') ?>" class="ecc-tab-link active">
-            <i class="bi bi-award"></i> Detail Capaian
-        </a>
-        <a href="<?= esc($detailUrl . '?tab=dokumen') ?>" class="ecc-tab-link">
-            <i class="bi bi-file-earmark-text"></i> Dokumen Bukti
-        </a>
-    </div>
+<div class="bento-card ecc-rj-card">
+    <nav class="ecc-tab-nav" aria-label="Navigasi Rekam Jejak">
+        <a href="<?= esc($detailUrl . '?tab=ringkasan') ?>" class="ecc-tab-link">Ringkasan</a>
+        <a href="<?= esc($detailUrl . '?tab=kronologi') ?>" class="ecc-tab-link">Kronologi</a>
+        <a href="<?= esc($detailUrl . '?tab=capaian') ?>" class="ecc-tab-link active" aria-current="page">Daftar Capaian</a>
+        <a href="<?= esc($detailUrl . '?tab=dokumen') ?>" class="ecc-tab-link">Dokumen Bukti</a>
+    </nav>
 
-    <?php if (!empty($capaian['catatan_validasi']) && in_array($capaian['status_validasi'], ['perlu_perbaikan', 'dikembalikan'], true)): ?>
-        <div class="alert alert-warning border rounded-3 mb-4 py-2 px-3" style="font-size: 0.875rem;">
+    <?php if (!empty($capaian['catatan_validasi']) && in_array($statusVal, ['perlu_perbaikan', 'dikembalikan'], true)): ?>
+        <div class="alert alert-warning border rounded-3 mb-4 py-2 px-3 small">
             <strong>Catatan Perbaikan:</strong> <?= esc((string) $capaian['catatan_validasi']) ?>
         </div>
     <?php endif; ?>
@@ -224,42 +133,42 @@ $detailUrl   = base_url('ketarunaan/rekam-jejak/detail/' . rawurlencode($nomorTa
                 <div class="d-flex justify-content-between align-items-start gap-3 mb-3 pb-3 border-bottom">
                     <div class="d-flex align-items-center gap-3">
                         <div class="ecc-icon-48" style="background-color: #fef3c7; color: #d97706;">
-                            <i class="bi bi-patch-check-fill"></i>
+                            <i class="bi bi-patch-check-fill" aria-hidden="true"></i>
                         </div>
                         <div>
-                            <h5 class="fw-bold text-dark mb-1"><?= esc((string) $capaian['nama_capaian']) ?></h5>
+                            <h3 class="h5 fw-bold text-dark mb-1"><?= esc((string) $capaian['nama_capaian']) ?></h3>
                             <?= ketarunaan_capaian_kategori_badge((string) $capaian['kategori'], true) ?>
                         </div>
                     </div>
                     <div>
-                        <?= ketarunaan_validasi_badge($capaian['status_validasi'] === 'perlu_perbaikan' ? 'dikembalikan' : (string) $capaian['status_validasi']) ?>
+                        <?= ketarunaan_validasi_badge($statusVal) ?>
                     </div>
                 </div>
 
                 <div>
                     <div class="ecc-attr-row">
                         <div class="ecc-attr-label">Tanggal</div>
-                        <div class="ecc-attr-value ecc-num">: <?= esc(ketarunaan_format_tanggal($capaian['tanggal_kegiatan'], false)) ?></div>
+                        <div class="ecc-attr-value ecc-num"><?= esc(ketarunaan_format_tanggal($capaian['tanggal_kegiatan'], false)) ?></div>
                     </div>
                     <div class="ecc-attr-row">
                         <div class="ecc-attr-label">Tahun Akademik</div>
-                        <div class="ecc-attr-value">: <?= esc((string) ($capaian['tahun_akademik_label'] ?: '2026/2027 Ganjil')) ?></div>
+                        <div class="ecc-attr-value"><?= esc((string) (!empty($capaian['tahun_akademik_label']) ? $capaian['tahun_akademik_label'] : '-')) ?></div>
                     </div>
                     <div class="ecc-attr-row">
                         <div class="ecc-attr-label">Semester</div>
-                        <div class="ecc-attr-value ecc-num">: <?= (int) ($capaian['semester'] ?? 5) ?></div>
+                        <div class="ecc-attr-value ecc-num"><?= !empty($capaian['semester']) ? (int) $capaian['semester'] : '-' ?></div>
                     </div>
                     <div class="ecc-attr-row">
                         <div class="ecc-attr-label">Penyelenggara</div>
-                        <div class="ecc-attr-value">: <?= esc((string) $capaian['penyelenggara']) ?></div>
+                        <div class="ecc-attr-value"><?= esc((string) $capaian['penyelenggara']) ?></div>
                     </div>
                     <div class="ecc-attr-row">
                         <div class="ecc-attr-label">Tingkat</div>
-                        <div class="ecc-attr-value">: <?= esc((string) $capaian['tingkat_kegiatan']) ?></div>
+                        <div class="ecc-attr-value"><?= esc((string) $capaian['tingkat_kegiatan']) ?></div>
                     </div>
                     <div class="ecc-attr-row">
                         <div class="ecc-attr-label">Hasil</div>
-                        <div class="ecc-attr-value">: <?= esc((string) $capaian['hasil_capaian']) ?>
+                        <div class="ecc-attr-value"><?= esc((string) $capaian['hasil_capaian']) ?>
                             <?php if (!empty($capaian['nilai_angka'])): ?>
                                 <span class="text-secondary ecc-num">(<?= esc((string) $capaian['nilai_angka']) ?> <?= esc((string) ($capaian['satuan_nilai'] ?? '')) ?>)</span>
                             <?php endif; ?>
@@ -267,20 +176,20 @@ $detailUrl   = base_url('ketarunaan/rekam-jejak/detail/' . rawurlencode($nomorTa
                     </div>
                     <div class="ecc-attr-row">
                         <div class="ecc-attr-label">Nomor Dokumen</div>
-                        <div class="ecc-attr-value ecc-num">: <?= esc((string) ($capaian['nomor_dokumen'] ?: '-')) ?></div>
+                        <div class="ecc-attr-value ecc-num"><?= esc((string) ($capaian['nomor_dokumen'] ?: '-')) ?></div>
                     </div>
                     <div class="ecc-attr-row">
                         <div class="ecc-attr-label">Unit</div>
-                        <div class="ecc-attr-value">: <?= esc((string) ($capaian['unit_pemilik'] ?: 'Ketarunaan')) ?></div>
+                        <div class="ecc-attr-value"><?= esc((string) ($capaian['unit_pemilik'] ?: '-')) ?></div>
                     </div>
                     <div class="ecc-attr-row">
                         <div class="ecc-attr-label">Sumber Dokumen</div>
-                        <div class="ecc-attr-value">: <?= esc(strtolower((string) ($capaian['sumber_dokumen'] ?: 'sertifikat'))) ?></div>
+                        <div class="ecc-attr-value"><?= esc((string) ($capaian['sumber_dokumen'] ?: '-')) ?></div>
                     </div>
                     <?php if (!empty($capaian['uraian_capaian'])): ?>
                         <div class="ecc-attr-row">
                             <div class="ecc-attr-label">Uraian</div>
-                            <div class="ecc-attr-value">: <?= esc((string) $capaian['uraian_capaian']) ?></div>
+                            <div class="ecc-attr-value"><?= esc((string) $capaian['uraian_capaian']) ?></div>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -291,39 +200,69 @@ $detailUrl   = base_url('ketarunaan/rekam-jejak/detail/' . rawurlencode($nomorTa
         <div class="col-12 col-lg-5">
             <div class="border rounded-3 p-3 h-100 d-flex flex-column justify-content-between">
                 <div>
-                    <h6 class="fw-bold text-dark mb-3">Bukti Pendukung</h6>
-                    <div class="ecc-preview-surface mb-3">
-                        <div class="ecc-preview-sheet">
-                            <div class="rounded-1 mb-2" style="height: 16px; width: 64px; background-color: #cbd5e1; margin: 0 auto;"></div>
-                            <div class="rounded-1 mb-2" style="height: 8px; background-color: #e2e8f0;"></div>
-                            <div class="rounded-1 mb-2" style="height: 8px; background-color: #e2e8f0;"></div>
-                            <div class="rounded-1 mb-2" style="height: 8px; background-color: #e2e8f0;"></div>
-                            <div class="rounded-1" style="height: 8px; width: 96px; background-color: #cbd5e1;"></div>
-                        </div>
+                    <h3 class="h6 fw-bold text-dark mb-3">Bukti Pendukung</h3>
+                    <div class="ecc-preview-surface mb-3 text-center">
+                        <?php if (!$hasBerkas): ?>
+                            <div class="text-secondary small">
+                                <i class="bi bi-link-45deg d-block mb-2 fs-3 text-muted" aria-hidden="true"></i>
+                                <span>Belum ada tautan bukti pendukung.</span>
+                            </div>
+                        <?php elseif ($isExternalUrl): ?>
+                            <div class="text-secondary small w-100">
+                                <i class="bi bi-cloud-check-fill text-primary d-block mb-2 fs-1" aria-hidden="true"></i>
+                                <div class="fw-semibold text-dark mb-1"><?= esc($namaBerkas) ?></div>
+                                <div class="text-truncate mx-auto mb-3" style="max-width: 280px;" title="<?= esc($namaBerkasRaw) ?>"><?= esc($namaBerkasRaw) ?></div>
+                                <a href="<?= esc($namaBerkasRaw) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-primary ecc-control-sm px-4 fw-semibold btn-tactile rj-touch-ctrl d-inline-flex align-items-center gap-2">
+                                    <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i> Buka Tautan Bukti
+                                </a>
+                            </div>
+                        <?php elseif ($isImageBerkas): ?>
+                            <img src="<?= base_url('ketarunaan/rekam-jejak/unduh-bukti/capaian/' . $idCapaian . '?inline=1') ?>"
+                                 alt="Pratinjau <?= esc($namaBerkas) ?>"
+                                 class="img-fluid rounded-2"
+                                 style="max-height: 224px; object-fit: contain;"
+                                 loading="lazy">
+                        <?php else: ?>
+                            <div class="text-secondary small">
+                                <i class="bi bi-file-earmark-pdf-fill text-danger d-block mb-2 fs-1" aria-hidden="true"></i>
+                                <div class="fw-semibold text-dark text-break"><?= esc($namaBerkas) ?></div>
+                                <div>Dokumen <?= esc(strtoupper($extBerkas ?: 'PDF')) ?><?= $ukuranKb > 0 ? ' &bull; ' . $ukuranKb . ' KB' : '' ?></div>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
 
-                <?php
-                $namaBerkas = (string) ($capaian['bukti_berkas'] ?: 'Sertifikat.pdf');
-                $ukuranKb   = (int) ($capaian['ukuran_berkas_kb'] ?: 456);
-                ?>
-                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pt-2 border-top">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-file-earmark-pdf-fill text-danger fs-4"></i>
-                        <div>
-                            <div class="fw-bold text-dark" style="font-size: 0.875rem;"><?= esc($namaBerkas) ?></div>
-                            <div class="text-secondary ecc-num" style="font-size: 0.75rem;">PDF &bull; <?= $ukuranKb ?> KB</div>
+                <?php if ($hasBerkas): ?>
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pt-2 border-top">
+                        <div class="d-flex align-items-center gap-2 min-w-0">
+                            <i class="bi <?= $isExternalUrl ? 'bi-link-45deg text-primary' : ($isImageBerkas ? 'bi-file-earmark-image text-primary' : 'bi-file-earmark-pdf-fill text-danger') ?> fs-5 flex-shrink-0" aria-hidden="true"></i>
+                            <div class="min-w-0">
+                                <div class="fw-bold text-dark small text-truncate"><?= esc($namaBerkas) ?></div>
+                                <div class="text-secondary ecc-num" style="font-size: 0.75rem;">
+                                    <?php if ($isExternalUrl): ?>
+                                        Tautan Dokumen Eksternal
+                                    <?php else: ?>
+                                        <?= esc(strtoupper($extBerkas ?: 'PDF')) ?><?= $ukuranKb > 0 ? ' &bull; ' . $ukuranKb . ' KB' : '' ?>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <?php if ($isExternalUrl): ?>
+                                <a href="<?= esc($namaBerkasRaw) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-light btn-sm rounded-3 px-3 border fw-semibold rj-touch-ctrl d-inline-flex align-items-center gap-1" style="min-height: 32px; color: #1e40af;">
+                                    <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i> Buka
+                                </a>
+                            <?php else: ?>
+                                <a href="<?= base_url('ketarunaan/rekam-jejak/unduh-bukti/capaian/' . $idCapaian . '?inline=1') ?>" target="_blank" rel="noopener noreferrer" class="btn btn-light btn-sm rounded-3 px-3 border fw-semibold rj-touch-ctrl d-inline-flex align-items-center" style="min-height: 32px; color: #1e40af;">
+                                    Pratinjau
+                                </a>
+                                <a href="<?= base_url('ketarunaan/rekam-jejak/unduh-bukti/capaian/' . $idCapaian) ?>" class="btn btn-outline-secondary btn-sm rounded-3 px-3 fw-semibold rj-touch-ctrl d-inline-flex align-items-center" style="min-height: 32px;">
+                                    Unduh
+                                </a>
+                            <?php endif; ?>
                         </div>
                     </div>
-                    <div class="d-flex gap-2">
-                        <a href="<?= base_url('ketarunaan/rekam-jejak/unduh-bukti/capaian/' . $idCapaian . '?inline=1') ?>" target="_blank" class="btn btn-outline-primary ecc-btn-pill-sm">
-                            Pratinjau
-                        </a>
-                        <a href="<?= base_url('ketarunaan/rekam-jejak/unduh-bukti/capaian/' . $idCapaian) ?>" class="btn btn-outline-secondary ecc-btn-pill-sm">
-                            Unduh
-                        </a>
-                    </div>
-                </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -333,57 +272,66 @@ $detailUrl   = base_url('ketarunaan/rekam-jejak/detail/' . rawurlencode($nomorTa
         <div class="d-flex flex-wrap gap-4">
             <div>
                 <div class="text-secondary" style="font-size: 0.75rem;">Diajukan oleh</div>
-                <div class="fw-bold text-dark" style="font-size: 0.875rem;"><?= esc((string) ($capaian['diajukan_oleh'] ?: 'PIC Ketarunaan')) ?></div>
+                <div class="fw-bold text-dark small"><?= esc((string) ($capaian['diajukan_oleh'] ?: '-')) ?></div>
             </div>
-            <div class="border-start ps-4">
+            <div class="border-md-start">
                 <div class="text-secondary" style="font-size: 0.75rem;">Divalidasi oleh</div>
-                <div class="fw-bold text-dark" style="font-size: 0.875rem;">
+                <div class="fw-bold text-dark small">
                     <?= esc((string) ($capaian['divalidasi_oleh'] ?: 'Belum divalidasi')) ?>
                 </div>
             </div>
         </div>
 
         <div class="d-flex flex-wrap align-items-center gap-2">
-            <?php if (!empty($canValidate) && $capaian['status_validasi'] !== 'tervalidasi'): ?>
-                <form method="post" action="<?= base_url('ketarunaan/rekam-jejak/validasi-capaian/' . $idCapaian) ?>" class="d-inline">
+            <?php if ($canDecideNow): ?>
+                <form method="post" action="<?= base_url('ketarunaan/rekam-jejak/validasi-capaian/' . $idCapaian) ?>" id="formValidasiCapaian" class="d-inline">
                     <?= csrf_field() ?>
                     <input type="hidden" name="keputusan" value="tervalidasi">
-                    <button type="submit" class="btn btn-success ecc-control-sm px-3 fw-semibold">
+                    <button type="button" class="btn btn-success ecc-control-sm px-3 fw-semibold btn-tactile rj-touch-ctrl" onclick="confirmValidateCapaian()">
                         Validasi Data
                     </button>
                 </form>
-                <button type="button" class="btn btn-outline-danger ecc-control-sm px-3 fw-semibold" data-bs-toggle="modal" data-bs-target="#modalKembalikanCapaian">
+                <button type="button" class="btn btn-outline-danger ecc-control-sm px-3 fw-semibold btn-tactile rj-touch-ctrl" data-bs-toggle="modal" data-bs-target="#modalKembalikanCapaian">
                     Kembalikan
                 </button>
             <?php endif; ?>
 
-            <?php if (!empty($canManageTaruna)): ?>
-                <a href="<?= base_url('ketarunaan/rekam-jejak/edit-capaian/' . $idCapaian) ?>" class="btn btn-outline-primary ecc-control-sm px-3 fw-semibold">
-                    Ajukan Koreksi
+            <?php if ($canEditBtn): ?>
+                <a href="<?= base_url('ketarunaan/rekam-jejak/edit-capaian/' . $idCapaian) ?>" class="btn btn-outline-primary ecc-control-sm px-3 fw-semibold btn-tactile rj-touch-ctrl d-inline-flex align-items-center justify-content-center">
+                    <?= ($statusVal === 'tervalidasi') ? 'Ajukan Koreksi' : 'Edit / Perbaiki' ?>
                 </a>
+            <?php endif; ?>
+
+            <?php if ($canDeleteBtn): ?>
+                <form method="post" action="<?= base_url('ketarunaan/rekam-jejak/hapus-capaian/' . $idCapaian) ?>" id="formHapusCapaian" class="d-inline">
+                    <?= csrf_field() ?>
+                    <button type="button" class="btn btn-outline-danger ecc-control-sm px-3 fw-semibold btn-tactile rj-touch-ctrl" onclick="confirmDeleteCapaian()">
+                        Hapus Draf
+                    </button>
+                </form>
             <?php endif; ?>
         </div>
     </div>
 </div>
 
 <!-- Modal Kembalikan Capaian untuk Perbaikan -->
-<?php if (!empty($canValidate)): ?>
+<?php if ($canDecideNow): ?>
     <div class="modal fade" id="modalKembalikanCapaian" tabindex="-1" aria-labelledby="modalKembalikanLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <form method="post" action="<?= base_url('ketarunaan/rekam-jejak/validasi-capaian/' . $idCapaian) ?>" class="modal-content rounded-4 border-0 shadow">
                 <?= csrf_field() ?>
                 <input type="hidden" name="keputusan" value="perlu_perbaikan">
                 <div class="modal-header border-bottom px-4 py-3">
-                    <h6 class="modal-title fw-bold text-dark" id="modalKembalikanLabel">Kembalikan Data Capaian</h6>
+                    <h4 class="h6 modal-title fw-bold text-dark" id="modalKembalikanLabel">Kembalikan Data Capaian</h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <label for="catatan_validasi" class="form-label fw-semibold text-dark" style="font-size: 0.875rem;">Catatan Perbaikan <span class="text-danger">*</span></label>
-                    <textarea id="catatan_validasi" name="catatan_validasi" rows="3" class="form-control rounded-3" style="font-size: 0.875rem;" placeholder="Tuliskan bagian yang perlu diperbaiki..." required></textarea>
+                    <label for="catatan_validasi" class="form-label fw-semibold text-dark small">Catatan Perbaikan <span class="text-danger">*</span></label>
+                    <textarea id="catatan_validasi" name="catatan_validasi" rows="3" class="form-control rounded-3 small" placeholder="Tuliskan bagian yang perlu diperbaiki..." required></textarea>
                 </div>
                 <div class="modal-footer border-top px-4 py-3">
-                    <button type="button" class="btn btn-light border ecc-control-sm px-3 fw-semibold" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-danger ecc-control-sm px-3 fw-semibold">Simpan & Kembalikan</button>
+                    <button type="button" class="btn btn-light border ecc-control-sm px-3 fw-semibold rj-touch-ctrl" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-danger ecc-control-sm px-3 fw-semibold rj-touch-ctrl">Simpan &amp; Kembalikan</button>
                 </div>
             </form>
         </div>
@@ -391,3 +339,62 @@ $detailUrl   = base_url('ketarunaan/rekam-jejak/detail/' . rawurlencode($nomorTa
 <?php endif; ?>
 <?= $this->endSection() ?>
 
+<?= $this->section('scripts') ?>
+<script>
+function confirmValidateCapaian() {
+    var form = document.getElementById('formValidasiCapaian');
+    if (!form) return;
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Validasi Data Capaian?',
+            text: 'Capaian ini akan disahkan dan masuk ke rekam jejak resmi taruna.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#15803d',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Ya, Validasi',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            customClass: {
+                popup: 'rounded-4 shadow border-0'
+            }
+        }).then(function (result) {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    } else if (confirm('Capaian ini akan disahkan ke rekam jejak resmi taruna. Lanjutkan?')) {
+        form.submit();
+    }
+}
+
+function confirmDeleteCapaian() {
+    var form = document.getElementById('formHapusCapaian');
+    if (!form) return;
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Hapus Draf Capaian?',
+            text: 'Data capaian ini akan dihapus.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            customClass: {
+                popup: 'rounded-4 shadow border-0'
+            }
+        }).then(function (result) {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    } else if (confirm('Data capaian ini akan dihapus. Lanjutkan?')) {
+        form.submit();
+    }
+}
+</script>
+<?= $this->endSection() ?>

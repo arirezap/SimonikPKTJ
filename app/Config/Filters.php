@@ -36,6 +36,7 @@ class Filters extends BaseFilters
         'performance'   => PerformanceMetrics::class,
         // Filter Custom Anda
         'auth'          => \App\Filters\AuthFilter::class,
+        'employee_only' => \App\Filters\EmployeeOnlyFilter::class,
         'maintenance'   => \App\Filters\MaintenanceFilter::class,
     ];
 

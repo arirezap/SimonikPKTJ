@@ -21,6 +21,9 @@ class SurveiPemetaanController extends BaseController
      */
     public function index()
     {
+        if ($blocked = $this->rejectSelfAccountIfLoggedIn(false)) {
+            return $blocked;
+        }
         $this->applyNoIndexHeaders();
 
         $tahun             = SurveiPemetaanPolicy::getActiveSurveyYear();
@@ -139,6 +142,9 @@ class SurveiPemetaanController extends BaseController
      */
     public function ringkasan()
     {
+        if ($blocked = $this->rejectSelfAccountIfLoggedIn(false)) {
+            return $blocked;
+        }
         $this->applyNoIndexHeaders();
 
         $tahun        = SurveiPemetaanPolicy::getActiveSurveyYear();
@@ -180,6 +186,9 @@ class SurveiPemetaanController extends BaseController
      */
     public function cekIdentitas()
     {
+        if ($blocked = $this->rejectSelfAccountIfLoggedIn(true)) {
+            return $blocked;
+        }
         $this->applyNoIndexHeaders();
 
         if (!SurveiPemetaanPolicy::isSurveyOpen()) {
@@ -321,6 +330,9 @@ class SurveiPemetaanController extends BaseController
      */
     public function saveStep()
     {
+        if ($blocked = $this->rejectSelfAccountIfLoggedIn(true)) {
+            return $blocked;
+        }
         $this->applyNoIndexHeaders();
 
         if (!SurveiPemetaanPolicy::isSurveyOpen()) {
@@ -390,6 +402,9 @@ class SurveiPemetaanController extends BaseController
      */
     public function submit()
     {
+        if ($blocked = $this->rejectSelfAccountIfLoggedIn(true)) {
+            return $blocked;
+        }
         $this->applyNoIndexHeaders();
         helper('audit');
 
@@ -1528,6 +1543,35 @@ class SurveiPemetaanController extends BaseController
         }
 
         return $str;
+    }
+
+    /**
+     * Tolak akses akun layanan mandiri (taruna / alumni) dari survei khusus pegawai ASN.
+     */
+    private function rejectSelfAccountIfLoggedIn(bool $asJson): ?\CodeIgniter\HTTP\ResponseInterface
+    {
+        if (!session()->get('isLoggedIn')) {
+            return null;
+        }
+
+        helper('role');
+        if (!\App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfAccountOnly()) {
+            return null;
+        }
+
+        if ($asJson || $this->request->isAJAX()) {
+            return $this->jsonResponse([
+                'status'  => 'error',
+                'message' => 'Akses ditolak. Survei ini khusus untuk pegawai.',
+            ], 403);
+        }
+
+        $portalUrl = site_url(ltrim(\App\Libraries\Ketarunaan\KetarunaanPolicy::getSelfPortalUrl(), '/'));
+
+        return $this->response->setStatusCode(403)->setBody(view('errors/html/error_403_portal', [
+            'backUrl'  => $portalUrl,
+            'isTaruna' => \App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfTarunaOnly(),
+        ]));
     }
 }
 

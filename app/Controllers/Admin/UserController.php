@@ -143,17 +143,26 @@ class UserController extends BaseController
         $unitKerjaModel = new UnitKerja();
         $data['unit_kerja_list'] = $unitKerjaModel->orderBy('nama_unit', 'ASC')->findAll();
         $unitKerjaMap = array_column($data['unit_kerja_list'], 'parent_unit', 'nama_unit');
-        
-        foreach($data['users'] as &$u) {
+        $secondaryRolesMap = $this->fetchSecondaryRolesMap($data['users']);
+
+        foreach ($data['users'] as &$u) {
             // Jika nama_atasan null, ubah jadi strip
             $u['nama_atasan'] = $u['nama_atasan'] ?? '-';
-            
+
             // Tentukan Unit Kabag (AAK/KUK) dari master data unit kerja
             $u['unit_kabag'] = null; // Default
             if (!empty($u['unit']) && isset($unitKerjaMap[$u['unit']])) {
                 $u['unit_kabag'] = $unitKerjaMap[$u['unit']];
             }
+
+            $uid = (int) ($u['id'] ?? 0);
+            $primaryLower = strtolower(trim((string) ($u['role'] ?? '')));
+            $u['secondary_roles'] = array_values(array_filter(
+                $secondaryRolesMap[$uid] ?? [],
+                static fn (string $r): bool => $r !== '' && $r !== $primaryLower
+            ));
         }
+        unset($u);
 
         return view('admin/users', $data);
     }
@@ -257,7 +266,7 @@ class UserController extends BaseController
             }
         }
 
-        $role = $this->request->getPost('role');
+        $role = trim(strtolower((string) ($this->request->getPost('role') ?: 'user')));
         $statusPegawai = $this->request->getPost('status_pegawai') ?: 'aktif';
         if (!in_array($statusPegawai, ['aktif', 'mutasi_keluar', 'pensiun', 'nonaktif'])) {
             $statusPegawai = 'aktif';
@@ -292,27 +301,8 @@ class UserController extends BaseController
         try {
             $insertID = $this->userModel->insert($data);
 
-            // 1. Insert role primer (wajib ada)
-            $db->table('user_roles')->insert([
-                'user_id' => $insertID,
-                'role_name' => strtolower($role),
-                'created_at' => date('Y-m-d H:i:s')
-            ]);
-            
-            // 2. Insert role sekunder yang dicentang
-            $secondaryRoles = $this->request->getPost('secondary_roles');
-            if (!empty($secondaryRoles) && is_array($secondaryRoles)) {
-                foreach ($secondaryRoles as $secRole) {
-                    // Jangan masukkan lagi jika sama dengan role primer
-                    if (strtolower($secRole) !== strtolower($role)) {
-                        $db->table('user_roles')->insert([
-                            'user_id' => $insertID,
-                            'role_name' => strtolower($secRole),
-                            'created_at' => date('Y-m-d H:i:s')
-                        ]);
-                    }
-                }
-            }
+            // Sinkronkan peran utama & peran tambahan tanpa duplikasi
+            $this->syncUserRoles($db, (int) $insertID, $role, $this->request->getPost('secondary_roles'));
 
             log_audit('CREATE', 'users', $insertID, null, $data);
             $db->transComplete();
@@ -445,12 +435,15 @@ class UserController extends BaseController
             }
         }
 
-        $role = $this->request->getPost('role');
+        $role = trim(strtolower((string) ($this->request->getPost('role') ?: 'user')));
         $statusPegawai = $this->request->getPost('status_pegawai') ?: 'aktif';
 
-        // Kunci status akun Superadmin utama agar selalu 'aktif'
+        // Kunci status dan peran akun Superadmin utama agar selalu aktif sebagai admin
         if ($existingUser && ($existingUser['username'] === 'admin' || $existingUser['role'] === 'admin')) {
             $statusPegawai = 'aktif';
+            if ($existingUser['username'] === 'admin') {
+                $role = 'admin';
+            }
         } elseif (!in_array($statusPegawai, ['aktif', 'mutasi_keluar', 'pensiun', 'nonaktif'])) {
             $statusPegawai = 'aktif';
         }
@@ -500,31 +493,8 @@ class UserController extends BaseController
         try {
             $this->userModel->update($id, $data);
 
-            // Update Multi-Roles (Pivot Table)
-            // 1. Hapus role sekunder yang lama
-            $db->table('user_roles')->where('user_id', $id)->delete();
-            
-            // 2. Insert role primer (wajib ada)
-            $db->table('user_roles')->insert([
-                'user_id' => $id,
-                'role_name' => strtolower($role),
-                'created_at' => date('Y-m-d H:i:s')
-            ]);
-            
-            // 3. Insert role sekunder yang dicentang
-            $secondaryRoles = $this->request->getPost('secondary_roles');
-            if (!empty($secondaryRoles) && is_array($secondaryRoles)) {
-                foreach ($secondaryRoles as $secRole) {
-                    // Jangan masukkan lagi jika sama dengan role primer
-                    if (strtolower($secRole) !== strtolower($role)) {
-                        $db->table('user_roles')->insert([
-                            'user_id' => $id,
-                            'role_name' => strtolower($secRole),
-                            'created_at' => date('Y-m-d H:i:s')
-                        ]);
-                    }
-                }
-            }
+            // Update Multi-Roles (Pivot Table) secara bersih & bebas duplikasi
+            $this->syncUserRoles($db, (int) $id, $role, $this->request->getPost('secondary_roles'));
 
             log_audit('UPDATE', 'users', $id, null, $data);
             $db->transComplete();
@@ -1278,6 +1248,76 @@ class UserController extends BaseController
                 'success'   => false,
                 'message'   => 'Gagal menghapus riwayat penugasan. Silakan coba lagi.',
                 'csrf_hash' => csrf_hash()
+            ]);
+        }
+    }
+
+    /**
+     * Memetakan seluruh peran tambahan dari tabel user_roles dalam 1 kueri batch.
+     *
+     * @param array<int, array<string, mixed>> $users
+     * @return array<int, array<int, string>>
+     */
+    private function fetchSecondaryRolesMap(array $users): array
+    {
+        $userIds = array_values(array_unique(array_filter(array_map(
+            static fn (array $u): int => (int) ($u['id'] ?? 0),
+            $users
+        ))));
+
+        if (empty($userIds)) {
+            return [];
+        }
+
+        $db   = \Config\Database::connect();
+        $rows = $db->table('user_roles')
+            ->select('user_id, role_name')
+            ->whereIn('user_id', $userIds)
+            ->orderBy('id', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        $map = [];
+        foreach ($rows as $row) {
+            $uid      = (int) ($row['user_id'] ?? 0);
+            $roleName = strtolower(trim((string) ($row['role_name'] ?? '')));
+            if ($uid > 0 && $roleName !== '') {
+                $map[$uid][] = $roleName;
+            }
+        }
+
+        foreach ($map as $uid => $roles) {
+            $map[$uid] = array_values(array_unique($roles));
+        }
+
+        return $map;
+    }
+
+    /**
+     * Menyinkronkan role primer dan role tambahan ke tabel pivot user_roles tanpa duplikasi.
+     */
+    private function syncUserRoles(\CodeIgniter\Database\BaseConnection $db, int $userId, string $primaryRole, mixed $secondaryRoles): void
+    {
+        $cleanPrimary = trim(strtolower($primaryRole)) ?: 'user';
+        $rolesToSave  = [$cleanPrimary];
+
+        if (is_array($secondaryRoles)) {
+            foreach ($secondaryRoles as $secRole) {
+                $cleanSec = trim(strtolower((string) $secRole));
+                if ($cleanSec !== '' && !in_array($cleanSec, $rolesToSave, true)) {
+                    $rolesToSave[] = $cleanSec;
+                }
+            }
+        }
+
+        $db->table('user_roles')->where('user_id', $userId)->delete();
+        $now = date('Y-m-d H:i:s');
+
+        foreach ($rolesToSave as $roleName) {
+            $db->table('user_roles')->insert([
+                'user_id'    => $userId,
+                'role_name'  => $roleName,
+                'created_at' => $now,
             ]);
         }
     }

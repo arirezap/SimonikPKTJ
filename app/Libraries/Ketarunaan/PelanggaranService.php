@@ -30,6 +30,7 @@ class PelanggaranService
         $this->pihakModel        = $pihakModel ?? new TarunaPelanggaranPihakModel();
         $this->tindakLanjutModel = $tindakLanjutModel ?? new TarunaPelanggaranTindakLanjutModel();
         helper('ketarunaan');
+        ketarunaan_ensure_kalender_terkini();
     }
 
     /**
@@ -59,7 +60,8 @@ class PelanggaranService
             }
         }
         if (empty($tahunList)) {
-            $tahunList = [2026, 2025];
+            $tahunKini = (int) date('Y');
+            $tahunList = [$tahunKini, $tahunKini - 1];
         }
 
         return [
@@ -117,7 +119,7 @@ class PelanggaranService
     public function getTarunaSelectList(): array
     {
         return $this->db->table('master_taruna mt')
-            ->select('mt.nomor_taruna, mt.nama_lengkap, mt.status_terkini, ps.kode_prodi, ang.tahun_masuk AS angkatan')
+            ->select('mt.nomor_taruna, mt.nama_lengkap, mt.status_terkini, ps.kode_prodi, ang.tahun_masuk AS angkatan, ang.kode_romawi AS angkatan_romawi')
             ->join('pendidikan_taruna pt', 'pt.nomor_taruna = mt.nomor_taruna', 'left')
             ->join('ref_program_studi ps', 'ps.id = pt.program_studi_id', 'left')
             ->join('ref_angkatan ang', 'ang.id = pt.angkatan_id', 'left')
@@ -133,7 +135,7 @@ class PelanggaranService
      */
     public function generateSuggestedNomorPerkara(): string
     {
-        $tahun  = '2026';
+        $tahun  = date('Y');
         $prefix = 'PKR/' . $tahun . '/';
         $rows   = $this->db->table('taruna_pelanggaran')
             ->select('nomor_perkara')
@@ -188,7 +190,7 @@ class PelanggaranService
             ->countAllResults();
 
         $builder = $this->db->table('taruna_pelanggaran pl')
-            ->select('pl.*, mt.nama_lengkap, ps.kode_prodi, ps.nama_prodi, ang.tahun_masuk AS angkatan')
+            ->select('pl.*, mt.nama_lengkap, ps.kode_prodi, ps.nama_prodi, ang.tahun_masuk AS angkatan, ang.kode_romawi AS angkatan_romawi')
             ->join('master_taruna mt', 'mt.nomor_taruna = pl.nomor_taruna', 'left')
             ->join('pendidikan_taruna pt', 'pt.nomor_taruna = pl.nomor_taruna', 'left')
             ->join('ref_program_studi ps', 'ps.id = pt.program_studi_id', 'left')
@@ -227,17 +229,59 @@ class PelanggaranService
 
         $stValidasi = trim((string) ($filters['status_validasi'] ?? 'all'));
         if ($stValidasi !== '' && $stValidasi !== 'all') {
-            $builder->where('pl.status_validasi', $stValidasi);
+            if ($stValidasi === 'dikembalikan') {
+                $builder->where('pl.status_validasi', 'perlu_perbaikan');
+            } else {
+                $builder->where('pl.status_validasi', $stValidasi);
+            }
         }
 
         $totalFiltered = (int) $builder->countAllResults(false);
-        $totalPages    = max(1, (int) ceil($totalFiltered / max(1, $perPage)));
-        $page          = min(max(1, $page), $totalPages);
-        $offset        = ($page - 1) * $perPage;
+        $isUnlimited   = ($perPage <= 0);
+        $totalPages    = $isUnlimited ? 1 : max(1, (int) ceil($totalFiltered / $perPage));
+        $page          = $isUnlimited ? 1 : min(max(1, $page), $totalPages);
+        $offset        = $isUnlimited ? 0 : ($page - 1) * $perPage;
 
-        $rows = $builder->orderBy('pl.tanggal_kejadian', 'DESC')
-            ->orderBy('pl.id', 'DESC')
-            ->limit($perPage, $offset)
+        $sortBy    = trim((string) ($filters['sort_by'] ?? ''));
+        $sortOrder = strtolower(trim((string) ($filters['sort_order'] ?? 'desc'))) === 'asc' ? 'ASC' : 'DESC';
+
+        switch ($sortBy) {
+            case 'nomor_perkara':
+                $builder->orderBy('pl.nomor_perkara', $sortOrder)->orderBy('pl.id', 'DESC');
+                break;
+            case 'taruna':
+                $sortCol = $canViewFull ? 'mt.nama_lengkap' : 'pl.nomor_taruna';
+                $builder->orderBy($sortCol, $sortOrder)->orderBy('pl.id', 'DESC');
+                break;
+            case 'jenis_pelanggaran':
+                $builder->orderBy('pl.jenis_pelanggaran', $sortOrder)->orderBy('pl.tanggal_kejadian', 'DESC');
+                break;
+            case 'tanggal_kejadian':
+                $builder->orderBy('pl.tanggal_kejadian', $sortOrder)->orderBy('pl.id', 'DESC');
+                break;
+            case 'status_penetapan':
+                $builder->orderBy("FIELD(pl.status_penetapan, 'terbukti', 'dugaan', 'tidak_terbukti', 'dibatalkan')", $sortOrder, false)
+                    ->orderBy('pl.tanggal_kejadian', 'DESC');
+                break;
+            case 'status_penyelesaian':
+                $builder->orderBy("FIELD(pl.status_penyelesaian, 'proses', 'banding', 'selesai')", $sortOrder, false)
+                    ->orderBy('pl.tanggal_kejadian', 'DESC');
+                break;
+            case 'status_validasi':
+                $builder->orderBy("FIELD(pl.status_validasi, 'diajukan', 'perlu_perbaikan', 'draf', 'tervalidasi')", $sortOrder, false)
+                    ->orderBy('pl.tanggal_kejadian', 'DESC');
+                break;
+            default:
+                $builder->orderBy('pl.tanggal_kejadian', 'DESC')
+                    ->orderBy('pl.id', 'DESC');
+                break;
+        }
+
+        if (!$isUnlimited) {
+            $builder->limit($perPage, $offset);
+        }
+
+        $rows = $builder
             ->get()
             ->getResultArray();
 
@@ -257,11 +301,11 @@ class PelanggaranService
             'rows'       => $rows,
             'pagination' => [
                 'page'           => $page,
-                'per_page'       => $perPage,
+                'per_page'       => $isUnlimited ? $totalFiltered : $perPage,
                 'total_filtered' => $totalFiltered,
                 'total_pages'    => $totalPages,
                 'from'           => $totalFiltered > 0 ? $offset + 1 : 0,
-                'to'             => min($offset + $perPage, $totalFiltered),
+                'to'             => $isUnlimited ? $totalFiltered : min($offset + $perPage, $totalFiltered),
             ],
         ];
     }
@@ -276,7 +320,7 @@ class PelanggaranService
     public function getDetail(int $id, bool $canViewFull = false): ?array
     {
         $kasus = $this->db->table('taruna_pelanggaran pl')
-            ->select('pl.*, mt.nama_lengkap, mt.status_terkini, ps.kode_prodi, ps.nama_prodi, ang.tahun_masuk AS angkatan')
+            ->select('pl.*, mt.nama_lengkap, mt.status_terkini, ps.kode_prodi, ps.nama_prodi, ang.tahun_masuk AS angkatan, ang.kode_romawi AS angkatan_romawi')
             ->join('master_taruna mt', 'mt.nomor_taruna = pl.nomor_taruna', 'left')
             ->join('pendidikan_taruna pt', 'pt.nomor_taruna = pl.nomor_taruna', 'left')
             ->join('ref_program_studi ps', 'ps.id = pt.program_studi_id', 'left')
@@ -426,6 +470,7 @@ class PelanggaranService
             if ($id !== null && $id > 0) {
                 $existing = $this->pelanggaranModel->find($id);
                 if (!$existing) {
+                    $this->db->transRollback();
                     return ['status' => false, 'message' => 'Data kasus pelanggaran tidak ditemukan.'];
                 }
 
@@ -519,16 +564,26 @@ class PelanggaranService
 
         $dokList = $this->decodeRawDokumenList($existing);
         if (!empty($input['berkas_bap'])) {
-            $namaBap = (string) $input['berkas_bap'];
+            $namaBap = trim((string) $input['berkas_bap']);
             $payload['berkas_bap'] = $namaBap;
-            $dokList[] = [
-                'nama_berkas'    => $namaBap,
-                'jenis_dokumen'  => 'Pemeriksaan',
-                'klasifikasi'    => 'sangat_terbatas',
-                'tanggal_unggah' => date('Y-m-d'),
-                'ukuran_kb'      => (int) ($input['bap_size_kb'] ?? 100),
-            ];
-            $payload['dokumen_bukti_json'] = json_encode($dokList, JSON_UNESCAPED_UNICODE);
+
+            $alreadyListed = false;
+            foreach ($dokList as $dItem) {
+                if (trim((string) ($dItem['nama_berkas'] ?? '')) === $namaBap) {
+                    $alreadyListed = true;
+                    break;
+                }
+            }
+            if (!$alreadyListed) {
+                $dokList[] = [
+                    'nama_berkas'    => $namaBap,
+                    'jenis_dokumen'  => 'Pemeriksaan',
+                    'klasifikasi'    => 'sangat_terbatas',
+                    'tanggal_unggah' => date('Y-m-d'),
+                    'ukuran_kb'      => (int) ($input['bap_size_kb'] ?? 0),
+                ];
+                $payload['dokumen_bukti_json'] = json_encode($dokList, JSON_UNESCAPED_UNICODE);
+            }
         }
 
         $wasValidated = ($existing['status_validasi'] === 'tervalidasi');
@@ -658,7 +713,7 @@ class PelanggaranService
      * @param string               $pelakuLabel
      * @return array{status: bool, message: string}
      */
-    public function savePenetapan(int $id, array $input, string $pelakuLabel): array
+    public function savePenetapan(int $id, array $input, string $pelakuLabel, bool $canDecide = true): array
     {
         $existing = $this->pelanggaranModel->find($id);
         if (!$existing) {
@@ -671,6 +726,10 @@ class PelanggaranService
 
         if (!in_array($stPenetapan, ['dugaan', 'terbukti', 'tidak_terbukti', 'dibatalkan'], true)) {
             return ['status' => false, 'message' => 'Status penetapan tidak sesuai ketentuan.'];
+        }
+        $existingPenetapan = (string) ($existing['status_penetapan'] ?? 'dugaan');
+        if (!$canDecide && $stPenetapan !== $existingPenetapan && in_array($stPenetapan, ['terbukti', 'tidak_terbukti', 'dibatalkan'], true)) {
+            return ['status' => false, 'message' => 'Penetapan akhir kasus hanya dapat dilakukan oleh pejabat berwenang.'];
         }
         if (!in_array($stPenyelesaian, ['proses', 'selesai', 'banding'], true)) {
             return ['status' => false, 'message' => 'Status penyelesaian tidak sesuai ketentuan.'];
@@ -849,14 +908,26 @@ class PelanggaranService
 
         if (!empty($input['uploaded_doc']) && is_array($input['uploaded_doc'])) {
             $newDoc    = $input['uploaded_doc'];
+            $newTarget = trim((string) ($newDoc['nama_berkas'] ?? ''));
+
+            if (count($dokList) >= 10) {
+                return ['status' => false, 'message' => 'Maksimal 10 tautan dokumen bukti per kasus.'];
+            }
+
+            foreach ($dokList as $existingDoc) {
+                if (trim((string) ($existingDoc['nama_berkas'] ?? '')) === $newTarget) {
+                    return ['status' => false, 'message' => 'Tautan dokumen tersebut sudah tersimpan pada kasus ini.'];
+                }
+            }
+
             $dokList[] = $newDoc;
             $update['dokumen_bukti_json'] = json_encode($dokList, JSON_UNESCAPED_UNICODE);
 
-            if (($newDoc['jenis_dokumen'] ?? '') === 'Pemeriksaan') {
-                $update['berkas_bap'] = $newDoc['nama_berkas'];
+            if (($newDoc['jenis_dokumen'] ?? '') === 'Pemeriksaan' && mb_strlen($newTarget) <= 255) {
+                $update['berkas_bap'] = $newTarget;
             }
-            if (($newDoc['jenis_dokumen'] ?? '') === 'Penetapan' || empty($existing['bukti_berkas'])) {
-                $update['bukti_berkas'] = $newDoc['nama_berkas'];
+            if ((($newDoc['jenis_dokumen'] ?? '') === 'Penetapan' || empty($existing['bukti_berkas'])) && mb_strlen($newTarget) <= 255) {
+                $update['bukti_berkas'] = $newTarget;
             }
         }
 
@@ -930,30 +1001,46 @@ class PelanggaranService
             return ['status' => false, 'message' => 'Data kasus tidak ditemukan.'];
         }
 
-        $target  = basename($filename);
-        $dokList = $this->decodeRawDokumenList($existing);
+        $targetRaw  = trim($filename);
+        $targetBase = basename($targetRaw);
+        $isTargetUrl = ketarunaan_is_http_url($targetRaw, 2000);
+        $dokList    = $this->decodeRawDokumenList($existing);
 
-        $filtered = [];
-        $found    = false;
+        $filtered   = [];
+        $found      = false;
+        $removedRaw = '';
         foreach ($dokList as $doc) {
-            if (basename((string) ($doc['nama_berkas'] ?? '')) === $target) {
-                $found = true;
+            $docRaw  = trim((string) ($doc['nama_berkas'] ?? ''));
+            $matched = $isTargetUrl
+                ? ($docRaw === $targetRaw)
+                : ($docRaw === $targetRaw || (!ketarunaan_is_http_url($docRaw, 2000) && basename($docRaw) === $targetBase));
+
+            if (!$found && $matched) {
+                $found      = true;
+                $removedRaw = $docRaw;
                 continue;
             }
             $filtered[] = $doc;
         }
 
         if (!$found) {
-            return ['status' => false, 'message' => 'Berkas dokumen tidak ditemukan.'];
+            return ['status' => false, 'message' => 'Dokumen bukti tidak ditemukan.'];
         }
 
         $update = [
             'dokumen_bukti_json' => !empty($filtered) ? json_encode(array_values($filtered), JSON_UNESCAPED_UNICODE) : null,
         ];
-        if (basename((string) ($existing['bukti_berkas'] ?? '')) === $target) {
-            $update['bukti_berkas'] = !empty($filtered) ? $filtered[0]['nama_berkas'] : null;
+
+        $existingBukti = trim((string) ($existing['bukti_berkas'] ?? ''));
+        $matchBukti    = $existingBukti !== '' && ($existingBukti === $removedRaw || (!$isTargetUrl && !ketarunaan_is_http_url($existingBukti, 2000) && basename($existingBukti) === $targetBase));
+        if ($matchBukti) {
+            $nextBukti = !empty($filtered) ? trim((string) ($filtered[0]['nama_berkas'] ?? '')) : '';
+            $update['bukti_berkas'] = ($nextBukti !== '' && mb_strlen($nextBukti) <= 255) ? $nextBukti : null;
         }
-        if (basename((string) ($existing['berkas_bap'] ?? '')) === $target) {
+
+        $existingBap = trim((string) ($existing['berkas_bap'] ?? ''));
+        $matchBap    = $existingBap !== '' && ($existingBap === $removedRaw || (!$isTargetUrl && !ketarunaan_is_http_url($existingBap, 2000) && basename($existingBap) === $targetBase));
+        if ($matchBap) {
             $update['berkas_bap'] = null;
         }
 
@@ -962,15 +1049,21 @@ class PelanggaranService
             $this->pelanggaranModel->update($id, $update);
             $this->db->transComplete();
 
-            $filePath = FCPATH . 'assets/uploads/ketarunaan/pelanggaran/' . $target;
-            if (is_file($filePath)) {
-                @unlink($filePath);
+            if ($this->db->transStatus() === false) {
+                return ['status' => false, 'message' => 'Gagal menghapus dokumen. Silakan coba lagi.'];
             }
 
-            return ['status' => true, 'message' => 'Berkas dokumen berhasil dihapus.'];
+            if ($removedRaw !== '' && !ketarunaan_is_http_url($removedRaw, 2000)) {
+                $filePath = FCPATH . 'assets/uploads/ketarunaan/pelanggaran/' . basename($removedRaw);
+                if (is_file($filePath)) {
+                    @unlink($filePath);
+                }
+            }
+
+            return ['status' => true, 'message' => 'Dokumen bukti berhasil dihapus.'];
         } catch (\Throwable $e) {
             log_message('error', '[PelanggaranService::removeDokumen] ' . $e->getMessage());
-            return ['status' => false, 'message' => 'Gagal menghapus berkas. Silakan coba lagi.'];
+            return ['status' => false, 'message' => 'Gagal menghapus dokumen. Silakan coba lagi.'];
         }
     }
 
@@ -990,12 +1083,25 @@ class PelanggaranService
             return ['status' => false, 'message' => 'Data kasus tidak ditemukan.'];
         }
 
+        if (!in_array($keputusan, ['tervalidasi', 'perlu_perbaikan'], true)) {
+            return ['status' => false, 'message' => 'Keputusan validasi tidak valid.'];
+        }
+
+        $currentStatus = (string) ($existing['status_validasi'] ?? 'draf');
+        if (!in_array($currentStatus, ['diajukan', 'perlu_perbaikan'], true)) {
+            return ['status' => false, 'message' => 'Kasus pada status ini tidak dapat diproses validasinya.'];
+        }
+
         $isValid      = ($keputusan === 'tervalidasi');
         $statusBaru   = $isValid ? 'tervalidasi' : 'perlu_perbaikan';
         $aksiLabel    = $isValid ? 'Menyetujui' : 'Mengembalikan';
         $catatanClean = $isValid
             ? (trim((string) $catatan) ?: 'Data dan dokumen pemeriksaan sesuai ketentuan.')
             : trim((string) $catatan);
+
+        if (!$isValid && $catatanClean === '') {
+            return ['status' => false, 'message' => 'Isi catatan perbaikan sebelum mengembalikan data kasus.'];
+        }
 
         try {
             $this->db->transStart();
@@ -1043,11 +1149,33 @@ class PelanggaranService
             return ['status' => false, 'message' => 'Data kasus tidak ditemukan.'];
         }
 
-        if ($existing['status_validasi'] === 'tervalidasi') {
-            return ['status' => false, 'message' => 'Kasus yang sudah tervalidasi tidak dapat dihapus.'];
+        if (!in_array((string) ($existing['status_validasi'] ?? ''), ['draf', 'perlu_perbaikan'], true)) {
+            return ['status' => false, 'message' => 'Hanya kasus berstatus Draf atau Perlu Perbaikan yang dapat dihapus.'];
         }
 
         $dokList = $this->decodeRawDokumenList($existing);
+        $tlRows  = $this->tindakLanjutModel->where('pelanggaran_id', $id)->findAll();
+
+        $filesToRemove = [];
+        foreach ($dokList as $doc) {
+            $raw = trim((string) ($doc['nama_berkas'] ?? ''));
+            if ($raw !== '' && !ketarunaan_is_http_url($raw, 2000)) {
+                $filesToRemove[] = basename($raw);
+            }
+        }
+        foreach (['bukti_berkas', 'berkas_bap'] as $col) {
+            $raw = trim((string) ($existing[$col] ?? ''));
+            if ($raw !== '' && !ketarunaan_is_http_url($raw, 2000)) {
+                $filesToRemove[] = basename($raw);
+            }
+        }
+        foreach ($tlRows as $tl) {
+            $raw = trim((string) ($tl['berkas_pendukung'] ?? ''));
+            if ($raw !== '' && !ketarunaan_is_http_url($raw, 2000)) {
+                $filesToRemove[] = basename($raw);
+            }
+        }
+        $filesToRemove = array_values(array_unique(array_filter($filesToRemove)));
 
         try {
             $this->db->transStart();
@@ -1060,8 +1188,8 @@ class PelanggaranService
                 return ['status' => false, 'message' => 'Gagal menghapus data kasus. Silakan coba lagi.'];
             }
 
-            foreach ($dokList as $doc) {
-                $path = FCPATH . 'assets/uploads/ketarunaan/pelanggaran/' . basename((string) ($doc['nama_berkas'] ?? ''));
+            foreach ($filesToRemove as $safeFile) {
+                $path = FCPATH . 'assets/uploads/ketarunaan/pelanggaran/' . $safeFile;
                 if (is_file($path)) {
                     @unlink($path);
                 }
@@ -1096,7 +1224,7 @@ class PelanggaranService
                 'jenis_dokumen'  => ($kasus['status_penetapan'] === 'dugaan') ? 'Laporan' : 'Penetapan',
                 'klasifikasi'    => (string) ($kasus['tingkat_kerahasiaan'] ?? 'terbatas'),
                 'tanggal_unggah' => $tglBase,
-                'ukuran_kb'      => 420,
+                'ukuran_kb'      => 0,
             ];
         }
         if (!empty($kasus['berkas_bap'])) {
@@ -1105,7 +1233,7 @@ class PelanggaranService
                 'jenis_dokumen'  => 'Pemeriksaan',
                 'klasifikasi'    => 'sangat_terbatas',
                 'tanggal_unggah' => (string) ($kasus['tanggal_pemeriksaan'] ?: $tglBase),
-                'ukuran_kb'      => 1120,
+                'ukuran_kb'      => 0,
             ];
         }
 

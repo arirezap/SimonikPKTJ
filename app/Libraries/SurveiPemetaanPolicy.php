@@ -154,6 +154,11 @@ class SurveiPemetaanPolicy
      */
     public static function isUserEligibleForSurvey(array $userRow): bool
     {
+        $role = strtolower(trim((string) ($userRow['role'] ?? '')));
+        if (in_array($role, User::SELF_SERVICE_ROLES, true)) {
+            return false;
+        }
+
         $status = strtolower((string) ($userRow['status_pegawai'] ?? 'aktif'));
         if ($status === 'nonaktif') {
             return false;

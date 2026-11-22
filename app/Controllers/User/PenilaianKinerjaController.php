@@ -87,7 +87,9 @@ class PenilaianKinerjaController extends BaseController
         // Ambil daftar unit kerja untuk filter (Hanya untuk Admin Utama dan Direktur)
         $daftarUnit = [];
         if ($isSuper) {
-            $units = $userModel->select('unit')->distinct()->where('unit !=', null)->where('unit !=', '')->orderBy('unit', 'ASC')->findAll();
+            $unitQuery = $userModel->select('unit')->distinct()->where('unit !=', null)->where('unit !=', '');
+            User::excludeSelfServiceFromQuery($unitQuery);
+            $units = $unitQuery->orderBy('unit', 'ASC')->findAll();
             foreach ($units as $u) {
                 $daftarUnit[] = $u['unit'];
             }
@@ -99,8 +101,9 @@ class PenilaianKinerjaController extends BaseController
         // Cek apakah user punya staf atau punya akses penuh admin
         if ($isSuper) {
             $builder = $userModel->select('id, nama_lengkap, nip, username, jabatan, pangkat, unit, role, status_pegawai, tmt_selesai, foto, atasan_id')
-                                 ->where('id !=', $userId)
-                                 ->groupStart()
+                                 ->where('id !=', $userId);
+            User::excludeSelfServiceFromQuery($builder);
+            $builder = $builder->groupStart()
                                      ->where('status_pegawai', 'aktif')
                                      ->orGroupStart()
                                          ->whereIn('status_pegawai', ['mutasi_keluar', 'pensiun'])

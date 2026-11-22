@@ -42,6 +42,7 @@ class TimController extends BaseController
         $stafQuery = $this->userModel->select('id, nama_lengkap, nip, unit, unit_id, jabatan, role, atasan_id, foto')
                                      ->where('id !=', $userId)
                                      ->where('status_pegawai', 'aktif');
+        User::excludeSelfServiceFromQuery($stafQuery);
         
         if (!empty($myUnit)) {
             $stafQuery->groupStart()
@@ -67,6 +68,7 @@ class TimController extends BaseController
             ->select('id, nama_lengkap, nip, unit, unit_id, jabatan, role, atasan_id, foto')
             ->whereNotIn('role', ['admin', 'direktur'])
             ->where('status_pegawai', 'aktif');
+        User::excludeSelfServiceFromQuery($semuaPegawaiQuery);
 
         if (!empty($stafIds)) {
             $semuaPegawaiQuery->whereNotIn('id', $stafIds);

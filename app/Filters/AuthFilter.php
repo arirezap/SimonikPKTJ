@@ -60,6 +60,9 @@ class AuthFilter implements FilterInterface
             // Gunakan hasAnyRole() untuk mendukung multi-role (tabel pivot)
             helper('role');
             if (!hasAnyRole($allowed_roles)) {
+                if (\App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfAccountOnly()) {
+                    return redirect()->to(\App\Libraries\Ketarunaan\KetarunaanPolicy::getSelfPortalUrl());
+                }
                 // Jika tidak diizinkan, kembalikan ke dashboard
                 return redirect()->to('/dashboard');
             }

@@ -12,9 +12,11 @@ class ProgramBeasiswaModel extends Model
     protected $returnType       = 'array';
     protected $protectFields    = true;
     protected $allowedFields    = [
-        'nama_program', 'jenis_beasiswa', 'pemberi', 'tahun',
-        'periode_mulai', 'periode_selesai', 'kuota', 'status_program',
-        'created_at', 'updated_at'
+        'nama_program', 'jenis_beasiswa', 'pemberi', 'tahun', 'tahun_akademik_id',
+        'periode_mulai', 'periode_selesai', 'kuota', 'nominal', 'persyaratan',
+        'penanggung_jawab', 'dasar_penilaian', 'periode_nilai_id', 'basis_kelas',
+        'jumlah_peringkat', 'aturan_seri', 'status_program',
+        'created_at', 'updated_at',
     ];
 
     protected $useTimestamps = true;

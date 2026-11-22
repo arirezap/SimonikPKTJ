@@ -55,25 +55,27 @@ class Ecc2SimulasiSeeder extends Seeder
         }
         $tahunAkademikId = $taMap['2026/2027 Ganjil'];
 
-        // 4. Kelas Referensi
+        // 4. Kelas Referensi (Multi-Prodi & Multi-Kelas untuk pembuktian UAT-09)
         $db->table('ref_kelas')->truncate();
         $kelasBatch = [];
-        foreach (['A', 'B', 'C'] as $namaKls) {
-            $kelasBatch[] = [
-                'program_studi_id' => $prodiMap['RSTJ'],
-                'angkatan_id'      => $angkatanMap[2024],
-                'tingkat'          => 3,
-                'nama_kelas'       => $namaKls,
-                'is_aktif'         => 1,
-                'created_at'       => $now,
-            ];
+        foreach (['RSTJ', 'TRO', 'TO'] as $kdProdi) {
+            foreach (['A', 'B', 'C'] as $namaKls) {
+                $kelasBatch[] = [
+                    'program_studi_id' => $prodiMap[$kdProdi],
+                    'angkatan_id'      => $angkatanMap[2024],
+                    'tingkat'          => 3,
+                    'nama_kelas'       => $namaKls,
+                    'is_aktif'         => 1,
+                    'created_at'       => $now,
+                ];
+            }
         }
         $db->table('ref_kelas')->insertBatch($kelasBatch);
         $kelasMap = [];
         foreach ($db->table('ref_kelas')->get()->getResultArray() as $k) {
-            $kelasMap[$k['nama_kelas']] = (int) $k['id'];
+            $kelasMap[(int) $k['program_studi_id'] . '_' . $k['nama_kelas']] = (int) $k['id'];
         }
-        $kelasAId = $kelasMap['A'] ?? null;
+        $kelasAId = $kelasMap[$prodiMap['RSTJ'] . '_A'] ?? null;
 
         // 5. Status Taruna
         $db->table('ref_status_taruna')->truncate();
@@ -91,6 +93,9 @@ class Ecc2SimulasiSeeder extends Seeder
         if ($db->tableExists('taruna_capaian')) {
             $db->table('taruna_capaian')->truncate();
         }
+        if ($db->tableExists('alumni_riwayat_perubahan')) {
+            $db->table('alumni_riwayat_perubahan')->truncate();
+        }
         $db->table('alumni_profil')->truncate();
         $db->table('taruna_peserta_prestasi')->truncate();
         $db->table('taruna_prestasi')->truncate();
@@ -101,8 +106,23 @@ class Ecc2SimulasiSeeder extends Seeder
             $db->table('taruna_pelanggaran_pihak')->truncate();
         }
         $db->table('taruna_pelanggaran')->truncate();
+        if ($db->tableExists('taruna_beasiswa_hasil_peringkat')) {
+            $db->table('taruna_beasiswa_hasil_peringkat')->truncate();
+        }
+        if ($db->tableExists('taruna_beasiswa_pemeringkatan')) {
+            $db->table('taruna_beasiswa_pemeringkatan')->truncate();
+        }
+        if ($db->tableExists('taruna_nilai_ip')) {
+            $db->table('taruna_nilai_ip')->truncate();
+        }
+        if ($db->tableExists('ref_wilayah_3tp')) {
+            $db->table('ref_wilayah_3tp')->truncate();
+        }
         $db->table('taruna_penerima_beasiswa')->truncate();
         $db->table('taruna_program_beasiswa')->truncate();
+        if ($db->tableExists('lowongan_dokumen')) {
+            $db->table('lowongan_dokumen')->truncate();
+        }
         $db->table('lowongan_sasaran_prodi')->truncate();
         $db->table('lowongan_pekerjaan')->truncate();
         $db->table('perusahaan_mitra')->truncate();
@@ -130,6 +150,7 @@ class Ecc2SimulasiSeeder extends Seeder
         $riwayatStatusBatch = [];
         $riwayatPendidikanBatch = [];
         $alumniBatch = [];
+        $alumniRiwayatBatch = [];
 
         $counter = 1;
         $cutiCounter = 0;
@@ -179,11 +200,25 @@ class Ecc2SimulasiSeeder extends Seeder
                     $tingkatTaruna  = $isAditya ? 3 : (($statusCode === 'lulus') ? 4 : max(1, min(4, 2026 - $thnMasuk + 1)));
                     $semesterTaruna = $isAditya ? 5 : (($statusCode === 'lulus') ? 8 : max(1, min(8, (2026 - $thnMasuk) * 2 + 1)));
 
+                    $kelasNamaTaruna = 'A';
+                    if ($kodeProdi === 'RSTJ') {
+                        if ($counter >= 31 && $counter <= 60) {
+                            $kelasNamaTaruna = 'B';
+                        } elseif ($counter > 60) {
+                            $kelasNamaTaruna = 'C';
+                        }
+                    } elseif ($i >= 30 && $i < 60) {
+                        $kelasNamaTaruna = 'B';
+                    } elseif ($i >= 60) {
+                        $kelasNamaTaruna = 'C';
+                    }
+                    $kelasTarunaId = $kelasMap[$prodiId . '_' . $kelasNamaTaruna] ?? $kelasAId;
+
                     $pendidikanBatch[] = [
                         'nomor_taruna'      => $nomorTaruna,
                         'program_studi_id'  => $prodiId,
                         'angkatan_id'       => $angkatanId,
-                        'kelas_id'          => $kelasAId,
+                        'kelas_id'          => $kelasTarunaId,
                         'tingkat'           => $tingkatTaruna,
                         'semester_aktif'    => $semesterTaruna,
                         'jalur_penerimaan'  => 'Pola Pembibitan',
@@ -312,7 +347,7 @@ class Ecc2SimulasiSeeder extends Seeder
                         $riwayatPendidikanBatch[] = [
                             'nomor_taruna'      => $nomorTaruna,
                             'program_studi_id'  => $prodiId,
-                            'kelas_id'          => $kelasAId,
+                            'kelas_id'          => $kelasTarunaId,
                             'tingkat'           => $tingkatTaruna,
                             'semester'          => $semesterTaruna,
                             'tahun_akademik_id' => $tahunAkademikId,
@@ -323,17 +358,140 @@ class Ecc2SimulasiSeeder extends Seeder
                     }
 
                     if ($statusCode === 'lulus') {
-                        $alumniBatch[] = [
-                            'nomor_taruna'          => $nomorTaruna,
-                            'tanggal_lulus'         => '2026-08-20',
-                            'nomor_keputusan_lulus' => 'SK.LULUS/PKTJ/2026/' . $counter,
-                            'tahun_lulus'           => 2026,
-                            'pekerjaan_saat_ini'    => 'Penguji Kendaraan Bermotor',
-                            'instansi_saat_ini'     => 'BPTD Kelas II Jawa Tengah',
-                            'kontak_terakhir'       => '0812' . sprintf('%08d', 10000000 + $counter),
-                            'created_at'            => $now,
-                            'updated_at'            => $now,
+                        $pekerjaanOpsi = [
+                            'Penguji Kendaraan Bermotor',
+                            'Staf Keselamatan Transportasi Darat',
+                            'Analis Lalu Lintas Jalan',
+                            'Staff Engineering Armada & Bengkel',
+                            'Inspector Keselamatan Jalan',
+                            'Pelaksana Administrasi Terminal',
                         ];
+                        $instansiOpsi = [
+                            'BPTD Kelas II Jawa Tengah',
+                            'Dinas Perhubungan Kota Semarang',
+                            'Dinas Perhubungan Kabupaten Tegal',
+                            'Balai Pengelola Transportasi Darat DKI Jakarta',
+                            'PT Transjakarta',
+                            'Direktorat Sarana Transportasi Jalan',
+                        ];
+                        $kotaOpsi = ['Semarang', 'Tegal', 'Jakarta', 'Surabaya', 'Bandung', 'Yogyakarta'];
+                        $sumberOpsi = ['mandiri_alumni', 'telepon_pic', 'email_resmi', 'pesan_whatsapp', 'yudisium_akademik'];
+
+                        $jobTitle     = $pekerjaanOpsi[$counter % count($pekerjaanOpsi)];
+                        $companyTitle = $instansiOpsi[$counter % count($instansiOpsi)];
+                        $kotaNama     = $kotaOpsi[$counter % count($kotaOpsi)];
+                        $hpAlumni     = '0812' . sprintf('%08d', 10000000 + $counter);
+                        $emailAlumni  = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $fn) . '.' . $nomorTaruna) . '@alumni.pktj.ac.id';
+                        $sumberKontak = $sumberOpsi[$counter % count($sumberOpsi)];
+                        $tglLulus     = '2026-08-20';
+                        $skLulus      = 'SK.LULUS/PKTJ/2026/' . $counter;
+                        $tglUpdate    = ($counter % 3 === 0) ? '2026-10-12' : '2026-09-25';
+
+                        $alumniBatch[] = [
+                            'nomor_taruna'             => $nomorTaruna,
+                            'tanggal_lulus'            => $tglLulus,
+                            'nomor_keputusan_lulus'    => $skLulus,
+                            'tahun_lulus'              => 2026,
+                            'pekerjaan_saat_ini'       => $jobTitle,
+                            'instansi_saat_ini'        => $companyTitle,
+                            'kontak_terakhir'          => $hpAlumni,
+                            'email_alumni'             => $emailAlumni,
+                            'telepon_alumni'           => $hpAlumni,
+                            'kota_domisili'            => $kotaNama,
+                            'alamat_domisili'          => 'Jl. Transportasi No. ' . (($counter % 80) + 1) . ', ' . $kotaNama,
+                            'status_profil'            => 'aktif',
+                            'sumber_konfirmasi'        => $sumberKontak,
+                            'tanggal_pembaruan_kontak' => $tglUpdate,
+                            'dicatat_oleh'             => 'PIC Karir & Alumni',
+                            'divalidasi_oleh'          => 'Ketua Bagian AAK',
+                            'tanggal_validasi'         => $tglLulus,
+                            'catatan_profil'           => 'Profil dasar alumni terbentuk otomatis dari kelulusan tervalidasi.',
+                            'created_at'               => $now,
+                            'updated_at'               => $now,
+                        ];
+
+                        $alumniRiwayatBatch[] = [
+                            'nomor_taruna'            => $nomorTaruna,
+                            'jenis_kejadian'          => 'kelulusan_awal',
+                            'judul_ringkas'           => 'Penetapan profil dasar alumni dari status lulus tervalidasi',
+                            'data_sebelum_json'       => json_encode(['status_taruna' => 'aktif'], JSON_UNESCAPED_UNICODE),
+                            'data_sesudah_json'       => json_encode([
+                                'tanggal_lulus'         => $tglLulus,
+                                'nomor_keputusan_lulus' => $skLulus,
+                                'status_profil'         => 'aktif',
+                            ], JSON_UNESCAPED_UNICODE),
+                            'tanggal_lulus_baru'      => $tglLulus,
+                            'nomor_keputusan_baru'    => $skLulus,
+                            'status_taruna_pengganti' => null,
+                            'sumber_konfirmasi'       => 'yudisium_akademik',
+                            'tanggal_kejadian'        => $tglLulus,
+                            'alasan_perubahan'        => 'Kelulusan yudisium divalidasi resmi.',
+                            'dampak_ringkasan'        => 'Terbentuk 1 profil dasar alumni aktif terhubung ke Nomor Taruna.',
+                            'status_validasi'         => 'tervalidasi',
+                            'catatan_validator'       => 'Sesuai SK yudisium resmi.',
+                            'diajukan_oleh'           => 'Staf Ketarunaan',
+                            'peran_pencatat'          => 'ketarunaan',
+                            'divalidasi_oleh'         => 'Ketua Bagian AAK',
+                            'tanggal_validasi'        => $tglLulus,
+                            'created_at'              => $now,
+                            'updated_at'              => $now,
+                        ];
+
+                        if (count($alumniBatch) <= 25) {
+                            $alumniRiwayatBatch[] = [
+                                'nomor_taruna'            => $nomorTaruna,
+                                'jenis_kejadian'          => 'pembaruan_kontak',
+                                'judul_ringkas'           => 'Konfirmasi pekerjaan dan kontak alumni (' . $companyTitle . ')',
+                                'data_sebelum_json'       => json_encode(['pekerjaan_saat_ini' => '-', 'instansi_saat_ini' => '-'], JSON_UNESCAPED_UNICODE),
+                                'data_sesudah_json'       => json_encode([
+                                    'pekerjaan_saat_ini' => $jobTitle,
+                                    'instansi_saat_ini'  => $companyTitle,
+                                    'email_alumni'       => $emailAlumni,
+                                    'telepon_alumni'     => $hpAlumni,
+                                    'kota_domisili'      => $kotaNama,
+                                ], JSON_UNESCAPED_UNICODE),
+                                'tanggal_lulus_baru'      => null,
+                                'nomor_keputusan_baru'    => null,
+                                'status_taruna_pengganti' => null,
+                                'sumber_konfirmasi'       => $sumberKontak,
+                                'tanggal_kejadian'        => $tglUpdate,
+                                'alasan_perubahan'        => 'Pembaruan data kontak dan penempatan kerja terkini.',
+                                'dampak_ringkasan'        => 'Kontak aktif diperbarui dengan sumber ' . $sumberKontak . '.',
+                                'status_validasi'         => 'tervalidasi',
+                                'catatan_validator'       => null,
+                                'diajukan_oleh'           => 'PIC Karir & Alumni',
+                                'peran_pencatat'          => 'karir_alumni',
+                                'divalidasi_oleh'         => 'PIC Karir & Alumni',
+                                'tanggal_validasi'        => $tglUpdate,
+                                'created_at'              => $now,
+                                'updated_at'              => $now,
+                            ];
+                        }
+
+                        if (count($alumniBatch) === 1) {
+                            $alumniRiwayatBatch[] = [
+                                'nomor_taruna'            => $nomorTaruna,
+                                'jenis_kejadian'          => 'ralat_sk',
+                                'judul_ringkas'           => 'Penyesuaian format penomoran SK kelulusan',
+                                'data_sebelum_json'       => json_encode(['nomor_keputusan_lulus' => 'SK.LULUS/PKTJ/2026/DRAFT-' . $counter], JSON_UNESCAPED_UNICODE),
+                                'data_sesudah_json'       => json_encode(['nomor_keputusan_lulus' => $skLulus, 'tanggal_lulus' => $tglLulus], JSON_UNESCAPED_UNICODE),
+                                'tanggal_lulus_baru'      => $tglLulus,
+                                'nomor_keputusan_baru'    => $skLulus,
+                                'status_taruna_pengganti' => null,
+                                'sumber_konfirmasi'       => 'yudisium_akademik',
+                                'tanggal_kejadian'        => '2026-08-25',
+                                'alasan_perubahan'        => 'Penyelarasan kode arsip SK kelulusan resmi.',
+                                'dampak_ringkasan'        => 'Jumlah alumni tetap; nomor SK diperbarui tanpa menghapus profil.',
+                                'status_validasi'         => 'tervalidasi',
+                                'catatan_validator'       => 'Sudah sesuai dengan salinan SK yudisium.',
+                                'diajukan_oleh'           => 'Staf Ketarunaan',
+                                'peran_pencatat'          => 'ketarunaan',
+                                'divalidasi_oleh'         => 'Ketua Bagian AAK',
+                                'tanggal_validasi'        => '2026-08-25',
+                                'created_at'              => $now,
+                                'updated_at'              => $now,
+                            ];
+                        }
                     }
 
                     $counter++;
@@ -855,115 +1013,917 @@ class Ecc2SimulasiSeeder extends Seeder
             ]);
         }
 
-        // 10. Program Beasiswa (3 Program Aktif, 45 Penerima Ditetapkan)
+        // 10. Beasiswa (4 Program 4 Jenis: 3 berjalan + 1 seleksi, 45 Penerima Ditetapkan Tervalidasi, Nilai IP, Pemeringkatan 2 Kelas, Referensi 3TP)
+        $periodeNilaiId = $taMap['2025/2026 Genap'] ?? $tahunAkademikId;
+
+        if ($db->tableExists('ref_wilayah_3tp')) {
+            $wilayah3tpBatch = [
+                ['kode_wilayah' => '12.14', 'provinsi' => 'Sumatera Utara',        'kabupaten_kota' => 'Kab. Nias Selatan',        'kategori_3tp' => 'Daerah Tertinggal', 'dasar_acuan' => 'Perpres No. 63 Tahun 2020', 'versi_acuan' => '2020-2024', 'tahun_berlaku' => 2024, 'is_aktif' => 1, 'created_at' => $now],
+                ['kode_wilayah' => '13.09', 'provinsi' => 'Sumatera Barat',        'kabupaten_kota' => 'Kab. Kepulauan Mentawai',  'kategori_3tp' => 'Daerah Tertinggal', 'dasar_acuan' => 'Perpres No. 63 Tahun 2020', 'versi_acuan' => '2020-2024', 'tahun_berlaku' => 2024, 'is_aktif' => 1, 'created_at' => $now],
+                ['kode_wilayah' => '52.08', 'provinsi' => 'Nusa Tenggara Barat',   'kabupaten_kota' => 'Kab. Lombok Utara',        'kategori_3tp' => 'Daerah Tertinggal', 'dasar_acuan' => 'Perpres No. 63 Tahun 2020', 'versi_acuan' => '2020-2024', 'tahun_berlaku' => 2024, 'is_aktif' => 1, 'created_at' => $now],
+                ['kode_wilayah' => '53.14', 'provinsi' => 'Nusa Tenggara Timur',   'kabupaten_kota' => 'Kab. Rote Ndao',           'kategori_3tp' => 'Perbatasan & Terluar', 'dasar_acuan' => 'Perpres No. 63 Tahun 2020', 'versi_acuan' => '2020-2024', 'tahun_berlaku' => 2024, 'is_aktif' => 1, 'created_at' => $now],
+                ['kode_wilayah' => '53.17', 'provinsi' => 'Nusa Tenggara Timur',   'kabupaten_kota' => 'Kab. Sumba Tengah',        'kategori_3tp' => 'Daerah Tertinggal', 'dasar_acuan' => 'Perpres No. 63 Tahun 2020', 'versi_acuan' => '2020-2024', 'tahun_berlaku' => 2024, 'is_aktif' => 1, 'created_at' => $now],
+                ['kode_wilayah' => '53.20', 'provinsi' => 'Nusa Tenggara Timur',   'kabupaten_kota' => 'Kab. Sabu Raijua',         'kategori_3tp' => 'Daerah Tertinggal', 'dasar_acuan' => 'Perpres No. 63 Tahun 2020', 'versi_acuan' => '2020-2024', 'tahun_berlaku' => 2024, 'is_aktif' => 1, 'created_at' => $now],
+                ['kode_wilayah' => '81.08', 'provinsi' => 'Maluku',                'kabupaten_kota' => 'Kab. Maluku Barat Daya',   'kategori_3tp' => 'Perbatasan & Terluar', 'dasar_acuan' => 'Perpres No. 63 Tahun 2020', 'versi_acuan' => '2020-2024', 'tahun_berlaku' => 2024, 'is_aktif' => 1, 'created_at' => $now],
+                ['kode_wilayah' => '92.07', 'provinsi' => 'Papua Barat',           'kabupaten_kota' => 'Kab. Teluk Wondama',       'kategori_3tp' => 'Daerah Tertinggal', 'dasar_acuan' => 'Perpres No. 63 Tahun 2020', 'versi_acuan' => '2020-2024', 'tahun_berlaku' => 2024, 'is_aktif' => 1, 'created_at' => $now],
+            ];
+            $db->table('ref_wilayah_3tp')->insertBatch($wilayah3tpBatch);
+        }
+
         $programs = [
-            ['nama_program' => 'Beasiswa Apresiasi IP Tertinggi 2026', 'jenis' => 'apresiasi', 'pemberi' => 'PKTJ Tegal', 'kuota' => 20],
-            ['nama_program' => 'Beasiswa Prestasi Keselamatan Transportasi', 'jenis' => 'prestasi', 'pemberi' => 'Badan Pengembangan SDM Perhubungan', 'kuota' => 15],
-            ['nama_program' => 'Bantuan Pendidikan Daerah 3TP', 'jenis' => 'daerah_3tp', 'pemberi' => 'Kementerian Perhubungan RI', 'kuota' => 15],
+            [
+                'nama_program'     => 'Beasiswa Apresiasi IP Tertinggi 2026',
+                'jenis'            => 'apresiasi',
+                'pemberi'          => 'PKTJ Tegal',
+                'kuota'            => 20,
+                'nominal'          => 2500000,
+                'status_program'   => 'berjalan',
+                'persyaratan'      => '5 IP semester tertinggi pada masing-masing kelas periode penilaian sebelumnya.',
+                'dasar_penilaian'  => 'ip_semester',
+                'periode_nilai_id' => $periodeNilaiId,
+                'basis_kelas'      => 'kelas_periode_penilaian',
+                'jumlah_peringkat' => 5,
+                'aturan_seri'      => 'belum_ditetapkan',
+            ],
+            [
+                'nama_program'     => 'Beasiswa Prestasi Keselamatan Transportasi',
+                'jenis'            => 'prestasi',
+                'pemberi'          => 'Badan Pengembangan SDM Perhubungan',
+                'kuota'            => 15,
+                'nominal'          => 3000000,
+                'status_program'   => 'berjalan',
+                'persyaratan'      => 'Prestasi akademik/nonakademik tervalidasi selama menjadi taruna disertai sertifikat dan dokumentasi.',
+                'dasar_penilaian'  => 'klaim_prestasi',
+                'periode_nilai_id' => null,
+                'basis_kelas'      => 'individu',
+                'jumlah_peringkat' => 0,
+                'aturan_seri'      => 'belum_ditetapkan',
+            ],
+            [
+                'nama_program'     => 'Bantuan Pendidikan Daerah 3TP',
+                'jenis'            => 'daerah_3tp',
+                'pemberi'          => 'Kementerian Perhubungan RI',
+                'kuota'            => 15,
+                'nominal'          => 3500000,
+                'status_program'   => 'berjalan',
+                'persyaratan'      => 'Berdomisili di wilayah 3TP sesuai daftar acuan resmi dan melampirkan bukti domisili sah.',
+                'dasar_penilaian'  => 'klaim_domisili_3tp',
+                'periode_nilai_id' => null,
+                'basis_kelas'      => 'individu',
+                'jumlah_peringkat' => 0,
+                'aturan_seri'      => 'belum_ditetapkan',
+            ],
+            [
+                'nama_program'     => 'Beasiswa Bantuan Biaya Pendidikan Tidak Mampu',
+                'jenis'            => 'tidak_mampu',
+                'pemberi'          => 'PKTJ Tegal & Mitra Industri',
+                'kuota'            => 10,
+                'nominal'          => 2750000,
+                'status_program'   => 'seleksi',
+                'persyaratan'      => 'Keterangan kondisi ekonomi keluarga (SKTM/KIP/penghasilan wali) dengan akses berkas terbatas.',
+                'dasar_penilaian'  => 'klaim_ekonomi',
+                'periode_nilai_id' => null,
+                'basis_kelas'      => 'individu',
+                'jumlah_peringkat' => 0,
+                'aturan_seri'      => 'belum_ditetapkan',
+            ],
         ];
 
         $progIds = [];
         foreach ($programs as $prog) {
             $db->table('taruna_program_beasiswa')->insert([
-                'nama_program'    => $prog['nama_program'],
-                'jenis_beasiswa'  => $prog['jenis'],
-                'pemberi'         => $prog['pemberi'],
-                'tahun'           => 2026,
-                'periode_mulai'   => '2026-09-01',
-                'periode_selesai' => '2026-12-31',
-                'kuota'           => $prog['kuota'],
-                'status_program'  => 'berjalan',
-                'created_at'      => $now,
-                'updated_at'      => $now,
+                'nama_program'     => $prog['nama_program'],
+                'jenis_beasiswa'   => $prog['jenis'],
+                'pemberi'          => $prog['pemberi'],
+                'tahun'            => 2026,
+                'tahun_akademik_id'=> $tahunAkademikId,
+                'periode_mulai'    => '2026-09-01',
+                'periode_selesai'  => '2026-12-31',
+                'kuota'            => $prog['kuota'],
+                'nominal'          => $prog['nominal'],
+                'persyaratan'      => $prog['persyaratan'],
+                'penanggung_jawab' => 'Unit Ketarunaan',
+                'dasar_penilaian'  => $prog['dasar_penilaian'],
+                'periode_nilai_id' => $prog['periode_nilai_id'],
+                'basis_kelas'      => $prog['basis_kelas'],
+                'jumlah_peringkat' => $prog['jumlah_peringkat'],
+                'aturan_seri'      => $prog['aturan_seri'],
+                'status_program'   => $prog['status_program'],
+                'created_at'       => $now,
+                'updated_at'       => $now,
             ]);
             $progIds[] = $db->insertID();
         }
 
+        // 10a. Nilai IP Semester (Genap 2025/2026) untuk 2 kelas RSTJ: Kelas A (30 taruna, tanpa seri) & Kelas B (30 taruna, seri peringkat ke-5 untuk UAT-09 & UAT-10)
+        $pemeringkatanAId = null;
+        if ($db->tableExists('taruna_nilai_ip')) {
+            $rstjProdiId = $prodiMap['RSTJ'];
+            $kelasRstjA  = $kelasMap[$rstjProdiId . '_A'];
+            $kelasRstjB  = $kelasMap[$rstjProdiId . '_B'];
+
+            // RSTJ Kelas A: index 0..29 (counter 1..30)
+            $ipTopA = [3.95, 3.92, 3.89, 3.85, 3.82, 3.78];
+            $nilaiIpBatch = [];
+            for ($idxA = 0; $idxA < 30; $idxA++) {
+                $ipVal = $ipTopA[$idxA] ?? round(3.74 - (($idxA - 6) * 0.03), 2);
+                $nilaiIpBatch[] = [
+                    'nomor_taruna'      => $tarunaBatch[$idxA]['nomor_taruna'],
+                    'tahun_akademik_id' => $periodeNilaiId,
+                    'program_studi_id'  => $rstjProdiId,
+                    'kelas_id'          => $kelasRstjA,
+                    'tingkat'           => 2,
+                    'semester'          => 4,
+                    'ip_semester'       => $ipVal,
+                    'sks_lulus'         => 22,
+                    'sumber_data'       => 'Nilai semester tervalidasi',
+                    'versi'             => 1,
+                    'status_validasi'   => 'tervalidasi',
+                    'diimpor_oleh'      => 'Unit Akademik',
+                    'created_at'        => $now,
+                    'updated_at'        => $now,
+                ];
+            }
+
+            // RSTJ Kelas B: index 30..59 (counter 31..60) -> peringkat 5 & 6 sama-sama 3.80 (Seri Peringkat Ke-5)
+            $ipTopB = [3.91, 3.88, 3.84, 3.83, 3.80, 3.80, 3.75];
+            for ($idxB = 0; $idxB < 30; $idxB++) {
+                $ipVal = $ipTopB[$idxB] ?? round(3.72 - (($idxB - 7) * 0.03), 2);
+                $nilaiIpBatch[] = [
+                    'nomor_taruna'      => $tarunaBatch[30 + $idxB]['nomor_taruna'],
+                    'tahun_akademik_id' => $periodeNilaiId,
+                    'program_studi_id'  => $rstjProdiId,
+                    'kelas_id'          => $kelasRstjB,
+                    'tingkat'           => 2,
+                    'semester'          => 4,
+                    'ip_semester'       => $ipVal,
+                    'sks_lulus'         => 22,
+                    'sumber_data'       => 'Nilai semester tervalidasi',
+                    'versi'             => 1,
+                    'status_validasi'   => 'tervalidasi',
+                    'diimpor_oleh'      => 'Unit Akademik',
+                    'created_at'        => $now,
+                    'updated_at'        => $now,
+                ];
+            }
+            $db->table('taruna_nilai_ip')->insertBatch($nilaiIpBatch);
+
+            if ($db->tableExists('taruna_beasiswa_pemeringkatan') && $db->tableExists('taruna_beasiswa_hasil_peringkat')) {
+                // Versi pemeringkatan Kelas A (siap / tervalidasi)
+                $db->table('taruna_beasiswa_pemeringkatan')->insert([
+                    'program_beasiswa_id'   => $progIds[0],
+                    'tahun_akademik_id'     => $periodeNilaiId,
+                    'program_studi_id'      => $rstjProdiId,
+                    'kelas_id'              => $kelasRstjA,
+                    'kode_versi'            => 'APR-2026-RSTJ-A-V1',
+                    'versi'                 => 1,
+                    'populasi_kelas'        => 30,
+                    'jumlah_kandidat'       => 5,
+                    'sumber_nilai'          => 'Nilai semester tervalidasi',
+                    'parameter_aturan_json' => json_encode(['kuota_per_kelas' => 5, 'dasar' => 'ip_semester'], JSON_UNESCAPED_UNICODE),
+                    'ada_seri_kelima'       => 0,
+                    'aturan_seri'           => 'belum_ditetapkan',
+                    'status_finalisasi'     => 'tervalidasi',
+                    'diproses_oleh'         => 'PIC Ketarunaan',
+                    'tanggal_hitung'        => '2026-09-10',
+                    'divalidasi_oleh'       => 'Validator Unit',
+                    'tanggal_validasi'      => '2026-09-12',
+                    'created_at'            => $now,
+                    'updated_at'            => $now,
+                ]);
+                $pemeringkatanAId = $db->insertID();
+
+                $hasilBatch = [];
+                for ($idxA = 0; $idxA < 30; $idxA++) {
+                    $ipVal = $ipTopA[$idxA] ?? round(3.74 - (($idxA - 6) * 0.03), 2);
+                    $rank  = $idxA + 1;
+                    $hasilBatch[] = [
+                        'pemeringkatan_id' => $pemeringkatanAId,
+                        'nomor_taruna'     => $tarunaBatch[$idxA]['nomor_taruna'],
+                        'nama_snapshot'    => $tarunaBatch[$idxA]['nama_lengkap'],
+                        'kelas_snapshot'   => 'RSTJ Kelas A',
+                        'ip_semester'      => $ipVal,
+                        'peringkat'        => $rank,
+                        'status_kandidat'  => ($rank <= 5) ? 'kandidat' : 'di_luar_5_besar',
+                        'is_seri'          => 0,
+                        'catatan'          => ($rank <= 5) ? 'Masuk 5 IP tertinggi kelas A' : null,
+                        'created_at'       => $now,
+                    ];
+                }
+
+                // Versi pemeringkatan Kelas B (ditahan karena seri peringkat ke-5 — UAT-10)
+                $db->table('taruna_beasiswa_pemeringkatan')->insert([
+                    'program_beasiswa_id'   => $progIds[0],
+                    'tahun_akademik_id'     => $periodeNilaiId,
+                    'program_studi_id'      => $rstjProdiId,
+                    'kelas_id'              => $kelasRstjB,
+                    'kode_versi'            => 'APR-2026-RSTJ-B-V1',
+                    'versi'                 => 1,
+                    'populasi_kelas'        => 30,
+                    'jumlah_kandidat'       => 4,
+                    'sumber_nilai'          => 'Nilai semester tervalidasi',
+                    'parameter_aturan_json' => json_encode(['kuota_per_kelas' => 5, 'dasar' => 'ip_semester'], JSON_UNESCAPED_UNICODE),
+                    'ada_seri_kelima'       => 1,
+                    'aturan_seri'           => 'belum_ditetapkan',
+                    'status_finalisasi'     => 'ditahan_seri',
+                    'alasan_ditahan'        => 'IP sama (3,80) pada batas peringkat ke-5 memerlukan aturan pemecah seri sebelum finalisasi.',
+                    'diproses_oleh'         => 'PIC Ketarunaan',
+                    'tanggal_hitung'        => '2026-09-10',
+                    'created_at'            => $now,
+                    'updated_at'            => $now,
+                ]);
+                $pemeringkatanBId = $db->insertID();
+
+                for ($idxB = 0; $idxB < 30; $idxB++) {
+                    $ipVal = $ipTopB[$idxB] ?? round(3.72 - (($idxB - 7) * 0.03), 2);
+                    $rank  = $idxB + 1;
+                    $isSeriKelima = ($rank === 5 || $rank === 6);
+                    $statusKand   = ($rank <= 4) ? 'kandidat' : ($isSeriKelima ? 'seri_kelima' : 'di_luar_5_besar');
+                    $hasilBatch[] = [
+                        'pemeringkatan_id' => $pemeringkatanBId,
+                        'nomor_taruna'     => $tarunaBatch[30 + $idxB]['nomor_taruna'],
+                        'nama_snapshot'    => $tarunaBatch[30 + $idxB]['nama_lengkap'],
+                        'kelas_snapshot'   => 'RSTJ Kelas B',
+                        'ip_semester'      => $ipVal,
+                        'peringkat'        => $isSeriKelima ? 5 : $rank,
+                        'status_kandidat'  => $statusKand,
+                        'is_seri'          => $isSeriKelima ? 1 : 0,
+                        'catatan'          => $isSeriKelima ? 'Seri IP pada batas peringkat ke-5' : null,
+                        'created_at'       => $now,
+                    ];
+                }
+                $db->table('taruna_beasiswa_hasil_peringkat')->insertBatch($hasilBatch);
+            }
+        }
+
+        // Ambil 1 ID prestasi Aditya Pratama untuk ditautkan pada klaim Beasiswa Prestasi
+        $adityaPrestasiRow = $db->table('taruna_prestasi tp')
+            ->select('tp.id')
+            ->join('taruna_peserta_prestasi tpp', 'tpp.prestasi_id = tp.id')
+            ->where('tpp.nomor_taruna', '2401001')
+            ->where('tp.status_validasi', 'tervalidasi')
+            ->orderBy('tp.id', 'ASC')
+            ->get()
+            ->getRowArray();
+        $adityaPrestasiId = $adityaPrestasiRow ? (int) $adityaPrestasiRow['id'] : null;
+
+        // 10b. 45 Penerima Ditetapkan & Tervalidasi (15 per 3 program berjalan)
         $bCounter = 50;
-        foreach ($progIds as $progIdx => $pId) {
+        for ($progIdx = 0; $progIdx < 3; $progIdx++) {
+            $pId       = $progIds[$progIdx];
+            $jenisProg = $programs[$progIdx]['jenis'];
             for ($b = 0; $b < 15; $b++) {
                 $isAdityaBeasiswa = ($progIdx === 1 && $b === 0);
-                $targetTaruna = $isAdityaBeasiswa ? '2401001' : $tarunaBatch[$bCounter]['nomor_taruna'];
-                $db->table('taruna_penerima_beasiswa')->insert([
-                    'program_beasiswa_id' => $pId,
-                    'nomor_taruna'        => $targetTaruna,
-                    'status_pengajuan'    => 'diterima',
-                    'status_penetapan'    => 'ditetapkan',
-                    'tanggal_penetapan'   => $isAdityaBeasiswa ? '2025-10-01' : '2026-09-15',
-                    'nomor_keputusan'     => $isAdityaBeasiswa ? 'Keputusan_Beasiswa.pdf' : ('SK.BEASISWA/2026/' . $pId . '/' . sprintf('%02d', $b + 1)),
-                    'status_validasi'     => 'tervalidasi',
-                    'created_at'          => $now,
-                    'updated_at'          => $now,
-                ]);
+                $targetTaruna     = $isAdityaBeasiswa ? '2401001' : $tarunaBatch[$bCounter]['nomor_taruna'];
+                $tglPutus         = $isAdityaBeasiswa ? '2025-10-01' : '2026-09-15';
+                $noKep            = $isAdityaBeasiswa ? 'Keputusan_Beasiswa.pdf' : ('SK.BEASISWA/2026/' . $pId . '/' . sprintf('%02d', $b + 1));
+
+                $detailFields = [];
+                if ($jenisProg === 'apresiasi') {
+                    $detailFields = [
+                        'sumber_klaim'    => 'pemeringkatan',
+                        'pemeringkatan_id'=> $pemeringkatanAId,
+                        'ip_semester'     => round(3.95 - ($b * 0.02), 2),
+                        'peringkat_kelas' => ($b % 5) + 1,
+                        'kelas_snapshot'  => 'RSTJ Kelas A',
+                    ];
+                } elseif ($jenisProg === 'prestasi') {
+                    $detailFields = [
+                        'sumber_klaim'           => $isAdityaBeasiswa ? 'taruna' : 'pic',
+                        'prestasi_id'            => $isAdityaBeasiswa ? $adityaPrestasiId : null,
+                        'kategori_prestasi'      => 'Akademik',
+                        'nama_prestasi'          => $isAdityaBeasiswa ? 'Lomba Inovasi Transportasi Nasional' : 'Kompetisi Keselamatan Transportasi #' . ($b + 1),
+                        'tingkat_prestasi'       => 'Nasional',
+                        'peringkat_prestasi'     => 'Juara I',
+                        'tanggal_prestasi'       => $isAdityaBeasiswa ? '2025-09-12' : '2026-08-18',
+                        'penyelenggara_prestasi' => 'Kementerian Perhubungan',
+                        'sertifikat_berkas'      => $isAdityaBeasiswa ? 'Piagam_Prestasi.pdf' : ('sertifikat_beasiswa_' . ($b + 1) . '.pdf'),
+                        'dokumentasi_berkas'     => 'Dokumentasi_Kegiatan_Beasiswa.jpg',
+                    ];
+                } else {
+                    $detailFields = [
+                        'sumber_klaim'           => 'pic',
+                        'alamat_domisili'        => 'Desa Contoh No. ' . ($b + 10),
+                        'provinsi'               => 'Nusa Tenggara Timur',
+                        'kabupaten_kota'         => 'Kab. Sumba Tengah',
+                        'kecamatan'              => 'Katikutana',
+                        'desa_kelurahan'         => 'Anakalang',
+                        'kode_wilayah'           => '53.17',
+                        'tanggal_acuan_domisili' => '2026-08-01',
+                        'acuan_wilayah_3tp'      => 'Perpres No. 63 Tahun 2020',
+                        'versi_acuan_3tp'        => '2020-2024',
+                        'status_pemeriksaan_3tp' => 'memenuhi',
+                        'dokumen_domisili'       => 'SK_Domisili_3TP_' . ($b + 1) . '.pdf',
+                        'jenis_dokumen_domisili' => 'Kartu Keluarga / Surat Domisili',
+                    ];
+                }
+
+                $riwayatProses = [
+                    ['tanggal' => '2026-09-10', 'waktu' => '2026-09-10 09:00', 'pelaku' => 'PIC Ketarunaan', 'aksi' => 'Mengajukan', 'status' => 'diajukan', 'catatan' => 'Berkas pengajuan dikirim untuk pemeriksaan.'],
+                    ['tanggal' => '2026-09-12', 'waktu' => '2026-09-12 10:30', 'pelaku' => 'Tim Verifikasi', 'aksi' => 'Memverifikasi', 'status' => 'memenuhi', 'catatan' => 'Memenuhi persyaratan program.'],
+                    ['tanggal' => $tglPutus, 'waktu' => $tglPutus . ' 14:00', 'pelaku' => 'Direktur PKTJ', 'aksi' => 'Menetapkan & Memvalidasi', 'status' => 'tervalidasi', 'catatan' => 'Ditetapkan berdasarkan ' . $noKep],
+                ];
+
+                $db->table('taruna_penerima_beasiswa')->insert(array_merge([
+                    'program_beasiswa_id'  => $pId,
+                    'nomor_taruna'         => $targetTaruna,
+                    'tahun_akademik_id'    => $tahunAkademikId,
+                    'tanggal_pengajuan'    => '2026-09-10',
+                    'dicatat_oleh'         => 'PIC Ketarunaan',
+                    'status_pengajuan'     => 'diterima',
+                    'hasil_verifikasi'     => 'memenuhi',
+                    'checklist_verifikasi_json' => json_encode(['identitas' => true, 'kelayakan' => true, 'dokumen' => true]),
+                    'catatan_pemeriksa'    => 'Berkas lengkap dan sesuai ketentuan program.',
+                    'diperiksa_oleh'       => 'Tim Verifikasi Beasiswa',
+                    'tanggal_pemeriksaan'  => '2026-09-12',
+                    'status_penetapan'     => 'ditetapkan',
+                    'tanggal_penetapan'    => $tglPutus,
+                    'nomor_keputusan'      => $noKep,
+                    'pejabat_penetap'      => 'Direktur PKTJ',
+                    'dokumen_keputusan'    => $isAdityaBeasiswa ? 'Keputusan_Beasiswa.pdf' : ('SK_Penetapan_' . $pId . '_' . sprintf('%02d', $b + 1) . '.pdf'),
+                    'catatan_penetapan'    => 'Penetapan penerima resmi periode 2026/2027 Ganjil.',
+                    'status_validasi'      => 'tervalidasi',
+                    'diajukan_oleh'        => 'PIC Ketarunaan',
+                    'divalidasi_oleh'      => 'Validator Unit',
+                    'tanggal_validasi'     => $tglPutus,
+                    'riwayat_proses_json'  => json_encode($riwayatProses, JSON_UNESCAPED_UNICODE),
+                    'created_at'           => $now,
+                    'updated_at'           => $now,
+                ], $detailFields));
                 $bCounter++;
             }
         }
 
-        // Tambah 4 usulan kandidat beasiswa (diajukan) & 2 perlu_perbaikan (status_penetapan = kandidat, tidak masuk 45 ditetapkan)
-        for ($kb = 1; $kb <= 6; $kb++) {
-            $db->table('taruna_penerima_beasiswa')->insert([
+        // 10c. Antrean Tetap: 4 usulan 'diajukan' & 2 'perlu_perbaikan' (status_penetapan = 'kandidat', tidak masuk 45 ditetapkan)
+        $antreanBeasiswaRows = [
+            [
                 'program_beasiswa_id' => $progIds[0],
-                'nomor_taruna'        => $tarunaBatch[$bCounter + $kb]['nomor_taruna'],
+                'nomor_taruna'        => $tarunaBatch[$bCounter + 1]['nomor_taruna'],
+                'sumber_klaim'        => 'pemeringkatan',
+                'pemeringkatan_id'    => $pemeringkatanAId,
+                'ip_semester'         => 3.85,
+                'peringkat_kelas'     => 4,
+                'kelas_snapshot'      => 'RSTJ Kelas A',
                 'status_pengajuan'    => 'diajukan',
+                'hasil_verifikasi'    => 'belum_diperiksa',
                 'status_penetapan'    => 'kandidat',
-                'tanggal_penetapan'   => null,
-                'nomor_keputusan'     => null,
-                'status_validasi'     => ($kb <= 4) ? 'diajukan' : 'perlu_perbaikan',
+                'status_validasi'     => 'diajukan',
+                'uraian_pengajuan'    => 'Kandidat 5 besar IP semester kelas A menunggu pemeriksaan berkas.',
+            ],
+            [
+                // Memenuhi verifikasi namun belum ditetapkan -> uji UAT-14
+                'program_beasiswa_id' => $progIds[0],
+                'nomor_taruna'        => $tarunaBatch[$bCounter + 2]['nomor_taruna'],
+                'sumber_klaim'        => 'pemeringkatan',
+                'pemeringkatan_id'    => $pemeringkatanAId,
+                'ip_semester'         => 3.82,
+                'peringkat_kelas'     => 5,
+                'kelas_snapshot'      => 'RSTJ Kelas A',
+                'status_pengajuan'    => 'diverifikasi',
+                'hasil_verifikasi'    => 'memenuhi',
+                'catatan_pemeriksa'   => 'Memenuhi persyaratan pemeringkatan, menunggu keputusan penetapan resmi.',
+                'diperiksa_oleh'      => 'Tim Verifikasi Beasiswa',
+                'tanggal_pemeriksaan' => '2026-10-28',
+                'status_penetapan'    => 'kandidat',
+                'status_validasi'     => 'diajukan',
+                'uraian_pengajuan'    => 'Kandidat lolos verifikasi menunggu SK penetapan.',
+            ],
+            [
+                'program_beasiswa_id' => $progIds[1],
+                'nomor_taruna'        => $tarunaBatch[$bCounter + 3]['nomor_taruna'],
+                'sumber_klaim'        => 'taruna',
+                'kategori_prestasi'   => 'Nonakademik',
+                'nama_prestasi'       => 'Juara II Lomba Karya Keselamatan Jalan',
+                'tingkat_prestasi'    => 'Nasional',
+                'peringkat_prestasi'  => 'Juara II',
+                'tanggal_prestasi'    => '2026-10-05',
+                'penyelenggara_prestasi' => 'Dishub Jawa Tengah',
+                'sertifikat_berkas'   => 'Sertifikat_Klaim_Prestasi.pdf',
+                'dokumentasi_berkas'  => 'Foto_Klaim_Prestasi.jpg',
+                'status_pengajuan'    => 'diajukan',
+                'hasil_verifikasi'    => 'belum_diperiksa',
+                'status_penetapan'    => 'kandidat',
+                'status_validasi'     => 'diajukan',
+                'uraian_pengajuan'    => 'Mengajukan klaim beasiswa prestasi berdasarkan sertifikat kejuaraan tingkat nasional.',
+            ],
+            [
+                'program_beasiswa_id' => $progIds[2],
+                'nomor_taruna'        => $tarunaBatch[$bCounter + 4]['nomor_taruna'],
+                'sumber_klaim'        => 'pic',
+                'alamat_domisili'     => 'Desa Makatete, Kec. Sumba Tengah',
+                'provinsi'            => 'Nusa Tenggara Timur',
+                'kabupaten_kota'      => 'Kab. Sumba Tengah',
+                'kecamatan'           => 'Katikutana Selatan',
+                'desa_kelurahan'      => 'Makatete',
+                'kode_wilayah'        => '53.17',
+                'tanggal_acuan_domisili' => '2026-09-20',
+                'acuan_wilayah_3tp'   => 'Perpres No. 63 Tahun 2020',
+                'versi_acuan_3tp'     => '2020-2024',
+                'status_pemeriksaan_3tp' => 'menunggu_verifikasi',
+                'dokumen_domisili'    => 'KK_Domisili_3TP.pdf',
+                'jenis_dokumen_domisili' => 'Kartu Keluarga',
+                'status_pengajuan'    => 'diajukan',
+                'hasil_verifikasi'    => 'belum_diperiksa',
+                'status_penetapan'    => 'kandidat',
+                'status_validasi'     => 'diajukan',
+                'uraian_pengajuan'    => 'Pengajuan klaim Daerah 3TP melalui PIC Ketarunaan.',
+            ],
+            [
+                // Uji UAT-12: Klaim 3TP wilayah belum terverifikasi pada acuan resmi -> Perlu Perbaikan
+                'program_beasiswa_id' => $progIds[2],
+                'nomor_taruna'        => $tarunaBatch[$bCounter + 5]['nomor_taruna'],
+                'sumber_klaim'        => 'taruna',
+                'alamat_domisili'     => 'Jl. Pandanaran No. 14',
+                'provinsi'            => 'Jawa Tengah',
+                'kabupaten_kota'      => 'Kota Semarang',
+                'kecamatan'           => 'Semarang Tengah',
+                'desa_kelurahan'      => 'Mugassari',
+                'kode_wilayah'        => '33.74',
+                'tanggal_acuan_domisili' => '2026-10-01',
+                'status_pemeriksaan_3tp' => 'acuan_belum_ada',
+                'dokumen_domisili'    => 'Domisili_Belum_Acuan.pdf',
+                'jenis_dokumen_domisili' => 'Surat Keterangan Domisili',
+                'status_pengajuan'    => 'diajukan',
+                'hasil_verifikasi'    => 'perlu_perbaikan',
+                'catatan_pemeriksa'   => 'Wilayah domisili tidak tercantum pada daftar acuan wilayah 3TP aktif.',
+                'catatan_validasi'    => 'Wilayah domisili belum tercantum pada daftar acuan resmi 3TP.',
+                'diperiksa_oleh'      => 'Tim Verifikasi Beasiswa',
+                'tanggal_pemeriksaan' => '2026-10-27',
+                'status_penetapan'    => 'kandidat',
+                'status_validasi'     => 'perlu_perbaikan',
+                'uraian_pengajuan'    => 'Pengajuan wilayah belum terverifikasi sebagai daerah 3TP.',
+            ],
+            [
+                // Uji UAT-13: Klaim Tidak Mampu dengan data ekonomi sensitif -> Perlu Perbaikan
+                'program_beasiswa_id' => $progIds[3],
+                'nomor_taruna'        => $tarunaBatch[$bCounter + 6]['nomor_taruna'],
+                'sumber_klaim'        => 'pic',
+                'pekerjaan_orang_tua' => 'Buruh Tani',
+                'penghasilan_bulanan' => 1850000,
+                'jumlah_tanggungan'   => 4,
+                'uraian_pengajuan'    => 'Keluarga bekerja sebagai buruh tani dengan 4 tanggungan anak sekolah.',
+                'dokumen_ekonomi_json' => json_encode([
+                    ['jenis_dokumen' => 'SKTM Kelurahan', 'nomor_dokumen' => 'SKTM/412/2026', 'penerbit' => 'Kelurahan Mintaragen', 'tanggal_terbit' => '2026-10-02', 'nama_berkas' => 'SKTM_Ekonomi_01.pdf'],
+                ], JSON_UNESCAPED_UNICODE),
+                'status_pengajuan'    => 'diajukan',
+                'hasil_verifikasi'    => 'perlu_perbaikan',
+                'catatan_pemeriksa'   => 'Mohon lengkapi surat keterangan penghasilan orang tua/wali.',
+                'catatan_validasi'    => 'Lampiran surat keterangan penghasilan orang tua perlu ditambahkan.',
+                'diperiksa_oleh'      => 'Tim Verifikasi Beasiswa',
+                'tanggal_pemeriksaan' => '2026-10-28',
+                'status_penetapan'    => 'kandidat',
+                'status_validasi'     => 'perlu_perbaikan',
+            ],
+        ];
+
+        foreach ($antreanBeasiswaRows as $rowAntrean) {
+            $stVal = $rowAntrean['status_validasi'];
+            $db->table('taruna_penerima_beasiswa')->insert(array_merge([
+                'tahun_akademik_id'   => $tahunAkademikId,
+                'tanggal_pengajuan'   => '2026-10-25',
+                'dicatat_oleh'        => ($rowAntrean['sumber_klaim'] === 'taruna') ? 'Taruna Pengaju' : 'PIC Ketarunaan',
+                'diajukan_oleh'       => 'PIC Ketarunaan',
+                'riwayat_proses_json' => json_encode([
+                    ['tanggal' => '2026-10-25', 'waktu' => '2026-10-25 10:00', 'pelaku' => 'PIC Ketarunaan', 'aksi' => 'Mengajukan', 'status' => $stVal, 'catatan' => $rowAntrean['uraian_pengajuan'] ?? 'Pengajuan beasiswa.'],
+                ], JSON_UNESCAPED_UNICODE),
                 'created_at'          => $now,
                 'updated_at'          => $now,
-            ]);
+            ], $rowAntrean));
         }
 
-        // 11. Perusahaan Mitra & Lowongan Aktif (8 Lowongan Aktif, 2 Segera Berakhir)
+        // Tambah 1 draf Tidak Mampu (memenuhi verifikasi, belum ditetapkan -> UAT-14) & 1 dibatalkan (tervalidasi) agar tidak menambah antrean maupun 45 ditetapkan
+        $db->table('taruna_penerima_beasiswa')->insert([
+            'program_beasiswa_id'  => $progIds[3],
+            'nomor_taruna'         => $tarunaBatch[$bCounter + 7]['nomor_taruna'],
+            'tahun_akademik_id'    => $tahunAkademikId,
+            'sumber_klaim'         => 'taruna',
+            'tanggal_pengajuan'    => '2026-10-26',
+            'dicatat_oleh'         => 'Taruna Pengaju',
+            'pekerjaan_orang_tua'  => 'Nelayan Kecil',
+            'penghasilan_bulanan'  => 1500000,
+            'jumlah_tanggungan'    => 3,
+            'uraian_pengajuan'     => 'Kondisi ekonomi keluarga nelayan kecil penghasilan tidak tetap.',
+            'dokumen_ekonomi_json' => json_encode([
+                ['jenis_dokumen' => 'SKTM Desa', 'nomor_dokumen' => 'SKTM/88/2026', 'penerbit' => 'Kepala Desa Muarareja', 'tanggal_terbit' => '2026-10-08', 'nama_berkas' => 'SKTM_Nelayan_02.pdf'],
+                ['jenis_dokumen' => 'Kartu Keluarga', 'nomor_dokumen' => '337601090012', 'penerbit' => 'Disdukcapil', 'tanggal_terbit' => '2025-05-12', 'nama_berkas' => 'KK_Ekonomi_02.pdf'],
+            ], JSON_UNESCAPED_UNICODE),
+            'status_pengajuan'     => 'diverifikasi',
+            'hasil_verifikasi'     => 'memenuhi',
+            'catatan_pemeriksa'    => 'Berkas ekonomi lengkap; belum ditetapkan sebagai penerima.',
+            'diperiksa_oleh'       => 'Tim Verifikasi Beasiswa',
+            'tanggal_pemeriksaan'  => '2026-10-28',
+            'status_penetapan'     => 'kandidat',
+            'status_validasi'      => 'draf',
+            'riwayat_proses_json'  => json_encode([
+                ['tanggal' => '2026-10-26', 'waktu' => '2026-10-26 11:00', 'pelaku' => 'PIC Ketarunaan', 'aksi' => 'Menyimpan Draf', 'status' => 'draf', 'catatan' => 'Klaim ekonomi memenuhi syarat, belum ditetapkan.'],
+            ], JSON_UNESCAPED_UNICODE),
+            'created_at'           => $now,
+            'updated_at'           => $now,
+        ]);
+
+        $db->table('taruna_penerima_beasiswa')->insert([
+            'program_beasiswa_id' => $progIds[1],
+            'nomor_taruna'        => $tarunaBatch[$bCounter + 8]['nomor_taruna'],
+            'tahun_akademik_id'   => $tahunAkademikId,
+            'sumber_klaim'        => 'pic',
+            'tanggal_pengajuan'   => '2026-09-05',
+            'dicatat_oleh'        => 'PIC Ketarunaan',
+            'nama_prestasi'       => 'Usulan Prestasi Dibatalkan',
+            'status_pengajuan'    => 'ditolak',
+            'hasil_verifikasi'    => 'tidak_memenuhi',
+            'status_penetapan'    => 'dibatalkan',
+            'tanggal_penetapan'   => '2026-09-18',
+            'nomor_keputusan'     => 'SK.BATAL/2026/01',
+            'pejabat_penetap'     => 'Direktur PKTJ',
+            'status_validasi'     => 'tervalidasi',
+            'diajukan_oleh'       => 'PIC Ketarunaan',
+            'divalidasi_oleh'     => 'Validator Unit',
+            'tanggal_validasi'    => '2026-09-18',
+            'riwayat_proses_json' => json_encode([
+                ['tanggal' => '2026-09-18', 'waktu' => '2026-09-18 15:00', 'pelaku' => 'Validator Unit', 'aksi' => 'Dibatalkan', 'status' => 'tervalidasi', 'catatan' => 'Keputusan dibatalkan karena peserta mengundurkan diri dari program.'],
+            ], JSON_UNESCAPED_UNICODE),
+            'created_at'          => $now,
+            'updated_at'          => $now,
+        ]);
+
+        // 11. Perusahaan Mitra & Lowongan Aktif (8 Lowongan Terbuka Aktif pada 2026-10-30, 2 Segera Berakhir, + skenario UAT-15/16/LOW-04)
+        $hasExtendedMitra = $db->fieldExists('kota', 'perusahaan_mitra');
+        $hasExtendedLow   = $db->fieldExists('jenjang_pendidikan', 'lowongan_pekerjaan');
+        $hasDokTable      = $db->tableExists('lowongan_dokumen');
+
         $companies = [
-            ['nama' => 'PT Kereta Api Indonesia (Persero)', 'sektor' => 'Transportasi Perkeretaapian', 'web' => 'https://kai.id'],
-            ['nama' => 'PT Transportasi Jakarta (Transjakarta)', 'sektor' => 'Transportasi Perkotaan', 'web' => 'https://transjakarta.co.id'],
-            ['nama' => 'Astra Daihatsu Motor', 'sektor' => 'Manufaktur Otomotif', 'web' => 'https://daihatsu.co.id'],
-            ['nama' => 'PT Bluebird Tbk', 'sektor' => 'Layanan Taksi & Armada', 'web' => 'https://bluebirdgroup.com'],
-            ['nama' => 'PT Hino Motors Manufacturing', 'sektor' => 'Kendaraan Niaga', 'web' => 'https://hino.co.id'],
+            [
+                'nama'       => 'PT Kereta Api Indonesia (Persero)',
+                'sektor'     => 'Transportasi Perkeretaapian',
+                'kota'       => 'Bandung / Jakarta',
+                'alamat'     => 'Jl. Perintis Kemerdekaan No. 1, Bandung',
+                'web'        => 'https://kai.id',
+                'pic'        => 'Rina Kusumawardhani',
+                'jabatan'    => 'Manajer Rekrutmen & Seleksi',
+                'email'      => 'rekrutmen@kai.id',
+                'telepon'    => '022-4230031',
+                'verified'   => 1,
+                'sumber'     => 'Konfirmasi surat resmi & panggilan telepon HRD',
+                'tgl_cek'    => '2026-10-12',
+                'catatan'    => 'Kontak HRD dan domain surel resmi telah diverifikasi.',
+            ],
+            [
+                'nama'       => 'PT Transportasi Jakarta (Transjakarta)',
+                'sektor'     => 'Transportasi Perkotaan',
+                'kota'       => 'DKI Jakarta',
+                'alamat'     => 'Jl. Mayjen Sutoyo No. 1, Cawang, Jakarta Timur',
+                'web'        => 'https://transjakarta.co.id',
+                'pic'        => 'Hendro Wibowo',
+                'jabatan'    => 'Kepala Bagian SDM',
+                'email'      => 'karir@transjakarta.co.id',
+                'telepon'    => '021-80879446',
+                'verified'   => 1,
+                'sumber'     => 'Portal karir resmi & MoU kampus',
+                'tgl_cek'    => '2026-10-14',
+                'catatan'    => 'Terdaftar sebagai mitra aktif penyelenggara rekrutmen kampus.',
+            ],
+            [
+                'nama'       => 'Astra Daihatsu Motor',
+                'sektor'     => 'Manufaktur Otomotif',
+                'kota'       => 'Jakarta Utara',
+                'alamat'     => 'Jl. Gaya Motor III No. 5, Sunter II, Jakarta Utara',
+                'web'        => 'https://daihatsu.co.id',
+                'pic'        => 'Dina Rahmawati',
+                'jabatan'    => 'Talent Acquisition Specialist',
+                'email'      => 'recruitment@daihatsu.astra.co.id',
+                'telepon'    => '021-6510300',
+                'verified'   => 1,
+                'sumber'     => 'Surel korporat & surat permohonan campus hiring',
+                'tgl_cek'    => '2026-10-15',
+                'catatan'    => 'Kontak PIC aktif dan korespondensi melalui domain Astra.',
+            ],
+            [
+                'nama'       => 'PT Bluebird Tbk',
+                'sektor'     => 'Layanan Taksi & Armada',
+                'kota'       => 'Jakarta Selatan',
+                'alamat'     => 'Jl. Mampang Prapatan Raya No. 60, Jakarta Selatan',
+                'web'        => 'https://bluebirdgroup.com',
+                'pic'        => 'Fajar Prasetya',
+                'jabatan'    => 'People Partner Fleet Operations',
+                'email'      => 'talent@bluebirdgroup.com',
+                'telepon'    => '021-7989000',
+                'verified'   => 1,
+                'sumber'     => 'Konfirmasi WhatsApp bisnis & laman karir perusahaan',
+                'tgl_cek'    => '2026-10-16',
+                'catatan'    => 'PIC rekrutmen telah dikonfirmasi.',
+            ],
+            [
+                'nama'       => 'PT Hino Motors Manufacturing',
+                'sektor'     => 'Kendaraan Niaga',
+                'kota'       => 'Purwakarta',
+                'alamat'     => 'Kawasan Industri Kota Bukit Indah Blok D1 No. 1, Purwakarta',
+                'web'        => 'https://hino.co.id',
+                'pic'        => 'Teguh Santoso',
+                'jabatan'    => 'Supervisor HR Recruitment',
+                'email'      => 'hr.recruitment@hino.co.id',
+                'telepon'    => '0264-351911',
+                'verified'   => 1,
+                'sumber'     => 'Surat undangan seleksi teknisi & konfirmasi telepon',
+                'tgl_cek'    => '2026-10-18',
+                'catatan'    => 'Rekam jejak kerja sama magang & serapan lulusan aktif.',
+            ],
+            [
+                'nama'       => 'PT Nusantara Logistik Armada',
+                'sektor'     => 'Logistik & Manajemen Armada',
+                'kota'       => 'Semarang',
+                'alamat'     => 'Kawasan Industri Candi Blok B No. 8, Semarang',
+                'web'        => 'https://nusantaralogistik.co.id',
+                'pic'        => 'Bagus Permadi',
+                'jabatan'    => 'Koordinator HR Operasional',
+                'email'      => 'hr@nusantaralogistik.co.id',
+                'telepon'    => '024-7628190',
+                'verified'   => 0,
+                'sumber'     => 'Pengajuan awal formulir mitra',
+                'tgl_cek'    => null,
+                'catatan'    => 'Menunggu konfirmasi panggilan dan pemeriksaan dokumen legalitas kontak.',
+            ],
         ];
 
         $compIds = [];
         foreach ($companies as $comp) {
-            $db->table('perusahaan_mitra')->insert([
+            $rowMitra = [
                 'nama_perusahaan' => $comp['nama'],
                 'sektor'          => $comp['sektor'],
-                'alamat'          => 'Kawasan Industri Jakarta & Sekitarnya',
+                'alamat'          => $comp['alamat'],
                 'website'         => $comp['web'],
-                'kontak_person'   => 'Divisi HRD & Rekrutmen',
-                'is_verified'     => 1,
+                'kontak_person'   => $comp['pic'],
+                'is_verified'     => $comp['verified'],
                 'created_at'      => $now,
                 'updated_at'      => $now,
-            ]);
+            ];
+            if ($hasExtendedMitra) {
+                $rowMitra = array_merge($rowMitra, [
+                    'kota'                       => $comp['kota'],
+                    'pic_jabatan'                => $comp['jabatan'],
+                    'email_rekrutmen'            => $comp['email'],
+                    'telepon_rekrutmen'          => $comp['telepon'],
+                    'sumber_verifikasi'          => $comp['sumber'],
+                    'tanggal_pemeriksaan_kontak' => $comp['tgl_cek'],
+                    'catatan_verifikasi'         => $comp['catatan'],
+                    'diperiksa_oleh'             => $comp['verified'] ? 'Validator Karir PKTJ' : null,
+                ]);
+            }
+            $db->table('perusahaan_mitra')->insert($rowMitra);
             $compIds[] = $db->insertID();
         }
 
+        $defaultChecklist = json_encode([
+            'kontak_mitra'      => true,
+            'kesesuaian_syarat' => true,
+            'kanal_dan_tenggat' => true,
+            'dokumen_sumber'    => true,
+        ], JSON_UNESCAPED_UNICODE);
+
         $vacancies = [
-            ['judul' => 'Transport Safety Officer',        'perusahaan_idx' => 0, 'tenggat' => '2026-11-04 23:59:00', 'prodi' => ['RSTJ']],
-            ['judul' => 'Fleet Maintenance Supervisor',   'perusahaan_idx' => 1, 'tenggat' => '2026-11-05 23:59:00', 'prodi' => ['TRO', 'TO']],
-            ['judul' => 'Traffic Management Analyst',     'perusahaan_idx' => 1, 'tenggat' => '2026-11-30 23:59:00', 'prodi' => ['RSTJ']],
-            ['judul' => 'Automotive Quality Inspector',   'perusahaan_idx' => 2, 'tenggat' => '2026-12-15 23:59:00', 'prodi' => ['TRO', 'TO']],
-            ['judul' => 'Vehicle Roadworthiness Engineer','perusahaan_idx' => 4, 'tenggat' => '2026-12-20 23:59:00', 'prodi' => ['TRO']],
-            ['judul' => 'Safety & Compliance Specialist', 'perusahaan_idx' => 3, 'tenggat' => '2026-12-31 23:59:00', 'prodi' => ['RSTJ']],
-            ['judul' => 'Maintenance Operations Planner', 'perusahaan_idx' => 0, 'tenggat' => '2027-01-10 23:59:00', 'prodi' => ['TRO', 'TO']],
-            ['judul' => 'Fleet Telematics Data Officer',  'perusahaan_idx' => 3, 'tenggat' => '2027-01-15 23:59:00', 'prodi' => ['RSTJ', 'TRO']],
+            // 1-8: Lowongan aktif terbuka (2 di antaranya <= 7 hari dari 2026-10-30)
+            [
+                'judul' => 'Transport Safety Officer', 'perusahaan_idx' => 0, 'jenis' => 'Tetap', 'jenjang' => 'D-IV',
+                'lokasi' => 'Bandung / Jakarta', 'tenggat' => '2026-11-04 23:59:59', 'prodi' => ['RSTJ'],
+                'kebutuhan' => 4, 'pengalaman' => 'Lulusan baru atau pengalaman 1 tahun di bidang keselamatan',
+                'sertifikasi' => 'Sertifikat K3 Umum / Keselamatan Transportasi menjadi nilai tambah',
+                'metode' => 'tautan_eksternal', 'email' => 'rekrutmen@kai.id',
+                'sumber' => 'Surat Resmi Mitra No. 114/SDM-KAI/X/2026', 'tgl_terima' => '2026-10-18',
+                'validasi' => 'tervalidasi', 'publikasi' => 'terbit', 'tgl_periksa' => '2026-10-19', 'tgl_terbit' => '2026-10-20',
+                'catatan_pemeriksa' => 'Kelengkapan dokumen, program studi sasaran, dan tautan resmi terkonfirmasi.',
+                'alasan_tutup' => null, 'tgl_tutup' => null, 'tutup_oleh' => null,
+            ],
+            [
+                'judul' => 'Fleet Maintenance Supervisor', 'perusahaan_idx' => 1, 'jenis' => 'Tetap', 'jenjang' => 'D-III / D-IV',
+                'lokasi' => 'DKI Jakarta', 'tenggat' => '2026-11-05 23:59:59', 'prodi' => ['TRO', 'TO'],
+                'kebutuhan' => 3, 'pengalaman' => 'Lulusan baru atau minimal 1 tahun inspeksi armada niaga',
+                'sertifikasi' => 'Sertifikat Penguji Kendaraan Bermotor diutamakan',
+                'metode' => 'keduanya', 'email' => 'karir@transjakarta.co.id',
+                'sumber' => 'Portal Resmi Karir Transjakarta', 'tgl_terima' => '2026-10-19',
+                'validasi' => 'tervalidasi', 'publikasi' => 'terbit', 'tgl_periksa' => '2026-10-20', 'tgl_terbit' => '2026-10-21',
+                'catatan_pemeriksa' => 'Seluruh butir pemeriksaan telah sesuai.',
+                'alasan_tutup' => null, 'tgl_tutup' => null, 'tutup_oleh' => null,
+            ],
+            [
+                'judul' => 'Traffic Management Analyst', 'perusahaan_idx' => 1, 'jenis' => 'Kontrak', 'jenjang' => 'D-IV',
+                'lokasi' => 'DKI Jakarta', 'tenggat' => '2026-11-30 23:59:59', 'prodi' => ['RSTJ'],
+                'kebutuhan' => 2, 'pengalaman' => 'Lulusan baru',
+                'sertifikasi' => 'Kemampuan pemodelan lalu lintas dan analisis data rute',
+                'metode' => 'tautan_eksternal', 'email' => 'karir@transjakarta.co.id',
+                'sumber' => 'Surat Kerja Sama Transjakarta', 'tgl_terima' => '2026-10-20',
+                'validasi' => 'tervalidasi', 'publikasi' => 'terbit', 'tgl_periksa' => '2026-10-21', 'tgl_terbit' => '2026-10-22',
+                'catatan_pemeriksa' => 'Sesuai kompetensi lulusan RSTJ.',
+                'alasan_tutup' => null, 'tgl_tutup' => null, 'tutup_oleh' => null,
+            ],
+            [
+                'judul' => 'Automotive Quality Inspector', 'perusahaan_idx' => 2, 'jenis' => 'Tetap', 'jenjang' => 'D-III / D-IV',
+                'lokasi' => 'Karawang / Jakarta Utara', 'tenggat' => '2026-12-15 23:59:59', 'prodi' => ['TRO', 'TO'],
+                'kebutuhan' => 6, 'pengalaman' => 'Lulusan baru',
+                'sertifikasi' => null,
+                'metode' => 'tautan_eksternal', 'email' => 'recruitment@daihatsu.astra.co.id',
+                'sumber' => 'Surat Permohonan Campus Hiring ADM', 'tgl_terima' => '2026-10-21',
+                'validasi' => 'tervalidasi', 'publikasi' => 'terbit', 'tgl_periksa' => '2026-10-22', 'tgl_terbit' => '2026-10-23',
+                'catatan_pemeriksa' => 'Memenuhi seluruh kriteria.',
+                'alasan_tutup' => null, 'tgl_tutup' => null, 'tutup_oleh' => null,
+            ],
+            [
+                'judul' => 'Vehicle Roadworthiness Engineer', 'perusahaan_idx' => 4, 'jenis' => 'Tetap', 'jenjang' => 'D-IV',
+                'lokasi' => 'Purwakarta, Jawa Barat', 'tenggat' => '2026-12-20 23:59:59', 'prodi' => ['TRO'],
+                'kebutuhan' => 3, 'pengalaman' => 'Pengalaman praktik bengkel kendaraan niaga',
+                'sertifikasi' => 'Kompetensi Pengujian Kendaraan Bermotor',
+                'metode' => 'keduanya', 'email' => 'hr.recruitment@hino.co.id',
+                'sumber' => 'Undangan Seleksi Hino Campus Recruitment', 'tgl_terima' => '2026-10-22',
+                'validasi' => 'tervalidasi', 'publikasi' => 'terbit', 'tgl_periksa' => '2026-10-23', 'tgl_terbit' => '2026-10-24',
+                'catatan_pemeriksa' => 'Siap ditayangkan untuk prodi TRO.',
+                'alasan_tutup' => null, 'tgl_tutup' => null, 'tutup_oleh' => null,
+            ],
+            [
+                'judul' => 'Safety & Compliance Specialist', 'perusahaan_idx' => 3, 'jenis' => 'Tetap', 'jenjang' => 'D-IV',
+                'lokasi' => 'Jakarta Selatan', 'tenggat' => '2026-12-31 23:59:59', 'prodi' => ['RSTJ'],
+                'kebutuhan' => 2, 'pengalaman' => 'Lulusan baru atau 1 tahun audit armada',
+                'sertifikasi' => 'Auditor SMKPAU (opsional)',
+                'metode' => 'email', 'email' => 'talent@bluebirdgroup.com',
+                'sumber' => 'Surel Resmi HRD Bluebird Group', 'tgl_terima' => '2026-10-23',
+                'validasi' => 'tervalidasi', 'publikasi' => 'terbit', 'tgl_periksa' => '2026-10-24', 'tgl_terbit' => '2026-10-25',
+                'catatan_pemeriksa' => 'Kanal lamaran Alamat Email aktif dan terverifikasi.',
+                'alasan_tutup' => null, 'tgl_tutup' => null, 'tutup_oleh' => null,
+            ],
+            [
+                'judul' => 'Maintenance Operations Planner', 'perusahaan_idx' => 0, 'jenis' => 'MT', 'jenjang' => 'D-III / D-IV',
+                'lokasi' => 'Bandung, Jawa Barat', 'tenggat' => '2027-01-10 23:59:59', 'prodi' => ['TRO', 'TO'],
+                'kebutuhan' => 5, 'pengalaman' => 'Lulusan baru IPK minimal 3,00',
+                'sertifikasi' => null,
+                'metode' => 'tautan_eksternal', 'email' => 'rekrutmen@kai.id',
+                'sumber' => 'Portal Rekrutmen PT KAI', 'tgl_terima' => '2026-10-25',
+                'validasi' => 'tervalidasi', 'publikasi' => 'terbit', 'tgl_periksa' => '2026-10-26', 'tgl_terbit' => '2026-10-27',
+                'catatan_pemeriksa' => 'Seluruh butir verifikasi terpenuhi.',
+                'alasan_tutup' => null, 'tgl_tutup' => null, 'tutup_oleh' => null,
+            ],
+            [
+                'judul' => 'Fleet Telematics Data Officer', 'perusahaan_idx' => 3, 'jenis' => 'Kontrak', 'jenjang' => 'D-IV',
+                'lokasi' => 'DKI Jakarta', 'tenggat' => '2027-01-15 23:59:59', 'prodi' => ['RSTJ', 'TRO'],
+                'kebutuhan' => 2, 'pengalaman' => 'Lulusan baru',
+                'sertifikasi' => 'Terbiasa dengan sistem pelacakan armada (GPS/Telematics)',
+                'metode' => 'tautan_eksternal', 'email' => 'talent@bluebirdgroup.com',
+                'sumber' => 'Poster & Surat Mitra Bluebird', 'tgl_terima' => '2026-10-26',
+                'validasi' => 'tervalidasi', 'publikasi' => 'terbit', 'tgl_periksa' => '2026-10-27', 'tgl_terbit' => '2026-10-28',
+                'catatan_pemeriksa' => 'Validasi lengkap dan siap dibuka.',
+                'alasan_tutup' => null, 'tgl_tutup' => null, 'tutup_oleh' => null,
+            ],
+            // 9: UAT-15 Tervalidasi tetapi masih berstatus publikasi draf (belum diterbitkan)
+            [
+                'judul' => 'Safety Operations Coordinator', 'perusahaan_idx' => 0, 'jenis' => 'Tetap', 'jenjang' => 'D-IV',
+                'lokasi' => 'Cirebon / Tegal', 'tenggat' => '2027-01-20 23:59:59', 'prodi' => ['RSTJ'],
+                'kebutuhan' => 2, 'pengalaman' => 'Lulusan baru',
+                'sertifikasi' => null,
+                'metode' => 'tautan_eksternal', 'email' => 'rekrutmen@kai.id',
+                'sumber' => 'Surat Pengantar Mitra No. 132/SDM-KAI/X/2026', 'tgl_terima' => '2026-10-27',
+                'validasi' => 'tervalidasi', 'publikasi' => 'draf', 'tgl_periksa' => '2026-10-28', 'tgl_terbit' => null,
+                'catatan_pemeriksa' => 'Sudah tervalidasi dan menunggu jadwal penerbitan resmi oleh staf karir.',
+                'alasan_tutup' => null, 'tgl_tutup' => null, 'tutup_oleh' => null,
+            ],
+            // 10: LOW-04 Perusahaan belum diperiksa & lowongan berstatus diajukan (menunggu verifikasi)
+            [
+                'judul' => 'Fleet Dispatch Analyst', 'perusahaan_idx' => 5, 'jenis' => 'Kontrak', 'jenjang' => 'D-III / D-IV',
+                'lokasi' => 'Semarang, Jawa Tengah', 'tenggat' => '2027-01-25 23:59:59', 'prodi' => ['RSTJ', 'TO'],
+                'kebutuhan' => 3, 'pengalaman' => 'Lulusan baru',
+                'sertifikasi' => null,
+                'metode' => 'email', 'email' => 'hr@nusantaralogistik.co.id',
+                'sumber' => 'Surel pengajuan mitra baru', 'tgl_terima' => '2026-10-29',
+                'validasi' => 'diajukan', 'publikasi' => 'draf', 'tgl_periksa' => null, 'tgl_terbit' => null,
+                'catatan_pemeriksa' => null,
+                'alasan_tutup' => null, 'tgl_tutup' => null, 'tutup_oleh' => null,
+            ],
+            // 11: UAT-16 Berakhir otomatis karena melewati batas_pendaftaran sebelum 2026-10-30
+            [
+                'judul' => 'Junior Road Inspector', 'perusahaan_idx' => 1, 'jenis' => 'Magang', 'jenjang' => 'D-IV',
+                'lokasi' => 'DKI Jakarta', 'tenggat' => '2026-10-20 23:59:59', 'prodi' => ['RSTJ'],
+                'kebutuhan' => 4, 'pengalaman' => 'Taruna tingkat akhir / lulusan baru',
+                'sertifikasi' => null,
+                'metode' => 'tautan_eksternal', 'email' => 'karir@transjakarta.co.id',
+                'sumber' => 'Portal Resmi Karir Transjakarta', 'tgl_terima' => '2026-10-01',
+                'validasi' => 'tervalidasi', 'publikasi' => 'terbit', 'tgl_periksa' => '2026-10-02', 'tgl_terbit' => '2026-10-03',
+                'catatan_pemeriksa' => 'Sudah selesai masa pendaftarannya pada 20 Oktober 2026.',
+                'alasan_tutup' => null, 'tgl_tutup' => null, 'tutup_oleh' => null,
+            ],
+            // 12: UAT-16 Ditutup manual dengan alasan sebelum tenggat selesai
+            [
+                'judul' => 'Chassis Quality Auditor', 'perusahaan_idx' => 4, 'jenis' => 'Tetap', 'jenjang' => 'D-III',
+                'lokasi' => 'Purwakarta', 'tenggat' => '2026-12-10 23:59:59', 'prodi' => ['TO'],
+                'kebutuhan' => 2, 'pengalaman' => 'Lulusan baru',
+                'sertifikasi' => null,
+                'metode' => 'tautan_eksternal', 'email' => 'hr.recruitment@hino.co.id',
+                'sumber' => 'Surat Mitra Hino', 'tgl_terima' => '2026-10-05',
+                'validasi' => 'tervalidasi', 'publikasi' => 'ditutup', 'tgl_periksa' => '2026-10-06', 'tgl_terbit' => '2026-10-07',
+                'catatan_pemeriksa' => 'Disetujui untuk program studi Teknologi Otomotif.',
+                'alasan_tutup' => 'Kuota pelamar telah terpenuhi', 'tgl_tutup' => '2026-10-25', 'tutup_oleh' => 'PIC Karir & Alumni',
+            ],
+            // 13: Perlu perbaikan
+            [
+                'judul' => 'Automotive Diagnostic Technician', 'perusahaan_idx' => 2, 'jenis' => 'Tetap', 'jenjang' => 'D-III / D-IV',
+                'lokasi' => 'Jakarta Utara', 'tenggat' => '2027-01-28 23:59:59', 'prodi' => ['TRO', 'TO'],
+                'kebutuhan' => 4, 'pengalaman' => 'Lulusan baru',
+                'sertifikasi' => null,
+                'metode' => 'tautan_eksternal', 'email' => 'recruitment@daihatsu.astra.co.id',
+                'sumber' => 'Pesan singkat informasi posisi', 'tgl_terima' => '2026-10-28',
+                'validasi' => 'perlu_perbaikan', 'publikasi' => 'draf', 'tgl_periksa' => '2026-10-29', 'tgl_terbit' => null,
+                'catatan_pemeriksa' => 'Lampirkan surat resmi perusahaan atau poster rekrutmen agar sumber lowongan dapat diverifikasi.',
+                'alasan_tutup' => null, 'tgl_tutup' => null, 'tutup_oleh' => null,
+            ],
         ];
 
-        foreach ($vacancies as $vac) {
-            $db->table('lowongan_pekerjaan')->insert([
+        foreach ($vacancies as $vIdx => $vac) {
+            $riwayat = [
+                [
+                    'tanggal' => $vac['tgl_terima'],
+                    'pelaku'  => 'PIC Karir & Alumni',
+                    'aksi'    => 'Dicatat & Diajukan',
+                    'status'  => 'diajukan',
+                    'catatan' => 'Pengajuan lowongan beserta rincian kanal lamaran dikirim ke pemeriksa.',
+                ],
+            ];
+            if ($vac['validasi'] === 'tervalidasi') {
+                $riwayat[] = [
+                    'tanggal' => $vac['tgl_periksa'],
+                    'pelaku'  => 'Validator Karir PKTJ',
+                    'aksi'    => 'Divalidasi',
+                    'status'  => 'tervalidasi',
+                    'catatan' => $vac['catatan_pemeriksa'] ?? 'Kelengkapan lowongan dinyatakan valid.',
+                ];
+            } elseif ($vac['validasi'] === 'perlu_perbaikan') {
+                $riwayat[] = [
+                    'tanggal' => $vac['tgl_periksa'],
+                    'pelaku'  => 'Validator Karir PKTJ',
+                    'aksi'    => 'Dikembalikan',
+                    'status'  => 'perlu_perbaikan',
+                    'catatan' => $vac['catatan_pemeriksa'] ?? 'Membutuhkan kelengkapan dokumen pendukung.',
+                ];
+            }
+            if (!empty($vac['tgl_terbit'])) {
+                $riwayat[] = [
+                    'tanggal' => $vac['tgl_terbit'],
+                    'pelaku'  => 'PIC Karir & Alumni',
+                    'aksi'    => 'Diterbitkan',
+                    'status'  => 'terbit',
+                    'catatan' => 'Lowongan ditayangkan pada direktori karir dan alumni.',
+                ];
+            }
+            if (!empty($vac['tgl_tutup'])) {
+                $riwayat[] = [
+                    'tanggal' => $vac['tgl_tutup'],
+                    'pelaku'  => $vac['tutup_oleh'] ?? 'PIC Karir & Alumni',
+                    'aksi'    => 'Ditutup Manual',
+                    'status'  => 'ditutup',
+                    'catatan' => $vac['alasan_tutup'] ?? 'Penutupan manual oleh pengelola.',
+                ];
+            }
+
+            $tautan = $vac['metode'] === 'email'
+                ? ''
+                : 'https://karir.mitra-transportasi.go.id/apply/' . url_title($vac['judul'], '-', true);
+
+            $rowLow = [
                 'perusahaan_id'      => $compIds[$vac['perusahaan_idx']],
                 'judul_lowongan'     => $vac['judul'],
-                'jenis_pekerjaan'    => 'Tetap',
-                'lokasi'             => 'DKI Jakarta / Jawa Barat',
-                'deskripsi'          => 'Tanggung jawab mencakup kepatuhan standar keselamatan kerja armada, audit kelaikan operasional, dan kepatuhan regulasi jalan.',
-                'persyaratan'        => 'Lulusan D-III / D-IV PKTJ, memahami regulasi keselamatan transportasi, sehat jasmani.',
+                'jenis_pekerjaan'    => $vac['jenis'],
+                'lokasi'             => $vac['lokasi'],
+                'deskripsi'          => 'Tanggung jawab mencakup kepatuhan standar keselamatan kerja armada, audit kelaikan operasional, koordinasi pemeliharaan, dan kepatuhan regulasi transportasi jalan.',
+                'persyaratan'        => 'Lulusan ' . $vac['jenjang'] . ' PKTJ Tegal, memahami regulasi keselamatan transportasi darat, sehat jasmani dan rohani.',
                 'batas_pendaftaran'  => $vac['tenggat'],
-                'tautan_pendaftaran' => 'https://karir.mitra-transportasi.go.id/apply/' . url_title($vac['judul'], '-', true),
-                'status_publikasi'   => 'terbit',
-                'status_validasi'    => 'tervalidasi',
+                'tautan_pendaftaran' => $tautan,
+                'status_publikasi'   => $vac['publikasi'],
+                'status_validasi'    => $vac['validasi'],
                 'created_at'         => $now,
                 'updated_at'         => $now,
-            ]);
+            ];
+
+            if ($hasExtendedLow) {
+                $rowLow = array_merge($rowLow, [
+                    'jenjang_pendidikan'        => $vac['jenjang'],
+                    'tahun_lulus_sasaran'       => '2024 - 2026',
+                    'jumlah_kebutuhan'          => $vac['kebutuhan'],
+                    'pengalaman_minimum'        => $vac['pengalaman'],
+                    'sertifikasi_opsional'      => $vac['sertifikasi'],
+                    'metode_lamaran'            => $vac['metode'],
+                    'email_lamaran'             => $vac['email'],
+                    'sumber_informasi'          => $vac['sumber'],
+                    'tanggal_diterima'          => $vac['tgl_terima'],
+                    'pic_pengelola'             => 'PIC Karir & Alumni',
+                    'catatan_sumber'            => 'Diterima melalui korespondensi resmi mitra industri dan diperiksa silang dengan kontak HRD.',
+                    'checklist_verifikasi_json' => $vac['validasi'] === 'tervalidasi' ? $defaultChecklist : null,
+                    'catatan_pemeriksa'         => $vac['catatan_pemeriksa'],
+                    'diajukan_oleh'             => 'PIC Karir & Alumni',
+                    'diperiksa_oleh'            => $vac['tgl_periksa'] ? 'Validator Karir PKTJ' : null,
+                    'tanggal_pemeriksaan'       => $vac['tgl_periksa'],
+                    'dipublikasi_oleh'          => $vac['tgl_terbit'] ? 'PIC Karir & Alumni' : null,
+                    'tanggal_publikasi'         => $vac['tgl_terbit'],
+                    'alasan_penutupan'          => $vac['alasan_tutup'],
+                    'ditutup_oleh'              => $vac['tutup_oleh'],
+                    'tanggal_ditutup'           => $vac['tgl_tutup'],
+                    'riwayat_proses_json'       => json_encode($riwayat, JSON_UNESCAPED_UNICODE),
+                ]);
+            }
+
+            $db->table('lowongan_pekerjaan')->insert($rowLow);
             $lowonganId = $db->insertID();
 
             foreach ($vac['prodi'] as $kp) {
@@ -974,6 +1934,78 @@ class Ecc2SimulasiSeeder extends Seeder
                         'created_at'       => $now,
                     ]);
                 }
+            }
+
+            if ($hasDokTable) {
+                $statusDok = $vac['validasi'] === 'tervalidasi' ? 'sesuai' : ($vac['validasi'] === 'perlu_perbaikan' ? 'perlu_perbaikan' : 'belum_diperiksa');
+                $compName  = $companies[$vac['perusahaan_idx']]['nama'];
+                $compWeb   = $companies[$vac['perusahaan_idx']]['web'];
+
+                $docs = [
+                    [
+                        'lowongan_id'        => $lowonganId,
+                        'kategori_dokumen'   => 'surat_perusahaan',
+                        'judul_dokumen'      => 'Surat Permohonan Rekrutmen ' . $compName,
+                        'sumber_dokumen'     => 'HRD ' . $compName,
+                        'nama_berkas'        => null,
+                        'url_sumber'         => null,
+                        'tanggal_diterima'   => $vac['tgl_terima'],
+                        'status_pemeriksaan' => $statusDok,
+                        'is_internal'        => 1,
+                        'catatan'            => 'Dokumen pengantar resmi mitra industri (khusus staf internal).',
+                        'diunggah_oleh'      => 'PIC Karir & Alumni',
+                        'created_at'         => $now,
+                        'updated_at'         => $now,
+                    ],
+                    [
+                        'lowongan_id'        => $lowonganId,
+                        'kategori_dokumen'   => 'tautan_sumber',
+                        'judul_dokumen'      => 'Tautan Sumber Portal Karir Mitra',
+                        'sumber_dokumen'     => 'Situs Resmi Perusahaan',
+                        'nama_berkas'        => null,
+                        'url_sumber'         => $compWeb . '/karir/' . url_title($vac['judul'], '-', true),
+                        'tanggal_diterima'   => $vac['tgl_terima'],
+                        'status_pemeriksaan' => $statusDok,
+                        'is_internal'        => 1,
+                        'catatan'            => 'Rujukan pemeriksaan keaslian lowongan pada kanal resmi perusahaan.',
+                        'diunggah_oleh'      => 'PIC Karir & Alumni',
+                        'created_at'         => $now,
+                        'updated_at'         => $now,
+                    ],
+                ];
+                if ($vIdx % 2 === 0 && $vac['validasi'] !== 'perlu_perbaikan') {
+                    $docs[] = [
+                        'lowongan_id'        => $lowonganId,
+                        'kategori_dokumen'   => 'poster_rekrutmen',
+                        'judul_dokumen'      => 'Poster Informasi Lowongan ' . $vac['judul'],
+                        'sumber_dokumen'     => 'Humas & Rekrutmen Mitra',
+                        'nama_berkas'        => null,
+                        'url_sumber'         => null,
+                        'tanggal_diterima'   => $vac['tgl_terima'],
+                        'status_pemeriksaan' => $statusDok,
+                        'is_internal'        => 0,
+                        'catatan'            => 'Materi publikasi resmi untuk taruna tingkat akhir dan alumni.',
+                        'diunggah_oleh'      => 'PIC Karir & Alumni',
+                        'created_at'         => $now,
+                        'updated_at'         => $now,
+                    ];
+                    $docs[] = [
+                        'lowongan_id'        => $lowonganId,
+                        'kategori_dokumen'   => 'bukti_konfirmasi',
+                        'judul_dokumen'      => 'Catatan Konfirmasi Kontak HRD',
+                        'sumber_dokumen'     => 'Telepon & Surel Resmi PIC',
+                        'nama_berkas'        => null,
+                        'url_sumber'         => null,
+                        'tanggal_diterima'   => $vac['tgl_terima'],
+                        'status_pemeriksaan' => $statusDok,
+                        'is_internal'        => 1,
+                        'catatan'            => 'Konfirmasi langsung dengan PIC perusahaan (tidak dipublikasikan ke alumni/taruna).',
+                        'diunggah_oleh'      => 'Validator Karir PKTJ',
+                        'created_at'         => $now,
+                        'updated_at'         => $now,
+                    ];
+                }
+                $db->table('lowongan_dokumen')->insertBatch($docs);
             }
         }
 
@@ -1183,6 +2215,11 @@ class Ecc2SimulasiSeeder extends Seeder
 
             foreach (array_chunk($capaianBatch, 100) as $chunk) {
                 $db->table('taruna_capaian')->insertBatch($chunk);
+            }
+        }
+        if (!empty($alumniRiwayatBatch) && $db->tableExists('alumni_riwayat_perubahan')) {
+            foreach (array_chunk($alumniRiwayatBatch, 100) as $chunk) {
+                $db->table('alumni_riwayat_perubahan')->insertBatch($chunk);
             }
         }
     }

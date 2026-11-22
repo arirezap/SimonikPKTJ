@@ -8,6 +8,10 @@ class DashboardController extends BaseController
 {
     public function index()
     {
+        if (\App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfAccountOnly()) {
+            return redirect()->to(\App\Libraries\Ketarunaan\KetarunaanPolicy::getSelfPortalUrl());
+        }
+
         $role = session()->get('role');
         $adminRoles = ['admin', 'direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'spm', 'kepegawaian'];
         
