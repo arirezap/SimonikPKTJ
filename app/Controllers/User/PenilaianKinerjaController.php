@@ -35,7 +35,7 @@ class PenilaianKinerjaController extends BaseController
             }
         }
 
-        $currentUser = $userModel->find($userId);
+        $currentUser = $userModel->select('id, nama_lengkap, nip, username, role, unit, status_pegawai, tmt_selesai, atasan_id')->find($userId);
         if (!$currentUser) {
             return redirect()->to(site_url('login'))->with('error', 'Sesi telah berakhir. Silakan masuk kembali.');
         }
@@ -289,7 +289,8 @@ class PenilaianKinerjaController extends BaseController
             'daftar_unit' => $daftarUnit,
             'unit_kerja_terpilih' => $unitKerjaTerpilih,
             'is_target_staf_disetujui' => $isTargetStafDisetujui,
-            'target_staf_unapproved_count' => $targetStafBelumDisetujuiCount
+            'target_staf_unapproved_count' => $targetStafBelumDisetujuiCount,
+            'can_evaluate_self' => PenilaianKinerjaPolicy::canEvaluateSelf($currentUser)
         ];
 
         return view('user/penilaian_kinerja/index', $data);
@@ -435,7 +436,7 @@ class PenilaianKinerjaController extends BaseController
             }
         }
 
-        $currentUser = $userModel->find($userId);
+        $currentUser = $userModel->select('id, nama_lengkap, nip, username, role, unit, status_pegawai, tmt_selesai, atasan_id')->find($userId);
         if (!$currentUser) {
             return redirect()->to(site_url('login'))->with('error', 'Sesi telah berakhir. Silakan masuk kembali.');
         }
@@ -482,7 +483,7 @@ class PenilaianKinerjaController extends BaseController
             $targetUserId = (int)$userId;
             $targetUserRecord = $currentUser;
         } else {
-            $stafUser = $userModel->find($stafPostId);
+            $stafUser = $userModel->select('id, nama_lengkap, nip, username, role, unit, status_pegawai, tmt_selesai, atasan_id')->find($stafPostId);
             if (!$stafUser) {
                 return redirect()->back()->with('error', 'Staf tidak ditemukan.');
             }

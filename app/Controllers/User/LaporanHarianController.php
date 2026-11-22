@@ -242,7 +242,7 @@ class LaporanHarianController extends BaseController
                                               ->findAll();
             } else {
                 $stafIdTerpilih = '';
-                session()->remove('laporan_staf_id');
+                session()->remove('laporan_harian_staf_id');
             }
         }
 
@@ -651,18 +651,18 @@ class LaporanHarianController extends BaseController
                 return redirect()->back()->withInput()->with('error', $msg);
             }
 
-            // Validasi angka target (desimal koma Indonesia & batas kapasitas)
+            // Validasi angka target (desimal koma Indonesia & kapasitas hingga ratusan triliun)
             $targetValNum = null;
             if ($targetStr !== '') {
                 $targetNormalized = str_replace(',', '.', $targetStr);
-                if (!is_numeric($targetNormalized) || !is_finite((float)$targetNormalized) || (float)$targetNormalized <= 0 || (float)$targetNormalized >= 10000000) {
-                    $msg = "Nilai target pada baris ke-{$rowNumber} harus berupa angka positif yang valid.";
+                if (!is_numeric($targetNormalized) || !is_finite((float)$targetNormalized) || (float)$targetNormalized <= 0 || (float)$targetNormalized >= 1000000000000000) {
+                    $msg = "Nilai target pada baris ke-{$rowNumber} harus berupa angka positif yang sah (maksimal di bawah 1.000 triliun).";
                     if ($this->request->isAJAX()) {
                         return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
                     }
                     return redirect()->back()->withInput()->with('error', $msg);
                 }
-                $targetValNum = round((float)$targetNormalized, 2);
+                $targetValNum = round((float)$targetNormalized, 4);
             }
 
             // Validasi kelengkapan jika aksi bukan draf (Simpan & Kirim wajib lengkap)
@@ -1367,14 +1367,14 @@ class LaporanHarianController extends BaseController
             ]);
         }
 
-        $stafId = $this->request->getPost('staf_id') ?? $this->request->getPost('target_user_id');
-        $bulan  = $this->request->getPost('bulan');
-        $tahun  = $this->request->getPost('tahun');
+        $stafId = (int)($this->request->getPost('staf_id') ?? $this->request->getPost('target_user_id'));
+        $bulan  = (int)$this->request->getPost('bulan');
+        $tahun  = (int)$this->request->getPost('tahun');
 
-        if (!$stafId || !$bulan || !$tahun) {
+        if ($stafId <= 0 || $bulan < 1 || $bulan > 12 || $tahun < 2020 || $tahun > 2099) {
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Parameter tidak lengkap (staf_id, bulan, dan tahun diperlukan).',
+                'message' => 'Data pegawai atau periode tidak valid.',
                 'csrf_hash' => csrf_hash()
             ]);
         }
@@ -1382,7 +1382,7 @@ class LaporanHarianController extends BaseController
         $laporanModel = new TargetKinerja();
         $userModel    = new User();
 
-        $targetUser = $userModel->find($stafId);
+        $targetUser = $userModel->select('id, nama_lengkap, nip, username, role, unit, atasan_id')->find($stafId);
         if (!$targetUser) {
             return $this->response->setJSON([
                 'success' => false,

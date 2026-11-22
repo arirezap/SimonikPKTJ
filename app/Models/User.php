@@ -43,6 +43,28 @@ class User extends Model
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
+    protected $beforeInsert = ['trimIdentityFields'];
+    protected $beforeUpdate = ['trimIdentityFields'];
+
+    /**
+     * Membersihkan spasi/whitespace di awal dan akhir pada kolom identitas sebelum disimpan ke basis data.
+     */
+    protected function trimIdentityFields(array $data): array
+    {
+        if (!isset($data['data']) || !is_array($data['data'])) {
+            return $data;
+        }
+
+        foreach (['nama_lengkap', 'username', 'email', 'nip', 'jabatan', 'pangkat', 'unit'] as $field) {
+            if (array_key_exists($field, $data['data']) && is_string($data['data'][$field])) {
+                $cleaned = preg_replace('/^[\s\p{Z}\x{200B}\x{FEFF}]+|[\s\p{Z}\x{200B}\x{FEFF}]+$/u', '', $data['data'][$field]);
+                $data['data'][$field] = $cleaned ?? trim($data['data'][$field]);
+            }
+        }
+
+        return $data;
+    }
+
     /**
      * Mengecualikan akun layanan mandiri (taruna & alumni) dari kueri data pegawai/unit kerja ECC Kinerja.
      */

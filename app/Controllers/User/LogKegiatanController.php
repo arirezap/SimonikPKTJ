@@ -20,16 +20,24 @@ class LogKegiatanController extends BaseController
 
         $userId = session()->get('id') ?? session()->get('user_id');
         $userModel = new User();
-        $currentUser = $userModel->find($userId);
-        
-        // Ambil parameter tanggal dari GET atau POST, sinkronkan ke session
-        $reqTanggal = $this->request->getVar('tanggal');
-        if (!empty($reqTanggal) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $reqTanggal)) {
+        $currentUser = $userModel->select('id, nama_lengkap, nip, username, role, unit, status_pegawai, tmt_selesai, dispensasi_lampau_sampai, atasan_id')->find($userId);
+
+        // Ambil parameter tanggal dari GET atau POST, validasi tanggal kalender strict, sinkronkan ke session
+        $isValidDateYmd = static function (?string $val): bool {
+            if (!is_string($val) || $val === '') {
+                return false;
+            }
+            $dt = \DateTimeImmutable::createFromFormat('Y-m-d', $val);
+            return $dt !== false && $dt->format('Y-m-d') === $val;
+        };
+
+        $reqTanggal = trim((string) ($this->request->getVar('tanggal') ?? ''));
+        if ($isValidDateYmd($reqTanggal)) {
             session()->set('log_kegiatan_tanggal', $reqTanggal);
             $tanggalTerpilih = $reqTanggal;
         } else {
-            $sessTanggal = session()->get('log_kegiatan_tanggal');
-            if (!empty($sessTanggal) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $sessTanggal)) {
+            $sessTanggal = trim((string) (session()->get('log_kegiatan_tanggal') ?? ''));
+            if ($isValidDateYmd($sessTanggal)) {
                 $tanggalTerpilih = $sessTanggal;
             } else {
                 $tanggalTerpilih = date('Y-m-d');
@@ -240,9 +248,9 @@ class LogKegiatanController extends BaseController
     public function store()
     {
         $userId = session()->get('id') ?? session()->get('user_id');
-        $tanggal = $this->request->getPost('tanggal');
+        $tanggal = trim((string) ($this->request->getPost('tanggal') ?? ''));
         $userModel = new User();
-        $currentUser = $userModel->find($userId);
+        $currentUser = $userModel->select('id, nama_lengkap, nip, username, role, unit, status_pegawai, tmt_selesai, dispensasi_lampau_sampai, atasan_id')->find($userId);
         $isDirektur = ($currentUser && $currentUser['role'] === 'direktur');
 
         $isDraft = $this->request->isAJAX() || $this->request->getPost('action') === 'draft';
@@ -546,8 +554,8 @@ class LogKegiatanController extends BaseController
                         }
                         return redirect()->back()->with('error', $msg);
                     }
-                    if ($capaianStr === '' || !is_numeric($capaianValNum) || (float)$capaianValNum <= 0) {
-                        $msg = 'Jumlah capaian kegiatan baris ' . ($index + 1) . ' harus lebih dari 0.';
+                    if ($capaianStr === '' || !is_numeric($capaianValNum) || !is_finite((float)$capaianValNum) || (float)$capaianValNum <= 0 || (float)$capaianValNum >= 1000000000000000) {
+                        $msg = 'Jumlah capaian kegiatan baris ' . ($index + 1) . ' harus lebih dari 0 dan di bawah 1.000 triliun.';
                         if ($this->request->isAJAX()) {
                             return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
                         }
@@ -562,7 +570,7 @@ class LogKegiatanController extends BaseController
                     }
                 } else {
                     // Mode Draf: simpan draf dengan capaian 0 jika belum diisi, jangan dilewati agar tidak hilang
-                    if ($capaianStr === '' || !is_numeric($capaianValNum) || (float)$capaianValNum < 0) {
+                    if ($capaianStr === '' || !is_numeric($capaianValNum) || !is_finite((float)$capaianValNum) || (float)$capaianValNum < 0 || (float)$capaianValNum >= 1000000000000000) {
                         $capaianValNum = 0.0;
                     }
                 }
@@ -654,8 +662,8 @@ class LogKegiatanController extends BaseController
                 }
 
                 if (!$isDraft) {
-                    if ($capaianStrTmb === '' || !is_numeric($capaianValNumTmb) || (float)$capaianValNumTmb <= 0) {
-                        $msg = 'Jumlah capaian tugas tambahan baris ' . ($index + 1) . ' harus lebih dari 0.';
+                    if ($capaianStrTmb === '' || !is_numeric($capaianValNumTmb) || !is_finite((float)$capaianValNumTmb) || (float)$capaianValNumTmb <= 0 || (float)$capaianValNumTmb >= 1000000000000000) {
+                        $msg = 'Jumlah capaian tugas tambahan baris ' . ($index + 1) . ' harus lebih dari 0 dan di bawah 1.000 triliun.';
                         if ($this->request->isAJAX()) {
                             return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
                         }
@@ -669,7 +677,7 @@ class LogKegiatanController extends BaseController
                         return redirect()->back()->with('error', $msg);
                     }
                 } else {
-                    if ($capaianStrTmb === '' || !is_numeric($capaianValNumTmb) || (float)$capaianValNumTmb < 0) {
+                    if ($capaianStrTmb === '' || !is_numeric($capaianValNumTmb) || !is_finite((float)$capaianValNumTmb) || (float)$capaianValNumTmb < 0 || (float)$capaianValNumTmb >= 1000000000000000) {
                         $capaianValNumTmb = 0.0;
                     }
                 }
@@ -820,7 +828,7 @@ class LogKegiatanController extends BaseController
             $row = $logModel->find($id);
             if ($row && ($row['user_id'] == $userId || hasRole('admin'))) {
                 $userModel = new User();
-                $currentUser = $userModel->find($userId);
+                $currentUser = $userModel->select('id, nama_lengkap, nip, username, role, unit, status_pegawai, tmt_selesai, dispensasi_lampau_sampai, atasan_id')->find($userId);
                 $isRowDraft = isset($row['status']) && $row['status'] === 'draft';
                 $isRevision = $isRowDraft && ($row['tanggal_kegiatan'] <= date('Y-m-d'));
                 $lockCheck = $this->checkDateLockStatus($row['tanggal_kegiatan'], $currentUser, $isRowDraft, $isRevision);
@@ -863,9 +871,17 @@ class LogKegiatanController extends BaseController
 
         $logTambahanModel = new LogTugasTambahan();
         $logModel = new LogKegiatanHarian();
-        $tanggal = $this->request->getPost('tanggal');
+        $tanggal = trim((string) $this->request->getPost('tanggal'));
+        $dtCheck = \DateTimeImmutable::createFromFormat('Y-m-d', $tanggal);
+        if (!$dtCheck || $dtCheck->format('Y-m-d') !== $tanggal) {
+            $msg = 'Format tanggal tidak valid.';
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
+            }
+            return redirect()->back()->with('error', $msg);
+        }
         $userModel = new User();
-        $currentUser = $userModel->find($userId);
+        $currentUser = $userModel->select('id, nama_lengkap, nip, username, role, unit, status_pegawai, tmt_selesai, dispensasi_lampau_sampai, atasan_id')->find($userId);
         $isDirektur = ($currentUser && $currentUser['role'] === 'direktur');
 
         $existingPokok = $logModel->where('user_id', $userId)->where('tanggal_kegiatan', $tanggal)->findAll();
@@ -1021,8 +1037,8 @@ class LogKegiatanController extends BaseController
 
                 // LKH-03 & LKH-04: Validasi capaian dan link bukti untuk tugas tambahan
                 if (!$isDraft) {
-                    if ($capaianStrTmb === '' || !is_numeric($capaianValNumTmb) || (float)$capaianValNumTmb <= 0) {
-                        $msg = 'Jumlah capaian tugas tambahan baris ' . ($index + 1) . ' harus lebih dari 0.';
+                    if ($capaianStrTmb === '' || !is_numeric($capaianValNumTmb) || !is_finite((float)$capaianValNumTmb) || (float)$capaianValNumTmb <= 0 || (float)$capaianValNumTmb >= 1000000000000000) {
+                        $msg = 'Jumlah capaian tugas tambahan baris ' . ($index + 1) . ' harus lebih dari 0 dan di bawah 1.000 triliun.';
                         if ($this->request->isAJAX()) {
                             return $this->response->setJSON(['success' => false, 'message' => $msg, 'csrf_hash' => csrf_hash()]);
                         }
@@ -1036,7 +1052,7 @@ class LogKegiatanController extends BaseController
                         return redirect()->back()->with('error', $msg);
                     }
                 } else {
-                    if ($capaianStrTmb === '' || !is_numeric($capaianValNumTmb) || (float)$capaianValNumTmb < 0) {
+                    if ($capaianStrTmb === '' || !is_numeric($capaianValNumTmb) || !is_finite((float)$capaianValNumTmb) || (float)$capaianValNumTmb < 0 || (float)$capaianValNumTmb >= 1000000000000000) {
                         $capaianValNumTmb = 0.0;
                     }
                 }
@@ -1130,7 +1146,7 @@ class LogKegiatanController extends BaseController
             $row = $logTambahanModel->find($id);
             if ($row && ($row['user_id'] == $userId || hasRole('admin'))) {
                 $userModel = new User();
-                $currentUser = $userModel->find($userId);
+                $currentUser = $userModel->select('id, nama_lengkap, nip, username, role, unit, status_pegawai, tmt_selesai, dispensasi_lampau_sampai, atasan_id')->find($userId);
                 $isRowDraft = isset($row['status']) && $row['status'] === 'draft';
                 $isRevision = $isRowDraft && ($row['tanggal_kegiatan'] <= date('Y-m-d'));
                 $lockCheck = $this->checkDateLockStatus($row['tanggal_kegiatan'], $currentUser, $isRowDraft, $isRevision);
@@ -1173,8 +1189,9 @@ class LogKegiatanController extends BaseController
         $logModel        = new LogKegiatanHarian();
         $logTambahanModel = new LogTugasTambahan();
         $userModel       = new User();
+        $selectUserCols  = 'id, nama_lengkap, nip, username, role, unit, status_pegawai, tmt_selesai, dispensasi_lampau_sampai, atasan_id';
 
-        $currentUser = $userModel->find($currentUserId);
+        $currentUser = $userModel->select($selectUserCols)->find($currentUserId);
         if (!$currentUser) {
             return $this->response->setJSON([
                 'success' => false,
@@ -1184,7 +1201,7 @@ class LogKegiatanController extends BaseController
         }
 
         // Verifikasi staf yang akan dibuka kuncinya
-        $targetUser = $userModel->find($targetUserId);
+        $targetUser = $userModel->select($selectUserCols)->find($targetUserId);
         if (!$targetUser) {
             return $this->response->setJSON([
                 'success' => false,

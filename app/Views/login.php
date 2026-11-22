@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=1.5.' . filemtime(FCPATH . 'assets/css/style.css')) ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=2.0.' . filemtime(FCPATH . 'assets/css/style.css')) ?>">
     <style>
         body.login-page {
             background-color: #f1f5f9;
@@ -310,7 +310,7 @@
                 </form>
 
                 <div class="text-center mt-3 pt-1">
-                    <p class="text-muted mb-0" style="font-size: 0.75rem; color: #64748b;">&copy; <?= date("Y"); ?> Evidence Command Center (ECC) &bull; PKTJ Tegal &bull; <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5" style="font-size: 0.7rem; font-variant-numeric: tabular-nums;">v 1.5</span></p>
+                    <p class="text-muted mb-0" style="font-size: 0.75rem; color: #64748b;">&copy; <?= date("Y"); ?> Evidence Command Center (ECC) &bull; PKTJ Tegal &bull; <span class="badge bg-light text-secondary border rounded-pill px-2 py-1" style="font-size: 0.75rem; font-variant-numeric: tabular-nums;">v 2.0</span></p>
                 </div>
             </div>
             

@@ -232,7 +232,6 @@ class DashboardKepegawaian extends BaseController
         $role    = strtolower(trim($u['role'] ?? ''));
         $jabatan = strtolower(trim($u['jabatan'] ?? ''));
         $unit    = strtolower(trim($u['unit'] ?? ''));
-        $nama    = strtolower(trim($u['nama_lengkap'] ?? ''));
 
         // Tier 1: Direktur
         if ($role === 'direktur' || $jabatan === 'direktur' || (strpos($jabatan, 'direktur') === 0 && strpos($jabatan, 'wakil') === false) || $unit === 'direktur') {
@@ -240,17 +239,17 @@ class DashboardKepegawaian extends BaseController
         }
 
         // Tier 2: Wakil Direktur 1
-        if (strpos($jabatan, 'wakil direktur 1') !== false || strpos($jabatan, 'wadir 1') !== false || strpos($unit, 'wakil direktur 1') !== false || strpos($nama, 'edi purwanto') !== false) {
+        if (strpos($jabatan, 'wakil direktur 1') !== false || strpos($jabatan, 'wadir 1') !== false || strpos($unit, 'wakil direktur 1') !== false) {
             return 200;
         }
 
         // Tier 3: Wakil Direktur 2
-        if (strpos($jabatan, 'wakil direktur 2') !== false || strpos($jabatan, 'wadir 2') !== false || strpos($unit, 'wakil direktur 2') !== false || strpos($nama, 'sugianto') !== false) {
+        if (strpos($jabatan, 'wakil direktur 2') !== false || strpos($jabatan, 'wadir 2') !== false || strpos($unit, 'wakil direktur 2') !== false) {
             return 300;
         }
 
         // Tier 4: Wakil Direktur 3
-        if (strpos($jabatan, 'wakil direktur 3') !== false || strpos($jabatan, 'wadir 3') !== false || strpos($unit, 'wakil direktur 3') !== false || strpos($nama, 'setya wijayanta') !== false) {
+        if (strpos($jabatan, 'wakil direktur 3') !== false || strpos($jabatan, 'wadir 3') !== false || strpos($unit, 'wakil direktur 3') !== false) {
             return 400;
         }
 
@@ -357,7 +356,8 @@ class DashboardKepegawaian extends BaseController
         }
 
         // 2. Batch Query Tugas Tambahan
-        $tmbBuilder = $logTambahanModel->whereIn('user_id', $userIds)
+        $tmbBuilder = $logTambahanModel->select('id, user_id, tanggal_kegiatan, deskripsi_kegiatan, jumlah_capaian, satuan, link_bukti, status_approval, nilai_capaian, status_penilaian')
+            ->whereIn('user_id', $userIds)
             ->where('status', 'terkirim');
 
         if ($bulanTerpilih !== 'all' && $bulanTerpilih !== '') {
@@ -1105,7 +1105,7 @@ class DashboardKepegawaian extends BaseController
         }
 
         $userModel = new User();
-        $pegawai = $userModel->find($userId);
+        $pegawai = $userModel->select('id, nama_lengkap, nip, unit, jabatan, atasan_id')->find($userId);
         if (!$pegawai) {
             return $this->response->setJSON(['status' => 'error', 'message' => 'Pegawai tidak ditemukan']);
         }

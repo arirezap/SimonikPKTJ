@@ -163,7 +163,7 @@
 
     <footer class="survei-footer text-center">
         <div class="mx-auto" style="max-width: 880px;">
-            &copy; <?= date('Y') ?> Evidence Command Center (ECC) &mdash; PKTJ Tegal
+            &copy; <?= date('Y') ?> Evidence Command Center (ECC) &mdash; PKTJ Tegal &bull; <span class="badge bg-light text-secondary border rounded-pill px-2 py-1" style="font-size: 0.75rem; font-variant-numeric: tabular-nums;">v 2.0</span>
         </div>
     </footer>
 

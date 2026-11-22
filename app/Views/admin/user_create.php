@@ -62,7 +62,7 @@
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-dark mb-1">Role Primer</label>
                                 <select name="role" class="form-select form-select-sm">
-                                    <optgroup label="Peran Organisasi ECC 1.0">
+                                    <optgroup label="Peran Organisasi &amp; Kinerja">
                                         <option value="direktur" <?= old('role') == 'direktur' ? 'selected' : '' ?>>Direktur (Level 1)</option>
                                         <option value="wadir" <?= old('role') == 'wadir' ? 'selected' : '' ?>>Wakil Direktur (Level 2)</option>
                                         <option value="kabag_aak" <?= old('role') == 'kabag_aak' ? 'selected' : '' ?>>Kabag AAK (Level 3)</option>

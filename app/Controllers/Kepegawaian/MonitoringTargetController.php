@@ -88,7 +88,7 @@ class MonitoringTargetController extends BaseController
         $userModel = new User();
         $targetModel = new TargetKinerja();
 
-        $user = $userModel->find($userId);
+        $user = $userModel->select('id, nama_lengkap, nip, jabatan, unit, role, foto, atasan_id')->find($userId);
         if (!$user) {
             return $this->response->setStatusCode(404)->setJSON(['success' => false, 'message' => 'Pegawai tidak ditemukan']);
         }
@@ -108,7 +108,8 @@ class MonitoringTargetController extends BaseController
             $atasan = $userModel->select('id, nama_lengkap, nip, jabatan, unit')->find($user['atasan_id']);
         }
 
-        $builder = $targetModel->where('user_id', $userId)
+        $builder = $targetModel->select('id, user_id, bulan, tahun, sasaran_program, indikator_kinerja, target_bulanan, satuan, status, status_approval')
+                               ->where('user_id', $userId)
                                ->where('tahun', $tahun);
         if ($bulan !== 'all') {
             $builder->where('bulan', $bulan);
