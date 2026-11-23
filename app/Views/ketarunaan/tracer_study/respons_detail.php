@@ -37,9 +37,9 @@ $pid          = (int) ($respons['periode_id'] ?? 0);
                     </button>
                 </form>
             <?php endif; ?>
-            <?php if (($isSelfAlumni && ($respons['status_periode'] ?? '') === 'dibuka') || ($canManage && ($respons['status_periode'] ?? '') !== 'draf' && (int) ($respons['is_alumni_terdaftar'] ?? 1) === 1)): ?>
-                <a href="<?= base_url('ketarunaan/tracer-study/isi/' . $pid . ($isSelfAlumni ? '' : ('?nomor_taruna=' . urlencode((string) $respons['nomor_taruna'])))) ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-semibold ts-touch-ctrl d-inline-flex align-items-center">
-                    Perbarui Jawaban
+            <?php if (!$isSelfAlumni && $canManage && ($respons['status_periode'] ?? '') !== 'draf' && (int) ($respons['is_alumni_terdaftar'] ?? 1) === 1): ?>
+                <a href="<?= base_url('ketarunaan/tracer-study/isi/' . $pid . '?nomor_taruna=' . urlencode((string) $respons['nomor_taruna'])) ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-semibold ts-touch-ctrl d-inline-flex align-items-center">
+                    Koreksi (PIC)
                 </a>
             <?php endif; ?>
         </div>

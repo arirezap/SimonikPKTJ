@@ -329,12 +329,35 @@
                         <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-1 rounded-pill fw-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.75rem;">
                             <i class="bi bi-person-gear me-1"></i> <?= esc(str_replace('_', ' ', $user['role'])) ?>
                         </span>
+                        <?php if (!empty($is_dosen_role) || !empty($own_dosen_profil_id)): ?>
+                        <span class="badge bg-info bg-opacity-10 text-info-emphasis border border-info-subtle px-3 py-1 rounded-pill fw-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.75rem;">
+                            Dosen
+                        </span>
+                        <?php endif; ?>
                         <?php if (!empty($user['unit'])): ?>
                         <span class="badge bg-light text-secondary border px-3 py-1 rounded-pill fw-semibold" style="font-size: 0.75rem;">
                             <i class="bi bi-building me-1"></i> <?= esc($user['unit']) ?>
                         </span>
                         <?php endif; ?>
                     </div>
+
+                    <?php if (!empty($own_dosen_profil_id)): ?>
+                        <?php
+                            $jafCatalog = function_exists('ketarunaan_dosen_jafung_catalog') ? ketarunaan_dosen_jafung_catalog() : [];
+                            $jafKey     = (string) ($dosen_summary['jabatan_fungsional'] ?? '');
+                            $jafLabel   = $jafCatalog[$jafKey]['label'] ?? ($jafKey !== '' ? ucwords(str_replace('_', ' ', $jafKey)) : 'Dosen');
+                            $prodiKode  = trim((string) ($dosen_summary['kode_prodi'] ?? ''));
+                        ?>
+                        <div class="w-100 p-3 mb-4 rounded-3 border bg-light text-start">
+                            <div class="small fw-bold text-dark mb-1">Profil Akademik Dosen</div>
+                            <div class="small text-muted mb-3" style="font-size: 0.75rem; line-height: 1.4;">
+                                <?= esc($jafLabel) ?><?= $prodiKode !== '' ? ' • Homebase ' . esc($prodiKode) : '' ?><?= !empty($dosen_summary['nidn']) ? ' • NIDN ' . esc($dosen_summary['nidn']) : '' ?>
+                            </div>
+                            <a href="<?= site_url('ketarunaan/data-dosen/detail/' . (int) $own_dosen_profil_id) ?>" class="btn btn-sm btn-primary rounded-pill px-3 w-100 fw-semibold btn-tactile" style="min-height: 32px;">
+                                Kelola Profil Dosen
+                            </a>
+                        </div>
+                    <?php endif; ?>
                     
                     <!-- Hidden File Input terhubung langsung ke Form Utama -->
                     <input form="profileForm" type="file" name="foto" id="fotoInput" class="d-none" accept="image/png, image/jpeg, image/jpg">

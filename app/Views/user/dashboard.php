@@ -2,134 +2,106 @@
 
 <?= $this->section('title') ?>Dashboard<?= $this->endSection() ?>
 
-<?= $this->section('page_title') ?>
-Dashboard
-<?= $this->endSection() ?>
-
-
+<?= $this->section('page_title') ?>Dashboard<?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<?php
+$formatNama = static function (?string $raw): string {
+    $raw = trim((string) $raw);
+    if ($raw === '') {
+        return '-';
+    }
+    $parts = explode(',', $raw);
+    $main  = ucwords(strtolower(trim($parts[0])));
+    if (count($parts) > 1) {
+        unset($parts[0]);
+        return $main . ', ' . implode(', ', array_map('trim', $parts));
+    }
+    return $main;
+};
 
-<!-- 0. TOP FILTER TOOLBAR (8pt Grid System) -->
+$scorePillClass = static function (float $rata, int $dinilai): string {
+    if ($dinilai <= 0 || $rata <= 0) return 'dash-score-neutral';
+    if ($rata > 100) return 'dash-score-success';
+    if ($rata > 90) return 'dash-score-primary';
+    if ($rata > 75) return 'dash-score-info';
+    if ($rata > 25) return 'dash-score-warning';
+    return 'dash-score-danger';
+};
+
+$hasRekapSection = (!empty($isAtasan) || !empty($isUnitPeers));
+$hasRekapData    = ($hasRekapSection && !empty($rekapDashboard));
+?>
+
+<!-- Toolbar Filter Periode Kinerja (8-Point Grid) -->
 <div class="d-flex justify-content-start align-items-center flex-wrap gap-2 mb-4 bento-stagger bento-stagger-1">
-    <form id="formKinerja" class="m-0 d-flex flex-wrap gap-2 align-items-center">
-        <select class="form-select form-select-sm filter-select fw-semibold text-dark bg-white shadow-xs rounded-pill border" id="bulan_kinerja" name="bulan_kinerja" aria-label="Pilih Bulan Kinerja" style="height: 36px; padding: 0 32px 0 16px; width: auto; min-width: 160px; cursor: pointer; font-size: 0.82rem;" onchange="updateKinerjaData()">
+    <form id="formKinerja" class="m-0 d-flex flex-wrap gap-2 align-items-center" aria-label="Filter Periode Kinerja">
+        <span class="text-muted fw-semibold me-1" style="font-size: 0.75rem;">Periode Kinerja:</span>
+        <label for="bulan_kinerja" class="visually-hidden">Pilih Bulan Kinerja</label>
+        <select class="form-select form-select-sm dash-filter-control" id="bulan_kinerja" name="bulan_kinerja" style="width: auto; min-width: 160px;" onchange="updateKinerjaData()">
             <option value="all" <?= ($bulan_kinerja === 'all') ? 'selected' : '' ?>>Semua Bulan (Setahun)</option>
             <?php for ($i = 1; $i <= 12; $i++): ?>
-                <option value="<?= $i; ?>" <?= ((string)$bulan_kinerja === (string)$i) ? 'selected' : ''; ?>><?= bulan_indo($i) ?></option>
+                <option value="<?= $i; ?>" <?= ((string) $bulan_kinerja === (string) $i) ? 'selected' : ''; ?>><?= bulan_indo($i) ?></option>
             <?php endfor; ?>
         </select>
-        <select name="tahun_kinerja" id="tahun_kinerja" class="form-select form-select-sm filter-select fw-semibold text-dark bg-white shadow-xs rounded-pill border" aria-label="Pilih Tahun Kinerja" style="height: 36px; padding: 0 32px 0 16px; width: auto; min-width: 140px; cursor: pointer; font-size: 0.82rem;" onchange="updateKinerjaData()">
+        <label for="tahun_kinerja" class="visually-hidden">Pilih Tahun Kinerja</label>
+        <select name="tahun_kinerja" id="tahun_kinerja" class="form-select form-select-sm dash-filter-control" style="width: auto; min-width: 128px;" onchange="updateKinerjaData()">
             <?php foreach ($daftar_tahun as $tahun_item): ?>
-                <option value="<?= esc($tahun_item) ?>" <?= ($tahun_kinerja == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
+                <option value="<?= esc($tahun_item) ?>" <?= ((string) $tahun_kinerja === (string) $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
             <?php endforeach; ?>
         </select>
     </form>
 </div>
 
-<!-- 1. ECC DASHBOARD (TOP HERO SECTION - 8pt Grid) -->
-<div class="row g-4 mb-5 bento-stagger bento-stagger-1">
+<!-- Bagian 1: Radar ECC & Metrik Kinerja Pribadi -->
+<div class="row g-4 mb-4 bento-stagger bento-stagger-1">
     <div class="col-lg-8 d-flex flex-column">
-        <div class="bento-card border-top border-4 border-primary flex-fill rounded-4 shadow-sm">
-            <div class="bento-header d-flex flex-column flex-md-row justify-content-between align-items-md-center border-bottom pb-3 mb-2 gap-2" style="padding: 16px 24px;">
-                <div class="d-flex align-items-center" style="gap: 12px;">
-                    <div class="bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 32px; height: 32px; border-radius: 8px;">
-                        <i class="bi bi-shield-check fs-6"></i>
-                    </div>
-                    <div>
-                        <div class="mb-0 fw-bold text-dark" style="font-size: 0.95rem; line-height: 1.3;">Evidence Command Center (ECC)</div>
-                        <div class="text-muted" style="font-size: 0.75rem; margin-top: 2px;">Monitoring Pemenuhan Standar Mutu</div>
-                    </div>
-                </div>
-                
-                <!-- Filter Tahun ECC -->
-                <form id="formEcc" class="m-0 d-flex gap-2">
-                    <select name="tahun_ecc" id="tahun_ecc" aria-label="Pilih Tahun ECC" class="form-select form-select-sm filter-select fw-semibold text-primary rounded-pill border" style="height: 32px; padding: 0 28px 0 12px; width: auto; cursor: pointer; font-size: 0.78rem;" onchange="updateEccData()">
-                        <?php foreach ($daftar_tahun as $tahun_item): ?>
-                            <option value="<?= esc($tahun_item) ?>" <?= ($tahun_ecc == $tahun_item) ? 'selected' : '' ?>>Tahun <?= esc($tahun_item) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </form>
-            </div>
-            
-            <div class="bento-body pt-2" style="padding: 24px;">
-                <ul class="nav nav-pills ecc-tabs mb-4 gap-1" id="prodiTab" role="tablist">
-                    <?php $tabIdx = 0; foreach($prodiData as $prodi): ?>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link rounded-pill py-1.5 px-3 <?= $tabIdx === 0 ? 'active' : '' ?>" style="font-size: 0.82rem; font-weight: 600;" id="tab-<?= esc($prodi['id_prodi']) ?>" data-bs-toggle="tab" data-bs-target="#content-<?= esc($prodi['id_prodi']) ?>" type="button" role="tab"><?= esc($prodi['nama_prodi']) ?></button>
-                        </li>
-                    <?php $tabIdx++; endforeach; ?>
-                </ul>
-
-                <div class="tab-content border-0 p-0 shadow-none bg-transparent" id="prodiTabContent">
-                    <?php $paneIdx = 0; foreach($prodiData as $prodi): ?>
-                        <div class="tab-pane fade <?= $paneIdx === 0 ? 'show active' : '' ?>" id="content-<?= esc($prodi['id_prodi']) ?>" role="tabpanel">
-                            <div class="row justify-content-center">
-                                <div class="col-12 px-0 px-md-3">
-                                    <div class="text-center mb-3">
-                                        <span class="badge bg-light text-dark border px-3 py-1.5 rounded-pill shadow-sm" style="font-size: 0.75rem;">
-                                             Rangkuman Skor LED: <strong class="text-primary"><?= esc($prodi['nama_prodi']) ?></strong>
-                                        </span>
-                                    </div>
-                                    <?php if (empty($prodi['chart_labels'])): ?>
-                                        <div class="alert alert-light text-center border py-4 text-muted rounded-4 shadow-none" style="padding: 32px 16px;">
-                                            <i class="bi bi-inbox fs-3 d-block mb-2 text-secondary opacity-75"></i>
-                                            Belum ada data Kategori LED untuk tahun ini.
-                                        </div>
-                                    <?php else: ?>
-                                        <div class="radar-chart-container"><canvas id="radarChart-<?= esc($prodi['id_prodi']) ?>" role="img" aria-label="Grafik Radar Pemenuhan Standar Mutu <?= esc($prodi['nama_prodi']) ?>"></canvas></div>
-                                        <p class="text-center text-muted small mt-2 mb-0"><i class="bi bi-info-circle me-1"></i> Klik pada nama standar (label) di grafik untuk melihat detail.</p>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        </div>
-                    <?php $paneIdx++; endforeach; ?>
-                </div>
-            </div>
-        </div>
+        <?= view('partials/_dashboard_ecc_card', [
+            'prodiData'    => $prodiData,
+            'daftar_tahun' => $daftar_tahun,
+            'tahun_ecc'    => $tahun_ecc,
+            'eccFrom'      => 'user',
+        ]) ?>
     </div>
-    
+
     <div class="col-lg-4 d-flex flex-column gap-4">
-        <!-- Rata-rata Capaian (8pt Grid) -->
-        <div class="bento-card bg-primary text-white flex-fill shadow-sm rounded-4" style="min-height: 160px; padding: 24px;">
-            <div class="d-flex flex-column justify-content-center align-items-center text-center h-100">
-                <div class="text-white-50 fw-semibold text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px; margin-bottom: 6px;">Nilai Rata-Rata Kinerja</div>
-                <div class="stat-value text-white num-tabular" id="valRataRataCapaian" aria-live="polite" aria-atomic="true" style="font-size: 2.25rem; font-weight: 700; line-height: 1.1; margin-bottom: 8px;"><?= number_format($rataRataCapaian, 2, ',', '.') ?></div>
-                <div class="progress w-75 bg-white bg-opacity-25 rounded-pill" style="height: 8px;">
-                    <div class="progress-bar bg-warning rounded-pill" id="barRataRataCapaian" style="width: <?= min(100, $rataRataCapaian) ?>%; transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);"></div>
+        <div class="bento-card dash-kpi-primary flex-fill">
+            <div class="d-flex flex-column justify-content-center h-100">
+                <div class="dash-kpi-label">Nilai Rata-Rata Kinerja</div>
+                <div class="dash-kpi-value" id="valRataRataCapaian" aria-live="polite" aria-atomic="true">
+                    <?= number_format((float) $rataRataCapaian, 2, ',', '.') ?>
+                </div>
+                <div class="progress w-100 bg-white bg-opacity-25 rounded-pill" style="height: 8px;" aria-hidden="true">
+                    <div class="progress-bar bg-warning rounded-pill dash-kpi-bar" id="barRataRataCapaian" style="width: <?= min(100, (float) $rataRataCapaian) ?>%;"></div>
                 </div>
             </div>
         </div>
-        
-        <!-- Total Komponen Dinilai (8pt Grid) -->
-        <div class="bento-card flex-fill shadow-sm border-top border-4 border-primary rounded-4" style="min-height: 160px; padding: 24px;">
-            <div class="d-flex align-items-center justify-content-center h-100" style="gap: 16px;">
-                <div class="bg-primary-subtle text-primary d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 48px; height: 48px; border-radius: 16px;">
-                    <i class="bi bi-layers-fill fs-4"></i>
+
+        <div class="bento-card dash-kpi-secondary flex-fill">
+            <div class="d-flex flex-column justify-content-center h-100">
+                <div class="dash-kpi-label text-muted">Komponen Dinilai</div>
+                <div class="dash-kpi-value text-dark" id="valTotalIndikator" aria-live="polite" aria-atomic="true">
+                    <?= (int) $totalIndikator ?>
                 </div>
-                <div>
-                    <div class="stat-value num-tabular" id="valTotalIndikator" aria-live="polite" aria-atomic="true" style="font-size: 2.25rem; font-weight: 700; line-height: 1.1; margin-bottom: 2px;"><?= $totalIndikator ?></div>
-                    <div class="fw-bold text-dark text-uppercase" style="letter-spacing: 0.5px; font-size: 0.78rem;">Komponen Dinilai</div>
-                    <div class="text-muted small" style="font-size: 0.72rem;">RHK Utama & Tugas Tambahan</div>
-                </div>
+                <div class="dash-kpi-meta">RHK Utama &amp; Tugas Tambahan</div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- 2. ANALISIS KINERJA PRIBADI (8pt Grid) -->
+<!-- Bagian 2: Tren Kinerja Pribadi -->
 <div class="bento-stagger bento-stagger-2">
-    <div class="d-flex justify-content-between align-items-center mb-3 mt-2">
-        <h5 class="fw-bold text-secondary mb-0 d-flex align-items-center gap-2" style="font-size: 1rem;"><i class="bi bi-person-workspace"></i> Kinerja Pribadi</h5>
+    <div class="mb-3 mt-4">
+        <h2 class="dash-section-title">Kinerja Pribadi</h2>
+        <p class="dash-section-subtitle">Perkembangan nilai rata-rata kinerja bulanan Anda pada tahun terpilih.</p>
     </div>
-    <div class="row g-4 mb-5">
-        <!-- Tren Kumulatif Chart -->
+    <div class="row g-4 mb-4">
         <div class="col-12">
-            <div class="bento-card rounded-4 shadow-sm">
-                <div class="bento-header fw-bold text-dark border-bottom" style="padding: 16px 24px; font-size: 0.88rem; min-height: 56px; display: flex; align-items: center;">
-                    Tren Nilai Rata-Rata Kinerja Bulanan
+            <div class="bento-card">
+                <div class="dash-card-header">
+                    <h3 class="dash-card-title">Tren Nilai Rata-Rata Kinerja Bulanan</h3>
                 </div>
-                <div class="bento-body pt-0" style="padding: 24px;">
+                <div class="bento-body p-4">
                     <div class="line-chart-container">
                         <canvas id="kumulatifChart" role="img" aria-label="Grafik Tren Nilai Rata-Rata Kinerja Bulanan Pribadi"></canvas>
                     </div>
@@ -139,317 +111,248 @@ Dashboard
     </div>
 </div>
 
-<!-- 3. ANALISIS KINERJA STAF / REKAN SATU UNIT (8pt Grid) -->
-<?php if (((isset($isAtasan) && $isAtasan) || (isset($isUnitPeers) && $isUnitPeers)) && !empty($rekapDashboard)): ?>
-<div class="bento-stagger bento-stagger-3">
-    <h5 class="fw-bold text-secondary mb-3 d-flex align-items-center gap-2" id="tabelRekapTitle" style="font-size: 1rem;">
-        <?php if (isset($isAtasan) && $isAtasan): ?>
-            <i class="bi bi-people-fill"></i> Monitoring Kinerja Staf Saya
-        <?php else: ?>
-            <i class="bi bi-diagram-3-fill"></i> Kinerja Rekan 1 Unit Kerja
-        <?php endif; ?>
-    </h5>
-    <div class="row g-4 mb-5" id="tabelRekapContainer">
+<!-- Bagian 3: Kinerja Staf / Rekan 1 Unit (Selalu ada di DOM agar AJAX dapat menampilkannya) -->
+<div class="bento-stagger bento-stagger-3 <?= $hasRekapData ? '' : 'd-none' ?>" id="tabelRekapSection">
+    <div class="mb-3 mt-4">
+        <h2 class="dash-section-title" id="tabelRekapTitle">
+            <?= !empty($isAtasan) ? 'Pemantauan Kinerja Staf Saya' : 'Kinerja Rekan 1 Unit Kerja' ?>
+        </h2>
+    </div>
+    <div class="row g-4 mb-4" id="tabelRekapContainer">
         <div class="col-12">
-            <div class="bento-card rounded-4 shadow-sm">
-                <div class="bento-body p-0">
+            <div class="bento-card">
+                <!-- Tabel Desktop (>= 768px) -->
+                <div class="bento-body p-0 d-none d-md-block">
                     <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0 border-0 table-bento" style="font-size: 0.8rem;">
-                        <thead class="bg-light text-muted small text-uppercase" style="letter-spacing: 0.5px; background-color: #f8fafc;">
-                            <tr>
-                                <th class="ps-4 border-0 rounded-top-start" style="padding: 12px 16px;">Nama Pegawai</th>
-                                <th class="text-center border-0" style="padding: 12px 16px;">Jabatan</th>
-                                <th class="text-center border-0" style="padding: 12px 16px;">Target & Tambahan</th>
-                                <th class="text-center border-0 rounded-top-end" style="padding: 12px 16px;">Rata-rata Nilai</th>
-                            </tr>
-                        </thead>
-                        <tbody class="border-top-0" id="tbodyKinerjaStaf">
-                            <?php foreach ($rekapDashboard as $rekap): ?>
-                                <?php 
-                                    $rata = (float)$rekap['rata_rata'];
-                                    $dinilai = (int)($rekap['dinilai'] ?? 0);
-                                    $warnaBadge = 'bg-secondary';
-                                    if ($dinilai > 0 && $rata > 0) {
-                                        if ($rata > 100) $warnaBadge = 'bg-success text-white';
-                                        elseif ($rata > 90) $warnaBadge = 'bg-primary text-white';
-                                        elseif ($rata > 75) $warnaBadge = 'bg-info text-dark';
-                                        elseif ($rata > 25) $warnaBadge = 'bg-warning text-dark';
-                                        else $warnaBadge = 'bg-danger text-white';
-                                    }
-                                ?>
+                        <table class="table table-hover align-middle mb-0 border-0 table-bento" style="font-size: 0.875rem;">
+                            <thead class="bg-light text-muted text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.04em;">
                                 <tr>
-                                    <td class="ps-4 border-bottom border-light" style="padding: 12px 16px;">
-                                        <div class="d-flex align-items-center" style="gap: 12px;">
-                                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm flex-shrink-0" style="width: 40px; height: 40px; font-size: 0.95rem;">
-                                                <?= strtoupper(substr(trim($rekap['staf']['nama_lengkap']), 0, 1)) ?>
-                                            </div>
-                                            <div style="min-width: 0;">
-                                                <div class="fw-bold text-dark text-truncate d-flex align-items-center gap-1" style="font-size: 0.82rem;">
-                                                    <span class="text-truncate"><?= esc($rekap['staf']['nama_lengkap']) ?></span>
-                                                    <?php if(($rekap['staf']['status_pegawai'] ?? '') === 'mutasi'): ?>
-                                                        <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;">Mutasi</span>
-                                                    <?php elseif(($rekap['staf']['status_pegawai'] ?? '') === 'pensiun'): ?>
-                                                        <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;">Pensiun</span>
-                                                    <?php endif; ?>
-                                                </div>
-                                                <div class="text-muted small num-tabular" style="font-size: 0.72rem; margin-top: 1px;"><?= esc($rekap['staf']['nip'] ?: '-') ?></div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="text-center text-muted border-bottom border-light" style="padding: 12px 16px;">
-                                        <span class="badge bg-light text-dark border rounded-pill px-2.5 py-1 text-wrap" style="font-size: 0.74rem;"><?= esc($rekap['staf']['jabatan'] ?: '-') ?></span>
-                                    </td>
-                                    <td class="text-center border-bottom border-light" style="padding: 12px 16px;">
-                                        <div class="d-flex flex-column align-items-center justify-content-center gap-1">
-                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5 num-tabular" style="font-size: 0.68rem;">
-                                                <?= $rekap['total_pokok'] ?? $rekap['total_laporan'] ?> Pokok
-                                            </span>
-                                            <span class="badge <?= ($rekap['total_tambahan'] ?? 0) > 0 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-light text-muted border' ?> rounded-pill px-2 py-0.5 num-tabular" style="font-size: 0.68rem;">
-                                                <?= ($rekap['total_tambahan'] ?? 0) ?> Tambahan
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td class="text-center border-bottom border-light" style="padding: 12px 16px;">
-                                        <?php if ($rata == 0 || $dinilai == 0): ?>
-                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2.5 py-1 shadow-sm num-tabular" style="font-size: 0.74rem; font-weight: 600;">
-                                                Belum Dinilai
-                                            </span>
-                                        <?php else: ?>
-                                            <span class="badge <?= $warnaBadge ?> rounded-pill px-3 py-1.5 shadow-sm num-tabular" style="font-size: 0.82rem; font-weight: 700;">
-                                                <?= number_format($rata, 2, ',', '.') ?>
-                                            </span>
-                                        <?php endif; ?>
-                                    </td>
+                                    <th class="ps-4 border-0" style="padding: 12px 16px;">Nama Pegawai</th>
+                                    <th class="text-center border-0" style="padding: 12px 16px;">Jabatan</th>
+                                    <th class="text-center border-0" style="padding: 12px 16px;">Target &amp; Tambahan</th>
+                                    <th class="text-center border-0" style="padding: 12px 16px;">Rata-Rata Nilai</th>
                                 </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody class="border-top-0" id="tbodyKinerjaStaf">
+                                <?php foreach ($rekapDashboard as $rekap): ?>
+                                    <?php
+                                        $rata      = (float) $rekap['rata_rata'];
+                                        $dinilai   = (int) ($rekap['dinilai'] ?? 0);
+                                        $scoreCls  = $scorePillClass($rata, $dinilai);
+                                        $namaRapih = $formatNama($rekap['staf']['nama_lengkap'] ?? '');
+                                        $inisial   = strtoupper(substr(trim($namaRapih), 0, 1));
+                                    ?>
+                                    <tr>
+                                        <td class="ps-4 border-bottom border-light" style="padding: 12px 16px;">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width: 40px; height: 40px; font-size: 0.875rem;">
+                                                    <?= esc($inisial) ?>
+                                                </div>
+                                                <div style="min-width: 0;">
+                                                    <div class="fw-semibold text-dark text-truncate d-flex align-items-center gap-2">
+                                                        <span class="text-truncate"><?= esc($namaRapih) ?></span>
+                                                        <?php if (($rekap['staf']['status_pegawai'] ?? '') === 'mutasi_keluar'): ?>
+                                                            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-2 py-1" style="font-size: 0.75rem;">Mutasi</span>
+                                                        <?php elseif (($rekap['staf']['status_pegawai'] ?? '') === 'pensiun'): ?>
+                                                            <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle rounded-pill px-2 py-1" style="font-size: 0.75rem;">Pensiun</span>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    <div class="text-muted num-tabular" style="font-size: 0.75rem;"><?= esc($rekap['staf']['nip'] ?: '-') ?></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-center text-muted border-bottom border-light" style="padding: 12px 16px;">
+                                            <span class="badge bg-light text-dark border rounded-pill px-3 py-1 text-wrap" style="font-size: 0.75rem;"><?= esc($rekap['staf']['jabatan'] ?: '-') ?></span>
+                                        </td>
+                                        <td class="text-center border-bottom border-light" style="padding: 12px 16px;">
+                                            <div class="d-flex flex-column align-items-center justify-content-center gap-1">
+                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1 num-tabular" style="font-size: 0.75rem;">
+                                                    <?= (int) ($rekap['total_pokok'] ?? $rekap['total_laporan']) ?> Pokok
+                                                </span>
+                                                <span class="badge <?= ($rekap['total_tambahan'] ?? 0) > 0 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-light text-muted border' ?> rounded-pill px-2 py-1 num-tabular" style="font-size: 0.75rem;">
+                                                    <?= (int) ($rekap['total_tambahan'] ?? 0) ?> Tambahan
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center border-bottom border-light" style="padding: 12px 16px;">
+                                            <?php if ($rata == 0 || $dinilai == 0): ?>
+                                                <span class="dash-score-pill dash-score-neutral">Belum Dinilai</span>
+                                            <?php else: ?>
+                                                <span class="dash-score-pill <?= $scoreCls ?>"><?= number_format($rata, 2, ',', '.') ?></span>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Daftar Kartu Mobile (< 768px) -->
+                <div class="d-md-none p-3 d-flex flex-column gap-3" id="mobileCardsKinerjaStaf">
+                    <?php foreach ($rekapDashboard as $rekap): ?>
+                        <?php
+                            $rata      = (float) $rekap['rata_rata'];
+                            $dinilai   = (int) ($rekap['dinilai'] ?? 0);
+                            $scoreCls  = $scorePillClass($rata, $dinilai);
+                            $namaRapih = $formatNama($rekap['staf']['nama_lengkap'] ?? '');
+                        ?>
+                        <div class="p-3 rounded-3 border bg-white">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                <div style="min-width: 0;">
+                                    <div class="fw-semibold text-dark d-flex align-items-center gap-1 flex-wrap" style="font-size: 0.875rem;">
+                                        <span><?= esc($namaRapih) ?></span>
+                                        <?php if (($rekap['staf']['status_pegawai'] ?? '') === 'mutasi_keluar'): ?>
+                                            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-2 py-1" style="font-size: 0.75rem;">Mutasi</span>
+                                        <?php elseif (($rekap['staf']['status_pegawai'] ?? '') === 'pensiun'): ?>
+                                            <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle rounded-pill px-2 py-1" style="font-size: 0.75rem;">Pensiun</span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="text-muted num-tabular" style="font-size: 0.75rem;"><?= esc($rekap['staf']['jabatan'] ?: '-') ?> • <?= esc($rekap['staf']['nip'] ?: '-') ?></div>
+                                </div>
+                                <?php if ($rata == 0 || $dinilai == 0): ?>
+                                    <span class="dash-score-pill dash-score-neutral">Belum Dinilai</span>
+                                <?php else: ?>
+                                    <span class="dash-score-pill <?= $scoreCls ?>"><?= number_format($rata, 2, ',', '.') ?></span>
+                                <?php endif; ?>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2">
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1 num-tabular" style="font-size: 0.75rem;">
+                                    <?= (int) ($rekap['total_pokok'] ?? $rekap['total_laporan']) ?> Pokok
+                                </span>
+                                <span class="badge <?= ($rekap['total_tambahan'] ?? 0) > 0 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-light text-muted border' ?> rounded-pill px-2 py-1 num-tabular" style="font-size: 0.75rem;">
+                                    <?= (int) ($rekap['total_tambahan'] ?? 0) ?> Tambahan
+                                </span>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
     </div>
 </div>
-<?php endif; ?>
 
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<?= view('partials/_dashboard_ecc_script', ['eccFrom' => 'user']) ?>
 
 <script>
 window.userDashboardCharts = window.userDashboardCharts || {};
-
-// Helper: Predikat Badge Class (Standar ECC)
-function getPredikatBadgeClass(rata, dinilai = 1) {
-    if (!dinilai || Number(rata) === 0) return 'bg-secondary-subtle text-secondary border border-secondary-subtle';
-    const val = Number(rata);
-    if (val > 100) return 'bg-success text-white';
-    if (val > 90) return 'bg-primary text-white';
-    if (val > 75) return 'bg-info text-dark';
-    if (val > 25) return 'bg-warning text-dark';
-    return 'bg-danger text-white';
-}
-
-// Helper: Smooth KPI Metric Count-Up Number Ticker
-function animateValue(elementId, start, end, duration = 800, suffix = '', decimals = 0) {
-    const obj = document.getElementById(elementId);
-    if (!obj) return;
-    
-    // Respect user's reduced-motion settings
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        obj.innerHTML = (decimals > 0 ? end.toFixed(decimals) : Math.round(end)) + suffix;
-        return;
-    }
-
-    let startTimestamp = null;
-    const step = (timestamp) => {
-        if (!startTimestamp) startTimestamp = timestamp;
-        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-        // Exponential ease-out
-        const easeProgress = 1 - Math.pow(2, -10 * progress);
-        const current = start + (end - start) * easeProgress;
-        
-        obj.innerHTML = (decimals > 0 ? current.toFixed(decimals) : Math.round(current)) + suffix;
-        
-        if (progress < 1) {
-            window.requestAnimationFrame(step);
-        } else {
-            obj.innerHTML = (decimals > 0 ? end.toFixed(decimals) : Math.round(end)) + suffix;
-        }
-    };
-    window.requestAnimationFrame(step);
-}
-
-async function updateEccData() {
-    const tahunEcc = document.getElementById('tahun_ecc').value;
-    try {
-        const response = await fetch(`<?= site_url('dashboard') ?>?ajax_type=ecc&tahun_ecc=${tahunEcc}`, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-        const data = await response.json();
-        if(data && data.prodiData) {
-            for (const [id, prodi] of Object.entries(data.prodiData)) {
-                const canvasId = 'radarChart-' + id;
-                if(window.userDashboardCharts[canvasId]) {
-                    const chart = window.userDashboardCharts[canvasId];
-                    chart.data.labels = prodi.chart_labels.map(label => {
-                        if (label.length <= 25) return label;
-                        const words = label.split(' ');
-                        const lines = [];
-                        let currentLine = words[0];
-                        for (let i = 1; i < words.length; i++) {
-                            if (currentLine.length + 1 + words[i].length <= 25) { currentLine += ' ' + words[i]; } 
-                            else { lines.push(currentLine); currentLine = words[i]; }
-                        }
-                        lines.push(currentLine);
-                        return lines;
-                    });
-                    chart.data.labelIds = prodi.chart_label_ids;
-                    chart.data.tahun = tahunEcc;
-                    chart.data.datasets[0].data = prodi.chart_data;
-                    chart.update();
-                }
-            }
-        }
-    } catch(err) { console.error("Gagal mengambil data ECC:", err); }
-}
-
-function updateDashboardYear(val) {
-    const tahunEcc = document.getElementById('tahun_ecc');
-    if (tahunEcc) {
-        tahunEcc.value = val;
-    }
-    updateEccData();
-    updateKinerjaData();
-}
 
 async function updateKinerjaData() {
     const tahunKinerja = document.getElementById('tahun_kinerja').value;
     const bulanKinerja = document.getElementById('bulan_kinerja') ? document.getElementById('bulan_kinerja').value : 'all';
     try {
-        const response = await fetch(`<?= site_url('dashboard') ?>?ajax_type=kinerja&tahun_kinerja=${tahunKinerja}&bulan_kinerja=${bulanKinerja}`, {
+        const response = await fetch(`<?= site_url('dashboard') ?>?ajax_type=kinerja&tahun_kinerja=${encodeURIComponent(tahunKinerja)}&bulan_kinerja=${encodeURIComponent(bulanKinerja)}`, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
         const data = await response.json();
-        if(data) {
-            // Update Text with smooth Count-up Ticker
-            const currentRr = parseFloat(document.getElementById('valRataRataCapaian')?.innerText?.replace(',', '.') || 0);
-            const rr = parseFloat(data.rataRataCapaian || 0);
-            animateValue('valRataRataCapaian', currentRr, rr, 700, '', 2);
-            
-            const bar = document.getElementById('barRataRataCapaian');
-            if (bar) bar.style.width = Math.min(100, rr) + '%';
-            
-            const currentTot = parseInt(document.getElementById('valTotalIndikator')?.innerText || 0);
-            animateValue('valTotalIndikator', currentTot, data.totalIndikator || 0, 700);
-            
-            // Update Line Chart
-            if(window.userDashboardCharts['kumulatifChart']) {
-                const chart = window.userDashboardCharts['kumulatifChart'];
-                chart.data.datasets[0].data = data.cumulative_realisasi || [];
-                chart.update();
-            }
+        if (!data) return;
 
-            // 3. Update Tabel Staf / Rekan 1 Unit
-            const isAtasan = data.isAtasan;
-            const isUnitPeers = data.isUnitPeers;
-            const rekapDashboard = data.rekapDashboard || [];
-            
-            const tabelContainer = document.getElementById('tabelRekapContainer');
-            const tabelTitle = document.getElementById('tabelRekapTitle');
-            if (tabelContainer && tabelTitle) {
-                if ((isAtasan || isUnitPeers) && rekapDashboard.length > 0) {
-                    tabelContainer.style.display = 'flex';
-                    tabelTitle.style.display = 'block';
-                    if (isAtasan) {
-                        tabelTitle.innerHTML = '<i class="bi bi-people-fill me-2"></i> Monitoring Kinerja Staf Saya';
-                    } else {
-                        tabelTitle.innerHTML = '<i class="bi bi-diagram-3-fill me-2"></i> Kinerja Rekan 1 Unit Kerja';
-                    }
-                    
-                    function escapeHtml(str) {
-                        if (str === null || str === undefined) return '';
-                        return String(str)
-                            .replace(/&/g, '&amp;')
-                            .replace(/</g, '&lt;')
-                            .replace(/>/g, '&gt;')
-                            .replace(/"/g, '&quot;')
-                            .replace(/'/g, '&#039;');
-                    }
+        const currentRr = window.eccDash.parseAngkaId(document.getElementById('valRataRataCapaian')?.innerText);
+        const rr = Number(data.rataRataCapaian || 0);
+        window.eccDash.animateValue('valRataRataCapaian', currentRr, rr, 650, '', 2);
 
-                    let htmlStaf = '';
-                    rekapDashboard.forEach(rekap => {
-                        let rata = Number(rekap.rata_rata || 0);
-                        const dinilai = Number(rekap.dinilai || 0);
-                        const warnaBadge = getPredikatBadgeClass(rata, dinilai);
-                        
-                        let inisial = (rekap.staf.nama_lengkap || '').trim().charAt(0).toUpperCase();
-                        let jabatan = rekap.staf.jabatan || '-';
-                        
-                        let statusBadge = '';
-                        if (rekap.staf && rekap.staf.status_pegawai === 'mutasi') {
-                            statusBadge = ` <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-1.5 py-0.5 ms-1" style="font-size: 0.65rem;">Mutasi</span>`;
-                        } else if (rekap.staf && rekap.staf.status_pegawai === 'pensiun') {
-                            statusBadge = ` <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle rounded-pill px-1.5 py-0.5 ms-1" style="font-size: 0.65rem;">Pensiun</span>`;
-                        }
+        const bar = document.getElementById('barRataRataCapaian');
+        if (bar) bar.style.width = Math.min(100, rr) + '%';
 
-                        let scoreBadgeHtml = '';
-                        if (rata === 0 || dinilai === 0) {
-                            scoreBadgeHtml = `<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2.5 py-1 shadow-sm num-tabular" style="font-size: 0.74rem; font-weight: 600;">Belum Dinilai</span>`;
-                        } else {
-                            scoreBadgeHtml = `<span class="badge ${warnaBadge} rounded-pill px-3 py-1.5 shadow-sm num-tabular" style="font-size: 0.82rem; font-weight: 700;">${rata.toFixed(2)}</span>`;
-                        }
-                        
-                        htmlStaf += `
+        const currentTot = window.eccDash.parseAngkaId(document.getElementById('valTotalIndikator')?.innerText);
+        window.eccDash.animateValue('valTotalIndikator', currentTot, data.totalIndikator || 0, 650, '', 0);
+
+        if (window.userDashboardCharts['kumulatifChart']) {
+            window.userDashboardCharts['kumulatifChart'].data.datasets[0].data = data.cumulative_realisasi || [];
+            window.userDashboardCharts['kumulatifChart'].update();
+        }
+
+        const isAtasan = !!data.isAtasan;
+        const isUnitPeers = !!data.isUnitPeers;
+        const rekapDashboard = data.rekapDashboard || [];
+        const sectionEl = document.getElementById('tabelRekapSection');
+        const titleEl = document.getElementById('tabelRekapTitle');
+        const tbodyEl = document.getElementById('tbodyKinerjaStaf');
+        const mobileEl = document.getElementById('mobileCardsKinerjaStaf');
+
+        if (sectionEl && titleEl && tbodyEl) {
+            if ((isAtasan || isUnitPeers) && rekapDashboard.length > 0) {
+                sectionEl.classList.remove('d-none');
+                titleEl.innerText = isAtasan ? 'Pemantauan Kinerja Staf Saya' : 'Kinerja Rekan 1 Unit Kerja';
+
+                let htmlDesktop = '';
+                let htmlMobile = '';
+                rekapDashboard.forEach(rekap => {
+                    const rata = Number(rekap.rata_rata || 0);
+                    const dinilai = Number(rekap.dinilai || 0);
+                    const scoreCls = window.eccDash.getPredikatScoreClass(rata, dinilai);
+                    const namaRapih = window.eccDash.formatNamaTitleCase(rekap.staf?.nama_lengkap);
+                    const inisial = namaRapih.charAt(0).toUpperCase();
+                    const jabatan = rekap.staf?.jabatan || '-';
+                    const nip = rekap.staf?.nip || '-';
+                    const statusBadge = window.eccDash.getStatusPegawaiBadge(rekap.staf?.status_pegawai);
+                    const pokokVal = rekap.total_pokok !== undefined ? rekap.total_pokok : rekap.total_laporan;
+                    const tambVal = rekap.total_tambahan || 0;
+                    const scoreHtml = (rata === 0 || dinilai === 0)
+                        ? '<span class="dash-score-pill dash-score-neutral">Belum Dinilai</span>'
+                        : `<span class="dash-score-pill ${scoreCls}">${window.eccDash.formatAngkaId(rata, 2)}</span>`;
+
+                    htmlDesktop += `
                         <tr>
                             <td class="ps-4 border-bottom border-light" style="padding: 12px 16px;">
-                                <div class="d-flex align-items-center" style="gap: 12px;">
-                                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm flex-shrink-0" style="width: 40px; height: 40px; font-size: 0.95rem;">
-                                        ${escapeHtml(inisial)}
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width: 40px; height: 40px; font-size: 0.875rem;">
+                                        ${window.eccDash.escapeHtml(inisial)}
                                     </div>
                                     <div style="min-width: 0;">
-                                        <div class="fw-bold text-dark text-truncate d-flex align-items-center gap-1" style="font-size: 0.82rem;">
-                                            <span class="text-truncate">${escapeHtml(rekap.staf.nama_lengkap)}</span>${statusBadge}
+                                        <div class="fw-semibold text-dark text-truncate d-flex align-items-center gap-2">
+                                            <span class="text-truncate">${window.eccDash.escapeHtml(namaRapih)}</span>${statusBadge}
                                         </div>
-                                        <div class="text-muted small num-tabular" style="font-size: 0.72rem; margin-top: 1px;">${escapeHtml(rekap.staf.nip || '-')}</div>
+                                        <div class="text-muted num-tabular" style="font-size: 0.75rem;">${window.eccDash.escapeHtml(nip)}</div>
                                     </div>
                                 </div>
                             </td>
                             <td class="text-center text-muted border-bottom border-light" style="padding: 12px 16px;">
-                                <span class="badge bg-light text-dark border rounded-pill px-2.5 py-1 text-wrap" style="font-size: 0.74rem;">${escapeHtml(jabatan)}</span>
+                                <span class="badge bg-light text-dark border rounded-pill px-3 py-1 text-wrap" style="font-size: 0.75rem;">${window.eccDash.escapeHtml(jabatan)}</span>
                             </td>
                             <td class="text-center border-bottom border-light" style="padding: 12px 16px;">
                                 <div class="d-flex flex-column align-items-center justify-content-center gap-1">
-                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5 num-tabular" style="font-size: 0.68rem;">
-                                        ${escapeHtml(rekap.total_pokok !== undefined ? rekap.total_pokok : rekap.total_laporan)} Pokok
-                                    </span>
-                                    <span class="badge ${(rekap.total_tambahan || 0) > 0 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-light text-muted border'} rounded-pill px-2 py-0.5 num-tabular" style="font-size: 0.68rem;">
-                                        ${escapeHtml(rekap.total_tambahan || 0)} Tambahan
-                                    </span>
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1 num-tabular" style="font-size: 0.75rem;">${window.eccDash.escapeHtml(pokokVal)} Pokok</span>
+                                    <span class="badge ${tambVal > 0 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-light text-muted border'} rounded-pill px-2 py-1 num-tabular" style="font-size: 0.75rem;">${window.eccDash.escapeHtml(tambVal)} Tambahan</span>
                                 </div>
                             </td>
-                            <td class="text-center border-bottom border-light" style="padding: 12px 16px;">
-                                ${scoreBadgeHtml}
-                            </td>
+                            <td class="text-center border-bottom border-light" style="padding: 12px 16px;">${scoreHtml}</td>
                         </tr>`;
-                    });
-                    document.getElementById('tbodyKinerjaStaf').innerHTML = htmlStaf;
-                } else {
-                    tabelContainer.style.display = 'none';
-                    tabelTitle.style.display = 'none';
-                }
+
+                    htmlMobile += `
+                        <div class="p-3 rounded-3 border bg-white">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                <div style="min-width: 0;">
+                                    <div class="fw-semibold text-dark" style="font-size: 0.875rem;">${window.eccDash.escapeHtml(namaRapih)}${statusBadge}</div>
+                                    <div class="text-muted num-tabular" style="font-size: 0.75rem;">${window.eccDash.escapeHtml(jabatan)} • ${window.eccDash.escapeHtml(nip)}</div>
+                                </div>
+                                ${scoreHtml}
+                            </div>
+                            <div class="d-flex flex-wrap gap-2">
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1 num-tabular" style="font-size: 0.75rem;">${window.eccDash.escapeHtml(pokokVal)} Pokok</span>
+                                <span class="badge ${tambVal > 0 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-light text-muted border'} rounded-pill px-2 py-1 num-tabular" style="font-size: 0.75rem;">${window.eccDash.escapeHtml(tambVal)} Tambahan</span>
+                            </div>
+                        </div>`;
+                });
+
+                tbodyEl.innerHTML = htmlDesktop;
+                if (mobileEl) mobileEl.innerHTML = htmlMobile;
+            } else {
+                sectionEl.classList.add('d-none');
             }
         }
-    } catch(err) { console.error("Gagal mengambil data Kinerja:", err); }
+    } catch (err) {
+        console.error('Gagal mengambil data kinerja:', err);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    
-    // Initial KPI Number Ticker Entrance
-    animateValue('valRataRataCapaian', 0, <?= round($rataRataCapaian, 2) ?>, 850, '', 2);
-    animateValue('valTotalIndikator', 0, <?= (int)$totalIndikator ?>, 850);
+    window.eccDash.animateValue('valRataRataCapaian', 0, <?= round((float) $rataRataCapaian, 2) ?>, 650, '', 2);
+    window.eccDash.animateValue('valTotalIndikator', 0, <?= (int) $totalIndikator ?>, 650, '', 0);
 
-    // Cleanup Old Charts
     for (let key in window.userDashboardCharts) {
         if (window.userDashboardCharts[key]) {
             window.userDashboardCharts[key].destroy();
@@ -457,183 +360,48 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // --- SCRIPT UNTUK MENGINGAT TAB AKTIF ECC ---
-    const activeTabKey = 'ecc_active_prodi_tab';
-    const savedTabTarget = localStorage.getItem(activeTabKey);
-    if (savedTabTarget) {
-        const targetBtn = document.querySelector(`button[data-bs-target="${savedTabTarget}"]`);
-        if (targetBtn) {
-            const tabObj = bootstrap.Tab.getInstance(targetBtn) || new bootstrap.Tab(targetBtn);
-            tabObj.show();
-        }
-    }
-
-    const tabElements = document.querySelectorAll('#prodiTab button[data-bs-toggle="tab"]');
-    tabElements.forEach(tab => {
-        tab.addEventListener('shown.bs.tab', event => {
-            const target = event.target.getAttribute('data-bs-target');
-            if (target) {
-                localStorage.setItem(activeTabKey, target);
-            }
-        });
-    });
-
-    // --- Helper: Word Wrap ---
-    function splitLabel(label, maxLength = 16) {
-        if (label.length <= maxLength) return label;
-        const words = label.split(' ');
-        const lines = [];
-        let currentLine = words[0];
-
-        for (let i = 1; i < words.length; i++) {
-            if (currentLine.length + 1 + words[i].length <= maxLength) {
-                currentLine += ' ' + words[i];
-            } else {
-                lines.push(currentLine);
-                currentLine = words[i];
-            }
-        }
-        lines.push(currentLine);
-        return lines;
-    }
-
-    // --- DATA ECC ---
     const prodiData = <?= json_encode($prodiData ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
-    const selectedTahun = '<?= esc($tahun_ecc) ?>';
+    window.eccDash.initEccRadar(prodiData, '<?= esc($tahun_ecc, 'js') ?>', window.userDashboardCharts);
 
-    // --- EVENT KLIK LABEL ECC ---
-    function getClickedLabel(clickEvent, chart) {
-        if (!chart || !chart.scales || !chart.scales.r) return null;
-        const r = chart.scales.r;
-        const pointLabelItems = r._pointLabelItems; 
-        if (!pointLabelItems || pointLabelItems.length === 0) return null;
-        const canvasPosition = Chart.helpers.getRelativePosition(clickEvent, chart);
-        const x = canvasPosition.x;
-        const y = canvasPosition.y;
-        let closestLabelIndex = -1;
-        let minDistance = Infinity;
-        for (let i = 0; i < pointLabelItems.length; i++) {
-            const item = pointLabelItems[i];
-            const distance = Math.sqrt(Math.pow(x - item.x, 2) + Math.pow(y - item.y, 2));
-            if (distance < minDistance) { minDistance = distance; closestLabelIndex = i; }
-        }
-        if (closestLabelIndex > -1) {
-            try {
-                const item = pointLabelItems[closestLabelIndex];
-                const itemWidth = item.options?.bounds?.width || 80; 
-                if (minDistance < (itemWidth / 2) + 20) return closestLabelIndex;
-            } catch (e) { if (minDistance < 50) return closestLabelIndex; }
-        }
-        return null;
-    }
-
-    // --- INIT RADAR CHART ECC ---
-    for (const [id, data] of Object.entries(prodiData)) {
-        const canvasId = 'radarChart-' + id;
-        const ctx = document.getElementById(canvasId);
-        if (ctx) {
-            const existing = Chart.getChart(ctx);
-            if (existing) existing.destroy();
-
-            const wrappedLabels = data.chart_labels.map(label => splitLabel(label, 16));
-
-            window.userDashboardCharts[canvasId] = new Chart(ctx, {
-                type: 'radar',
-                data: {
-                    labels: wrappedLabels,
-                    labelIds: data.chart_label_ids, 
-                    prodi: data.id_prodi, 
-                    tahun: selectedTahun,
-                    datasets: [{
-                        label: 'Skor ' + data.nama_prodi, data: data.chart_data, fill: true,
-                        backgroundColor: 'rgba(30, 64, 175, 0.15)', borderColor: 'rgba(30, 64, 175, 1)',
-                        pointBackgroundColor: 'rgba(30, 64, 175, 1)', pointBorderColor: '#fff',
-                        pointHoverBackgroundColor: '#fff', pointHoverBorderColor: 'rgba(30, 64, 175, 1)',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    animation: {
-                        duration: 900,
-                        easing: 'easeOutQuart'
-                    },
-                    layout: { padding: 10 },
-                    scales: { 
-                        r: { 
-                            angleLines: { display: true, color: 'rgba(0, 0, 0, 0.2)', lineWidth: 1.5 },
-                            min: 0, max: 100,
-                            grid: { color: 'rgba(0, 0, 0, 0.2)', lineWidth: 1.5 }, 
-                            pointLabels: { 
-                                display: true, 
-                                color: '#334155', 
-                                font: { size: 12, weight: '700', family: 'system-ui', lineHeight: 1.2 }, 
-                                backdropPadding: 2,
-                                padding: 8, 
-                            }, 
-                            ticks: { display: false, stepSize: 33.3333 } 
-                        } 
-                    },
-                    plugins: { legend: { display: false } },
-                    onHover: (event, activeElements, chart) => {
-                         const index = getClickedLabel(event, chart);
-                         event.native.target.style.cursor = (index !== null) ? 'pointer' : 'default';
-                    },
-                    onClick: (e, elements, chart) => {
-                        const idx = getClickedLabel(e, chart);
-                        if (idx !== null) {
-                            if (chart.config.data.labelIds && chart.config.data.labelIds[idx]) {
-                                const labelId = chart.config.data.labelIds[idx];
-                                const prodi = chart.config.data.prodi.toLowerCase();
-                                const tahun = chart.config.data.tahun;
-                                document.body.style.cursor = 'wait'; 
-                                window.location.href = `<?= site_url('ecc/detailStandar') ?>/${labelId}/${prodi}/${tahun}?from=user`;
-                            }
-                        }
-                    }
-                }
-            });
-        }
-    }
-
-    // --- INIT CHART PRIBADI (KUMULATIF) ---
     const ctxKumulatif = document.getElementById('kumulatifChart');
-    if (ctxKumulatif) {
+    if (ctxKumulatif && typeof Chart !== 'undefined') {
         window.userDashboardCharts['kumulatifChart'] = new Chart(ctxKumulatif.getContext('2d'), {
             type: 'line',
             data: {
                 labels: <?= json_encode($lineChartLabels ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>,
-                datasets: [
-                    {
-                        label: 'Nilai Rata-rata',
-                        data: <?= json_encode($lineChartRealisasiData ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>,
-                        borderColor: '#2962ff',
-                        backgroundColor: 'rgba(41, 98, 255, 0.1)',
-                        borderWidth: 3,
-                        pointBackgroundColor: '#2962ff',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        fill: true,
-                        tension: 0.4
-                    }
-                ]
+                datasets: [{
+                    label: 'Nilai Rata-Rata',
+                    data: <?= json_encode($lineChartRealisasiData ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>,
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.10)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#1e40af',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    fill: true,
+                    spanGaps: false,
+                    tension: 0.35
+                }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                animation: {
-                    duration: 900,
-                    easing: 'easeOutQuart'
-                },
+                animation: window.eccDash.chartAnimationOption(),
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
-                    legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, font: { family: 'system-ui' } } }
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0f172a',
+                        padding: 12,
+                        callbacks: {
+                            label: (ctx) => ctx.parsed.y === null ? 'Belum dinilai' : 'Nilai Rata-Rata: ' + window.eccDash.formatAngkaId(ctx.parsed.y, 2)
+                        }
+                    }
                 },
                 scales: {
-                    y: { beginAtZero: true, suggestedMax: 100, grace: '8%', grid: { borderDash: [2, 4], color: '#f1f5f9' } },
+                    y: { beginAtZero: true, suggestedMax: 100, grace: '8%', grid: { borderDash: [4, 4], color: '#f1f5f9' } },
                     x: { grid: { display: false } }
                 }
             }

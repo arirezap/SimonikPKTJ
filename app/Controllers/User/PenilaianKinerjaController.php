@@ -266,10 +266,33 @@ class PenilaianKinerjaController extends BaseController
             ? $this->buildCalendarHeatmap($bulanTerpilih, $tahunTerpilih, $logHarianStaf, $holidayMap, $bulanIndo, $revisiDatesMap)
             : null;
 
+        // Bangun daftar tahun filter secara deterministik (menggantikan input bebas angka di mobile)
+        $daftarTahunSet = range(2024, (int) date('Y') + 1);
+        $daftarTahunSet[] = (int) $tahunTerpilih;
+        try {
+            $dbTahunRows = \Config\Database::connect()
+                ->table('target_kinerja_bulanan')
+                ->select('DISTINCT(tahun) AS tahun', false)
+                ->where('tahun >=', 2020)
+                ->get()
+                ->getResultArray();
+            foreach ($dbTahunRows as $tr) {
+                $tVal = (int) ($tr['tahun'] ?? 0);
+                if ($tVal >= 2020 && $tVal <= 2099) {
+                    $daftarTahunSet[] = $tVal;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Fallback daftar default sudah terisi
+        }
+        $daftarTahun = array_values(array_unique(array_map('intval', $daftarTahunSet)));
+        rsort($daftarTahun);
+
         $data = [
             'title' => 'Rekap & Penilaian Kinerja',
             'bulan_terpilih' => $bulanTerpilih,
             'tahun_terpilih' => $tahunTerpilih,
+            'daftar_tahun' => $daftarTahun,
             'bulan_indo' => $bulanIndo,
             'daftar_staf' => $daftarStaf,
             'staf_id_terpilih' => $stafIdTerpilih,

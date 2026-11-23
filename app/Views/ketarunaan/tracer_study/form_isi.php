@@ -170,7 +170,11 @@ $valSumber    = (string) old('sumber_pengisian', (string) ($existing['sumber_pen
                             <div class="ts-q-item">
                                 <label class="form-label fw-semibold text-dark small mb-1 d-block">
                                     <?= esc((string) $q['teks_pertanyaan']) ?>
-                                    <?php if ($wajib): ?><span class="text-danger">*</span><?php endif; ?>
+                                    <?php if ($wajib): ?>
+                                        <span class="text-danger">*</span>
+                                    <?php else: ?>
+                                        <span class="fw-normal ecc-text-muted-aa">(Opsional)</span>
+                                    <?php endif; ?>
                                 </label>
                                 <?php if (!empty($q['keterangan_bantuan'])): ?>
                                     <div class="ecc-text-muted-aa mb-2" style="font-size: 0.75rem;"><?= esc((string) $q['keterangan_bantuan']) ?></div>

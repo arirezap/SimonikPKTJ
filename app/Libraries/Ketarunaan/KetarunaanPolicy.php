@@ -535,6 +535,138 @@ class KetarunaanPolicy
     }
 
     /**
+     * Hak melihat direktori Data Dosen (Executive Profiling untuk pengambilan keputusan pimpinan).
+     * Diblokir penuh bagi akun taruna & alumni.
+     */
+    public static function canViewDataDosenDirectory(): bool
+    {
+        if (self::isSelfAccountOnly()) {
+            return false;
+        }
+
+        return function_exists('hasAnyRole') && hasAnyRole([
+            'admin',
+            'direktur',
+            'wadir',
+            'kabag',
+            'kabag_aak',
+            'kabag_kuk',
+            'kepegawaian',
+            'manajemen',
+            'ketarunaan',
+            'ketarunaan_validator',
+            'pusbangkar',
+        ]);
+    }
+
+    /**
+     * Hak mengakses modul Data Dosen (direktori pimpinan/pengelola ATAU pemilik peran sekunder dosen).
+     */
+    public static function canAccessDataDosenModule(): bool
+    {
+        if (self::isSelfAccountOnly()) {
+            return false;
+        }
+        if (self::canViewDataDosenDirectory()) {
+            return true;
+        }
+        if (function_exists('hasRole') && hasRole('dosen')) {
+            return true;
+        }
+
+        return self::resolveOwnDosenProfilId() !== null;
+    }
+
+    /**
+     * Hak mengelola (tambah/ubah/sinkron/verifikasi kualifikasi) seluruh data profil dosen.
+     */
+    public static function canManageDataDosen(): bool
+    {
+        if (self::isSelfAccountOnly()) {
+            return false;
+        }
+
+        return function_exists('hasAnyRole') && hasAnyRole([
+            'admin',
+            'direktur',
+            'kabag',
+            'kabag_aak',
+            'kepegawaian',
+        ]);
+    }
+
+    /**
+     * Hak melihat Catatan Pimpinan & ringkasan indeks kinerja ECC pada kartu profil eksekutif dosen.
+     */
+    public static function canViewDosenExecutiveNotes(): bool
+    {
+        if (self::isSelfAccountOnly()) {
+            return false;
+        }
+
+        return function_exists('hasAnyRole') && hasAnyRole([
+            'admin',
+            'direktur',
+            'wadir',
+            'kabag',
+            'kabag_aak',
+            'kabag_kuk',
+            'kepegawaian',
+        ]);
+    }
+
+    /**
+     * Hak menulis atau mengubah Catatan Pimpinan dan status kesiapan penugasan dosen.
+     */
+    public static function canEditDosenExecutiveNotes(): bool
+    {
+        if (self::isSelfAccountOnly()) {
+            return false;
+        }
+
+        return function_exists('hasAnyRole') && hasAnyRole([
+            'admin',
+            'direktur',
+            'wadir',
+            'kabag',
+            'kabag_aak',
+            'kabag_kuk',
+        ]);
+    }
+
+    /**
+     * Mengambil ID dosen_profil milik pengguna yang sedang login (jika pegawai adalah dosen).
+     */
+    public static function resolveOwnDosenProfilId(): ?int
+    {
+        $userId = (int) (session()->get('id') ?? session()->get('user_id') ?? 0);
+        if ($userId <= 0 || self::isSelfAccountOnly()) {
+            return null;
+        }
+
+        try {
+            $db = \Config\Database::connect();
+            if (!$db->tableExists('dosen_profil')) {
+                return null;
+            }
+            $row = $db->table('dosen_profil')->select('id')->where('user_id', $userId)->get()->getRowArray();
+            if ($row) {
+                return (int) $row['id'];
+            }
+
+            // Jika pegawai memegang peran sekunder 'dosen' namun baris dosen_profil belum ada, siapkan otomatis
+            if (function_exists('hasRole') && hasRole('dosen')) {
+                $actor = (string) (session()->get('nama_lengkap') ?: session()->get('username') ?: 'system');
+                return (new DataDosenService($db))->ensureProfilForUser($userId, $actor);
+            }
+
+            return null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
      * Hak mengelola kemitraan & membagikan tautan/survei ke mitra pengguna lulusan (Tim Kerjasama & Karir Alumni).
      */
     public static function canShareToMitraPenggunaLulusan(): bool

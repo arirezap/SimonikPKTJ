@@ -74,6 +74,7 @@ if (!function_exists('render_role_badge')) {
             'tugas_belajar' => 'Tugas Belajar (Level 5)',
             'admin'                => 'Superadmin',
             'kepegawaian'          => 'Kepegawaian',
+            'dosen'                => 'Dosen',
             'spm'                  => 'SPM',
             'pusbangkar'           => 'Pusbangkar',
             'ketarunaan'           => 'Ketarunaan',
@@ -94,7 +95,7 @@ if (!function_exists('render_role_badge')) {
             $badgeStyle = 'bg-info-subtle text-info-emphasis border border-info-subtle';
         } elseif ($role === 'manajemen') {
             $badgeStyle = 'bg-success-subtle text-success border border-success-subtle';
-        } elseif ($role === 'direktur' || $role === 'wadir') {
+        } elseif ($role === 'direktur' || $role === 'wadir' || $role === 'dosen') {
             $badgeStyle = 'bg-primary-subtle text-primary border border-primary-subtle';
         }
 

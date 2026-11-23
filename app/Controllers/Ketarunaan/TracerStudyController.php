@@ -589,6 +589,10 @@ class TracerStudyController extends BaseController
 
         $ctx = $this->service->getSurveyFormContext($periodeId, $nomorTaruna, $isSelfAlumni);
         if (!$ctx['status']) {
+            if (!empty($ctx['already_submitted']) && !empty($ctx['respons_id'])) {
+                return redirect()->to(base_url('ketarunaan/tracer-study/respons/' . (int) $ctx['respons_id']))
+                    ->with('warning', $ctx['message']);
+            }
             return redirect()->to(base_url('ketarunaan/tracer-study'))
                 ->with('warning', $ctx['message']);
         }

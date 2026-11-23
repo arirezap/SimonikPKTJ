@@ -142,13 +142,72 @@
         white-space: nowrap;
     }
     .tab-content > .tab-pane {
-        transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .tab-content > .tab-pane.fade:not(.show) {
-        transform: translateY(4px);
+    .pk-filter-control {
+        height: 36px;
     }
-    .tab-content > .tab-pane.fade.show {
-        transform: translateY(0);
+    .pk-summary-pill {
+        white-space: normal;
+        text-align: start;
+        line-height: 1.35;
+    }
+    .pk-predikat-details {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 12px 16px;
+    }
+    .pk-predikat-details summary {
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 0.875rem;
+        color: #0f172a;
+        list-style: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 24px;
+    }
+    .pk-predikat-details summary::-webkit-details-marker {
+        display: none;
+    }
+    .pk-predikat-details summary::after {
+        content: "+";
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #475569;
+    }
+    .pk-predikat-details[open] summary::after {
+        content: "−";
+    }
+    .heatmap-kpi-grid {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .heatmap-kpi-item {
+        min-width: 104px;
+    }
+    .heatmap-kpi-label {
+        font-size: 0.75rem;
+        line-height: 1.25;
+    }
+    .heatmap-kpi-val {
+        font-size: 0.875rem;
+    }
+    .heatmap-swatch-grid {
+        display: inline-flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .heatmap-hint-box {
+        font-size: 0.75rem;
+        line-height: 1.4;
+        text-align: center;
+        white-space: normal;
     }
     .btn-tactile {
         transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease;
@@ -441,9 +500,27 @@
 
     /* Responsive Mobile Card Stack (< 768px) */
     @media (max-width: 767.98px) {
+        .pk-page-wrap {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+        .pk-main-card {
+            border-radius: 12px !important;
+        }
+        .pk-main-card-body {
+            padding: 12px !important;
+        }
         .form-control,
         .form-select {
             font-size: var(--bs-body-font-size, 1rem) !important;
+        }
+        .pk-filter-control {
+            height: auto;
+            min-height: 44px;
+        }
+        .input-nilai-capaian,
+        .input-group .input-group-text {
+            min-height: 44px;
         }
         .btn-action-container {
             flex-direction: column-reverse;
@@ -506,24 +583,105 @@
             letter-spacing: 0.04em;
             margin-bottom: 4px;
         }
+        /* Grid 3 kolom kompak untuk metrik Target, Realisasi, Selisih di kartu mobile RHK */
+        .table-bento-rhk tbody tr {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+        }
+        .table-bento-rhk tbody td.td-no,
+        .table-bento-rhk tbody td.td-rhk-indikator,
+        .table-bento-rhk tbody td.td-rhk-nilai {
+            grid-column: 1 / -1;
+        }
+        .table-bento-rhk tbody td.td-rhk-metric {
+            background-color: #f8fafc;
+            border: 1px solid #f1f5f9;
+            border-radius: 8px;
+            padding: 8px !important;
+            text-align: center !important;
+        }
+        .table-bento-rhk tbody td.td-rhk-metric::before {
+            text-align: center;
+        }
+        /* Kalender Heatmap Mobile (Anti-Overlap di 360px-375px) */
         .calendar-heatmap-card {
-            padding: 16px;
+            padding: 12px 8px;
+            border-radius: 12px;
+        }
+        .heatmap-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            width: 100%;
+        }
+        .heatmap-kpi-item {
+            min-width: 0;
         }
         .calendar-heatmap-grid {
             gap: 4px;
         }
+        .calendar-header-cell {
+            font-size: 0.75rem;
+            padding-bottom: 4px;
+            letter-spacing: 0;
+        }
         .heatmap-day-cell {
             min-height: 48px;
-            padding: 4px 8px;
+            padding: 4px;
             border-radius: 8px;
+            align-items: center;
+            text-align: center;
+        }
+        .heatmap-day-cell .day-header {
+            justify-content: center;
+            width: 100%;
+        }
+        .heatmap-day-cell .day-footer {
+            justify-content: center;
+            width: 100%;
+            margin-top: 4px;
         }
         .heatmap-day-cell .badge-count {
             font-size: 0.75rem;
-            padding: 2px 4px;
+            padding: 4px;
+            line-height: 1;
+            white-space: nowrap;
+            min-width: 24px;
+            text-align: center;
         }
         .heatmap-empty-cell {
             min-height: 48px;
             border-radius: 8px;
+        }
+        .heatmap-swatch-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            width: 100%;
+        }
+        .heatmap-hint-box {
+            width: 100%;
+            border-radius: 12px !important;
+        }
+        /* Modal Detail Log Mobile: tanpa nested scroll trap & target sentuh >= 44px */
+        #modalDetailLogTanggal #modalLogTableContainer {
+            max-height: none;
+            overflow-y: visible;
+        }
+        #modalDetailLogTanggal .btn-nav-date,
+        #modalDetailLogTanggal .btn-close {
+            min-width: 44px;
+            min-height: 44px;
+            width: 44px;
+            height: 44px;
+        }
+        #modalDetailLogTanggal .modal-footer {
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        #modalDetailLogTanggal .modal-footer .btn {
+            min-height: 44px;
         }
     }
 
@@ -617,7 +775,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
 };
 ?>
 
-<div class="container-fluid px-2 px-md-3">
+<div class="container-fluid px-2 px-md-3 pk-page-wrap">
     <!-- PAGE HEADER (Clean Typography, No Trailing Period Pill) -->
     <div class="d-flex justify-content-between flex-wrap align-items-center pt-2 pb-3 mb-3 border-bottom gap-2 bento-stagger bento-stagger-1">
         <div>
@@ -640,31 +798,35 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
         </div>
     <?php endif; ?>
 
-    <div class="card shadow-sm border-0 mb-4 rounded-4 overflow-hidden bento-stagger bento-stagger-2">
-        <div class="card-body p-3 p-md-4">
+    <div class="card shadow-sm border-0 mb-4 rounded-4 overflow-hidden bento-stagger bento-stagger-2 pk-main-card">
+        <div class="card-body p-3 p-md-4 pk-main-card-body">
 
             <!-- Filter Bar Toolbar -->
             <form method="POST" action="<?= site_url('penilaian-kinerja') ?>" class="mb-3 p-3 bg-light rounded-4 border border-light-subtle" id="filterForm">
                 <?= csrf_field() ?>
                 <input type="hidden" name="active_tab" id="active_tab_input" value="<?= empty($staf_id_terpilih) ? 'individu' : 'staf' ?>">
                 <div class="row g-3 align-items-end">
-                    <div class="col-6 col-sm-3 col-md-3">
+                    <div class="col-7 col-sm-4 col-md-3">
                         <label for="filterBulanSelect" class="form-label fw-bold text-dark small mb-1">Bulan</label>
-                        <select name="bulan" id="filterBulanSelect" class="form-select form-select-sm border-primary fw-semibold ecc-focus-ring" style="height: 36px;" aria-label="Pilih Bulan Penilaian">
+                        <select name="bulan" id="filterBulanSelect" class="form-select form-select-sm border-primary fw-semibold ecc-focus-ring pk-filter-control" aria-label="Pilih Bulan Penilaian">
                             <?php foreach ($bulan_indo as $index => $nama): ?>
                                 <option value="<?= $index + 1 ?>" <?= ($bulan_terpilih == $index + 1) ? 'selected' : '' ?>><?= esc($nama) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="col-6 col-sm-2 col-md-2">
-                        <label for="tahunFilterInput" class="form-label fw-bold text-dark small mb-1">Tahun</label>
-                        <input type="number" name="tahun" id="tahunFilterInput" class="form-control form-control-sm border-primary fw-semibold ecc-focus-ring" style="height: 36px;" aria-label="Input Tahun Penilaian" value="<?= esc($tahun_terpilih) ?>">
+                    <div class="col-5 col-sm-3 col-md-2">
+                        <label for="tahunFilterSelect" class="form-label fw-bold text-dark small mb-1">Tahun</label>
+                        <select name="tahun" id="tahunFilterSelect" class="form-select form-select-sm border-primary fw-semibold ecc-focus-ring pk-filter-control" aria-label="Pilih Tahun Penilaian">
+                            <?php foreach (($daftar_tahun ?? [date('Y')]) as $thnItem): ?>
+                                <option value="<?= esc($thnItem) ?>" <?= ((int) $tahun_terpilih === (int) $thnItem) ? 'selected' : '' ?>><?= esc($thnItem) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
 
                     <?php if ($is_super): ?>
-                        <div class="col-12 col-sm-4 col-md-4">
+                        <div class="col-12 col-sm-5 col-md-4 <?= empty($staf_id_terpilih) ? 'd-none' : '' ?>" id="filterUnitCol">
                             <label for="filterUnitSelect" class="form-label fw-bold text-dark small mb-1">Unit Kerja</label>
-                            <select name="unit_kerja" id="filterUnitSelect" class="form-select form-select-sm border-primary fw-semibold ecc-focus-ring" style="height: 36px;" aria-label="Pilih Unit Kerja">
+                            <select name="unit_kerja" id="filterUnitSelect" class="form-select form-select-sm border-primary fw-semibold ecc-focus-ring pk-filter-control" aria-label="Pilih Unit Kerja">
                                 <option value="">Semua Unit Kerja</option>
                                 <?php foreach ($daftar_unit as $u): ?>
                                     <option value="<?= esc($u) ?>" <?= ($u == $unit_kerja_terpilih) ? 'selected' : '' ?>><?= esc($u) ?></option>
@@ -675,8 +837,8 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                 </div>
             </form>
 
-            <!-- Unified Standar Predikat Bar (Single Source) -->
-            <div class="alert alert-light border shadow-sm mb-4 py-2 px-3 text-dark rounded-3 small">
+            <!-- Unified Standar Predikat Bar (Desktop Penuh, Mobile Ringkas Dapat Dibuka) -->
+            <div class="alert alert-light border shadow-sm mb-4 py-2 px-3 text-dark rounded-3 small d-none d-md-block">
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                     <span class="fw-bold ecc-text-muted-aa text-nowrap">Standar Predikat:</span>
                     <span class="text-nowrap"><span class="badge bg-danger text-white px-2 py-1">Sangat Kurang</span> &le; 25%</span>
@@ -686,22 +848,32 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                     <span class="text-nowrap"><span class="badge bg-success text-white px-2 py-1">Sangat Baik</span> &gt; 100% - 150%</span>
                 </div>
             </div>
+            <details class="pk-predikat-details mb-3 d-md-none">
+                <summary>Standar Predikat (5 Kategori)</summary>
+                <div class="d-flex flex-column gap-2 mt-3 small">
+                    <div class="d-flex justify-content-between align-items-center"><span class="badge bg-success text-white px-2 py-1">Sangat Baik</span><span class="num-tabular fw-semibold">&gt; 100% – 150%</span></div>
+                    <div class="d-flex justify-content-between align-items-center"><span class="badge bg-primary text-white px-2 py-1">Baik</span><span class="num-tabular fw-semibold">&gt; 90% – 100%</span></div>
+                    <div class="d-flex justify-content-between align-items-center"><span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-2 py-1">Butuh Perbaikan</span><span class="num-tabular fw-semibold">&gt; 75% – 90%</span></div>
+                    <div class="d-flex justify-content-between align-items-center"><span class="badge bg-warning text-dark px-2 py-1">Kurang</span><span class="num-tabular fw-semibold">&gt; 25% – 75%</span></div>
+                    <div class="d-flex justify-content-between align-items-center"><span class="badge bg-danger text-white px-2 py-1">Sangat Kurang</span><span class="num-tabular fw-semibold">&le; 25%</span></div>
+                </div>
+            </details>
 
-            <!-- Navigation Tabs -->
+            <!-- Navigation Tabs (Hanya tampil jika pengguna memiliki akses Penilaian Staf) -->
+            <?php if ($is_atasan): ?>
             <ul class="nav segmented-control mb-4 bento-stagger bento-stagger-2" id="penilaianTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link btn-tactile <?= empty($staf_id_terpilih) ? 'active' : '' ?>" id="individu-tab" data-bs-toggle="tab" data-bs-target="#individu" type="button" role="tab" aria-controls="individu" aria-selected="<?= empty($staf_id_terpilih) ? 'true' : 'false' ?>">
                         Target Saya
                     </button>
                 </li>
-                <?php if ($is_atasan): ?>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link btn-tactile <?= !empty($staf_id_terpilih) ? 'active' : '' ?>" id="staf-tab" data-bs-toggle="tab" data-bs-target="#staf" type="button" role="tab" aria-controls="staf" aria-selected="<?= !empty($staf_id_terpilih) ? 'true' : 'false' ?>">
-                            Penilaian Staf
-                        </button>
-                    </li>
-                <?php endif; ?>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link btn-tactile <?= !empty($staf_id_terpilih) ? 'active' : '' ?>" id="staf-tab" data-bs-toggle="tab" data-bs-target="#staf" type="button" role="tab" aria-controls="staf" aria-selected="<?= !empty($staf_id_terpilih) ? 'true' : 'false' ?>">
+                        Penilaian Staf
+                    </button>
+                </li>
             </ul>
+            <?php endif; ?>
 
             <div class="tab-content" id="penilaianTabsContent">
 
@@ -778,7 +950,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                         </div>
 
                         <div class="table-bento-wrapper mb-4 bg-white border rounded-4 shadow-sm overflow-hidden">
-                            <table class="table table-bordered table-hover mb-0 table-bento" id="tablePenilaianMandiri">
+                            <table class="table table-bordered table-hover mb-0 table-bento table-bento-rhk" id="tablePenilaianMandiri">
                                 <thead>
                                     <tr>
                                         <th class="col-no-bento text-center">No</th>
@@ -801,10 +973,10 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                         ?>
                                         <tr>
                                             <td class="td-no text-center fw-bold ecc-text-muted-aa" data-label="Baris"><?= $index + 1 ?></td>
-                                            <td class="fw-semibold text-dark" data-label="Indikator Kinerja / RHK"><?= esc($row['indikator_kinerja']) ?></td>
-                                            <td class="text-center fw-bold text-dark num-tabular" data-label="Target Bulanan"><?= $formatDisplayDecimal($target) ?> <?= esc($row['satuan']) ?></td>
-                                            <td class="text-center fw-bold text-primary-emphasis num-tabular" data-label="Total Realisasi"><?= $formatDisplayDecimal($realisasi) ?> <?= esc($row['satuan']) ?></td>
-                                            <td class="text-center fw-bold num-tabular" data-label="Selisih (Gap)">
+                                            <td class="td-rhk-indikator fw-semibold text-dark" data-label="Indikator Kinerja / RHK"><?= esc($row['indikator_kinerja']) ?></td>
+                                            <td class="td-rhk-metric text-center fw-bold text-dark num-tabular" data-label="Target"><?= $formatDisplayDecimal($target) ?> <?= esc($row['satuan']) ?></td>
+                                            <td class="td-rhk-metric text-center fw-bold text-primary-emphasis num-tabular" data-label="Realisasi"><?= $formatDisplayDecimal($realisasi) ?> <?= esc($row['satuan']) ?></td>
+                                            <td class="td-rhk-metric text-center fw-bold num-tabular" data-label="Selisih">
                                                 <?php if ($selisih > 0): ?>
                                                     <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-2 py-1">+<?= $formatDisplayDecimal($selisih) ?> <?= esc($row['satuan']) ?></span>
                                                 <?php elseif ($selisih < 0): ?>
@@ -813,7 +985,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                                     <span class="badge bg-light text-dark border px-2 py-1">0 <?= esc($row['satuan']) ?></span>
                                                 <?php endif; ?>
                                             </td>
-                                            <td class="text-center fw-bold num-tabular" data-label="Nilai Capaian">
+                                            <td class="td-rhk-nilai text-center fw-bold num-tabular" data-label="Nilai Capaian">
                                                 <?php if ($canEvaluateSelf): ?>
                                                     <input type="hidden" name="laporan_id[]" value="<?= esc($row['id']) ?>">
                                                     <div class="input-group input-group-sm mb-2">
@@ -909,8 +1081,8 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                 <?php if (!empty($tugas_tambahan_sendiri)): ?>
                                     <tfoot class="table-light fw-bold">
                                         <tr>
-                                            <td colspan="4" class="text-end text-dark fw-bold">Nilai Tugas Tambahan (0 - 150%):</td>
-                                            <td class="text-center fw-bold num-tabular" data-label="Nilai Tugas Tambahan">
+                                            <td colspan="4" class="text-end text-dark fw-bold d-none d-md-table-cell">Nilai Tugas Tambahan (0 - 150%):</td>
+                                            <td class="text-center fw-bold num-tabular" data-label="Nilai Tugas Tambahan (0 - 150%)">
                                                 <?php if ($canEvaluateSelf): ?>
                                                     <div class="input-group input-group-sm mb-2">
                                                         <input type="number" step="0.01" min="0" max="150" name="nilai_tugas_tambahan_gabungan" id="inputNilaiTambahanMandiri" class="form-control text-center text-success-emphasis fw-bold num-tabular input-nilai-capaian" value="<?= esc(old('nilai_tugas_tambahan_gabungan', $formatInputNumber($scoreTambahanDirekturForm))) ?>" data-status-penilaian="<?= $isMandiriTmbTerbit ? 'terbit' : ($isMandiriTmbDraft ? 'draft' : 'none') ?>" data-initial-value="<?= esc($formatInputNumber($scoreTambahanDirekturForm)) ?>" placeholder="0 - 150" aria-label="Nilai Tugas Tambahan Mandiri">
@@ -953,26 +1125,26 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                         <?php endif; ?>
                                     </div>
                                     <div class="d-flex flex-wrap gap-2 align-items-center">
-                                        <span class="badge bg-light text-dark border px-3 py-1">
+                                        <span class="badge bg-light text-dark border px-3 py-1 pk-summary-pill">
                                             <span id="countRhkMandiriTerisi"><?= $jmlDinilai - ($scoreTambahanIndividu !== null ? 1 : 0) ?></span> / <?= count($rekap_data_sendiri) ?> Target RHK
                                         </span>
                                         <?php if (!empty($tugas_tambahan_sendiri)): ?>
-                                            <span class="badge bg-light text-dark border px-3 py-1">
+                                            <span class="badge bg-light text-dark border px-3 py-1 pk-summary-pill">
                                                 Tugas Tambahan: <span id="textTambahanMandiriStatus"><?= $scoreTambahanIndividu !== null ? $formatDisplayDecimal($scoreTambahanIndividu) . '%' : 'Belum Dinilai' ?></span>
                                             </span>
                                         <?php endif; ?>
                                         <?php if ($jmlDinilai < $totalKomponenIndividu): ?>
-                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-1" id="badgeHintUnfilledMandiri">
+                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-1 pk-summary-pill" id="badgeHintUnfilledMandiri">
                                                 <?= $canEvaluateSelf ? 'Sebagian komponen belum diisi atau diterbitkan' : 'Sebagian nilai belum diterbitkan atasan' ?>
                                             </span>
-                                            <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-3 py-1 d-none" id="badgeAllFilledMandiri">
+                                            <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-3 py-1 pk-summary-pill d-none" id="badgeAllFilledMandiri">
                                                 Seluruh komponen telah dinilai
                                             </span>
                                         <?php else: ?>
-                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-1 d-none" id="badgeHintUnfilledMandiri">
+                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-1 pk-summary-pill d-none" id="badgeHintUnfilledMandiri">
                                                 <?= $canEvaluateSelf ? 'Sebagian komponen belum diisi atau diterbitkan' : 'Sebagian nilai belum diterbitkan atasan' ?>
                                             </span>
-                                            <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-3 py-1" id="badgeAllFilledMandiri">
+                                            <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-3 py-1 pk-summary-pill" id="badgeAllFilledMandiri">
                                                 Seluruh komponen telah dinilai
                                             </span>
                                         <?php endif; ?>
@@ -1112,154 +1284,14 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                             </div>
                         <?php else: ?>
                             <!-- HEATMAP KALENDER AKTIVITAS BULANAN PEGAWAI (INDIVIDU) -->
-                            <?php if (!empty($heatmap_sendiri)): ?>
-                                <div class="calendar-heatmap-card mb-4 bento-stagger bento-stagger-3">
-                                    <div class="d-flex justify-content-between align-items-start align-items-md-center flex-column flex-md-row gap-2 mb-3">
-                                        <div>
-                                            <div class="d-flex align-items-center gap-2 flex-wrap">
-                                                <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle rounded-pill px-3 py-1 fw-bold">
-                                                    Kalender Aktivitas Saya
-                                                </span>
-                                                <span class="ecc-text-muted-aa small fw-semibold">
-                                                    Periode: <?= esc($bulan_indo[$bulan_terpilih - 1] ?? '') ?> <?= esc($tahun_terpilih) ?>
-                                                </span>
-                                            </div>
-                                            <h3 class="h6 fw-bold text-dark mb-0 mt-2">
-                                                Distribusi &amp; Konsistensi Kerja Harian
-                                            </h3>
-                                        </div>
-                                        <div class="d-flex align-items-center gap-2 flex-wrap">
-                                            <div class="bg-light border rounded-3 px-3 py-2 text-center" style="min-width: 104px;">
-                                                <div class="ecc-text-muted-aa fw-bold small text-uppercase">Hari Terisi</div>
-                                                <div class="fw-bold text-success-emphasis num-tabular"><?= $heatmap_sendiri['summary']['total_hari_terisi'] ?> Hari</div>
-                                            </div>
-                                            <div class="bg-light border rounded-3 px-3 py-2 text-center" style="min-width: 104px;">
-                                                <div class="ecc-text-muted-aa fw-bold small text-uppercase">Total Kegiatan</div>
-                                                <div class="fw-bold text-primary-emphasis num-tabular"><?= $heatmap_sendiri['summary']['total_log_items'] ?> Kegiatan</div>
-                                            </div>
-                                            <div class="bg-light border rounded-3 px-3 py-2 text-center" style="min-width: 104px;">
-                                                <div class="ecc-text-muted-aa fw-bold small text-uppercase">Rata-Rata / Hari</div>
-                                                <div class="fw-bold text-dark num-tabular"><?= $formatDisplayDecimal($heatmap_sendiri['summary']['rata_rata_per_hari_aktif']) ?> Log</div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="calendar-heatmap-grid mb-3">
-                                        <div class="calendar-header-cell">Sen</div>
-                                        <div class="calendar-header-cell">Sel</div>
-                                        <div class="calendar-header-cell">Rab</div>
-                                        <div class="calendar-header-cell">Kam</div>
-                                        <div class="calendar-header-cell">Jum</div>
-                                        <div class="calendar-header-cell weekend-header">Sab</div>
-                                        <div class="calendar-header-cell weekend-header">Min</div>
-
-                                        <?php for ($emptyIdx = 1; $emptyIdx < $heatmap_sendiri['first_day_of_week']; $emptyIdx++): ?>
-                                            <div class="heatmap-empty-cell"></div>
-                                        <?php endfor; ?>
-
-                                        <?php foreach ($heatmap_sendiri['days'] as $day): ?>
-                                            <?php
-                                                $levelClass = 'heatmap-level-' . $day['level'];
-                                                $tanggalMerahClass = $day['is_tanggal_merah'] ? 'is-tanggal-merah' : '';
-                                                $draftClass = $day['has_draft'] ? 'is-draft' : '';
-                                                $tooltipTitle = esc($day['date_formatted']);
-                                                if ($day['is_holiday']) {
-                                                    $tooltipTitle .= ' - ' . esc($day['holiday_name']);
-                                                } elseif ($day['is_weekend']) {
-                                                    $tooltipTitle .= ' - Akhir Pekan';
-                                                }
-                                                if ($day['has_draft']) {
-                                                    $tooltipTitle .= ' [Draf]';
-                                                }
-                                                $tooltipTitle .= ' (' . $day['count_logs'] . ' Kegiatan)';
-                                            ?>
-                                            <div class="heatmap-day-cell <?= $levelClass ?> <?= $tanggalMerahClass ?> <?= $draftClass ?>"
-                                                 role="button"
-                                                 tabindex="0"
-                                                 aria-label="<?= esc($day['date_formatted']) ?>, <?= $day['count_logs'] ?> kegiatan<?= $day['is_holiday'] ? ', libur ' . esc($day['holiday_name']) : '' ?>"
-                                                 data-is-staf="0"
-                                                 data-staf-id=""
-                                                 data-day-num="<?= $day['day_num'] ?>"
-                                                 data-date-str="<?= esc($day['date_str']) ?>"
-                                                 data-tanggal="<?= esc($day['date_str']) ?>"
-                                                 data-tanggal-formatted="<?= esc($day['date_formatted']) ?>"
-                                                 data-is-holiday="<?= $day['is_holiday'] ? '1' : '0' ?>"
-                                                 data-holiday-name="<?= esc($day['holiday_name'] ?? '') ?>"
-                                                 data-is-weekend="<?= $day['is_weekend'] ? '1' : '0' ?>"
-                                                 data-is-tanggal-merah="<?= $day['is_tanggal_merah'] ? '1' : '0' ?>"
-                                                 data-has-draft="<?= $day['has_draft'] ? '1' : '0' ?>"
-                                                 data-has-terkirim="<?= $day['has_terkirim'] ? '1' : '0' ?>"
-                                                 data-is-revisi="<?= (!empty($day['is_revisi_aktif'])) ? '1' : '0' ?>"
-                                                 data-total-kegiatan="<?= $day['count_logs'] ?>"
-                                                 data-logs='<?= htmlspecialchars(json_encode($day['logs']), ENT_QUOTES, 'UTF-8') ?>'
-                                                 data-bs-toggle="tooltip"
-                                                 data-bs-placement="top"
-                                                 title="<?= $tooltipTitle ?>">
-                                                <div class="day-header">
-                                                    <span class="day-num"><?= $day['day_num'] ?></span>
-                                                    <?php if ($day['is_holiday']): ?>
-                                                        <i class="bi bi-sun-fill holiday-indicator small" title="<?= esc($day['holiday_name']) ?>"></i>
-                                                    <?php elseif ($day['is_weekend']): ?>
-                                                        <i class="bi bi-moon-stars ecc-text-muted-aa small"></i>
-                                                    <?php elseif ($day['has_draft']): ?>
-                                                        <i class="bi bi-pencil-fill text-warning-emphasis small"></i>
-                                                    <?php elseif ($day['count_logs'] > 0): ?>
-                                                        <i class="bi bi-check2-circle text-success-emphasis small"></i>
-                                                    <?php endif; ?>
-                                                </div>
-                                                <div class="day-footer">
-                                                    <?php if ($day['count_logs'] === 0): ?>
-                                                        <span class="badge-count">-</span>
-                                                    <?php else: ?>
-                                                        <span class="badge-count <?= in_array($day['level'], [3, 4]) ? 'badge-subtle-custom' : 'fw-bold' ?>">
-                                                            <?= $day['count_logs'] ?> Log
-                                                        </span>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </div>
-                                        <?php endforeach; ?>
-                                    </div>
-
-                                    <!-- Legend Footer -->
-                                    <div class="heatmap-legend-container mt-3 pt-3">
-                                        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
-                                            <div class="d-flex align-items-center flex-wrap gap-2">
-                                                <span class="badge bg-light ecc-text-muted-aa border px-3 py-2 fw-bold text-uppercase">Keterangan</span>
-                                                <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle rounded-pill px-3 py-2 fw-semibold">Tgl Merah / Libur</span>
-                                                <div class="d-inline-flex align-items-center bg-light rounded-pill border flex-wrap px-3 py-1 gap-3 small">
-                                                    <div class="d-flex align-items-center gap-2">
-                                                        <span class="heatmap-legend-swatch heatmap-swatch-empty"></span>
-                                                        <span class="ecc-text-muted-aa fw-medium">0 Log</span>
-                                                    </div>
-                                                    <div class="d-flex align-items-center gap-2">
-                                                        <span class="heatmap-legend-swatch heatmap-swatch-draft"></span>
-                                                        <span class="text-warning-emphasis fw-semibold">Draf</span>
-                                                    </div>
-                                                    <div class="d-flex align-items-center gap-2">
-                                                        <span class="heatmap-legend-swatch heatmap-swatch-l1"></span>
-                                                        <span class="text-dark fw-medium">1 - 2</span>
-                                                    </div>
-                                                    <div class="d-flex align-items-center gap-2">
-                                                        <span class="heatmap-legend-swatch heatmap-swatch-l2"></span>
-                                                        <span class="text-dark fw-medium">3 - 4</span>
-                                                    </div>
-                                                    <div class="d-flex align-items-center gap-2">
-                                                        <span class="heatmap-legend-swatch heatmap-swatch-l3"></span>
-                                                        <span class="text-dark fw-medium">5 - 6</span>
-                                                    </div>
-                                                    <div class="d-flex align-items-center gap-2">
-                                                        <span class="heatmap-legend-swatch heatmap-swatch-l4"></span>
-                                                        <span class="text-dark fw-medium">&gt; 6 Log</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <span class="badge text-primary-emphasis bg-primary-subtle rounded-pill border border-primary-subtle px-3 py-2 fw-semibold">
-                                                Klik tanggal untuk melihat rincian pekerjaan
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
+                            <?= view('user/penilaian_kinerja/_calendar_heatmap', [
+                                'heatmap'              => $heatmap_sendiri,
+                                'isStaf'               => false,
+                                'stafId'               => '',
+                                'bulanNama'            => $bulan_indo[$bulan_terpilih - 1] ?? '',
+                                'tahunTerpilih'        => $tahun_terpilih,
+                                'formatDisplayDecimal' => $formatDisplayDecimal,
+                            ]) ?>
                         <?php endif; ?>
                     <?php endif; ?>
                 </div> <!-- End Tab Individu -->
@@ -1406,7 +1438,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                     </div>
 
                                     <div class="table-bento-wrapper mb-4 bg-white border rounded-4 shadow-sm overflow-hidden">
-                                        <table class="table table-bordered table-hover mb-0 table-bento" id="tablePenilaianStaf">
+                                        <table class="table table-bordered table-hover mb-0 table-bento table-bento-rhk" id="tablePenilaianStaf">
                                             <thead>
                                                 <tr>
                                                     <th class="col-no-bento text-center">No</th>
@@ -1440,10 +1472,10 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                                     ?>
                                                     <tr>
                                                         <td class="td-no text-center fw-bold ecc-text-muted-aa" data-label="Baris"><?= $index + 1 ?></td>
-                                                        <td class="fw-semibold text-dark" data-label="Indikator Kinerja / RHK"><?= esc($row['indikator_kinerja']) ?></td>
-                                                        <td class="text-center fw-bold text-dark num-tabular" data-label="Target Bulanan"><?= $formatDisplayDecimal($target) ?> <?= esc($row['satuan']) ?></td>
-                                                        <td class="text-center fw-bold text-primary-emphasis num-tabular" data-label="Total Realisasi"><?= $formatDisplayDecimal($realisasi) ?> <?= esc($row['satuan']) ?></td>
-                                                        <td class="text-center fw-bold num-tabular" data-label="Selisih (Gap)">
+                                                        <td class="td-rhk-indikator fw-semibold text-dark" data-label="Indikator Kinerja / RHK"><?= esc($row['indikator_kinerja']) ?></td>
+                                                        <td class="td-rhk-metric text-center fw-bold text-dark num-tabular" data-label="Target"><?= $formatDisplayDecimal($target) ?> <?= esc($row['satuan']) ?></td>
+                                                        <td class="td-rhk-metric text-center fw-bold text-primary-emphasis num-tabular" data-label="Realisasi"><?= $formatDisplayDecimal($realisasi) ?> <?= esc($row['satuan']) ?></td>
+                                                        <td class="td-rhk-metric text-center fw-bold num-tabular" data-label="Selisih">
                                                             <?php if ($selisih > 0): ?>
                                                                 <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-2 py-1">+<?= $formatDisplayDecimal($selisih) ?> <?= esc($row['satuan']) ?></span>
                                                             <?php elseif ($selisih < 0): ?>
@@ -1452,7 +1484,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                                                 <span class="badge bg-light text-dark border px-2 py-1">0 <?= esc($row['satuan']) ?></span>
                                                             <?php endif; ?>
                                                         </td>
-                                                        <td class="text-center col-nilai" data-label="Input Nilai Capaian">
+                                                        <td class="td-rhk-nilai text-center col-nilai" data-label="Input Nilai Capaian">
                                                             <input type="hidden" name="laporan_id[]" value="<?= esc($row['id']) ?>">
                                                             <?php if (isset($is_target_staf_disetujui) && !$is_target_staf_disetujui): ?>
                                                                 <div class="input-group input-group-sm mb-2">
@@ -1539,8 +1571,8 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                             <?php if (!empty($tugas_tambahan_staf)): ?>
                                                 <tfoot class="table-light fw-bold">
                                                     <tr>
-                                                        <td colspan="4" class="text-end text-dark fw-bold">Nilai Tugas Tambahan (0 - 150%):</td>
-                                                        <td class="text-center col-nilai" data-label="Nilai Tugas Tambahan">
+                                                        <td colspan="4" class="text-end text-dark fw-bold d-none d-md-table-cell">Nilai Tugas Tambahan (0 - 150%):</td>
+                                                        <td class="text-center col-nilai" data-label="Nilai Tugas Tambahan (0 - 150%)">
                                                             <div class="input-group input-group-sm mb-2">
                                                                 <input type="number" step="0.01" max="150" min="0" name="nilai_tugas_tambahan_gabungan" id="inputNilaiTambahanGabungan" class="form-control text-center fw-bold <?= (isset($is_target_staf_disetujui) && !$is_target_staf_disetujui) ? 'ecc-text-muted-aa bg-light' : 'text-success-emphasis' ?> num-tabular input-nilai-capaian" value="<?= esc(old('nilai_tugas_tambahan_gabungan', $formatInputNumber($scoreTambahanStafInput))) ?>" placeholder="<?= (isset($is_target_staf_disetujui) && !$is_target_staf_disetujui) ? 'Terkunci' : '0 - 150' ?>" data-status-penilaian="<?= $isTmbTerbit ? 'terbit' : ($isTmbDraft ? 'draft' : 'none') ?>" data-initial-value="<?= esc($formatInputNumber($scoreTambahanStafInput)) ?>" aria-label="Input Nilai Akumulasi Tugas Tambahan Staf" <?= (!$is_penilai || (isset($is_target_staf_disetujui) && !$is_target_staf_disetujui)) ? 'disabled' : '' ?>>
                                                                 <span class="input-group-text bg-success-subtle text-success-emphasis fw-bold">%</span>
@@ -1577,18 +1609,18 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                                     <?php endif; ?>
                                                 </div>
                                                 <div class="d-flex flex-wrap gap-2 align-items-center">
-                                                    <span class="badge bg-light text-dark border px-3 py-1">
+                                                    <span class="badge bg-light text-dark border px-3 py-1 pk-summary-pill">
                                                         <span id="countRhkTerisi"><?= $jmlDinilaiBwh - ($scoreTambahanStaf !== null ? 1 : 0) ?></span> / <?= count($rekap_data_staf) ?> RHK Terisi
                                                     </span>
                                                     <?php if (!empty($tugas_tambahan_staf)): ?>
-                                                        <span class="badge bg-light text-dark border px-3 py-1" id="badgeTambahanStatus">
+                                                        <span class="badge bg-light text-dark border px-3 py-1 pk-summary-pill" id="badgeTambahanStatus">
                                                             Tugas Tambahan: <span id="textTambahanStatus"><?= $scoreTambahanStafInput !== null ? $formatDisplayDecimal($scoreTambahanStafInput) . '%' . ($isTmbTerbit ? ' (Terbit)' : ' (Draf)') : 'Belum Dinilai' ?></span>
                                                         </span>
                                                     <?php endif; ?>
-                                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-1 d-none" id="badgeHintUnfilled">
+                                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-1 pk-summary-pill d-none" id="badgeHintUnfilled">
                                                         <span id="textCountUnfilled">0</span> kolom belum diisi
                                                     </span>
-                                                    <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-3 py-1 d-none" id="badgeAllFilled">
+                                                    <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-3 py-1 pk-summary-pill d-none" id="badgeAllFilled">
                                                         Semua nilai terisi
                                                     </span>
                                                 </div>
@@ -1738,160 +1770,14 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                     </div>
                                 <?php else: ?>
                                     <!-- HEATMAP KALENDER AKTIVITAS BULANAN STAF -->
-                                    <?php if (!empty($heatmap_staf)): ?>
-                                        <div class="calendar-heatmap-card mb-4 bento-stagger bento-stagger-3">
-                                            <div class="d-flex justify-content-between align-items-start align-items-md-center flex-column flex-md-row gap-2 mb-3">
-                                                <div>
-                                                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                                                        <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle rounded-pill px-3 py-1 fw-bold">
-                                                            Kalender Aktivitas Staf
-                                                        </span>
-                                                        <span class="ecc-text-muted-aa small fw-semibold">
-                                                            Periode: <?= esc($bulan_indo[$bulan_terpilih - 1] ?? '') ?> <?= esc($tahun_terpilih) ?>
-                                                        </span>
-                                                    </div>
-                                                    <h3 class="h6 fw-bold text-dark mb-0 mt-2">
-                                                        Distribusi &amp; Konsistensi Kerja Harian Staf
-                                                    </h3>
-                                                </div>
-                                                <div class="d-flex align-items-center gap-2 flex-wrap">
-                                                    <div class="bg-light border rounded-3 px-3 py-2 text-center" style="min-width: 104px;">
-                                                        <div class="ecc-text-muted-aa fw-bold small text-uppercase">Hari Terisi</div>
-                                                        <div class="fw-bold text-success-emphasis num-tabular"><?= $heatmap_staf['summary']['total_hari_terisi'] ?> Hari</div>
-                                                    </div>
-                                                    <div class="bg-light border rounded-3 px-3 py-2 text-center" style="min-width: 104px;">
-                                                        <div class="ecc-text-muted-aa fw-bold small text-uppercase">Total Kegiatan</div>
-                                                        <div class="fw-bold text-primary-emphasis num-tabular"><?= $heatmap_staf['summary']['total_log_items'] ?> Kegiatan</div>
-                                                    </div>
-                                                    <div class="bg-light border rounded-3 px-3 py-2 text-center" style="min-width: 104px;">
-                                                        <div class="ecc-text-muted-aa fw-bold small text-uppercase">Rata-Rata / Hari</div>
-                                                        <div class="fw-bold text-dark num-tabular"><?= $formatDisplayDecimal($heatmap_staf['summary']['rata_rata_per_hari_aktif']) ?> Log</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="calendar-heatmap-grid mb-3">
-                                                <div class="calendar-header-cell">Sen</div>
-                                                <div class="calendar-header-cell">Sel</div>
-                                                <div class="calendar-header-cell">Rab</div>
-                                                <div class="calendar-header-cell">Kam</div>
-                                                <div class="calendar-header-cell">Jum</div>
-                                                <div class="calendar-header-cell weekend-header">Sab</div>
-                                                <div class="calendar-header-cell weekend-header">Min</div>
-
-                                                <?php for ($emptyIdx = 1; $emptyIdx < $heatmap_staf['first_day_of_week']; $emptyIdx++): ?>
-                                                    <div class="heatmap-empty-cell"></div>
-                                                <?php endfor; ?>
-
-                                                <?php foreach ($heatmap_staf['days'] as $day): ?>
-                                                    <?php
-                                                        $levelClass = 'heatmap-level-' . $day['level'];
-                                                        $tanggalMerahClass = $day['is_tanggal_merah'] ? 'is-tanggal-merah' : '';
-                                                        $isRevisi = !empty($day['is_revisi_aktif']);
-                                                        $draftClass = ($day['has_draft'] || $isRevisi) ? 'is-draft' : '';
-                                                        $tooltipTitle = esc($day['date_formatted']);
-                                                        if ($day['is_holiday']) {
-                                                            $tooltipTitle .= ' - ' . esc($day['holiday_name']);
-                                                        } elseif ($day['is_weekend']) {
-                                                            $tooltipTitle .= ' - Akhir Pekan';
-                                                        }
-                                                        if ($isRevisi) {
-                                                            $tooltipTitle .= ' [Revisi Aktif]';
-                                                        } elseif ($day['has_draft']) {
-                                                            $tooltipTitle .= ' [Draf]';
-                                                        }
-                                                        $tooltipTitle .= ' (' . $day['count_logs'] . ' Kegiatan)';
-                                                    ?>
-                                                    <div class="heatmap-day-cell <?= $levelClass ?> <?= $tanggalMerahClass ?> <?= $draftClass ?>"
-                                                         role="button"
-                                                         tabindex="0"
-                                                         aria-label="<?= esc($day['date_formatted']) ?>, <?= $day['count_logs'] ?> kegiatan<?= $day['is_holiday'] ? ', libur ' . esc($day['holiday_name']) : '' ?>"
-                                                         data-is-staf="1"
-                                                         data-staf-id="<?= esc($staf_id_terpilih) ?>"
-                                                         data-day-num="<?= $day['day_num'] ?>"
-                                                         data-date-str="<?= esc($day['date_str']) ?>"
-                                                         data-tanggal="<?= esc($day['date_str']) ?>"
-                                                         data-tanggal-formatted="<?= esc($day['date_formatted']) ?>"
-                                                         data-is-holiday="<?= $day['is_holiday'] ? '1' : '0' ?>"
-                                                         data-holiday-name="<?= esc($day['holiday_name'] ?? '') ?>"
-                                                         data-is-weekend="<?= $day['is_weekend'] ? '1' : '0' ?>"
-                                                         data-is-tanggal-merah="<?= $day['is_tanggal_merah'] ? '1' : '0' ?>"
-                                                         data-has-draft="<?= ($day['has_draft'] || $isRevisi) ? '1' : '0' ?>"
-                                                         data-has-terkirim="<?= $day['has_terkirim'] ? '1' : '0' ?>"
-                                                         data-is-revisi="<?= $isRevisi ? '1' : '0' ?>"
-                                                         data-total-kegiatan="<?= $day['count_logs'] ?>"
-                                                         data-logs='<?= htmlspecialchars(json_encode($day['logs']), ENT_QUOTES, 'UTF-8') ?>'
-                                                         data-bs-toggle="tooltip"
-                                                         data-bs-placement="top"
-                                                         title="<?= $tooltipTitle ?>">
-                                                        <div class="day-header">
-                                                            <span class="day-num"><?= $day['day_num'] ?></span>
-                                                            <?php if ($day['is_holiday']): ?>
-                                                                <i class="bi bi-sun-fill holiday-indicator small" title="<?= esc($day['holiday_name']) ?>"></i>
-                                                            <?php elseif ($day['is_weekend']): ?>
-                                                                <i class="bi bi-moon-stars ecc-text-muted-aa small"></i>
-                                                            <?php elseif ($isRevisi): ?>
-                                                                <i class="bi bi-pencil-square text-warning-emphasis small" title="Mode Revisi Aktif"></i>
-                                                            <?php elseif ($day['has_draft']): ?>
-                                                                <i class="bi bi-pencil-fill text-warning-emphasis small"></i>
-                                                            <?php elseif ($day['count_logs'] > 0): ?>
-                                                                <i class="bi bi-check2-circle text-success-emphasis small"></i>
-                                                            <?php endif; ?>
-                                                        </div>
-                                                        <div class="day-footer">
-                                                            <?php if ($isRevisi && $day['count_logs'] === 0): ?>
-                                                                <span class="badge-count text-warning-emphasis fw-bold">Revisi</span>
-                                                            <?php elseif ($day['count_logs'] === 0): ?>
-                                                                <span class="badge-count">-</span>
-                                                            <?php else: ?>
-                                                                <span class="badge-count <?= in_array($day['level'], [3, 4]) ? 'badge-subtle-custom' : 'fw-bold' ?>">
-                                                                    <?= $day['count_logs'] ?> Log
-                                                                </span>
-                                                            <?php endif; ?>
-                                                        </div>
-                                                    </div>
-                                                <?php endforeach; ?>
-                                            </div>
-
-                                            <div class="heatmap-legend-container mt-3 pt-3">
-                                                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
-                                                    <div class="d-flex align-items-center flex-wrap gap-2">
-                                                        <span class="badge bg-light ecc-text-muted-aa border px-3 py-2 fw-bold text-uppercase">Keterangan</span>
-                                                        <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle rounded-pill px-3 py-2 fw-semibold">Tgl Merah / Libur</span>
-                                                        <div class="d-inline-flex align-items-center bg-light rounded-pill border flex-wrap px-3 py-1 gap-3 small">
-                                                            <div class="d-flex align-items-center gap-2">
-                                                                <span class="heatmap-legend-swatch heatmap-swatch-empty"></span>
-                                                                <span class="ecc-text-muted-aa fw-medium">0 Log</span>
-                                                            </div>
-                                                            <div class="d-flex align-items-center gap-2">
-                                                                <span class="heatmap-legend-swatch heatmap-swatch-draft"></span>
-                                                                <span class="text-warning-emphasis fw-semibold">Draf</span>
-                                                            </div>
-                                                            <div class="d-flex align-items-center gap-2">
-                                                                <span class="heatmap-legend-swatch heatmap-swatch-l1"></span>
-                                                                <span class="text-dark fw-medium">1 - 2</span>
-                                                            </div>
-                                                            <div class="d-flex align-items-center gap-2">
-                                                                <span class="heatmap-legend-swatch heatmap-swatch-l2"></span>
-                                                                <span class="text-dark fw-medium">3 - 4</span>
-                                                            </div>
-                                                            <div class="d-flex align-items-center gap-2">
-                                                                <span class="heatmap-legend-swatch heatmap-swatch-l3"></span>
-                                                                <span class="text-dark fw-medium">5 - 6</span>
-                                                            </div>
-                                                            <div class="d-flex align-items-center gap-2">
-                                                                <span class="heatmap-legend-swatch heatmap-swatch-l4"></span>
-                                                                <span class="text-dark fw-medium">&gt; 6 Log</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <span class="badge text-primary-emphasis bg-primary-subtle rounded-pill border border-primary-subtle px-3 py-2 fw-semibold">
-                                                        Klik tanggal untuk melihat rincian pekerjaan
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
+                                    <?= view('user/penilaian_kinerja/_calendar_heatmap', [
+                                        'heatmap'              => $heatmap_staf,
+                                        'isStaf'               => true,
+                                        'stafId'               => $staf_id_terpilih,
+                                        'bulanNama'            => $bulan_indo[$bulan_terpilih - 1] ?? '',
+                                        'tahunTerpilih'        => $tahun_terpilih,
+                                        'formatDisplayDecimal' => $formatDisplayDecimal,
+                                    ]) ?>
                                 <?php endif; ?>
                             <?php endif; ?>
                         <?php else: ?>
@@ -2009,7 +1895,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
 
         const filterPreviousValues = {
             bulan: $('#filterBulanSelect').val(),
-            tahun: $('#tahunFilterInput').val(),
+            tahun: $('#tahunFilterSelect').val(),
             unit: $('#filterUnitSelect').val(),
             staf: $('#selectStaf').val()
         };
@@ -2076,6 +1962,9 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
         $('#filterBulanSelect').on('change', function() {
             handleFilterChange($(this).closest('form'), $(this), 'bulan');
         });
+        $('#tahunFilterSelect').on('change', function() {
+            handleFilterChange($(this).closest('form'), $(this), 'tahun');
+        });
         $('#filterUnitSelect').on('change', function() {
             handleFilterChange($(this).closest('form'), $(this), 'unit');
         });
@@ -2101,20 +1990,6 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                     handleFilterChange($(this).closest('form'), $(this), 'staf');
                 });
             }
-        }
-
-        let tahunDebounceTimer = null;
-        const tahunInput = document.getElementById('tahunFilterInput');
-        if (tahunInput) {
-            tahunInput.addEventListener('input', function() {
-                clearTimeout(tahunDebounceTimer);
-                tahunDebounceTimer = setTimeout(function() {
-                    const val = parseInt(tahunInput.value, 10);
-                    if (!isNaN(val) && val >= 2020 && val <= 2099) {
-                        handleFilterChange($(tahunInput).closest('form'), $(tahunInput), 'tahun');
-                    }
-                }, 600);
-            });
         }
 
         $(document).on('wheel', 'input[type="number"]', function() {
@@ -2588,9 +2463,20 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
             setTimeout(() => { submitBtns.prop('disabled', true); }, 10);
         });
 
+        function syncFilterUnitVisibility(tabName) {
+            const unitCol = document.getElementById('filterUnitCol');
+            if (!unitCol) return;
+            if (tabName === 'staf') {
+                unitCol.classList.remove('d-none');
+            } else {
+                unitCol.classList.add('d-none');
+            }
+        }
+
         $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
             const target = $(e.target).attr('aria-controls');
             $('#active_tab_input').val(target);
+            syncFilterUnitVisibility(target);
             if (history.pushState) {
                 history.pushState(null, null, '#' + target);
             } else {
@@ -2599,12 +2485,16 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
         });
 
         if (window.location.hash) {
-            const targetTab = document.querySelector('button[aria-controls="' + window.location.hash.substring(1) + '"]');
+            const hashTab = window.location.hash.substring(1);
+            const targetTab = document.querySelector('button[aria-controls="' + hashTab + '"]');
             if (targetTab) {
                 const tab = new bootstrap.Tab(targetTab);
                 tab.show();
-                $('#active_tab_input').val(window.location.hash.substring(1));
+                $('#active_tab_input').val(hashTab);
+                syncFilterUnitVisibility(hashTab);
             }
+        } else {
+            syncFilterUnitVisibility($('#active_tab_input').val());
         }
 
         // Modal Detail Log Heatmap

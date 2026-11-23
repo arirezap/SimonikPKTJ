@@ -77,6 +77,11 @@ $tipeCatalog = $refs['tipe_jawaban'] ?? ketarunaan_tracer_tipe_jawaban_catalog()
                                     <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle rounded-pill px-2 py-1 ecc-num" style="font-size: 0.72rem;">#<?= (int) $q['urutan'] ?></span>
                                     <span class="badge bg-light text-dark border rounded-pill px-2 py-1" style="font-size: 0.72rem;"><?= esc((string) $q['bagian']) ?></span>
                                     <span class="badge bg-light text-secondary border rounded-pill px-2 py-1" style="font-size: 0.72rem;"><?= esc($tipeCatalog[$q['tipe_jawaban']] ?? $q['tipe_jawaban']) ?></span>
+                                    <?php if ((int) ($q['is_wajib'] ?? 1) === 1): ?>
+                                        <span class="badge bg-danger-subtle text-danger-emphasis rounded-pill px-2 py-1" style="font-size: 0.7rem;">Wajib Diisi</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill px-2 py-1" style="font-size: 0.7rem;">Opsional</span>
+                                    <?php endif; ?>
                                     <span class="ecc-text-muted-aa ecc-num" style="font-size: 0.72rem;">Kode: <?= esc((string) $q['kode_pertanyaan']) ?></span>
                                 </div>
                                 <div class="fw-semibold text-dark mb-1"><?= esc((string) $q['teks_pertanyaan']) ?></div>

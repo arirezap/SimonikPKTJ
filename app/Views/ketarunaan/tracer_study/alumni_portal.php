@@ -41,13 +41,13 @@ $doneList = array_values(array_filter($periodes, static fn (array $p): bool => !
                                     <?php endif; ?>
                                 </div>
                             </div>
-                            <div class="d-flex flex-wrap gap-2 pt-2 border-top">
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 pt-2 border-top">
                                 <?php if ($myR): ?>
-                                    <a href="<?= base_url('ketarunaan/tracer-study/respons/' . (int) $myR['id']) ?>" class="btn btn-light border btn-sm rounded-pill px-3 ts-touch-ctrl d-inline-flex align-items-center">
+                                    <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle rounded-pill px-3 py-1" style="font-size: 0.75rem;">
+                                        Sudah Mengisi
+                                    </span>
+                                    <a href="<?= base_url('ketarunaan/tracer-study/respons/' . (int) $myR['id']) ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 ts-touch-ctrl d-inline-flex align-items-center">
                                         Lihat Jawaban Saya
-                                    </a>
-                                    <a href="<?= base_url('ketarunaan/tracer-study/isi/' . (int) $pr['id']) ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-semibold ts-touch-ctrl d-inline-flex align-items-center">
-                                        Perbarui Jawaban
                                     </a>
                                 <?php else: ?>
                                     <a href="<?= base_url('ketarunaan/tracer-study/isi/' . (int) $pr['id']) ?>" class="btn btn-primary btn-sm rounded-pill px-4 fw-semibold btn-tactile ts-touch-ctrl d-inline-flex align-items-center">

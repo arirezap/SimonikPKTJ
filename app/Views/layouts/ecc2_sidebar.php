@@ -13,15 +13,18 @@ $isBeasiswaActive    = str_starts_with($current_uri, 'ketarunaan/beasiswa');
 $isLowonganActive    = str_starts_with($current_uri, 'ketarunaan/lowongan');
 $isAlumniActive      = str_starts_with($current_uri, 'ketarunaan/alumni');
 $isTracerStudyActive = str_starts_with($current_uri, 'ketarunaan/tracer-study');
+$isDataDosenActive   = str_starts_with($current_uri, 'ketarunaan/data-dosen');
 $isValidasiActive    = str_starts_with($current_uri, 'ketarunaan/validasi');
 $isLaporanActive     = str_starts_with($current_uri, 'ketarunaan/laporan');
 $isPengaturanActive  = str_starts_with($current_uri, 'ketarunaan/pengaturan');
 
 helper('ketarunaan');
-$isSelfTaruna  = \App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfTarunaOnly();
-$isSelfAlumni  = \App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfAlumniOnly();
-$isSelfAccount = $isSelfTaruna || $isSelfAlumni;
-$sidebarHome   = ketarunaan_home_url();
+$isSelfTaruna      = \App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfTarunaOnly();
+$isSelfAlumni      = \App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfAlumniOnly();
+$isSelfAccount     = $isSelfTaruna || $isSelfAlumni;
+$canKetarunaanCore = \App\Libraries\Ketarunaan\KetarunaanPolicy::canAccessModule();
+$canViewDosenDir   = \App\Libraries\Ketarunaan\KetarunaanPolicy::canViewDataDosenDirectory();
+$sidebarHome       = $canKetarunaanCore ? ketarunaan_home_url() : site_url('ketarunaan/data-dosen');
 ?>
 
 <div class="sidebar bg-white offcanvas-lg offcanvas-start border-end" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarOffcanvasLabel">
@@ -47,6 +50,7 @@ $sidebarHome   = ketarunaan_home_url();
     <div class="sidebar-menu offcanvas-body p-0 d-block">
         <ul class="nav flex-column">
             
+            <?php if ($canKetarunaanCore): ?>
             <?php if (!$isSelfAccount): ?>
             <li class="sidebar-category">DASHBOARD</li>
             <li class="nav-item">
@@ -124,14 +128,24 @@ $sidebarHome   = ketarunaan_home_url();
                 </a>
             </li>
             <?php endif; ?>
+            <?php endif; ?>
 
             <?php
+            $canDataDosen  = \App\Libraries\Ketarunaan\KetarunaanPolicy::canAccessDataDosenModule();
             $canValidasi   = \App\Libraries\Ketarunaan\KetarunaanPolicy::canAccessValidasiModule();
             $canLaporan    = \App\Libraries\Ketarunaan\KetarunaanPolicy::canAccessLaporanModule();
             $canPengaturan = \App\Libraries\Ketarunaan\KetarunaanPolicy::canAccessPengaturanModule();
             ?>
-            <?php if ($canValidasi || $canLaporan || $canPengaturan): ?>
+            <?php if ($canDataDosen || $canValidasi || $canLaporan || $canPengaturan): ?>
             <li class="sidebar-category">TATA KELOLA</li>
+            <?php if ($canDataDosen): ?>
+            <li class="nav-item">
+                <a class="nav-link <?= $isDataDosenActive ? 'active' : '' ?>" href="<?= site_url('ketarunaan/data-dosen') ?>">
+                    <i class="bi bi-person-badge-fill" aria-hidden="true"></i>
+                    <span><?= $canViewDosenDir ? 'Data Dosen' : 'Profil Dosen Saya' ?></span>
+                </a>
+            </li>
+            <?php endif; ?>
             <?php if ($canValidasi): ?>
             <li class="nav-item">
                 <a class="nav-link <?= $isValidasiActive ? 'active' : '' ?>" href="<?= site_url('ketarunaan/validasi') ?>">

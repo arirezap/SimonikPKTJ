@@ -65,9 +65,7 @@ $valJenjang  = (string) old('kesesuaian_jenjang', (string) ($existing['kesesuaia
                 Responden: <strong class="text-dark"><?= esc((string) ($verified['nama_lengkap'] ?? '')) ?></strong>
                 (<span class="ecc-num"><?= esc((string) ($verified['nomor_taruna'] ?? '')) ?></span> &bull; <?= esc((string) ($verified['kode_prodi'] ?? '-')) ?>)
             </div>
-            <?php if ($existing): ?>
-                <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-3 py-1">Mode Pembaruan Jawaban</span>
-            <?php endif; ?>
+            <span class="badge bg-light text-secondary border rounded-pill px-3 py-1">Pengisian 1 Kali (Final)</span>
         </div>
     </div>
 
@@ -158,7 +156,11 @@ $valJenjang  = (string) old('kesesuaian_jenjang', (string) ($existing['kesesuaia
                             <div class="ts-q-item">
                                 <label class="form-label fw-semibold text-dark small mb-1 d-block">
                                     <?= esc((string) $q['teks_pertanyaan']) ?>
-                                    <?php if ($wajib): ?><span class="text-danger">*</span><?php endif; ?>
+                                    <?php if ($wajib): ?>
+                                        <span class="text-danger">*</span>
+                                    <?php else: ?>
+                                        <span class="fw-normal ecc-text-muted-aa">(Opsional)</span>
+                                    <?php endif; ?>
                                 </label>
                                 <?php if (!empty($q['keterangan_bantuan'])): ?>
                                     <div class="ecc-text-muted-aa mb-2" style="font-size: 0.75rem;"><?= esc((string) $q['keterangan_bantuan']) ?></div>
@@ -216,9 +218,10 @@ $valJenjang  = (string) old('kesesuaian_jenjang', (string) ($existing['kesesuaia
                 </div>
             <?php endforeach; ?>
 
-            <div class="d-flex justify-content-end pt-3 border-top">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pt-3 border-top">
+                <span class="ecc-text-muted-aa small">Pastikan jawaban sudah benar sebelum dikirim. Jawaban yang telah dikirim bersifat final.</span>
                 <button type="submit" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold">
-                    <?= $existing ? 'Simpan Perubahan Jawaban' : 'Kirim Jawaban Survei' ?>
+                    Kirim Jawaban Survei
                 </button>
             </div>
         </form>

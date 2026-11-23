@@ -46,7 +46,8 @@ class Dashboard extends BaseController
             $statYear = ($bulanTerpilih === 'all') ? $statPersonal : $this->hitungKinerjaPegawai($user_id, 'all', $tahun_kinerja, $batchTargets, $batchTambahan);
             $lineChartRealisasiData = [];
             for ($i = 1; $i <= 12; $i++) {
-                $lineChartRealisasiData[] = $statYear['monthly_averages'][$i] ?? 0;
+                $mVal = $statYear['monthly_averages'][$i] ?? null;
+                $lineChartRealisasiData[] = ($mVal !== null && $mVal > 0) ? $mVal : null;
             }
 
             $role = session()->get('role');
@@ -80,7 +81,8 @@ class Dashboard extends BaseController
                         $peerQuery->groupStart()
                             ->where('status_pegawai', 'aktif')
                             ->orGroupStart()
-                                ->whereIn('status_pegawai', ['mutasi', 'pensiun'])
+                                ->whereIn('status_pegawai', ['mutasi_keluar', 'pensiun', 'nonaktif'])
+                                ->where('tmt_selesai IS NOT NULL')
                                 ->where('tmt_selesai >=', $periodDate)
                             ->groupEnd()
                         ->groupEnd();
@@ -95,11 +97,16 @@ class Dashboard extends BaseController
             $rekapDashboard = [];
 
             if (!empty($daftarStaf)) {
+                $penugasanStafMap = $userModel->getPenugasanPeriodeBatch(
+                    array_column($daftarStaf, 'id'),
+                    $bulanCek,
+                    (int)$tahun_kinerja
+                );
                 foreach ($daftarStaf as $staf) {
-                    $penugasanStaf = $userModel->getPenugasanPeriode($staf['id'], $bulanCek, (int)$tahun_kinerja);
+                    $penugasanStaf = $penugasanStafMap[(int)$staf['id']] ?? null;
                     if ($penugasanStaf) {
-                        $staf['unit'] = $penugasanStaf['unit'] ?? $staf['unit'];
-                        $staf['jabatan'] = $penugasanStaf['jabatan'] ?? $staf['jabatan'];
+                        $staf['unit']    = !empty($penugasanStaf['unit']) ? $penugasanStaf['unit'] : $staf['unit'];
+                        $staf['jabatan'] = !empty($penugasanStaf['jabatan']) ? $penugasanStaf['jabatan'] : $staf['jabatan'];
                     }
 
                     $statStaf = $this->hitungKinerjaPegawai($staf['id'], $bulanTerpilih, $tahun_kinerja, $batchTargets, $batchTambahan);

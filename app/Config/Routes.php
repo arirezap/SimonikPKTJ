@@ -403,7 +403,17 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
         $routes->get('tracer-study/isi/(:num)', 'Ketarunaan\TracerStudyController::formIsi/$1');
         $routes->post('tracer-study/isi/(:num)/simpan', 'Ketarunaan\TracerStudyController::simpanRespons/$1');
 
-        // Modul 8: Tata Kelola ECC 2.0 (Validasi Data, Laporan, Pengaturan)
+        // Modul 8: Tata Kelola ECC 2.0 (Data Dosen, Validasi Data, Laporan, Pengaturan)
+        $routes->get('data-dosen', 'Ketarunaan\DataDosenController::index');
+        $routes->get('data-dosen/ekspor', 'Ketarunaan\DataDosenController::ekspor');
+        $routes->post('data-dosen/sinkron', 'Ketarunaan\DataDosenController::sinkron');
+        $routes->post('data-dosen/simpan', 'Ketarunaan\DataDosenController::simpan');
+        $routes->get('data-dosen/detail/(:num)', 'Ketarunaan\DataDosenController::detail/$1');
+        $routes->post('data-dosen/detail/(:num)/catatan-pimpinan', 'Ketarunaan\DataDosenController::saveCatatanPimpinan/$1');
+        $routes->post('data-dosen/detail/(:num)/kualifikasi/simpan', 'Ketarunaan\DataDosenController::saveKualifikasi/$1');
+        $routes->post('data-dosen/detail/(:num)/kualifikasi/(:num)/hapus', 'Ketarunaan\DataDosenController::deleteKualifikasi/$1/$2');
+        $routes->post('data-dosen/detail/(:num)/kualifikasi/(:num)/verifikasi', 'Ketarunaan\DataDosenController::verifyKualifikasi/$1/$2');
+
         $routes->get('validasi', 'Ketarunaan\ValidasiController::index');
         $routes->post('validasi/status/(:num)', 'Ketarunaan\ValidasiController::putuskanStatus/$1');
         $routes->post('validasi/capaian/(:num)', 'Ketarunaan\ValidasiController::putuskanCapaian/$1');

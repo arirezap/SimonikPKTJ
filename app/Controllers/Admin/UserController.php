@@ -1320,5 +1320,21 @@ class UserController extends BaseController
                 'created_at' => $now,
             ]);
         }
+
+        // Sinkronisasi 2 arah: jika role tambahan 'dosen' dicentang pada akun pegawai, siapkan profil dosen otomatis
+        if (in_array('dosen', $rolesToSave, true) && !in_array($cleanPrimary, ['taruna', 'alumni'], true)) {
+            try {
+                $actor = (string) (session()->get('nama_lengkap') ?: session()->get('username') ?: 'system');
+                (new \App\Libraries\Ketarunaan\DataDosenService($db))->ensureProfilForUser($userId, $actor);
+            } catch (\Throwable $e) {
+                log_message('warning', 'Auto-sync dosen_profil gagal untuk user_id ' . $userId . ': ' . $e->getMessage());
+            }
+        }
+
+        // Segarkan daftar peran sesi bila yang diubah adalah akun pengguna yang sedang login
+        $currentSessionUserId = (int) (session()->get('id') ?? session()->get('user_id') ?? 0);
+        if ($currentSessionUserId > 0 && $currentSessionUserId === $userId) {
+            session()->set('all_roles', $rolesToSave);
+        }
     }
 }

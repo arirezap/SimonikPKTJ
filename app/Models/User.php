@@ -169,6 +169,58 @@ class User extends Model
         ];
     }
 
+    /**
+     * Memuat riwayat penugasan aktif (jabatan, unit, unit_id, atasan_id, role) secara batch
+     * untuk banyak user sekaligus dalam 1 kueri (menghindari N+1 pada Dashboard & rekap).
+     *
+     * @param array<int, int|string> $userIds
+     * @param int|null               $bulan
+     * @param int|null               $tahun
+     * @return array<int, array<string, mixed>> Peta [user_id => row]
+     */
+    public function getPenugasanPeriodeBatch(array $userIds, ?int $bulan = null, ?int $tahun = null): array
+    {
+        $cleanIds = array_values(array_unique(array_filter(array_map('intval', $userIds), static fn (int $id): bool => $id > 0)));
+        if (empty($cleanIds)) {
+            return [];
+        }
+
+        $db = \Config\Database::connect();
+        if (!$db->tableExists('riwayat_atasan')) {
+            return [];
+        }
+
+        $bulan = $bulan ? (int) $bulan : (int) date('n');
+        $tahun = $tahun ? (int) $tahun : (int) date('Y');
+
+        $rows = $db->table('riwayat_atasan')
+            ->select('id, user_id, atasan_id, jabatan, unit, unit_id, role')
+            ->whereIn('user_id', $cleanIds)
+            ->where('tahun', $tahun)
+            ->where('bulan_mulai <=', $bulan)
+            ->where('bulan_selesai >=', $bulan)
+            ->where('is_aktif', 1)
+            ->orderBy('id', 'DESC')
+            ->get()
+            ->getResultArray();
+
+        $map = [];
+        foreach ($rows as $row) {
+            $uid = (int) ($row['user_id'] ?? 0);
+            if ($uid > 0 && !isset($map[$uid])) {
+                $map[$uid] = [
+                    'atasan_id' => !empty($row['atasan_id']) ? (int) $row['atasan_id'] : null,
+                    'jabatan'   => (string) ($row['jabatan'] ?? ''),
+                    'unit'      => (string) ($row['unit'] ?? ''),
+                    'unit_id'   => !empty($row['unit_id']) ? (int) $row['unit_id'] : null,
+                    'role'      => (string) ($row['role'] ?? ''),
+                ];
+            }
+        }
+
+        return $map;
+    }
+
     // Helper untuk mengambil daftar staf langsung (dengan resolusi riwayat penugasan dan status aktif)
     public function getStaf($atasanId, ?string $periodDate = null)
     {

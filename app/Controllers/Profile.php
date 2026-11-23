@@ -22,7 +22,7 @@ class Profile extends BaseController
             return redirect()->to(\App\Libraries\Ketarunaan\KetarunaanPolicy::getSelfPortalUrl());
         }
 
-        helper(['avatar', 'audit']);
+        helper(['avatar', 'audit', 'role', 'ketarunaan']);
 
         $userId = session()->get('id') ?? session()->get('user_id');
         
@@ -72,12 +72,30 @@ class Profile extends BaseController
         $riwayatAtasanModel = new \App\Models\RiwayatAtasan();
         $hasRiwayat = ($riwayatAtasanModel->where('user_id', $userId)->countAllResults() > 0);
 
+        $isDosenRole      = function_exists('hasRole') && hasRole('dosen');
+        $ownDosenProfilId = \App\Libraries\Ketarunaan\KetarunaanPolicy::resolveOwnDosenProfilId();
+        $dosenSummary     = null;
+        if ($ownDosenProfilId !== null) {
+            $db = \Config\Database::connect();
+            if ($db->tableExists('dosen_profil')) {
+                $dosenSummary = $db->table('dosen_profil dp')
+                    ->select('dp.id, dp.nidn, dp.jabatan_fungsional, dp.pendidikan_terakhir, dp.status_serdos, ps.kode_prodi')
+                    ->join('ref_program_studi ps', 'ps.id = dp.homebase_prodi_id', 'left')
+                    ->where('dp.id', $ownDosenProfilId)
+                    ->get()
+                    ->getRowArray();
+            }
+        }
+
         $data = [
             'title'                 => 'Profil Saya',
             'user'                  => $user,
             'is_direktur'           => $isDirektur,
             'is_pimpinan_institusi' => $isPimpinanInstitusi,
             'has_riwayat'           => $hasRiwayat,
+            'is_dosen_role'         => $isDosenRole,
+            'own_dosen_profil_id'   => $ownDosenProfilId,
+            'dosen_summary'         => $dosenSummary,
             'unit_kerja_list'       => $unit_kerja_list,
             'potential_bosses'      => $potential_bosses,
             'validation'            => \Config\Services::validation()

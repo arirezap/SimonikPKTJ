@@ -68,15 +68,10 @@ $token    = (string) ($token ?? '');
                 </div>
             </div>
             <div class="d-flex flex-wrap justify-content-center gap-2">
-                <?php if ($token !== '' && !empty($periode) && ketarunaan_is_tracer_periode_open($periode)): ?>
-                    <a href="<?= esc(ketarunaan_tracer_public_url($token)) ?>" class="btn btn-outline-primary rounded-pill px-4 fw-semibold">
-                        Perbarui Jawaban
-                    </a>
-                <?php endif; ?>
                 <?php if ($token !== ''): ?>
                     <form method="post" action="<?= esc(ketarunaan_tracer_public_url($token, 'ganti-alumni')) ?>" class="d-inline">
                         <?= csrf_field() ?>
-                        <button type="submit" class="btn btn-light border rounded-pill px-4">Selesai</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">Selesai</button>
                     </form>
                 <?php endif; ?>
             </div>

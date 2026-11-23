@@ -931,6 +931,19 @@ class TracerStudyService
                 return ['status' => false, 'message' => $genericError];
             }
 
+            $alreadyResp = $this->responsModel
+                ->where('periode_id', $periodeId)
+                ->where('nomor_taruna', (string) $alumni['nomor_taruna'])
+                ->where('status_validasi !=', 'ditolak')
+                ->first();
+            if ($alreadyResp) {
+                return [
+                    'status'            => false,
+                    'already_submitted' => true,
+                    'message'           => 'Anda sudah mengisi survei pada periode ini. Setiap alumni hanya dapat mengirim jawaban satu kali.',
+                ];
+            }
+
             return [
                 'status' => true,
                 'mode'   => 'registered',
@@ -960,6 +973,19 @@ class TracerStudyService
         // 3. Jika Notar belum ada di database & periode mengizinkan alumni belum terdaftar -> arahkan ke lengkapi identitas
         if ((int) ($periode['allow_unregistered_alumni'] ?? 1) !== 1) {
             return ['status' => false, 'message' => $genericError];
+        }
+
+        $alreadyUnreg = $this->responsModel
+            ->where('periode_id', $periodeId)
+            ->whereIn('nomor_taruna', $nimCandidates)
+            ->where('status_validasi !=', 'ditolak')
+            ->first();
+        if ($alreadyUnreg) {
+            return [
+                'status'            => false,
+                'already_submitted' => true,
+                'message'           => 'Anda sudah mengisi survei pada periode ini. Setiap alumni hanya dapat mengirim jawaban satu kali.',
+            ];
         }
 
         return [
@@ -1047,6 +1073,19 @@ class TracerStudyService
             return ['status' => false, 'message' => 'Tahun lulus atau program studi Anda tidak termasuk sasaran periode survei ini.'];
         }
 
+        $alreadyReg = $this->responsModel
+            ->where('periode_id', $periodeId)
+            ->where('nomor_taruna', $nimClean)
+            ->where('status_validasi !=', 'ditolak')
+            ->first();
+        if ($alreadyReg) {
+            return [
+                'status'            => false,
+                'already_submitted' => true,
+                'message'           => 'Anda sudah mengisi survei pada periode ini. Setiap alumni hanya dapat mengirim jawaban satu kali.',
+            ];
+        }
+
         return [
             'status' => true,
             'alumni' => [
@@ -1112,6 +1151,15 @@ class TracerStudyService
                 ->where('periode_id', $periodeId)
                 ->where('nomor_taruna', $nimClean)
                 ->first();
+
+            if ($existing && $isSelfAlumni && ($existing['status_validasi'] ?? '') !== 'ditolak') {
+                return [
+                    'status'            => false,
+                    'already_submitted' => true,
+                    'respons_id'        => (int) $existing['id'],
+                    'message'           => 'Anda sudah mengisi survei pada periode ini. Jawaban yang telah dikirim bersifat final.',
+                ];
+            }
 
             if ($existing) {
                 $ansRows = $this->jawabanModel->where('respons_id', (int) $existing['id'])->findAll();
@@ -1317,6 +1365,13 @@ class TracerStudyService
             ->where('periode_id', $periodeId)
             ->where('nomor_taruna', $nimClean)
             ->first();
+
+        if ($existing && $isSelfAlumni && ($existing['status_validasi'] ?? '') !== 'ditolak') {
+            return [
+                'status'  => false,
+                'message' => 'Anda sudah mengisi survei pada periode ini. Jawaban yang telah dikirim tidak dapat diubah.',
+            ];
+        }
 
         $now = date('Y-m-d H:i:s');
         $headerData = [

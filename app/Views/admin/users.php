@@ -309,6 +309,7 @@
                         <option value="manajemen" <?= (isset($filter_role) && $filter_role == 'manajemen') ? 'selected' : '' ?>>Kanit / Katim</option>
                         <option value="user" <?= (isset($filter_role) && $filter_role == 'user') ? 'selected' : '' ?>>Staf</option>
                         <option value="kepegawaian" <?= (isset($filter_role) && $filter_role == 'kepegawaian') ? 'selected' : '' ?>>Kepegawaian</option>
+                        <option value="dosen" <?= (isset($filter_role) && $filter_role == 'dosen') ? 'selected' : '' ?>>Dosen</option>
                         <option value="spm" <?= (isset($filter_role) && $filter_role == 'spm') ? 'selected' : '' ?>>SPM</option>
                         <option value="tugas_belajar" <?= (isset($filter_role) && $filter_role == 'tugas_belajar') ? 'selected' : '' ?>>Tugas Belajar</option>
                         <option value="ketarunaan" <?= (isset($filter_role) && $filter_role == 'ketarunaan') ? 'selected' : '' ?>>Ketarunaan (PIC Taruna)</option>

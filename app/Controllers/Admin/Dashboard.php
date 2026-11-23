@@ -98,13 +98,18 @@ class Dashboard extends BaseController
             }
         }
 
-        // Penyelarasan Jabatan & Unit Kerja Dinamis Berdasarkan Periode (Pindah Unit / Rotasi Jabatan)
+        // Penyelarasan Jabatan & Unit Kerja Dinamis Berdasarkan Periode (Batch 1 Kueri)
         $bulanCek = ($bulan_kinerja !== 'all' && !empty($bulan_kinerja)) ? (int)$bulan_kinerja : (int)date('n');
+        $penugasanMap = $this->userModel->getPenugasanPeriodeBatch(
+            array_column($daftarSemuaUser, 'id'),
+            $bulanCek,
+            (int)$tahun_kinerja
+        );
         foreach ($daftarSemuaUser as &$staf) {
-            $penugasan = $this->userModel->getPenugasanPeriode($staf['id'], $bulanCek, (int)$tahun_kinerja);
+            $penugasan = $penugasanMap[(int)$staf['id']] ?? null;
             if ($penugasan) {
-                $staf['jabatan'] = $penugasan['jabatan'] ?: $staf['jabatan'];
-                $staf['unit']    = $penugasan['unit'] ?: $staf['unit'];
+                $staf['jabatan'] = !empty($penugasan['jabatan']) ? $penugasan['jabatan'] : $staf['jabatan'];
+                $staf['unit']    = !empty($penugasan['unit']) ? $penugasan['unit'] : $staf['unit'];
             }
         }
         unset($staf);
@@ -115,11 +120,26 @@ class Dashboard extends BaseController
         $rekapDashboard = [];
         $globalTotalDinilai = 0;
         $unitStats = [];
+        $trendBulananData = array_fill(0, 12, null);
+        $monthUserCounts = array_fill(0, 12, 0);
+        $monthUserSums = array_fill(0, 12, 0);
         
-        // Single-pass: Sekaligus bangun rekap pegawai dan agregasi unit kerja
+        // Single-pass: Sekaligus bangun rekap pegawai, agregasi unit kerja, dan tren bulanan
         foreach ($daftarSemuaUser as $staf) {
             $statPegawai = $this->hitungKinerjaPegawai($staf['id'], $bulan_kinerja, $tahun_kinerja, $batchTargets, $batchTambahan);
             $globalTotalDinilai += $statPegawai['dinilai'];
+
+            $statYear = ($bulan_kinerja === 'all')
+                ? $statPegawai
+                : $this->hitungKinerjaPegawai($staf['id'], 'all', $tahun_kinerja, $batchTargets, $batchTambahan);
+            if (!empty($statYear['monthly_averages'])) {
+                foreach ($statYear['monthly_averages'] as $mIdx => $mAvg) {
+                    if ($mAvg !== null && $mAvg > 0 && $mIdx >= 1 && $mIdx <= 12) {
+                        $monthUserCounts[$mIdx - 1]++;
+                        $monthUserSums[$mIdx - 1] += $mAvg;
+                    }
+                }
+            }
             
             $rekapDashboard[] = [
                 'staf'           => $staf,
@@ -149,24 +169,8 @@ class Dashboard extends BaseController
         }
 
         // ----------------------------------------------------------------
-        // 2. TREN KINERJA BULANAN SELURUH PEGAWAI (1-12)
+        // 2. TREN KINERJA BULANAN SELURUH PEGAWAI (1-12, null jika belum ada penilaian)
         // ----------------------------------------------------------------
-        $trendBulananData = array_fill(0, 12, 0);
-        $monthUserCounts = array_fill(0, 12, 0);
-        $monthUserSums = array_fill(0, 12, 0);
-
-        foreach ($daftarSemuaUser as $u) {
-            $statYear = $this->hitungKinerjaPegawai($u['id'], 'all', $tahun_kinerja, $batchTargets, $batchTambahan);
-            if (!empty($statYear['monthly_averages'])) {
-                foreach ($statYear['monthly_averages'] as $mIdx => $mAvg) {
-                    if ($mAvg !== null && $mAvg > 0) {
-                        $monthUserCounts[$mIdx - 1]++;
-                        $monthUserSums[$mIdx - 1] += $mAvg;
-                    }
-                }
-            }
-        }
-
         for ($i = 0; $i < 12; $i++) {
             if ($monthUserCounts[$i] > 0) {
                 $trendBulananData[$i] = round($monthUserSums[$i] / $monthUserCounts[$i], 2);
@@ -373,51 +377,71 @@ class Dashboard extends BaseController
         $key = $this->request->getVar('key') ?: $this->request->getVar('kategori');
         $normalizedKey = strtolower(str_replace(' ', '_', trim((string)$key)));
 
+        $user_id   = session()->get('id') ?? session()->get('user_id');
+        $role      = session()->get('role');
+        $canSeeAll = hasAnyRole(['admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk', 'kepegawaian']);
+
         [$batchTargets, $batchTambahan] = $this->loadBatchKinerjaData($tahun);
 
-        $userBuilder = $this->userModel
-            ->select('id, nama_lengkap, nip, username, jabatan, unit, role, status_pegawai, tmt_selesai')
-            ->where('role !=', 'admin');
-        User::excludeSelfServiceFromQuery($userBuilder);
+        $userSelect = 'id, nama_lengkap, nip, username, jabatan, unit, role, status_pegawai, tmt_selesai';
+        $bulanCek   = ($bulan !== 'all' && !empty($bulan)) ? (int)$bulan : (int)date('n');
 
-        $adminPivotIds = array_column(
-            $this->db->table('user_roles')->select('user_id')->where('role_name', 'admin')->get()->getResultArray(),
-            'user_id'
-        );
-        if (!empty($adminPivotIds)) {
-            $userBuilder->whereNotIn('id', $adminPivotIds);
-        }
+        if ($canSeeAll) {
+            $userBuilder = $this->userModel
+                ->select($userSelect)
+                ->where('role !=', 'admin');
+            User::excludeSelfServiceFromQuery($userBuilder);
 
-        if ($this->db->fieldExists('status_pegawai', 'users')) {
-            if ($bulan !== 'all' && !empty($bulan)) {
-                $periodMonth = sprintf('%04d-%02d-01', (int)$tahun, (int)$bulan);
-                $userBuilder->groupStart()
-                            ->where('status_pegawai', 'aktif')
-                            ->orGroupStart()
-                                ->whereIn('status_pegawai', ['mutasi_keluar', 'pensiun', 'nonaktif'])
-                                ->where('tmt_selesai IS NOT NULL')
-                                ->where('tmt_selesai >=', $periodMonth)
-                            ->groupEnd()
-                            ->groupEnd();
-            } else {
-                $userBuilder->groupStart()
-                            ->where('status_pegawai', 'aktif')
-                            ->orGroupStart()
-                                ->whereIn('status_pegawai', ['mutasi_keluar', 'pensiun', 'nonaktif'])
-                                ->where('tmt_selesai IS NOT NULL')
-                                ->where('YEAR(tmt_selesai) >=', (int)$tahun)
-                            ->groupEnd()
-                            ->groupEnd();
+            $adminPivotIds = array_column(
+                $this->db->table('user_roles')->select('user_id')->where('role_name', 'admin')->get()->getResultArray(),
+                'user_id'
+            );
+            if (!empty($adminPivotIds)) {
+                $userBuilder->whereNotIn('id', $adminPivotIds);
+            }
+
+            if ($this->db->fieldExists('status_pegawai', 'users')) {
+                if ($bulan !== 'all' && !empty($bulan)) {
+                    $periodMonth = sprintf('%04d-%02d-01', (int)$tahun, (int)$bulan);
+                    $userBuilder->groupStart()
+                                ->where('status_pegawai', 'aktif')
+                                ->orGroupStart()
+                                    ->whereIn('status_pegawai', ['mutasi_keluar', 'pensiun', 'nonaktif'])
+                                    ->where('tmt_selesai IS NOT NULL')
+                                    ->where('tmt_selesai >=', $periodMonth)
+                                ->groupEnd()
+                                ->groupEnd();
+                } else {
+                    $userBuilder->groupStart()
+                                ->where('status_pegawai', 'aktif')
+                                ->orGroupStart()
+                                    ->whereIn('status_pegawai', ['mutasi_keluar', 'pensiun', 'nonaktif'])
+                                    ->where('tmt_selesai IS NOT NULL')
+                                    ->where('YEAR(tmt_selesai) >=', (int)$tahun)
+                                ->groupEnd()
+                                ->groupEnd();
+                }
+            }
+            $allUsers = $userBuilder->orderBy('nama_lengkap', 'ASC')->findAll();
+        } else {
+            $periodDate = sprintf('%04d-%02d-01', (int)$tahun, $bulanCek);
+            $allUsers   = $this->userModel->getAllStaf($user_id, $role, $periodDate);
+            $me         = $this->userModel->select($userSelect)->find($user_id);
+            if ($me) {
+                array_unshift($allUsers, $me);
             }
         }
-        $allUsers = $userBuilder->findAll();
 
-        $bulanCek = ($bulan !== 'all' && !empty($bulan)) ? (int)$bulan : (int)date('n');
+        $penugasanMap = $this->userModel->getPenugasanPeriodeBatch(
+            array_column($allUsers, 'id'),
+            $bulanCek,
+            $tahun
+        );
         foreach ($allUsers as &$u) {
-            $penugasan = $this->userModel->getPenugasanPeriode($u['id'], $bulanCek, $tahun);
+            $penugasan = $penugasanMap[(int)$u['id']] ?? null;
             if ($penugasan) {
-                $u['jabatan'] = $penugasan['jabatan'] ?: $u['jabatan'];
-                $u['unit']    = $penugasan['unit'] ?: $u['unit'];
+                $u['jabatan'] = !empty($penugasan['jabatan']) ? $penugasan['jabatan'] : $u['jabatan'];
+                $u['unit']    = !empty($penugasan['unit']) ? $penugasan['unit'] : $u['unit'];
             }
         }
         unset($u);
@@ -463,12 +487,13 @@ class Dashboard extends BaseController
                 $stat = $this->hitungKinerjaPegawai($u['id'], $bulan, $tahun, $batchTargets, $batchTambahan);
                 if ($stat['rata_rata'] > 0 || $stat['dinilai'] > 0) {
                     $result[] = [
-                        'nama' => $u['nama_lengkap'],
-                        'jabatan' => $u['jabatan'] ?? '-',
-                        'unit' => $u['unit'] ?? '-',
-                        'dinilai' => $stat['dinilai'],
-                        'total_laporan' => $stat['total_laporan'],
-                        'rata_rata' => $stat['rata_rata']
+                        'nama'           => $u['nama_lengkap'],
+                        'jabatan'        => $u['jabatan'] ?? '-',
+                        'unit'           => $u['unit'] ?? '-',
+                        'dinilai'        => $stat['dinilai'],
+                        'total_laporan'  => $stat['total_laporan'],
+                        'rata_rata'      => $stat['rata_rata'],
+                        'status_pegawai' => $u['status_pegawai'] ?? 'aktif',
                     ];
                 }
             }

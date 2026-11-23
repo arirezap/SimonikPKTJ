@@ -72,6 +72,9 @@ class TracerStudyPublicController extends BaseController
 
         $ctx = $this->service->getSurveyFormContext($pid, (string) $verified['nomor_taruna'], true, $verified);
         if (!$ctx['status']) {
+            if (!empty($ctx['already_submitted'])) {
+                return redirect()->to(ketarunaan_tracer_public_url($token, 'selesai'));
+            }
             $this->clearVerifiedSession($pid);
             return redirect()->to(ketarunaan_tracer_public_url($token))
                 ->with('error', $ctx['message']);

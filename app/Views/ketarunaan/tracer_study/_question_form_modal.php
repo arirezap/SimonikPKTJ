@@ -57,11 +57,12 @@ $bagianPresets = $refs['bagian_presets'] ?? ['Pencarian & Transisi Kerja', 'Eval
                             </select>
                         </div>
 
-                        <div class="col-12 col-md-5 d-flex align-items-end">
-                            <div class="form-check form-switch mb-2">
-                                <input class="form-check-input" type="checkbox" role="switch" id="qModalWajib" name="is_wajib" value="1" checked>
-                                <label class="form-check-label small fw-semibold" for="qModalWajib">Wajib diisi responden</label>
-                            </div>
+                        <div class="col-12 col-md-5">
+                            <label for="qModalWajib" class="form-label fw-semibold small">Sifat Pengisian <span class="text-danger">*</span></label>
+                            <select class="form-select ecc-control-sm" id="qModalWajib" name="is_wajib" required>
+                                <option value="1" selected>Wajib Diisi</option>
+                                <option value="0">Opsional (Tidak Wajib)</option>
+                            </select>
                         </div>
 
                         <div class="col-12" id="qOpsiWrapper">
@@ -128,7 +129,7 @@ function resetQuestionModal(nextUrutan) {
     document.getElementById('qModalUrutan').value = nextUrutan || '';
     document.getElementById('qModalTeks').value = '';
     document.getElementById('qModalTipe').value = 'pilihan_tunggal';
-    document.getElementById('qModalWajib').checked = true;
+    document.getElementById('qModalWajib').value = '1';
     document.getElementById('qModalOpsi').value = '';
     document.getElementById('qLikertMin').value = 'Sangat Kurang';
     document.getElementById('qLikertMax').value = 'Sangat Baik';
@@ -145,7 +146,7 @@ function openEditQuestionModal(btn) {
     document.getElementById('qModalUrutan').value = d.urutan || '';
     document.getElementById('qModalTeks').value = d.teks || '';
     document.getElementById('qModalTipe').value = d.tipe || 'pilihan_tunggal';
-    document.getElementById('qModalWajib').checked = (d.wajib === '1');
+    document.getElementById('qModalWajib').value = (d.wajib === '0') ? '0' : '1';
     document.getElementById('qModalBantuan').value = d.bantuan || '';
 
     var opsiRaw = [];

@@ -2144,6 +2144,92 @@ if (!function_exists('ketarunaan_tracer_public_url')) {
     }
 }
 
+if (!function_exists('ketarunaan_dosen_jafung_catalog')) {
+    /**
+     * Katalog jabatan fungsional dosen resmi.
+     *
+     * @return array<string, array<string, string>>
+     */
+    function ketarunaan_dosen_jafung_catalog(): array
+    {
+        return [
+            'guru_besar'      => ['label' => 'Guru Besar',       'badge_class' => 'bg-primary-subtle text-primary-emphasis border border-primary-subtle'],
+            'lektor_kepala'   => ['label' => 'Lektor Kepala',    'badge_class' => 'bg-info-subtle text-info-emphasis border border-info-subtle'],
+            'lektor'          => ['label' => 'Lektor',           'badge_class' => 'bg-success-subtle text-success-emphasis border border-success-subtle'],
+            'asisten_ahli'    => ['label' => 'Asisten Ahli',     'badge_class' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'],
+            'tenaga_pengajar' => ['label' => 'Tenaga Pengajar',  'badge_class' => 'bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle'],
+        ];
+    }
+}
+
+if (!function_exists('ketarunaan_dosen_pendidikan_catalog')) {
+    /**
+     * Katalog jenjang pendidikan terakhir dosen.
+     *
+     * @return array<string, string>
+     */
+    function ketarunaan_dosen_pendidikan_catalog(): array
+    {
+        return [
+            'S3'        => 'Doktor (S3)',
+            'S2'        => 'Magister (S2)',
+            'spesialis' => 'Spesialis / Profesi',
+            'S1'        => 'Sarjana (S1)',
+        ];
+    }
+}
+
+if (!function_exists('ketarunaan_dosen_serdos_catalog')) {
+    /**
+     * Katalog status Sertifikasi Dosen (Serdos).
+     *
+     * @return array<string, array<string, string>>
+     */
+    function ketarunaan_dosen_serdos_catalog(): array
+    {
+        return [
+            'sudah'  => ['label' => 'Sudah Serdos', 'badge_class' => 'bg-success-subtle text-success-emphasis border border-success-subtle'],
+            'proses' => ['label' => 'Proses',       'badge_class' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'],
+            'belum'  => ['label' => 'Belum Serdos', 'badge_class' => 'bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle'],
+        ];
+    }
+}
+
+if (!function_exists('ketarunaan_dosen_ikatan_catalog')) {
+    /**
+     * Katalog status ikatan/penugasan dosen.
+     *
+     * @return array<string, array<string, string>>
+     */
+    function ketarunaan_dosen_ikatan_catalog(): array
+    {
+        return [
+            'dosen_tetap'      => ['label' => 'Dosen Tetap',      'badge_class' => 'bg-primary-subtle text-primary-emphasis border border-primary-subtle'],
+            'dosen_luar_biasa' => ['label' => 'Dosen Luar Biasa', 'badge_class' => 'bg-info-subtle text-info-emphasis border border-info-subtle'],
+            'tugas_belajar'    => ['label' => 'Tugas Belajar',    'badge_class' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'],
+            'izin_belajar'     => ['label' => 'Izin Belajar',     'badge_class' => 'bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle'],
+        ];
+    }
+}
+
+if (!function_exists('ketarunaan_dosen_kualifikasi_catalog')) {
+    /**
+     * Katalog kategori riwayat kualifikasi & rekam jejak dosen.
+     *
+     * @return array<string, string>
+     */
+    function ketarunaan_dosen_kualifikasi_catalog(): array
+    {
+        return [
+            'pendidikan'             => 'Riwayat Pendidikan',
+            'sertifikasi_kompetensi' => 'Sertifikasi Kompetensi',
+            'pelatihan_strategis'    => 'Pelatihan / Diklat Strategis',
+            'penugasan_khusus'       => 'Penugasan Strategis / Tim Kerja',
+            'penghargaan'            => 'Penghargaan & Prestasi',
+        ];
+    }
+}
+
 
 
 

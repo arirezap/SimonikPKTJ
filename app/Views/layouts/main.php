@@ -193,14 +193,16 @@
                 </div>
             </header>
 
-            <div class="content-area">
-                
+            <main class="content-area">
+                <?php $renderedPageTitle = trim((string) $this->renderSection('page_title')); ?>
+                <?php if ($renderedPageTitle !== ''): ?>
                 <div class="d-flex align-items-center mb-3">
-                    <h3 class="mb-0 fw-bold text-dark"><?= $this->renderSection('page_title') ?></h3>
+                    <h1 class="h3 mb-0 fw-bold text-dark"><?= $renderedPageTitle ?></h1>
                 </div>
+                <?php endif; ?>
 
                 <?= $this->renderSection('content') ?>
-            </div>
+            </main>
             
             <!-- Footer Aplikasi -->
             <footer class="footer-promax py-3 mt-auto d-flex justify-content-between px-3 px-md-4 align-items-center">

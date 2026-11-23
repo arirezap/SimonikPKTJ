@@ -102,6 +102,7 @@
                                 <?php 
                                     $availableSecondary = [
                                         'kepegawaian'          => 'Kepegawaian (Rekap & Approval)',
+                                        'dosen'                => 'Dosen (Profil Akademik & Kepakaran)',
                                         'spm'                  => 'SPM (Penjaminan Mutu)',
                                         'tugas_belajar'        => 'Tugas Belajar (Laporan Studi)',
                                         'pusbangkar'           => 'Pusbangkar (Pengembangan Karakter & Disiplin)',
