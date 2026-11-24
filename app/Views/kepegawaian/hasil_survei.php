@@ -3,8 +3,8 @@
 <?= $this->section('title') ?>Hasil Survei Pemetaan SDM<?= $this->endSection() ?>
 
 <?= $this->section('styles') ?>
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet">
+<link href="<?= base_url('assets/vendor/select2/select2.min.css') ?>" rel="stylesheet">
+<link href="<?= base_url('assets/vendor/select2/select2-bootstrap-5-theme.min.css') ?>" rel="stylesheet">
 <style>
     .tabular-nums {
         font-variant-numeric: tabular-nums;
@@ -12,39 +12,120 @@
     }
 
     .card-bento-ecc {
-        background: #ffffff;
-        border: 0;
+        background: var(--ecc-surface-white, #ffffff);
+        border: 1px solid var(--ecc-border-slate, #e2e8f0);
         border-radius: 16px;
         padding: 24px;
-        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
-    }
-
-    @media (max-width: 767.98px) {
-        .card-bento-ecc {
-            padding: 16px;
-        }
-        .form-control,
-        .form-select {
-            font-size: 16px !important;
-        }
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
     }
 
     .kpi-value {
         font-size: 1.75rem;
         font-weight: 700;
-        line-height: 1.15;
-        color: #0f172a;
+        line-height: 1.2;
+        color: var(--text-dark, #0f172a);
+    }
+
+    .hs-title-sm {
+        font-size: 0.95rem;
+    }
+
+    .hs-body {
+        font-size: 0.875rem;
+    }
+
+    .hs-meta {
+        font-size: 0.75rem;
+    }
+
+    .hs-control {
+        height: 36px;
+        font-size: 0.875rem;
+    }
+
+    .hs-search-input {
+        height: 36px;
+        width: 240px;
+        max-width: 100%;
+        font-size: 0.875rem;
+    }
+
+    .hs-select-inline {
+        height: 36px;
+        width: 224px;
+        max-width: 100%;
+        font-size: 0.875rem;
+    }
+
+    .hs-header-btn {
+        min-height: 36px;
+        padding: 8px 16px;
+        font-size: 0.875rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+    }
+
+    .hs-kpi-inline-btn {
+        border: 0;
+        background: transparent;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        line-height: 1.4;
+        cursor: pointer;
+        transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .hs-kpi-inline-btn:hover {
+        background: var(--ecc-border-slate, #e2e8f0);
+        color: var(--ecc-primary-dark, #1e40af) !important;
+    }
+
+    .hs-kpi-inline-btn:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+    }
+
+    .progress-ecc {
+        height: 8px;
+        background: var(--ecc-border-slate, #e2e8f0);
+    }
+
+    .progress-bar-primary {
+        background: var(--ecc-primary-dark, #1e40af);
+    }
+
+    .progress-bar-sky {
+        background: var(--ecc-ink-sky, #0284c7);
+    }
+
+    .progress-bar-danger {
+        background: var(--ecc-ink-crimson, #b91c1c);
+    }
+
+    .progress-bar-tier-1 {
+        background: var(--ecc-ink-emerald, #047857);
+    }
+
+    .progress-bar-tier-2 {
+        background: var(--ecc-primary, #0d6efd);
+    }
+
+    .progress-bar-tier-3 {
+        background: var(--accent-color, #f59e0b);
     }
 
     /* =======================================================================
        NAVIGASI 3 TAB ANALITIK ECC (STANDOUT & BENTO DESIGN)
        ======================================================================= */
     .nav-tabs-ecc-wrapper {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
+        background: var(--ecc-surface-white, #ffffff);
+        border: 1px solid var(--ecc-border-slate, #e2e8f0);
         border-radius: 16px;
-        padding: 6px;
-        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+        padding: 8px;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
     }
 
     .nav-tabs-ecc {
@@ -64,16 +145,16 @@
 
     .nav-tabs-ecc .nav-item {
         flex: 1 1 0;
-        min-width: 220px;
+        min-width: 224px;
     }
 
     .nav-tabs-ecc .nav-link {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 10px;
+        gap: 8px;
         min-height: 48px;
-        padding: 10px 18px;
+        padding: 8px 16px;
         border: 1px solid transparent;
         border-radius: 12px;
         font-size: 0.875rem;
@@ -82,46 +163,51 @@
         background: #f8fafc;
         white-space: nowrap;
         cursor: pointer;
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease, border-color 0.2s ease;
         position: relative;
     }
 
     .nav-tabs-ecc .nav-link:hover {
         background: #f1f5f9;
-        color: #0f172a;
+        color: var(--text-dark, #0f172a);
         border-color: #cbd5e1;
+    }
+
+    .nav-tabs-ecc .nav-link:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
     }
 
     .nav-tabs-ecc .nav-link .tab-number {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 26px;
-        height: 26px;
+        width: 24px;
+        height: 24px;
         border-radius: 8px;
         font-size: 0.75rem;
         font-weight: 700;
-        background: #e2e8f0;
+        background: var(--ecc-border-slate, #e2e8f0);
         color: #475569;
         font-variant-numeric: tabular-nums;
-        transition: all 0.2s ease;
+        transition: background-color 0.2s ease, color 0.2s ease;
         flex-shrink: 0;
     }
 
     .nav-tabs-ecc .nav-link:hover .tab-number {
         background: #cbd5e1;
-        color: #0f172a;
+        color: var(--text-dark, #0f172a);
     }
 
     .nav-tabs-ecc .nav-link.active {
-        background: #1e40af;
+        background: var(--ecc-primary-dark, #1e40af);
         color: #ffffff;
-        border-color: #1d4ed8;
-        box-shadow: 0 4px 14px rgba(30, 64, 175, 0.25);
+        border-color: var(--ecc-primary-dark, #1e40af);
+        box-shadow: 0 4px 12px rgba(30, 64, 175, 0.24);
     }
 
     .nav-tabs-ecc .nav-link.active .tab-number {
-        background: rgba(255, 255, 255, 0.25);
+        background: rgba(255, 255, 255, 0.24);
         color: #ffffff;
     }
 
@@ -130,38 +216,16 @@
         font-weight: 700;
     }
 
-    @media (max-width: 767.98px) {
-        .nav-tabs-ecc-wrapper {
-            border-radius: 12px;
-            padding: 4px;
-        }
-        .nav-tabs-ecc .nav-item {
-            flex: 0 0 auto;
-            min-width: 200px;
-        }
-        .nav-tabs-ecc .nav-link {
-            min-height: 40px;
-            padding: 8px 12px;
-            font-size: 0.8125rem;
-            gap: 8px;
-        }
-        .nav-tabs-ecc .nav-link .tab-number {
-            width: 22px;
-            height: 22px;
-            font-size: 0.7rem;
-        }
-    }
-
     .table-bento-scroll {
         max-height: 480px;
         overflow-y: auto;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--ecc-border-slate, #e2e8f0);
         border-radius: 12px;
     }
 
     .table-bento {
         margin-bottom: 0;
-        font-size: 0.8125rem;
+        font-size: 0.875rem;
     }
 
     .table-bento thead th {
@@ -170,9 +234,10 @@
         z-index: 2;
         background: #f8fafc;
         color: #475569;
+        font-size: 0.75rem;
         font-weight: 600;
         padding: 12px 16px;
-        border-bottom: 1px solid #e2e8f0;
+        border-bottom: 1px solid var(--ecc-border-slate, #e2e8f0);
         white-space: nowrap;
     }
 
@@ -186,16 +251,16 @@
         display: inline-flex;
         align-items: center;
         padding: 4px 12px;
-        border-radius: 50rem;
+        border-radius: 9999px;
         font-size: 0.75rem;
         font-weight: 600;
         white-space: nowrap;
     }
 
     .btn-action-compact {
-        height: 32px;
+        min-height: 32px;
         padding: 4px 12px;
-        border-radius: 50rem;
+        border-radius: 9999px;
         font-size: 0.75rem;
         font-weight: 600;
         display: inline-flex;
@@ -210,20 +275,25 @@
     }
 
     .filter-pill-sub {
-        height: 32px;
+        min-height: 32px;
         padding: 4px 12px;
-        border-radius: 50rem;
+        border-radius: 9999px;
         border: 1px solid #cbd5e1;
-        background: #ffffff;
+        background: var(--ecc-surface-white, #ffffff);
         color: #475569;
         font-size: 0.75rem;
         font-weight: 600;
         cursor: pointer;
     }
 
+    .filter-pill-sub:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+    }
+
     .filter-pill-sub.active {
-        background: #1d4ed8;
-        border-color: #1d4ed8;
+        background: var(--ecc-primary-dark, #1e40af);
+        border-color: var(--ecc-primary-dark, #1e40af);
         color: #ffffff;
     }
 
@@ -237,8 +307,8 @@
     .custom-scroll::-webkit-scrollbar,
     .table-bento-scroll::-webkit-scrollbar,
     .compare-table-wrapper::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
+        width: 8px;
+        height: 8px;
     }
     .custom-scroll::-webkit-scrollbar-track,
     .table-bento-scroll::-webkit-scrollbar-track,
@@ -265,57 +335,53 @@
     }
     .card-interactive:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+    }
+    .card-interactive:focus-visible,
+    .unit-summary-row:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
     }
     .card-interactive:active {
         transform: scale(0.99);
     }
     .card-interactive.is-active-filter {
-        border: 2px solid #2563eb !important;
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
-    }
-    .card-clickable-badge {
-        cursor: pointer;
-        transition: opacity 0.15s ease, transform 0.15s ease;
-        display: inline-block;
-        border-radius: 4px;
-        padding: 1px 4px;
-    }
-    .card-clickable-badge:hover {
-        background: #e2e8f0;
-        color: #1d4ed8 !important;
+        border: 2px solid var(--ecc-primary, #0d6efd) !important;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15) !important;
     }
     .active-filter-banner {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         padding: 4px 12px;
-        background: #eff6ff;
-        border: 1px solid #bfdbfe;
-        color: #1d4ed8;
-        border-radius: 50rem;
+        background: var(--ecc-tile-aktif-bg, #eff6ff);
+        border: 1px solid var(--ecc-tile-aktif-border, #bfdbfe);
+        color: var(--ecc-primary-dark, #1e40af);
+        border-radius: 9999px;
         font-size: 0.75rem;
         font-weight: 600;
     }
     .active-filter-banner .btn-clear-filter {
         border: 0;
         background: transparent;
-        color: #1d4ed8;
-        padding: 0;
+        color: var(--ecc-primary-dark, #1e40af);
+        padding: 0 4px;
+        min-width: 24px;
+        min-height: 24px;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         font-size: 0.875rem;
         line-height: 1;
-        margin-left: 2px;
     }
     .pulse-highlight {
         animation: pulseHighlight 1.6s ease-out;
     }
     @keyframes pulseHighlight {
-        0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.45); }
-        50% { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0.2); }
-        100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+        0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.45); }
+        50% { box-shadow: 0 0 0 8px rgba(13, 110, 253, 0.2); }
+        100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
     }
 
     .detail-q-row {
@@ -333,7 +399,7 @@
         overflow-x: auto;
         overflow-y: auto;
         max-height: 68vh;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--ecc-border-slate, #e2e8f0);
         border-radius: 8px;
     }
 
@@ -348,8 +414,8 @@
     .table-compare td {
         border-bottom: 1px solid #f1f5f9;
         border-right: 1px solid #f1f5f9;
-        padding: 10px 14px;
-        font-size: 0.8125rem;
+        padding: 12px 16px;
+        font-size: 0.875rem;
     }
 
     .table-compare thead th {
@@ -357,7 +423,7 @@
         top: 0;
         background: #f8fafc;
         z-index: 10;
-        box-shadow: inset 0 -2px 0 #e2e8f0;
+        box-shadow: inset 0 -2px 0 var(--ecc-border-slate, #e2e8f0);
     }
 
     .table-compare thead th.sticky-col-header {
@@ -380,21 +446,73 @@
     }
 
     .table-compare .sec-heading-row th {
-        background: #eff6ff;
-        color: #1d4ed8;
+        background: var(--ecc-tile-aktif-bg, #eff6ff);
+        color: var(--ecc-primary-dark, #1e40af);
         font-weight: 700;
         position: sticky;
         left: 0;
-        border-top: 1px solid #dbeafe;
-        border-bottom: 1px solid #dbeafe;
+        border-top: 1px solid var(--ecc-primary-subtle, #dbeafe);
+        border-bottom: 1px solid var(--ecc-primary-subtle, #dbeafe);
+    }
+
+    .hs-floating-bar {
+        z-index: 1045;
+        min-width: 320px;
+        max-width: 92vw;
+        border-color: #cbd5e1 !important;
+    }
+
+    @media (max-width: 767.98px) {
+        .card-bento-ecc {
+            padding: 16px;
+        }
+        .nav-tabs-ecc-wrapper {
+            border-radius: 12px;
+            padding: 4px;
+        }
+        .nav-tabs-ecc .nav-item {
+            flex: 0 0 auto;
+            min-width: 200px;
+        }
+        .nav-tabs-ecc .nav-link {
+            min-height: 44px;
+            padding: 8px 12px;
+            font-size: 0.875rem;
+            gap: 8px;
+        }
+        .hs-header-btn,
+        .hs-control,
+        .hs-search-input,
+        .hs-select-inline,
+        .btn-action-compact,
+        .filter-pill-sub {
+            min-height: 44px;
+        }
+        .hs-search-input,
+        .hs-select-inline {
+            width: 100%;
+        }
+        .hs-floating-bar {
+            min-width: 0;
+            width: calc(100vw - 24px);
+            border-radius: 16px !important;
+            padding: 12px 16px !important;
+        }
     }
 
     @media (prefers-reduced-motion: reduce) {
-        *,
-        *::before,
-        *::after {
-            animation-duration: 0.01ms !important;
-            transition-duration: 0.01ms !important;
+        .card-interactive,
+        .nav-tabs-ecc .nav-link,
+        .nav-tabs-ecc .nav-link .tab-number,
+        .hs-kpi-inline-btn {
+            transition: none;
+        }
+        .card-interactive:hover,
+        .card-interactive:active {
+            transform: none;
+        }
+        .pulse-highlight {
+            animation: none;
         }
     }
 </style>
@@ -420,14 +538,9 @@ $exportQuery = http_build_query([
                 <span id="badgeStatusPeriode" class="status-pill-compact <?= $isSurveyOpen ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-secondary-subtle text-secondary border border-secondary-subtle' ?>">
                     <?= $isSurveyOpen ? 'Periode Dibuka' : 'Periode Ditutup' ?>
                 </span>
-                <?php if (!$canManage && !empty($delegationInfo)): ?>
-                    <span class="status-pill-compact bg-primary-subtle text-primary border border-primary-subtle">
-                        Akses Delegasi Kabag KUK
-                    </span>
-                <?php endif; ?>
             </div>
-            <p class="text-secondary mb-0" style="font-size: 0.875rem;">
-                Pemetaan potensi, kompetensi, kesiapan lintas unit, dan kontribusi BLU pegawai PKTJ.
+            <p class="text-secondary mb-0 hs-body">
+                Pemetaan potensi, kompetensi, kesiapan lintas unit, dan kontribusi BLU pegawai PKTJ.<?php if (!$canManage && !empty($delegationInfo)): ?> Anda memantau melalui delegasi Kabag KUK.<?php endif; ?>
             </p>
         </div>
 
@@ -436,10 +549,9 @@ $exportQuery = http_build_query([
                 type="button"
                 id="btnCopyShareLink"
                 data-link="<?= esc($shareLinkUrl) ?>"
-                class="btn btn-outline-primary rounded-pill fw-semibold btn-tactile"
-                style="height: 36px; padding: 4px 16px; font-size: 0.8125rem;"
+                class="btn btn-outline-primary rounded-pill fw-semibold btn-tactile hs-header-btn"
             >
-                <i class="bi bi-link-45deg me-1"></i> Salin Tautan Survei
+                <i class="bi bi-link-45deg" aria-hidden="true"></i> Salin Tautan Survei
             </button>
 
             <?php if ($canManage): ?>
@@ -447,16 +559,14 @@ $exportQuery = http_build_query([
                     type="button"
                     id="btnTogglePeriode"
                     data-open="<?= $isSurveyOpen ? '1' : '0' ?>"
-                    class="btn <?= $isSurveyOpen ? 'btn-outline-secondary' : 'btn-outline-success' ?> rounded-pill fw-semibold btn-tactile"
-                    style="height: 36px; padding: 4px 16px; font-size: 0.8125rem;"
+                    class="btn <?= $isSurveyOpen ? 'btn-outline-secondary' : 'btn-outline-success' ?> rounded-pill fw-semibold btn-tactile hs-header-btn"
                 >
                     <?= $isSurveyOpen ? 'Tutup Periode' : 'Buka Periode' ?>
                 </button>
 
                 <button
                     type="button"
-                    class="btn btn-light border rounded-pill fw-semibold text-dark btn-tactile"
-                    style="height: 36px; padding: 4px 16px; font-size: 0.8125rem;"
+                    class="btn btn-light border rounded-pill fw-semibold text-dark btn-tactile hs-header-btn"
                     data-bs-toggle="modal"
                     data-bs-target="#modalDelegasiStaf"
                 >
@@ -468,10 +578,9 @@ $exportQuery = http_build_query([
             <?php if ($canExport): ?>
                 <a
                     href="<?= site_url('kepegawaian/survei-pemetaan/export-excel?' . $exportQuery) ?>"
-                    class="btn btn-success rounded-pill fw-semibold btn-tactile"
-                    style="height: 36px; padding: 6px 16px; font-size: 0.8125rem;"
+                    class="btn btn-success rounded-pill fw-semibold btn-tactile hs-header-btn"
                 >
-                    <i class="bi bi-download me-1"></i> Export Excel
+                    <i class="bi bi-download" aria-hidden="true"></i> Export Excel
                 </a>
             <?php endif; ?>
         </div>
@@ -480,16 +589,16 @@ $exportQuery = http_build_query([
     <!-- Bilah Filter Global -->
     <form action="<?= site_url('kepegawaian/survei-pemetaan') ?>" method="get" class="row g-2 align-items-end mt-3 pt-3 border-top">
         <div class="col-6 col-md-2">
-            <label for="filterTahun" class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.75rem;">Tahun Survei</label>
-            <select name="tahun" id="filterTahun" class="form-select tabular-nums" style="height: 36px; font-size: 0.8125rem;">
+            <label for="filterTahun" class="form-label text-secondary fw-semibold mb-1 hs-meta">Tahun Survei</label>
+            <select name="tahun" id="filterTahun" class="form-select tabular-nums hs-control">
                 <?php for ($yr = max(2025, $activeSurveyYear - 1); $yr <= $activeSurveyYear + 1; $yr++): ?>
                     <option value="<?= $yr ?>" <?= (int) $tahunFilter === $yr ? 'selected' : '' ?>><?= $yr ?></option>
                 <?php endfor; ?>
             </select>
         </div>
         <div class="col-12 col-md-5">
-            <label for="filterUnit" class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.75rem;">Unit Kerja</label>
-            <select name="unit" id="filterUnit" class="form-select" style="height: 36px; font-size: 0.8125rem;">
+            <label for="filterUnit" class="form-label text-secondary fw-semibold mb-1 hs-meta">Unit Kerja</label>
+            <select name="unit" id="filterUnit" class="form-select hs-control">
                 <option value="">Seluruh Unit Kerja</option>
                 <?php foreach ($unitOptions as $uOpt): ?>
                     <option value="<?= esc($uOpt) ?>" <?= $unitFilter === $uOpt ? 'selected' : '' ?>><?= esc($uOpt) ?></option>
@@ -497,19 +606,19 @@ $exportQuery = http_build_query([
             </select>
         </div>
         <div class="col-6 col-md-3">
-            <label for="filterKelompok" class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.75rem;">Status ASN</label>
-            <select name="kelompok" id="filterKelompok" class="form-select" style="height: 36px; font-size: 0.8125rem;">
+            <label for="filterKelompok" class="form-label text-secondary fw-semibold mb-1 hs-meta">Status ASN</label>
+            <select name="kelompok" id="filterKelompok" class="form-select hs-control">
                 <option value="all" <?= $kelompokFilter === 'all' ? 'selected' : '' ?>>Semua ASN</option>
                 <option value="PNS" <?= $kelompokFilter === 'PNS' ? 'selected' : '' ?>>PNS</option>
                 <option value="PPPK" <?= $kelompokFilter === 'PPPK' ? 'selected' : '' ?>>PPPK</option>
             </select>
         </div>
         <div class="col-12 col-md-2 d-flex gap-2">
-            <button type="submit" class="btn btn-primary fw-semibold rounded-3 flex-grow-1 btn-tactile" style="height: 36px; font-size: 0.8125rem;">
+            <button type="submit" class="btn btn-primary fw-semibold rounded-3 flex-grow-1 btn-tactile hs-control">
                 Terapkan
             </button>
             <?php if ($unitFilter !== '' || $kelompokFilter !== 'all' || $tahunFilter !== $activeSurveyYear): ?>
-                <a href="<?= site_url('kepegawaian/survei-pemetaan') ?>" class="btn btn-light border fw-semibold rounded-3 btn-tactile" style="height: 36px; font-size: 0.8125rem;">
+                <a href="<?= site_url('kepegawaian/survei-pemetaan') ?>" class="btn btn-light border fw-semibold rounded-3 btn-tactile hs-control d-inline-flex align-items-center justify-content-center">
                     Reset
                 </a>
             <?php endif; ?>
@@ -521,24 +630,24 @@ $exportQuery = http_build_query([
 <!-- ANTREAN SINKRONISASI PROFIL KOSONG PEGAWAI (KHUSUS PENGELOLA UTAMA)     -->
 <!-- ======================================================================= -->
 <?php if ($canManage && !empty($pendingSyncList)): ?>
-    <div class="card-bento-ecc mb-3 border border-primary-subtle" id="pendingSyncCard" style="background: #eff6ff;">
+    <div class="card-bento-ecc mb-3 border border-primary-subtle" id="pendingSyncCard" style="background: var(--ecc-tile-aktif-bg, #eff6ff);">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
             <div>
-                <div class="fw-bold text-dark" style="font-size: 0.9375rem;">
+                <div class="fw-bold text-dark hs-title-sm">
                     Usulan Pelengkapan Profil Pegawai (<span class="tabular-nums"><?= count($pendingSyncList) ?></span> Akun)
                 </div>
-                <div class="text-secondary" style="font-size: 0.8125rem;">
+                <div class="text-secondary hs-body">
                     Pegawai berikut memperbarui penulisan gelar nama atau melengkapi atribut profil yang kosong saat mengisi survei.
                 </div>
             </div>
-            <button type="button" id="btnSyncAllProfiles" class="btn btn-primary btn-sm rounded-pill fw-semibold btn-tactile" style="height: 36px; padding: 4px 16px;">
+            <button type="button" id="btnSyncAllProfiles" class="btn btn-primary rounded-pill fw-semibold btn-tactile hs-header-btn">
                 Terapkan Semua ke Profil Pegawai
             </button>
         </div>
-        <div class="d-flex flex-column gap-2 mt-2 custom-scroll" style="max-height: 280px; overflow-y: auto; padding-right: 6px;">
+        <div class="d-flex flex-column gap-2 mt-2 custom-scroll" style="max-height: 280px; overflow-y: auto; padding-right: 8px;">
             <?php foreach ($pendingSyncList as $ps): ?>
                 <div class="bg-white rounded-3 border p-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
-                    <div style="font-size: 0.8125rem;">
+                    <div class="hs-body">
                         <span class="fw-semibold text-dark"><?= esc($ps['nama']) ?></span>
                         <span class="text-secondary tabular-nums ms-1">(<?= esc($ps['nip']) ?>)</span>
                         <span class="text-primary fw-medium ms-2"><?= esc(implode(' · ', $ps['changes'])) ?></span>
@@ -561,71 +670,71 @@ $exportQuery = http_build_query([
 <!-- ======================================================================= -->
 <div class="row g-3 mb-3">
     <div class="col-12 col-sm-6 col-xl-3">
-        <div class="card-bento-ecc card-interactive h-100" id="cardKpiKeterisian" title="Klik untuk melihat tabel responden">
+        <div class="card-bento-ecc card-interactive h-100" id="cardKpiKeterisian" role="button" tabindex="0" title="Klik untuk melihat tabel responden">
             <div class="d-flex align-items-center justify-content-between mb-2">
-                <div class="text-secondary fw-semibold" style="font-size: 0.75rem;">Keterisian Pegawai</div>
-                <span class="text-primary" style="font-size: 0.75rem;">Lihat Data &rarr;</span>
+                <div class="text-secondary fw-semibold hs-meta">Keterisian Pegawai</div>
+                <span class="text-primary hs-meta">Lihat Data &rarr;</span>
             </div>
             <div class="d-flex align-items-baseline justify-content-between gap-2 mb-2">
                 <div class="kpi-value tabular-nums"><?= (float) $kpi['asn_persen'] ?>%</div>
-                <div class="text-secondary fw-semibold tabular-nums" style="font-size: 0.875rem;">
+                <div class="text-secondary fw-semibold tabular-nums hs-body">
                     <?= (int) $kpi['asn_submitted'] ?> / <?= (int) $kpi['asn_wajib'] ?> pegawai
                 </div>
             </div>
-            <div class="progress rounded-pill mb-2" style="height: 8px; background: #e2e8f0;">
-                <div class="progress-bar rounded-pill" style="width: <?= min(100, (float) $kpi['asn_persen']) ?>%; background: #1d4ed8;"></div>
+            <div class="progress rounded-pill mb-2 progress-ecc">
+                <div class="progress-bar rounded-pill progress-bar-primary" style="width: <?= min(100, (float) $kpi['asn_persen']) ?>%;"></div>
             </div>
-            <div class="text-secondary tabular-nums" style="font-size: 0.75rem;">
-                <span class="card-clickable-badge text-dark" id="btnFilterKpiDraft" title="Klik untuk menyaring status Draf">Draf: <strong><?= (int) $kpi['asn_draft'] ?></strong></span>
-                &middot;
-                <span class="card-clickable-badge text-danger" id="btnFilterKpiBelum" title="Klik untuk melihat pegawai yang belum mulai">Belum mulai: <strong><?= (int) $kpi['asn_belum'] ?></strong></span>
+            <div class="text-secondary tabular-nums hs-meta d-flex flex-wrap align-items-center gap-1">
+                <button type="button" class="hs-kpi-inline-btn text-dark" id="btnFilterKpiDraft" title="Klik untuk menyaring status Draf">Draf: <strong><?= (int) $kpi['asn_draft'] ?></strong></button>
+                <span aria-hidden="true">&middot;</span>
+                <button type="button" class="hs-kpi-inline-btn text-danger" id="btnFilterKpiBelum" title="Klik untuk melihat pegawai yang belum mulai">Belum mulai: <strong><?= (int) $kpi['asn_belum'] ?></strong></button>
             </div>
         </div>
     </div>
 
     <div class="col-12 col-sm-6 col-xl-3">
-        <div class="card-bento-ecc card-interactive h-100" id="cardKpiKerjaLebih" title="Klik untuk menyaring pegawai siap kerja lebih">
+        <div class="card-bento-ecc card-interactive h-100" id="cardKpiKerjaLebih" role="button" tabindex="0" title="Klik untuk menyaring pegawai siap kerja lebih">
             <div class="d-flex align-items-center justify-content-between mb-2">
-                <div class="text-secondary fw-semibold" style="font-size: 0.75rem;">Mau &amp; Siap Bekerja Lebih</div>
-                <span class="text-primary" style="font-size: 0.75rem;">Saring &rarr;</span>
+                <div class="text-secondary fw-semibold hs-meta">Mau &amp; Siap Bekerja Lebih</div>
+                <span class="text-primary hs-meta">Saring &rarr;</span>
             </div>
             <div class="d-flex align-items-baseline justify-content-between gap-2 mb-2">
                 <div class="kpi-value tabular-nums"><?= (int) $kpi['kerja_lebih_ready'] ?></div>
                 <span class="status-pill-compact bg-primary-subtle text-primary tabular-nums"><?= (float) $kpi['kerja_lebih_persen'] ?>%</span>
             </div>
-            <div class="text-secondary tabular-nums mt-3" style="font-size: 0.75rem;">
+            <div class="text-secondary tabular-nums mt-3 hs-meta">
                 Siap jam lebih: <strong><?= (int) $kpi['overtime_willing'] ?></strong> &middot; Ada kapasitas: <strong><?= (int) $kpi['extra_capacity_count'] ?></strong>
             </div>
         </div>
     </div>
 
     <div class="col-12 col-sm-6 col-xl-3">
-        <div class="card-bento-ecc card-interactive h-100" id="cardKpiLintasUnit" title="Klik untuk menyaring pegawai siap lintas unit">
+        <div class="card-bento-ecc card-interactive h-100" id="cardKpiLintasUnit" role="button" tabindex="0" title="Klik untuk menyaring pegawai siap lintas unit">
             <div class="d-flex align-items-center justify-content-between mb-2">
-                <div class="text-secondary fw-semibold" style="font-size: 0.75rem;">Siap Diperbantukan Lintas Unit</div>
-                <span class="text-success" style="font-size: 0.75rem;">Saring &rarr;</span>
+                <div class="text-secondary fw-semibold hs-meta">Siap Diperbantukan Lintas Unit</div>
+                <span class="text-success hs-meta">Saring &rarr;</span>
             </div>
             <div class="d-flex align-items-baseline justify-content-between gap-2 mb-2">
                 <div class="kpi-value tabular-nums"><?= (int) $kpi['lintas_unit_ready'] ?></div>
                 <span class="status-pill-compact bg-success-subtle text-success tabular-nums"><?= (float) $kpi['lintas_unit_persen'] ?>%</span>
             </div>
-            <div class="text-secondary tabular-nums mt-3" style="font-size: 0.75rem;">
+            <div class="text-secondary tabular-nums mt-3 hs-meta">
                 Alokasi &ge; 2 jam/minggu: <strong><?= (int) $kpi['lintas_jam_cukup'] ?></strong> pegawai
             </div>
         </div>
     </div>
 
     <div class="col-12 col-sm-6 col-xl-3">
-        <div class="card-bento-ecc card-interactive h-100" id="cardKpiBlu" title="Klik untuk membuka pemetaan kontributor BLU">
+        <div class="card-bento-ecc card-interactive h-100" id="cardKpiBlu" role="button" tabindex="0" title="Klik untuk membuka pemetaan kontributor BLU">
             <div class="d-flex align-items-center justify-content-between mb-2">
-                <div class="text-secondary fw-semibold" style="font-size: 0.75rem;">Mau &amp; Siap Membantu BLU</div>
-                <span class="text-info-emphasis" style="font-size: 0.75rem;">Buka Peta &rarr;</span>
+                <div class="text-secondary fw-semibold hs-meta">Mau &amp; Siap Membantu BLU</div>
+                <span class="text-info-emphasis hs-meta">Buka Peta &rarr;</span>
             </div>
             <div class="d-flex align-items-baseline justify-content-between gap-2 mb-2">
                 <div class="kpi-value tabular-nums"><?= (int) $kpi['blu_ready_count'] ?></div>
                 <span class="status-pill-compact bg-info-subtle text-info-emphasis tabular-nums"><?= (float) $kpi['blu_ready_persen'] ?>%</span>
             </div>
-            <div class="text-secondary tabular-nums mt-3" style="font-size: 0.75rem;">
+            <div class="text-secondary tabular-nums mt-3 hs-meta">
                 Minat BLU: <strong><?= (int) $kpi['blu_interested'] ?></strong> &middot; Siap target BLU: <strong><?= (int) $kpi['blu_target_willing'] ?></strong>
             </div>
         </div>
@@ -668,7 +777,7 @@ $exportQuery = http_build_query([
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                 <div>
                     <h2 class="h6 fw-bold text-dark mb-0">Rekapitulasi Keterisian per Unit Kerja</h2>
-                    <div class="text-secondary" style="font-size: 0.8125rem;">Progres pengisian survei pegawai aktif per unit. <span class="text-primary fw-medium">&bull; Klik baris unit untuk menyaring responden</span></div>
+                    <div class="text-secondary hs-body">Progres pengisian survei pegawai aktif per unit. <span class="text-primary fw-medium">&bull; Klik baris unit untuk menyaring responden</span></div>
                 </div>
             </div>
 
@@ -691,11 +800,11 @@ $exportQuery = http_build_query([
                             </tr>
                         <?php else: ?>
                             <?php foreach ($rekapUnit as $ru): ?>
-                                <tr class="unit-summary-row" role="button" data-unit="<?= esc($ru['nama_unit']) ?>" style="cursor: pointer;" title="Klik untuk menyaring daftar responden unit <?= esc($ru['nama_unit']) ?>">
+                                <tr class="unit-summary-row" role="button" tabindex="0" data-unit="<?= esc($ru['nama_unit']) ?>" style="cursor: pointer;" title="Klik untuk menyaring daftar responden unit <?= esc($ru['nama_unit']) ?>">
                                     <td class="fw-semibold text-dark">
-                                        <div class="d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center justify-content-between gap-2">
                                             <span><?= esc($ru['nama_unit']) ?></span>
-                                            <span class="text-primary" style="font-size: 0.75rem;">Saring &rarr;</span>
+                                            <span class="text-primary hs-meta">Saring &rarr;</span>
                                         </div>
                                     </td>
                                     <td class="text-center tabular-nums"><?= (int) $ru['asn_wajib'] ?></td>
@@ -704,10 +813,10 @@ $exportQuery = http_build_query([
                                     <td class="text-center tabular-nums text-danger"><?= (int) $ru['asn_belum'] ?></td>
                                     <td>
                                         <div class="d-flex align-items-center gap-2">
-                                            <div class="progress rounded-pill flex-grow-1" style="height: 8px; background: #e2e8f0;">
-                                                <div class="progress-bar rounded-pill" style="width: <?= min(100, (float) $ru['asn_persen']) ?>%; background: #1d4ed8;"></div>
+                                            <div class="progress rounded-pill flex-grow-1 progress-ecc">
+                                                <div class="progress-bar rounded-pill progress-bar-primary" style="width: <?= min(100, (float) $ru['asn_persen']) ?>%;"></div>
                                             </div>
-                                            <span class="fw-semibold text-dark tabular-nums" style="font-size: 0.75rem; min-width: 44px; text-align: right;">
+                                            <span class="fw-semibold text-dark tabular-nums hs-meta" style="min-width: 44px; text-align: right;">
                                                 <?= (float) $ru['asn_persen'] ?>%
                                             </span>
                                         </div>
@@ -725,9 +834,9 @@ $exportQuery = http_build_query([
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-2">
                 <div>
                     <h2 class="h6 fw-bold text-dark mb-0">Daftar Responden (<span class="tabular-nums"><?= count($daftarResponden) ?></span>)</h2>
-                    <div class="text-secondary" style="font-size: 0.8125rem;">Klik Rincian untuk membaca seluruh jawaban 10 bagian. Gunakan Buka Edit agar pegawai yang sudah selesai dapat mengedit kembali isiannya.</div>
+                    <div class="text-secondary hs-body">Klik Rincian untuk membaca seluruh jawaban 10 bagian. Gunakan Buka Edit agar pegawai yang sudah selesai dapat mengedit kembali isiannya.</div>
                 </div>
-                <div class="d-flex flex-wrap align-items-center gap-2">
+                <div class="d-flex flex-wrap align-items-center gap-2 w-100 w-md-auto">
                     <div class="d-flex gap-1" id="respondenStatusPills">
                         <button type="button" class="filter-pill-sub active" data-status-filter="all">Semua</button>
                         <button type="button" class="filter-pill-sub" data-status-filter="submitted">Terkirim</button>
@@ -736,8 +845,8 @@ $exportQuery = http_build_query([
                     <input
                         type="search"
                         id="searchRespondenInput"
-                        class="form-control"
-                        style="height: 36px; width: 240px; font-size: 0.8125rem;"
+                        class="form-control hs-search-input"
+                        aria-label="Cari responden berdasarkan nama, NIP, atau unit kerja"
                         placeholder="Cari nama, NIP, unit..."
                     >
                 </div>
@@ -751,7 +860,7 @@ $exportQuery = http_build_query([
                     <thead>
                         <tr>
                             <th class="text-center" style="width: 44px;">
-                                <input type="checkbox" id="checkAllResponden" class="form-check-input" title="Pilih Semua Pegawai Terlihat">
+                                <input type="checkbox" id="checkAllResponden" class="form-check-input" aria-label="Pilih semua responden terlihat" title="Pilih Semua Pegawai Terlihat">
                             </th>
                             <th>Nama &amp; NIP</th>
                             <th>Status ASN</th>
@@ -778,6 +887,7 @@ $exportQuery = http_build_query([
                                             type="checkbox"
                                             class="form-check-input check-responden-item"
                                             value="<?= (int) $resp['id'] ?>"
+                                            aria-label="Pilih <?= esc($resp['nama']) ?>"
                                             data-nama="<?= esc($resp['nama']) ?>"
                                             data-nip="<?= esc($resp['nomor_identitas']) ?>"
                                             data-unit="<?= esc($resp['unit']) ?>"
@@ -785,7 +895,7 @@ $exportQuery = http_build_query([
                                     </td>
                                     <td>
                                         <div class="fw-semibold text-dark"><?= esc($resp['nama']) ?></div>
-                                        <div class="text-secondary tabular-nums" style="font-size: 0.75rem;"><?= esc($resp['nomor_identitas']) ?></div>
+                                        <div class="text-secondary tabular-nums hs-meta"><?= esc($resp['nomor_identitas']) ?></div>
                                     </td>
                                     <td>
                                         <span class="status-pill-compact bg-primary-subtle text-primary">
@@ -794,11 +904,11 @@ $exportQuery = http_build_query([
                                     </td>
                                     <td>
                                         <div class="fw-medium text-dark"><?= esc($resp['unit']) ?></div>
-                                        <div class="text-secondary" style="font-size: 0.75rem;"><?= esc($resp['jabatan']) ?></div>
+                                        <div class="text-secondary hs-meta"><?= esc($resp['jabatan']) ?></div>
                                     </td>
                                     <td class="tabular-nums">
                                         <div class="fw-semibold text-dark"><?= (float) $resp['progress_percent'] ?>%</div>
-                                        <div class="text-secondary" style="font-size: 0.75rem;"><?= (int) $resp['total_answered'] ?>/<?= (int) $resp['total_applicable'] ?> butir</div>
+                                        <div class="text-secondary hs-meta"><?= (int) $resp['total_answered'] ?>/<?= (int) $resp['total_applicable'] ?> butir</div>
                                     </td>
                                     <td>
                                         <?php if ($isSub): ?>
@@ -853,13 +963,13 @@ $exportQuery = http_build_query([
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                 <div>
                     <h2 class="h6 fw-bold text-dark mb-0">Pegawai Belum Menyelesaikan Survei (<span class="tabular-nums"><?= count($daftarAsnBelum) ?></span>)</h2>
-                    <div class="text-secondary" style="font-size: 0.8125rem;">Daftar pemilik akun ECC aktif yang belum memulai atau masih berstatus draf.</div>
+                    <div class="text-secondary hs-body">Daftar pemilik akun ECC aktif yang belum memulai atau masih berstatus draf.</div>
                 </div>
                 <input
                     type="search"
                     id="searchAsnBelumInput"
-                    class="form-control"
-                    style="height: 36px; width: 240px; font-size: 0.8125rem;"
+                    class="form-control hs-search-input"
+                    aria-label="Cari pegawai yang belum menyelesaikan survei"
                     placeholder="Cari pegawai..."
                 >
             </div>
@@ -913,17 +1023,12 @@ $exportQuery = http_build_query([
     <!-- TAB 2: PETA TALENTA LINTAS UNIT, BLU & VISUALISASI CHART.JS         -->
     <!-- =================================================================== -->
     <div class="tab-pane fade" id="paneTalenta" role="tabpanel">
-        <!-- Sorotan Khusus No. 21: Keahlian Tambahan di Luar Tupoksi (Fokus 2 Analitik) -->
+        <!-- Sorotan Khusus No. 21: Keahlian Tambahan di Luar Tupoksi -->
         <div class="card-bento-ecc mb-3">
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                 <div>
-                    <div class="d-flex align-items-center gap-2 mb-1">
-                        <span class="badge rounded-pill text-primary border border-primary-subtle fw-semibold" style="background: #eff6ff; padding: 4px 10px; font-size: 0.75rem;">
-                            Fokus Analitik No. 21
-                        </span>
-                        <h2 class="h6 fw-bold text-dark mb-0">Keahlian Tambahan Pegawai di Luar Tupoksi</h2>
-                    </div>
-                    <div class="text-secondary" style="font-size: 0.8125rem;">
+                    <h2 class="h6 fw-bold text-dark mb-1">Keahlian Tambahan Pegawai di Luar Tupoksi</h2>
+                    <div class="text-secondary hs-body">
                         Pemetaan pegawai yang memiliki keahlian pendukung di luar tugas utama (No. 21–25) untuk mengoptimalkan potensi internal PKTJ.
                     </div>
                 </div>
@@ -932,38 +1037,38 @@ $exportQuery = http_build_query([
             <!-- 3 Kartu Mini Ringkasan No. 21 -->
             <div class="row g-2 mb-3">
                 <div class="col-12 col-md-4">
-                    <div class="p-3 rounded-3 border card-interactive card-keahlian-filter h-100 is-active-filter" id="cardKeahlianSemua" title="Klik untuk menampilkan seluruh pegawai berkeahlian" style="background: #f8fafc;">
+                    <div class="p-3 rounded-3 border card-interactive card-keahlian-filter h-100 is-active-filter" id="cardKeahlianSemua" role="button" tabindex="0" title="Klik untuk menampilkan seluruh pegawai berkeahlian" style="background: #f8fafc;">
                         <div class="d-flex align-items-center justify-content-between mb-1">
-                            <div class="text-secondary" style="font-size: 0.75rem;">Memiliki Keahlian Tambahan (No. 21)</div>
-                            <span class="text-primary" style="font-size: 0.75rem;">Semua &rarr;</span>
+                            <div class="text-secondary hs-meta">Memiliki Keahlian Tambahan (No. 21)</div>
+                            <span class="text-primary hs-meta">Semua &rarr;</span>
                         </div>
                         <div class="d-flex align-items-baseline gap-2">
                             <span class="h5 fw-bold text-dark mb-0 tabular-nums"><?= (int) ($q21Stats['total_has_skill'] ?? 0) ?></span>
-                            <span class="text-secondary" style="font-size: 0.75rem;">dari <?= (int) ($kpi['total_submitted'] ?? $kpi['submitted_filtered'] ?? $kpi['asn_submitted'] ?? 0) ?> responden (<?= (float) ($q21Stats['persen_memiliki_keahlian'] ?? 0) ?>%)</span>
+                            <span class="text-secondary hs-meta">dari <?= (int) ($kpi['total_submitted'] ?? $kpi['submitted_filtered'] ?? $kpi['asn_submitted'] ?? 0) ?> responden (<?= (float) ($q21Stats['persen_memiliki_keahlian'] ?? 0) ?>%)</span>
                         </div>
                     </div>
                 </div>
                 <div class="col-12 col-md-4">
-                    <div class="p-3 rounded-3 border card-interactive card-keahlian-filter h-100" id="cardKeahlianProduk" title="Klik untuk menyaring yang menghasilkan produk/jasa" style="background: #f8fafc;">
+                    <div class="p-3 rounded-3 border card-interactive card-keahlian-filter h-100" id="cardKeahlianProduk" role="button" tabindex="0" title="Klik untuk menyaring yang menghasilkan produk/jasa" style="background: #f8fafc;">
                         <div class="d-flex align-items-center justify-content-between mb-1">
-                            <div class="text-secondary" style="font-size: 0.75rem;">Pernah Hasilkan Produk/Jasa (No. 24)</div>
-                            <span class="text-primary" style="font-size: 0.75rem;">Saring &rarr;</span>
+                            <div class="text-secondary hs-meta">Pernah Hasilkan Produk/Jasa (No. 24)</div>
+                            <span class="text-primary hs-meta">Saring &rarr;</span>
                         </div>
                         <div class="d-flex align-items-baseline gap-2">
                             <span class="h5 fw-bold text-primary mb-0 tabular-nums"><?= (int) ($q21Stats['has_product_count'] ?? 0) ?></span>
-                            <span class="text-secondary" style="font-size: 0.75rem;">pegawai</span>
+                            <span class="text-secondary hs-meta">pegawai</span>
                         </div>
                     </div>
                 </div>
                 <div class="col-12 col-md-4">
-                    <div class="p-3 rounded-3 border card-interactive card-keahlian-filter h-100" id="cardKeahlianPortofolio" title="Klik untuk menyaring yang memiliki portofolio/bukti" style="background: #f8fafc;">
+                    <div class="p-3 rounded-3 border card-interactive card-keahlian-filter h-100" id="cardKeahlianPortofolio" role="button" tabindex="0" title="Klik untuk menyaring yang memiliki portofolio/bukti" style="background: #f8fafc;">
                         <div class="d-flex align-items-center justify-content-between mb-1">
-                            <div class="text-secondary" style="font-size: 0.75rem;">Memiliki Portofolio / Bukti (No. 25)</div>
-                            <span class="text-success" style="font-size: 0.75rem;">Saring &rarr;</span>
+                            <div class="text-secondary hs-meta">Memiliki Portofolio / Bukti (No. 25)</div>
+                            <span class="text-success hs-meta">Saring &rarr;</span>
                         </div>
                         <div class="d-flex align-items-baseline gap-2">
                             <span class="h5 fw-bold text-success mb-0 tabular-nums"><?= (int) ($q21Stats['has_portfolio_count'] ?? 0) ?></span>
-                            <span class="text-secondary" style="font-size: 0.75rem;">pegawai</span>
+                            <span class="text-secondary hs-meta">pegawai</span>
                         </div>
                     </div>
                 </div>
@@ -974,14 +1079,14 @@ $exportQuery = http_build_query([
 
             <!-- Tabel Daftar Pegawai Pemilik Keahlian Tambahan -->
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
-                <div class="fw-semibold text-dark" style="font-size: 0.8125rem;">
+                <div class="fw-semibold text-dark hs-body">
                     Daftar Pegawai &amp; Rincian Keahlian (No. 21–25)
                 </div>
                 <input
                     type="search"
                     id="searchKeahlianTambahanInput"
-                    class="form-control"
-                    style="height: 36px; width: 240px; font-size: 0.8125rem;"
+                    class="form-control hs-search-input"
+                    aria-label="Cari keahlian tambahan, nama, atau unit"
                     placeholder="Cari keahlian, nama, unit..."
                 >
             </div>
@@ -1021,10 +1126,10 @@ $exportQuery = http_build_query([
                                 <tr class="keahlian-row" data-has-product="<?= $hasProd ?>" data-has-portfolio="<?= $hasPort ?>" data-search="<?= esc($ktSearch) ?>">
                                     <td>
                                         <div class="fw-semibold text-dark"><?= esc($namaTxt) ?></div>
-                                        <div class="text-secondary tabular-nums" style="font-size: 0.75rem;"><?= esc($nipTxt) ?> &middot; <?= esc($unitTxt) ?></div>
+                                        <div class="text-secondary tabular-nums hs-meta"><?= esc($nipTxt) ?> &middot; <?= esc($unitTxt) ?></div>
                                     </td>
                                     <td style="max-width: 260px;">
-                                        <div class="fw-medium text-primary" style="font-size: 0.8125rem;"><?= esc($keahlianTxt) ?></div>
+                                        <div class="fw-medium text-primary hs-body"><?= esc($keahlianTxt) ?></div>
                                     </td>
                                     <td class="text-center">
                                         <?php if ($skorVal > 0): ?>
@@ -1036,7 +1141,7 @@ $exportQuery = http_build_query([
                                         <?php endif; ?>
                                     </td>
                                     <td style="max-width: 220px;">
-                                        <div class="text-dark" style="font-size: 0.75rem;"><?= esc($produkTxt !== '' ? $produkTxt : '-') ?></div>
+                                        <div class="text-dark hs-meta"><?= esc($produkTxt !== '' ? $produkTxt : '-') ?></div>
                                     </td>
                                     <td>
                                         <?php if ($portofolioTxt === 'Ada'): ?>
@@ -1044,7 +1149,7 @@ $exportQuery = http_build_query([
                                         <?php elseif ($portofolioTxt === 'Sedang dalam proses pengumpulan'): ?>
                                             <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill">Proses Kumpul</span>
                                         <?php else: ?>
-                                            <span class="text-secondary" style="font-size: 0.75rem;"><?= esc($portofolioTxt !== '' ? $portofolioTxt : '-') ?></span>
+                                            <span class="text-secondary hs-meta"><?= esc($portofolioTxt !== '' ? $portofolioTxt : '-') ?></span>
                                         <?php endif; ?>
                                     </td>
                                     <td class="text-end">
@@ -1069,7 +1174,7 @@ $exportQuery = http_build_query([
             <div class="col-12 col-lg-6">
                 <div class="card-bento-ecc h-100">
                     <h2 class="h6 fw-bold text-dark mb-1">10 Kompetensi Utama Terbanyak (No. 20)</h2>
-                    <div class="text-secondary mb-3" style="font-size: 0.75rem;">Sebaran bidang keahlian utama responden. <span class="text-primary fw-medium">&bull; Klik batang untuk menyaring talenta</span></div>
+                    <div class="text-secondary mb-3 hs-meta">Sebaran bidang keahlian utama responden. <span class="text-primary fw-medium">&bull; Klik batang untuk menyaring talenta</span></div>
                     <div class="chart-box">
                         <canvas id="chartKompetensiCanvas"></canvas>
                     </div>
@@ -1079,7 +1184,7 @@ $exportQuery = http_build_query([
             <div class="col-12 col-lg-6">
                 <div class="card-bento-ecc h-100">
                     <h2 class="h6 fw-bold text-dark mb-1">Bidang Kontribusi Pendapatan BLU (No. 61)</h2>
-                    <div class="text-secondary mb-3" style="font-size: 0.75rem;">Layanan BLU yang paling siap didukung pegawai. <span class="text-primary fw-medium">&bull; Klik batang untuk menyaring kontributor</span></div>
+                    <div class="text-secondary mb-3 hs-meta">Layanan BLU yang paling siap didukung pegawai. <span class="text-primary fw-medium">&bull; Klik batang untuk menyaring kontributor</span></div>
                     <div class="chart-box">
                         <canvas id="chartBluCanvas"></canvas>
                     </div>
@@ -1089,7 +1194,7 @@ $exportQuery = http_build_query([
             <div class="col-12 col-lg-6">
                 <div class="card-bento-ecc h-100">
                     <h2 class="h6 fw-bold text-dark mb-1">Kondisi Beban Kerja &amp; Kapasitas Tambahan (No. 68 &amp; 70)</h2>
-                    <div class="text-secondary mb-3" style="font-size: 0.75rem;">Pemetaan ruang kapasitas pegawai. <span class="text-primary fw-medium">&bull; Klik donat untuk menyaring kapasitas</span></div>
+                    <div class="text-secondary mb-3 hs-meta">Pemetaan ruang kapasitas pegawai. <span class="text-primary fw-medium">&bull; Klik donat untuk menyaring kapasitas</span></div>
                     <div class="chart-box">
                         <canvas id="chartKapasitasCanvas"></canvas>
                     </div>
@@ -1099,7 +1204,7 @@ $exportQuery = http_build_query([
             <div class="col-12 col-lg-6">
                 <div class="card-bento-ecc h-100">
                     <h2 class="h6 fw-bold text-dark mb-1">10 Kebutuhan Pelatihan Prioritas (No. 37)</h2>
-                    <div class="text-secondary mb-3" style="font-size: 0.75rem;">Bidang pelatihan yang paling diminati. <span class="text-primary fw-medium">&bull; Klik batang untuk rincian pegawai</span></div>
+                    <div class="text-secondary mb-3 hs-meta">Bidang pelatihan yang paling diminati. <span class="text-primary fw-medium">&bull; Klik batang untuk rincian pegawai</span></div>
                     <div class="chart-box">
                         <canvas id="chartPelatihanCanvas"></canvas>
                     </div>
@@ -1108,18 +1213,13 @@ $exportQuery = http_build_query([
         </div>
 
         <!-- =============================================================== -->
-        <!-- MUARA PEMETAAN: REKOMENDASI KONTRIBUTOR LAYANAN BLU (PAK KBU)   -->
+        <!-- MUARA PEMETAAN: REKOMENDASI KONTRIBUTOR LAYANAN BLU             -->
         <!-- =============================================================== -->
         <div class="card-bento-ecc mb-3" id="secMuaraKontributorBlu">
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                 <div>
-                    <div class="d-flex align-items-center gap-2 mb-1">
-                        <span class="badge rounded-pill text-success border border-success-subtle fw-semibold" style="background: #f0fdf4; padding: 4px 10px; font-size: 0.75rem;">
-                            Muara Analitik Pak KBU
-                        </span>
-                        <h2 class="h6 fw-bold text-dark mb-0">Pemetaan Kontributor &amp; Tim Penggerak Layanan BLU</h2>
-                    </div>
-                    <div class="text-secondary" style="font-size: 0.8125rem;">
+                    <h2 class="h6 fw-bold text-dark mb-1">Pemetaan Kontributor &amp; Tim Penggerak Layanan BLU</h2>
+                    <div class="text-secondary hs-body">
                         Peringkat prioritas pegawai yang siap dan mau mendukung pendapatan BLU PKTJ berdasarkan minat (No. 60), kesiapan target (No. 66), kapasitas kerja (No. 70), keahlian tambahan (No. 21–25), serta kesiapan komersial dan jejaring (No. 62–64).
                     </div>
                 </div>
@@ -1128,50 +1228,50 @@ $exportQuery = http_build_query([
             <!-- 4 Kartu KPI Kontributor BLU -->
             <div class="row g-2 mb-3">
                 <div class="col-6 col-lg-3">
-                    <div class="p-3 rounded-3 border card-interactive card-blu-filter h-100" id="cardBluTier1" title="Klik untuk menyaring Prioritas I (Tim Inti)" style="background: #f8fafc;">
+                    <div class="p-3 rounded-3 border card-interactive card-blu-filter h-100" id="cardBluTier1" role="button" tabindex="0" title="Klik untuk menyaring Prioritas I (Tim Inti)" style="background: #f8fafc;">
                         <div class="d-flex align-items-center justify-content-between mb-1">
-                            <div class="text-secondary" style="font-size: 0.75rem;">Tim Inti Penggerak (Tier 1)</div>
-                            <span class="text-success" style="font-size: 0.75rem;">Saring &rarr;</span>
+                            <div class="text-secondary hs-meta">Tim Inti Penggerak (Tier 1)</div>
+                            <span class="text-success hs-meta">Saring &rarr;</span>
                         </div>
                         <div class="d-flex align-items-baseline gap-2">
                             <span class="h5 fw-bold text-success mb-0 tabular-nums"><?= (int) ($bluStats['tier1_count'] ?? 0) ?></span>
-                            <span class="text-secondary" style="font-size: 0.75rem;">Prioritas Utama</span>
+                            <span class="text-secondary hs-meta">Prioritas Utama</span>
                         </div>
                     </div>
                 </div>
                 <div class="col-6 col-lg-3">
-                    <div class="p-3 rounded-3 border card-interactive card-blu-filter h-100" id="cardBluTarget" title="Klik untuk menyaring pegawai siap target BLU" style="background: #f8fafc;">
+                    <div class="p-3 rounded-3 border card-interactive card-blu-filter h-100" id="cardBluTarget" role="button" tabindex="0" title="Klik untuk menyaring pegawai siap target BLU" style="background: #f8fafc;">
                         <div class="d-flex align-items-center justify-content-between mb-1">
-                            <div class="text-secondary" style="font-size: 0.75rem;">Siap Target BLU (No. 66)</div>
-                            <span class="text-primary" style="font-size: 0.75rem;">Saring &rarr;</span>
+                            <div class="text-secondary hs-meta">Siap Target BLU (No. 66)</div>
+                            <span class="text-primary hs-meta">Saring &rarr;</span>
                         </div>
                         <div class="d-flex align-items-baseline gap-2">
                             <span class="h5 fw-bold text-primary mb-0 tabular-nums"><?= (int) ($kpi['blu_target_willing'] ?? 0) ?></span>
-                            <span class="text-secondary" style="font-size: 0.75rem;">pegawai</span>
+                            <span class="text-secondary hs-meta">pegawai</span>
                         </div>
                     </div>
                 </div>
                 <div class="col-6 col-lg-3">
-                    <div class="p-3 rounded-3 border card-interactive card-blu-filter h-100" id="cardBluMitra" title="Klik untuk menyaring pegawai bersedia cari mitra" style="background: #f8fafc;">
+                    <div class="p-3 rounded-3 border card-interactive card-blu-filter h-100" id="cardBluMitra" role="button" tabindex="0" title="Klik untuk menyaring pegawai bersedia cari mitra" style="background: #f8fafc;">
                         <div class="d-flex align-items-center justify-content-between mb-1">
-                            <div class="text-secondary" style="font-size: 0.75rem;">Bersedia Cari Mitra (No. 63)</div>
-                            <span class="text-info-emphasis" style="font-size: 0.75rem;">Saring &rarr;</span>
+                            <div class="text-secondary hs-meta">Bersedia Cari Mitra (No. 63)</div>
+                            <span class="text-info-emphasis hs-meta">Saring &rarr;</span>
                         </div>
                         <div class="d-flex align-items-baseline gap-2">
                             <span class="h5 fw-bold text-info-emphasis mb-0 tabular-nums"><?= (int) ($bluStats['willing_partner_cnt'] ?? 0) ?></span>
-                            <span class="text-secondary" style="font-size: 0.75rem;">pegawai</span>
+                            <span class="text-secondary hs-meta">pegawai</span>
                         </div>
                     </div>
                 </div>
                 <div class="col-6 col-lg-3">
-                    <div class="p-3 rounded-3 border card-interactive card-blu-filter h-100" id="cardBluExperience" title="Klik untuk menyaring pegawai dengan pengalaman bisnis/relasi" style="background: #f8fafc;">
+                    <div class="p-3 rounded-3 border card-interactive card-blu-filter h-100" id="cardBluExperience" role="button" tabindex="0" title="Klik untuk menyaring pegawai dengan pengalaman bisnis/relasi" style="background: #f8fafc;">
                         <div class="d-flex align-items-center justify-content-between mb-1">
-                            <div class="text-secondary" style="font-size: 0.75rem;">Pengalaman Bisnis (No. 62 &amp; 64)</div>
-                            <span class="text-dark" style="font-size: 0.75rem;">Saring &rarr;</span>
+                            <div class="text-secondary hs-meta">Pengalaman Bisnis (No. 62 &amp; 64)</div>
+                            <span class="text-dark hs-meta">Saring &rarr;</span>
                         </div>
                         <div class="d-flex align-items-baseline gap-2">
                             <span class="h5 fw-bold text-dark mb-0 tabular-nums"><?= (int) ($bluStats['has_experience_cnt'] ?? 0) ?></span>
-                            <span class="text-secondary" style="font-size: 0.75rem;">berpengalaman</span>
+                            <span class="text-secondary hs-meta">berpengalaman</span>
                         </div>
                     </div>
                 </div>
@@ -1180,14 +1280,14 @@ $exportQuery = http_build_query([
             <!-- Filter Cepat & Pencarian Kontributor BLU -->
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
                 <div class="d-flex flex-wrap align-items-center gap-1" id="bluTierFilterPills">
-                    <span class="text-secondary me-1 fw-medium" style="font-size: 0.75rem;">Tingkat Prioritas:</span>
+                    <span class="text-secondary me-1 fw-medium hs-meta">Tingkat Prioritas:</span>
                     <button type="button" class="filter-pill-sub active" data-blu-tier="all">Semua Kandidat</button>
                     <button type="button" class="filter-pill-sub" data-blu-tier="1">Prioritas I (Tim Inti)</button>
                     <button type="button" class="filter-pill-sub" data-blu-tier="2">Prioritas II (Potensial)</button>
                     <button type="button" class="filter-pill-sub" data-blu-tier="3">Prioritas III (Pendukung)</button>
                 </div>
-                <div class="d-flex flex-wrap align-items-center gap-2">
-                    <select id="bluFilterServiceSelect" class="form-select" style="height: 36px; width: 230px; font-size: 0.8125rem;">
+                <div class="d-flex flex-wrap align-items-center gap-2 w-100 w-lg-auto">
+                    <select id="bluFilterServiceSelect" class="form-select hs-select-inline" aria-label="Saring layanan BLU">
                         <option value="">Semua Layanan BLU (No. 61)</option>
                         <?php foreach (($filterOptions['q61_options'] ?? []) as $opt61): ?>
                             <option value="<?= esc($opt61) ?>"><?= esc($opt61) ?></option>
@@ -1196,8 +1296,8 @@ $exportQuery = http_build_query([
                     <input
                         type="search"
                         id="searchKontributorBluInput"
-                        class="form-control"
-                        style="height: 36px; width: 240px; font-size: 0.8125rem;"
+                        class="form-control hs-search-input"
+                        aria-label="Cari kontributor BLU berdasarkan nama, NIP, atau keahlian"
                         placeholder="Cari nama, NIP, keahlian..."
                     >
                 </div>
@@ -1205,19 +1305,6 @@ $exportQuery = http_build_query([
 
             <!-- Banner Filter Aktif Kontributor BLU -->
             <div id="activeBluFilterBanner" class="d-none mb-3"></div>
-                        <?php foreach (($filterOptions['q61_options'] ?? []) as $opt61): ?>
-                            <option value="<?= esc($opt61) ?>"><?= esc($opt61) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                    <input
-                        type="search"
-                        id="searchKontributorBluInput"
-                        class="form-control"
-                        style="height: 36px; width: 240px; font-size: 0.8125rem;"
-                        placeholder="Cari nama, NIP, keahlian..."
-                    >
-                </div>
-            </div>
 
             <!-- Tabel Peringkat Kontributor BLU -->
             <div class="table-bento-scroll" style="max-height: 480px;">
@@ -1225,7 +1312,7 @@ $exportQuery = http_build_query([
                     <thead>
                         <tr>
                             <th class="text-center" style="width: 44px;">
-                                <input type="checkbox" id="checkAllBlu" class="form-check-input" title="Pilih Semua Pegawai Terlihat">
+                                <input type="checkbox" id="checkAllBlu" class="form-check-input" aria-label="Pilih semua kontributor BLU terlihat" title="Pilih Semua Pegawai Terlihat">
                             </th>
                             <th>Pegawai &amp; Unit</th>
                             <th>Prioritas &amp; Skor Kesiapan</th>
@@ -1245,6 +1332,7 @@ $exportQuery = http_build_query([
                             <?php foreach ($daftarKontributorBlu as $kb): ?>
                                 <?php
                                 $kbSearch = strtolower($kb['nama'] . ' ' . $kb['nip'] . ' ' . $kb['unit'] . ' ' . $kb['jabatan'] . ' ' . $kb['q22_keahlian'] . ' ' . implode(' ', $kb['q61_list']) . ' ' . $kb['q67_kontribusi'] . ' ' . $kb['q65_ide']);
+                                $tierBarClass = $kb['tier_blu'] === 1 ? 'progress-bar-tier-1' : ($kb['tier_blu'] === 2 ? 'progress-bar-tier-2' : 'progress-bar-tier-3');
                                 ?>
                                 <tr
                                     class="blu-contributor-row"
@@ -1258,6 +1346,7 @@ $exportQuery = http_build_query([
                                             type="checkbox"
                                             class="form-check-input check-responden-item"
                                             value="<?= (int) $kb['respon_id'] ?>"
+                                            aria-label="Pilih <?= esc($kb['nama']) ?>"
                                             data-nama="<?= esc($kb['nama']) ?>"
                                             data-nip="<?= esc($kb['nip']) ?>"
                                             data-unit="<?= esc($kb['unit']) ?>"
@@ -1265,25 +1354,25 @@ $exportQuery = http_build_query([
                                     </td>
                                     <td>
                                         <div class="fw-semibold text-dark"><?= esc($kb['nama']) ?></div>
-                                        <div class="text-secondary tabular-nums" style="font-size: 0.75rem;"><?= esc($kb['nip']) ?> &middot; <?= esc($kb['unit']) ?></div>
-                                        <div class="text-secondary" style="font-size: 0.75rem;"><?= esc($kb['jabatan']) ?></div>
+                                        <div class="text-secondary tabular-nums hs-meta"><?= esc($kb['nip']) ?> &middot; <?= esc($kb['unit']) ?></div>
+                                        <div class="text-secondary hs-meta"><?= esc($kb['jabatan']) ?></div>
                                     </td>
                                     <td>
                                         <span class="status-pill-compact <?= esc($kb['tier_badge_class']) ?> mb-1">
                                             <?= esc($kb['tier_label']) ?>
                                         </span>
                                         <div class="d-flex align-items-center gap-2 mt-1">
-                                            <div class="progress rounded-pill flex-grow-1" style="height: 6px; width: 70px; background: #e2e8f0;">
-                                                <div class="progress-bar rounded-pill" style="width: <?= min(100, (int) $kb['skor_blu']) ?>%; background: <?= $kb['tier_blu'] === 1 ? '#16a34a' : ($kb['tier_blu'] === 2 ? '#2563eb' : '#f59e0b') ?>;"></div>
+                                            <div class="progress rounded-pill flex-grow-1 progress-ecc" style="width: 72px;">
+                                                <div class="progress-bar rounded-pill <?= $tierBarClass ?>" style="width: <?= min(100, (int) $kb['skor_blu']) ?>%;"></div>
                                             </div>
-                                            <span class="fw-bold text-dark tabular-nums" style="font-size: 0.75rem;"><?= (int) $kb['skor_blu'] ?>%</span>
+                                            <span class="fw-bold text-dark tabular-nums hs-meta"><?= (int) $kb['skor_blu'] ?>%</span>
                                         </div>
                                     </td>
-                                    <td style="max-width: 220px;">
-                                        <div class="text-dark fw-medium" style="font-size: 0.8125rem;">
+                                    <td style="max-width: 224px;">
+                                        <div class="text-dark fw-medium hs-body">
                                             Target: <span class="<?= $kb['is_blu_committed'] ? 'text-success fw-semibold' : 'text-secondary' ?>"><?= esc($kb['q66_target']) ?></span>
                                         </div>
-                                        <div class="text-secondary mt-1" style="font-size: 0.75rem;">
+                                        <div class="text-secondary mt-1 hs-meta">
                                             Minat: <?= esc($kb['q60_minat']) ?>
                                         </div>
                                     </td>
@@ -1291,22 +1380,22 @@ $exportQuery = http_build_query([
                                         <?php if (!empty($kb['q61_list'])): ?>
                                             <div class="d-flex flex-wrap gap-1">
                                                 <?php foreach (array_slice($kb['q61_list'], 0, 3) as $svc): ?>
-                                                    <span class="badge bg-light text-dark border rounded-pill" style="font-size: 0.6875rem;">
+                                                    <span class="badge bg-light text-dark border rounded-pill hs-meta">
                                                         <?= esc(mb_strimwidth($svc, 0, 28, '...')) ?>
                                                     </span>
                                                 <?php endforeach; ?>
                                                 <?php if (count($kb['q61_list']) > 3): ?>
-                                                    <span class="badge bg-light text-primary border rounded-pill" style="font-size: 0.6875rem;">
+                                                    <span class="badge bg-light text-primary border rounded-pill hs-meta">
                                                         +<?= count($kb['q61_list']) - 3 ?> lainnya
                                                     </span>
                                                 <?php endif; ?>
                                             </div>
                                         <?php else: ?>
-                                            <span class="text-secondary" style="font-size: 0.75rem;">Belum memilih bidang</span>
+                                            <span class="text-secondary hs-meta">Belum memilih bidang</span>
                                         <?php endif; ?>
                                     </td>
                                     <td style="max-width: 240px;">
-                                        <div class="d-flex flex-column gap-1" style="font-size: 0.75rem;">
+                                        <div class="d-flex flex-column gap-1 hs-meta">
                                             <?php if ($kb['q62_bisnis'] !== 'Belum memiliki pengalaman' && $kb['q62_bisnis'] !== '-'): ?>
                                                 <div class="text-dark"><span class="fw-semibold text-primary">Bisnis:</span> <?= esc($kb['q62_bisnis']) ?></div>
                                             <?php endif; ?>
@@ -1321,19 +1410,19 @@ $exportQuery = http_build_query([
                                             <?php endif; ?>
                                         </div>
                                     </td>
-                                    <td style="max-width: 250px;">
+                                    <td style="max-width: 248px;">
                                         <?php if ($kb['q67_kontribusi'] !== ''): ?>
-                                            <div class="text-dark fst-italic" style="font-size: 0.75rem; line-height: 1.4;">
+                                            <div class="text-dark fst-italic hs-meta" style="line-height: 1.4;">
                                                 &ldquo;<?= esc(mb_strimwidth($kb['q67_kontribusi'], 0, 90, '...')) ?>&rdquo;
                                             </div>
                                         <?php endif; ?>
                                         <?php if ($kb['q65_ide'] !== ''): ?>
-                                            <div class="text-secondary mt-1" style="font-size: 0.6875rem;">
+                                            <div class="text-secondary mt-1 hs-meta">
                                                 Ide: <?= esc(mb_strimwidth($kb['q65_ide'], 0, 70, '...')) ?>
                                             </div>
                                         <?php endif; ?>
                                         <?php if ($kb['q67_kontribusi'] === '' && $kb['q65_ide'] === ''): ?>
-                                            <span class="text-secondary" style="font-size: 0.75rem;">-</span>
+                                            <span class="text-secondary hs-meta">-</span>
                                         <?php endif; ?>
                                     </td>
                                     <td class="text-end">
@@ -1357,35 +1446,27 @@ $exportQuery = http_build_query([
         <div class="card-bento-ecc">
             <div class="mb-3">
                 <h2 class="h6 fw-bold text-dark mb-1">Pencari Talenta Lintas Unit &amp; Kontributor BLU</h2>
-                <div class="text-secondary" style="font-size: 0.8125rem;">
+                <div class="text-secondary hs-body">
                     Saring pegawai berdasarkan keahlian, kesiapan membantu unit kerja lain, minat kegiatan BLU, serta ketersediaan kapasitas kerja.
                 </div>
             </div>
 
-            <!-- Filter Cepat 4 Fokus Analitik Pak KBU -->
+            <!-- Filter Cepat 4 Fokus Analitik -->
             <div class="d-flex flex-wrap align-items-center gap-1 mb-3" id="talentQuickFilterPills">
-                <span class="text-secondary me-1 fw-medium" style="font-size: 0.75rem;">Filter Fokus:</span>
+                <span class="text-secondary me-1 fw-medium hs-meta">Filter Fokus:</span>
                 <button type="button" class="filter-pill-sub active" data-quick-filter="all">Semua Pegawai</button>
-                <button type="button" class="filter-pill-sub" data-quick-filter="kerja_lebih">
-                    <i class="bi bi-clock-history me-1"></i>Mau &amp; Siap Kerja Lebih (No. 33 + 70)
-                </button>
-                <button type="button" class="filter-pill-sub" data-quick-filter="skill21">
-                    <i class="bi bi-stars me-1"></i>Memiliki Keahlian Tambahan (No. 21)
-                </button>
-                <button type="button" class="filter-pill-sub" data-quick-filter="lintas">
-                    <i class="bi bi-arrows-angle-expand me-1"></i>Siap Bantu Lintas Unit (No. 27)
-                </button>
-                <button type="button" class="filter-pill-sub" data-quick-filter="blu_commit">
-                    <i class="bi bi-briefcase me-1"></i>Mau &amp; Siap Bantu BLU (No. 60 + 66)
-                </button>
+                <button type="button" class="filter-pill-sub" data-quick-filter="kerja_lebih">Mau &amp; Siap Kerja Lebih (No. 33 + 70)</button>
+                <button type="button" class="filter-pill-sub" data-quick-filter="skill21">Memiliki Keahlian Tambahan (No. 21)</button>
+                <button type="button" class="filter-pill-sub" data-quick-filter="lintas">Siap Bantu Lintas Unit (No. 27)</button>
+                <button type="button" class="filter-pill-sub" data-quick-filter="blu_commit">Mau &amp; Siap Bantu BLU (No. 60 + 66)</button>
             </div>
 
             <div class="row g-2 mb-3">
                 <div class="col-12 col-md-3">
-                    <input type="search" id="tfSearchKeyword" class="form-control" style="height: 36px; font-size: 0.8125rem;" placeholder="Cari nama / keahlian tambahan...">
+                    <input type="search" id="tfSearchKeyword" class="form-control hs-control" aria-label="Cari talenta berdasarkan nama atau keahlian tambahan" placeholder="Cari nama / keahlian tambahan...">
                 </div>
                 <div class="col-12 col-md-3">
-                    <select id="tfFilterKompetensi" class="form-select" style="height: 36px; font-size: 0.8125rem;">
+                    <select id="tfFilterKompetensi" class="form-select hs-control" aria-label="Saring kompetensi utama">
                         <option value="">Semua Kompetensi Utama (No. 20)</option>
                         <?php foreach (($filterOptions['q20_options'] ?? []) as $opt20): ?>
                             <option value="<?= esc($opt20) ?>"><?= esc($opt20) ?></option>
@@ -1393,7 +1474,7 @@ $exportQuery = http_build_query([
                     </select>
                 </div>
                 <div class="col-12 col-md-3">
-                    <select id="tfFilterBlu" class="form-select" style="height: 36px; font-size: 0.8125rem;">
+                    <select id="tfFilterBlu" class="form-select hs-control" aria-label="Saring kegiatan BLU">
                         <option value="">Semua Kegiatan BLU (No. 61)</option>
                         <?php foreach (($filterOptions['q61_options'] ?? []) as $opt61): ?>
                             <option value="<?= esc($opt61) ?>"><?= esc($opt61) ?></option>
@@ -1401,7 +1482,7 @@ $exportQuery = http_build_query([
                     </select>
                 </div>
                 <div class="col-12 col-md-3">
-                    <select id="tfFilterReadiness" class="form-select" style="height: 36px; font-size: 0.8125rem;">
+                    <select id="tfFilterReadiness" class="form-select hs-control" aria-label="Saring tingkat kesiapan">
                         <option value="all">Semua Tingkat Kesiapan</option>
                         <option value="lintas">Siap Bantu Lintas Unit</option>
                         <option value="blu">Tertarik Kontribusi BLU</option>
@@ -1451,28 +1532,28 @@ $exportQuery = http_build_query([
                                 >
                                     <td>
                                         <div class="fw-semibold text-dark"><?= esc($tp['nama']) ?></div>
-                                        <div class="text-secondary" style="font-size: 0.75rem;"><?= esc($tp['kelompok']) ?> &middot; <?= esc($tp['unit']) ?></div>
+                                        <div class="text-secondary hs-meta"><?= esc($tp['kelompok']) ?> &middot; <?= esc($tp['unit']) ?></div>
                                         <div class="d-flex flex-wrap gap-1 mt-1">
                                             <?php if (!empty($tp['is_kerja_lebih_ready'])): ?>
-                                                <span class="badge bg-success-subtle text-success rounded-pill" style="font-size: 0.625rem;">Siap Kerja Lebih</span>
+                                                <span class="badge bg-success-subtle text-success rounded-pill hs-meta">Siap Kerja Lebih</span>
                                             <?php endif; ?>
                                             <?php if (!empty($tp['has_skill_21'])): ?>
-                                                <span class="badge bg-primary-subtle text-primary rounded-pill" style="font-size: 0.625rem;">Skill No. 21</span>
+                                                <span class="badge bg-primary-subtle text-primary rounded-pill hs-meta">Skill No. 21</span>
                                             <?php endif; ?>
                                             <?php if (!empty($tp['is_blu_committed'])): ?>
-                                                <span class="badge bg-info-subtle text-info-emphasis rounded-pill" style="font-size: 0.625rem;">BLU Ready</span>
+                                                <span class="badge bg-info-subtle text-info-emphasis rounded-pill hs-meta">BLU Ready</span>
                                             <?php endif; ?>
                                         </div>
                                     </td>
-                                    <td style="max-width: 260px;">
-                                        <div class="text-dark" style="font-size: 0.75rem;">
+                                    <td style="max-width: 264px;">
+                                        <div class="text-dark hs-meta">
                                             <?= esc(!empty($tp['q20_list']) ? implode(', ', array_slice($tp['q20_list'], 0, 3)) : '-') ?>
                                             <?php if (count($tp['q20_list']) > 3): ?>
                                                 <span class="text-primary fw-semibold">(+<?= count($tp['q20_list']) - 3 ?>)</span>
                                             <?php endif; ?>
                                         </div>
                                         <?php if ($tp['q22_keahlian'] !== ''): ?>
-                                            <div class="text-primary fw-medium mt-1" style="font-size: 0.75rem;">
+                                            <div class="text-primary fw-medium mt-1 hs-meta">
                                                 + <?= esc(mb_strimwidth($tp['q22_keahlian'], 0, 70, '...')) ?>
                                                 <?php if ($tp['q23_skor'] > 0): ?>
                                                     <span class="badge bg-primary-subtle text-primary rounded-pill ms-1 tabular-nums">Skor <?= (int) $tp['q23_skor'] ?>/5</span>
@@ -1481,24 +1562,24 @@ $exportQuery = http_build_query([
                                         <?php endif; ?>
                                     </td>
                                     <td>
-                                        <div class="fw-medium <?= $tp['is_lintas_ready'] ? 'text-success' : 'text-secondary' ?>" style="font-size: 0.75rem;">
+                                        <div class="fw-medium hs-meta <?= $tp['is_lintas_ready'] ? 'text-success' : 'text-secondary' ?>">
                                             <?= esc($tp['q27_lintas_unit']) ?>
                                         </div>
-                                        <div class="text-secondary" style="font-size: 0.75rem;"><?= esc($tp['q32_jam']) ?></div>
+                                        <div class="text-secondary hs-meta"><?= esc($tp['q32_jam']) ?></div>
                                     </td>
                                     <td style="max-width: 240px;">
-                                        <div class="fw-medium <?= $tp['is_blu_ready'] ? 'text-primary' : 'text-secondary' ?>" style="font-size: 0.75rem;">
+                                        <div class="fw-medium hs-meta <?= $tp['is_blu_ready'] ? 'text-primary' : 'text-secondary' ?>">
                                             <?= esc($tp['q60_minat_blu']) ?>
                                         </div>
                                         <?php if (!empty($tp['q61_list'])): ?>
-                                            <div class="text-secondary" style="font-size: 0.75rem;">
+                                            <div class="text-secondary hs-meta">
                                                 <?= esc(implode(', ', array_slice($tp['q61_list'], 0, 2))) ?>
                                             </div>
                                         <?php endif; ?>
                                     </td>
                                     <td>
-                                        <div class="text-dark" style="font-size: 0.75rem;">Beban: <strong><?= esc($tp['q68_beban']) ?></strong></div>
-                                        <div class="text-secondary" style="font-size: 0.75rem;"><?= esc($tp['q70_kapasitas']) ?></div>
+                                        <div class="text-dark hs-meta">Beban: <strong><?= esc($tp['q68_beban']) ?></strong></div>
+                                        <div class="text-secondary hs-meta"><?= esc($tp['q70_kapasitas']) ?></div>
                                     </td>
                                     <td class="text-end">
                                         <button
@@ -1529,26 +1610,26 @@ $exportQuery = http_build_query([
                     <div class="d-flex align-items-center justify-content-between gap-2 mb-3 flex-shrink-0">
                         <div>
                             <h2 class="h6 fw-bold text-dark mb-0">Indeks Perilaku &amp; Inisiatif Kerja (No. 43&ndash;55)</h2>
-                            <div class="text-secondary" style="font-size: 0.75rem;">Rata-rata skala 1,00 s.d. 5,00 dari responden terkirim.</div>
+                            <div class="text-secondary hs-meta">Rata-rata skala 1,00 s.d. 5,00 dari responden terkirim.</div>
                         </div>
                         <span class="status-pill-compact bg-primary-subtle text-primary tabular-nums flex-shrink-0">
                             Rata-rata: <?= number_format((float) $kpi['overall_behavior_avg'], 2, ',', '.') ?> / 5,00
                         </span>
                     </div>
 
-                    <div class="d-flex flex-column gap-2 flex-grow-1 custom-scroll" style="max-height: 540px; overflow-y: auto; padding-right: 6px;">
+                    <div class="d-flex flex-column gap-2 flex-grow-1 custom-scroll" style="max-height: 544px; overflow-y: auto; padding-right: 8px;">
                         <?php foreach (($insights['likert_perilaku'] ?? []) as $lp): ?>
-                            <div class="p-2 px-3 rounded-3 border" style="background: #f8fafc;">
+                            <div class="p-2 px-3 rounded-3 border bg-light">
                                 <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
-                                    <div class="text-dark" style="font-size: 0.8125rem;">
+                                    <div class="text-dark hs-body">
                                         <strong class="tabular-nums"><?= (int) $lp['no'] ?>.</strong> <?= esc($lp['label']) ?>
                                     </div>
-                                    <span class="fw-bold text-primary tabular-nums flex-shrink-0" style="font-size: 0.8125rem;">
+                                    <span class="fw-bold text-primary tabular-nums flex-shrink-0 hs-body">
                                         <?= number_format((float) $lp['avg'], 2, ',', '.') ?>
                                     </span>
                                 </div>
-                                <div class="progress rounded-pill" style="height: 6px; background: #e2e8f0;">
-                                    <div class="progress-bar rounded-pill" style="width: <?= min(100, round(((float) $lp['avg'] / 5) * 100, 1)) ?>%; background: #1d4ed8;"></div>
+                                <div class="progress rounded-pill progress-ecc">
+                                    <div class="progress-bar rounded-pill progress-bar-primary" style="width: <?= min(100, round(((float) $lp['avg'] / 5) * 100, 1)) ?>%;"></div>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -1561,24 +1642,24 @@ $exportQuery = http_build_query([
                 <div class="card-bento-ecc flex-shrink-0">
                     <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
                         <h2 class="h6 fw-bold text-dark mb-0">Persepsi Sistem Kinerja &amp; Komitmen BLU</h2>
-                        <span class="badge rounded-pill bg-light text-secondary border fw-normal" style="font-size: 0.6875rem;">Skala 1&ndash;5</span>
+                        <span class="badge rounded-pill bg-light text-secondary border fw-normal hs-meta">Skala 1&ndash;5</span>
                     </div>
-                    <div class="text-secondary mb-3" style="font-size: 0.75rem;">
+                    <div class="text-secondary mb-3 hs-meta">
                         Penilaian keterkaitan capaian kerja, skema penghargaan, dan komitmen institusi.
                     </div>
                     <div class="d-flex flex-column gap-2">
                         <?php foreach (($insights['skor_penghargaan'] ?? []) as $sp): ?>
-                            <div class="p-2 px-3 rounded-3 border" style="background: #f8fafc;">
+                            <div class="p-2 px-3 rounded-3 border bg-light">
                                 <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
-                                    <div class="text-dark" style="font-size: 0.8125rem;">
+                                    <div class="text-dark hs-body">
                                         <strong class="tabular-nums">No. <?= (int) $sp['no'] ?>:</strong> <?= esc($sp['label']) ?>
                                     </div>
-                                    <span class="fw-bold tabular-nums flex-shrink-0" style="font-size: 0.8125rem; color: #0284c7;">
+                                    <span class="fw-bold tabular-nums flex-shrink-0 hs-body" style="color: var(--ecc-ink-sky, #0284c7);">
                                         <?= number_format((float) $sp['avg'], 2, ',', '.') ?>
                                     </span>
                                 </div>
-                                <div class="progress rounded-pill" style="height: 5px; background: #e2e8f0;">
-                                    <div class="progress-bar rounded-pill" style="width: <?= min(100, round(((float) $sp['avg'] / 5) * 100, 1)) ?>%; background: #0284c7;"></div>
+                                <div class="progress rounded-pill progress-ecc">
+                                    <div class="progress-bar rounded-pill progress-bar-sky" style="width: <?= min(100, round(((float) $sp['avg'] / 5) * 100, 1)) ?>%;"></div>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -1586,32 +1667,29 @@ $exportQuery = http_build_query([
                 </div>
 
                 <div class="card-bento-ecc flex-grow-1 d-flex flex-column">
-                    <div class="d-flex align-items-center justify-content-between gap-2 mb-1 flex-shrink-0">
+                    <div class="mb-1 flex-shrink-0">
                         <h2 class="h6 fw-bold text-dark mb-0">Hambatan Produktivitas (No. 57)</h2>
-                        <span class="badge rounded-pill text-danger border border-danger-subtle fw-semibold" style="background: #fef2f2; padding: 4px 10px; font-size: 0.6875rem;">
-                            Fokus Analitik 4
-                        </span>
                     </div>
-                    <div class="text-secondary mb-3 flex-shrink-0" style="font-size: 0.75rem;">
+                    <div class="text-secondary mb-3 flex-shrink-0 hs-meta">
                         Peringkat faktor utama penghambat produktivitas kerja pegawai di lingkungan PKTJ.
                     </div>
                     <?php if (empty($insights['hambatan_ranked'])): ?>
-                        <div class="text-secondary" style="font-size: 0.8125rem;">Belum ada data hambatan terkirim.</div>
+                        <div class="text-secondary hs-body">Belum ada data hambatan terkirim.</div>
                     <?php else: ?>
-                        <div class="d-flex flex-column gap-2 flex-grow-1 custom-scroll" style="max-height: 250px; overflow-y: auto; padding-right: 6px;">
+                        <div class="d-flex flex-column gap-2 flex-grow-1 custom-scroll" style="max-height: 256px; overflow-y: auto; padding-right: 8px;">
                             <?php foreach ($insights['hambatan_ranked'] as $hRank => $hItem): ?>
-                                <div class="p-2 px-3 rounded-3 border" style="background: #f8fafc;">
-                                    <div class="d-flex align-items-center justify-content-between gap-2 mb-1" style="font-size: 0.8125rem;">
+                                <div class="p-2 px-3 rounded-3 border bg-light">
+                                    <div class="d-flex align-items-center justify-content-between gap-2 mb-1 hs-body">
                                         <div class="text-dark">
                                             <span class="badge bg-white text-dark border rounded-pill me-1 tabular-nums">#<?= $hRank + 1 ?></span>
                                             <?= esc($hItem['label']) ?>
                                         </div>
-                                        <span class="fw-bold text-dark tabular-nums flex-shrink-0" style="font-size: 0.75rem;">
+                                        <span class="fw-bold text-dark tabular-nums flex-shrink-0 hs-meta">
                                             <?= (int) $hItem['count'] ?> <span class="text-secondary fw-normal">(<?= (float) $hItem['percent'] ?>%)</span>
                                         </span>
                                     </div>
-                                    <div class="progress rounded-pill" style="height: 6px; background: #e2e8f0;">
-                                        <div class="progress-bar rounded-pill" style="width: <?= min(100, (float) $hItem['percent']) ?>%; background: #dc2626;"></div>
+                                    <div class="progress rounded-pill progress-ecc">
+                                        <div class="progress-bar rounded-pill progress-bar-danger" style="width: <?= min(100, (float) $hItem['percent']) ?>%;"></div>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -1626,7 +1704,7 @@ $exportQuery = http_build_query([
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                 <div>
                     <h2 class="h6 fw-bold text-dark mb-0">Masukan Strategis &amp; Aspirasi Pengembangan SDM</h2>
-                    <div class="text-secondary" style="font-size: 0.8125rem;">Rangkuman aspirasi, kebutuhan keahlian, dan saran terbuka dari seluruh responden terkirim.</div>
+                    <div class="text-secondary hs-body">Rangkuman aspirasi, kebutuhan keahlian, dan saran terbuka dari seluruh responden terkirim.</div>
                 </div>
                 <div class="d-flex flex-wrap gap-1" id="essayTopicPills">
                     <button type="button" class="filter-pill-sub active" data-essay-q="83">Saran Pimpinan (No. 83)</button>
@@ -1641,19 +1719,19 @@ $exportQuery = http_build_query([
                 <?php $eList = $insights['aspirasi'][$eNo] ?? []; ?>
                 <div class="essay-pane <?= $eNo === 83 ? '' : 'd-none' ?>" id="essayPane_<?= $eNo ?>">
                     <?php if (empty($eList)): ?>
-                        <div class="text-center text-secondary py-4" style="font-size: 0.875rem;">Belum ada jawaban terbuka pada butir pertanyaan ini.</div>
+                        <div class="text-center text-secondary py-4 hs-body">Belum ada jawaban terbuka pada butir pertanyaan ini.</div>
                     <?php else: ?>
-                        <div class="row g-2 custom-scroll" style="max-height: 440px; overflow-y: auto; padding-right: 4px;">
+                        <div class="row g-2 custom-scroll" style="max-height: 440px; overflow-y: auto; padding-right: 8px;">
                             <?php foreach ($eList as $eItem): ?>
                                 <div class="col-12 col-md-6">
-                                    <div class="p-3 rounded-3 border h-100" style="background: #f8fafc;">
+                                    <div class="p-3 rounded-3 border h-100 bg-light">
                                         <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
-                                            <span class="fw-semibold text-dark" style="font-size: 0.8125rem;"><?= esc($eItem['nama']) ?></span>
-                                            <span class="badge bg-white text-secondary border rounded-pill" style="padding: 4px 10px; font-size: 0.6875rem;">
+                                            <span class="fw-semibold text-dark hs-body"><?= esc($eItem['nama']) ?></span>
+                                            <span class="badge bg-white text-secondary border rounded-pill hs-meta" style="padding: 4px 12px;">
                                                 <?= esc($eItem['kelompok']) ?> &middot; <?= esc($eItem['unit']) ?>
                                             </span>
                                         </div>
-                                        <div class="text-dark" style="font-size: 0.8125rem; white-space: pre-line; line-height: 1.5;"><?= esc($eItem['teks']) ?></div>
+                                        <div class="text-dark hs-body" style="white-space: pre-line; line-height: 1.5;"><?= esc($eItem['teks']) ?></div>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -1674,13 +1752,13 @@ $exportQuery = http_build_query([
             <div class="modal-header border-bottom px-4 py-3">
                 <div>
                     <h5 class="modal-title fw-bold text-dark mb-0" id="modalDetailRespondenLabel">Rincian Jawaban Responden</h5>
-                    <div id="detailRespondenSubtitle" class="text-secondary tabular-nums" style="font-size: 0.8125rem;">Memuat data...</div>
+                    <div id="detailRespondenSubtitle" class="text-secondary tabular-nums hs-body">Memuat data...</div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body px-4 py-3">
                 <div class="mb-3">
-                    <input type="search" id="searchInsideDetailInput" class="form-control" style="height: 36px; font-size: 0.8125rem;" placeholder="Cari nomor atau kata kunci pertanyaan/jawaban...">
+                    <input type="search" id="searchInsideDetailInput" class="form-control hs-control" aria-label="Cari pertanyaan atau jawaban responden" placeholder="Cari nomor atau kata kunci pertanyaan/jawaban...">
                 </div>
                 <div id="detailRespondenBody">
                     <div class="text-center text-secondary py-5">Memuat rincian jawaban...</div>
@@ -1692,14 +1770,13 @@ $exportQuery = http_build_query([
                         <button
                             type="button"
                             id="btnDetailModalUnlock"
-                            class="btn btn-outline-secondary rounded-pill fw-semibold px-3 d-none btn-tactile btn-buka-kunci"
-                            style="height: 36px; font-size: 0.8125rem;"
+                            class="btn btn-outline-secondary rounded-pill fw-semibold hs-header-btn d-none btn-tactile btn-buka-kunci"
                         >
                             Buka Edit
                         </button>
                     <?php endif; ?>
                 </div>
-                <button type="button" class="btn btn-light border rounded-pill fw-semibold px-4" style="height: 36px;" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-light border rounded-pill fw-semibold hs-header-btn" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
@@ -1708,22 +1785,22 @@ $exportQuery = http_build_query([
 <!-- ======================================================================= -->
 <!-- FLOATING ACTION BAR PILIHAN PEGAWAI (BANDINGKAN / UNDUH EXCEL)          -->
 <!-- ======================================================================= -->
-<div id="floatingSelectionBar" class="d-none position-fixed bottom-0 start-50 translate-middle-x mb-4 shadow-lg rounded-pill px-4 py-2 border bg-white" style="z-index: 1045; min-width: 320px; max-width: 92vw; border-color: #cbd5e1 !important;">
+<div id="floatingSelectionBar" class="d-none position-fixed bottom-0 start-50 translate-middle-x mb-4 shadow-lg rounded-pill px-4 py-2 border bg-white hs-floating-bar">
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
         <div class="d-flex align-items-center gap-2">
-            <span class="badge bg-primary rounded-pill tabular-nums px-2 py-1" id="selectedCountBadge" style="font-size: 0.8125rem;">0</span>
-            <span class="fw-semibold text-dark" style="font-size: 0.8125rem;" id="selectedSummaryText">Pegawai Terpilih</span>
+            <span class="badge bg-primary rounded-pill tabular-nums px-2 py-1 hs-body" id="selectedCountBadge">0</span>
+            <span class="fw-semibold text-dark hs-body" id="selectedSummaryText">Pegawai Terpilih</span>
         </div>
-        <div class="d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-primary rounded-pill fw-semibold btn-tactile d-inline-flex align-items-center gap-1" id="btnCompareSelected" style="height: 36px; font-size: 0.8125rem; padding: 4px 16px;">
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <button type="button" class="btn btn-primary rounded-pill fw-semibold btn-tactile hs-header-btn" id="btnCompareSelected">
                 Bandingkan Isian
             </button>
             <?php if ($canExport): ?>
-                <button type="button" class="btn btn-outline-success rounded-pill fw-semibold btn-tactile d-inline-flex align-items-center gap-1" id="btnExportSelectedExcel" style="height: 36px; font-size: 0.8125rem; padding: 4px 16px;">
+                <button type="button" class="btn btn-outline-success rounded-pill fw-semibold btn-tactile hs-header-btn" id="btnExportSelectedExcel">
                     Unduh Excel
                 </button>
             <?php endif; ?>
-            <button type="button" class="btn btn-outline-secondary rounded-pill btn-tactile" id="btnClearSelected" style="height: 36px; font-size: 0.8125rem; padding: 4px 14px;">
+            <button type="button" class="btn btn-outline-secondary rounded-pill btn-tactile hs-header-btn" id="btnClearSelected">
                 Batal
             </button>
         </div>
@@ -1739,11 +1816,11 @@ $exportQuery = http_build_query([
             <div class="modal-header border-bottom px-4 py-3">
                 <div class="me-auto">
                     <h5 class="modal-title fw-bold text-dark mb-0" id="modalBandingkanRespondenLabel">Perbandingan Isian Pegawai</h5>
-                    <div id="compareRespondenSubtitle" class="text-secondary tabular-nums" style="font-size: 0.8125rem;">Memuat data...</div>
+                    <div id="compareRespondenSubtitle" class="text-secondary tabular-nums hs-body">Memuat data...</div>
                 </div>
                 <div class="d-flex align-items-center gap-2">
                     <?php if ($canExport): ?>
-                        <button type="button" class="btn btn-sm btn-outline-success rounded-pill fw-semibold btn-tactile" id="btnModalCompareExportExcel" style="height: 32px; font-size: 0.75rem;">
+                        <button type="button" class="btn btn-outline-success btn-action-compact btn-tactile" id="btnModalCompareExportExcel">
                             Unduh Excel Pegawai Ini
                         </button>
                     <?php endif; ?>
@@ -1752,15 +1829,15 @@ $exportQuery = http_build_query([
             </div>
             <div class="modal-body px-4 py-3">
                 <div class="mb-3">
-                    <input type="search" id="searchInsideCompareInput" class="form-control" style="height: 36px; font-size: 0.8125rem;" placeholder="Cari nomor butir atau kata kunci pertanyaan...">
+                    <input type="search" id="searchInsideCompareInput" class="form-control hs-control" aria-label="Cari nomor butir atau kata kunci pertanyaan" placeholder="Cari nomor butir atau kata kunci pertanyaan...">
                 </div>
                 <div id="compareRespondenContainer">
                     <div class="text-center text-secondary py-5">Memuat perbandingan isian...</div>
                 </div>
             </div>
             <div class="modal-footer border-top px-4 py-2 d-flex justify-content-between">
-                <div id="compareFooterMeta" class="text-secondary tabular-nums" style="font-size: 0.8125rem;"></div>
-                <button type="button" class="btn btn-light border rounded-pill fw-semibold px-4" style="height: 36px;" data-bs-dismiss="modal">Tutup</button>
+                <div id="compareFooterMeta" class="text-secondary tabular-nums hs-body"></div>
+                <button type="button" class="btn btn-light border rounded-pill fw-semibold hs-header-btn" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
@@ -1771,31 +1848,31 @@ $exportQuery = http_build_query([
 <!-- ======================================================================= -->
 <div class="modal fade" id="modalDrilldownChart" tabindex="-1" aria-labelledby="modalDrilldownTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 rounded-4 shadow-sm" style="border-radius: 16px;">
+        <div class="modal-content border-0 rounded-4 shadow-sm">
             <div class="modal-header border-bottom py-3 px-4">
                 <div>
                     <h5 class="modal-title fw-bold text-dark mb-0" id="modalDrilldownTitle">Daftar Pegawai</h5>
-                    <div class="text-secondary" id="modalDrilldownSubtitle" style="font-size: 0.8125rem;"></div>
+                    <div class="text-secondary hs-body" id="modalDrilldownSubtitle"></div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body p-4">
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                    <div class="text-secondary" style="font-size: 0.8125rem;">
+                    <div class="text-secondary hs-body">
                         Ditemukan <strong id="modalDrilldownCount" class="text-dark tabular-nums">0</strong> pegawai pada kategori ini.
                     </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <input type="search" id="modalDrilldownSearch" class="form-control form-control-sm" placeholder="Cari nama atau unit..." style="height: 32px; width: 220px; font-size: 0.8125rem;">
-                        <button type="button" id="btnCopyDrilldownList" class="btn btn-outline-secondary btn-action-compact btn-tactile" title="Salin daftar ke clipboard">
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <input type="search" id="modalDrilldownSearch" class="form-control hs-search-input" aria-label="Cari nama atau unit pegawai" placeholder="Cari nama atau unit...">
+                        <button type="button" id="btnCopyDrilldownList" class="btn btn-outline-secondary btn-action-compact btn-tactile" title="Salin daftar pegawai">
                             Salin
                         </button>
                     </div>
                 </div>
-                <div class="table-bento-scroll" style="max-height: 380px;">
+                <div class="table-bento-scroll" style="max-height: 384px;">
                     <table class="table table-bento table-hover" id="tableDrilldownChart">
                         <thead>
                             <tr>
-                                <th style="width: 44px;" class="text-center">No</th>
+                                <th style="width: 48px;" class="text-center">No</th>
                                 <th>Nama &amp; NIP</th>
                                 <th>Unit Kerja</th>
                                 <th>Jabatan</th>
@@ -1808,7 +1885,7 @@ $exportQuery = http_build_query([
                 </div>
             </div>
             <div class="modal-footer border-top py-2 px-4">
-                <button type="button" class="btn btn-light rounded-pill px-4 btn-tactile fw-medium" data-bs-dismiss="modal" style="height: 36px; font-size: 0.8125rem;">Tutup</button>
+                <button type="button" class="btn btn-light border rounded-pill btn-tactile fw-medium hs-header-btn" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
@@ -1820,17 +1897,17 @@ $exportQuery = http_build_query([
             <div class="modal-header border-bottom px-4 py-3">
                 <div>
                     <h5 class="modal-title fw-bold text-dark mb-0" id="modalDelegasiStafLabel">Delegasi Akses Hasil Survei SDM</h5>
-                    <div class="text-secondary" style="font-size: 0.8125rem;">
+                    <div class="text-secondary hs-body">
                         Berikan akses terbatas kepada staf untuk memantau hasil survei tanpa membuka menu Kepegawaian lainnya.
                     </div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body px-4 py-3">
-                <form id="formTambahDelegasi" class="p-3 rounded-3 border mb-3" style="background: #f8fafc;">
+                <form id="formTambahDelegasi" class="p-3 rounded-3 border mb-3 bg-light">
                     <div class="row g-2 align-items-end">
                         <div class="col-12 col-md-6">
-                            <label for="selectDelegasiStaf" class="form-label fw-semibold text-dark mb-1" style="font-size: 0.8125rem;">Pilih Staf</label>
+                            <label for="selectDelegasiStaf" class="form-label fw-semibold text-dark mb-1 hs-body">Pilih Staf</label>
                             <select id="selectDelegasiStaf" class="form-select" required>
                                 <option value="">-- Cari nama atau NIP staf --</option>
                                 <?php foreach ($delegateCandidates as $cand): ?>
@@ -1841,24 +1918,24 @@ $exportQuery = http_build_query([
                             </select>
                         </div>
                         <div class="col-12 col-md-4">
-                            <label for="inputCatatanDelegasi" class="form-label fw-semibold text-dark mb-1" style="font-size: 0.8125rem;">Catatan Tugas (Opsional)</label>
-                            <input type="text" id="inputCatatanDelegasi" class="form-control" style="height: 38px; font-size: 0.8125rem;" maxlength="150" placeholder="Contoh: Rekapitulasi SDM KUK">
+                            <label for="inputCatatanDelegasi" class="form-label fw-semibold text-dark mb-1 hs-body">Catatan Tugas (Opsional)</label>
+                            <input type="text" id="inputCatatanDelegasi" class="form-control hs-control" maxlength="150" placeholder="Contoh: Rekapitulasi SDM KUK">
                         </div>
                         <div class="col-12 col-md-2">
-                            <button type="submit" id="btnSubmitDelegasi" class="btn btn-primary fw-semibold rounded-3 w-100 btn-tactile" style="height: 38px; font-size: 0.8125rem;">
+                            <button type="submit" id="btnSubmitDelegasi" class="btn btn-primary fw-semibold rounded-3 w-100 btn-tactile hs-control">
                                 Beri Akses
                             </button>
                         </div>
                     </div>
                     <div class="form-check mt-2">
                         <input class="form-check-input" type="checkbox" id="chkDelegasiCanExport" value="1" checked>
-                        <label class="form-check-label text-secondary" for="chkDelegasiCanExport" style="font-size: 0.8125rem;">
+                        <label class="form-check-label text-secondary hs-body" for="chkDelegasiCanExport">
                             Izinkan staf mengunduh rekapitulasi Excel
                         </label>
                     </div>
                 </form>
 
-                <div class="fw-semibold text-dark mb-2" style="font-size: 0.875rem;">Daftar Staf Penerima Delegasi Aktif</div>
+                <div class="fw-semibold text-dark mb-2 hs-body">Daftar Staf Penerima Delegasi Aktif</div>
                 <div class="table-bento-scroll" style="max-height: 280px;">
                     <table class="table table-bento" id="tableActiveDelegates">
                         <thead>
@@ -1880,7 +1957,7 @@ $exportQuery = http_build_query([
                                     <tr>
                                         <td>
                                             <div class="fw-semibold text-dark"><?= esc($dg['nama_lengkap']) ?></div>
-                                            <div class="text-secondary tabular-nums" style="font-size: 0.75rem;"><?= esc($dg['nip'] ?: '-') ?></div>
+                                            <div class="text-secondary tabular-nums hs-meta"><?= esc($dg['nip'] ?: '-') ?></div>
                                         </td>
                                         <td><?= esc($dg['unit'] ?: '-') ?></td>
                                         <td>
@@ -1914,9 +1991,9 @@ $exportQuery = http_build_query([
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="<?= base_url('assets/vendor/jquery/jquery.min.js') ?>"></script>
+<script src="<?= base_url('assets/vendor/select2/select2.min.js') ?>"></script>
+<script src="<?= base_url('assets/vendor/chartjs/chart.umd.min.js') ?>"></script>
 <script>
 (function () {
     'use strict';
@@ -2010,8 +2087,14 @@ $exportQuery = http_build_query([
                 json = { status: 'error', message: 'Permintaan gagal diproses. Silakan coba lagi.' };
             }
             updateCsrf(json);
+            if (!res.ok && json.status !== 'error') {
+                return { status: 'error', message: json.message || 'Permintaan gagal diproses. Silakan coba lagi.' };
+            }
             return json;
-        });
+        }).catch(() => ({
+            status: 'error',
+            message: 'Permintaan tidak dapat diproses saat ini. Silakan coba lagi.'
+        }));
     }
 
     function renderDelegatesTable(delegates) {
@@ -2102,9 +2185,20 @@ $exportQuery = http_build_query([
             }
         });
 
+        // Dukungan Keyboard (Enter & Space) untuk Kartu & Baris Interaktif
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            const targetEl = e.target.closest('.card-interactive[role="button"], .unit-summary-row[role="button"]');
+            if (!targetEl) return;
+            if (e.target.closest('button, a, input, select, textarea')) return;
+            e.preventDefault();
+            targetEl.click();
+        });
+
         // Buka / Tutup Periode Survei
         document.getElementById('btnTogglePeriode')?.addEventListener('click', async function () {
-            const currentlyOpen = this.dataset.open === '1';
+            const toggleBtn = this;
+            const currentlyOpen = toggleBtn.dataset.open === '1';
             const nextOpen = currentlyOpen ? '0' : '1';
             const conf = await showDialog({
                 title: currentlyOpen ? 'Tutup Periode Survei?' : 'Buka Periode Survei?',
@@ -2117,11 +2211,33 @@ $exportQuery = http_build_query([
             });
             if (!conf.isConfirmed) return;
 
-            const res = await postAction(URLS.togglePeriode, { is_open: nextOpen });
-            if (res.status === 'success') {
-                window.location.reload();
-            } else {
-                showDialog({ title: 'Gagal', text: res.message || 'Gagal memperbarui status periode.', icon: 'error' });
+            const origText = toggleBtn.textContent;
+            toggleBtn.disabled = true;
+            toggleBtn.textContent = 'Menyimpan...';
+
+            try {
+                const res = await postAction(URLS.togglePeriode, { is_open: nextOpen });
+                if (res.status === 'success') {
+                    const isNowOpen = res.is_open === true || nextOpen === '1';
+                    toggleBtn.dataset.open = isNowOpen ? '1' : '0';
+                    toggleBtn.textContent = isNowOpen ? 'Tutup Periode' : 'Buka Periode';
+                    const statusBadge = document.getElementById('badgeStatusPeriode');
+                    if (statusBadge) {
+                        statusBadge.textContent = isNowOpen ? 'Periode Aktif' : 'Periode Ditutup';
+                        statusBadge.className = 'status-pill-compact ' + (isNowOpen ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger');
+                    }
+                    await showDialog({
+                        title: 'Tersimpan',
+                        text: res.message || (isNowOpen ? 'Periode survei dibuka kembali.' : 'Periode survei telah ditutup.'),
+                        icon: 'success'
+                    });
+                    window.location.reload();
+                } else {
+                    toggleBtn.textContent = origText;
+                    showDialog({ title: 'Gagal', text: res.message || 'Gagal memperbarui status periode.', icon: 'error' });
+                }
+            } finally {
+                toggleBtn.disabled = false;
             }
         });
 
@@ -2136,23 +2252,11 @@ $exportQuery = http_build_query([
             });
             if (!conf.isConfirmed) return;
 
-            const res = await postAction(URLS.syncProfil, { mode: 'all' });
-            if (res.status === 'success') {
-                await showDialog({ title: 'Tersimpan', text: res.message, icon: 'success' });
-                window.location.reload();
-            } else {
-                showDialog({ title: 'Gagal', text: res.message || 'Gagal menerapkan profil.', icon: 'error' });
-            }
-        });
             const btn = this;
             const origHtml = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Menerapkan...';
 
-        document.querySelectorAll('.btn-sync-single').forEach(btn => {
-            btn.addEventListener('click', async function () {
-                const rid = this.dataset.responId;
-                const res = await postAction(URLS.syncProfil, { mode: 'single', respon_id: rid });
             try {
                 const res = await postAction(URLS.syncProfil, { mode: 'all' });
                 if (res.status === 'success') {
@@ -2607,7 +2711,7 @@ $exportQuery = http_build_query([
                     document.execCommand('copy');
                     document.body.removeChild(ta);
                 }
-                showDialog({ title: 'Tersalin', text: 'Daftar nama berhasil disalin ke clipboard.', icon: 'success' });
+                showDialog({ title: 'Tersalin', text: 'Daftar nama berhasil disalin.', icon: 'success' });
             } catch (e) {
                 showDialog({ title: 'Gagal', text: 'Gagal menyalin data.', icon: 'error' });
             }
@@ -2682,9 +2786,9 @@ $exportQuery = http_build_query([
                 });
             }
 
-            buildHorizontalBar('chartKompetensiCanvas', CHARTS_DATA.top_kompetensi, '#1d4ed8', handleKompetensiChartClick);
+            buildHorizontalBar('chartKompetensiCanvas', CHARTS_DATA.top_kompetensi, '#1e40af', handleKompetensiChartClick);
             buildHorizontalBar('chartBluCanvas', CHARTS_DATA.top_blu, '#0284c7', handleBluChartClick);
-            buildHorizontalBar('chartPelatihanCanvas', CHARTS_DATA.top_pelatihan, '#4f46e5', handlePelatihanChartClick);
+            buildHorizontalBar('chartPelatihanCanvas', CHARTS_DATA.top_pelatihan, '#0d6efd', handlePelatihanChartClick);
 
             const kapEl = document.getElementById('chartKapasitasCanvas');
             if (kapEl) {
@@ -2701,7 +2805,7 @@ $exportQuery = http_build_query([
                         labels: hasData ? kapKeys : ['Belum ada data'],
                         datasets: [{
                             data: hasData ? Object.values(kapMap) : [1],
-                            backgroundColor: hasData ? ['#16a34a', '#2563eb', '#0ea5e9', '#f59e0b', '#94a3b8'] : ['#e2e8f0'],
+                            backgroundColor: hasData ? ['#047857', '#0d6efd', '#0284c7', '#f59e0b', '#64748b'] : ['#e2e8f0'],
                             borderWidth: 2,
                             borderColor: '#ffffff'
                         }]
@@ -2895,7 +2999,7 @@ $exportQuery = http_build_query([
                     (res.sections || []).forEach(sec => {
                         html += `
                             <div class="mb-3 p-3 rounded-3 border detail-section-card">
-                                <div class="fw-bold text-primary mb-2 pb-1 border-bottom" style="font-size: 0.8125rem;">
+                                <div class="fw-bold text-primary mb-2 pb-1 border-bottom hs-body">
                                     BAGIAN ${escapeHtml(sec.roman)} — ${escapeHtml(sec.short_title)}
                                 </div>
                         `;
@@ -2904,10 +3008,10 @@ $exportQuery = http_build_query([
                             const rowText = (it.no + ' ' + it.label + ' ' + it.display).toLowerCase();
                             html += `
                                 <div class="detail-q-row" data-qsearch="${escapeHtml(rowText)}">
-                                    <div class="text-secondary mb-1" style="font-size: 0.8125rem;">
+                                    <div class="text-secondary mb-1 hs-body">
                                         <strong class="text-dark tabular-nums">${Number(it.no)}.</strong> ${escapeHtml(it.label)}
                                     </div>
-                                    <div class="fw-medium text-dark ps-3" style="font-size: 0.8125rem; white-space: pre-line;">${escapeHtml(it.display)}</div>
+                                    <div class="fw-medium text-dark ps-3 hs-body" style="white-space: pre-line;">${escapeHtml(it.display)}</div>
                                 </div>
                             `;
                         });
