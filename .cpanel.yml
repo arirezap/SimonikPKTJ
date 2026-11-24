@@ -10,3 +10,4 @@ deployment:
     - /bin/cp preload.php $DEPLOYPATH
     - /bin/cp spark $DEPLOYPATH
     - /bin/cp .htaccess $DEPLOYPATH
+    - printf '\n# php -- BEGIN cPanel-generated handler, do not edit\n<IfModule mime_module>\n  AddHandler application/x-httpd-ea-php82 .php .php8 .phtml\n</IfModule>\n# php -- END cPanel-generated handler, do not edit\n' >> ${DEPLOYPATH}.htaccess
