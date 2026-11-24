@@ -70,6 +70,40 @@ class SettingModel extends Model
     }
 
     /**
+     * Simpan atau perbarui pengaturan sistem secara idempoten (upsert)
+     * sekaligus mengosongkan cache statis request.
+     */
+    public static function saveSetting(string $key, string $value, ?string $name = null, ?string $description = null): bool
+    {
+        $model    = new self();
+        $existing = $model->find($key);
+
+        if ($existing) {
+            $payload = ['setting_value' => $value];
+            if ($name !== null && trim($name) !== '') {
+                $payload['setting_name'] = trim($name);
+            }
+            if ($description !== null) {
+                $payload['description'] = $description;
+            }
+            $saved = (bool) $model->update($key, $payload);
+        } else {
+            $fallbackName = $name !== null && trim($name) !== ''
+                ? trim($name)
+                : ucwords(str_replace('_', ' ', $key));
+            $saved = $model->insert([
+                'setting_key'   => $key,
+                'setting_name'  => $fallbackName,
+                'setting_value' => $value,
+                'description'   => $description,
+            ]) !== false;
+        }
+
+        self::clearCache();
+        return $saved;
+    }
+
+    /**
      * Ambil seluruh data baris pengaturan sebagai map terindeks setting_key
      *
      * @return array

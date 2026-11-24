@@ -449,21 +449,41 @@ class HasilSurveiController extends BaseController
         $newState = ((string) $this->request->getPost('is_open') === '1') ? '1' : '0';
         $oldState = SurveiPemetaanPolicy::isSurveyOpen() ? '1' : '0';
 
-        SettingModel::saveSetting('enable_survei_pemetaan', $newState);
+        try {
+            $saved = SettingModel::saveSetting(
+                'enable_survei_pemetaan',
+                $newState,
+                'Status Pembukaan Survei Pemetaan SDM',
+                'Kontrol buka atau tutup periode pengisian Survei Pemetaan SDM.'
+            );
 
-        log_audit('TOGGLE_PERIODE_SURVEI', 'settings', 'enable_survei_pemetaan', [
-            'enable_survei_pemetaan' => $oldState,
-        ], [
-            'enable_survei_pemetaan' => $newState,
-        ]);
+            if (!$saved) {
+                return $this->jsonResponse([
+                    'status'  => 'error',
+                    'message' => 'Gagal memperbarui status periode. Silakan coba lagi.',
+                ], 500);
+            }
 
-        return $this->jsonResponse([
-            'status'  => 'success',
-            'is_open' => $newState === '1',
-            'message' => $newState === '1'
-                ? 'Tautan pengisian survei kini dibuka.'
-                : 'Tautan pengisian survei telah ditutup.',
-        ]);
+            log_audit('TOGGLE_PERIODE_SURVEI', 'settings', 'enable_survei_pemetaan', [
+                'enable_survei_pemetaan' => $oldState,
+            ], [
+                'enable_survei_pemetaan' => $newState,
+            ]);
+
+            return $this->jsonResponse([
+                'status'  => 'success',
+                'is_open' => $newState === '1',
+                'message' => $newState === '1'
+                    ? 'Tautan pengisian survei kini dibuka.'
+                    : 'Tautan pengisian survei telah ditutup.',
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'HasilSurveiController::togglePeriode error: ' . $e->getMessage());
+            return $this->jsonResponse([
+                'status'  => 'error',
+                'message' => 'Gagal memperbarui status periode. Silakan coba lagi.',
+            ], 500);
+        }
     }
 
     /**
