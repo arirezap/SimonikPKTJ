@@ -14,8 +14,29 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx as XlsxWriter;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx as XlsxReader;
 
+use CodeIgniter\Exceptions\PageNotFoundException;
+use CodeIgniter\HTTP\RequestInterface;
+use CodeIgniter\HTTP\ResponseInterface;
+use Psr\Log\LoggerInterface;
+
 class MasterDataController extends BaseController
 {
+    private const MASTER_DATA_ROLES = ['admin', 'kepegawaian', 'spm'];
+
+    public function initController(RequestInterface $request, ResponseInterface $response, LoggerInterface $logger)
+    {
+        parent::initController($request, $response, $logger);
+
+        $router = service('router');
+        $method = strtolower((string) ($router ? $router->methodName() : ''));
+        if ($method !== 'eccled' && !hasAnyRole(self::MASTER_DATA_ROLES)) {
+            log_audit('UNAUTHORIZED_ACCESS', 'master_data', $method, null, [
+                'uri' => (string) $request->getUri()->getPath(),
+                'ip'  => $request->getIPAddress(),
+            ]);
+            throw PageNotFoundException::forPageNotFound();
+        }
+    }
     // ==========================================================
     // FUNGSI-FUNGSI UNTUK SASARAN PROGRAM
     // ==========================================================

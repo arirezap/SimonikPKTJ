@@ -11,23 +11,28 @@
     # ------------------------------------------------------------------
     # HTTP SECURITY HEADERS (OWASP HARDENING)
     # ------------------------------------------------------------------
+    Header always unset X-Powered-By
     Header set X-Frame-Options "SAMEORIGIN"
     Header set X-Content-Type-Options "nosniff"
     Header set X-XSS-Protection "1; mode=block"
     Header set Referrer-Policy "strict-origin-when-cross-origin"
     Header set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS
 </IfModule>
 
 # ----------------------------------------------------------------------
-# Disable directory browsing
+# Disable directory browsing & block dotfiles (kecuali .well-known SSL)
 # ----------------------------------------------------------------------
 Options -Indexes
 
-# ----------------------------------------------------------------------
-# Rewrite Engine
-# ----------------------------------------------------------------------
 <IfModule mod_rewrite.c>
     RewriteEngine On
+
+    # Izinkan validasi SSL AutoSSL / Let's Encrypt
+    RewriteRule ^\.well-known/ - [L]
+
+    # Blokir file/folder tersembunyi di dalam public/
+    RewriteRule (^|/)\.(?!well-known) - [F,L]
 
     # If the requested filename exists, simply serve it.
     # We only want to let Apache serve files and not directories.

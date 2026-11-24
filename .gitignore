@@ -44,6 +44,7 @@ $RECYCLE.BIN/
 # These should never be under version control, as it poses a security risk.
 .env
 .env.*
+!.env.example
 *.env
 .env.local
 .env.production
@@ -76,6 +77,19 @@ id_rsa*
 *.db3
 *.dump
 *.rdb
+sql_cpanel_parts/
+
+#-------------------------
+# Internal PII, Raw Spreadsheets & Security Audit Reports
+#-------------------------
+ECC 2.0/data taruna/
+ECC 2.0/Notulen*.docx
+docs/audits/
+audit_code.md
+.impeccable/audit/
+app/Database/Seeds/Ecc2RealStaffRolesSeeder.php
+*.xls
+*.xlsx
 
 #-------------------------
 # Backup & Archive Files

@@ -66,68 +66,74 @@ abstract class BaseController extends Controller
         if (!$this->session->get('isLoggedIn')) {
             helper('cookie');
             $rememberToken = get_cookie('remember_me');
-            if ($rememberToken) {
-                $decoded = base64_decode($rememberToken);
-                if (strpos($decoded, '::') !== false) {
-                    list($userId, $hash) = explode('::', $decoded);
-                    $db = \Config\Database::connect();
-                    $user = $db->table('users')->where('id', $userId)->get()->getRowArray();
-                    if ($user) {
-                        // Tolak auto-login khusus jika akun berstatus nonaktif (mutasi_keluar & pensiun tetap diizinkan)
-                        if (($user['status_pegawai'] ?? 'aktif') === 'nonaktif') {
-                            delete_cookie('remember_me');
-                        } else {
-                            $expectedHmac = hash_hmac('sha256', $user['id'] . '::' . $user['username'] . '::' . $user['password'], (string)config('App')->appTimezone ?: 'ecc_auth_token');
-                            $expectedMd5 = md5($user['id'] . $user['username'] . $user['password']);
-                            
-                            if (hash_equals($expectedHmac, $hash) || hash_equals($expectedMd5, $hash)) {
-                                $role_aplikasi = $user['role'];
+            if (is_string($rememberToken) && $rememberToken !== '') {
+                $decoded = base64_decode($rememberToken, true);
+                if (is_string($decoded) && strpos($decoded, '::') !== false) {
+                    $parts = explode('::', $decoded, 2);
+                    $userId = $parts[0] ?? '';
+                    $hash   = $parts[1] ?? '';
 
-                                // Load semua role dari tabel pivot user_roles
-                                $userRoles = $db->table('user_roles')
-                                                ->where('user_id', $user['id'])
-                                                ->get()
-                                                ->getResultArray();
-                                $allRoles = array_column($userRoles, 'role_name');
-                                if (!in_array(strtolower($role_aplikasi), array_map('strtolower', $allRoles))) {
-                                    $allRoles[] = strtolower($role_aplikasi);
-                                }
-
-                                // Regenerasi Session ID untuk Mencegah Session Fixation
-                                $this->session->regenerate(true);
-
-                                $userAgent = (string) $this->request->getUserAgent();
-                                $fingerprint = hash('sha256', $userAgent);
-
-                                $ses_data = [
-                                    'id'                     => $user['id'],
-                                    'user_id'                => $user['id'], // Kompatibilitas mundur
-                                    'username'               => $user['username'],
-                                    'nama'                   => $user['nama_lengkap'], 
-                                    'nip'                    => $user['nip'],           
-                                    'role'                   => $role_aplikasi,          
-                                    'all_roles'              => $allRoles,
-                                    'unit'                   => $user['unit'] ?? '-', 
-                                    'unit_id'                => $user['unit_id'] ?? null,
-                                    'jabatan'                => $user['jabatan'] ?? '-',
-                                    'pangkat'                => $user['pangkat'] ?? '-',
-                                    'status_pegawai'         => $user['status_pegawai'] ?? 'aktif',
-                                    'foto'                   => $user['foto'] ?? null,
-                                    'user_agent_fingerprint' => $fingerprint,
-                                    'isLoggedIn'             => TRUE
-                                ];
-                                $this->session->set($ses_data);
-
-                                helper('audit');
-                                if (function_exists('log_audit')) {
-                                    log_audit('LOGIN_REMEMBER_ME', 'users', $user['id'], null, [
-                                        'username'   => $user['username'],
-                                        'ip_address' => $this->request->getIPAddress()
-                                    ]);
-                                }
-                            } else {
+                    if (ctype_digit($userId) && preg_match('/^[a-f0-9]{64}$/', $hash)) {
+                        $db = \Config\Database::connect();
+                        $user = $db->table('users')->where('id', (int) $userId)->get()->getRowArray();
+                        if ($user) {
+                            // Tolak auto-login khusus jika akun berstatus nonaktif (mutasi_keluar & pensiun tetap diizinkan)
+                            if (($user['status_pegawai'] ?? 'aktif') === 'nonaktif') {
                                 delete_cookie('remember_me');
+                            } else {
+                                $expectedHmac = $this->buildRememberMeSignature($user);
+
+                                if (hash_equals($expectedHmac, $hash)) {
+                                    $role_aplikasi = $user['role'];
+
+                                    // Load semua role dari tabel pivot user_roles
+                                    $userRoles = $db->table('user_roles')
+                                                    ->where('user_id', $user['id'])
+                                                    ->get()
+                                                    ->getResultArray();
+                                    $allRoles = array_column($userRoles, 'role_name');
+                                    if (!in_array(strtolower($role_aplikasi), array_map('strtolower', $allRoles))) {
+                                        $allRoles[] = strtolower($role_aplikasi);
+                                    }
+
+                                    // Regenerasi Session ID untuk Mencegah Session Fixation
+                                    $this->session->regenerate(true);
+
+                                    $userAgent = (string) $this->request->getUserAgent();
+                                    $fingerprint = hash('sha256', $userAgent);
+
+                                    $ses_data = [
+                                        'id'                     => $user['id'],
+                                        'user_id'                => $user['id'], // Kompatibilitas mundur
+                                        'username'               => $user['username'],
+                                        'nama'                   => $user['nama_lengkap'],
+                                        'nip'                    => $user['nip'],
+                                        'role'                   => $role_aplikasi,
+                                        'all_roles'              => $allRoles,
+                                        'unit'                   => $user['unit'] ?? '-',
+                                        'unit_id'                => $user['unit_id'] ?? null,
+                                        'jabatan'                => $user['jabatan'] ?? '-',
+                                        'pangkat'                => $user['pangkat'] ?? '-',
+                                        'status_pegawai'         => $user['status_pegawai'] ?? 'aktif',
+                                        'foto'                   => $user['foto'] ?? null,
+                                        'user_agent_fingerprint' => $fingerprint,
+                                        'isLoggedIn'             => TRUE
+                                    ];
+                                    $this->session->set($ses_data);
+
+                                    helper('audit');
+                                    if (function_exists('log_audit')) {
+                                        log_audit('LOGIN_REMEMBER_ME', 'users', $user['id'], null, [
+                                            'username'   => $user['username'],
+                                            'ip_address' => $this->request->getIPAddress()
+                                        ]);
+                                    }
+                                } else {
+                                    delete_cookie('remember_me');
+                                }
                             }
+                        } else {
+                            delete_cookie('remember_me');
                         }
                     } else {
                         delete_cookie('remember_me');
@@ -138,6 +144,29 @@ abstract class BaseController extends Controller
             }
         }
         // --------------------------------
+    }
+
+    /**
+     * Kunci rahasia penandatanganan HMAC cookie remember_me.
+     * Wajib mengandalkan encryption.key dari .env di production; fallback hanya untuk lokal.
+     */
+    protected function getRememberMeSecret(): string
+    {
+        $encKey = trim((string) (config('Encryption')->key ?? ''));
+        if ($encKey !== '') {
+            return hash('sha256', 'ecc_remember_v2::' . $encKey);
+        }
+
+        return hash('sha256', 'ecc_remember_v2::' . APPPATH . '::' . (string) (config('App')->baseURL ?? 'ecc'));
+    }
+
+    /**
+     * Tanda tangan HMAC-SHA256 cookie remember_me per akun (otomatis hangus saat kata sandi diganti).
+     */
+    protected function buildRememberMeSignature(array $user): string
+    {
+        $payload = (int) ($user['id'] ?? 0) . '::' . (string) ($user['username'] ?? '') . '::' . (string) ($user['password'] ?? '');
+        return hash_hmac('sha256', $payload, $this->getRememberMeSecret());
     }
 
     /**

@@ -81,12 +81,12 @@ $routes->get('notifications/fetch', 'NotificationController::fetch');
 $routes->post('notifications/read/(:segment)', 'NotificationController::markAsRead/$1');
 $routes->post('notifications/read-all', 'NotificationController::markAllAsRead');
     $routes->match(['get', 'post'], 'dashboard/api-detail-chart', 'Admin\Dashboard::apiDetailChart');
-    $routes->get('monitoring', 'Admin\MonitoringController::index');
-    $routes->get('monitoring/exportExcel/(:num)/(:num)', 'Admin\MonitoringController::exportExcel/$1/$2');
-    $routes->get('monitoring/exportPdf/(:num)/(:num)', 'Admin\MonitoringController::exportPdf/$1/$2');
+    $routes->get('monitoring', 'Admin\MonitoringController::index', ['filter' => 'auth:admin,direktur,wadir,kabag,kabag_aak,kabag_kuk,kepegawaian,manajemen']);
+    $routes->get('monitoring/exportExcel/(:num)/(:num)', 'Admin\MonitoringController::exportExcel/$1/$2', ['filter' => 'auth:admin,direktur,wadir,kabag,kabag_aak,kabag_kuk,kepegawaian,manajemen']);
+    $routes->get('monitoring/exportPdf/(:num)/(:num)', 'Admin\MonitoringController::exportPdf/$1/$2', ['filter' => 'auth:admin,direktur,wadir,kabag,kabag_aak,kabag_kuk,kepegawaian,manajemen']);
 
-    $routes->get('remunerasi', 'Admin\RemunerasiController::index');
-    $routes->post('remunerasi/store', 'Admin\RemunerasiController::store');
+    $routes->get('remunerasi', 'Admin\RemunerasiController::index', ['filter' => 'auth:admin,kepegawaian']);
+    $routes->post('remunerasi/store', 'Admin\RemunerasiController::store', ['filter' => 'auth:admin,kepegawaian']);
     
     // --- Rute untuk Kelola Pengguna (Users) & Daftar Pegawai ---
     $routes->get('users', 'Admin\UserController::index');
@@ -115,8 +115,8 @@ $routes->post('notifications/read-all', 'NotificationController::markAllAsRead')
     $routes->get('admin/audit-logs', 'Admin\AuditLogController::index');
     $routes->get('admin/audit-logs/export', 'Admin\AuditLogController::exportExcel');
 
-    // Master Data Group
-    $routes->group('master-data', function ($routes) {
+    // Master Data Group (Khusus admin, kepegawaian, spm)
+    $routes->group('master-data', ['filter' => 'auth:admin,kepegawaian,spm'], function ($routes) {
         // Rute Hari Libur
         $routes->get('holidays', 'Admin\MasterDataController::holidays');
         $routes->post('holidays/sync', 'Admin\MasterDataController::syncHolidays');

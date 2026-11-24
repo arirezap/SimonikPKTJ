@@ -12,11 +12,18 @@ use Dompdf\Options;
 
 class MonitoringController extends BaseController
 {
+    private const ALLOWED_ROLES = ['admin', 'direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk', 'kepegawaian', 'manajemen'];
+    private const SAFE_USER_COLS = 'id, nama_lengkap, nip, username, jabatan, unit, role';
+
     /**
      * Menampilkan halaman monitoring yang dinamis untuk semua unit/pokja.
      */
     public function index()
     {
+        if (!hasAnyRole(self::ALLOWED_ROLES)) {
+            return redirect()->to('dashboard')->with('error', 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
         $userModel = new UserModel();
         $rencanaModel = new RencanaKinerjaModel();
 
@@ -28,8 +35,8 @@ class MonitoringController extends BaseController
             'page_title' => 'Monitoring Kinerja',
             'selectedUserId' => $selectedUserId,
             'selectedYear' => $selectedYear,
-            // PERBAIKAN: Hapus 'user' dari daftar peran
-            'unit_pokja' => $userModel->whereIn('role', ['manajemen', 'aak', 'kuk'])->findAll(),
+            // PERBAIKAN: Hapus 'user' dari daftar peran & gunakan kolom selektif
+            'unit_pokja' => $userModel->select(self::SAFE_USER_COLS)->whereIn('role', ['manajemen', 'aak', 'kuk'])->findAll(),
             'daftar_tahun' => $rencanaModel->select('tahun_anggaran')->distinct()->orderBy('tahun_anggaran', 'DESC')->findAll(),
             // Inisialisasi data detail (akan diisi jika ada pilihan)
             'user' => null,
@@ -38,11 +45,11 @@ class MonitoringController extends BaseController
 
         // Jika pengguna sudah memilih Unit/Pokja DAN tahun, ambil data detailnya
         if ($selectedUserId && $selectedYear) {
-            $user = $userModel->find($selectedUserId);
+            $user = $userModel->select(self::SAFE_USER_COLS)->find((int) $selectedUserId);
             if ($user) {
                 $data['user'] = $user;
-                $data['rencana_kinerja'] = $rencanaModel->where('user_id', $selectedUserId)
-                                                      ->where('tahun_anggaran', $selectedYear)
+                $data['rencana_kinerja'] = $rencanaModel->where('user_id', (int) $selectedUserId)
+                                                      ->where('tahun_anggaran', (int) $selectedYear)
                                                       ->findAll();
             } else {
                 session()->setFlashdata('error', 'Tim/Unit/Pokja yang dipilih tidak valid.');
@@ -57,6 +64,10 @@ class MonitoringController extends BaseController
      */
     public function exportExcel($userId, $tahun)
     {
+        if (!hasAnyRole(self::ALLOWED_ROLES)) {
+            return redirect()->to('dashboard')->with('error', 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
         // Proteksi Throttling: Batasi frekuensi unduhan dokumen berat (Maks 5x / menit)
         if (!$this->checkExportRateLimit('EXPORT_EXCEL_MONITORING')) {
             $this->session->setFlashdata('error', 'Pengunduhan dokumen dibatasi. Silakan tunggu beberapa saat sebelum mengunduh kembali.');
@@ -66,10 +77,13 @@ class MonitoringController extends BaseController
 
         $userModel = new UserModel();
         $rencanaModel = new RencanaKinerjaModel();
-        $user = $userModel->find($userId);
+        $user = $userModel->select(self::SAFE_USER_COLS)->find((int) $userId);
+        if (!$user) {
+            return redirect()->to('monitoring')->with('error', 'Data pengguna tidak ditemukan.');
+        }
 
-        $rencana_kinerja = $rencanaModel->where('user_id', $userId)
-                                      ->where('tahun_anggaran', $tahun)
+        $rencana_kinerja = $rencanaModel->where('user_id', (int) $userId)
+                                      ->where('tahun_anggaran', (int) $tahun)
                                       ->findAll();
 
         $spreadsheet = new Spreadsheet();
@@ -121,6 +135,10 @@ class MonitoringController extends BaseController
      */
     public function exportPdf($userId, $tahun)
     {
+        if (!hasAnyRole(self::ALLOWED_ROLES)) {
+            return redirect()->to('dashboard')->with('error', 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
         // Proteksi Throttling: Batasi frekuensi unduhan dokumen berat (Maks 5x / menit)
         if (!$this->checkExportRateLimit('EXPORT_PDF_MONITORING')) {
             $this->session->setFlashdata('error', 'Pengunduhan dokumen dibatasi. Silakan tunggu beberapa saat sebelum mengunduh kembali.');
@@ -131,9 +149,12 @@ class MonitoringController extends BaseController
         $userModel = new UserModel();
         $rencanaModel = new RencanaKinerjaModel();
         
-        $user = $userModel->find($userId);
-        $rencana_kinerja = $rencanaModel->where('user_id', $userId)
-                                      ->where('tahun_anggaran', $tahun)
+        $user = $userModel->select(self::SAFE_USER_COLS)->find((int) $userId);
+        if (!$user) {
+            return redirect()->to('monitoring')->with('error', 'Data pengguna tidak ditemukan.');
+        }
+        $rencana_kinerja = $rencanaModel->where('user_id', (int) $userId)
+                                      ->where('tahun_anggaran', (int) $tahun)
                                       ->findAll();
 
         $data = [

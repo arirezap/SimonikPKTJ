@@ -129,18 +129,18 @@ class Auth extends BaseController
                 $session->set($ses_data);
                 \App\Libraries\SurveiPemetaanPolicy::syncPendingProfileOnLogin((int) $data['id']);
                 
-                // --- FITUR REMEMBER ME (HMAC-SHA256 Token & HttpOnly Flag for Security) ---
+                // --- FITUR REMEMBER ME (HMAC-SHA256 Secret Key, Secure, HttpOnly, SameSite=Lax) ---
                 helper('cookie');
                 $remember = $this->request->getVar('remember');
+                $isSecure = $this->request->isSecure();
                 if ($remember) {
-                    // Buat token aman: id::hmac_sha256(id::username::password)
-                    $tokenHash = hash_hmac('sha256', $data['id'] . '::' . $data['username'] . '::' . $data['password'], (string)config('App')->appTimezone ?: 'ecc_auth_token');
+                    $tokenHash = $this->buildRememberMeSignature($data);
                     $tokenString = $data['id'] . '::' . $tokenHash;
                     $token = base64_encode($tokenString);
-                    // Set cookie untuk 30 hari (2592000 detik) dengan HttpOnly=true
-                    set_cookie('remember_me', $token, 2592000, '', '/', '', false, true);
+                    // Set cookie untuk 30 hari (2592000 detik) dengan Secure (saat HTTPS), HttpOnly, SameSite=Lax
+                    set_cookie('remember_me', $token, 2592000, '', '/', '', $isSecure, true, 'Lax');
                     // Simpan username agar otomatis terisi di form login
-                    set_cookie('saved_username', $data['username'], 2592000, '', '/', '', false, true);
+                    set_cookie('saved_username', $data['username'], 2592000, '', '/', '', $isSecure, true, 'Lax');
                 } else {
                     delete_cookie('saved_username');
                 }
