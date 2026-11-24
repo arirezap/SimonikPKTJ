@@ -34,7 +34,7 @@ $hasRekapData    = ($hasRekapSection && !empty($rekapDashboard));
 ?>
 
 <!-- Toolbar Filter Periode Kinerja (8-Point Grid) -->
-<div class="d-flex justify-content-start align-items-center flex-wrap gap-2 mb-4 bento-stagger bento-stagger-1">
+<div class="d-flex justify-content-start align-items-center flex-wrap gap-2 mb-3 bento-stagger bento-stagger-1">
     <form id="formKinerja" class="m-0 d-flex flex-wrap gap-2 align-items-center" aria-label="Filter Periode Kinerja">
         <span class="text-muted fw-semibold me-1" style="font-size: 0.75rem;">Periode Kinerja:</span>
         <label for="bulan_kinerja" class="visually-hidden">Pilih Bulan Kinerja</label>
@@ -52,6 +52,7 @@ $hasRekapData    = ($hasRekapSection && !empty($rekapDashboard));
         </select>
     </form>
 </div>
+<div id="dashKinerjaError" class="alert alert-danger border-0 shadow-sm rounded-3 py-2 px-3 mb-3 d-none" role="alert" style="font-size: 0.875rem;"></div>
 
 <!-- Bagian 1: Radar ECC & Metrik Kinerja Pribadi -->
 <div class="row g-4 mb-4 bento-stagger bento-stagger-1">
@@ -117,6 +118,9 @@ $hasRekapData    = ($hasRekapSection && !empty($rekapDashboard));
         <h2 class="dash-section-title" id="tabelRekapTitle">
             <?= !empty($isAtasan) ? 'Pemantauan Kinerja Staf Saya' : 'Kinerja Rekan 1 Unit Kerja' ?>
         </h2>
+        <p class="dash-section-subtitle <?= empty($peerUnitSubLabel) || !empty($isAtasan) ? 'd-none' : '' ?>" id="tabelRekapSubtitle">
+            <?= esc($peerUnitSubLabel ?? '') ?>
+        </p>
     </div>
     <div class="row g-4 mb-4" id="tabelRekapContainer">
         <div class="col-12">
@@ -127,25 +131,27 @@ $hasRekapData    = ($hasRekapSection && !empty($rekapDashboard));
                         <table class="table table-hover align-middle mb-0 border-0 table-bento" style="font-size: 0.875rem;">
                             <thead class="bg-light text-muted text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.04em;">
                                 <tr>
-                                    <th class="ps-4 border-0" style="padding: 12px 16px;">Nama Pegawai</th>
-                                    <th class="text-center border-0" style="padding: 12px 16px;">Jabatan</th>
-                                    <th class="text-center border-0" style="padding: 12px 16px;">Target &amp; Tambahan</th>
-                                    <th class="text-center border-0" style="padding: 12px 16px;">Rata-Rata Nilai</th>
+                                    <th scope="col" class="ps-4 border-0" style="padding: 12px 16px;">Nama Pegawai</th>
+                                    <th scope="col" class="text-center border-0" style="padding: 12px 16px;">Jabatan</th>
+                                    <th scope="col" class="text-center border-0" style="padding: 12px 16px;">Target &amp; Tambahan</th>
+                                    <th scope="col" class="text-center border-0" style="padding: 12px 16px;">Rata-Rata Nilai</th>
                                 </tr>
                             </thead>
                             <tbody class="border-top-0" id="tbodyKinerjaStaf">
                                 <?php foreach ($rekapDashboard as $rekap): ?>
                                     <?php
-                                        $rata      = (float) $rekap['rata_rata'];
-                                        $dinilai   = (int) ($rekap['dinilai'] ?? 0);
-                                        $scoreCls  = $scorePillClass($rata, $dinilai);
-                                        $namaRapih = $formatNama($rekap['staf']['nama_lengkap'] ?? '');
-                                        $inisial   = strtoupper(substr(trim($namaRapih), 0, 1));
+                                        $rata          = (float) $rekap['rata_rata'];
+                                        $dinilai       = (int) ($rekap['dinilai'] ?? 0);
+                                        $scoreCls      = $scorePillClass($rata, $dinilai);
+                                        $namaRapih     = $formatNama($rekap['staf']['nama_lengkap'] ?? '');
+                                        $inisial       = strtoupper(substr(trim($namaRapih), 0, 1));
+                                        $stafUnit      = trim((string) ($rekap['staf']['unit'] ?? ''));
+                                        $stafPokjaMeta = !empty($isAtasan) && !empty($rekap['staf']['parent_unit_name']) ? $stafUnit : '';
                                     ?>
                                     <tr>
                                         <td class="ps-4 border-bottom border-light" style="padding: 12px 16px;">
                                             <div class="d-flex align-items-center gap-3">
-                                                <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width: 40px; height: 40px; font-size: 0.875rem;">
+                                                <div aria-hidden="true" class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width: 40px; height: 40px; font-size: 0.875rem;">
                                                     <?= esc($inisial) ?>
                                                 </div>
                                                 <div style="min-width: 0;">
@@ -163,6 +169,9 @@ $hasRekapData    = ($hasRekapSection && !empty($rekapDashboard));
                                         </td>
                                         <td class="text-center text-muted border-bottom border-light" style="padding: 12px 16px;">
                                             <span class="badge bg-light text-dark border rounded-pill px-3 py-1 text-wrap" style="font-size: 0.75rem;"><?= esc($rekap['staf']['jabatan'] ?: '-') ?></span>
+                                            <?php if ($stafPokjaMeta !== ''): ?>
+                                                <div class="text-muted mt-1" style="font-size: 0.75rem;"><?= esc($stafPokjaMeta) ?></div>
+                                            <?php endif; ?>
                                         </td>
                                         <td class="text-center border-bottom border-light" style="padding: 12px 16px;">
                                             <div class="d-flex flex-column align-items-center justify-content-center gap-1">
@@ -243,10 +252,18 @@ window.userDashboardCharts = window.userDashboardCharts || {};
 async function updateKinerjaData() {
     const tahunKinerja = document.getElementById('tahun_kinerja').value;
     const bulanKinerja = document.getElementById('bulan_kinerja') ? document.getElementById('bulan_kinerja').value : 'all';
+    const formEl = document.getElementById('formKinerja');
+    const errorEl = document.getElementById('dashKinerjaError');
+    if (errorEl) errorEl.classList.add('d-none');
+    if (formEl) formEl.setAttribute('aria-busy', 'true');
+
     try {
         const response = await fetch(`<?= site_url('dashboard') ?>?ajax_type=kinerja&tahun_kinerja=${encodeURIComponent(tahunKinerja)}&bulan_kinerja=${encodeURIComponent(bulanKinerja)}`, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
+        if (!response.ok) {
+            throw new Error('Gagal memuat data');
+        }
         const data = await response.json();
         if (!data) return;
 
@@ -267,9 +284,11 @@ async function updateKinerjaData() {
 
         const isAtasan = !!data.isAtasan;
         const isUnitPeers = !!data.isUnitPeers;
+        const peerUnitSubLabel = data.peerUnitSubLabel || '';
         const rekapDashboard = data.rekapDashboard || [];
         const sectionEl = document.getElementById('tabelRekapSection');
         const titleEl = document.getElementById('tabelRekapTitle');
+        const subtitleEl = document.getElementById('tabelRekapSubtitle');
         const tbodyEl = document.getElementById('tbodyKinerjaStaf');
         const mobileEl = document.getElementById('mobileCardsKinerjaStaf');
 
@@ -277,6 +296,14 @@ async function updateKinerjaData() {
             if ((isAtasan || isUnitPeers) && rekapDashboard.length > 0) {
                 sectionEl.classList.remove('d-none');
                 titleEl.innerText = isAtasan ? 'Pemantauan Kinerja Staf Saya' : 'Kinerja Rekan 1 Unit Kerja';
+                if (subtitleEl) {
+                    if (!isAtasan && peerUnitSubLabel) {
+                        subtitleEl.innerText = peerUnitSubLabel;
+                        subtitleEl.classList.remove('d-none');
+                    } else {
+                        subtitleEl.classList.add('d-none');
+                    }
+                }
 
                 let htmlDesktop = '';
                 let htmlMobile = '';
@@ -288,6 +315,7 @@ async function updateKinerjaData() {
                     const inisial = namaRapih.charAt(0).toUpperCase();
                     const jabatan = rekap.staf?.jabatan || '-';
                     const nip = rekap.staf?.nip || '-';
+                    const pokjaTag = (isAtasan && rekap.staf?.parent_unit_name && rekap.staf?.unit) ? String(rekap.staf.unit) : '';
                     const statusBadge = window.eccDash.getStatusPegawaiBadge(rekap.staf?.status_pegawai);
                     const pokokVal = rekap.total_pokok !== undefined ? rekap.total_pokok : rekap.total_laporan;
                     const tambVal = rekap.total_tambahan || 0;
@@ -299,7 +327,7 @@ async function updateKinerjaData() {
                         <tr>
                             <td class="ps-4 border-bottom border-light" style="padding: 12px 16px;">
                                 <div class="d-flex align-items-center gap-3">
-                                    <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width: 40px; height: 40px; font-size: 0.875rem;">
+                                    <div aria-hidden="true" class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width: 40px; height: 40px; font-size: 0.875rem;">
                                         ${window.eccDash.escapeHtml(inisial)}
                                     </div>
                                     <div style="min-width: 0;">
@@ -312,6 +340,7 @@ async function updateKinerjaData() {
                             </td>
                             <td class="text-center text-muted border-bottom border-light" style="padding: 12px 16px;">
                                 <span class="badge bg-light text-dark border rounded-pill px-3 py-1 text-wrap" style="font-size: 0.75rem;">${window.eccDash.escapeHtml(jabatan)}</span>
+                                ${pokjaTag ? `<div class="text-muted mt-1" style="font-size: 0.75rem;">${window.eccDash.escapeHtml(pokjaTag)}</div>` : ''}
                             </td>
                             <td class="text-center border-bottom border-light" style="padding: 12px 16px;">
                                 <div class="d-flex flex-column align-items-center justify-content-center gap-1">
@@ -327,7 +356,7 @@ async function updateKinerjaData() {
                             <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
                                 <div style="min-width: 0;">
                                     <div class="fw-semibold text-dark" style="font-size: 0.875rem;">${window.eccDash.escapeHtml(namaRapih)}${statusBadge}</div>
-                                    <div class="text-muted num-tabular" style="font-size: 0.75rem;">${window.eccDash.escapeHtml(jabatan)} • ${window.eccDash.escapeHtml(nip)}</div>
+                                    <div class="text-muted num-tabular" style="font-size: 0.75rem;">${window.eccDash.escapeHtml(jabatan)}${pokjaTag ? ' · ' + window.eccDash.escapeHtml(pokjaTag) : ''} · ${window.eccDash.escapeHtml(nip)}</div>
                                 </div>
                                 ${scoreHtml}
                             </div>
@@ -345,7 +374,12 @@ async function updateKinerjaData() {
             }
         }
     } catch (err) {
-        console.error('Gagal mengambil data kinerja:', err);
+        if (errorEl) {
+            errorEl.textContent = 'Gagal memperbarui data kinerja. Silakan pilih ulang periode atau muat ulang halaman.';
+            errorEl.classList.remove('d-none');
+        }
+    } finally {
+        if (formEl) formEl.removeAttribute('aria-busy');
     }
 }
 

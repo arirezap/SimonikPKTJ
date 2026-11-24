@@ -2403,12 +2403,72 @@ body.login-page {
 .dash-score-danger { background-color: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
 .dash-score-neutral { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
 
+.dash-org-card {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 16px 24px;
+    height: 100%;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.dash-org-card:hover {
+    transform: translateY(-2px);
+    border-color: #93c5fd;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+.dash-org-card:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+}
+.dash-org-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+    color: #0f172a;
+}
+.dash-group-pill {
+    min-height: 32px;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    border: 1px solid #cbd5e1;
+    background-color: #ffffff;
+    color: #475569;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+.dash-group-pill:hover {
+    background-color: #f8fafc;
+    color: #0f172a;
+}
+.dash-group-pill.active {
+    background-color: #1e40af;
+    border-color: #1e40af;
+    color: #ffffff;
+}
+.dash-group-pill:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+}
+.dash-modal-close-btn {
+    min-height: 36px;
+}
+
 @media (max-width: 767.98px) {
     .dash-filter-control,
     .dash-ecc-standar-link,
     .dash-legend-btn,
-    .dash-action-pill {
+    .dash-action-pill,
+    .dash-group-pill,
+    .dash-modal-close-btn {
         min-height: 44px;
+    }
+    .dash-org-card {
+        padding: 16px;
     }
     .dash-legend-list {
         grid-template-columns: 1fr;
@@ -2417,7 +2477,12 @@ body.login-page {
 
 @media (prefers-reduced-motion: reduce) {
     .dash-kpi-bar,
-    .dash-ecc-standar-link {
+    .dash-ecc-standar-link,
+    .dash-org-card,
+    .dash-group-pill {
         transition: none !important;
+    }
+    .dash-org-card:hover {
+        transform: none;
     }
 }

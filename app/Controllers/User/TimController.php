@@ -37,18 +37,37 @@ class TimController extends BaseController
         $userId = $this->getNormalizedCurrentUserId();
         $me = $this->userModel->find($userId);
         $myUnit = $me['unit'] ?? null;
-        
-        // Ambil staf aktif: yang atasan_id = $userId ATAU (unit sama dan belum memiliki atasan lain)
+        $myUnitId = !empty($me['unit_id']) ? (int) $me['unit_id'] : 0;
+        if ($myUnitId === 0 && !empty($myUnit)) {
+            $uDb = $this->unitKerjaModel->where('nama_unit', $myUnit)->first();
+            if ($uDb) {
+                $myUnitId = (int) $uDb['id'];
+            }
+        }
+        $subUnitIds = $myUnitId > 0 ? $this->unitKerjaModel->getSubUnitIds($myUnitId) : [];
+
+        // Ambil staf aktif: yang atasan_id = $userId ATAU (unit/sub-unit sama dan belum memiliki atasan lain)
         $stafQuery = $this->userModel->select('id, nama_lengkap, nip, unit, unit_id, jabatan, role, atasan_id, foto')
                                      ->where('id !=', $userId)
                                      ->where('status_pegawai', 'aktif');
         User::excludeSelfServiceFromQuery($stafQuery);
-        
-        if (!empty($myUnit)) {
+
+        if (!empty($myUnit) || !empty($subUnitIds)) {
             $stafQuery->groupStart()
                          ->where('atasan_id', $userId)
                          ->orGroupStart()
-                             ->where('unit', $myUnit)
+                             ->groupStart();
+            if (!empty($myUnit)) {
+                $stafQuery->where('unit', $myUnit);
+            }
+            if (!empty($subUnitIds)) {
+                if (!empty($myUnit)) {
+                    $stafQuery->orWhereIn('unit_id', $subUnitIds);
+                } else {
+                    $stafQuery->whereIn('unit_id', $subUnitIds);
+                }
+            }
+            $stafQuery->groupEnd()
                              ->groupStart()
                                  ->where('atasan_id', null)
                                  ->orWhere('atasan_id', 0)
@@ -141,11 +160,19 @@ class TimController extends BaseController
             'unit'      => $targetUser['unit'],
             'unit_id'   => $targetUser['unit_id']
         ];
-        $newData = [
-            'atasan_id' => $myId,
-            'unit'      => $myUnit,
-            'unit_id'   => $myUnitId
-        ];
+
+        // Jika calon staf sudah berada di sub-unit (Pokja) di bawah unit pimpinan ini,
+        // pertahankan unit Pokja-nya dan cukup tautkan atasan_id ke Katim.
+        $subUnitIds = !empty($myUnitId) ? $this->unitKerjaModel->getSubUnitIds((int) $myUnitId) : [];
+        $isInOwnedSubUnit = !empty($targetUser['unit_id']) && in_array((int) $targetUser['unit_id'], $subUnitIds, true);
+
+        $newData = $isInOwnedSubUnit
+            ? ['atasan_id' => $myId]
+            : [
+                'atasan_id' => $myId,
+                'unit'      => $myUnit,
+                'unit_id'   => $myUnitId
+            ];
 
         $this->userModel->update($stafId, $newData);
         log_audit('UPDATE', 'users', $stafId, $oldData, ['action' => 'ADD_TO_TEAM', 'old' => $oldData, 'new' => $newData]);

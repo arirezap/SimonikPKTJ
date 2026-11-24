@@ -8,6 +8,7 @@ use App\Models\LogKegiatanHarian;
 use App\Models\Satuan;
 use App\Models\SettingModel;
 use App\Models\TargetKinerja;
+use App\Models\UnitKerja;
 use App\Models\User;
 
 /**
@@ -105,11 +106,14 @@ class LaporanHarianController extends BaseController
         if (!empty($reqBulan) && is_numeric($reqBulan)) session()->set('laporan_harian_bulan', (int)$reqBulan);
         if (!empty($reqTahun) && is_numeric($reqTahun)) session()->set('laporan_harian_tahun', (int)$reqTahun);
         
+        $unitChanged = false;
         if ($reqUnitKerja !== null) {
-            if ($reqUnitKerja !== session()->get('laporan_harian_unit_kerja')) {
+            $prevUnitKerja = (string)(session()->get('laporan_harian_unit_kerja') ?? '');
+            if ((string)$reqUnitKerja !== $prevUnitKerja) {
+                $unitChanged = true;
                 session()->remove('laporan_harian_staf_id');
             }
-            if (!empty($reqUnitKerja)) {
+            if ($reqUnitKerja !== '') {
                 session()->set('laporan_harian_unit_kerja', $reqUnitKerja);
             } else {
                 session()->remove('laporan_harian_unit_kerja');
@@ -118,12 +122,21 @@ class LaporanHarianController extends BaseController
 
         if ($sourceTab === 'sendiri') {
             session()->remove('laporan_harian_staf_id');
+            session()->set('laporan_harian_active_tab', 'sendiri');
         } elseif ($sourceTab === 'staf' || $reqStafId !== null) {
-            if (!empty($reqStafId)) {
+            session()->set('laporan_harian_active_tab', 'staf');
+            if ($unitChanged) {
+                session()->remove('laporan_harian_staf_id');
+            } elseif (!empty($reqStafId)) {
                 session()->set('laporan_harian_staf_id', $reqStafId);
+                if ($reqUnitKerja === null) {
+                    session()->remove('laporan_harian_unit_kerja');
+                }
             } else {
                 session()->remove('laporan_harian_staf_id');
             }
+        } elseif ($reqBulan !== null || $reqTahun !== null) {
+            session()->set('laporan_harian_active_tab', 'sendiri');
         }
 
         if ($this->request->is('post') && ($sourceTab === 'sendiri' || $sourceTab === 'staf')) {
@@ -147,23 +160,41 @@ class LaporanHarianController extends BaseController
                                          ->orderBy('target_kinerja_bulanan.id', 'ASC')
                                          ->findAll();
 
+        // Muat konteks hierarki unit kerja (Top Manajemen, Bagian AAK, Bagian KUK, dan Pokja)
+        $unitKerjaModel = new UnitKerja();
+        $unitHierarchy = $this->buildUnitHierarchyContext($unitKerjaModel, $userModel);
+        $pokjaParentMap = $unitHierarchy['pokja_parent_map'];
+        $unitOrderRank = $unitHierarchy['unit_order_rank'];
+
+        // Penugasan & atasan langsung user pada periode terpilih (untuk Tab Target Saya & urutan unit Katim)
+        $penugasanSendiri = $userModel->getPenugasanPeriode((int)$userId, (int)$bulanTerpilih, (int)$tahunTerpilih);
+        $currentUserUnit = trim((string)($penugasanSendiri['unit'] ?? ''));
+        $atasanPeriode = (!empty($penugasanSendiri['atasan_id']) && !empty($penugasanSendiri['nama_atasan']))
+            ? [
+                'id'           => (int)$penugasanSendiri['atasan_id'],
+                'nama_lengkap' => (string)$penugasanSendiri['nama_atasan'],
+            ]
+            : null;
+
         // Cek apakah user punya staf atau akses pimpinan eksekutif (Admin, Direktur)
         // Catatan: Role Wadir tidak memiliki akses menyetujui / merevisi target staf
         $isSuper = hasAnyRole(['admin', 'direktur']);
         $daftarUnit = [];
+        $daftarUnitGrouped = [];
         if ($isSuper) {
-            $unitQuery = $userModel->select('unit')->distinct()->where('unit !=', null)->where('unit !=', '');
-            User::excludeSelfServiceFromQuery($unitQuery);
-            $units = $unitQuery->orderBy('unit', 'ASC')->findAll();
-            foreach ($units as $u) {
-                $daftarUnit[] = $u['unit'];
-            }
+            $daftarUnit = $unitHierarchy['daftar_unit'];
+            $daftarUnitGrouped = $unitHierarchy['daftar_unit_grouped'];
 
             $periodDate = sprintf('%04d-%02d-01', (int)$tahunTerpilih, (int)$bulanTerpilih);
             $periodMonth = date('Y-m', strtotime($periodDate));
 
             $builder = $userModel->select('id, nama_lengkap, jabatan, unit, role, status_pegawai, tmt_selesai, atasan_id')
-                                 ->where('id !=', $userId);
+                                 ->where('id !=', $userId)
+                                 ->where('username !=', 'admin')
+                                 ->groupStart()
+                                     ->where('role IS NULL', null, false)
+                                     ->orWhere('role !=', 'admin')
+                                 ->groupEnd();
             User::excludeSelfServiceFromQuery($builder);
             $builder = $builder->groupStart()
                                      ->where('status_pegawai', 'aktif')
@@ -219,19 +250,33 @@ class LaporanHarianController extends BaseController
             $isAtasan = !empty($daftarStaf);
         }
 
+        $daftarStafGrouped = $isAtasan
+            ? $this->groupStafByUnit($daftarStaf, $unitOrderRank, $pokjaParentMap, $currentUserUnit, $isSuper)
+            : [];
+
         $rekapDataStaf = [];
         $isPenyetuju = false;
+        $stafTerpilihDetail = null;
 
         if ($isAtasan && !empty($stafIdTerpilih)) {
-            $isValidStaf = false;
+            $matchedStaf = null;
             foreach ($daftarStaf as $staf) {
-                if ($staf['id'] == $stafIdTerpilih) {
-                    $isValidStaf = true;
+                if ((int)$staf['id'] === (int)$stafIdTerpilih) {
+                    $matchedStaf = $staf;
                     break;
                 }
             }
-            if ($isValidStaf) {
+            if ($matchedStaf !== null) {
                 $isPenyetuju = true;
+                $stafUnit = trim((string)($matchedStaf['unit'] ?? ''));
+                $stafTerpilihDetail = [
+                    'id'               => (int)$matchedStaf['id'],
+                    'nama_lengkap'     => (string)($matchedStaf['nama_lengkap'] ?? ''),
+                    'jabatan'          => (string)($matchedStaf['jabatan'] ?? ''),
+                    'unit'             => $stafUnit,
+                    'is_pokja'         => isset($pokjaParentMap[$stafUnit]),
+                    'parent_unit_name' => $pokjaParentMap[$stafUnit] ?? '',
+                ];
                 $rekapDataStaf = $laporanModel->select('target_kinerja_bulanan.id, target_kinerja_bulanan.user_id, target_kinerja_bulanan.sasaran_program, target_kinerja_bulanan.indikator_kinerja, target_kinerja_bulanan.target_bulanan, target_kinerja_bulanan.satuan, target_kinerja_bulanan.status_approval, target_kinerja_bulanan.status, target_kinerja_bulanan.nilai_capaian, target_kinerja_bulanan.status_penilaian, target_kinerja_bulanan.approved_by, target_kinerja_bulanan.approved_at, approver.nama_lengkap as nama_penyetuju')
                                               ->join('users as approver', 'approver.id = target_kinerja_bulanan.approved_by', 'left')
                                               ->where('target_kinerja_bulanan.user_id', $stafIdTerpilih)
@@ -312,15 +357,165 @@ class LaporanHarianController extends BaseController
             'is_post_tmt' => $isPostTmt,
             'post_tmt_reason' => $postTmtReason,
             'is_atasan' => $isAtasan,
+            'active_tab' => ($isAtasan && (session()->get('laporan_harian_active_tab') === 'staf' || !empty($stafIdTerpilih))) ? 'staf' : 'sendiri',
             'is_penyetuju' => $isPenyetuju,
             'daftar_staf' => $daftarStaf,
+            'daftar_staf_grouped' => $daftarStafGrouped,
             'staf_id_terpilih' => $stafIdTerpilih,
+            'staf_terpilih_detail' => $stafTerpilihDetail,
+            'atasan_periode' => $atasanPeriode,
             'is_super' => $isSuper,
             'daftar_unit' => $daftarUnit,
+            'daftar_unit_grouped' => $daftarUnitGrouped,
             'unit_kerja_terpilih' => $unitKerjaTerpilih
         ];
 
         return view('user/laporan_harian/index', $data);
+    }
+
+    /**
+     * Menyusun struktur hierarki unit kerja (Top Manajemen, Bagian AAK, Bagian KUK, dan Pokja)
+     * untuk filter Admin/Direktur serta peta urutan & induk Kelompok Kerja (Pokja).
+     */
+    private function buildUnitHierarchyContext(UnitKerja $unitKerjaModel, User $userModel): array
+    {
+        $orderedUnits = $unitKerjaModel->getUnitsWithUserCount();
+        $groupLabels = [
+            'pimpinan' => 'Top Manajemen',
+            'aak'      => 'Bagian AAK',
+            'kuk'      => 'Bagian KUK',
+        ];
+
+        $buckets = [
+            'Top Manajemen' => [],
+            'Bagian AAK'    => [],
+            'Bagian KUK'    => [],
+        ];
+        $daftarUnit = [];
+        $pokjaParentMap = [];
+        $unitOrderRank = [];
+        $knownUnitSet = [];
+
+        foreach ($orderedUnits as $idx => $u) {
+            $namaUnit = trim((string)($u['nama_unit'] ?? ''));
+            if ($namaUnit === '') {
+                continue;
+            }
+
+            $parentKey = strtolower(trim((string)($u['parent_unit'] ?? '')));
+            $groupLabel = $groupLabels[$parentKey] ?? 'Unit Lainnya';
+            $isPokja = !empty($u['is_sub_unit']);
+            $parentUnitName = trim((string)($u['parent_unit_name'] ?? ''));
+
+            if ($isPokja && $parentUnitName !== '') {
+                $pokjaParentMap[$namaUnit] = $parentUnitName;
+            }
+
+            $unitOrderRank[$namaUnit] = $idx;
+            $knownUnitSet[$namaUnit] = true;
+            $daftarUnit[] = $namaUnit;
+
+            if (!isset($buckets[$groupLabel])) {
+                $buckets[$groupLabel] = [];
+            }
+            $buckets[$groupLabel][] = [
+                'nama_unit' => $namaUnit,
+                'label'     => $isPokja ? ('↳ ' . $namaUnit) : $namaUnit,
+                'is_pokja'  => $isPokja,
+            ];
+        }
+
+        // Fallback defensif bila ada pegawai yang unit-nya belum terdaftar di tabel unit_kerja
+        $extraUnitQuery = $userModel->select('unit')->distinct()->where('unit IS NOT NULL', null, false)->where('unit !=', '');
+        User::excludeSelfServiceFromQuery($extraUnitQuery);
+        $extraUnits = $extraUnitQuery->orderBy('unit', 'ASC')->findAll();
+        foreach ($extraUnits as $eu) {
+            $uName = trim((string)($eu['unit'] ?? ''));
+            if ($uName !== '' && !isset($knownUnitSet[$uName])) {
+                $knownUnitSet[$uName] = true;
+                $unitOrderRank[$uName] = count($unitOrderRank);
+                $daftarUnit[] = $uName;
+                $buckets['Unit Lainnya'][] = [
+                    'nama_unit' => $uName,
+                    'label'     => $uName,
+                    'is_pokja'  => false,
+                ];
+            }
+        }
+
+        $daftarUnitGrouped = [];
+        foreach ($buckets as $label => $items) {
+            if (!empty($items)) {
+                $daftarUnitGrouped[$label] = $items;
+            }
+        }
+
+        return [
+            'daftar_unit'         => $daftarUnit,
+            'daftar_unit_grouped' => $daftarUnitGrouped,
+            'pokja_parent_map'    => $pokjaParentMap,
+            'unit_order_rank'     => $unitOrderRank,
+        ];
+    }
+
+    /**
+     * Mengelompokkan daftar staf per unit kerja agar atasan yang membawahi
+     * lebih dari satu unit (mis. Katim induk Pokja, Kabag, Admin/Direktur) mudah membedakan asal unit/Pokja.
+     */
+    private function groupStafByUnit(
+        array $daftarStaf,
+        array $unitOrderRank,
+        array $pokjaParentMap,
+        string $currentUserUnit,
+        bool $isSuper
+    ): array {
+        $byUnit = [];
+        foreach ($daftarStaf as $staf) {
+            $unitName = trim((string)($staf['unit'] ?? ''));
+            $key = $unitName !== '' ? $unitName : 'Unit Lainnya';
+            $byUnit[$key][] = $staf;
+        }
+
+        $unitKeys = array_keys($byUnit);
+        usort($unitKeys, static function (string $a, string $b) use ($unitOrderRank, $pokjaParentMap, $currentUserUnit, $isSuper): int {
+            if (!$isSuper && $currentUserUnit !== '') {
+                $prio = static function (string $u) use ($currentUserUnit, $pokjaParentMap): int {
+                    if ($u === $currentUserUnit) {
+                        return 0;
+                    }
+                    if (($pokjaParentMap[$u] ?? '') === $currentUserUnit) {
+                        return 1;
+                    }
+                    return 2;
+                };
+                $pa = $prio($a);
+                $pb = $prio($b);
+                if ($pa !== $pb) {
+                    return $pa <=> $pb;
+                }
+            }
+
+            $ra = $unitOrderRank[$a] ?? 9999;
+            $rb = $unitOrderRank[$b] ?? 9999;
+            if ($ra !== $rb) {
+                return $ra <=> $rb;
+            }
+
+            return strcasecmp($a, $b);
+        });
+
+        $grouped = [];
+        foreach ($unitKeys as $uKey) {
+            $isPokja = isset($pokjaParentMap[$uKey]);
+            $grouped[] = [
+                'unit'     => $uKey,
+                'label'    => $isPokja ? ($uKey . ' (Kelompok Kerja)') : $uKey,
+                'is_pokja' => $isPokja,
+                'members'  => $byUnit[$uKey],
+            ];
+        }
+
+        return $grouped;
     }
 
     public function store()
@@ -924,7 +1119,8 @@ class LaporanHarianController extends BaseController
                 log_message('error', 'Gagal mengirim notifikasi target ke staf #' . $targetUserId . ': ' . $e->getMessage());
             }
         } elseif (!$isEditingStaf && !$isDraft && !$isTargetDirektur) {
-            if (!empty($targetUser['atasan_id'])) {
+            $atasanIdNotif = PenilaianKinerjaPolicy::resolveAtasanId($targetUser, $bulan, $tahun);
+            if (!empty($atasanIdNotif)) {
                 try {
                     $hadSubmittedBefore = false;
                     if (!empty($oldTargetValues)) {
@@ -942,13 +1138,13 @@ class LaporanHarianController extends BaseController
                         : ($targetUser['nama_lengkap'] ?? 'Staf') . " mengirimkan Target Bulanan ({$namaBulan} {$tahun}) untuk diperiksa.";
 
                     send_notification(
-                        $targetUser['atasan_id'], 
-                        $notifJudul, 
+                        $atasanIdNotif,
+                        $notifJudul,
                         $notifPesan,
                         site_url('laporan-harian?source_tab=staf&staf_id=' . $targetUserId . '&bulan=' . $bulan . '&tahun=' . $tahun)
                     );
                 } catch (\Throwable $e) {
-                    log_message('error', 'Gagal mengirim notifikasi target ke atasan #' . $targetUser['atasan_id'] . ': ' . $e->getMessage());
+                    log_message('error', 'Gagal mengirim notifikasi target ke atasan #' . $atasanIdNotif . ': ' . $e->getMessage());
                 }
             }
         }
@@ -963,7 +1159,7 @@ class LaporanHarianController extends BaseController
 
         $redirectUrl = $isEditingStaf
             ? site_url('laporan-harian?source_tab=staf&staf_id=' . $targetUserId . '&bulan=' . $bulan . '&tahun=' . $tahun)
-            : site_url('laporan-harian?bulan=' . $bulan . '&tahun=' . $tahun);
+            : site_url('laporan-harian?source_tab=sendiri&bulan=' . $bulan . '&tahun=' . $tahun);
 
         return redirect()->to($redirectUrl)
                          ->with('success', $successMsg);

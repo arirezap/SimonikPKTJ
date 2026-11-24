@@ -181,7 +181,9 @@ $isSelfServiceAccount = \App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfAccoun
 
             <?php if (hasAnyRole(['admin', 'kepegawaian'])): ?>
                 <li class="nav-item"><a href="<?= site_url('users') ?>" class="nav-link <?= (str_starts_with($current_uri, 'admin/users') || str_starts_with($current_uri, 'users')) ? 'active' : '' ?>"><i class="bi bi-people-fill"></i><span>Kelola Pengguna</span></a></li>
-            <?php else: ?>
+            <?php endif; ?>
+
+            <?php if ($isAdmin || !hasRole('kepegawaian')): ?>
                 <li class="nav-item"><a href="<?= site_url('daftar-pegawai') ?>" class="nav-link <?= str_starts_with($current_uri, 'daftar-pegawai') ? 'active' : '' ?>"><i class="bi bi-person-lines-fill"></i><span>Daftar Pegawai</span></a></li>
             <?php endif; ?>
 

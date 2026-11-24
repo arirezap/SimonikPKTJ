@@ -550,7 +550,8 @@
                             <?php 
                                 $atasan_display = $user['nama_atasan'] ?? null;
                                 $is_auto_synced = false;
-                                if ((empty($atasan_display) || $atasan_display === '-') && !empty($user['unit']) && isset($unitManagers[$user['unit']])) {
+                                $isExecutiveRow = in_array(strtolower((string) ($user['role'] ?? '')), ['direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk'], true);
+                                if (!$isExecutiveRow && (empty($atasan_display) || $atasan_display === '-') && !empty($user['unit']) && isset($unitManagers[$user['unit']])) {
                                     $atasan_display = $unitManagers[$user['unit']];
                                     $is_auto_synced = true;
                                 }
@@ -610,7 +611,8 @@
 
                     $atasan_display = $user['nama_atasan'] ?? null;
                     $is_auto_synced = false;
-                    if ((empty($atasan_display) || $atasan_display === '-') && !empty($user['unit']) && isset($unitManagers[$user['unit']])) {
+                    $isExecutiveRow = in_array(strtolower((string) ($user['role'] ?? '')), ['direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk'], true);
+                    if (!$isExecutiveRow && (empty($atasan_display) || $atasan_display === '-') && !empty($user['unit']) && isset($unitManagers[$user['unit']])) {
                         $atasan_display = $unitManagers[$user['unit']];
                         $is_auto_synced = true;
                     }

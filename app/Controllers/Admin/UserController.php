@@ -113,14 +113,37 @@ class UserController extends BaseController
         $data['pager'] = null;
 
         // Ambil pemetaan pimpinan per unit untuk referensi sinkronisasi visual di View
+        // Kecualikan unit Top Manajemen (parent_unit = 'pimpinan') agar Direktur/Wadir tidak tertimpa atasan otomatis
+        $unitKerjaModel = new UnitKerja();
+        $data['unit_kerja_list'] = $unitKerjaModel->orderBy('nama_unit', 'ASC')->findAll();
+        $unitKerjaMap = array_column($data['unit_kerja_list'], 'parent_unit', 'nama_unit');
+        $unitByIdMap = [];
+        foreach ($data['unit_kerja_list'] as $ukRow) {
+            $unitByIdMap[(int) $ukRow['id']] = $ukRow;
+        }
+
         $pimpinanUnits = $this->userModel->select('unit, nama_lengkap')
-                                         ->whereIn('role', ['manajemen', 'kabag_aak', 'kabag_kuk', 'kabag'])
+                                         ->whereIn('role', ['manajemen', 'katim', 'kanit', 'kabag_aak', 'kabag_kuk', 'kabag'])
                                          ->where('unit !=', '')
                                          ->where('unit IS NOT NULL')
+                                         ->where('status_pegawai', 'aktif')
                                          ->findAll();
         $unitManagers = [];
         foreach ($pimpinanUnits as $p) {
-            $unitManagers[$p['unit']] = $p['nama_lengkap'];
+            $uKey = $p['unit'];
+            if (strtolower((string) ($unitKerjaMap[$uKey] ?? '')) === 'pimpinan') {
+                continue;
+            }
+            $unitManagers[$uKey] = $p['nama_lengkap'];
+        }
+        // Untuk sub-unit (Pokja), pimpinan penilai default mengacu ke Katim unit induknya
+        foreach ($data['unit_kerja_list'] as $ukRow) {
+            if (!empty($ukRow['parent_unit_id']) && isset($unitByIdMap[(int) $ukRow['parent_unit_id']])) {
+                $parentNama = $unitByIdMap[(int) $ukRow['parent_unit_id']]['nama_unit'] ?? '';
+                if ($parentNama !== '' && isset($unitManagers[$parentNama])) {
+                    $unitManagers[$ukRow['nama_unit']] = $unitManagers[$parentNama];
+                }
+            }
         }
         $data['unitManagers'] = $unitManagers;
 
@@ -139,10 +162,6 @@ class UserController extends BaseController
                                                     ->orderBy('nama_lengkap', 'ASC')
                                                     ->findAll();
 
-        // Ambil master unit kerja (kueri tunggal)
-        $unitKerjaModel = new UnitKerja();
-        $data['unit_kerja_list'] = $unitKerjaModel->orderBy('nama_unit', 'ASC')->findAll();
-        $unitKerjaMap = array_column($data['unit_kerja_list'], 'parent_unit', 'nama_unit');
         $secondaryRolesMap = $this->fetchSecondaryRolesMap($data['users']);
 
         foreach ($data['users'] as &$u) {
@@ -249,6 +268,7 @@ class UserController extends BaseController
         $unitInput = $this->request->getPost('unit_id') ?? $this->request->getPost('unit');
         $unitId = null;
         $unitNama = '';
+        $unitDb = null;
         if (!empty($unitInput)) {
             $unitKerjaModel = new UnitKerja();
             if (is_numeric($unitInput)) {
@@ -418,6 +438,7 @@ class UserController extends BaseController
         $unitInput = $this->request->getPost('unit_id') ?? $this->request->getPost('unit');
         $unitId = null;
         $unitNama = '';
+        $unitDb = null;
         if (!empty($unitInput)) {
             $unitKerjaModel = new UnitKerja();
             if (is_numeric($unitInput)) {
@@ -473,13 +494,15 @@ class UserController extends BaseController
         }
         $data['atasan_id'] = !empty($atasan_id) ? (int)$atasan_id : 0;
 
-        // Jika atasan tidak dipilih tapi unit ada, cari pimpinannya secara otomatis
-        if (empty($data['atasan_id']) && !empty($data['unit'])) {
-            $pimpinan = $this->userModel->where('unit', $data['unit'])
-                                        ->whereIn('role', ['manajemen', 'kabag_aak', 'kabag_kuk', 'kabag'])
-                                        ->first();
-            if ($pimpinan && (int)$pimpinan['id'] !== (int)$id) {
-                $data['atasan_id'] = $pimpinan['id'];
+        // Jika atasan tidak dipilih tapi unit operasional ada, cari pimpinannya secara otomatis
+        // Kecualikan akun pimpinan (Direktur/Wadir/Kabag) dan unit Top Manajemen
+        // Jika unit merupakan sub-unit (Pokja), pelaporan otomatis mengarah ke Katim unit induknya
+        $isExecutiveRole = in_array($role, ['direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk'], true);
+        $isTopManajemenUnit = !empty($unitDb) && strtolower((string) ($unitDb['parent_unit'] ?? '')) === 'pimpinan';
+        if (empty($data['atasan_id']) && !empty($data['unit']) && !$isExecutiveRole && !$isTopManajemenUnit) {
+            $resolvedAtasan = $this->resolveDefaultAtasanForUnit($unitDb, $data['unit'], (int) $id);
+            if ($resolvedAtasan > 0) {
+                $data['atasan_id'] = $resolvedAtasan;
             }
         }
 
@@ -516,6 +539,42 @@ class UserController extends BaseController
         }
     }
 
+    /**
+     * Menentukan ID atasan langsung bawaan untuk suatu unit kerja.
+     * Jika unit merupakan sub-unit (Pokja dengan parent_unit_id),
+     * pelaporan kinerja otomatis diarahkan ke Katim pada unit induknya.
+     */
+    private function resolveDefaultAtasanForUnit(?array $unitDb, string $unitNama, int $excludeUserId): int
+    {
+        if (!empty($unitDb['parent_unit_id'])) {
+            $katim = $this->userModel
+                ->select('id')
+                ->where('unit_id', (int) $unitDb['parent_unit_id'])
+                ->whereIn('role', ['manajemen', 'katim', 'kanit', 'kabag', 'kabag_aak', 'kabag_kuk'])
+                ->where('status_pegawai', 'aktif')
+                ->orderBy('id', 'ASC')
+                ->first();
+
+            if ($katim && (int) $katim['id'] !== $excludeUserId) {
+                return (int) $katim['id'];
+            }
+        }
+
+        if ($unitNama === '') {
+            return 0;
+        }
+
+        $pimpinan = $this->userModel
+            ->select('id')
+            ->where('unit', $unitNama)
+            ->whereIn('role', ['manajemen', 'katim', 'kanit', 'kabag_aak', 'kabag_kuk', 'kabag'])
+            ->where('status_pegawai', 'aktif')
+            ->orderBy('id', 'ASC')
+            ->first();
+
+        return ($pimpinan && (int) $pimpinan['id'] !== $excludeUserId) ? (int) $pimpinan['id'] : 0;
+    }
+
     public function ajaxUpdateUnit()
     {
         // Check if it's an AJAX request for security
@@ -537,6 +596,8 @@ class UserController extends BaseController
 
         $unitId = null;
         $unitNama = '';
+        $unitParent = null;
+        $unitDb = null;
         if (!empty($unitInput)) {
             $unitKerjaModel = new UnitKerja();
             if (is_numeric($unitInput)) {
@@ -544,15 +605,21 @@ class UserController extends BaseController
                 if ($unitDb) {
                     $unitId = $unitDb['id'];
                     $unitNama = $unitDb['nama_unit'];
+                    $unitParent = strtolower((string) ($unitDb['parent_unit'] ?? ''));
                 }
             } else {
                 $unitNama = trim((string)$unitInput);
                 $unitDb = $unitKerjaModel->where('nama_unit', $unitNama)->first();
                 if ($unitDb) {
                     $unitId = $unitDb['id'];
+                    $unitParent = strtolower((string) ($unitDb['parent_unit'] ?? ''));
                 }
             }
         }
+
+        $targetUser = $this->userModel->select('id, role')->find($userId);
+        $targetRole = strtolower(trim((string) ($targetUser['role'] ?? '')));
+        $isExecutiveTarget = in_array($targetRole, ['direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk'], true);
 
         $updateData = [
             'unit'    => $unitNama,
@@ -564,14 +631,11 @@ class UserController extends BaseController
             $updateData['role'] = 'spm';
         }
 
-        // Sinkronisasi Atasan otomatis
-        if (!empty($unitNama)) {
-            $pimpinan = $this->userModel->where('unit', $unitNama)
-                                        ->whereIn('role', ['manajemen', 'kabag_aak', 'kabag_kuk', 'kabag'])
-                                        ->first();
-            $updateData['atasan_id'] = $pimpinan ? $pimpinan['id'] : 0;
-        } else {
-            $updateData['atasan_id'] = 0;
+        // Sinkronisasi Atasan otomatis (kecuali pimpinan & unit Top Manajemen; sub-unit Pokja mengarah ke Katim induk)
+        if (!$isExecutiveTarget && $unitParent !== 'pimpinan') {
+            $updateData['atasan_id'] = !empty($unitNama)
+                ? $this->resolveDefaultAtasanForUnit($unitDb, $unitNama, (int) $userId)
+                : 0;
         }
 
         if ($this->userModel->update($userId, $updateData)) {

@@ -2,9 +2,9 @@
 
 /**
  * Avatar & UI Badge Helper - Clean & Reusable UI Helpers
- * 
+ *
  * Helper ini menyediakan fungsi-fungsi reusable untuk merender avatar profil,
- * badge role, dan badge status pegawai secara konsisten di seluruh view SIMONIK.
+ * badge peran, dan badge status pegawai secara konsisten di seluruh view Evidence Command Center (ECC).
  */
 
 if (!function_exists('render_user_avatar')) {
@@ -46,12 +46,11 @@ if (!function_exists('render_user_avatar')) {
 
         if ($hasPhoto) {
             $imgUrl = base_url($fotoPath);
-            $escNama = esc($namaLengkap);
-            return '<img src="' . $imgUrl . '" class="avatar-circle-sm rounded-circle border shadow-sm me-2 ' . esc($extraClass) . '" style="width: ' . $size . 'px; height: ' . $size . 'px; object-fit: cover; flex-shrink: 0;" alt="' . $escNama . '" onerror="this.style.display=\'none\'; if(this.nextElementSibling){this.nextElementSibling.style.display=\'flex\';}">' .
-                   '<div class="avatar-circle-sm me-2 bg-primary-subtle text-primary fw-bold align-items-center justify-content-center rounded-circle ' . esc($extraClass) . '" style="display: none; width: ' . $size . 'px; height: ' . $size . 'px; font-size: ' . $fontSizePx . 'px; flex-shrink: 0;">' . $initials . '</div>';
+            return '<img src="' . $imgUrl . '" class="avatar-circle-sm rounded-circle border shadow-sm me-2 ' . esc($extraClass) . '" width="' . $size . '" height="' . $size . '" loading="lazy" decoding="async" style="width: ' . $size . 'px; height: ' . $size . 'px; object-fit: cover; flex-shrink: 0;" alt="" onerror="this.style.display=\'none\'; if(this.nextElementSibling){this.nextElementSibling.style.display=\'flex\';}">' .
+                   '<div aria-hidden="true" class="avatar-circle-sm me-2 bg-primary-subtle text-primary fw-bold align-items-center justify-content-center rounded-circle ' . esc($extraClass) . '" style="display: none; width: ' . $size . 'px; height: ' . $size . 'px; font-size: ' . $fontSizePx . 'px; flex-shrink: 0;">' . $initials . '</div>';
         }
 
-        return '<div class="avatar-circle-sm me-2 bg-primary-subtle text-primary fw-bold d-flex align-items-center justify-content-center rounded-circle ' . esc($extraClass) . '" style="width: ' . $size . 'px; height: ' . $size . 'px; font-size: ' . $fontSizePx . 'px; flex-shrink: 0;">' . $initials . '</div>';
+        return '<div aria-hidden="true" class="avatar-circle-sm me-2 bg-primary-subtle text-primary fw-bold d-flex align-items-center justify-content-center rounded-circle ' . esc($extraClass) . '" style="width: ' . $size . 'px; height: ' . $size . 'px; font-size: ' . $fontSizePx . 'px; flex-shrink: 0;">' . $initials . '</div>';
     }
 }
 
@@ -99,7 +98,7 @@ if (!function_exists('render_role_badge')) {
             $badgeStyle = 'bg-primary-subtle text-primary border border-primary-subtle';
         }
 
-        return '<span class="badge ' . $badgeStyle . ' px-2 py-0.5" style="font-size: 0.72rem; font-weight: 500;">' . esc($roleText) . '</span>';
+        return '<span class="badge ' . $badgeStyle . ' px-2 py-1" style="font-size: 0.75rem; font-weight: 600;">' . esc($roleText) . '</span>';
     }
 }
 
@@ -118,9 +117,17 @@ if (!function_exists('render_unit_kabag_badge')) {
 
         $val = strtolower(trim($unitKabag));
         $badgeClass = 'bg-secondary-subtle text-secondary border';
-        if ($val === 'aak') $badgeClass = 'bg-success-subtle text-success border border-success-subtle';
-        if ($val === 'kuk') $badgeClass = 'bg-info-subtle text-info-emphasis border border-info-subtle';
+        $label = strtoupper($val);
 
-        return '<span class="badge ' . $badgeClass . ' px-2 py-0.5" style="font-size: 0.7rem;">' . strtoupper(esc($val)) . '</span>';
+        if ($val === 'pimpinan') {
+            $badgeClass = 'bg-primary-subtle text-primary border border-primary-subtle';
+            $label = 'Top Manajemen';
+        } elseif ($val === 'aak') {
+            $badgeClass = 'bg-success-subtle text-success border border-success-subtle';
+        } elseif ($val === 'kuk') {
+            $badgeClass = 'bg-info-subtle text-info-emphasis border border-info-subtle';
+        }
+
+        return '<span class="badge ' . $badgeClass . ' px-2 py-1" style="font-size: 0.75rem; font-weight: 600;">' . esc($label) . '</span>';
     }
 }

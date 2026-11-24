@@ -61,7 +61,8 @@ class LogKegiatanController extends BaseController
                                   ->where('tahun', $tahunTerpilih)
                                   ->findAll();
 
-        $hasAtasan = $currentUser && !empty($currentUser['atasan_id']) && $currentUser['role'] !== 'direktur';
+        $atasanIdPeriode = $this->resolveEffectiveAtasanId($currentUser, (int)$bulanTerpilih, (int)$tahunTerpilih);
+        $hasAtasan = ($atasanIdPeriode !== null);
 
         $targetStatus = 'disetujui';
         if (empty($allTargets)) {
@@ -304,7 +305,8 @@ class LogKegiatanController extends BaseController
                                   ->where('tahun', $tahunTerpilih)
                                   ->findAll();
 
-        $hasAtasan = $currentUser && !empty($currentUser['atasan_id']) && $currentUser['role'] !== 'direktur';
+        $atasanIdPeriode = $this->resolveEffectiveAtasanId($currentUser, (int)$bulanTerpilih, (int)$tahunTerpilih);
+        $hasAtasan = ($atasanIdPeriode !== null);
 
         if (empty($allTargets)) {
             if ($this->request->isAJAX()) {
@@ -445,12 +447,12 @@ class LogKegiatanController extends BaseController
                 return redirect()->back()->with('error', 'Gagal mengirim laporan. Silakan coba lagi.');
             }
                      
-            if ($currentUser && !empty($currentUser['atasan_id']) && $currentUser['role'] !== 'direktur') {
+            if ($atasanIdPeriode !== null) {
                 try {
                     helper('notification');
                     send_notification(
-                        $currentUser['atasan_id'], 
-                        'Laporan Harian Baru', 
+                        $atasanIdPeriode,
+                        'Laporan Harian Baru',
                         $currentUser['nama_lengkap'] . " mengirimkan Laporan Harian untuk tanggal $tanggal.",
                         site_url('penilaian-kinerja')
                     );
@@ -762,12 +764,12 @@ class LogKegiatanController extends BaseController
         }
 
         // Kirim notifikasi ke atasan jika laporan resmi dikirim (bukan draf)
-        if (!$isDraft && $currentUser && !empty($currentUser['atasan_id']) && $currentUser['role'] !== 'direktur') {
+        if (!$isDraft && $atasanIdPeriode !== null) {
             try {
                 helper('notification');
                 send_notification(
-                    $currentUser['atasan_id'], 
-                    'Laporan Harian Baru', 
+                    $atasanIdPeriode,
+                    'Laporan Harian Baru',
                     $currentUser['nama_lengkap'] . " mengirimkan Laporan Harian untuk tanggal $tanggal.",
                     site_url('penilaian-kinerja')
                 );
@@ -960,7 +962,8 @@ class LogKegiatanController extends BaseController
                                   ->where('tahun', $tahunTerpilih)
                                   ->findAll();
 
-        $hasAtasan = $currentUser && !empty($currentUser['atasan_id']) && $currentUser['role'] !== 'direktur';
+        $atasanIdPeriode = $this->resolveEffectiveAtasanId($currentUser, (int)$bulanTerpilih, (int)$tahunTerpilih);
+        $hasAtasan = ($atasanIdPeriode !== null);
 
         if (empty($allTargets)) {
             if ($this->request->isAJAX()) {
@@ -1424,5 +1427,19 @@ class LogKegiatanController extends BaseController
         }
 
         return ['is_locked' => false, 'reason' => ''];
+    }
+
+    /**
+     * Resolusi ID atasan langsung efektif pada periode bulan & tahun tertentu
+     * (mengutamakan riwayat_atasan, fallback ke users.atasan_id; null untuk Direktur).
+     */
+    private function resolveEffectiveAtasanId(?array $user, int $bulan, int $tahun): ?int
+    {
+        if (!$user || strtolower((string) ($user['role'] ?? '')) === 'direktur') {
+            return null;
+        }
+
+        $resolved = PenilaianKinerjaPolicy::resolveAtasanId($user, $bulan, $tahun);
+        return !empty($resolved) ? (int) $resolved : null;
     }
 }

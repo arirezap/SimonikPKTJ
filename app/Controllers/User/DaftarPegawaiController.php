@@ -58,7 +58,14 @@ class DaftarPegawaiController extends BaseController
         }
 
         if (!empty($role)) {
-            $targetRoles = ($role === 'kabag') ? ['kabag', 'kabag_aak', 'kabag_kuk'] : [$role];
+            $roleAliases = [
+                'kabag'     => ['kabag', 'kabag_aak', 'kabag_kuk'],
+                'manajemen' => ['manajemen', 'kanit', 'katim', 'kapokja'],
+                'kanit'     => ['manajemen', 'kanit', 'katim', 'kapokja'],
+                'katim'     => ['manajemen', 'kanit', 'katim', 'kapokja'],
+                'kapokja'   => ['manajemen', 'kanit', 'katim', 'kapokja'],
+            ];
+            $targetRoles = $roleAliases[$role] ?? [$role];
             
             // Dapatkan ID pengguna yang memiliki peran target dari tabel pivot user_roles
             $matchedPivotIds = array_column(
@@ -77,9 +84,10 @@ class DaftarPegawaiController extends BaseController
         if (!empty($unit)) {
             $ukRow = $unitKerjaModel->where('nama_unit', $unit)->first();
             if ($ukRow) {
+                $matchedUnitIds = array_merge([(int) $ukRow['id']], $unitKerjaModel->getSubUnitIds((int) $ukRow['id']));
                 $query->groupStart()
                       ->where('users.unit', $unit)
-                      ->orWhere('users.unit_id', $ukRow['id'])
+                      ->orWhereIn('users.unit_id', $matchedUnitIds)
                       ->groupEnd();
             } else {
                 $query->where('users.unit', $unit);
@@ -87,16 +95,18 @@ class DaftarPegawaiController extends BaseController
         }
 
         $users = $query->orderBy($dbSortColumn, $sortOrder)->findAll();
+        $normalizedFilterRole = in_array($role, ['kanit', 'katim', 'kapokja'], true) ? 'manajemen' : $role;
 
         $data = [
-            'title'           => 'Daftar Pegawai',
-            'users'           => $users,
-            'unit_kerja_list' => $unitKerjaModel->orderBy('nama_unit', 'ASC')->findAll(),
-            'search'          => $search,
-            'filter_role'     => $role,
-            'filter_unit'     => $unit,
-            'sort_by'         => $sortBy,
-            'sort_order'      => $sortOrder
+            'title'               => 'Daftar Pegawai',
+            'users'               => $users,
+            'unit_kerja_list'     => $unitKerjaModel->orderBy('nama_unit', 'ASC')->findAll(),
+            'sub_unit_parent_map' => $unitKerjaModel->getParentUnitNameMap(),
+            'search'              => $search,
+            'filter_role'         => $normalizedFilterRole,
+            'filter_unit'         => $unit,
+            'sort_by'             => $sortBy,
+            'sort_order'          => $sortOrder
         ];
 
         return view('user/daftar_pegawai', $data);

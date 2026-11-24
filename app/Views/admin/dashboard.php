@@ -32,7 +32,7 @@ $sebaranItems = [
 ?>
 
 <!-- Toolbar Filter Periode Kinerja (8-Point Grid) -->
-<div class="d-flex justify-content-start align-items-center flex-wrap gap-2 mb-4 bento-stagger bento-stagger-1">
+<div class="d-flex justify-content-start align-items-center flex-wrap gap-2 mb-3 bento-stagger bento-stagger-1">
     <form id="formKinerja" class="m-0 d-flex flex-wrap gap-2 align-items-center" aria-label="Filter Periode Kinerja">
         <span class="text-muted fw-semibold me-1" style="font-size: 0.75rem;">Periode Kinerja:</span>
         <label for="bulan_kinerja" class="visually-hidden">Pilih Bulan Kinerja</label>
@@ -50,6 +50,7 @@ $sebaranItems = [
         </select>
     </form>
 </div>
+<div id="dashKinerjaError" class="alert alert-danger border-0 shadow-sm rounded-3 py-2 px-3 mb-3 d-none" role="alert" style="font-size: 0.875rem;"></div>
 
 <!-- Bagian 1: Radar ECC & Metrik Utama -->
 <div class="row g-4 mb-4 bento-stagger bento-stagger-1">
@@ -69,7 +70,7 @@ $sebaranItems = [
                 <div class="dash-kpi-value" id="valRataRataKinerja" aria-live="polite" aria-atomic="true">
                     <?= number_format((float) ($rataRataValue ?? 0), 2, ',', '.') ?>
                 </div>
-                <div class="dash-kpi-meta">Rata-rata seluruh pegawai</div>
+                <div class="dash-kpi-meta"><?= !empty($isSuper) ? 'Rata-rata seluruh pegawai PKTJ' : 'Rata-rata tim &amp; unit binaan' ?></div>
             </div>
         </div>
 
@@ -171,11 +172,20 @@ $sebaranItems = [
                                             <span class="dash-rank-badge <?= $rankClass ?>"><?= $i + 1 ?></span>
                                         </td>
                                         <td class="border-bottom border-light" style="padding: 8px 4px;">
+                                            <?php
+                                                $pokjaParent = !empty($u['is_pokja']) ? trim((string) ($u['parent_unit_name'] ?? '')) : '';
+                                                $unitTitleAttr = $pokjaParent !== '' ? ($u['nama'] . ' — Kelompok Kerja di bawah ' . $pokjaParent) : $u['nama'];
+                                            ?>
                                             <button type="button"
                                                     class="dash-row-btn"
                                                     onclick="openUnitDetailModal('<?= esc($u['nama'], 'js') ?>')"
-                                                    title="<?= esc($u['nama']) ?>">
+                                                    title="<?= esc($unitTitleAttr) ?>">
                                                 <span class="dash-unit-name"><?= esc($u['nama']) ?></span>
+                                                <?php if ($pokjaParent !== ''): ?>
+                                                    <span class="d-block text-muted text-truncate" style="font-size: 0.75rem;">
+                                                        Pokja &middot; <?= esc(str_replace('Tim Substansi Bidang ', 'Bidang ', $pokjaParent)) ?>
+                                                    </span>
+                                                <?php endif; ?>
                                             </button>
                                         </td>
                                         <td class="text-end border-bottom border-light" style="width: 112px; padding: 8px 16px;">
@@ -294,11 +304,61 @@ $sebaranItems = [
     </div>
 </div>
 
-<!-- Bagian 4: Grafik Kinerja Unit -->
+<!-- Bagian 4: Ringkasan Struktur Induk & Grafik Kinerja Unit -->
 <div class="bento-stagger bento-stagger-4" id="unitPerformanceSection">
-    <div class="mb-3 mt-4">
-        <h2 class="dash-section-title">Grafik Kinerja Unit</h2>
-        <p class="dash-section-subtitle">Klik batang unit kerja untuk melihat rincian penilaian setiap anggota.</p>
+    <?php if (!empty($isSuper) && !empty($orgSummary)): ?>
+        <div class="mb-3 mt-4">
+            <h2 class="dash-section-title">Ringkasan Struktur Induk</h2>
+            <p class="dash-section-subtitle">Rata-rata gabungan Top Manajemen dan unit binaan Bagian AAK serta Bagian KUK. Klik kartu untuk melihat rincian pegawai.</p>
+        </div>
+
+        <div class="row g-3 mb-4" id="orgSummaryRow">
+            <?php
+            $orgBadgeClasses = [
+                'pimpinan' => 'bg-primary-subtle text-primary border border-primary-subtle',
+                'aak'      => 'bg-success-subtle text-success border border-success-subtle',
+                'kuk'      => 'bg-info-subtle text-info-emphasis border border-info-subtle',
+            ];
+            foreach ($orgSummary as $org):
+                $bCls = $orgBadgeClasses[$org['bagian'] ?? ''] ?? 'bg-light text-secondary border';
+                $orgScoreText = ((float) ($org['rata'] ?? 0) > 0) ? number_format((float) $org['rata'], 2, ',', '.') : '-';
+            ?>
+                <div class="col-12 col-md-4">
+                    <div
+                        class="dash-org-card"
+                        role="button"
+                        tabindex="0"
+                        data-org-key="<?= esc($org['key']) ?>"
+                        aria-label="Lihat rincian pegawai <?= esc($org['label']) ?>"
+                    >
+                        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                            <span class="fw-bold text-dark" style="font-size: 0.95rem;"><?= esc($org['label']) ?></span>
+                            <span class="badge <?= $bCls ?> rounded-pill px-2 py-1 num-tabular" style="font-size: 0.75rem;">
+                                <?= (int) $org['total_anggota'] ?> Pegawai
+                            </span>
+                        </div>
+                        <div class="dash-org-value mb-1" data-org-score="<?= esc($org['key']) ?>"><?= esc($orgScoreText) ?></div>
+                        <div class="text-muted num-tabular" style="font-size: 0.75rem;" data-org-meta="<?= esc($org['key']) ?>">
+                            <?= (int) $org['total_aktif'] ?> dari <?= (int) $org['total_anggota'] ?> dinilai &middot; <?= esc($org['subtitle']) ?>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-3 mt-4">
+        <div>
+            <h2 class="dash-section-title">Grafik Kinerja Unit &amp; Kelompok Kerja</h2>
+            <p class="dash-section-subtitle">Performa unit pelaksana &amp; Pokja secara mandiri. Klik batang untuk melihat rincian penilaian anggota.</p>
+        </div>
+        <?php if (!empty($isSuper)): ?>
+            <div class="d-flex flex-wrap align-items-center gap-1" id="unitBagianPills" role="group" aria-label="Filter grafik unit berdasarkan bagian">
+                <button type="button" class="dash-group-pill active" data-bagian-filter="all">Semua Unit</button>
+                <button type="button" class="dash-group-pill" data-bagian-filter="aak">Bagian AAK</button>
+                <button type="button" class="dash-group-pill" data-bagian-filter="kuk">Bagian KUK</button>
+            </div>
+        <?php endif; ?>
     </div>
 
     <div class="row g-4 mb-4">
@@ -310,7 +370,7 @@ $sebaranItems = [
                     <?php else: ?>
                         <div class="dash-bar-scroll">
                             <div class="performance-chart-container" id="unitChartWrap">
-                                <canvas id="unitPerformanceChart" role="img" aria-label="Grafik Batang Kinerja Seluruh Unit Kerja Organisasi"></canvas>
+                                <canvas id="unitPerformanceChart" role="img" aria-label="Grafik Batang Kinerja Unit Pelaksana dan Kelompok Kerja"></canvas>
                             </div>
                         </div>
                     <?php endif; ?>
@@ -325,11 +385,14 @@ $sebaranItems = [
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
             <div class="modal-header bg-light border-bottom px-4 py-3">
-                <h2 class="modal-title fw-bold text-dark mb-0 d-flex align-items-center flex-wrap gap-2" id="unitDetailModalLabel" style="font-size: 0.95rem;">
-                    <span>Detail Pegawai:</span>
-                    <span id="modalUnitName" class="text-primary"></span>
-                    <span id="modalPeriodBadge" class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1" style="font-size: 0.75rem;"></span>
-                </h2>
+                <div>
+                    <h2 class="modal-title fw-bold text-dark mb-0 d-flex align-items-center flex-wrap gap-2" id="unitDetailModalLabel" style="font-size: 0.95rem;">
+                        <span>Detail Pegawai:</span>
+                        <span id="modalUnitName" class="text-primary"></span>
+                        <span id="modalPeriodBadge" class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1" style="font-size: 0.75rem;"></span>
+                    </h2>
+                    <div id="modalUnitSubinfo" class="text-muted mt-1" style="font-size: 0.75rem;"></div>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup" style="min-width: 44px; min-height: 44px;"></button>
             </div>
             <div class="modal-body p-4">
@@ -337,9 +400,9 @@ $sebaranItems = [
                     <table class="table table-hover align-middle mb-0 table-bento" style="font-size: 0.875rem;">
                         <thead class="bg-light text-muted text-uppercase" style="font-size: 0.75rem;">
                             <tr>
-                                <th class="px-3 py-3">Nama Pegawai</th>
-                                <th class="text-center px-3 py-3">Target &amp; Tambahan</th>
-                                <th class="text-center px-3 py-3">Rata-Rata Nilai</th>
+                                <th scope="col" class="px-3 py-3">Nama Pegawai</th>
+                                <th scope="col" class="text-center px-3 py-3">Target &amp; Tambahan</th>
+                                <th scope="col" class="text-center px-3 py-3">Rata-Rata Nilai</th>
                             </tr>
                         </thead>
                         <tbody id="unitDetailTbody" class="border-top-0"></tbody>
@@ -347,7 +410,7 @@ $sebaranItems = [
                 </div>
             </div>
             <div class="modal-footer bg-light border-top px-4 py-3">
-                <button type="button" class="btn btn-sm btn-secondary rounded-pill px-4 fw-semibold" style="min-height: 36px;" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-sm btn-secondary rounded-pill px-4 fw-semibold dash-modal-close-btn" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
@@ -375,15 +438,68 @@ $sebaranItems = [
 window.pageCharts = window.pageCharts || {};
 window.adminUnitStatsCache = {};
 window.adminUnitLabelsCache = [];
+window.adminUnitRankingCache = [];
+window.adminUnitFilteredRanking = [];
+window.adminActiveBagianFilter = 'all';
 
 function getUnitChartHeight(count) {
     return Math.max(224, (count || 0) * 32);
 }
 
+function formatUnitTickLabel(fullLabel) {
+    const full = String(fullLabel || '');
+    if (window.innerWidth < 768) {
+        const compact = full.replace(/^Tim Substansi Bidang\s+/i, 'Tim ');
+        return compact.length > 22 ? compact.slice(0, 21) + '…' : compact;
+    }
+    return full.length > 42 ? full.slice(0, 41) + '…' : full;
+}
+
+function applyUnitChartFilter(bagianFilter) {
+    window.adminActiveBagianFilter = bagianFilter || 'all';
+
+    document.querySelectorAll('#unitBagianPills .dash-group-pill').forEach(btn => {
+        btn.classList.toggle('active', (btn.dataset.bagianFilter || 'all') === window.adminActiveBagianFilter);
+    });
+
+    const source = Array.isArray(window.adminUnitRankingCache) ? window.adminUnitRankingCache : [];
+    const filtered = (window.adminActiveBagianFilter === 'all')
+        ? source
+        : source.filter(item => (item.bagian || '') === window.adminActiveBagianFilter);
+
+    window.adminUnitFilteredRanking = filtered;
+    window.adminUnitLabelsCache = filtered.map(u => u.nama);
+    const chartData = filtered.map(u => u.rata);
+
+    const wrap = document.getElementById('unitChartWrap');
+    if (wrap) wrap.style.height = getUnitChartHeight(filtered.length) + 'px';
+
+    if (window.pageCharts['unitChart']) {
+        window.pageCharts['unitChart'].data.labels = window.adminUnitLabelsCache;
+        window.pageCharts['unitChart'].data.datasets[0].data = chartData;
+        window.pageCharts['unitChart'].resize();
+        window.pageCharts['unitChart'].update();
+    }
+}
+
 function openUnitDetailModal(selectedUnit) {
-    const details = window.adminUnitStatsCache[selectedUnit]?.anggota || [];
+    const unitInfo = window.adminUnitStatsCache[selectedUnit] || {};
+    const details = unitInfo.anggota || [];
+    const isOrgGroup = !!unitInfo.is_org_group;
+
     const nameEl = document.getElementById('modalUnitName');
     if (nameEl) nameEl.innerText = selectedUnit;
+
+    const subinfoEl = document.getElementById('modalUnitSubinfo');
+    if (subinfoEl) {
+        if (isOrgGroup) {
+            subinfoEl.innerText = (unitInfo.group_subtitle ? unitInfo.group_subtitle + ' · ' : '') + details.length + ' pegawai';
+        } else if (unitInfo.is_pokja && unitInfo.parent_unit_name) {
+            subinfoEl.innerText = 'Kelompok Kerja di bawah ' + unitInfo.parent_unit_name + ' · ' + details.length + ' pegawai';
+        } else {
+            subinfoEl.innerText = details.length + ' pegawai terdaftar pada periode ini';
+        }
+    }
 
     const bulanSelect = document.getElementById('bulan_kinerja');
     const tahunSelect = document.getElementById('tahun_kinerja');
@@ -402,12 +518,15 @@ function openUnitDetailModal(selectedUnit) {
             const namaRapih = window.eccDash.formatNamaTitleCase(item.nama);
             const pokokVal = item.total_pokok !== undefined ? item.total_pokok : item.total_laporan;
             const tambVal = item.total_tambahan || 0;
+            const jabMeta = isOrgGroup && item.unit
+                ? `${item.jabatan || '-'} · ${item.unit}`
+                : (item.jabatan || '-');
 
             tbody += `
                 <tr>
                     <td class="px-3 py-3 border-bottom border-light">
                         <div class="fw-semibold text-dark">${window.eccDash.escapeHtml(namaRapih)}</div>
-                        <div class="text-muted" style="font-size: 0.75rem;">${window.eccDash.escapeHtml(item.jabatan || '-')}</div>
+                        <div class="text-muted" style="font-size: 0.75rem;">${window.eccDash.escapeHtml(jabMeta)}</div>
                     </td>
                     <td class="text-center px-3 py-3 border-bottom border-light">
                         <div class="d-flex flex-column align-items-center justify-content-center gap-1">
@@ -430,6 +549,20 @@ function openUnitDetailModal(selectedUnit) {
     unitModal.show();
 }
 
+function updateOrgSummaryCards(orgSummary) {
+    if (!Array.isArray(orgSummary)) return;
+    orgSummary.forEach(org => {
+        const scoreEl = document.querySelector(`[data-org-score="${org.key}"]`);
+        if (scoreEl) {
+            scoreEl.innerText = Number(org.rata || 0) > 0 ? window.eccDash.formatAngkaId(org.rata, 2) : '-';
+        }
+        const metaEl = document.querySelector(`[data-org-meta="${org.key}"]`);
+        if (metaEl) {
+            metaEl.innerText = `${org.total_aktif || 0} dari ${org.total_anggota || 0} dinilai · ${org.subtitle || ''}`;
+        }
+    });
+}
+
 function updateSebaranLegendCounts(sebaran) {
     if (!sebaran) return;
     const map = {
@@ -449,10 +582,18 @@ function updateSebaranLegendCounts(sebaran) {
 async function updateKinerjaData() {
     const bulanKinerja = document.getElementById('bulan_kinerja').value;
     const tahunKinerja = document.getElementById('tahun_kinerja').value;
+    const formEl = document.getElementById('formKinerja');
+    const errorEl = document.getElementById('dashKinerjaError');
+    if (errorEl) errorEl.classList.add('d-none');
+    if (formEl) formEl.setAttribute('aria-busy', 'true');
+
     try {
         const response = await fetch(`<?= site_url('dashboard') ?>?ajax_type=kinerja&bulan_kinerja=${encodeURIComponent(bulanKinerja)}&tahun_kinerja=${encodeURIComponent(tahunKinerja)}`, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
+        if (!response.ok) {
+            throw new Error('Gagal memuat data');
+        }
         const data = await response.json();
         if (!data) return;
 
@@ -471,7 +612,7 @@ async function updateKinerjaData() {
         const currentTotPeg = window.eccDash.parseAngkaId(document.getElementById('valTotalPegawai')?.innerText);
         window.eccDash.animateValue('valTotalPegawai', currentTotPeg, total, 650, '', 0);
 
-        // Perbarui Top 5 Unit (konsisten SSR & empty state)
+        // Perbarui Top 5 Unit (konsisten SSR & empty state, Pokja tetap mandiri)
         let htmlUnit = '';
         if (data.top5Unit && data.top5Unit.length > 0) {
             data.top5Unit.forEach((u, i) => {
@@ -480,14 +621,19 @@ async function updateKinerjaData() {
                     ? window.eccDash.formatAngkaId(u.rata, 2)
                     : '-';
                 const escapedNama = window.eccDash.escapeHtml(u.nama);
+                const pokjaParent = (u.is_pokja && u.parent_unit_name) ? String(u.parent_unit_name) : '';
+                const titleAttr = pokjaParent ? window.eccDash.escapeHtml(u.nama + ' — Kelompok Kerja di bawah ' + pokjaParent) : escapedNama;
+                const pokjaSubHtml = pokjaParent
+                    ? `<span class="d-block text-muted text-truncate" style="font-size: 0.75rem;">Pokja · ${window.eccDash.escapeHtml(pokjaParent.replace(/^Tim Substansi Bidang\s+/i, 'Bidang '))}</span>`
+                    : '';
                 htmlUnit += `
                     <tr>
                         <td class="text-center align-middle border-bottom border-light" style="width: 56px; padding: 8px 16px;">
                             <span class="dash-rank-badge ${rankClass}">${i + 1}</span>
                         </td>
                         <td class="border-bottom border-light" style="padding: 8px 4px;">
-                            <button type="button" class="dash-row-btn" data-unit-open="${escapedNama}" title="${escapedNama}">
-                                <span class="dash-unit-name">${escapedNama}</span>
+                            <button type="button" class="dash-row-btn" data-unit-open="${escapedNama}" title="${titleAttr}">
+                                <span class="dash-unit-name">${escapedNama}</span>${pokjaSubHtml}
                             </button>
                         </td>
                         <td class="text-end border-bottom border-light" style="width: 112px; padding: 8px 16px;">
@@ -571,19 +717,18 @@ async function updateKinerjaData() {
         document.getElementById('tbodyTop5').innerHTML = renderEmployeeTable(data.top5, true);
         document.getElementById('tbodyBottom5').innerHTML = renderEmployeeTable(data.bottom5, false);
 
-        // Perbarui Grafik Unit & Hitung Ulang Tinggi Kanvas
-        window.adminUnitLabelsCache = data.chartPegawaiUnitLabels || [];
+        // Perbarui Ringkasan Struktur Induk & Grafik Unit Pelaksana + Pokja
         window.adminUnitStatsCache = data.unitStats || {};
-        if (window.pageCharts['unitChart']) {
-            const wrap = document.getElementById('unitChartWrap');
-            if (wrap) wrap.style.height = getUnitChartHeight(window.adminUnitLabelsCache.length) + 'px';
-            window.pageCharts['unitChart'].data.labels = window.adminUnitLabelsCache;
-            window.pageCharts['unitChart'].data.datasets[0].data = data.chartPegawaiUnitData || [];
-            window.pageCharts['unitChart'].resize();
-            window.pageCharts['unitChart'].update();
-        }
+        window.adminUnitRankingCache = data.unitRanking || [];
+        updateOrgSummaryCards(data.orgSummary || []);
+        applyUnitChartFilter(window.adminActiveBagianFilter);
     } catch (err) {
-        console.error('Gagal mengambil data kinerja:', err);
+        if (errorEl) {
+            errorEl.textContent = 'Gagal memperbarui data kinerja. Silakan pilih ulang periode atau muat ulang halaman.';
+            errorEl.classList.remove('d-none');
+        }
+    } finally {
+        if (formEl) formEl.removeAttribute('aria-busy');
     }
 }
 
@@ -624,7 +769,7 @@ function fetchChartDetail(mode, label, bulanVal = null) {
                     return;
                 }
 
-                let html = '<div class="table-responsive"><table class="table table-hover align-middle border mb-0" style="font-size: 0.875rem;"><thead class="table-light" style="font-size: 0.75rem;"><tr><th class="px-3 py-2">Nama Pegawai</th><th class="text-center px-3 py-2">Nilai Rata-Rata</th></tr></thead><tbody>';
+                let html = '<div class="table-responsive"><table class="table table-hover align-middle border mb-0" style="font-size: 0.875rem;"><thead class="table-light" style="font-size: 0.75rem;"><tr><th scope="col" class="px-3 py-2">Nama Pegawai</th><th scope="col" class="text-center px-3 py-2">Nilai Rata-Rata</th></tr></thead><tbody>';
                 res.data.forEach(p => {
                     const isBelum = (p.dinilai === 0 || Number(p.rata_rata || 0) === 0);
                     const scoreClass = window.eccDash.getPredikatScoreClass(p.rata_rata, p.dinilai !== undefined ? p.dinilai : 1);
@@ -671,11 +816,32 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (typeof Chart === 'undefined') return;
 
-    // 1. Grafik Batang Kinerja Unit
+    // 1. Interaksi Kartu Struktur Induk & Filter Bagian
+    window.adminUnitStatsCache = <?= json_encode($unitStats ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+    window.adminUnitRankingCache = <?= json_encode($unitRanking ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+    window.adminUnitFilteredRanking = window.adminUnitRankingCache.slice();
+
+    document.querySelectorAll('.dash-org-card[data-org-key]').forEach(card => {
+        const openOrg = () => openUnitDetailModal(card.dataset.orgKey);
+        card.addEventListener('click', openOrg);
+        card.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openOrg();
+            }
+        });
+    });
+
+    document.querySelectorAll('#unitBagianPills .dash-group-pill').forEach(btn => {
+        btn.addEventListener('click', function () {
+            applyUnitChartFilter(this.dataset.bagianFilter || 'all');
+        });
+    });
+
+    // 2. Grafik Batang Kinerja Unit Pelaksana & Kelompok Kerja (Pokja)
     <?php if (!empty($chartPegawaiUnitLabels)): ?>
     const ctxUnit = document.getElementById('unitPerformanceChart');
     if (ctxUnit) {
-        window.adminUnitStatsCache = <?= json_encode($unitStats ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
         window.adminUnitLabelsCache = <?= json_encode($chartPegawaiUnitLabels ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
         const unitData = <?= json_encode($chartPegawaiUnitData ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
@@ -708,7 +874,16 @@ document.addEventListener('DOMContentLoaded', function () {
                         padding: 12,
                         callbacks: {
                             title: (items) => items[0] ? window.adminUnitLabelsCache[items[0].dataIndex] : '',
-                            label: (ctx) => 'Rata-Rata: ' + window.eccDash.formatAngkaId(ctx.parsed.x || 0, 2)
+                            label: (ctx) => 'Rata-Rata: ' + window.eccDash.formatAngkaId(ctx.parsed.x || 0, 2),
+                            afterLabel: (ctx) => {
+                                const meta = window.adminUnitFilteredRanking[ctx.dataIndex];
+                                if (!meta) return '';
+                                const lines = [`Dinilai: ${meta.total_aktif || 0} dari ${meta.total_anggota || 0} pegawai`];
+                                if (meta.is_pokja && meta.parent_unit_name) {
+                                    lines.push('Kelompok Kerja di bawah ' + meta.parent_unit_name);
+                                }
+                                return lines;
+                            }
                         }
                     }
                 },
@@ -726,9 +901,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             color: '#475569',
                             font: { size: 12 },
                             callback: function (value) {
-                                const full = this.getLabelForValue(value) || '';
-                                const maxChars = window.innerWidth < 768 ? 18 : 42;
-                                return full.length > maxChars ? full.slice(0, maxChars - 1) + '…' : full;
+                                return formatUnitTickLabel(this.getLabelForValue(value));
                             }
                         }
                     }

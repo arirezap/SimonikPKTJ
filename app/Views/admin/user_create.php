@@ -144,7 +144,7 @@
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-dark mb-1">Unit Kerja</label>
                                 <select name="unit_id" class="form-select form-select-sm">
-                                    <option value="">-- Tanpa Unit / Pimpinan --</option>
+                                    <option value="">-- Pilih Unit Kerja --</option>
                                     <?php if (!empty($unit_kerja_list)): ?>
                                         <?php foreach ($unit_kerja_list as $unit_kerja): ?>
                                             <option value="<?= esc($unit_kerja['id']) ?>" <?= (old('unit_id') == $unit_kerja['id'] || old('unit') == $unit_kerja['nama_unit']) ? 'selected' : '' ?>><?= esc($unit_kerja['nama_unit']) ?></option>

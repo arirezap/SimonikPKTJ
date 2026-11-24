@@ -320,16 +320,17 @@
         </div>
     <?php endif; ?>
 
+    <?php $isTabStafActive = !empty($is_atasan) && (($active_tab ?? '') === 'staf' || !empty($staf_id_terpilih)); ?>
     <!-- Navigasi Tab -->
     <ul class="nav segmented-control mb-3" id="targetKinerjaTab" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link gov-touch-ctrl <?= empty($staf_id_terpilih) ? 'active' : '' ?>" id="sendiri-tab" data-bs-toggle="tab" data-bs-target="#sendiri" type="button" role="tab" aria-controls="sendiri" aria-selected="<?= empty($staf_id_terpilih) ? 'true' : 'false' ?>">
+            <button class="nav-link gov-touch-ctrl <?= !$isTabStafActive ? 'active' : '' ?>" id="sendiri-tab" data-bs-toggle="tab" data-bs-target="#sendiri" type="button" role="tab" aria-controls="sendiri" aria-selected="<?= !$isTabStafActive ? 'true' : 'false' ?>">
                 Target Saya
             </button>
         </li>
         <?php if ($is_atasan): ?>
         <li class="nav-item" role="presentation">
-            <button class="nav-link gov-touch-ctrl <?= !empty($staf_id_terpilih) ? 'active' : '' ?>" id="staf-tab" data-bs-toggle="tab" data-bs-target="#staf" type="button" role="tab" aria-controls="staf" aria-selected="<?= !empty($staf_id_terpilih) ? 'true' : 'false' ?>">
+            <button class="nav-link gov-touch-ctrl <?= $isTabStafActive ? 'active' : '' ?>" id="staf-tab" data-bs-toggle="tab" data-bs-target="#staf" type="button" role="tab" aria-controls="staf" aria-selected="<?= $isTabStafActive ? 'true' : 'false' ?>">
                 Persetujuan Target Staf
             </button>
         </li>
@@ -361,7 +362,7 @@
 <div class="tab-content" id="targetKinerjaTabContent">
 
     <!-- TAB 1: TARGET KINERJA SAYA -->
-    <div class="tab-pane fade <?= empty($staf_id_terpilih) ? 'show active' : '' ?>" id="sendiri" role="tabpanel" aria-labelledby="sendiri-tab">
+    <div class="tab-pane fade <?= !$isTabStafActive ? 'show active' : '' ?>" id="sendiri" role="tabpanel" aria-labelledby="sendiri-tab">
         <div class="card shadow-sm border-0 mb-4 rounded-4">
             <div class="card-body p-3 p-md-4">
                 <!-- Filter Bulan/Tahun -->
@@ -382,7 +383,11 @@
                             <input type="number" id="filterSendiriTahun" name="tahun" class="form-control ecc-control-sm shadow-sm filter-select num-tabular input-filter-tahun" value="<?= esc($tahun_terpilih) ?>" min="2020" max="2099">
                         </div>
                         <div class="col-12 col-md-7 ecc-text-muted-aa small pb-1">
-                            Rancang dan kelola target kinerja bulanan Anda pada tabel di bawah.
+                            <?php if (session()->get('role') !== 'direktur' && !empty($atasan_periode['nama_lengkap'])): ?>
+                                Target periode ini diajukan ke <strong class="text-dark"><?= esc($atasan_periode['nama_lengkap']) ?></strong>.
+                            <?php else: ?>
+                                Rancang dan kelola target kinerja bulanan Anda pada tabel di bawah.
+                            <?php endif; ?>
                         </div>
                     </div>
                 </form>
@@ -548,14 +553,14 @@
                         <table class="table table-bordered align-top table-hover mb-0 table-bento tabel-target">
                             <thead>
                                 <tr>
-                                    <th class="col-no text-center">No</th>
-                                    <th class="col-rhk">Rencana Hasil Kerja (RHK)</th>
-                                    <th class="col-indikator">Indikator Kinerja Individu</th>
-                                    <th class="col-target text-center">Target <?= esc($nama_bulan) ?></th>
-                                    <th class="col-satuan text-center">Satuan</th>
-                                    <th class="col-status text-center">Status</th>
+                                    <th scope="col" class="col-no text-center">No</th>
+                                    <th scope="col" class="col-rhk">Rencana Hasil Kerja (RHK)</th>
+                                    <th scope="col" class="col-indikator">Indikator Kinerja Individu</th>
+                                    <th scope="col" class="col-target text-center">Target <?= esc($nama_bulan) ?></th>
+                                    <th scope="col" class="col-satuan text-center">Satuan</th>
+                                    <th scope="col" class="col-status text-center">Status</th>
                                     <?php if ($showAksiSendiri): ?>
-                                    <th class="col-aksi text-center">Aksi</th>
+                                    <th scope="col" class="col-aksi text-center">Aksi</th>
                                     <?php endif; ?>
                                 </tr>
                             </thead>
@@ -685,7 +690,7 @@
 
     <!-- TAB 2: PERSETUJUAN TARGET STAF -->
     <?php if ($is_atasan): ?>
-    <div class="tab-pane fade <?= !empty($staf_id_terpilih) ? 'show active' : '' ?>" id="staf" role="tabpanel" aria-labelledby="staf-tab">
+    <div class="tab-pane fade <?= $isTabStafActive ? 'show active' : '' ?>" id="staf" role="tabpanel" aria-labelledby="staf-tab">
         <div class="card shadow-sm border-0 mb-4 rounded-4">
             <div class="card-body p-3 p-md-4">
                 <!-- Filter Staf -->
@@ -693,28 +698,44 @@
                     <?= csrf_field() ?>
                     <input type="hidden" name="source_tab" value="staf">
                     <div class="row g-2 align-items-end">
-                        <?php if (!empty($is_super) && !empty($daftar_unit)): ?>
+                        <?php if (!empty($is_super) && !empty($daftar_unit_grouped)): ?>
                         <div class="col-12 col-md-3">
                             <label for="filterStafUnit" class="form-label fw-semibold text-dark mb-1" style="font-size: 0.75rem;">Unit Kerja</label>
                             <select id="filterStafUnit" name="unit_kerja" class="form-select ecc-control-sm shadow-sm filter-select" onchange="this.form.submit()">
                                 <option value="">Semua Unit Kerja</option>
-                                <?php foreach ($daftar_unit as $u): ?>
-                                    <option value="<?= esc($u) ?>" <?= ($unit_kerja_terpilih == $u) ? 'selected' : '' ?>>
-                                        <?= esc($u) ?>
-                                    </option>
+                                <?php foreach ($daftar_unit_grouped as $groupLabel => $groupUnits): ?>
+                                    <optgroup label="<?= esc($groupLabel) ?>">
+                                        <?php foreach ($groupUnits as $u): ?>
+                                            <option value="<?= esc($u['nama_unit']) ?>" <?= ($unit_kerja_terpilih == $u['nama_unit']) ? 'selected' : '' ?>>
+                                                <?= esc($u['label']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </optgroup>
                                 <?php endforeach; ?>
                             </select>
                         </div>
                         <?php endif; ?>
-                        <div class="col-12 <?= (!empty($is_super) && !empty($daftar_unit)) ? 'col-md-4' : 'col-md-5' ?>">
+                        <div class="col-12 <?= (!empty($is_super) && !empty($daftar_unit_grouped)) ? 'col-md-4' : 'col-md-5' ?>">
                             <label for="filterStafId" class="form-label fw-semibold text-dark mb-1" style="font-size: 0.75rem;">Pilih Staf</label>
                             <select id="filterStafId" name="staf_id" class="form-select ecc-control-sm shadow-sm filter-select" onchange="this.form.submit()">
                                 <option value="">Pilih Staf</option>
-                                <?php foreach ($daftar_staf as $s): ?>
-                                    <option value="<?= $s['id'] ?>" <?= ($s['id'] == $staf_id_terpilih) ? 'selected' : '' ?>>
-                                        <?= esc($s['nama_lengkap']) ?> - <?= esc($s['jabatan']) ?>
-                                    </option>
-                                <?php endforeach; ?>
+                                <?php if (!empty($daftar_staf_grouped) && count($daftar_staf_grouped) > 1): ?>
+                                    <?php foreach ($daftar_staf_grouped as $stafGroup): ?>
+                                        <optgroup label="<?= esc($stafGroup['label']) ?>">
+                                            <?php foreach ($stafGroup['members'] as $s): ?>
+                                                <option value="<?= esc($s['id']) ?>" <?= ($s['id'] == $staf_id_terpilih) ? 'selected' : '' ?>>
+                                                    <?= esc($s['nama_lengkap']) ?> - <?= esc($s['jabatan']) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </optgroup>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <?php foreach ($daftar_staf as $s): ?>
+                                        <option value="<?= esc($s['id']) ?>" <?= ($s['id'] == $staf_id_terpilih) ? 'selected' : '' ?>>
+                                            <?= esc($s['nama_lengkap']) ?> - <?= esc($s['jabatan']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
                             </select>
                         </div>
                         <div class="col-6 col-md-3">
@@ -736,7 +757,13 @@
                     <?php if (empty($rekap_data_staf)): ?>
                         <div class="card bg-light border-0 rounded-4 p-4 text-center my-3">
                             <h2 class="h6 fw-bold text-dark mb-1">Target Belum Dibuat</h2>
-                            <p class="ecc-text-muted-aa small mb-0">Staf yang dipilih belum menyusun target kinerja bulanan untuk periode <strong><?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?></strong>.</p>
+                            <p class="ecc-text-muted-aa small mb-0">
+                                <?= !empty($staf_terpilih_detail['nama_lengkap']) ? '<strong>' . esc($staf_terpilih_detail['nama_lengkap']) . '</strong>' : 'Staf yang dipilih' ?>
+                                <?php if (!empty($staf_terpilih_detail['unit'])): ?>
+                                    (<?= esc($staf_terpilih_detail['unit']) ?>)
+                                <?php endif; ?>
+                                belum menyusun target kinerja bulanan untuk periode <strong><?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?></strong>.
+                            </p>
                         </div>
                     <?php else: ?>
                         <?php
@@ -814,8 +841,23 @@
                             }
                         ?>
 
-                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                            <h2 class="h6 fw-bold mb-0 text-dark">Target Kinerja Staf</h2>
+                        <div class="d-flex justify-content-between align-items-start align-items-md-center mb-3 flex-wrap gap-2">
+                            <div>
+                                <h2 class="h6 fw-bold mb-0 text-dark">
+                                    <?= !empty($staf_terpilih_detail['nama_lengkap']) ? 'Target Kinerja — ' . esc($staf_terpilih_detail['nama_lengkap']) : 'Target Kinerja Staf' ?>
+                                </h2>
+                                <?php if (!empty($staf_terpilih_detail)): ?>
+                                    <p class="ecc-text-muted-aa mb-0 mt-1" style="font-size: 0.75rem;">
+                                        <?= esc($staf_terpilih_detail['jabatan'] ?: '-') ?>
+                                        <?php if (!empty($staf_terpilih_detail['unit'])): ?>
+                                            &middot; <strong class="text-dark"><?= esc($staf_terpilih_detail['unit']) ?></strong>
+                                            <?php if (!empty($staf_terpilih_detail['is_pokja']) && !empty($staf_terpilih_detail['parent_unit_name'])): ?>
+                                                (di bawah <?= esc($staf_terpilih_detail['parent_unit_name']) ?>)
+                                            <?php endif; ?>
+                                        <?php endif; ?>
+                                    </p>
+                                <?php endif; ?>
+                            </div>
                             <span class="ecc-text-muted-aa" style="font-size: 0.75rem;">Periksa dan setujui target kinerja staf di bawah ini.</span>
                         </div>
 
@@ -832,13 +874,13 @@
                                 <table class="table table-bordered align-top table-hover mb-0 table-bento tabel-target">
                                     <thead>
                                         <tr>
-                                            <th class="col-no text-center">No</th>
-                                            <th class="col-rhk">Rencana Hasil Kerja (RHK)</th>
-                                            <th class="col-indikator">Indikator Kinerja Individu</th>
-                                            <th class="col-target text-center">Target</th>
-                                            <th class="col-satuan text-center">Satuan</th>
-                                            <th class="col-status text-center">Status</th>
-                                            <th class="col-aksi text-center col-aksi-staf" style="display: none;">Aksi</th>
+                                            <th scope="col" class="col-no text-center">No</th>
+                                            <th scope="col" class="col-rhk">Rencana Hasil Kerja (RHK)</th>
+                                            <th scope="col" class="col-indikator">Indikator Kinerja Individu</th>
+                                            <th scope="col" class="col-target text-center">Target</th>
+                                            <th scope="col" class="col-satuan text-center">Satuan</th>
+                                            <th scope="col" class="col-status text-center">Status</th>
+                                            <th scope="col" class="col-aksi text-center col-aksi-staf" style="display: none;">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -998,6 +1040,7 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 <?= $this->endSection() ?>
 

@@ -4,7 +4,8 @@ namespace App\Controllers\User;
 
 use App\Controllers\BaseController;
 use App\Models\User as UserModel;
-use App\Controllers\Traits\EccDataTrait; 
+use App\Models\UnitKerja;
+use App\Controllers\Traits\EccDataTrait;
 use App\Controllers\Traits\KinerjaBatchTrait;
 
 class Dashboard extends BaseController
@@ -51,31 +52,42 @@ class Dashboard extends BaseController
             }
 
             $role = session()->get('role');
-            $bulanCek = ($bulanTerpilih === 'all' || empty($bulanTerpilih)) ? 12 : (int)$bulanTerpilih;
-            $periodDate = sprintf('%04d-%02d-01', (int)$tahun_kinerja, $bulanCek);
+            $bulanCek = ($bulanTerpilih === 'all' || empty($bulanTerpilih)) ? (int) date('n') : (int) $bulanTerpilih;
+            $periodDate = sprintf('%04d-%02d-01', (int) $tahun_kinerja, $bulanCek);
+
+            $unitKerjaModel   = new UnitKerja();
+            $subUnitParentMap = $unitKerjaModel->getParentUnitNameMap();
 
             $daftarStaf = $userModel->getAllStaf($user_id, $role, $periodDate);
             $isAtasan = !empty($daftarStaf);
-            
-            $userSelect = 'id, nama_lengkap, nip, username, jabatan, unit, role, status_pegawai, tmt_selesai, foto';
+
+            $userSelect = 'id, nama_lengkap, nip, username, jabatan, unit, unit_id, role, status_pegawai, tmt_selesai, foto';
             $me = $userModel->select($userSelect)->find($user_id);
             if ($me) {
-                $penugasanMe = $userModel->getPenugasanPeriode($user_id, $bulanCek, (int)$tahun_kinerja);
+                $penugasanMe = $userModel->getPenugasanPeriode($user_id, $bulanCek, (int) $tahun_kinerja);
                 if ($penugasanMe) {
-                    $me['unit'] = $penugasanMe['unit'] ?? $me['unit'];
+                    $me['unit']    = $penugasanMe['unit'] ?? $me['unit'];
                     $me['jabatan'] = $penugasanMe['jabatan'] ?? $me['jabatan'];
                 }
             }
-            $isUnitPeers = false;
-            
-            // Jika bukan atasan langsung, tampilkan data rekan kerja aktif dalam 1 unit
+            $isUnitPeers      = false;
+            $peerUnitSubLabel = '';
+
+            // Jika bukan atasan langsung, tampilkan data rekan kerja aktif dalam 1 unit / 1 Pokja
             if (!$isAtasan && !empty($me['unit'])) {
+                $myUnitName = trim((string) $me['unit']);
+                if (isset($subUnitParentMap[$myUnitName])) {
+                    $peerUnitSubLabel = $myUnitName . ' — Kelompok Kerja di bawah ' . $subUnitParentMap[$myUnitName];
+                } else {
+                    $peerUnitSubLabel = $myUnitName;
+                }
+
                 $peerQuery = $userModel->select($userSelect)
                     ->where('unit', $me['unit'])
                     ->where('id !=', $user_id)
                     ->where('role !=', 'admin');
                 UserModel::excludeSelfServiceFromQuery($peerQuery);
-                
+
                 if ($db->fieldExists('status_pegawai', 'users')) {
                     if ($db->fieldExists('tmt_selesai', 'users')) {
                         $peerQuery->groupStart()
@@ -90,7 +102,7 @@ class Dashboard extends BaseController
                         $peerQuery->where('status_pegawai', 'aktif');
                     }
                 }
-                $daftarStaf = $peerQuery->findAll();
+                $daftarStaf  = $peerQuery->orderBy('nama_lengkap', 'ASC')->findAll();
                 $isUnitPeers = true;
             }
 
@@ -100,24 +112,26 @@ class Dashboard extends BaseController
                 $penugasanStafMap = $userModel->getPenugasanPeriodeBatch(
                     array_column($daftarStaf, 'id'),
                     $bulanCek,
-                    (int)$tahun_kinerja
+                    (int) $tahun_kinerja
                 );
                 foreach ($daftarStaf as $staf) {
-                    $penugasanStaf = $penugasanStafMap[(int)$staf['id']] ?? null;
+                    $penugasanStaf = $penugasanStafMap[(int) $staf['id']] ?? null;
                     if ($penugasanStaf) {
                         $staf['unit']    = !empty($penugasanStaf['unit']) ? $penugasanStaf['unit'] : $staf['unit'];
                         $staf['jabatan'] = !empty($penugasanStaf['jabatan']) ? $penugasanStaf['jabatan'] : $staf['jabatan'];
                     }
+                    $stafUnitKey = trim((string) ($staf['unit'] ?? ''));
+                    $staf['parent_unit_name'] = $subUnitParentMap[$stafUnitKey] ?? '';
 
                     $statStaf = $this->hitungKinerjaPegawai($staf['id'], $bulanTerpilih, $tahun_kinerja, $batchTargets, $batchTambahan);
-                    
+
                     $rekapDashboard[] = [
                         'staf'           => $staf,
                         'total_pokok'    => $statStaf['total_pokok'],
                         'total_tambahan' => $statStaf['total_tambahan'],
                         'total_laporan'  => $statStaf['total_laporan'],
                         'dinilai'        => $statStaf['dinilai'],
-                        'rata_rata'      => $statStaf['rata_rata']
+                        'rata_rata'      => $statStaf['rata_rata'],
                     ];
                 }
             }
@@ -129,9 +143,10 @@ class Dashboard extends BaseController
                     'cumulative_realisasi' => $lineChartRealisasiData,
                     'isAtasan'             => $isAtasan,
                     'isUnitPeers'          => $isUnitPeers,
+                    'peerUnitSubLabel'     => $peerUnitSubLabel,
                     'rekapDashboard'       => $rekapDashboard,
                     'tahun'                => $tahun_kinerja,
-                    'bulan'                => $bulanTerpilih
+                    'bulan'                => $bulanTerpilih,
                 ]);
             }
         }
@@ -150,6 +165,7 @@ class Dashboard extends BaseController
             'lineChartRealisasiData' => $lineChartRealisasiData ?? [],
             'isAtasan'               => $isAtasan ?? false,
             'isUnitPeers'            => $isUnitPeers ?? false,
+            'peerUnitSubLabel'       => $peerUnitSubLabel ?? '',
             'rekapDashboard'         => $rekapDashboard ?? [],
         ];
 
