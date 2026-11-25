@@ -229,4 +229,36 @@ class AuditLogController extends BaseController
         $writer->save('php://output');
         exit;
     }
+
+    /**
+     * Pembersihan terkendali Log Aktivitas Sistem (audit_logs) & notifikasi lama (> N hari).
+     * Sama sekali tidak menyentuh laporan kegiatan harian, target, maupun nilai draf/terkirim pegawai.
+     */
+    public function cleanup()
+    {
+        if (!hasRole('admin')) {
+            return redirect()->to('dashboard')->with('error', 'Akses ditolak.');
+        }
+
+        helper('audit');
+        $mode = strtolower(trim((string) ($this->request->getPost('retention_mode') ?? '30d')));
+        $keepDays = match ($mode) {
+            '7d'  => 7,
+            '14d' => 14,
+            default => 30,
+        };
+
+        $res = prune_old_audit_and_notifications($keepDays, true, true);
+        $totAudit = number_format((int) ($res['deleted_audit'] ?? 0), 0, ',', '.');
+        $totNotif = number_format((int) ($res['deleted_notif'] ?? 0), 0, ',', '.');
+
+        log_audit('CLEANUP_AUDIT_LOGS', 'audit_logs', null, null, [
+            'keep_days'     => $keepDays,
+            'deleted_audit' => (int) ($res['deleted_audit'] ?? 0),
+            'deleted_notif' => (int) ($res['deleted_notif'] ?? 0),
+        ]);
+
+        return redirect()->to('admin/audit-logs')
+            ->with('success', "Pembersihan selesai: {$totAudit} log aktivitas lama dan {$totNotif} notifikasi kadaluarsa berhasil dihapus.");
+    }
 }

@@ -39,7 +39,7 @@
             </span>
         </div>
         
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex flex-wrap align-items-center gap-2">
             <?php
                 $exportQuery = http_build_query(array_filter([
                     'search'     => $filter_search ?? '',
@@ -50,6 +50,17 @@
                 ]));
                 $exportUrl = base_url('admin/audit-logs/export' . ($exportQuery ? '?' . $exportQuery : ''));
             ?>
+            <form method="post" action="<?= site_url('admin/audit-logs/cleanup') ?>" id="formCleanupAuditLogs" class="d-inline-flex align-items-center gap-1">
+                <?= csrf_field() ?>
+                <select name="retention_mode" class="form-select form-select-sm rounded-pill px-3" style="width: auto;" aria-label="Batas simpan log aktivitas">
+                    <option value="30d" selected>Simpan 30 Hari</option>
+                    <option value="14d">Simpan 14 Hari</option>
+                    <option value="7d">Simpan 7 Hari</option>
+                </select>
+                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold shadow-sm" title="Bersihkan log aktivitas sistem & notifikasi lama">
+                    Bersihkan Log Lama
+                </button>
+            </form>
             <a href="<?= $exportUrl ?>" id="btnExportAuditExcel" class="btn btn-sm btn-success rounded-pill px-3 fw-semibold shadow-sm" title="Export Audit Logs ke Excel">
                 <i class="bi bi-file-earmark-excel-fill me-1"></i> Export Excel
             </a>
@@ -58,6 +69,17 @@
             </button>
         </div>
     </div>
+
+    <?php if (session()->getFlashdata('success')): ?>
+        <div class="alert alert-success border-0 shadow-sm rounded-3 py-2 px-3 small mb-3" role="alert">
+            <?= esc((string) session()->getFlashdata('success')) ?>
+        </div>
+    <?php endif; ?>
+    <?php if (session()->getFlashdata('error')): ?>
+        <div class="alert alert-danger border-0 shadow-sm rounded-3 py-2 px-3 small mb-3" role="alert">
+            <?= esc((string) session()->getFlashdata('error')) ?>
+        </div>
+    <?php endif; ?>
 
     <!-- TAB NAVIGASI LOG -->
     <ul class="nav nav-pills gap-2 mb-3" role="tablist">
@@ -430,6 +452,35 @@ document.addEventListener("DOMContentLoaded", function() {
                 });
             } else {
                 window.location.href = url;
+            }
+        });
+    }
+
+    const cleanupForm = document.getElementById('formCleanupAuditLogs');
+    if (cleanupForm) {
+        cleanupForm.addEventListener('submit', function (e) {
+            if (cleanupForm.dataset.confirmed === '1') return;
+            e.preventDefault();
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Bersihkan Log Lama?',
+                    text: 'Log aktivitas sistem dan notifikasi lama di luar batas hari terpilih akan dihapus.',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc2626',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: 'Ya, Bersihkan',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true
+                }).then(function (result) {
+                    if (result.isConfirmed) {
+                        cleanupForm.dataset.confirmed = '1';
+                        cleanupForm.submit();
+                    }
+                });
+            } else if (confirm('Log aktivitas sistem dan notifikasi lama di luar batas hari terpilih akan dihapus.')) {
+                cleanupForm.dataset.confirmed = '1';
+                cleanupForm.submit();
             }
         });
     }

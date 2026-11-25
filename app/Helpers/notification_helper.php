@@ -45,26 +45,48 @@ if (!function_exists('send_notification')) {
         }
 
         $notifModel = new NotificationModel();
+        $now        = date('Y-m-d H:i:s');
+        $todayStart = date('Y-m-d 00:00:00');
+
+        // Deduplikasi notifikasi belum dibaca yang identik pada hari yang sama agar tabel tidak membengkak
+        $existingUnread = $notifModel->where('user_id', $user_id)
+                                     ->where('is_read', 0)
+                                     ->where('title', (string) $title)
+                                     ->where('message', (string) $message)
+                                     ->where('created_at >=', $todayStart)
+                                     ->orderBy('id', 'DESC')
+                                     ->first();
+
+        if ($existingUnread && !empty($existingUnread['id'])) {
+            $notifModel->update((int) $existingUnread['id'], [
+                'link'       => $link,
+                'created_at' => $now,
+            ]);
+            return (int) $existingUnread['id'];
+        }
+
         return $notifModel->insert([
             'user_id'    => $user_id,
             'title'      => $title,
             'message'    => $message,
             'link'       => $link,
             'is_read'    => 0,
-            'created_at' => date('Y-m-d H:i:s')
+            'created_at' => $now
         ]);
     }
 }
 
 if (!function_exists('get_unread_notifications')) {
     /**
-     * Ambil notifikasi belum dibaca untuk User
+     * Ambil notifikasi belum dibaca untuk User (dalam rentang 30 hari terakhir)
      */
     function get_unread_notifications($user_id, $limit = 10)
     {
+        $cutoff     = date('Y-m-d H:i:s', strtotime('-30 days'));
         $notifModel = new NotificationModel();
         return $notifModel->where('user_id', $user_id)
                           ->where('is_read', 0)
+                          ->where('created_at >=', $cutoff)
                           ->orderBy('created_at', 'DESC')
                           ->findAll($limit);
     }
@@ -72,12 +94,14 @@ if (!function_exists('get_unread_notifications')) {
 
 if (!function_exists('get_user_notifications')) {
     /**
-     * Ambil daftar riwayat notifikasi terbaru user (baik belum dibaca maupun sudah dibaca)
+     * Ambil daftar riwayat notifikasi terbaru user (30 hari terakhir, maksimal 20 item)
      */
     function get_user_notifications($user_id, $limit = 20)
     {
+        $cutoff     = date('Y-m-d H:i:s', strtotime('-30 days'));
         $notifModel = new NotificationModel();
         return $notifModel->where('user_id', $user_id)
+                          ->where('created_at >=', $cutoff)
                           ->orderBy('created_at', 'DESC')
                           ->findAll($limit);
     }
@@ -85,13 +109,15 @@ if (!function_exists('get_user_notifications')) {
 
 if (!function_exists('count_unread_notifications')) {
     /**
-     * Hitung total notifikasi belum dibaca untuk User di database
+     * Hitung total notifikasi belum dibaca untuk User dalam 30 hari terakhir
      */
     function count_unread_notifications($user_id)
     {
+        $cutoff     = date('Y-m-d H:i:s', strtotime('-30 days'));
         $notifModel = new NotificationModel();
         return $notifModel->where('user_id', $user_id)
                           ->where('is_read', 0)
+                          ->where('created_at >=', $cutoff)
                           ->countAllResults();
     }
 }

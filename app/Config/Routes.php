@@ -126,6 +126,7 @@ $routes->post('notifications/read-all', 'NotificationController::markAllAsRead')
     $routes->get('admin/audit-logs', 'Admin\AuditLogController::index');
     $routes->get('admin/audit-logs/export', 'Admin\AuditLogController::exportExcel');
     $routes->get('admin/audit-logs/app-errors', 'Admin\AuditLogController::appErrors');
+    $routes->post('admin/audit-logs/cleanup', 'Admin\AuditLogController::cleanup');
 
     // Master Data Group (Khusus admin, kepegawaian, spm)
     $routes->group('master-data', ['filter' => 'auth:admin,kepegawaian,spm'], function ($routes) {
