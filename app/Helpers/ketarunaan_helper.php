@@ -2038,13 +2038,215 @@ if (!function_exists('ketarunaan_tracer_tipe_jawaban_catalog')) {
     function ketarunaan_tracer_tipe_jawaban_catalog(): array
     {
         return [
-            'pilihan_tunggal' => 'Pilihan Tunggal (Radio)',
+            'pilihan_tunggal' => 'Pilihan Tunggal (Radio / Dropdown)',
             'pilihan_ganda'   => 'Pilihan Ganda (Centang)',
-            'skala_likert'    => 'Skala Penilaian (1 - 5)',
+            'skala_likert'    => 'Skala Penilaian (1 - 4 / 1 - 5)',
             'teks_singkat'    => 'Teks Singkat',
             'teks_panjang'    => 'Uraian / Saran',
             'angka'           => 'Angka',
             'tanggal'         => 'Tanggal',
+        ];
+    }
+}
+
+if (!function_exists('ketarunaan_tracer_target_responden_catalog')) {
+    /**
+     * Katalog sasaran responden Tracer Study (Alumni vs Pengguna Lulusan / Mitra).
+     *
+     * @return array<string, array<string, string>>
+     */
+    function ketarunaan_tracer_target_responden_catalog(): array
+    {
+        return [
+            'alumni' => [
+                'label'       => 'Lulusan / Alumni',
+                'short'       => 'Alumni',
+                'badge_class' => 'bg-primary-subtle text-primary-emphasis border border-primary-subtle',
+            ],
+            'mitra'  => [
+                'label'       => 'Pengguna Lulusan (Instansi)',
+                'short'       => 'Pengguna Lulusan',
+                'badge_class' => 'bg-info-subtle text-info-emphasis border border-info-subtle',
+            ],
+        ];
+    }
+}
+
+if (!function_exists('ketarunaan_tracer_target_badge')) {
+    /**
+     * Menghasilkan badge HTML target responden Tracer Study.
+     */
+    function ketarunaan_tracer_target_badge(string $target): string
+    {
+        $key = strtolower(trim($target));
+        $cat = ketarunaan_tracer_target_responden_catalog();
+        $meta = $cat[$key] ?? $cat['alumni'];
+
+        return sprintf(
+            '<span class="badge rounded-pill px-3 py-1 fw-semibold %s" style="font-size:0.75rem; white-space:nowrap;">%s</span>',
+            esc($meta['badge_class']),
+            esc($meta['short'])
+        );
+    }
+}
+
+if (!function_exists('ketarunaan_tracer_parse_opsi')) {
+    /**
+     * Mem-parse metadata opsi_jawaban_json secara backward-compatible
+     * (mendukung array list lama, object Likert lama, dan metadata kaya: dropdown, allow_other, max_scale, show_if, section_intro).
+     *
+     * @param mixed  $raw  JSON string atau array hasil decode
+     * @param string $tipe Tipe jawaban pertanyaan
+     * @return array<string, mixed>
+     */
+    function ketarunaan_tracer_parse_opsi($raw, string $tipe = ''): array
+    {
+        $decoded = [];
+        if (is_array($raw)) {
+            $decoded = $raw;
+        } elseif (is_string($raw) && trim($raw) !== '') {
+            $tmp = json_decode($raw, true);
+            if (is_array($tmp)) {
+                $decoded = $tmp;
+            }
+        }
+
+        $isList = !empty($decoded) && array_is_list($decoded);
+        $options = [];
+        if ($isList) {
+            foreach ($decoded as $item) {
+                if (is_scalar($item) && trim((string) $item) !== '') {
+                    $options[] = trim((string) $item);
+                }
+            }
+        } elseif (isset($decoded['options']) && is_array($decoded['options'])) {
+            foreach ($decoded['options'] as $item) {
+                if (is_scalar($item) && trim((string) $item) !== '') {
+                    $options[] = trim((string) $item);
+                }
+            }
+        }
+
+        $renderAs = (!$isList && isset($decoded['render_as']) && strtolower((string) $decoded['render_as']) === 'dropdown')
+            ? 'dropdown'
+            : 'radio';
+
+        $allowOther = !$isList && !empty($decoded['allow_other']);
+
+        $maxScale = 5;
+        if (!$isList && isset($decoded['max_scale']) && is_numeric($decoded['max_scale'])) {
+            $ms = (int) $decoded['max_scale'];
+            if ($ms >= 3 && $ms <= 10) {
+                $maxScale = $ms;
+            }
+        }
+
+        $minLabel = (!$isList && !empty($decoded['min_label']))
+            ? trim((string) $decoded['min_label'])
+            : ($maxScale === 4 ? 'Kurang Baik' : 'Sangat Kurang');
+        $maxLabel = (!$isList && !empty($decoded['max_label']))
+            ? trim((string) $decoded['max_label'])
+            : 'Sangat Baik';
+
+        $showIf = null;
+        if (!$isList && isset($decoded['show_if']) && is_array($decoded['show_if'])) {
+            $siKode = strtoupper(trim((string) ($decoded['show_if']['kode'] ?? '')));
+            $siVals = $decoded['show_if']['values'] ?? [];
+            if (is_string($siVals) && trim($siVals) !== '') {
+                $siVals = [trim($siVals)];
+            }
+            $cleanVals = [];
+            if (is_array($siVals)) {
+                foreach ($siVals as $v) {
+                    if (is_scalar($v) && trim((string) $v) !== '') {
+                        $cleanVals[] = trim((string) $v);
+                    }
+                }
+            }
+            if ($siKode !== '' && !empty($cleanVals)) {
+                $showIf = ['kode' => $siKode, 'values' => $cleanVals];
+            }
+        }
+
+        $sectionIntro = (!$isList && !empty($decoded['section_intro']))
+            ? trim((string) $decoded['section_intro'])
+            : null;
+
+        $inputType = 'text';
+        if (!$isList && !empty($decoded['input_type'])) {
+            $it = strtolower(trim((string) $decoded['input_type']));
+            if (in_array($it, ['text', 'email', 'tel'], true)) {
+                $inputType = $it;
+            }
+        }
+
+        $prefillKey = (!$isList && !empty($decoded['prefill_key']))
+            ? trim((string) $decoded['prefill_key'])
+            : null;
+
+        $wilayahRole = (!$isList && !empty($decoded['wilayah_role']))
+            ? strtolower(trim((string) $decoded['wilayah_role']))
+            : null;
+        if ($wilayahRole !== null && !in_array($wilayahRole, ['provinsi', 'kabupaten_kota', 'kabupaten_kota_tags'], true)) {
+            $wilayahRole = null;
+        }
+
+        $wilayahParentKode = (!$isList && !empty($decoded['wilayah_parent_kode']))
+            ? strtoupper(trim((string) $decoded['wilayah_parent_kode']))
+            : null;
+
+        return [
+            'options'             => $options,
+            'render_as'           => $renderAs,
+            'allow_other'         => $allowOther,
+            'min_label'           => $minLabel,
+            'max_label'           => $maxLabel,
+            'max_scale'           => $maxScale,
+            'show_if'             => $showIf,
+            'section_intro'       => $sectionIntro,
+            'input_type'          => $inputType,
+            'prefill_key'         => $prefillKey,
+            'wilayah_role'        => $wilayahRole,
+            'wilayah_parent_kode' => $wilayahParentKode,
+        ];
+    }
+}
+
+if (!function_exists('ketarunaan_tracer_prodi_tokens')) {
+    /**
+     * Memetakan pilihan Program Studi pada formulir Pengguna Lulusan menjadi token label dinamis.
+     *
+     * @return array{short:string, full:string, kode_prodi:?string}
+     */
+    function ketarunaan_tracer_prodi_tokens(string $selectedProdi): array
+    {
+        $up = strtoupper(trim($selectedProdi));
+        if (str_contains($up, 'RSTJ')) {
+            return [
+                'short'      => 'RSTJ',
+                'full'       => 'Sarjana Terapan Program Studi RSTJ',
+                'kode_prodi' => 'RSTJ',
+            ];
+        }
+        if (str_contains($up, 'TRO')) {
+            return [
+                'short'      => 'TRO',
+                'full'       => 'Sarjana Terapan Program Studi TRO',
+                'kode_prodi' => 'TRO',
+            ];
+        }
+        if ($up === 'TO' || str_contains($up, 'DIPLOMA III TO') || str_contains($up, 'DIPLOMA 3 TO') || str_contains($up, '(TO)') || str_ends_with($up, ' TO')) {
+            return [
+                'short'      => 'TO',
+                'full'       => 'Diploma III Program Studi TO',
+                'kode_prodi' => 'TO',
+            ];
+        }
+
+        return [
+            'short'      => 'PKTJ',
+            'full'       => 'Program Studi PKTJ',
+            'kode_prodi' => null,
         ];
     }
 }

@@ -54,10 +54,24 @@
                 <i class="bi bi-file-earmark-excel-fill me-1"></i> Export Excel
             </a>
             <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold shadow-sm" onclick="window.location.reload();" title="Segarkan data audit log">
-                <i class="bi bi-arrow-repeat me-1"></i> Segarkan Data
+                <i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i> Segarkan Data
             </button>
         </div>
     </div>
+
+    <!-- TAB NAVIGASI LOG -->
+    <ul class="nav nav-pills gap-2 mb-3" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active rounded-pill px-3 py-2 fw-semibold small" href="<?= site_url('admin/audit-logs') ?>" aria-current="page">
+                Aktivitas Pengguna
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link rounded-pill px-3 py-2 fw-semibold small bg-white border text-dark" href="<?= site_url('admin/audit-logs/app-errors') ?>">
+                Log Gangguan Aplikasi
+            </a>
+        </li>
+    </ul>
 
     <!-- FILTER TOOLBAR (BENTO CARD) -->
     <div class="card mb-3 border-0 shadow-sm rounded-4">

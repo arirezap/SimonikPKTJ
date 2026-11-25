@@ -489,8 +489,47 @@
                     </div>
                     <div class="flex-shrink-0 align-self-stretch align-self-lg-auto d-flex justify-content-end mt-2 mt-lg-0">
                         <button type="button" class="btn btn-outline-danger btn-tactile rounded-pill px-3.5 py-2 fw-semibold shadow-sm d-inline-flex align-items-center gap-2" id="btnPurgeLogs">
-                            <i class="bi bi-trash3 fs-5"></i>
+                            <i class="bi bi-trash3 fs-5" aria-hidden="true"></i>
                             <span>Bersihkan Log Lama</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <hr class="my-4">
+
+            <form action="<?= site_url('settings/purge-app-logs') ?>" method="POST" id="formPurgeAppLogs">
+                <?= csrf_field() ?>
+                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                            <span class="badge bg-light text-dark border px-3 py-1 rounded-pill small" style="font-variant-numeric: tabular-nums;">
+                                Berkas Log Harian: <strong><?= number_format((int) ($appLogStats['file_count'] ?? 0), 0, ',', '.') ?> Berkas</strong>
+                            </span>
+                            <span class="badge bg-light text-dark border px-3 py-1 rounded-pill small" style="font-variant-numeric: tabular-nums;">
+                                Total Ukuran: <strong><?= number_format((float) ($appLogStats['total_mb'] ?? 0), 2, ',', '.') ?> MB</strong>
+                            </span>
+                            <a href="<?= site_url('admin/audit-logs/app-errors') ?>" class="btn btn-link btn-sm p-0 text-decoration-none fw-semibold">
+                                Lihat Log Gangguan
+                            </a>
+                        </div>
+                        <p class="text-muted small mb-2">
+                            Hapus berkas catatan harian aplikasi yang sudah lama untuk menjaga kapasitas penyimpanan tetap lega.
+                        </p>
+                        <div class="input-group input-group-sm shadow-sm" style="max-width: 264px;">
+                            <label class="input-group-text bg-white text-muted small fw-semibold" for="retention_days">Hapus Lebih Dari</label>
+                            <select name="retention_days" id="retention_days" class="form-select form-select-sm fw-semibold text-dark">
+                                <option value="30" selected>30 Hari</option>
+                                <option value="14">14 Hari</option>
+                                <option value="7">7 Hari</option>
+                                <option value="90">90 Hari</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0 align-self-stretch align-self-lg-auto d-flex justify-content-end mt-2 mt-lg-0">
+                        <button type="button" class="btn btn-outline-danger btn-tactile rounded-pill px-3 py-2 fw-semibold shadow-sm d-inline-flex align-items-center gap-2" id="btnPurgeAppLogs">
+                            <i class="bi bi-file-earmark-minus" aria-hidden="true"></i>
+                            <span>Bersihkan Berkas Log</span>
                         </button>
                     </div>
                 </div>
@@ -656,6 +695,42 @@
                 if (confirm(`Bersihkan Log Lama?\nCatatan log (${targetText}) yang berusia lebih dari ${monthsText} akan dibersihkan.`)) {
                     btnPurgeLogs.disabled = true;
                     formPurgeLogs.submit();
+                }
+            }
+        });
+    }
+
+    const btnPurgeAppLogs = document.getElementById('btnPurgeAppLogs');
+    const formPurgeAppLogs = document.getElementById('formPurgeAppLogs');
+    if (btnPurgeAppLogs && formPurgeAppLogs) {
+        btnPurgeAppLogs.addEventListener('click', function() {
+            const daysSelect = document.getElementById('retention_days');
+            const daysText = daysSelect ? daysSelect.options[daysSelect.selectedIndex].text : '30 Hari';
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Bersihkan Berkas Log?',
+                    text: `Berkas log aplikasi yang berusia lebih dari ${daysText} akan dihapus.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc2626',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: 'Ya, Bersihkan',
+                    cancelButtonText: 'Batal',
+                    customClass: {
+                        popup: 'rounded-4 shadow-sm'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        btnPurgeAppLogs.disabled = true;
+                        btnPurgeAppLogs.textContent = 'Membersihkan...';
+                        formPurgeAppLogs.submit();
+                    }
+                });
+            } else {
+                if (confirm(`Bersihkan Berkas Log?\nBerkas log aplikasi yang berusia lebih dari ${daysText} akan dihapus.`)) {
+                    btnPurgeAppLogs.disabled = true;
+                    formPurgeAppLogs.submit();
                 }
             }
         });

@@ -3,8 +3,7 @@
 <?= $this->section('title') ?>Formulir Klaim Beasiswa<?= $this->endSection() ?>
 
 <?= $this->section('styles') ?>
-<link rel="stylesheet" href="<?= base_url('assets/vendor/select2/select2.min.css') ?>">
-<link rel="stylesheet" href="<?= base_url('assets/vendor/select2/select2-bootstrap-5-theme.min.css') ?>">
+<?= view('partials/_wilayah_styles') ?>
 <?= $this->include('ketarunaan/beasiswa/_styles') ?>
 <?= $this->endSection() ?>
 
@@ -273,15 +272,32 @@ $existingPendRaw = trim((string) ($existing['dokumen_pendukung_3tp'] ?? ''));
                         <label for="alamat_domisili" class="form-label fw-semibold">Alamat Lengkap Domisili <span class="text-danger">*</span></label>
                         <textarea id="alamat_domisili" name="alamat_domisili" rows="2" class="form-control rounded-3"><?= esc((string) old('alamat_domisili', $existing['alamat_domisili'] ?? '')) ?></textarea>
                     </div>
+                    <?php
+                    $valProvBea = (string) old('provinsi', $existing['provinsi'] ?? '');
+                    $valKabBea  = (string) old('kabupaten_kota', $existing['kabupaten_kota'] ?? '');
+                    ?>
                     <div class="col-12 col-md-4">
                         <label for="provinsi" class="form-label fw-semibold">Provinsi <span class="text-danger">*</span></label>
-                        <input type="text" id="provinsi" name="provinsi" class="form-control ecc-control-sm"
-                               value="<?= esc((string) old('provinsi', $existing['provinsi'] ?? '')) ?>">
+                        <select id="provinsi" name="provinsi" class="form-select ecc-control-sm js-ecc-wilayah-prov"
+                                data-wilayah-pair="bea_3tp" data-current-value="<?= esc($valProvBea) ?>"
+                                data-placeholder="-- Pilih Provinsi --">
+                            <option value="">-- Pilih Provinsi --</option>
+                            <?php if ($valProvBea !== ''): ?>
+                                <option value="<?= esc($valProvBea) ?>" selected><?= esc($valProvBea) ?></option>
+                            <?php endif; ?>
+                        </select>
                     </div>
                     <div class="col-12 col-md-4">
                         <label for="kabupaten_kota" class="form-label fw-semibold">Kabupaten / Kota <span class="text-danger">*</span></label>
-                        <input type="text" id="kabupaten_kota" name="kabupaten_kota" class="form-control ecc-control-sm"
-                               value="<?= esc((string) old('kabupaten_kota', $existing['kabupaten_kota'] ?? '')) ?>">
+                        <select id="kabupaten_kota" name="kabupaten_kota" class="form-select ecc-control-sm js-ecc-wilayah-kab"
+                                data-wilayah-pair="bea_3tp" data-kode-target="#kode_wilayah"
+                                data-current-value="<?= esc($valKabBea) ?>"
+                                data-placeholder="-- Pilih Kabupaten / Kota --">
+                            <option value="">-- Pilih Kabupaten / Kota --</option>
+                            <?php if ($valKabBea !== ''): ?>
+                                <option value="<?= esc($valKabBea) ?>" selected><?= esc($valKabBea) ?></option>
+                            <?php endif; ?>
+                        </select>
                     </div>
                     <div class="col-6 col-md-2">
                         <label for="kode_wilayah" class="form-label fw-semibold">Kode Wilayah</label>
@@ -444,7 +460,7 @@ $existingPendRaw = trim((string) ($existing['dokumen_pendukung_3tp'] ?? ''));
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
-<script src="<?= base_url('assets/vendor/select2/select2.min.js') ?>"></script>
+<?= view('partials/_wilayah_scripts') ?>
 <?= $this->include('ketarunaan/beasiswa/_scripts_common') ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -468,12 +484,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }).on('change', function() {
                 var opt = this.options[this.selectedIndex];
                 if (!opt || !opt.value) return;
-                var kodeEl = document.getElementById('kode_wilayah');
-                var provEl = document.getElementById('provinsi');
-                var kabEl  = document.getElementById('kabupaten_kota');
-                if (kodeEl) kodeEl.value = opt.dataset.kode || '';
-                if (provEl) provEl.value = opt.dataset.provinsi || '';
-                if (kabEl)  kabEl.value  = opt.dataset.kabupaten || '';
+                if (window.EccWilayah) {
+                    window.EccWilayah.setPairValues('bea_3tp', opt.dataset.provinsi || '', opt.dataset.kabupaten || '', opt.dataset.kode || '');
+                } else {
+                    var kodeEl = document.getElementById('kode_wilayah');
+                    var provEl = document.getElementById('provinsi');
+                    var kabEl  = document.getElementById('kabupaten_kota');
+                    if (kodeEl) kodeEl.value = opt.dataset.kode || '';
+                    if (provEl) provEl.value = opt.dataset.provinsi || '';
+                    if (kabEl)  kabEl.value  = opt.dataset.kabupaten || '';
+                }
             });
         }
     }

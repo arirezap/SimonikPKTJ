@@ -38,12 +38,15 @@ $canManage = !empty($perms['can_manage']);
                                         <div class="fw-bold text-dark"><?= esc((string) $bn['nama_bundle']) ?></div>
                                         <div class="ecc-text-muted-aa ecc-num" style="font-size: 0.75rem;"><?= esc((string) $bn['kode_bundle']) ?></div>
                                     </div>
-                                    <span class="badge rounded-pill px-3 py-1 fw-semibold <?= (int) ($bn['is_aktif'] ?? 1) === 1 ? 'bg-success-subtle text-success-emphasis border border-success-subtle' : 'bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle' ?>" style="font-size: 0.75rem;">
-                                        <?= (int) ($bn['is_aktif'] ?? 1) === 1 ? 'Aktif' : 'Nonaktif' ?>
-                                    </span>
+                                    <div class="d-flex flex-wrap justify-content-end gap-1">
+                                        <?= ketarunaan_tracer_target_badge((string) ($bn['target_responden'] ?? 'alumni')) ?>
+                                        <span class="badge rounded-pill px-3 py-1 fw-semibold <?= (int) ($bn['is_aktif'] ?? 1) === 1 ? 'bg-success-subtle text-success-emphasis border border-success-subtle' : 'bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle' ?>" style="font-size: 0.75rem;">
+                                            <?= (int) ($bn['is_aktif'] ?? 1) === 1 ? 'Aktif' : 'Nonaktif' ?>
+                                        </span>
+                                    </div>
                                 </div>
                                 <?php if (!empty($bn['deskripsi'])): ?>
-                                    <p class="ecc-text-muted-aa small mb-3"><?= esc((string) $bn['deskripsi']) ?></p>
+                                    <p class="ecc-text-muted-aa small mb-3"><?= esc(mb_strimwidth(trim(preg_replace('/\s+/', ' ', (string) $bn['deskripsi'])), 0, 210, '...')) ?></p>
                                 <?php endif; ?>
                             </div>
                             <div>
@@ -52,6 +55,11 @@ $canManage = !empty($perms['can_manage']);
                                         <strong><?= (int) $bn['jumlah_pertanyaan'] ?></strong> pertanyaan &bull; Dipakai di <strong><?= (int) $bn['jumlah_periode_pakai'] ?></strong> periode
                                     </div>
                                     <div class="d-flex flex-wrap gap-1">
+                                        <?php if ($canManage): ?>
+                                            <a href="<?= base_url('ketarunaan/tracer-study/periode?create_bundle_id=' . $bid) ?>" class="btn btn-primary ecc-btn-action">
+                                                Buat Periode
+                                            </a>
+                                        <?php endif; ?>
                                         <a href="<?= base_url('ketarunaan/tracer-study/bundel/' . $bid) ?>" class="btn btn-outline-primary ecc-btn-action">
                                             <?= $canManage ? 'Kelola Soal' : 'Lihat Soal' ?>
                                         </a>
@@ -91,12 +99,19 @@ $canManage = !empty($perms['can_manage']);
                         <input type="text" class="form-control ecc-control-sm" id="bModalNama" name="nama_bundle" required placeholder="Contoh: Bundel Tracer Study Lulusan 2026">
                     </div>
                     <div class="mb-3">
+                        <label for="bModalTarget" class="form-label fw-semibold small">Sasaran Responden <span class="text-danger">*</span></label>
+                        <select class="form-select ecc-control-sm" id="bModalTarget" name="target_responden" required>
+                            <option value="alumni">Lulusan / Alumni PKTJ</option>
+                            <option value="mitra">Pengguna Lulusan (Atasan Langsung / Instansi)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
                         <label for="bModalKode" class="form-label fw-semibold small">Kode Bundel</label>
                         <input type="text" class="form-control ecc-control-sm text-uppercase" id="bModalKode" name="kode_bundle" maxlength="40" placeholder="Otomatis jika kosong">
                     </div>
                     <div>
-                        <label for="bModalDesk" class="form-label fw-semibold small">Deskripsi Singkat</label>
-                        <textarea class="form-control" id="bModalDesk" name="deskripsi" rows="3" placeholder="Tujuan atau ringkasan isi paket pertanyaan..."></textarea>
+                        <label for="bModalDesk" class="form-label fw-semibold small">Surat Pengantar / Deskripsi Singkat</label>
+                        <textarea class="form-control" id="bModalDesk" name="deskripsi" rows="3" placeholder="Tujuan atau surat pengantar kuesioner..."></textarea>
                     </div>
                 </div>
 

@@ -55,7 +55,10 @@ $canToggle = !empty($perms['can_toggle']);
                             ?>
                             <tr>
                                 <td>
-                                    <div class="fw-semibold text-dark"><?= esc((string) $pr['nama_periode']) ?></div>
+                                    <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                                        <span class="fw-semibold text-dark"><?= esc((string) $pr['nama_periode']) ?></span>
+                                        <?= ketarunaan_tracer_target_badge((string) ($pr['target_responden'] ?? 'alumni')) ?>
+                                    </div>
                                     <div class="ecc-text-muted-aa ecc-num" style="font-size: 0.75rem;">
                                         <?= esc((string) $pr['kode_periode']) ?>
                                         <?php if (!empty($pr['tanggal_mulai']) || !empty($pr['tanggal_selesai'])): ?>
@@ -75,13 +78,18 @@ $canToggle = !empty($perms['can_toggle']);
                                     </div>
                                 </td>
                                 <td style="min-width: 170px;">
-                                    <div class="d-flex justify-content-between small ecc-num mb-1">
-                                        <span><?= (int) $pr['jumlah_respons'] ?> / <?= (int) $pr['sasaran_total'] ?></span>
-                                        <strong><?= number_format((float) $pr['response_rate'], 1, ',', '.') ?>%</strong>
-                                    </div>
-                                    <div class="ts-progress">
-                                        <div class="ts-progress-bar" style="width: <?= min(100, max(0, (float) $pr['response_rate'])) ?>%;"></div>
-                                    </div>
+                                    <?php if (!empty($pr['is_mitra'])): ?>
+                                        <div class="small ecc-num fw-semibold text-dark"><?= (int) $pr['jumlah_respons'] ?> penilaian masuk</div>
+                                        <div class="ecc-text-muted-aa" style="font-size: 0.72rem;">Terbuka untuk instansi mitra</div>
+                                    <?php else: ?>
+                                        <div class="d-flex justify-content-between small ecc-num mb-1">
+                                            <span><?= (int) $pr['jumlah_respons'] ?> / <?= (int) $pr['sasaran_total'] ?></span>
+                                            <strong><?= number_format((float) $pr['response_rate'], 1, ',', '.') ?>%</strong>
+                                        </div>
+                                        <div class="ts-progress">
+                                            <div class="ts-progress-bar" style="width: <?= min(100, max(0, (float) $pr['response_rate'])) ?>%;"></div>
+                                        </div>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <?= ketarunaan_tracer_status_periode_badge($status) ?>
@@ -175,12 +183,19 @@ $canToggle = !empty($perms['can_toggle']);
                         <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
                             <div>
                                 <div class="fw-bold text-dark"><?= esc((string) $pr['nama_periode']) ?></div>
-                                <div class="ecc-text-muted-aa ecc-num" style="font-size: 0.75rem;"><?= esc((string) $pr['kode_periode']) ?></div>
+                                <div class="d-flex flex-wrap align-items-center gap-1 mt-1">
+                                    <?= ketarunaan_tracer_target_badge((string) ($pr['target_responden'] ?? 'alumni')) ?>
+                                    <span class="ecc-text-muted-aa ecc-num" style="font-size: 0.75rem;"><?= esc((string) $pr['kode_periode']) ?></span>
+                                </div>
                             </div>
                             <?= ketarunaan_tracer_status_periode_badge($status) ?>
                         </div>
                         <div class="small ecc-num mb-2">
-                            Partisipasi: <strong><?= (int) $pr['jumlah_respons'] ?> / <?= (int) $pr['sasaran_total'] ?></strong> (<?= number_format((float) $pr['response_rate'], 1, ',', '.') ?>%) &bull; <?= (int) $pr['jumlah_pertanyaan'] ?> soal
+                            <?php if (!empty($pr['is_mitra'])): ?>
+                                Penilaian masuk: <strong><?= (int) $pr['jumlah_respons'] ?></strong> &bull; <?= (int) $pr['jumlah_pertanyaan'] ?> soal
+                            <?php else: ?>
+                                Partisipasi: <strong><?= (int) $pr['jumlah_respons'] ?> / <?= (int) $pr['sasaran_total'] ?></strong> (<?= number_format((float) $pr['response_rate'], 1, ',', '.') ?>%) &bull; <?= (int) $pr['jumlah_pertanyaan'] ?> soal
+                            <?php endif; ?>
                         </div>
                         <div class="d-flex flex-wrap gap-2 pt-2 border-top">
                             <a href="<?= base_url('ketarunaan/tracer-study?periode_id=' . $pid) ?>" class="btn btn-light border btn-sm rounded-pill px-3 ts-touch-ctrl d-inline-flex align-items-center">Hasil</a>
@@ -269,28 +284,35 @@ $canToggle = !empty($perms['can_toggle']);
                                     </div>
                                 </div>
                                 <div id="wrapSelectBundle">
-                                    <select name="sumber_bundle_id" id="pSumberBundle" class="form-select ecc-control-sm">
+                                    <select name="sumber_bundle_id" id="pSumberBundle" class="form-select ecc-control-sm" onchange="syncTargetFromSource()">
                                         <?php foreach (($refs['bundles'] ?? []) as $bn): ?>
-                                            <option value="<?= (int) $bn['id'] ?>">
-                                                <?= esc((string) $bn['nama_bundle']) ?> (<?= (int) $bn['jumlah_pertanyaan'] ?> pertanyaan)
+                                            <option value="<?= (int) $bn['id'] ?>" data-target="<?= esc((string) ($bn['target_responden'] ?? 'alumni')) ?>">
+                                                [<?= (($bn['target_responden'] ?? 'alumni') === 'mitra') ? 'Pengguna Lulusan' : 'Alumni' ?>] <?= esc((string) $bn['nama_bundle']) ?> (<?= (int) $bn['jumlah_pertanyaan'] ?> pertanyaan)
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
-                                    <div class="form-text" style="font-size: 0.75rem;">Seluruh pertanyaan bundel akan disalin ke periode ini dan dapat dimodifikasi sebelum survei dibuka.</div>
+                                    <div class="form-text" style="font-size: 0.75rem;">Seluruh pertanyaan &amp; surat pengantar bundel akan disalin ke periode ini dan dapat dimodifikasi sebelum survei dibuka.</div>
                                 </div>
                                 <div id="wrapSelectPeriode" class="d-none">
-                                    <select name="sumber_periode_id" id="pSumberPeriode" class="form-select ecc-control-sm">
+                                    <select name="sumber_periode_id" id="pSumberPeriode" class="form-select ecc-control-sm" onchange="syncTargetFromSource()">
                                         <?php if (empty($periodes)): ?>
-                                            <option value="0">Belum ada periode sebelumnya</option>
+                                            <option value="0" data-target="alumni">Belum ada periode sebelumnya</option>
                                         <?php else: ?>
                                             <?php foreach ($periodes as $sp): ?>
-                                                <option value="<?= (int) $sp['id'] ?>">
-                                                    <?= esc((string) $sp['nama_periode']) ?> (<?= (int) $sp['jumlah_pertanyaan'] ?> pertanyaan)
+                                                <option value="<?= (int) $sp['id'] ?>" data-target="<?= esc((string) ($sp['target_responden'] ?? 'alumni')) ?>">
+                                                    [<?= !empty($sp['is_mitra']) ? 'Pengguna Lulusan' : 'Alumni' ?>] <?= esc((string) $sp['nama_periode']) ?> (<?= (int) $sp['jumlah_pertanyaan'] ?> pertanyaan)
                                                 </option>
                                             <?php endforeach; ?>
                                         <?php endif; ?>
                                     </select>
                                     <div class="form-text" style="font-size: 0.75rem;">Menyalin susunan pertanyaan periode terdahulu tanpa mengubah data periode lama.</div>
+                                </div>
+                                <div class="mt-2">
+                                    <label for="pModalTargetResp" class="form-label fw-semibold small mb-1">Sasaran Responden</label>
+                                    <select name="target_responden" id="pModalTargetResp" class="form-select ecc-control-sm" onchange="toggleTargetRespondenFields()">
+                                        <option value="alumni">Lulusan / Alumni PKTJ</option>
+                                        <option value="mitra">Pengguna Lulusan (Atasan Langsung / Instansi)</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -334,10 +356,10 @@ $canToggle = !empty($perms['can_toggle']);
                             <div class="form-text" style="font-size: 0.72rem;">Kosongkan untuk menargetkan seluruh program studi.</div>
                         </div>
 
-                        <div class="col-12">
+                        <div class="col-12" id="pAllowUnregWrap">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" role="switch" id="pModalAllowUnreg" name="allow_unregistered_alumni" value="1" checked>
-                                <label class="form-check-label small fw-semibold" for="pModalAllowUnreg">Izinkan alumni yang belum terdaftar di database untuk mengisi survei</label>
+                                <label class="form-check-label small fw-semibold" for="pModalAllowUnreg">Izinkan alumni yang belum terdaftar di sistem untuk mengisi survei</label>
                             </div>
                             <div class="form-text" style="font-size: 0.75rem;">Jawaban alumni baru akan masuk ke antrean verifikasi pengelola sebelum ditambahkan ke Data Alumni.</div>
                         </div>
@@ -362,6 +384,32 @@ $canToggle = !empty($perms['can_toggle']);
 
 <?= $this->section('scripts') ?>
 <script>
+function toggleTargetRespondenFields() {
+    var sel = document.getElementById('pModalTargetResp');
+    var isMitra = sel && sel.value === 'mitra';
+    var tahunWrap = document.getElementById('pSasaranTahunWrap');
+    var unregWrap = document.getElementById('pAllowUnregWrap');
+    if (tahunWrap) tahunWrap.classList.toggle('d-none', isMitra);
+    if (unregWrap) unregWrap.classList.toggle('d-none', isMitra);
+}
+
+function syncTargetFromSource() {
+    var src = document.querySelector('input[name="sumber_pertanyaan"]:checked');
+    var val = src ? src.value : 'bundle';
+    var targetSel = document.getElementById('pModalTargetResp');
+    if (!targetSel) return;
+    if (val === 'bundle') {
+        var bSel = document.getElementById('pSumberBundle');
+        var opt = bSel && bSel.options[bSel.selectedIndex];
+        if (opt && opt.dataset.target) targetSel.value = opt.dataset.target;
+    } else if (val === 'periode') {
+        var pSel = document.getElementById('pSumberPeriode');
+        var optP = pSel && pSel.options[pSel.selectedIndex];
+        if (optP && optP.dataset.target) targetSel.value = optP.dataset.target;
+    }
+    toggleTargetRespondenFields();
+}
+
 function toggleSumberPertanyaan() {
     var src = document.querySelector('input[name="sumber_pertanyaan"]:checked');
     var val = src ? src.value : 'bundle';
@@ -369,6 +417,7 @@ function toggleSumberPertanyaan() {
     var wp = document.getElementById('wrapSelectPeriode');
     if (wb) wb.classList.toggle('d-none', val !== 'bundle');
     if (wp) wp.classList.toggle('d-none', val !== 'periode');
+    syncTargetFromSource();
 }
 
 function resetPeriodeModal() {
@@ -430,6 +479,21 @@ function openEditPeriodeModal(btn) {
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof flatpickr !== 'undefined') {
         flatpickr('.js-ts-date', { dateFormat: 'Y-m-d', allowInput: true, locale: 'id' });
+    }
+
+    var params = new URLSearchParams(window.location.search);
+    var createBundleId = params.get('create_bundle_id');
+    if (createBundleId) {
+        resetPeriodeModal();
+        var bSel = document.getElementById('pSumberBundle');
+        if (bSel) {
+            bSel.value = createBundleId;
+            syncTargetFromSource();
+        }
+        var modalEl = document.getElementById('modalPeriodeTracer');
+        if (window.bootstrap && modalEl) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        }
     }
 
     document.querySelectorAll('.js-ts-confirm-form').forEach(function(form) {

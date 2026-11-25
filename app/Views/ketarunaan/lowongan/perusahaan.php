@@ -3,6 +3,7 @@
 <?= $this->section('title') ?>Perusahaan &amp; Kontak Rekrutmen<?= $this->endSection() ?>
 
 <?= $this->section('styles') ?>
+<?= view('partials/_wilayah_styles') ?>
 <?= $this->include('ketarunaan/lowongan/_styles') ?>
 <?= $this->endSection() ?>
 
@@ -172,9 +173,16 @@ $hasFilter     = ($qMitra !== '') || ($verifMitra !== '' && $verifMitra !== 'all
                                        value="<?= esc(old('sektor', $selected['sektor'] ?? '')) ?>">
                             </div>
                             <div class="col-12 col-md-6">
-                                <label for="kota" class="form-label fw-semibold ecc-text-muted-aa small">Kota / Wilayah</label>
-                                <input type="text" name="kota" id="kota" class="form-control ecc-control-sm"
-                                       value="<?= esc(old('kota', $selected['kota'] ?? '')) ?>">
+                                <label for="kota" class="form-label fw-semibold ecc-text-muted-aa small">Kabupaten / Kota</label>
+                                <?php $valKotaMitra = (string) old('kota', $selected['kota'] ?? ''); ?>
+                                <select name="kota" id="kota" class="form-select ecc-control-sm js-ecc-wilayah-kab-only"
+                                        data-allow-tags="1" data-current-value="<?= esc($valKotaMitra) ?>"
+                                        data-placeholder="-- Pilih Kabupaten / Kota --">
+                                    <option value="">-- Pilih Kabupaten / Kota --</option>
+                                    <?php if ($valKotaMitra !== ''): ?>
+                                        <option value="<?= esc($valKotaMitra) ?>" selected><?= esc($valKotaMitra) ?></option>
+                                    <?php endif; ?>
+                                </select>
                             </div>
                         </div>
                         <div class="mb-3">
@@ -252,5 +260,6 @@ $hasFilter     = ($qMitra !== '') || ($verifMitra !== '' && $verifMitra !== 'all
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
+<?= view('partials/_wilayah_scripts') ?>
 <?= $this->include('ketarunaan/lowongan/_scripts_common') ?>
 <?= $this->endSection() ?>

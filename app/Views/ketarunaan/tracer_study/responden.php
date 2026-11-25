@@ -21,6 +21,10 @@ $responded    = $data['responded'] ?? [];
 $pendingVerif = $data['pending_verif'] ?? [];
 $pending      = $data['pending'] ?? [];
 $periode      = $data['periode'] ?? [];
+$isMitra      = !empty($periode['is_mitra']);
+if ($isMitra) {
+    $subTab = 'sudah';
+}
 $transisiCat  = ketarunaan_tracer_status_transisi_catalog();
 $bidangCat    = ketarunaan_tracer_kesesuaian_bidang_catalog();
 ?>
@@ -78,22 +82,24 @@ $bidangCat    = ketarunaan_tracer_kesesuaian_bidang_catalog();
             <div class="d-flex flex-wrap gap-2">
                 <a href="<?= base_url('ketarunaan/tracer-study/responden?periode_id=' . $selectedPid . '&sub=sudah') ?>"
                    class="btn btn-sm rounded-pill px-3 fw-semibold ts-touch-ctrl d-inline-flex align-items-center <?= $subTab === 'sudah' ? 'btn-primary' : 'btn-light border' ?>">
-                    Tervalidasi (<?= count($responded) ?>)
+                    <?= $isMitra ? 'Penilaian Masuk' : 'Tervalidasi' ?> (<?= count($responded) ?>)
                 </a>
-                <a href="<?= base_url('ketarunaan/tracer-study/responden?periode_id=' . $selectedPid . '&sub=verifikasi') ?>"
-                   class="btn btn-sm rounded-pill px-3 fw-semibold ts-touch-ctrl d-inline-flex align-items-center gap-1 <?= $subTab === 'verifikasi' ? 'btn-warning text-dark' : 'btn-light border' ?>">
-                    <span>Verifikasi Alumni Baru</span>
-                    <span class="badge rounded-pill <?= count($pendingVerif) > 0 ? 'bg-danger text-white' : 'bg-secondary-subtle text-secondary-emphasis' ?> ecc-num"><?= count($pendingVerif) ?></span>
-                </a>
-                <a href="<?= base_url('ketarunaan/tracer-study/responden?periode_id=' . $selectedPid . '&sub=belum') ?>"
-                   class="btn btn-sm rounded-pill px-3 fw-semibold ts-touch-ctrl d-inline-flex align-items-center <?= $subTab === 'belum' ? 'btn-primary' : 'btn-light border' ?>">
-                    Belum Mengisi (<?= count($pending) ?>)
-                </a>
+                <?php if (!$isMitra): ?>
+                    <a href="<?= base_url('ketarunaan/tracer-study/responden?periode_id=' . $selectedPid . '&sub=verifikasi') ?>"
+                       class="btn btn-sm rounded-pill px-3 fw-semibold ts-touch-ctrl d-inline-flex align-items-center gap-1 <?= $subTab === 'verifikasi' ? 'btn-warning text-dark' : 'btn-light border' ?>">
+                        <span>Verifikasi Alumni Baru</span>
+                        <span class="badge rounded-pill <?= count($pendingVerif) > 0 ? 'bg-danger text-white' : 'bg-secondary-subtle text-secondary-emphasis' ?> ecc-num"><?= count($pendingVerif) ?></span>
+                    </a>
+                    <a href="<?= base_url('ketarunaan/tracer-study/responden?periode_id=' . $selectedPid . '&sub=belum') ?>"
+                       class="btn btn-sm rounded-pill px-3 fw-semibold ts-touch-ctrl d-inline-flex align-items-center <?= $subTab === 'belum' ? 'btn-primary' : 'btn-light border' ?>">
+                        Belum Mengisi (<?= count($pending) ?>)
+                    </a>
+                <?php endif; ?>
             </div>
             <div class="d-flex flex-wrap gap-2">
                 <?php if ($canManage && ($periode['status_periode'] ?? '') !== 'draf'): ?>
                     <a href="<?= base_url('ketarunaan/tracer-study/isi/' . $selectedPid) ?>" class="btn btn-primary btn-sm rounded-pill px-3 fw-semibold ts-touch-ctrl d-inline-flex align-items-center">
-                        + Input Respons PIC
+                        <?= $isMitra ? '+ Input Penilaian PIC' : '+ Input Respons PIC' ?>
                     </a>
                 <?php endif; ?>
                 <a href="<?= base_url('ketarunaan/tracer-study/ekspor?periode_id=' . $selectedPid) ?>" class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-semibold ts-touch-ctrl d-inline-flex align-items-center">
@@ -103,7 +109,46 @@ $bidangCat    = ketarunaan_tracer_kesesuaian_bidang_catalog();
         </div>
 
         <div class="ecc-ts-card">
-            <?php if ($subTab === 'sudah'): ?>
+            <?php if ($subTab === 'sudah' && $isMitra): ?>
+                <div class="table-responsive ecc-table-ts-wrap">
+                    <table class="table ecc-table-ts mb-0">
+                        <thead>
+                            <tr>
+                                <th>Atasan Langsung / Penilai</th>
+                                <th>Instansi / Perusahaan</th>
+                                <th>Alumni yang Dinilai</th>
+                                <th>Prodi</th>
+                                <th>Kontak</th>
+                                <th class="text-end">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($responded)): ?>
+                                <tr><td colspan="6" class="text-center ecc-text-muted-aa py-4">Belum ada penilaian pengguna lulusan yang masuk.</td></tr>
+                            <?php else: ?>
+                                <?php foreach ($responded as $r): ?>
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold text-dark"><?= esc((string) ($r['nama_lengkap'] ?: $r['nomor_taruna'])) ?></div>
+                                            <div class="ecc-text-muted-aa ecc-num" style="font-size: 0.75rem;"><?= esc((string) $r['nomor_taruna']) ?></div>
+                                        </td>
+                                        <td class="small text-dark"><?= esc((string) ($r['nama_instansi'] ?: '-')) ?></td>
+                                        <td class="fw-semibold text-dark small"><?= esc((string) ($r['nama_alumni_dinilai'] ?: '-')) ?></td>
+                                        <td class="ecc-num small"><?= esc((string) ($r['kode_prodi'] ?: '-')) ?></td>
+                                        <td class="small">
+                                            <div class="ecc-num"><?= esc((string) ($r['telepon_alumni'] ?: '-')) ?></div>
+                                            <div class="ecc-text-muted-aa" style="font-size: 0.75rem;"><?= esc((string) ($r['email_alumni'] ?: '-')) ?></div>
+                                        </td>
+                                        <td class="text-end text-nowrap">
+                                            <a href="<?= base_url('ketarunaan/tracer-study/respons/' . (int) $r['id']) ?>" class="btn btn-outline-primary ecc-btn-action">Detail</a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php elseif ($subTab === 'sudah'): ?>
                 <div class="table-responsive ecc-table-ts-wrap">
                     <table class="table ecc-table-ts mb-0">
                         <thead>

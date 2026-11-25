@@ -102,9 +102,10 @@ class AlokasiController extends BaseController
             ]);
 
         } catch (\Exception $e) {
+            log_message('error', '[AlokasiController::store] ' . $e->getMessage());
             return $this->response->setStatusCode(500)->setJSON([
-                'status' => 'error',
-                'message' => 'Exception: ' . $e->getMessage()
+                'status'  => 'error',
+                'message' => 'Gagal menyimpan data alokasi. Silakan coba lagi.'
             ]);
         }
     }

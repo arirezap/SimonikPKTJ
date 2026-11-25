@@ -350,7 +350,8 @@ class UserController extends BaseController
             return redirect()->to('users')->with('success', 'Pengguna baru berhasil ditambahkan.');
         } catch (\Throwable $e) {
             $db->transRollback();
-            return redirect()->back()->withInput()->with('error', 'Gagal menambahkan data pengguna: ' . $e->getMessage());
+            log_message('error', '[UserController::store] ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Gagal menambahkan data pengguna. Silakan coba lagi.');
         }
     }
     // --- END FITUR BARU ---
@@ -1018,7 +1019,8 @@ class UserController extends BaseController
             return redirect()->to('users')->with('success', 'Pengguna berhasil dihapus.');
         } catch (\Throwable $e) {
             $db->transRollback();
-            return redirect()->to('users')->with('error', 'Gagal menghapus pengguna: ' . $e->getMessage());
+            log_message('error', '[UserController::delete] ' . $e->getMessage());
+            return redirect()->to('users')->with('error', 'Gagal menghapus pengguna. Silakan coba lagi.');
         }
     }
 
@@ -1124,7 +1126,8 @@ class UserController extends BaseController
             $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getTempName());
             $sheetData = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
         } catch (\Exception $e) {
-            return redirect()->to('users')->with('error', 'Gagal membaca file Excel: ' . $e->getMessage());
+            log_message('error', '[UserController::importExcel:read] ' . $e->getMessage());
+            return redirect()->to('users')->with('error', 'Berkas Excel tidak dapat dibaca. Pastikan format .xlsx, .xls, atau .csv valid.');
         }
 
         $dataToInsert = [];
@@ -1226,11 +1229,12 @@ class UserController extends BaseController
                 $db->transComplete();
 
                 if ($db->transStatus() === false) {
-                    return redirect()->to('users')->with('error', 'Gagal mengimpor data pengguna karena kendala transaksi basis data.');
+                    return redirect()->to('users')->with('error', 'Gagal mengimpor data pengguna. Silakan coba lagi.');
                 }
             } catch (\Throwable $e) {
                 $db->transRollback();
-                return redirect()->to('users')->with('error', 'Gagal mengimpor data pengguna: ' . $e->getMessage());
+                log_message('error', '[UserController::importExcel:insert] ' . $e->getMessage());
+                return redirect()->to('users')->with('error', 'Gagal mengimpor data pengguna. Silakan coba lagi.');
             }
         }
 
@@ -1319,7 +1323,8 @@ class UserController extends BaseController
             return redirect()->back()->with('success', "Seluruh data kinerja bulan $bulan tahun $tahun berhasil direset.");
         } catch (\Throwable $e) {
             $db->transRollback();
-            return redirect()->back()->with('error', 'Gagal mereset data kinerja: ' . $e->getMessage());
+            log_message('error', '[UserController::resetKinerja] ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal mereset data kinerja. Silakan coba lagi.');
         }
     }
 

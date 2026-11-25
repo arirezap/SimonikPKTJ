@@ -56,6 +56,15 @@ $routes->post('(tracer[a-z0-9\-]{2,48})/simpan', 'Ketarunaan\TracerStudyPublicCo
 $routes->get('(tracer[a-z0-9\-]{2,48})/selesai', 'Ketarunaan\TracerStudyPublicController::selesai/$1');
 $routes->post('(tracer[a-z0-9\-]{2,48})/ganti-alumni', 'Ketarunaan\TracerStudyPublicController::resetSession/$1');
 
+// API Referensi Wilayah Indonesia (Read-Only, berbasis cahyadsn/wilayah Kepmendagri 2025)
+$routes->group('api/wilayah', static function ($routes) {
+    $routes->get('all', 'Api\WilayahController::all');
+    $routes->get('provinsi', 'Api\WilayahController::provinsi');
+    $routes->get('kabupaten', 'Api\WilayahController::kabupaten');
+    $routes->get('kecamatan', 'Api\WilayahController::kecamatan');
+    $routes->get('desa', 'Api\WilayahController::desa');
+});
+
 // Survei Pemetaan SDM (Eksklusif via Share Link — Khusus Pegawai ASN PKTJ)
 $routes->group('survei-pemetaan', ['filter' => 'employee_only'], function ($routes) {
     $routes->get('/', 'User\SurveiPemetaanController::index');
@@ -80,7 +89,7 @@ $routes->group('', ['filter' => ['auth', 'employee_only']], function ($routes) {
 $routes->get('notifications/fetch', 'NotificationController::fetch');
 $routes->post('notifications/read/(:segment)', 'NotificationController::markAsRead/$1');
 $routes->post('notifications/read-all', 'NotificationController::markAllAsRead');
-    $routes->match(['get', 'post'], 'dashboard/api-detail-chart', 'Admin\Dashboard::apiDetailChart');
+    $routes->match(['GET', 'POST'], 'dashboard/api-detail-chart', 'Admin\Dashboard::apiDetailChart');
     $routes->get('monitoring', 'Admin\MonitoringController::index', ['filter' => 'auth:admin,direktur,wadir,kabag,kabag_aak,kabag_kuk,kepegawaian,manajemen']);
     $routes->get('monitoring/exportExcel/(:num)/(:num)', 'Admin\MonitoringController::exportExcel/$1/$2', ['filter' => 'auth:admin,direktur,wadir,kabag,kabag_aak,kabag_kuk,kepegawaian,manajemen']);
     $routes->get('monitoring/exportPdf/(:num)/(:num)', 'Admin\MonitoringController::exportPdf/$1/$2', ['filter' => 'auth:admin,direktur,wadir,kabag,kabag_aak,kabag_kuk,kepegawaian,manajemen']);
@@ -100,6 +109,7 @@ $routes->post('notifications/read-all', 'NotificationController::markAllAsRead')
     $routes->post('settings/store', 'Admin\SettingsController::store');
     $routes->get('settings/backup-db', 'Admin\SettingsController::backupDatabase');
     $routes->post('settings/purge-logs', 'Admin\SettingsController::purgeLogs');
+    $routes->post('settings/purge-app-logs', 'Admin\SettingsController::purgeAppLogs');
     $routes->post('users/update', 'Admin\UserController::update');
     $routes->post('users/reset-kinerja', 'Admin\UserController::resetKinerja');
     $routes->post('users/delete/(:num)', 'Admin\UserController::delete/$1');
@@ -115,6 +125,7 @@ $routes->post('notifications/read-all', 'NotificationController::markAllAsRead')
     // Log Keamanan Aktivitas
     $routes->get('admin/audit-logs', 'Admin\AuditLogController::index');
     $routes->get('admin/audit-logs/export', 'Admin\AuditLogController::exportExcel');
+    $routes->get('admin/audit-logs/app-errors', 'Admin\AuditLogController::appErrors');
 
     // Master Data Group (Khusus admin, kepegawaian, spm)
     $routes->group('master-data', ['filter' => 'auth:admin,kepegawaian,spm'], function ($routes) {
@@ -213,7 +224,7 @@ $routes->group('', ['filter' => ['auth', 'employee_only']], function ($routes) {
     $routes->post('tim/update_unit', 'User\TimController::updateUnit');
 
     // --- Laporan Kinerja Harian ---
-    $routes->match(['get', 'post'], 'laporan-harian', 'User\LaporanHarianController::index');
+    $routes->match(['GET', 'POST'], 'laporan-harian', 'User\LaporanHarianController::index');
     $routes->post('laporan-harian/get-previous-targets', 'User\LaporanHarianController::getPreviousTargets');
     $routes->post('laporan-harian/store', 'User\LaporanHarianController::store');
     $routes->post('laporan-harian/hapus', 'User\LaporanHarianController::hapus');
@@ -222,7 +233,7 @@ $routes->group('', ['filter' => ['auth', 'employee_only']], function ($routes) {
     $routes->post('laporan-harian/batal-approve', 'User\LaporanHarianController::cancelApprove'); // [SUPERADMIN] Batalkan persetujuan target
 
     // --- Log Kegiatan Harian ---
-    $routes->match(['get', 'post'], 'log-kegiatan', 'User\LogKegiatanController::index');
+    $routes->match(['GET', 'POST'], 'log-kegiatan', 'User\LogKegiatanController::index');
     $routes->post('log-kegiatan/store', 'User\LogKegiatanController::store');
     $routes->post('log-kegiatan/hapus', 'User\LogKegiatanController::hapus');
     $routes->post('log-kegiatan/storeTugasTambahan', 'User\LogKegiatanController::storeTugasTambahan');
@@ -230,7 +241,7 @@ $routes->group('', ['filter' => ['auth', 'employee_only']], function ($routes) {
     $routes->post('log-kegiatan/buka-kunci', 'User\LogKegiatanController::bukaKunci'); // [SUPERADMIN] Buka kunci laporan
 
     // --- Rekap & Penilaian Kinerja ---
-    $routes->match(['get', 'post'], 'penilaian-kinerja', 'User\PenilaianKinerjaController::index');
+    $routes->match(['GET', 'POST'], 'penilaian-kinerja', 'User\PenilaianKinerjaController::index');
     $routes->post('penilaian-kinerja/store', 'User\PenilaianKinerjaController::store');
     $routes->get('penilaian-kinerja/api-chart', 'User\PenilaianKinerjaController::getChartDataApi');
 
@@ -445,14 +456,14 @@ $routes->group('ecc', ['filter' => ['auth', 'employee_only']], function ($routes
 // Kepegawaian Routes (Role-Restricted: kepegawaian, admin, direktur, wadir, kabag, kabag_aak, kabag_kuk)
 $routes->group('kepegawaian', ['filter' => ['auth', 'employee_only']], function ($routes) {
     // Submenu 1: Monitoring Target Kinerja Bulanan
-    $routes->match(['get', 'post'], 'target-kinerja', 'Kepegawaian\MonitoringTargetController::index');
+    $routes->match(['GET', 'POST'], 'target-kinerja', 'Kepegawaian\MonitoringTargetController::index');
     $routes->get('target-kinerja/detail-pegawai', 'Kepegawaian\MonitoringTargetController::getDetailTarget');
     $routes->get('target-kinerja/export-excel', 'Kepegawaian\MonitoringTargetController::exportExcel');
     $routes->get('target-kinerja/export-pdf', 'Kepegawaian\MonitoringTargetController::exportPdf');
 
     // Submenu 2: Monitoring Penilaian Kinerja
-    $routes->match(['get', 'post'], '/', 'Kepegawaian\DashboardKepegawaian::index');
-    $routes->match(['get', 'post'], 'monitoring-penilaian', 'Kepegawaian\DashboardKepegawaian::index');
+    $routes->match(['GET', 'POST'], '/', 'Kepegawaian\DashboardKepegawaian::index');
+    $routes->match(['GET', 'POST'], 'monitoring-penilaian', 'Kepegawaian\DashboardKepegawaian::index');
     $routes->get('export-excel', 'Kepegawaian\DashboardKepegawaian::exportExcel');
     $routes->get('export-pdf', 'Kepegawaian\DashboardKepegawaian::exportPdf');
     $routes->get('detail-pegawai', 'Kepegawaian\DashboardKepegawaian::getDetailPegawai');

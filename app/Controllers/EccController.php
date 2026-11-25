@@ -212,8 +212,9 @@ class EccController extends BaseController
                 
         } catch (\Exception $e) {
             $db->transRollback();
+            log_message('error', '[EccController::storeLed] ' . $e->getMessage());
             return redirect()->to('ecc/led?prodi=' . $prodi . '&tahun=' . $tahun)
-                ->with('error', 'Gagal menyimpan data: ' . $e->getMessage());
+                ->with('error', 'Gagal menyimpan data LED. Silakan coba lagi.');
         }
     }
 
@@ -370,8 +371,9 @@ class EccController extends BaseController
                 
         } catch (\Exception $e) {
             $db->transRollback();
+            log_message('error', '[EccController::storeSimulasi] ' . $e->getMessage());
             return redirect()->to('ecc/simulasi?prodi=' . $prodi . '&tahun=' . $tahun)
-                ->with('error', 'Gagal menyimpan data: ' . $e->getMessage());
+                ->with('error', 'Gagal menyimpan skor simulasi. Silakan coba lagi.');
         }
     }
     

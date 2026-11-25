@@ -68,7 +68,7 @@ class MaintenanceFilter implements FilterInterface
         // 5. Tangani permintaan AJAX / API saat maintenance
         $response = service('response');
         if ($request->isAJAX()) {
-            $msg = !empty($customMessage) ? $customMessage : 'Sistem Evidence Command Center (ECC) sedang dalam pemeliharaan sementara.';
+            $msg = !empty($customMessage) ? $customMessage : 'Layanan Evidence Command Center (ECC) sedang diperbarui sementara.';
             return $response->setStatusCode(503)
                             ->setHeader('Retry-After', '30')
                             ->setJSON([
@@ -86,7 +86,7 @@ class MaintenanceFilter implements FilterInterface
                 $html = preg_replace('/<p class="desc">.*?<\/p>/s', '<p class="desc">' . htmlspecialchars($customMessage, ENT_QUOTES, 'UTF-8') . '</p>', $html);
             }
         } else {
-            $html = '<!DOCTYPE html><html><head><title>Pembaruan Sistem</title></head><body style="font-family:sans-serif;text-align:center;padding:50px;"><h1>Pembaruan Sistem Sedang Berlangsung</h1><p>Mohon tunggu beberapa saat, sistem akan segera kembali normal.</p></body></html>';
+            $html = '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><title>Pembaruan Layanan | Evidence Command Center (ECC)</title></head><body style="font-family:sans-serif;text-align:center;padding:48px 16px;"><h1>Pembaruan Layanan Sedang Berlangsung</h1><p>Silakan coba kembali beberapa saat lagi.</p></body></html>';
         }
 
         return $response->setStatusCode(503)

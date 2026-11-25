@@ -3,6 +3,7 @@
 <?= $this->section('title') ?><?= !empty($isEdit) ? 'Ubah Lowongan' : 'Tambah Lowongan' ?><?= $this->endSection() ?>
 
 <?= $this->section('styles') ?>
+<?= view('partials/_wilayah_styles') ?>
 <?= $this->include('ketarunaan/lowongan/_styles') ?>
 <?= $this->endSection() ?>
 
@@ -79,8 +80,15 @@ $isLockedOrPublished = $isEdit && (($low['status_validasi'] ?? '') === 'tervalid
                         </div>
                         <div class="col-12 col-md-8">
                             <label for="lokasi" class="form-label fw-semibold ecc-text-muted-aa small">Lokasi Penempatan <span class="text-danger">*</span></label>
-                            <input type="text" name="lokasi" id="lokasi" class="form-control ecc-control-sm" required
-                                   value="<?= esc(old('lokasi', $low['lokasi'] ?? '')) ?>" placeholder="Contoh: Bandung / DKI Jakarta">
+                            <?php $valLokasiLow = (string) old('lokasi', $low['lokasi'] ?? ''); ?>
+                            <select name="lokasi" id="lokasi" class="form-select ecc-control-sm js-ecc-wilayah-kab-only"
+                                    data-allow-tags="1" data-current-value="<?= esc($valLokasiLow) ?>"
+                                    data-placeholder="-- Pilih Kabupaten / Kota --" required>
+                                <option value="">-- Pilih Kabupaten / Kota --</option>
+                                <?php if ($valLokasiLow !== ''): ?>
+                                    <option value="<?= esc($valLokasiLow) ?>" selected><?= esc($valLokasiLow) ?></option>
+                                <?php endif; ?>
+                            </select>
                         </div>
                         <div class="col-6 col-md-4">
                             <label for="tahun_lulus_sasaran" class="form-label fw-semibold ecc-text-muted-aa small">Tahun Lulus Sasaran</label>
@@ -220,6 +228,7 @@ $isLockedOrPublished = $isEdit && (($low['status_validasi'] ?? '') === 'tervalid
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
+<?= view('partials/_wilayah_scripts') ?>
 <?= $this->include('ketarunaan/lowongan/_scripts_common') ?>
 <script>
 (function () {

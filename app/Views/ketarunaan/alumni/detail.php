@@ -3,6 +3,7 @@
 <?= $this->section('title') ?>Detail Profil Alumni<?= $this->endSection() ?>
 
 <?= $this->section('styles') ?>
+<?= view('partials/_wilayah_styles') ?>
 <?= $this->include('ketarunaan/alumni/_styles') ?>
 <?= $this->endSection() ?>
 
@@ -153,10 +154,16 @@ $isAktifProfil = ($alumni['status_profil'] ?? 'aktif') === 'aktif';
                                        placeholder="08xxxxxxxxxx">
                             </div>
                             <div class="col-12 col-md-6">
-                                <label for="kota_domisili" class="form-label fw-semibold ecc-text-muted-aa small">Kota Domisili</label>
-                                <input type="text" name="kota_domisili" id="kota_domisili" class="form-control ecc-control-sm"
-                                       value="<?= esc((string) old('kota_domisili', $alumni['kota_domisili'] ?? '')) ?>"
-                                       placeholder="Contoh: Semarang">
+                                <label for="kota_domisili" class="form-label fw-semibold ecc-text-muted-aa small">Kota / Kabupaten Domisili</label>
+                                <?php $valKotaAlm = (string) old('kota_domisili', $alumni['kota_domisili'] ?? ''); ?>
+                                <select name="kota_domisili" id="kota_domisili" class="form-select ecc-control-sm js-ecc-wilayah-kab-only"
+                                        data-allow-tags="1" data-current-value="<?= esc($valKotaAlm) ?>"
+                                        data-placeholder="-- Pilih Kabupaten / Kota --">
+                                    <option value="">-- Pilih Kabupaten / Kota --</option>
+                                    <?php if ($valKotaAlm !== ''): ?>
+                                        <option value="<?= esc($valKotaAlm) ?>" selected><?= esc($valKotaAlm) ?></option>
+                                    <?php endif; ?>
+                                </select>
                             </div>
                             <div class="col-12 col-md-6">
                                 <label for="sumber_konfirmasi" class="form-label fw-semibold ecc-text-muted-aa small">Sumber Konfirmasi</label>
@@ -329,5 +336,6 @@ $isAktifProfil = ($alumni['status_profil'] ?? 'aktif') === 'aktif';
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
+<?= view('partials/_wilayah_scripts') ?>
 <?= $this->include('ketarunaan/alumni/_scripts_common') ?>
 <?= $this->endSection() ?>

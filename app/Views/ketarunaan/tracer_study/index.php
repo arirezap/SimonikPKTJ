@@ -35,6 +35,7 @@ $canManage   = !empty($perms['can_manage']);
     <?php else: ?>
         <?php
         $periode  = $analytics['periode'] ?? [];
+        $isMitra  = !empty($analytics['is_mitra']);
         $kpi      = $analytics['kpi'] ?? [];
         $prodiPrg = $analytics['prodi_progress'] ?? [];
         $tahunPrg = $analytics['tahun_progress'] ?? [];
@@ -104,6 +105,7 @@ $canManage   = !empty($perms['can_manage']);
                     <div>
                         <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
                             <span class="fw-bold text-dark fs-6"><?= esc((string) $periode['nama_periode']) ?></span>
+                            <?= ketarunaan_tracer_target_badge((string) ($periode['target_responden'] ?? 'alumni')) ?>
                             <?= ketarunaan_tracer_status_periode_badge((string) ($periode['status_periode'] ?? 'draf')) ?>
                             <span class="badge bg-light text-dark border rounded-pill px-3 py-1 ecc-num" style="font-size: 0.75rem;">
                                 <?= (int) ($kpi['jumlah_pertanyaan'] ?? 0) ?> Pertanyaan
@@ -147,110 +149,168 @@ $canManage   = !empty($perms['can_manage']);
             </div>
 
             <!-- 4 Kartu KPI Progres & Hasil -->
-            <div class="row g-3 mb-4">
-                <div class="col-6 col-xl-3">
-                    <div class="ecc-ts-kpi">
-                        <div class="ecc-text-muted-aa mb-1 fw-semibold" style="font-size: 0.75rem;">Progres Partisipasi</div>
-                        <div class="fw-bold fs-3 text-primary ecc-num"><?= number_format((float) ($kpi['response_rate'] ?? 0), 1, ',', '.') ?>%</div>
-                        <div class="ts-progress my-2">
-                            <div class="ts-progress-bar" style="width: <?= min(100, max(0, (float) ($kpi['response_rate'] ?? 0))) ?>%;"></div>
+            <?php if ($isMitra): ?>
+                <div class="row g-3 mb-4">
+                    <div class="col-6 col-xl-3">
+                        <div class="ecc-ts-kpi">
+                            <div class="ecc-text-muted-aa mb-1 fw-semibold" style="font-size: 0.75rem;">Total Penilaian Masuk</div>
+                            <div class="fw-bold fs-3 text-primary ecc-num"><?= (int) ($kpi['responden_total'] ?? 0) ?></div>
+                            <div class="ecc-text-muted-aa mt-2" style="font-size: 0.75rem;">Alumni PKTJ yang telah dinilai atasan</div>
                         </div>
-                        <div class="ecc-text-muted-aa ecc-num" style="font-size: 0.75rem;">
-                            <strong><?= (int) ($kpi['responden_total'] ?? 0) ?></strong> dari <?= (int) ($kpi['sasaran_total'] ?? 0) ?> alumni (Target <?= number_format((float) ($kpi['target_persen'] ?? 80), 0) ?>%)
+                    </div>
+                    <div class="col-6 col-xl-3">
+                        <div class="ecc-ts-kpi">
+                            <div class="ecc-text-muted-aa mb-1 fw-semibold" style="font-size: 0.75rem;">Instansi / Perusahaan</div>
+                            <div class="fw-bold fs-3 text-dark ecc-num"><?= (int) ($kpi['instansi_unik_count'] ?? 0) ?></div>
+                            <div class="ecc-text-muted-aa mt-2" style="font-size: 0.75rem;">Instansi pengguna lulusan berpartisipasi</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-xl-3">
+                        <div class="ecc-ts-kpi">
+                            <div class="ecc-text-muted-aa mb-1 fw-semibold" style="font-size: 0.75rem;">Rata-Rata Skor Kinerja</div>
+                            <div class="fw-bold fs-3 text-success ecc-num">
+                                <?= number_format((float) ($kpi['avg_likert_overall'] ?? 0), 2, ',', '.') ?>
+                                <span class="fs-6 fw-normal ecc-text-muted-aa">/ <?= (int) ($kpi['max_likert_scale'] ?? 4) ?>,00</span>
+                            </div>
+                            <div class="ecc-text-muted-aa mt-2" style="font-size: 0.75rem;">Gabungan seluruh aspek penilaian</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-xl-3">
+                        <div class="ecc-ts-kpi">
+                            <div class="ecc-text-muted-aa mb-1 fw-semibold" style="font-size: 0.75rem;">Butir Kuesioner</div>
+                            <div class="fw-bold fs-3 text-dark ecc-num"><?= (int) ($kpi['jumlah_pertanyaan'] ?? 0) ?></div>
+                            <div class="ecc-text-muted-aa mt-2" style="font-size: 0.75rem;">Identitas, kompetensi &amp; saran prodi</div>
                         </div>
                     </div>
                 </div>
 
-                <div class="col-6 col-xl-3">
-                    <div class="ecc-ts-kpi">
-                        <div class="ecc-text-muted-aa mb-1 fw-semibold" style="font-size: 0.75rem;">Lulusan Terserap</div>
-                        <div class="fw-bold fs-3 text-success ecc-num"><?= number_format((float) ($kpi['terserap_persen'] ?? 0), 1, ',', '.') ?>%</div>
-                        <div class="ecc-text-muted-aa ecc-num mt-2" style="font-size: 0.75rem;">
-                            <?= (int) ($kpi['terserap_count'] ?? 0) ?> responden bekerja, wirausaha, atau studi lanjut
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-6 col-xl-3">
-                    <div class="ecc-ts-kpi">
-                        <div class="ecc-text-muted-aa mb-1 fw-semibold" style="font-size: 0.75rem;">Rata-Rata Masa Tunggu</div>
-                        <div class="fw-bold fs-3 text-dark ecc-num"><?= number_format((float) ($kpi['avg_masa_tunggu'] ?? 0), 1, ',', '.') ?> <span class="fs-6 fw-normal ecc-text-muted-aa">bln</span></div>
-                        <div class="ecc-text-muted-aa mt-2" style="font-size: 0.75rem;">
-                            Dari lulus hingga pekerjaan pertama
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-6 col-xl-3">
-                    <div class="ecc-ts-kpi">
-                        <div class="ecc-text-muted-aa mb-1 fw-semibold" style="font-size: 0.75rem;">Kesesuaian Bidang</div>
-                        <div class="fw-bold fs-3 text-dark ecc-num"><?= number_format((float) ($kpi['sesuai_bidang_pct'] ?? 0), 1, ',', '.') ?>%</div>
-                        <div class="ecc-text-muted-aa mt-2" style="font-size: 0.75rem;">
-                            Pekerjaan sesuai atau sangat sesuai prodi
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Progres per Prodi & Grafik Distribusi Transisi -->
-            <div class="row g-3 mb-4">
-                <div class="col-12 col-lg-7">
-                    <div class="ecc-ts-card h-100">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h2 class="h6 fw-bold text-dark mb-0">Progres Partisipasi per Program Studi</h2>
-                            <a href="<?= base_url('ketarunaan/tracer-study/responden?periode_id=' . $selectedPid . '&sub=belum') ?>" class="btn btn-light border btn-sm rounded-pill px-3" style="font-size: 0.75rem;">
-                                Belum Mengisi (<?= (int) ($kpi['belum_mengisi'] ?? 0) ?>)
-                            </a>
-                        </div>
-                        <?php if (empty($prodiPrg)): ?>
-                            <p class="ecc-text-muted-aa small mb-0">Belum ada data alumni sasaran pada periode ini.</p>
-                        <?php else: ?>
-                            <div class="d-flex flex-column gap-3">
-                                <?php foreach ($prodiPrg as $pp): ?>
-                                    <div>
-                                        <div class="d-flex justify-content-between align-items-center small mb-1">
-                                            <span class="fw-semibold text-dark"><?= esc((string) $pp['kode_prodi']) ?> <span class="fw-normal ecc-text-muted-aa">— <?= esc((string) $pp['nama_prodi']) ?></span></span>
-                                            <span class="ecc-num fw-semibold">
-                                                <?= (int) $pp['terisi'] ?> / <?= (int) $pp['sasaran'] ?> (<?= number_format((float) $pp['persen'], 1, ',', '.') ?>%)
-                                            </span>
-                                        </div>
-                                        <div class="ts-progress">
-                                            <div class="ts-progress-bar" style="width: <?= min(100, max(0, (float) $pp['persen'])) ?>%;"></div>
-                                        </div>
+                <!-- Sebaran Penilaian per Program Studi (Mitra) -->
+                <div class="ecc-ts-card mb-4">
+                    <h2 class="h6 fw-bold text-dark mb-3">Sebaran Alumni yang Dinilai per Program Studi</h2>
+                    <div class="row g-3">
+                        <?php foreach ($prodiPrg as $pp): ?>
+                            <?php $pctMitra = ((int) ($kpi['responden_total'] ?? 0) > 0) ? round(((int) $pp['terisi'] / (int) $kpi['responden_total']) * 100, 1) : 0.0; ?>
+                            <div class="col-12 col-md-4">
+                                <div class="p-3 rounded-3 bg-light border">
+                                    <div class="d-flex justify-content-between align-items-center small mb-1">
+                                        <span class="fw-bold text-dark"><?= esc((string) $pp['kode_prodi']) ?></span>
+                                        <span class="ecc-num fw-semibold text-primary"><?= (int) $pp['terisi'] ?> penilaian (<?= number_format($pctMitra, 1, ',', '.') ?>%)</span>
                                     </div>
-                                <?php endforeach; ?>
+                                    <div class="ecc-text-muted-aa mb-2" style="font-size: 0.72rem;"><?= esc((string) $pp['nama_prodi']) ?></div>
+                                    <div class="ts-progress">
+                                        <div class="ts-progress-bar" style="width: <?= min(100, max(0, $pctMitra)) ?>%;"></div>
+                                    </div>
+                                </div>
                             </div>
-                        <?php endif; ?>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php else: ?>
+                <div class="row g-3 mb-4">
+                    <div class="col-6 col-xl-3">
+                        <div class="ecc-ts-kpi">
+                            <div class="ecc-text-muted-aa mb-1 fw-semibold" style="font-size: 0.75rem;">Progres Partisipasi</div>
+                            <div class="fw-bold fs-3 text-primary ecc-num"><?= number_format((float) ($kpi['response_rate'] ?? 0), 1, ',', '.') ?>%</div>
+                            <div class="ts-progress my-2">
+                                <div class="ts-progress-bar" style="width: <?= min(100, max(0, (float) ($kpi['response_rate'] ?? 0))) ?>%;"></div>
+                            </div>
+                            <div class="ecc-text-muted-aa ecc-num" style="font-size: 0.75rem;">
+                                <strong><?= (int) ($kpi['responden_total'] ?? 0) ?></strong> dari <?= (int) ($kpi['sasaran_total'] ?? 0) ?> alumni (Target <?= number_format((float) ($kpi['target_persen'] ?? 80), 0) ?>%)
+                            </div>
+                        </div>
+                    </div>
 
-                        <?php if (!empty($tahunPrg)): ?>
-                            <hr class="my-3">
-                            <div class="fw-semibold small text-dark mb-2">Sebaran per Tahun Lulus</div>
-                            <div class="d-flex flex-wrap gap-2">
-                                <?php foreach ($tahunPrg as $tp): ?>
-                                    <span class="badge bg-light text-dark border rounded-pill px-3 py-2 ecc-num" style="font-size: 0.75rem;">
-                                        Lulus <?= (int) $tp['tahun_lulus'] ?>: <strong><?= (int) $tp['terisi'] ?>/<?= (int) $tp['sasaran'] ?></strong> (<?= number_format((float) $tp['persen'], 0) ?>%)
-                                    </span>
-                                <?php endforeach; ?>
+                    <div class="col-6 col-xl-3">
+                        <div class="ecc-ts-kpi">
+                            <div class="ecc-text-muted-aa mb-1 fw-semibold" style="font-size: 0.75rem;">Lulusan Terserap</div>
+                            <div class="fw-bold fs-3 text-success ecc-num"><?= number_format((float) ($kpi['terserap_persen'] ?? 0), 1, ',', '.') ?>%</div>
+                            <div class="ecc-text-muted-aa ecc-num mt-2" style="font-size: 0.75rem;">
+                                <?= (int) ($kpi['terserap_count'] ?? 0) ?> responden bekerja, wirausaha, atau studi lanjut
                             </div>
-                        <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <div class="col-6 col-xl-3">
+                        <div class="ecc-ts-kpi">
+                            <div class="ecc-text-muted-aa mb-1 fw-semibold" style="font-size: 0.75rem;">Rata-Rata Masa Tunggu</div>
+                            <div class="fw-bold fs-3 text-dark ecc-num"><?= number_format((float) ($kpi['avg_masa_tunggu'] ?? 0), 1, ',', '.') ?> <span class="fs-6 fw-normal ecc-text-muted-aa">bln</span></div>
+                            <div class="ecc-text-muted-aa mt-2" style="font-size: 0.75rem;">
+                                Dari lulus hingga pekerjaan pertama
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-6 col-xl-3">
+                        <div class="ecc-ts-kpi">
+                            <div class="ecc-text-muted-aa mb-1 fw-semibold" style="font-size: 0.75rem;">Kesesuaian Bidang</div>
+                            <div class="fw-bold fs-3 text-dark ecc-num"><?= number_format((float) ($kpi['sesuai_bidang_pct'] ?? 0), 1, ',', '.') ?>%</div>
+                            <div class="ecc-text-muted-aa mt-2" style="font-size: 0.75rem;">
+                                Pekerjaan sesuai atau sangat sesuai prodi
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="col-12 col-lg-5">
-                    <div class="ecc-ts-card h-100">
-                        <h2 class="h6 fw-bold text-dark mb-3">Distribusi Status Lulusan</h2>
-                        <?php if ((int) ($kpi['responden_total'] ?? 0) === 0): ?>
-                            <div class="text-center py-5 ecc-text-muted-aa small">
-                                Belum ada respons masuk pada periode ini.
+                <!-- Progres per Prodi & Grafik Distribusi Transisi -->
+                <div class="row g-3 mb-4">
+                    <div class="col-12 col-lg-7">
+                        <div class="ecc-ts-card h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h2 class="h6 fw-bold text-dark mb-0">Progres Partisipasi per Program Studi</h2>
+                                <a href="<?= base_url('ketarunaan/tracer-study/responden?periode_id=' . $selectedPid . '&sub=belum') ?>" class="btn btn-light border btn-sm rounded-pill px-3" style="font-size: 0.75rem;">
+                                    Belum Mengisi (<?= (int) ($kpi['belum_mengisi'] ?? 0) ?>)
+                                </a>
                             </div>
-                        <?php else: ?>
-                            <div style="height: 220px; position: relative;">
-                                <canvas id="chartTransisiTracer"></canvas>
-                            </div>
-                        <?php endif; ?>
+                            <?php if (empty($prodiPrg)): ?>
+                                <p class="ecc-text-muted-aa small mb-0">Belum ada data alumni sasaran pada periode ini.</p>
+                            <?php else: ?>
+                                <div class="d-flex flex-column gap-3">
+                                    <?php foreach ($prodiPrg as $pp): ?>
+                                        <div>
+                                            <div class="d-flex justify-content-between align-items-center small mb-1">
+                                                <span class="fw-semibold text-dark"><?= esc((string) $pp['kode_prodi']) ?> <span class="fw-normal ecc-text-muted-aa">— <?= esc((string) $pp['nama_prodi']) ?></span></span>
+                                                <span class="ecc-num fw-semibold">
+                                                    <?= (int) $pp['terisi'] ?> / <?= (int) $pp['sasaran'] ?> (<?= number_format((float) $pp['persen'], 1, ',', '.') ?>%)
+                                                </span>
+                                            </div>
+                                            <div class="ts-progress">
+                                                <div class="ts-progress-bar" style="width: <?= min(100, max(0, (float) $pp['persen'])) ?>%;"></div>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+
+                            <?php if (!empty($tahunPrg)): ?>
+                                <hr class="my-3">
+                                <div class="fw-semibold small text-dark mb-2">Sebaran per Tahun Lulus</div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <?php foreach ($tahunPrg as $tp): ?>
+                                        <span class="badge bg-light text-dark border rounded-pill px-3 py-2 ecc-num" style="font-size: 0.75rem;">
+                                            Lulus <?= (int) $tp['tahun_lulus'] ?>: <strong><?= (int) $tp['terisi'] ?>/<?= (int) $tp['sasaran'] ?></strong> (<?= number_format((float) $tp['persen'], 0) ?>%)
+                                        </span>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-lg-5">
+                        <div class="ecc-ts-card h-100">
+                            <h2 class="h6 fw-bold text-dark mb-3">Distribusi Status Lulusan</h2>
+                            <?php if ((int) ($kpi['responden_total'] ?? 0) === 0): ?>
+                                <div class="text-center py-5 ecc-text-muted-aa small">
+                                    Belum ada respons masuk pada periode ini.
+                                </div>
+                            <?php else: ?>
+                                <div style="height: 220px; position: relative;">
+                                    <canvas id="chartTransisiTracer"></canvas>
+                                </div>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
-            </div>
+            <?php endif; ?>
 
             <!-- Rekap Hasil per Pertanyaan Bundel pada Periode Ini -->
             <div class="ecc-ts-card mb-4">
@@ -300,12 +360,13 @@ $canManage   = !empty($perms['can_manage']);
                                             <?php endforeach; ?>
                                         </div>
                                     <?php elseif ($qs['tipe_jawaban'] === 'skala_likert'): ?>
+                                        <?php $maxS = max(3, (int) ($qs['likert_max'] ?? 5)); ?>
                                         <div class="d-flex align-items-baseline gap-2 mb-2">
                                             <span class="fs-4 fw-bold text-primary ecc-num"><?= number_format((float) $qs['likert_avg'], 2, ',', '.') ?></span>
-                                            <span class="small ecc-text-muted-aa">dari skala 5,00</span>
+                                            <span class="small ecc-text-muted-aa ecc-num">dari skala <?= $maxS ?>,00</span>
                                         </div>
                                         <div class="d-flex flex-column gap-1">
-                                            <?php for ($s = 5; $s >= 1; $s--): ?>
+                                            <?php for ($s = $maxS; $s >= 1; $s--): ?>
                                                 <?php
                                                 $sc = (int) ($qs['likert_dist'][$s] ?? 0);
                                                 $sp = $qs['total_jawaban'] > 0 ? round(($sc / $qs['total_jawaban']) * 100, 1) : 0;

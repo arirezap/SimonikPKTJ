@@ -37,6 +37,7 @@ $tipeCatalog      = $refs['tipe_jawaban'] ?? ketarunaan_tracer_tipe_jawaban_cata
             <div>
                 <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
                     <h2 class="h5 fw-bold text-dark mb-0"><?= esc((string) $periode['nama_periode']) ?></h2>
+                    <?= ketarunaan_tracer_target_badge((string) ($periode['target_responden'] ?? 'alumni')) ?>
                     <?= ketarunaan_tracer_status_periode_badge($status) ?>
                 </div>
                 <div class="ecc-text-muted-aa small">
@@ -100,7 +101,13 @@ $tipeCatalog      = $refs['tipe_jawaban'] ?? ketarunaan_tracer_tipe_jawaban_cata
         </div>
 
         <div class="alert alert-light border small text-dark mb-3 py-2 px-3">
-            Bagian dasar (status pekerjaan, masa tunggu, nama instansi, sektor, jabatan, dan kesesuaian bidang/jenjang) otomatis tersedia di bagian atas formulir. Pertanyaan di bawah ini merupakan pertanyaan tambahan dari bundel periode ini.
+            <?php if (!empty($periode['is_mitra'])): ?>
+                Formulir <strong>Pengguna Lulusan (Instansi)</strong> ini dapat diisi langsung melalui tautan publik tanpa login dan mendukung penilaian lebih dari 1 alumni PKTJ.
+            <?php elseif (!empty($periode['uses_structured_questionnaire'])): ?>
+                Periode ini menggunakan format <strong>kuesioner resmi PKTJ 2025</strong> lengkap dengan data pribadi, percabangan status pekerjaan, saran prodi, dan pendidikan lanjutan (indikator kinerja otomatis direkap dari jawaban di bawah).
+            <?php else: ?>
+                Bagian dasar (status pekerjaan, masa tunggu, nama instansi, sektor, jabatan, dan kesesuaian bidang/jenjang) otomatis tersedia di bagian atas formulir. Pertanyaan di bawah ini merupakan pertanyaan tambahan dari bundel periode ini.
+            <?php endif; ?>
         </div>
 
         <?php if (empty($pertanyaan)): ?>
@@ -112,7 +119,8 @@ $tipeCatalog      = $refs['tipe_jawaban'] ?? ketarunaan_tracer_tipe_jawaban_cata
                 <?php foreach ($pertanyaan as $q): ?>
                     <?php
                     $qid  = (int) $q['id'];
-                    $opsi = $q['opsi_parsed'] ?? [];
+                    $meta = $q['opsi_meta'] ?? ketarunaan_tracer_parse_opsi($q['opsi_jawaban_json'] ?? null, (string) ($q['tipe_jawaban'] ?? ''));
+                    $opts = $meta['options'] ?? [];
                     ?>
                     <div class="ts-q-item">
                         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-2">
@@ -126,11 +134,17 @@ $tipeCatalog      = $refs['tipe_jawaban'] ?? ketarunaan_tracer_tipe_jawaban_cata
                                     </span>
                                     <span class="badge bg-light text-secondary border rounded-pill px-2 py-1" style="font-size: 0.72rem;">
                                         <?= esc($tipeCatalog[$q['tipe_jawaban']] ?? $q['tipe_jawaban']) ?>
+                                        <?= ($q['tipe_jawaban'] === 'pilihan_tunggal' && ($meta['render_as'] ?? '') === 'dropdown') ? ' — Dropdown' : '' ?>
                                     </span>
                                     <?php if ((int) ($q['is_wajib'] ?? 1) === 1): ?>
                                         <span class="badge bg-danger-subtle text-danger-emphasis rounded-pill px-2 py-1" style="font-size: 0.7rem;">Wajib</span>
                                     <?php else: ?>
                                         <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill px-2 py-1" style="font-size: 0.7rem;">Opsional</span>
+                                    <?php endif; ?>
+                                    <?php if (!empty($meta['show_if'])): ?>
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2 py-1" style="font-size: 0.7rem;">
+                                            Kondisional: <?= esc((string) $meta['show_if']['kode']) ?> = <?= esc(implode(' / ', (array) $meta['show_if']['values'])) ?>
+                                        </span>
                                     <?php endif; ?>
                                     <span class="ecc-text-muted-aa ecc-num" style="font-size: 0.72rem;">Kode: <?= esc((string) $q['kode_pertanyaan']) ?></span>
                                 </div>
@@ -139,15 +153,21 @@ $tipeCatalog      = $refs['tipe_jawaban'] ?? ketarunaan_tracer_tipe_jawaban_cata
                                     <div class="ecc-text-muted-aa small mb-2"><?= esc((string) $q['keterangan_bantuan']) ?></div>
                                 <?php endif; ?>
 
-                                <?php if (in_array($q['tipe_jawaban'], ['pilihan_tunggal', 'pilihan_ganda'], true) && !empty($opsi)): ?>
+                                <?php if (in_array($q['tipe_jawaban'], ['pilihan_tunggal', 'pilihan_ganda'], true) && !empty($opts)): ?>
                                     <div class="d-flex flex-wrap gap-1 mt-2">
-                                        <?php foreach ($opsi as $op): ?>
-                                            <span class="badge bg-light text-dark border fw-normal px-2 py-1" style="font-size: 0.75rem;"><?= esc((string) $op) ?></span>
+                                        <?php foreach (array_slice($opts, 0, 8) as $op): ?>
+                                            <span class="badge bg-light text-dark border fw-normal px-2 py-1 text-wrap text-start" style="font-size: 0.75rem;"><?= esc(mb_strimwidth((string) $op, 0, 90, '...')) ?></span>
                                         <?php endforeach; ?>
+                                        <?php if (count($opts) > 8): ?>
+                                            <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle fw-semibold px-2 py-1 ecc-num" style="font-size: 0.75rem;">+<?= count($opts) - 8 ?> pilihan lainnya</span>
+                                        <?php endif; ?>
+                                        <?php if (!empty($meta['allow_other'])): ?>
+                                            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle fw-semibold px-2 py-1" style="font-size: 0.75rem;">+ Isian "Yang lain:"</span>
+                                        <?php endif; ?>
                                     </div>
                                 <?php elseif ($q['tipe_jawaban'] === 'skala_likert'): ?>
-                                    <div class="ecc-text-muted-aa small mt-1">
-                                        Skala 1 (<?= esc((string) ($opsi['min_label'] ?? 'Sangat Kurang')) ?>) s.d. 5 (<?= esc((string) ($opsi['max_label'] ?? 'Sangat Baik')) ?>)
+                                    <div class="ecc-text-muted-aa small mt-1 ecc-num">
+                                        Skala 1 (<?= esc((string) ($meta['min_label'] ?? 'Kurang Baik')) ?>) s.d. <?= (int) ($meta['max_scale'] ?? 5) ?> (<?= esc((string) ($meta['max_label'] ?? 'Sangat Baik')) ?>)
                                     </div>
                                 <?php endif; ?>
                             </div>

@@ -3,6 +3,7 @@
 namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
+use App\Libraries\AppLogService;
 use App\Models\SettingModel;
 
 class SettingsController extends BaseController
@@ -57,7 +58,7 @@ class SettingsController extends BaseController
             ],
             'maintenance_message' => [
                 'setting_name'  => 'Pesan Pemeliharaan Sistem',
-                'setting_value' => 'Sistem sedang melakukan sinkronisasi pembaruan performa dan peningkatan fitur terbaru. Layanan akan kembali normal dalam beberapa saat.',
+                'setting_value' => 'Layanan sedang diperbarui untuk sementara. Silakan coba kembali beberapa saat lagi.',
                 'description'   => 'Pesan kustom yang ditampilkan kepada pengguna saat mode pemeliharaan aktif.'
             ],
             'hide_heatmap_years' => [
@@ -98,6 +99,7 @@ class SettingsController extends BaseController
 
         $totalAuditLogs = $db->table('audit_logs')->countAllResults();
         $totalNotifications = $db->table('notifications')->countAllResults();
+        $appLogStats = (new AppLogService())->getStorageStats();
 
         $rawHiddenYears = $settingsMap['hide_heatmap_years']['setting_value'] ?? '[]';
         $hiddenHeatmapYears = json_decode($rawHiddenYears, true);
@@ -116,13 +118,14 @@ class SettingsController extends BaseController
             'isLogDeadlineActive'        => ($settingsMap['enable_log_deadline']['setting_value'] ?? '0') === '1',
             'isPenilaianDeadlineActive'  => ($settingsMap['enable_penilaian_deadline']['setting_value'] ?? '0') === '1',
             'isMaintenanceActive'        => ($settingsMap['enable_maintenance_mode']['setting_value'] ?? '0') === '1',
-            'maintenanceMessage'         => $settingsMap['maintenance_message']['setting_value'] ?? 'Sistem sedang melakukan sinkronisasi pembaruan performa dan peningkatan fitur terbaru. Layanan akan kembali normal dalam beberapa saat.',
+            'maintenanceMessage'         => $settingsMap['maintenance_message']['setting_value'] ?? 'Layanan sedang diperbarui untuk sementara. Silakan coba kembali beberapa saat lagi.',
             'hiddenHeatmapYears'         => $hiddenHeatmapYears,
             'availableYears'             => $availableYears,
             'databaseName'               => $dbName,
             'totalTables'                => count($tables),
             'totalAuditLogs'             => $totalAuditLogs,
             'totalNotifications'         => $totalNotifications,
+            'appLogStats'                => $appLogStats,
         ];
         
         return view('admin/settings/index', $data);
@@ -223,7 +226,8 @@ class SettingsController extends BaseController
             }
         } catch (\Throwable $e) {
             $db->transRollback();
-            return redirect()->back()->with('error', 'Gagal menyimpan pengaturan: ' . $e->getMessage());
+            log_message('error', '[SettingsController::store] ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal menyimpan pengaturan. Silakan coba lagi.');
         }
 
         // Invalidate in-memory cache seketika
@@ -442,6 +446,44 @@ class SettingsController extends BaseController
         $msg = $totalDeleted > 0
             ? "Pembersihan berhasil. Sebanyak {$totalDeleted} catatan log yang berusia lebih dari {$retentionMonths} bulan telah dibersihkan."
             : "Tidak ada catatan log yang berusia lebih dari {$retentionMonths} bulan. Seluruh data masih dalam rentang waktu aktif.";
+
+        return redirect()->back()->with('success', $msg);
+    }
+
+    /**
+     * Pembersihan berkas log aplikasi harian (writable/logs/log-YYYY-MM-DD.log).
+     */
+    public function purgeAppLogs()
+    {
+        if (!hasRole('admin')) {
+            return redirect()->to('dashboard')->with('error', 'Akses ditolak.');
+        }
+
+        $retentionDays = (int) $this->request->getPost('retention_days');
+        if (!in_array($retentionDays, [7, 14, 30, 90], true)) {
+            $retentionDays = 30;
+        }
+
+        $result = (new AppLogService())->purgeOlderThanDays($retentionDays);
+
+        helper('audit');
+        if (function_exists('log_audit')) {
+            $currentUserId = session()->get('id') ?? session()->get('user_id');
+            log_audit(
+                'PURGE_APP_LOGS',
+                'system',
+                $currentUserId,
+                null,
+                $result
+            );
+        }
+
+        if ($result['deleted_files'] > 0) {
+            $freed = number_format($result['freed_mb'], 2, ',', '.');
+            $msg = "Pembersihan berhasil. Sebanyak {$result['deleted_files']} berkas log aplikasi ({$freed} MB) yang berusia lebih dari {$result['retention_days']} hari telah dihapus.";
+        } else {
+            $msg = "Tidak ada berkas log aplikasi yang berusia lebih dari {$result['retention_days']} hari.";
+        }
 
         return redirect()->back()->with('success', $msg);
     }

@@ -3,6 +3,9 @@
 <?= $this->section('title') ?>Pengaturan Ketarunaan<?= $this->endSection() ?>
 
 <?= $this->section('styles') ?>
+<?php if (($active_tab ?? 'referensi') === 'referensi' && ($active_ref ?? 'prodi') === 'wilayah_3tp'): ?>
+<?= view('partials/_wilayah_styles') ?>
+<?php endif; ?>
 <?= $this->include('ketarunaan/_governance_styles') ?>
 <?= $this->endSection() ?>
 
@@ -192,17 +195,36 @@ $colCount = $colCountBase + (!empty($perms['can_manage_referensi']) ? 1 : 0);
                                     <input type="text" id="fNamaKelas" name="nama_kelas" class="form-control ecc-control-sm" value="<?= esc((string) old('nama_kelas', '')) ?>" required placeholder="Contoh: RSTJ 1A">
                                 </div>
                             <?php else: ?>
-                                <div class="mb-3">
-                                    <label for="fKodeWilayah" class="form-label small fw-semibold">Kode Wilayah</label>
-                                    <input type="text" id="fKodeWilayah" name="kode_wilayah" class="form-control ecc-control-sm ecc-num" value="<?= esc((string) old('kode_wilayah', '')) ?>" required placeholder="Contoh: 53.01">
-                                </div>
+                                <?php
+                                $oldProv3tp = (string) old('provinsi', '');
+                                $oldKab3tp  = (string) old('kabupaten_kota', '');
+                                ?>
                                 <div class="mb-3">
                                     <label for="fProvinsi" class="form-label small fw-semibold">Provinsi</label>
-                                    <input type="text" id="fProvinsi" name="provinsi" class="form-control ecc-control-sm" value="<?= esc((string) old('provinsi', '')) ?>" required>
+                                    <select id="fProvinsi" name="provinsi" class="form-select ecc-control-sm js-ecc-wilayah-prov"
+                                            data-wilayah-pair="ref_3tp" data-current-value="<?= esc($oldProv3tp) ?>"
+                                            data-placeholder="-- Pilih Provinsi --" required>
+                                        <option value="">-- Pilih Provinsi --</option>
+                                        <?php if ($oldProv3tp !== ''): ?>
+                                            <option value="<?= esc($oldProv3tp) ?>" selected><?= esc($oldProv3tp) ?></option>
+                                        <?php endif; ?>
+                                    </select>
                                 </div>
                                 <div class="mb-3">
                                     <label for="fKabKota" class="form-label small fw-semibold">Kabupaten / Kota</label>
-                                    <input type="text" id="fKabKota" name="kabupaten_kota" class="form-control ecc-control-sm" value="<?= esc((string) old('kabupaten_kota', '')) ?>" required>
+                                    <select id="fKabKota" name="kabupaten_kota" class="form-select ecc-control-sm js-ecc-wilayah-kab"
+                                            data-wilayah-pair="ref_3tp" data-kode-target="#fKodeWilayah"
+                                            data-current-value="<?= esc($oldKab3tp) ?>"
+                                            data-placeholder="-- Pilih Kabupaten / Kota --" required>
+                                        <option value="">-- Pilih Kabupaten / Kota --</option>
+                                        <?php if ($oldKab3tp !== ''): ?>
+                                            <option value="<?= esc($oldKab3tp) ?>" selected><?= esc($oldKab3tp) ?></option>
+                                        <?php endif; ?>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="fKodeWilayah" class="form-label small fw-semibold">Kode Wilayah (Kepmendagri)</label>
+                                    <input type="text" id="fKodeWilayah" name="kode_wilayah" class="form-control ecc-control-sm ecc-num" value="<?= esc((string) old('kode_wilayah', '')) ?>" required placeholder="Terisi otomatis (contoh: 53.01)">
                                 </div>
                                 <div class="mb-3">
                                     <label for="fKategori3tp" class="form-label small fw-semibold">Kategori 3TP</label>
@@ -616,6 +638,9 @@ $colCount = $colCountBase + (!empty($perms['can_manage_referensi']) ? 1 : 0);
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
+<?php if (($active_tab ?? 'referensi') === 'referensi' && ($active_ref ?? 'prodi') === 'wilayah_3tp'): ?>
+<?= view('partials/_wilayah_scripts') ?>
+<?php endif; ?>
 <script>
     function muatEditReferensi(jenis, btn) {
         const raw = btn.getAttribute('data-row');
@@ -663,8 +688,12 @@ $colCount = $colCountBase + (!empty($perms['can_manage_referensi']) ? 1 : 0);
             setVal('fNamaKelas', row.nama_kelas);
         } else if (jenis === 'wilayah_3tp') {
             setVal('fKodeWilayah', row.kode_wilayah);
-            setVal('fProvinsi', row.provinsi);
-            setVal('fKabKota', row.kabupaten_kota);
+            if (window.EccWilayah) {
+                window.EccWilayah.setPairValues('ref_3tp', row.provinsi || '', row.kabupaten_kota || '', row.kode_wilayah || '');
+            } else {
+                setVal('fProvinsi', row.provinsi);
+                setVal('fKabKota', row.kabupaten_kota);
+            }
             setVal('fKategori3tp', row.kategori_3tp);
             setVal('fDasarAcuan', row.dasar_acuan);
             setVal('fVersiAcuan', row.versi_acuan);
@@ -694,6 +723,7 @@ $colCount = $colCountBase + (!empty($perms['can_manage_referensi']) ? 1 : 0);
         const resetBtn = document.getElementById('btnResetFormRef');
         if (titleEl) titleEl.textContent = 'Tambah ' + refLabel;
         if (resetBtn) resetBtn.classList.add('d-none');
+        if (window.EccWilayah) window.EccWilayah.resetPair('ref_3tp');
         if (typeof updateAngkatanPreview === 'function') updateAngkatanPreview();
     }
 

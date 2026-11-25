@@ -3,6 +3,7 @@
 namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
+use App\Libraries\AppLogService;
 use App\Models\AuditLog;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -82,6 +83,42 @@ class AuditLogController extends BaseController
         ];
 
         return view('admin/audit_logs/index', $data);
+    }
+
+    /**
+     * Halaman pemantauan Log Gangguan Aplikasi (CRITICAL/ERROR/WARNING) dari berkas log harian.
+     */
+    public function appErrors()
+    {
+        if (!hasRole('admin')) {
+            return redirect()->to('dashboard')->with('error', 'Akses ditolak.');
+        }
+
+        $date   = trim((string) ($this->request->getGet('date') ?? ''));
+        $level  = strtoupper(trim((string) ($this->request->getGet('level') ?? 'ERROR_CRITICAL')));
+        $search = trim((string) ($this->request->getGet('search') ?? ''));
+
+        $allowedLevels = ['ERROR_CRITICAL', 'CRITICAL', 'ERROR', 'WARNING', 'ALL_ISSUES'];
+        if (!in_array($level, $allowedLevels, true)) {
+            $level = 'ERROR_CRITICAL';
+        }
+
+        $logService = new AppLogService();
+        $result     = $logService->getEntries($date !== '' ? $date : null, $level, $search, 120);
+        $stats      = $logService->getStorageStats();
+
+        return view('admin/audit_logs/app_errors', [
+            'title'           => 'Log Gangguan Aplikasi',
+            'selected_date'   => $result['selected_date'],
+            'available_dates' => $result['available_dates'],
+            'file_size_mb'    => $result['file_size_mb'],
+            'counts'          => $result['counts'],
+            'total_matched'   => $result['total_matched'],
+            'entries'         => $result['entries'],
+            'storage_stats'   => $stats,
+            'filter_level'    => $level,
+            'filter_search'   => $search,
+        ]);
     }
 
     /**

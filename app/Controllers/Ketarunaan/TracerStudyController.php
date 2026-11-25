@@ -110,6 +110,7 @@ class TracerStudyController extends BaseController
             'kode_periode'              => $this->request->getPost('kode_periode'),
             'public_token'              => $this->request->getPost('public_token'),
             'nama_periode'              => $this->request->getPost('nama_periode'),
+            'target_responden'          => $this->request->getPost('target_responden'),
             'sumber_pertanyaan'         => $this->request->getPost('sumber_pertanyaan'),
             'sumber_bundle_id'          => $this->request->getPost('sumber_bundle_id'),
             'sumber_periode_id'         => $this->request->getPost('sumber_periode_id'),
@@ -235,8 +236,13 @@ class TracerStudyController extends BaseController
             'keterangan_bantuan' => $this->request->getPost('keterangan_bantuan'),
             'tipe_jawaban'       => $this->request->getPost('tipe_jawaban'),
             'opsi_jawaban_text'  => $this->request->getPost('opsi_jawaban_text'),
+            'render_as'          => $this->request->getPost('render_as'),
+            'allow_other'        => $this->request->getPost('allow_other'),
+            'likert_max_scale'   => $this->request->getPost('likert_max_scale'),
             'likert_min_label'   => $this->request->getPost('likert_min_label'),
             'likert_max_label'   => $this->request->getPost('likert_max_label'),
+            'show_if_kode'       => $this->request->getPost('show_if_kode'),
+            'show_if_values'     => $this->request->getPost('show_if_values'),
             'is_wajib'           => $this->request->getPost('is_wajib'),
         ];
 
@@ -336,7 +342,7 @@ class TracerStudyController extends BaseController
         $input    = [
             'kode_bundle'      => $this->request->getPost('kode_bundle'),
             'nama_bundle'      => $this->request->getPost('nama_bundle'),
-            'target_responden' => 'alumni',
+            'target_responden' => $this->request->getPost('target_responden') ?: 'alumni',
             'deskripsi'        => $this->request->getPost('deskripsi'),
             'is_aktif'         => $this->request->getPost('is_aktif') ?? 1,
         ];
@@ -422,8 +428,13 @@ class TracerStudyController extends BaseController
             'keterangan_bantuan' => $this->request->getPost('keterangan_bantuan'),
             'tipe_jawaban'       => $this->request->getPost('tipe_jawaban'),
             'opsi_jawaban_text'  => $this->request->getPost('opsi_jawaban_text'),
+            'render_as'          => $this->request->getPost('render_as'),
+            'allow_other'        => $this->request->getPost('allow_other'),
+            'likert_max_scale'   => $this->request->getPost('likert_max_scale'),
             'likert_min_label'   => $this->request->getPost('likert_min_label'),
             'likert_max_label'   => $this->request->getPost('likert_max_label'),
+            'show_if_kode'       => $this->request->getPost('show_if_kode'),
+            'show_if_values'     => $this->request->getPost('show_if_values'),
             'is_wajib'           => $this->request->getPost('is_wajib'),
         ];
 
@@ -622,6 +633,36 @@ class TracerStudyController extends BaseController
             return $this->denyAccess('Hanya alumni sasaran atau pengelola Tracer Study yang dapat menyimpan jawaban.');
         }
 
+        $periodeDetail = $this->service->getPeriodeDetail($periodeId);
+        if (!$periodeDetail) {
+            return redirect()->to(base_url('ketarunaan/tracer-study'))->with('error', 'Periode survei tidak ditemukan.');
+        }
+
+        if (!empty($periodeDetail['periode']['is_mitra'])) {
+            if ($isSelfAlumni) {
+                return $this->denyAccess('Survei ini khusus untuk Pengguna Lulusan (Instansi).');
+            }
+            $mitraResult = $this->service->submitMitraRespons($periodeId, [
+                'jawaban'       => $this->request->getPost('jawaban') ?? [],
+                'jawaban_other' => $this->request->getPost('jawaban_other') ?? [],
+            ], $this->getActorName(), false);
+
+            if (!$mitraResult['status']) {
+                return redirect()->back()->withInput()->with('error', $mitraResult['message']);
+            }
+
+            if (function_exists('log_audit')) {
+                log_audit('SUBMIT_TRACER_MITRA', 'tracer_study_respons', (string) $mitraResult['id'], null, [
+                    'periode_id'  => $periodeId,
+                    'instansi'    => $mitraResult['instansi'] ?? '',
+                    'nama_alumni' => $mitraResult['nama_alumni'] ?? '',
+                ]);
+            }
+
+            return redirect()->to(base_url('ketarunaan/tracer-study/respons/' . (int) $mitraResult['id']))
+                ->with('success', $mitraResult['message']);
+        }
+
         $nomorTaruna = $isSelfAlumni
             ? (string) (KetarunaanPolicy::resolveSelfAlumniNomorTaruna() ?? '')
             : trim((string) ($this->request->getPost('nomor_taruna') ?? ''));
@@ -642,6 +683,7 @@ class TracerStudyController extends BaseController
             'kesesuaian_jenjang'  => $this->request->getPost('kesesuaian_jenjang'),
             'sumber_pengisian'    => $this->request->getPost('sumber_pengisian'),
             'jawaban'             => $this->request->getPost('jawaban') ?? [],
+            'jawaban_other'       => $this->request->getPost('jawaban_other') ?? [],
         ];
 
         $result = $this->service->submitRespons($periodeId, $nomorTaruna, $input, $this->getActorName(), $isSelfAlumni);

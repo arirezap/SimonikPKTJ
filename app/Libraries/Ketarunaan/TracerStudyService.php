@@ -101,14 +101,24 @@ class TracerStudyService
             'bundles'            => $bundles,
             'periodes'           => $periodes,
             'tipe_jawaban'       => ketarunaan_tracer_tipe_jawaban_catalog(),
+            'target_responden'   => ketarunaan_tracer_target_responden_catalog(),
             'status_transisi'    => ketarunaan_tracer_status_transisi_catalog(),
             'kesesuaian_bidang'  => ketarunaan_tracer_kesesuaian_bidang_catalog(),
             'kesesuaian_jenjang' => ketarunaan_tracer_kesesuaian_jenjang_catalog(),
             'sektor_industri'    => ketarunaan_tracer_sektor_catalog(),
             'bagian_presets'     => [
+                'Informasi Data Pribadi Alumni',
+                'Informasi Data Pekerjaan Alumni',
+                'Alasan Belum Bekerja',
+                'Alasan Tidak Bekerja',
+                'Saran Untuk Pengembangan Program Studi',
+                'Data Pendidikan Lanjutan',
+                'Data Perguruan Tinggi Lanjutan dan Program Studi Lanjutan',
+                'Identitas Atasan Langsung',
+                'Identitas Lulusan PKTJ yang akan Dinilai',
+                'Penilaian terhadap Alumni {PRODI_LENGKAP}',
                 'Pencarian & Transisi Kerja',
                 'Evaluasi Pembelajaran & Kompetensi',
-                'Layanan Karier & Pembinaan',
                 'Masukan & Saran',
             ],
         ];
@@ -152,6 +162,7 @@ class TracerStudyService
 
         foreach ($pertanyaan as $i => $q) {
             $pertanyaan[$i]['opsi_parsed'] = $this->decodeOpsiJawaban($q['opsi_jawaban_json'] ?? null);
+            $pertanyaan[$i]['opsi_meta']   = ketarunaan_tracer_parse_opsi($q['opsi_jawaban_json'] ?? null, (string) ($q['tipe_jawaban'] ?? ''));
         }
 
         return [
@@ -358,10 +369,12 @@ class TracerStudyService
 
         foreach ($rows as $i => $p) {
             $pid        = (int) $p['id'];
-            $sasaranCnt = $this->countTargetAlumniForPeriode($p);
+            $isMitra    = (($p['target_responden'] ?? 'alumni') === 'mitra');
+            $sasaranCnt = $isMitra ? 0 : $this->countTargetAlumniForPeriode($p);
             $respCnt    = (int) ($p['jumlah_respons'] ?? 0);
-            $rate       = $sasaranCnt > 0 ? round(($respCnt / $sasaranCnt) * 100, 1) : 0.0;
+            $rate       = (!$isMitra && $sasaranCnt > 0) ? round(($respCnt / $sasaranCnt) * 100, 1) : 0.0;
 
+            $rows[$i]['is_mitra']       = $isMitra;
             $rows[$i]['tahun_sasaran']  = $this->decodeIntList($p['tahun_lulus_sasaran_json'] ?? null);
             $rows[$i]['prodi_sasaran']  = $this->decodeIntList($p['prodi_sasaran_json'] ?? null);
             $rows[$i]['sasaran_total']  = $sasaranCnt;
@@ -369,8 +382,12 @@ class TracerStudyService
             $rows[$i]['is_open_now']    = ketarunaan_is_tracer_periode_open($p);
             $rows[$i]['can_edit_q']     = (($p['status_periode'] ?? '') === 'draf');
             $rows[$i]['can_revert']     = (($p['status_periode'] ?? '') !== 'draf' && $respCnt === 0);
-            $rows[$i]['my_respons']     = $myRespMap[$pid] ?? null;
-            $rows[$i]['is_eligible']    = $alumniRow !== null ? $this->isAlumniEligibleForPeriode($alumniRow, $p) : false;
+            $rows[$i]['my_respons']     = $isMitra ? null : ($myRespMap[$pid] ?? null);
+            $rows[$i]['is_eligible']    = (!$isMitra && $alumniRow !== null) ? $this->isAlumniEligibleForPeriode($alumniRow, $p) : false;
+        }
+
+        if ($alumniNomor !== null && trim($alumniNomor) !== '') {
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => empty($r['is_mitra'])));
         }
 
         return $rows;
@@ -403,12 +420,24 @@ class TracerStudyService
 
         foreach ($pertanyaan as $i => $q) {
             $pertanyaan[$i]['opsi_parsed'] = $this->decodeOpsiJawaban($q['opsi_jawaban_json'] ?? null);
+            $pertanyaan[$i]['opsi_meta']   = ketarunaan_tracer_parse_opsi($q['opsi_jawaban_json'] ?? null, (string) ($q['tipe_jawaban'] ?? ''));
         }
 
         $jumlahRespons = (int) $this->responsModel->where('periode_id', $periodeId)->countAllResults();
-        $periode['tahun_sasaran'] = $this->decodeIntList($periode['tahun_lulus_sasaran_json'] ?? null);
-        $periode['prodi_sasaran'] = $this->decodeIntList($periode['prodi_sasaran_json'] ?? null);
-        $periode['is_open_now']   = ketarunaan_is_tracer_periode_open($periode);
+        $isMitra       = (($periode['target_responden'] ?? 'alumni') === 'mitra');
+        $hasStatusQ    = false;
+        foreach ($pertanyaan as $qCheck) {
+            if ((int) ($qCheck['is_aktif'] ?? 1) === 1 && strtoupper((string) ($qCheck['kode_pertanyaan'] ?? '')) === 'TS25_STATUS_PEKERJAAN') {
+                $hasStatusQ = true;
+                break;
+            }
+        }
+
+        $periode['is_mitra']                      = $isMitra;
+        $periode['uses_structured_questionnaire'] = $isMitra || $hasStatusQ;
+        $periode['tahun_sasaran']                 = $this->decodeIntList($periode['tahun_lulus_sasaran_json'] ?? null);
+        $periode['prodi_sasaran']                 = $this->decodeIntList($periode['prodi_sasaran_json'] ?? null);
+        $periode['is_open_now']                   = ketarunaan_is_tracer_periode_open($periode);
 
         return [
             'periode'            => $periode,
@@ -498,9 +527,24 @@ class TracerStudyService
         $sumberTipe      = strtolower(trim((string) ($input['sumber_pertanyaan'] ?? 'bundle')));
         $sumberBundleId  = (int) ($input['sumber_bundle_id'] ?? 0);
         $sumberPeriodeId = (int) ($input['sumber_periode_id'] ?? 0);
+        $targetResponden = strtolower(trim((string) ($input['target_responden'] ?? 'alumni')));
+        if (!in_array($targetResponden, ['alumni', 'mitra'], true)) {
+            $targetResponden = 'alumni';
+        }
+        $deskripsiPeriode = trim((string) ($input['deskripsi'] ?? ''));
 
         $sourceQuestions = [];
         if ($sumberTipe === 'bundle' && $sumberBundleId > 0) {
+            $srcBundle = $this->bundleModel->find($sumberBundleId);
+            if ($srcBundle) {
+                $bTarget = strtolower(trim((string) ($srcBundle['target_responden'] ?? 'alumni')));
+                if (in_array($bTarget, ['alumni', 'mitra'], true)) {
+                    $targetResponden = $bTarget;
+                }
+                if ($deskripsiPeriode === '' && !empty($srcBundle['deskripsi'])) {
+                    $deskripsiPeriode = trim((string) $srcBundle['deskripsi']);
+                }
+            }
             $sourceQuestions = $this->bundlePertanyaanModel
                 ->where('bundle_id', $sumberBundleId)
                 ->where('is_aktif', 1)
@@ -509,6 +553,16 @@ class TracerStudyService
                 ->findAll();
             $sumberPeriodeId = 0;
         } elseif ($sumberTipe === 'periode' && $sumberPeriodeId > 0) {
+            $srcPeriode = $this->periodeModel->find($sumberPeriodeId);
+            if ($srcPeriode) {
+                $pTarget = strtolower(trim((string) ($srcPeriode['target_responden'] ?? 'alumni')));
+                if (in_array($pTarget, ['alumni', 'mitra'], true)) {
+                    $targetResponden = $pTarget;
+                }
+                if ($deskripsiPeriode === '' && !empty($srcPeriode['deskripsi'])) {
+                    $deskripsiPeriode = trim((string) $srcPeriode['deskripsi']);
+                }
+            }
             $sourceQuestions = $this->periodePertanyaanModel
                 ->where('periode_id', $sumberPeriodeId)
                 ->where('is_aktif', 1)
@@ -521,6 +575,10 @@ class TracerStudyService
             $sumberPeriodeId = 0;
         }
 
+        if ($targetResponden === 'mitra') {
+            $allowUnreg = 0;
+        }
+
         $this->db->transStart();
         try {
             $newId = (int) $this->periodeModel->insert([
@@ -531,14 +589,14 @@ class TracerStudyService
                 'nama_periode'              => $nama,
                 'sumber_bundle_id'          => $sumberBundleId > 0 ? $sumberBundleId : null,
                 'sumber_periode_id'         => $sumberPeriodeId > 0 ? $sumberPeriodeId : null,
-                'target_responden'          => 'alumni',
-                'tahun_lulus_sasaran_json'  => !empty($tahunList) ? json_encode($tahunList) : null,
+                'target_responden'          => $targetResponden,
+                'tahun_lulus_sasaran_json'  => ($targetResponden === 'alumni' && !empty($tahunList)) ? json_encode($tahunList) : null,
                 'prodi_sasaran_json'        => !empty($prodiList) ? json_encode($prodiList) : null,
                 'tanggal_mulai'             => $tglMulai !== '' ? $tglMulai : null,
                 'tanggal_selesai'           => $tglSelesai !== '' ? $tglSelesai : null,
                 'target_partisipasi_persen' => $targetPersen,
                 'status_periode'            => 'draf',
-                'deskripsi'                 => trim((string) ($input['deskripsi'] ?? '')),
+                'deskripsi'                 => $deskripsiPeriode,
                 'dibuat_oleh'               => $actor,
             ], true);
 
@@ -1118,8 +1176,12 @@ class TracerStudyService
         }
 
         $periode = $detail['periode'];
+        $isMitra = !empty($periode['is_mitra']);
         if ($isSelfAlumni && !ketarunaan_is_tracer_periode_open($periode)) {
             return ['status' => false, 'message' => 'Periode survei ini sedang tidak dibuka untuk pengisian.'];
+        }
+        if ($isSelfAlumni && $isMitra) {
+            return ['status' => false, 'message' => 'Periode survei ini khusus untuk Pengguna Lulusan (Instansi).'];
         }
 
         $alumniRow = null;
@@ -1128,7 +1190,7 @@ class TracerStudyService
         $isUnreg   = ($unregisteredIdentity !== null && (int) ($unregisteredIdentity['is_alumni_terdaftar'] ?? 1) === 0);
 
         $nimClean = trim((string) ($nomorTaruna ?? ''));
-        if ($nimClean !== '') {
+        if (!$isMitra && $nimClean !== '') {
             $alumniRow = $this->getAlumniBasicProfile($nimClean);
             if ($isSelfAlumni && !$alumniRow) {
                 if ($isUnreg && (int) ($periode['allow_unregistered_alumni'] ?? 1) === 1) {
@@ -1138,6 +1200,9 @@ class TracerStudyService
                         'program_studi_id' => (int) ($unregisteredIdentity['program_studi_id'] ?? 0),
                         'kode_prodi'       => (string) ($unregisteredIdentity['kode_prodi'] ?? '-'),
                         'tahun_lulus'      => (int) ($unregisteredIdentity['tahun_lulus'] ?? 0),
+                        'tanggal_lahir'    => (string) ($unregisteredIdentity['tanggal_lahir'] ?? ''),
+                        'telepon_alumni'   => (string) ($unregisteredIdentity['no_hp'] ?? ''),
+                        'email_alumni'     => (string) ($unregisteredIdentity['email'] ?? ''),
                     ];
                 } else {
                     return ['status' => false, 'message' => 'Profil alumni Anda belum terdaftar aktif.'];
@@ -1173,31 +1238,57 @@ class TracerStudyService
             }
         }
 
-        // Daftar pilihan alumni untuk mode input PIC
+        // Daftar pilihan alumni untuk mode input PIC (khusus target alumni)
         $alumniOptions = [];
-        if (!$isSelfAlumni) {
+        if (!$isSelfAlumni && !$isMitra) {
             $alumniOptions = $this->getTargetAlumniList($periode);
         }
 
-        // Kelompokkan pertanyaan aktif berdasarkan bagian
+        // Kelompokkan pertanyaan aktif berdasarkan bagian & kumpulkan pengantar bagian
         $groupedQuestions = [];
+        $sectionIntros    = [];
         foreach ($detail['pertanyaan'] as $q) {
             if ((int) ($q['is_aktif'] ?? 1) !== 1) {
                 continue;
             }
             $sec = trim((string) ($q['bagian'] ?? 'Umum')) ?: 'Umum';
             $groupedQuestions[$sec][] = $q;
+            $meta = $q['opsi_meta'] ?? ketarunaan_tracer_parse_opsi($q['opsi_jawaban_json'] ?? null, (string) ($q['tipe_jawaban'] ?? ''));
+            if (!empty($meta['section_intro']) && !isset($sectionIntros[$sec])) {
+                $sectionIntros[$sec] = (string) $meta['section_intro'];
+            }
+        }
+
+        // Prefill nilai awal untuk pertanyaan berbasis profil alumni (PDF 2 Data Pribadi)
+        $prefills = [];
+        if (is_array($alumniRow)) {
+            $jkRaw = strtoupper(trim((string) ($alumniRow['jenis_kelamin'] ?? '')));
+            $jkVal = ($jkRaw === 'L' || $jkRaw === 'LAKI-LAKI') ? 'Laki-laki' : (($jkRaw === 'P' || $jkRaw === 'PEREMPUAN') ? 'Perempuan' : '');
+            $prefills = [
+                'tempat_lahir'      => trim((string) ($alumniRow['tempat_lahir'] ?? '')),
+                'tanggal_lahir'     => trim((string) ($alumniRow['tanggal_lahir'] ?? '')),
+                'jenis_kelamin'     => $jkVal,
+                'email_alumni'      => trim((string) ($alumniRow['email_alumni'] ?? '')),
+                'telepon_alumni'    => trim((string) ($alumniRow['telepon_alumni'] ?? '')),
+                'kota_domisili'     => trim((string) ($alumniRow['kota_domisili'] ?? '')),
+                'instansi_saat_ini' => trim((string) ($alumniRow['instansi_saat_ini'] ?? '')),
+                'pekerjaan_saat_ini'=> trim((string) ($alumniRow['pekerjaan_saat_ini'] ?? '')),
+            ];
         }
 
         return [
-            'status'            => true,
-            'periode'           => $periode,
-            'pertanyaan'        => $detail['pertanyaan'],
-            'grouped_questions' => $groupedQuestions,
-            'alumni'            => $alumniRow,
-            'alumni_options'    => $alumniOptions,
-            'existing'          => $existing,
-            'answers'           => $answers,
+            'status'                 => true,
+            'periode'                => $periode,
+            'is_mitra'               => $isMitra,
+            'hide_legacy_work_block' => !empty($periode['uses_structured_questionnaire']),
+            'pertanyaan'             => $detail['pertanyaan'],
+            'grouped_questions'      => $groupedQuestions,
+            'section_intros'         => $sectionIntros,
+            'prefills'               => $prefills,
+            'alumni'                 => $alumniRow,
+            'alumni_options'         => $alumniOptions,
+            'existing'               => $existing,
+            'answers'                => $answers,
         ];
     }
 
@@ -1257,101 +1348,94 @@ class TracerStudyService
             return ['status' => false, 'message' => 'Anda tidak termasuk sasaran periode survei ini.'];
         }
 
+        // Validasi jawaban pertanyaan dinamis periode (mendukung show_if, skala 1-4/1-5, dropdown, & "Yang lain:")
+        $rawAnswers = is_array($input['jawaban'] ?? null) ? $input['jawaban'] : [];
+        $rawOthers  = is_array($input['jawaban_other'] ?? null) ? $input['jawaban_other'] : [];
+        $collected  = $this->validateAndCollectDynamicAnswers($detail['pertanyaan'], $rawAnswers, $rawOthers);
+        if (!$collected['status']) {
+            return $collected;
+        }
+        $answersToStore = $collected['answers'];
+        $byCode         = $collected['by_code'];
+
+        $usesStructured = !empty($periode['uses_structured_questionnaire']);
         $statusTransisi = strtolower(trim((string) ($input['status_transisi'] ?? '')));
-        if (!array_key_exists($statusTransisi, ketarunaan_tracer_status_transisi_catalog())) {
-            return ['status' => false, 'message' => 'Pilih status kegiatan utama setelah lulus.'];
+        $namaInstansi   = trim((string) ($input['nama_instansi'] ?? ''));
+        $sektorIndustri = trim((string) ($input['sektor_industri'] ?? ''));
+        $jabatanPosisi  = trim((string) ($input['jabatan_posisi'] ?? ''));
+        $kotaKerja      = trim((string) ($input['kota_kerja'] ?? ''));
+        $masaTungguRaw  = trim((string) ($input['masa_tunggu_bulan'] ?? ''));
+        $masaTunggu     = ($masaTungguRaw !== '' && is_numeric($masaTungguRaw)) ? max(0, (int) $masaTungguRaw) : null;
+        $tglMulaiKerja  = trim((string) ($input['tanggal_mulai_kerja'] ?? ''));
+        $kesesuaianBidang  = trim((string) ($input['kesesuaian_bidang'] ?? ''));
+        $kesesuaianJenjang = trim((string) ($input['kesesuaian_jenjang'] ?? ''));
+
+        // Pemetaan otomatis jawaban bundel resmi 2025 (PDF 2) ke kolom ringkasan KPI agar tidak duplikat input
+        if ($usesStructured && isset($byCode['TS25_STATUS_PEKERJAAN'])) {
+            $statusPdf = strtolower(trim((string) $byCode['TS25_STATUS_PEKERJAAN']));
+            $tempatPdf = trim((string) ($byCode['TS25_TEMPAT_BEKERJA'] ?? ''));
+            $lanjutPdf = strtolower(trim((string) ($byCode['TS25_LANJUT_STUDI'] ?? '')));
+
+            if ($statusPdf === 'sudah bekerja') {
+                $statusTransisi = (stripos($tempatPdf, 'wirausaha') !== false) ? 'wirausaha' : 'bekerja';
+            } elseif ($lanjutPdf === 'ya') {
+                $statusTransisi = 'studi_lanjut';
+            } elseif ($statusPdf === 'belum bekerja') {
+                $statusTransisi = 'mencari_kerja';
+            } else {
+                $statusTransisi = 'belum_memungkinkan';
+            }
+
+            if ($namaInstansi === '' && !empty($byCode['TS25_NAMA_INSTANSI'])) {
+                $namaInstansi = trim((string) $byCode['TS25_NAMA_INSTANSI']);
+            }
+            if ($sektorIndustri === '' && $tempatPdf !== '') {
+                $sektorIndustri = $tempatPdf;
+            }
+            if ($jabatanPosisi === '' && !empty($byCode['TS25_JABATAN_PERTAMA'])) {
+                $jabatanPosisi = trim((string) $byCode['TS25_JABATAN_PERTAMA']);
+            }
+            if ($kotaKerja === '' && !empty($byCode['TS25_KOTA_DOMISILI'])) {
+                $kotaKerja = trim((string) $byCode['TS25_KOTA_DOMISILI']);
+            }
+            if ($masaTunggu === null) {
+                $wtSpec = trim((string) ($byCode['TS25_SPESIFIK_WT'] ?? ''));
+                $wtKat  = trim((string) ($byCode['TS25_KATEGORI_WT'] ?? ''));
+                if ($wtSpec !== '') {
+                    if (str_starts_with($wtSpec, '>')) {
+                        $masaTunggu = 19;
+                    } elseif (preg_match('/(\d+)/', $wtSpec, $wm) === 1) {
+                        $masaTunggu = (int) $wm[1];
+                    }
+                } elseif (stripos($wtKat, 'sebelum kelulusan') !== false) {
+                    $masaTunggu = 0;
+                }
+            }
+            if ($kesesuaianBidang === '' && !empty($byCode['TS25_KESESUAIAN_KOMPETENSI'])) {
+                $kesPdf = strtolower(trim((string) $byCode['TS25_KESESUAIAN_KOMPETENSI']));
+                $kesesuaianBidang = match ($kesPdf) {
+                    'tinggi' => 'sangat_sesuai',
+                    'sedang' => 'sesuai',
+                    'rendah' => 'kurang_sesuai',
+                    default  => '',
+                };
+            }
         }
 
-        $isWorking   = in_array($statusTransisi, ['bekerja', 'wirausaha'], true);
-        $namaInstansi = trim((string) ($input['nama_instansi'] ?? ''));
-        if ($isWorking && $namaInstansi === '') {
+        if (!array_key_exists($statusTransisi, ketarunaan_tracer_status_transisi_catalog())) {
+            return ['status' => false, 'message' => 'Pilih status pekerjaan atau kegiatan utama setelah lulus.'];
+        }
+
+        $isWorking = in_array($statusTransisi, ['bekerja', 'wirausaha'], true);
+        if (!$usesStructured && $isWorking && $namaInstansi === '') {
             return ['status' => false, 'message' => 'Nama instansi, perusahaan, atau usaha wajib diisi.'];
         }
 
-        $masaTungguRaw = trim((string) ($input['masa_tunggu_bulan'] ?? ''));
-        $masaTunggu    = ($masaTungguRaw !== '' && is_numeric($masaTungguRaw)) ? max(0, (int) $masaTungguRaw) : null;
-        $tglMulaiKerja = trim((string) ($input['tanggal_mulai_kerja'] ?? ''));
-
-        $kesesuaianBidang  = trim((string) ($input['kesesuaian_bidang'] ?? ''));
         if ($kesesuaianBidang !== '' && !array_key_exists($kesesuaianBidang, ketarunaan_tracer_kesesuaian_bidang_catalog())) {
             $kesesuaianBidang = '';
         }
-        $kesesuaianJenjang = trim((string) ($input['kesesuaian_jenjang'] ?? ''));
         if ($kesesuaianJenjang !== '' && !array_key_exists($kesesuaianJenjang, ketarunaan_tracer_kesesuaian_jenjang_catalog())) {
             $kesesuaianJenjang = '';
-        }
-
-        // Validasi jawaban pertanyaan dinamis periode
-        $rawAnswers     = is_array($input['jawaban'] ?? null) ? $input['jawaban'] : [];
-        $answersToStore = [];
-
-        foreach ($detail['pertanyaan'] as $q) {
-            if ((int) ($q['is_aktif'] ?? 1) !== 1) {
-                continue;
-            }
-            $qid     = (int) $q['id'];
-            $tipe    = (string) $q['tipe_jawaban'];
-            $isWajib = ((int) ($q['is_wajib'] ?? 1) === 1);
-            $val     = $rawAnswers[$qid] ?? null;
-
-            $nilaiTeks  = null;
-            $nilaiAngka = null;
-            $nilaiOpsi  = null;
-            $hasValue   = false;
-
-            if ($tipe === 'pilihan_ganda') {
-                $arr = is_array($val) ? array_values(array_filter(array_map('trim', $val), static fn ($v) => $v !== '')) : [];
-                if (!empty($arr)) {
-                    $hasValue  = true;
-                    $nilaiOpsi = json_encode($arr, JSON_UNESCAPED_UNICODE);
-                    $nilaiTeks = implode(', ', $arr);
-                }
-            } elseif ($tipe === 'pilihan_tunggal') {
-                $str = is_string($val) ? trim($val) : '';
-                if ($str !== '') {
-                    $hasValue  = true;
-                    $nilaiOpsi = json_encode([$str], JSON_UNESCAPED_UNICODE);
-                    $nilaiTeks = $str;
-                }
-            } elseif ($tipe === 'skala_likert') {
-                $str = is_scalar($val) ? trim((string) $val) : '';
-                if ($str !== '' && is_numeric($str)) {
-                    $num = (int) $str;
-                    if ($num < 1 || $num > 5) {
-                        return ['status' => false, 'message' => 'Nilai skala harus antara 1 sampai 5 pada pertanyaan: ' . $q['teks_pertanyaan']];
-                    }
-                    $hasValue   = true;
-                    $nilaiAngka = (float) $num;
-                    $nilaiTeks  = (string) $num;
-                }
-            } elseif ($tipe === 'angka') {
-                $str = is_scalar($val) ? str_replace(',', '.', trim((string) $val)) : '';
-                if ($str !== '' && is_numeric($str)) {
-                    $hasValue   = true;
-                    $nilaiAngka = (float) $str;
-                    $nilaiTeks  = $str;
-                }
-            } else {
-                $str = is_scalar($val) ? trim((string) $val) : '';
-                if ($str !== '') {
-                    $hasValue  = true;
-                    $nilaiTeks = $str;
-                }
-            }
-
-            if ($isWajib && !$hasValue) {
-                return ['status' => false, 'message' => 'Pertanyaan wajib belum diisi: "' . $q['teks_pertanyaan'] . '"'];
-            }
-
-            if ($hasValue) {
-                $answersToStore[] = [
-                    'periode_pertanyaan_id' => $qid,
-                    'kode_pertanyaan'       => (string) $q['kode_pertanyaan'],
-                    'nilai_teks'            => $nilaiTeks,
-                    'nilai_angka'           => $nilaiAngka,
-                    'nilai_opsi_json'       => $nilaiOpsi,
-                ];
-            }
         }
 
         $rawSumber = trim((string) ($input['sumber_pengisian'] ?? ''));
@@ -1388,9 +1472,9 @@ class TracerStudyService
             'masa_tunggu_bulan'       => $masaTunggu,
             'tanggal_mulai_kerja'     => $tglMulaiKerja !== '' ? $tglMulaiKerja : null,
             'nama_instansi'           => $namaInstansi !== '' ? $namaInstansi : null,
-            'sektor_industri'         => trim((string) ($input['sektor_industri'] ?? '')) ?: null,
-            'jabatan_posisi'          => trim((string) ($input['jabatan_posisi'] ?? '')) ?: null,
-            'kota_kerja'              => trim((string) ($input['kota_kerja'] ?? '')) ?: null,
+            'sektor_industri'         => $sektorIndustri !== '' ? $sektorIndustri : null,
+            'jabatan_posisi'          => $jabatanPosisi !== '' ? $jabatanPosisi : null,
+            'kota_kerja'              => $kotaKerja !== '' ? $kotaKerja : null,
             'kesesuaian_bidang'       => $kesesuaianBidang !== '' ? $kesesuaianBidang : null,
             'kesesuaian_jenjang'      => $kesesuaianJenjang !== '' ? $kesesuaianJenjang : null,
             'sumber_pengisian'        => $sumber,
@@ -1415,16 +1499,27 @@ class TracerStudyService
                 $this->jawabanModel->insert($ans);
             }
 
-            // Sinkronkan ringkasan pekerjaan terbaru ke alumni_profil bila sudah terdaftar di master
-            if (!$isUnreg && $isWorking && $namaInstansi !== '') {
-                $syncData = ['instansi_saat_ini' => $namaInstansi];
+            // Sinkronkan ringkasan pekerjaan & kontak terbaru ke alumni_profil bila sudah terdaftar di master
+            if (!$isUnreg) {
+                $syncData = [];
+                if ($isWorking && $namaInstansi !== '') {
+                    $syncData['instansi_saat_ini'] = $namaInstansi;
+                }
                 if (!empty($headerData['jabatan_posisi'])) {
                     $syncData['pekerjaan_saat_ini'] = $headerData['jabatan_posisi'];
                 }
                 if (!empty($headerData['kota_kerja'])) {
                     $syncData['kota_domisili'] = $headerData['kota_kerja'];
                 }
-                $this->alumniModel->update($nimClean, $syncData);
+                if (!empty($byCode['TS25_EMAIL'])) {
+                    $syncData['email_alumni'] = trim((string) $byCode['TS25_EMAIL']);
+                }
+                if (!empty($byCode['TS25_NO_HP'])) {
+                    $syncData['telepon_alumni'] = trim((string) $byCode['TS25_NO_HP']);
+                }
+                if (!empty($syncData)) {
+                    $this->alumniModel->update($nimClean, $syncData);
+                }
             }
 
             $this->db->transComplete();
@@ -1443,8 +1538,290 @@ class TracerStudyService
             ];
         } catch (\Throwable $e) {
             $this->db->transRollback();
+            log_message('error', '[TracerStudyService::submitRespons] ' . $e->getMessage());
             return ['status' => false, 'message' => 'Gagal menyimpan jawaban survei. Silakan coba lagi.'];
         }
+    }
+
+    /**
+     * Menyimpan respons Tracer Study Pengguna Lulusan (Instansi / Atasan Langsung — PDF 1).
+     * Mendukung pengisian berulang per alumni yang dinilai tanpa login ECC.
+     *
+     * @param int                  $periodeId
+     * @param array<string, mixed> $input
+     * @param string               $actor
+     * @param bool                 $isPublic
+     * @return array<string, mixed>
+     */
+    public function submitMitraRespons(int $periodeId, array $input, string $actor, bool $isPublic = true): array
+    {
+        $detail = $this->getPeriodeDetail($periodeId);
+        if (!$detail) {
+            return ['status' => false, 'message' => 'Periode survei tidak ditemukan.'];
+        }
+
+        $periode = $detail['periode'];
+        if (($periode['target_responden'] ?? 'alumni') !== 'mitra') {
+            return ['status' => false, 'message' => 'Periode ini bukan survei Pengguna Lulusan.'];
+        }
+        if (($periode['status_periode'] ?? '') === 'draf') {
+            return ['status' => false, 'message' => 'Periode survei masih berstatus Draf dan belum dibuka.'];
+        }
+        if ($isPublic && !ketarunaan_is_tracer_periode_open($periode)) {
+            return ['status' => false, 'message' => 'Periode survei ini telah ditutup.'];
+        }
+
+        $rawAnswers = is_array($input['jawaban'] ?? null) ? $input['jawaban'] : [];
+        $rawOthers  = is_array($input['jawaban_other'] ?? null) ? $input['jawaban_other'] : [];
+        $collected  = $this->validateAndCollectDynamicAnswers($detail['pertanyaan'], $rawAnswers, $rawOthers);
+        if (!$collected['status']) {
+            return $collected;
+        }
+
+        $answersToStore = $collected['answers'];
+        $byCode         = $collected['by_code'];
+
+        $namaAtasan   = trim((string) ($byCode['TSM25_NAMA_ATASAN'] ?? ($input['nama_responden'] ?? '')));
+        $namaInstansi = trim((string) ($byCode['TSM25_INSTANSI'] ?? ($input['nama_instansi'] ?? '')));
+        $emailAtasan  = trim((string) ($byCode['TSM25_EMAIL'] ?? ($input['email_responden'] ?? '')));
+        $hpAtasan     = trim((string) ($byCode['TSM25_NO_HP'] ?? ($input['no_hp_responden'] ?? '')));
+        $namaAlumni   = trim((string) ($byCode['TSM25_NAMA_ALUMNI'] ?? ($input['nama_alumni_dinilai'] ?? '')));
+        $prodiLabel   = trim((string) ($byCode['TSM25_PRODI_ALUMNI'] ?? ''));
+
+        $prodiTokens  = ketarunaan_tracer_prodi_tokens($prodiLabel);
+        $prodiId      = null;
+        if (!empty($prodiTokens['kode_prodi'])) {
+            $prodiRow = $this->db->table('ref_program_studi')
+                ->select('id')
+                ->where('kode_prodi', $prodiTokens['kode_prodi'])
+                ->get()
+                ->getRowArray();
+            if ($prodiRow) {
+                $prodiId = (int) $prodiRow['id'];
+            }
+        }
+
+        $submissionCode = 'MTR-' . date('Ymd') . '-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
+        $now            = date('Y-m-d H:i:s');
+
+        $headerData = [
+            'periode_id'              => $periodeId,
+            'nomor_taruna'            => $submissionCode,
+            'is_alumni_terdaftar'     => 0,
+            'nama_responden'          => $namaAtasan !== '' ? $namaAtasan : 'Pengguna Lulusan',
+            'nama_alumni_dinilai'     => $namaAlumni !== '' ? $namaAlumni : null,
+            'prodi_id_responden'      => $prodiId,
+            'tahun_lulus_responden'   => null,
+            'tanggal_lahir_responden' => null,
+            'no_hp_responden'         => $hpAtasan !== '' ? $hpAtasan : null,
+            'email_responden'         => $emailAtasan !== '' ? $emailAtasan : null,
+            'status_transisi'         => 'bekerja',
+            'masa_tunggu_bulan'       => null,
+            'tanggal_mulai_kerja'     => null,
+            'nama_instansi'           => $namaInstansi !== '' ? $namaInstansi : null,
+            'sektor_industri'         => 'Pengguna Lulusan',
+            'jabatan_posisi'          => 'Atasan Langsung',
+            'kota_kerja'              => null,
+            'kesesuaian_bidang'       => null,
+            'kesesuaian_jenjang'      => null,
+            'sumber_pengisian'        => $isPublic ? 'tautan_publik_mitra' : 'input_pic_mitra',
+            'status_validasi'         => 'tervalidasi',
+            'dicatat_oleh'            => $namaAtasan !== '' ? $namaAtasan : $actor,
+            'divalidasi_oleh'         => $isPublic ? 'Pengguna Lulusan' : $actor,
+            'tanggal_pengisian'       => $now,
+        ];
+
+        $this->db->transStart();
+        try {
+            $responsId = (int) $this->responsModel->insert($headerData, true);
+            foreach ($answersToStore as $ans) {
+                $ans['respons_id'] = $responsId;
+                $this->jawabanModel->insert($ans);
+            }
+
+            $this->db->transComplete();
+            if ($this->db->transStatus() === false) {
+                return ['status' => false, 'message' => 'Gagal menyimpan penilaian. Silakan coba lagi.'];
+            }
+
+            return [
+                'status'       => true,
+                'id'           => $responsId,
+                'nama_atasan'  => $namaAtasan,
+                'instansi'     => $namaInstansi,
+                'nama_alumni'  => $namaAlumni,
+                'prodi_label'  => $prodiLabel,
+                'message'      => 'Terima kasih, penilaian Anda terhadap lulusan PKTJ berhasil tersimpan.',
+            ];
+        } catch (\Throwable $e) {
+            $this->db->transRollback();
+            log_message('error', '[TracerStudyService::submitMitraRespons] ' . $e->getMessage());
+            return ['status' => false, 'message' => 'Gagal menyimpan penilaian. Silakan coba lagi.'];
+        }
+    }
+
+    /**
+     * Validasi dan pengumpulan seluruh jawaban dinamis (mendukung show_if, skala 1-4/1-5, dropdown, dan opsi "Yang lain:").
+     *
+     * @param list<array<string, mixed>> $pertanyaan
+     * @param array<mixed>               $rawAnswers
+     * @param array<mixed>               $rawOthers
+     * @return array{status:bool, message?:string, answers?:list<array<string,mixed>>, by_code?:array<string,mixed>}
+     */
+    private function validateAndCollectDynamicAnswers(array $pertanyaan, array $rawAnswers, array $rawOthers = []): array
+    {
+        // Pass 1: Baca nilai mentah terindeks kode_pertanyaan untuk mengevaluasi aturan percabangan show_if
+        $resolvedByCode = [];
+        foreach ($pertanyaan as $q) {
+            if ((int) ($q['is_aktif'] ?? 1) !== 1) {
+                continue;
+            }
+            $qid  = (int) $q['id'];
+            $kode = strtoupper(trim((string) ($q['kode_pertanyaan'] ?? '')));
+            $val  = $rawAnswers[$qid] ?? null;
+            if (is_string($val)) {
+                $valTrim = trim($val);
+                if ($valTrim === '__OTHER__') {
+                    $valTrim = trim((string) ($rawOthers[$qid] ?? ''));
+                }
+                $resolvedByCode[$kode] = $valTrim;
+            } elseif (is_array($val)) {
+                $resolvedByCode[$kode] = array_values(array_filter(array_map('trim', $val), static fn ($v) => $v !== ''));
+            } elseif (is_scalar($val)) {
+                $resolvedByCode[$kode] = trim((string) $val);
+            } else {
+                $resolvedByCode[$kode] = '';
+            }
+        }
+
+        // Pass 2: Validasi dan kumpulkan jawaban hanya untuk pertanyaan yang aktif tampil
+        $answersToStore = [];
+        $byCode         = [];
+        $prodiRaw       = is_string($resolvedByCode['TSM25_PRODI_ALUMNI'] ?? null) ? $resolvedByCode['TSM25_PRODI_ALUMNI'] : '';
+        $prodiTokens    = ketarunaan_tracer_prodi_tokens($prodiRaw);
+
+        foreach ($pertanyaan as $q) {
+            if ((int) ($q['is_aktif'] ?? 1) !== 1) {
+                continue;
+            }
+            $qid     = (int) $q['id'];
+            $kode    = strtoupper(trim((string) ($q['kode_pertanyaan'] ?? '')));
+            $tipe    = (string) $q['tipe_jawaban'];
+            $isWajib = ((int) ($q['is_wajib'] ?? 1) === 1);
+            $meta    = $q['opsi_meta'] ?? ketarunaan_tracer_parse_opsi($q['opsi_jawaban_json'] ?? null, $tipe);
+            $qLabel  = str_replace(
+                ['{PRODI_LENGKAP}', '{PRODI}'],
+                [$prodiTokens['full'], $prodiTokens['short']],
+                (string) ($q['teks_pertanyaan'] ?? '')
+            );
+
+            // Periksa kondisi tampil (show_if)
+            if (!empty($meta['show_if']) && is_array($meta['show_if'])) {
+                $depKode = strtoupper((string) ($meta['show_if']['kode'] ?? ''));
+                $depVals = (array) ($meta['show_if']['values'] ?? []);
+                $actual  = $resolvedByCode[$depKode] ?? '';
+                $matched = false;
+                if (is_array($actual)) {
+                    foreach ($actual as $aVal) {
+                        foreach ($depVals as $dv) {
+                            if (strcasecmp((string) $aVal, (string) $dv) === 0) {
+                                $matched = true;
+                                break 2;
+                            }
+                        }
+                    }
+                } else {
+                    foreach ($depVals as $dv) {
+                        if (strcasecmp((string) $actual, (string) $dv) === 0) {
+                            $matched = true;
+                            break;
+                        }
+                    }
+                }
+                if (!$matched) {
+                    continue;
+                }
+            }
+
+            $val        = $rawAnswers[$qid] ?? null;
+            $nilaiTeks  = null;
+            $nilaiAngka = null;
+            $nilaiOpsi  = null;
+            $hasValue   = false;
+
+            if ($tipe === 'pilihan_ganda') {
+                $arr = is_array($val) ? array_values(array_filter(array_map('trim', $val), static fn ($v) => $v !== '')) : [];
+                if (!empty($arr)) {
+                    $hasValue  = true;
+                    $nilaiOpsi = json_encode($arr, JSON_UNESCAPED_UNICODE);
+                    $nilaiTeks = implode(', ', $arr);
+                }
+            } elseif ($tipe === 'pilihan_tunggal') {
+                $str = is_string($val) ? trim($val) : '';
+                if ($str === '__OTHER__') {
+                    $otherTxt = trim((string) ($rawOthers[$qid] ?? ''));
+                    if ($otherTxt === '') {
+                        if ($isWajib) {
+                            return ['status' => false, 'message' => 'Tuliskan isian "Yang lain" pada pertanyaan: "' . $qLabel . '"'];
+                        }
+                        $str = '';
+                    } else {
+                        $str = $otherTxt;
+                    }
+                }
+                if ($str !== '') {
+                    $hasValue  = true;
+                    $nilaiOpsi = json_encode([$str], JSON_UNESCAPED_UNICODE);
+                    $nilaiTeks = $str;
+                }
+            } elseif ($tipe === 'skala_likert') {
+                $maxScale = max(3, min(10, (int) ($meta['max_scale'] ?? 5)));
+                $str = is_scalar($val) ? trim((string) $val) : '';
+                if ($str !== '' && is_numeric($str)) {
+                    $num = (int) $str;
+                    if ($num < 1 || $num > $maxScale) {
+                        return ['status' => false, 'message' => "Nilai skala harus antara 1 sampai {$maxScale} pada pertanyaan: " . $qLabel];
+                    }
+                    $hasValue   = true;
+                    $nilaiAngka = (float) $num;
+                    $nilaiTeks  = (string) $num;
+                }
+            } elseif ($tipe === 'angka') {
+                $str = is_scalar($val) ? str_replace(',', '.', trim((string) $val)) : '';
+                if ($str !== '' && is_numeric($str)) {
+                    $hasValue   = true;
+                    $nilaiAngka = (float) $str;
+                    $nilaiTeks  = $str;
+                }
+            } else {
+                $str = is_scalar($val) ? trim((string) $val) : '';
+                if ($str !== '') {
+                    $hasValue  = true;
+                    $nilaiTeks = $str;
+                }
+            }
+
+            if ($isWajib && !$hasValue) {
+                return ['status' => false, 'message' => 'Pertanyaan wajib belum diisi: "' . $qLabel . '"'];
+            }
+
+            if ($hasValue) {
+                $byCode[$kode]    = $nilaiTeks;
+                $answersToStore[] = [
+                    'periode_pertanyaan_id' => $qid,
+                    'kode_pertanyaan'       => (string) $q['kode_pertanyaan'],
+                    'nilai_teks'            => $nilaiTeks,
+                    'nilai_angka'           => $nilaiAngka,
+                    'nilai_opsi_json'       => $nilaiOpsi,
+                ];
+            }
+        }
+
+        return [
+            'status'  => true,
+            'answers' => $answersToStore,
+            'by_code' => $byCode,
+        ];
     }
 
     /**
@@ -1639,16 +2016,33 @@ class TracerStudyService
         if (!$detail) {
             return null;
         }
-        $periode    = $detail['periode'];
-        $pertanyaan = $detail['pertanyaan'];
+        $periode     = $detail['periode'];
+        $pertanyaan  = $detail['pertanyaan'];
+        $isMitra     = !empty($periode['is_mitra']);
 
         $prodiFilter = (int) ($filters['prodi_id'] ?? 0);
         $tahunFilter = (int) ($filters['tahun_lulus'] ?? 0);
 
-        $targetAlumni = $this->getTargetAlumniList($periode, $prodiFilter, $tahunFilter);
+        $targetAlumni = $isMitra ? [] : $this->getTargetAlumniList($periode, $prodiFilter, $tahunFilter);
         $targetByNim  = [];
         $prodiStats   = [];
         $tahunStats   = [];
+
+        if ($isMitra) {
+            $prodiList = $this->db->table('ref_program_studi')
+                ->select('id, kode_prodi, nama_prodi')
+                ->where('is_aktif', 1)
+                ->orderBy('id', 'ASC')
+                ->get()
+                ->getResultArray();
+            foreach ($prodiList as $pl) {
+                if ($prodiFilter > 0 && (int) $pl['id'] !== $prodiFilter) {
+                    continue;
+                }
+                $pc = (string) $pl['kode_prodi'];
+                $prodiStats[$pc] = ['kode_prodi' => $pc, 'nama_prodi' => (string) $pl['nama_prodi'], 'sasaran' => 0, 'terisi' => 0];
+            }
+        }
 
         foreach ($targetAlumni as $al) {
             $nim   = (string) $al['nomor_taruna'];
@@ -1784,32 +2178,54 @@ class TracerStudyService
         }
 
         $questionSummaries = [];
+        $overallLikertSum  = 0.0;
+        $overallLikertCnt  = 0;
+        $overallLikertMax  = 5;
+        $instansiSet       = [];
+        foreach ($responses as $rInst) {
+            $instName = strtolower(trim((string) ($rInst['nama_instansi'] ?? '')));
+            if ($instName !== '') {
+                $instansiSet[$instName] = true;
+            }
+        }
+
         foreach ($pertanyaan as $q) {
             if ((int) ($q['is_aktif'] ?? 1) !== 1) {
                 continue;
             }
-            $qid   = (int) $q['id'];
-            $tipe  = (string) $q['tipe_jawaban'];
-            $items = $jawabanByQ[$qid] ?? [];
-            $cnt   = count($items);
+            $qid      = (int) $q['id'];
+            $tipe     = (string) $q['tipe_jawaban'];
+            $meta     = $q['opsi_meta'] ?? ketarunaan_tracer_parse_opsi($q['opsi_jawaban_json'] ?? null, $tipe);
+            $maxScale = max(3, min(10, (int) ($meta['max_scale'] ?? 5)));
+            $items    = $jawabanByQ[$qid] ?? [];
+            $cnt      = count($items);
+
+            $likertDist = [];
+            for ($s = 1; $s <= $maxScale; $s++) {
+                $likertDist[$s] = 0;
+            }
+
+            $displayBagian = str_replace(['{PRODI_LENGKAP}', '{PRODI}'], ['Program Studi PKTJ', 'PKTJ'], (string) $q['bagian']);
+            $displayTeks   = str_replace(['{PRODI_LENGKAP}', '{PRODI}'], ['Program Studi PKTJ', 'PKTJ'], (string) $q['teks_pertanyaan']);
 
             $agg = [
                 'id'              => $qid,
                 'kode_pertanyaan' => $q['kode_pertanyaan'],
-                'bagian'          => $q['bagian'],
-                'teks_pertanyaan' => $q['teks_pertanyaan'],
+                'bagian'          => $displayBagian,
+                'teks_pertanyaan' => $displayTeks,
                 'tipe_jawaban'    => $tipe,
                 'total_jawaban'   => $cnt,
                 'options'         => [],
+                'likert_max'      => $maxScale,
                 'likert_avg'      => 0.0,
-                'likert_dist'     => [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0],
+                'likert_dist'     => $likertDist,
                 'angka_stats'     => ['avg' => 0.0, 'min' => 0.0, 'max' => 0.0],
                 'text_samples'    => [],
             ];
 
             if (in_array($tipe, ['pilihan_tunggal', 'pilihan_ganda'], true)) {
                 $optCounts = [];
-                foreach (($q['opsi_parsed'] ?? []) as $optLbl) {
+                foreach (($meta['options'] ?? []) as $optLbl) {
                     if (is_string($optLbl) && trim($optLbl) !== '') {
                         $optCounts[$optLbl] = 0;
                     }
@@ -1827,6 +2243,9 @@ class TracerStudyService
                     }
                 }
                 foreach ($optCounts as $lbl => $c) {
+                    if ($c === 0 && count($optCounts) > 12) {
+                        continue;
+                    }
                     $agg['options'][] = [
                         'label'  => $lbl,
                         'count'  => $c,
@@ -1836,12 +2255,15 @@ class TracerStudyService
             } elseif ($tipe === 'skala_likert') {
                 $sum = 0.0;
                 $vCnt = 0;
+                $overallLikertMax = $maxScale;
                 foreach ($items as $it) {
                     $val = (int) round((float) ($it['nilai_angka'] ?? $it['nilai_teks'] ?? 0));
-                    if ($val >= 1 && $val <= 5) {
+                    if ($val >= 1 && $val <= $maxScale) {
                         $agg['likert_dist'][$val]++;
                         $sum += $val;
                         $vCnt++;
+                        $overallLikertSum += $val;
+                        $overallLikertCnt++;
                     }
                 }
                 $agg['likert_avg'] = $vCnt > 0 ? round($sum / $vCnt, 2) : 0.0;
@@ -1881,9 +2303,11 @@ class TracerStudyService
         $terserapPct   = $respondenCnt > 0 ? round(($terserapCount / $respondenCnt) * 100, 1) : 0.0;
         $avgMasaTunggu = $masaTungguCnt > 0 ? round($masaTungguSum / $masaTungguCnt, 1) : 0.0;
         $sesuaiPct     = $kesesuaianTot > 0 ? round(($sesuaiCnt / $kesesuaianTot) * 100, 1) : 0.0;
+        $avgLikertAll  = $overallLikertCnt > 0 ? round($overallLikertSum / $overallLikertCnt, 2) : 0.0;
 
         return [
             'periode'            => $periode,
+            'is_mitra'           => $isMitra,
             'kpi'                => [
                 'sasaran_total'       => $sasaranTotal,
                 'responden_total'     => $respondenCnt,
@@ -1896,6 +2320,9 @@ class TracerStudyService
                 'sesuai_bidang_pct'   => $sesuaiPct,
                 'jumlah_pertanyaan'   => count($questionSummaries),
                 'pending_verif_count' => $pendingVerifCount,
+                'instansi_unik_count' => count($instansiSet),
+                'avg_likert_overall'  => $avgLikertAll,
+                'max_likert_scale'    => $overallLikertMax,
             ],
             'prodi_progress'     => array_values($prodiStats),
             'tahun_progress'     => array_values($tahunStats),
@@ -2013,6 +2440,7 @@ class TracerStudyService
             $respBuilder->groupStart()
                 ->like('mt.nama_lengkap', $q)
                 ->orLike('r.nama_responden', $q)
+                ->orLike('r.nama_alumni_dinilai', $q)
                 ->orLike('r.nomor_taruna', $q)
                 ->orLike('r.nama_instansi', $q)
                 ->groupEnd();
@@ -2040,7 +2468,8 @@ class TracerStudyService
             $allRespNims[strtoupper(trim((string) $rr['nomor_taruna']))] = true;
         }
 
-        $targetAlumni = $this->getTargetAlumniList($periode, $prodiFilter, $tahunFilter);
+        $isMitra     = !empty($periode['is_mitra']);
+        $targetAlumni = $isMitra ? [] : $this->getTargetAlumniList($periode, $prodiFilter, $tahunFilter);
         $pendingRows  = [];
         foreach ($targetAlumni as $al) {
             $key = strtoupper(trim((string) $al['nomor_taruna']));
@@ -2070,7 +2499,7 @@ class TracerStudyService
     public function getResponsDetail(int $responsId, ?string $viewerAlumniNim = null): ?array
     {
         $row = $this->db->table('tracer_study_respons r')
-            ->select('r.*, p.kode_periode, p.nama_periode, p.status_periode,
+            ->select('r.*, p.kode_periode, p.nama_periode, p.status_periode, p.target_responden,
                       COALESCE(mt.nama_lengkap, r.nama_responden) AS nama_lengkap,
                       COALESCE(ap.tahun_lulus, r.tahun_lulus_responden) AS tahun_lulus,
                       COALESCE(ap.email_alumni, r.email_responden) AS email_alumni,
@@ -2106,14 +2535,20 @@ class TracerStudyService
             $ansMap[(int) $ar['periode_pertanyaan_id']] = $ar;
         }
 
-        $qaList = [];
+        $prodiTokens = ketarunaan_tracer_prodi_tokens((string) ($row['kode_prodi'] ?? ''));
+        $qaList      = [];
         foreach ($pertanyaan as $q) {
-            $ans = $ansMap[(int) $q['id']] ?? null;
+            $ans  = $ansMap[(int) $q['id']] ?? null;
+            $meta = ketarunaan_tracer_parse_opsi($q['opsi_jawaban_json'] ?? null, (string) ($q['tipe_jawaban'] ?? ''));
+            if ($ans === null && !empty($meta['show_if'])) {
+                continue;
+            }
             $qaList[] = [
-                'bagian'          => $q['bagian'],
+                'bagian'          => str_replace(['{PRODI_LENGKAP}', '{PRODI}'], [$prodiTokens['full'], $prodiTokens['short']], (string) $q['bagian']),
                 'kode_pertanyaan' => $q['kode_pertanyaan'],
-                'teks_pertanyaan' => $q['teks_pertanyaan'],
+                'teks_pertanyaan' => str_replace(['{PRODI_LENGKAP}', '{PRODI}'], [$prodiTokens['full'], $prodiTokens['short']], (string) $q['teks_pertanyaan']),
                 'tipe_jawaban'    => $q['tipe_jawaban'],
+                'max_scale'       => (int) ($meta['max_scale'] ?? 5),
                 'nilai_teks'      => $ans['nilai_teks'] ?? '-',
                 'nilai_angka'     => $ans['nilai_angka'] ?? null,
             ];
@@ -2156,24 +2591,40 @@ class TracerStudyService
             }
         }
 
-        $header = [
-            'Nomor Taruna',
-            'Nama Alumni',
-            'Prodi',
-            'Tahun Lulus',
-            'Status Transisi',
-            'Masa Tunggu (Bulan)',
-            'Instansi / Perusahaan',
-            'Sektor Industri',
-            'Jabatan / Posisi',
-            'Kota Kerja',
-            'Kesesuaian Bidang',
-            'Kesesuaian Jenjang',
-            'Sumber Pengisian',
-            'Tanggal Pengisian',
-        ];
+        $isMitra = !empty($detail['periode']['is_mitra']);
+        if ($isMitra) {
+            $header = [
+                'Kode Respons',
+                'Nama Atasan Langsung',
+                'Instansi / Perusahaan',
+                'Email Atasan',
+                'No. HP Atasan',
+                'Nama Alumni Dinilai',
+                'Program Studi',
+                'Sumber Pengisian',
+                'Tanggal Pengisian',
+            ];
+        } else {
+            $header = [
+                'Nomor Taruna',
+                'Nama Alumni',
+                'Prodi',
+                'Tahun Lulus',
+                'Status Transisi',
+                'Masa Tunggu (Bulan)',
+                'Instansi / Perusahaan',
+                'Sektor Industri',
+                'Jabatan / Posisi',
+                'Kota Kerja',
+                'Kesesuaian Bidang',
+                'Kesesuaian Jenjang',
+                'Sumber Pengisian',
+                'Tanggal Pengisian',
+            ];
+        }
         foreach ($pertanyaan as $q) {
-            $header[] = '[' . $q['kode_pertanyaan'] . '] ' . $q['teks_pertanyaan'];
+            $cleanQ   = str_replace(['{PRODI_LENGKAP}', '{PRODI}'], ['Program Studi PKTJ', 'PKTJ'], (string) $q['teks_pertanyaan']);
+            $header[] = '[' . $q['kode_pertanyaan'] . '] ' . $cleanQ;
         }
 
         $csv           = [$header];
@@ -2182,23 +2633,37 @@ class TracerStudyService
         $jenjangMap    = ketarunaan_tracer_kesesuaian_jenjang_catalog();
 
         foreach ($rows as $r) {
-            $rid  = (int) $r['id'];
-            $line = [
-                (string) ($r['nomor_taruna'] ?? ''),
-                (string) ($r['nama_lengkap'] ?? ''),
-                (string) ($r['kode_prodi'] ?? ''),
-                (string) ($r['tahun_lulus'] ?? ''),
-                (string) ($transisiMap[$r['status_transisi'] ?? '']['label'] ?? $r['status_transisi'] ?? ''),
-                $r['masa_tunggu_bulan'] !== null ? (string) $r['masa_tunggu_bulan'] : '',
-                (string) ($r['nama_instansi'] ?? ''),
-                (string) ($r['sektor_industri'] ?? ''),
-                (string) ($r['jabatan_posisi'] ?? ''),
-                (string) ($r['kota_kerja'] ?? ''),
-                (string) ($bidangMap[$r['kesesuaian_bidang'] ?? ''] ?? ''),
-                (string) ($jenjangMap[$r['kesesuaian_jenjang'] ?? ''] ?? ''),
-                (string) ($r['sumber_pengisian'] ?? ''),
-                (string) ($r['tanggal_pengisian'] ?? ''),
-            ];
+            $rid = (int) $r['id'];
+            if ($isMitra) {
+                $line = [
+                    (string) ($r['nomor_taruna'] ?? ''),
+                    (string) ($r['nama_lengkap'] ?? ''),
+                    (string) ($r['nama_instansi'] ?? ''),
+                    (string) ($r['email_alumni'] ?? ''),
+                    (string) ($r['telepon_alumni'] ?? ''),
+                    (string) ($r['nama_alumni_dinilai'] ?? ''),
+                    (string) ($r['kode_prodi'] ?? ''),
+                    (string) ($r['sumber_pengisian'] ?? ''),
+                    (string) ($r['tanggal_pengisian'] ?? ''),
+                ];
+            } else {
+                $line = [
+                    (string) ($r['nomor_taruna'] ?? ''),
+                    (string) ($r['nama_lengkap'] ?? ''),
+                    (string) ($r['kode_prodi'] ?? ''),
+                    (string) ($r['tahun_lulus'] ?? ''),
+                    (string) ($transisiMap[$r['status_transisi'] ?? '']['label'] ?? $r['status_transisi'] ?? ''),
+                    $r['masa_tunggu_bulan'] !== null ? (string) $r['masa_tunggu_bulan'] : '',
+                    (string) ($r['nama_instansi'] ?? ''),
+                    (string) ($r['sektor_industri'] ?? ''),
+                    (string) ($r['jabatan_posisi'] ?? ''),
+                    (string) ($r['kota_kerja'] ?? ''),
+                    (string) ($bidangMap[$r['kesesuaian_bidang'] ?? ''] ?? ''),
+                    (string) ($jenjangMap[$r['kesesuaian_jenjang'] ?? ''] ?? ''),
+                    (string) ($r['sumber_pengisian'] ?? ''),
+                    (string) ($r['tanggal_pengisian'] ?? ''),
+                ];
+            }
 
             foreach ($pertanyaan as $q) {
                 $line[] = $ansMap[$rid][(int) $q['id']] ?? '';
@@ -2245,7 +2710,47 @@ class TracerStudyService
             $urutan = ((int) ($maxRow['urutan'] ?? 0)) + 1;
         }
 
-        $opsiJson = null;
+        // Pertahankan metadata tambahan (section_intro, input_type, prefill_key) saat mengubah soal yang sudah ada
+        $existingMeta = [];
+        if ($questionId !== null && $questionId > 0) {
+            $tblExisting = $scope === 'bundle' ? 'tracer_study_bundle_pertanyaan' : 'tracer_study_periode_pertanyaan';
+            $rowExisting = $this->db->table($tblExisting)->where('id', $questionId)->get()->getRowArray();
+            if ($rowExisting && !empty($rowExisting['opsi_jawaban_json'])) {
+                $parsedOld = ketarunaan_tracer_parse_opsi($rowExisting['opsi_jawaban_json'], (string) ($rowExisting['tipe_jawaban'] ?? ''));
+                if (!empty($parsedOld['section_intro'])) {
+                    $existingMeta['section_intro'] = $parsedOld['section_intro'];
+                }
+                if (($parsedOld['input_type'] ?? 'text') !== 'text') {
+                    $existingMeta['input_type'] = $parsedOld['input_type'];
+                }
+                if (!empty($parsedOld['prefill_key'])) {
+                    $existingMeta['prefill_key'] = $parsedOld['prefill_key'];
+                }
+                if (!empty($parsedOld['wilayah_role'])) {
+                    $existingMeta['wilayah_role'] = $parsedOld['wilayah_role'];
+                }
+                if (!empty($parsedOld['wilayah_parent_kode'])) {
+                    $existingMeta['wilayah_parent_kode'] = $parsedOld['wilayah_parent_kode'];
+                }
+            }
+        }
+
+        // Aturan tampil kondisional (show_if) opsional
+        $showIfKode = strtoupper(trim((string) ($input['show_if_kode'] ?? '')));
+        $showIfValsRaw = trim((string) ($input['show_if_values'] ?? ''));
+        $showIfMeta = null;
+        if ($showIfKode !== '' && $showIfValsRaw !== '') {
+            $parts = array_values(array_filter(array_map('trim', explode(',', $showIfValsRaw)), static fn ($v) => $v !== ''));
+            if (!empty($parts)) {
+                $showIfMeta = ['kode' => $showIfKode, 'values' => $parts];
+            }
+        }
+
+        $opsiPayload = $existingMeta;
+        if ($showIfMeta !== null) {
+            $opsiPayload['show_if'] = $showIfMeta;
+        }
+
         if (in_array($tipe, ['pilihan_tunggal', 'pilihan_ganda'], true)) {
             $rawLines = preg_split('/\r\n|\r|\n/', (string) ($input['opsi_jawaban_text'] ?? '')) ?: [];
             $opts     = [];
@@ -2258,11 +2763,35 @@ class TracerStudyService
             if (count($opts) < 2) {
                 return ['status' => false, 'message' => 'Pertanyaan pilihan wajib memiliki minimal 2 opsi jawaban (1 opsi per baris).'];
             }
-            $opsiJson = json_encode($opts, JSON_UNESCAPED_UNICODE);
+            $renderAs   = ($tipe === 'pilihan_tunggal' && strtolower(trim((string) ($input['render_as'] ?? 'radio'))) === 'dropdown') ? 'dropdown' : 'radio';
+            $allowOther = ($tipe === 'pilihan_tunggal' && !empty($input['allow_other']));
+
+            if ($renderAs === 'radio' && !$allowOther && empty($opsiPayload)) {
+                $opsiJson = json_encode($opts, JSON_UNESCAPED_UNICODE);
+            } else {
+                $opsiPayload['options'] = $opts;
+                if ($tipe === 'pilihan_tunggal') {
+                    $opsiPayload['render_as'] = $renderAs;
+                    if ($allowOther) {
+                        $opsiPayload['allow_other'] = true;
+                    }
+                }
+                $opsiJson = json_encode($opsiPayload, JSON_UNESCAPED_UNICODE);
+            }
         } elseif ($tipe === 'skala_likert') {
-            $minLbl   = trim((string) ($input['likert_min_label'] ?? 'Sangat Kurang')) ?: 'Sangat Kurang';
-            $maxLbl   = trim((string) ($input['likert_max_label'] ?? 'Sangat Baik')) ?: 'Sangat Baik';
-            $opsiJson = json_encode(['min_label' => $minLbl, 'max_label' => $maxLbl], JSON_UNESCAPED_UNICODE);
+            $maxScale = (int) ($input['likert_max_scale'] ?? 5);
+            if (!in_array($maxScale, [4, 5], true)) {
+                $maxScale = 5;
+            }
+            $defaultMin = $maxScale === 4 ? 'Kurang Baik' : 'Sangat Kurang';
+            $minLbl     = trim((string) ($input['likert_min_label'] ?? $defaultMin)) ?: $defaultMin;
+            $maxLbl     = trim((string) ($input['likert_max_label'] ?? 'Sangat Baik')) ?: 'Sangat Baik';
+            $opsiPayload['min_label'] = $minLbl;
+            $opsiPayload['max_label'] = $maxLbl;
+            $opsiPayload['max_scale'] = $maxScale;
+            $opsiJson = json_encode($opsiPayload, JSON_UNESCAPED_UNICODE);
+        } else {
+            $opsiJson = !empty($opsiPayload) ? json_encode($opsiPayload, JSON_UNESCAPED_UNICODE) : null;
         }
 
         return [
@@ -2287,7 +2816,7 @@ class TracerStudyService
     private function getAlumniBasicProfile(string $nomorTaruna): ?array
     {
         $row = $this->db->table('alumni_profil ap')
-            ->select('ap.*, mt.nama_lengkap, pt.program_studi_id, ps.kode_prodi, ps.nama_prodi')
+            ->select('ap.*, mt.nama_lengkap, mt.tempat_lahir, mt.tanggal_lahir, mt.jenis_kelamin, pt.program_studi_id, ps.kode_prodi, ps.nama_prodi')
             ->join('master_taruna mt', 'mt.nomor_taruna = ap.nomor_taruna', 'left')
             ->join('pendidikan_taruna pt', 'pt.nomor_taruna = ap.nomor_taruna', 'left')
             ->join('ref_program_studi ps', 'ps.id = pt.program_studi_id', 'left')

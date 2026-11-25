@@ -3,6 +3,7 @@
 <?= $this->section('title') ?>Database Taruna<?= $this->endSection() ?>
 
 <?= $this->section('styles') ?>
+<?= view('partials/_wilayah_styles') ?>
 <style>
     .status-filter-tile {
         border-radius: 12px;
@@ -477,7 +478,16 @@
                         </div>
                         <div class="col-md-4">
                             <label for="tambahTempatLahir" class="form-label small fw-semibold">Tempat Lahir</label>
-                            <input type="text" id="tambahTempatLahir" name="tempat_lahir" class="form-control" value="<?= esc(old('tempat_lahir', '')) ?>" placeholder="Contoh: Tegal" style="height: 40px;">
+                            <?php $oldTambahTempat = (string) old('tempat_lahir', ''); ?>
+                            <select id="tambahTempatLahir" name="tempat_lahir" class="form-select js-ecc-wilayah-kab-only"
+                                    data-allow-tags="1" data-dropdown-parent="#modalTambahTaruna"
+                                    data-current-value="<?= esc($oldTambahTempat) ?>"
+                                    data-placeholder="-- Pilih Kabupaten / Kota --">
+                                <option value="">-- Pilih Kabupaten / Kota --</option>
+                                <?php if ($oldTambahTempat !== ''): ?>
+                                    <option value="<?= esc($oldTambahTempat) ?>" selected><?= esc($oldTambahTempat) ?></option>
+                                <?php endif; ?>
+                            </select>
                         </div>
                         <div class="col-md-4">
                             <label for="tambahTanggalLahir" class="form-label small fw-semibold">Tanggal Lahir</label>
@@ -540,6 +550,7 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
+<?= view('partials/_wilayah_scripts') ?>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const params = new URLSearchParams(window.location.search);

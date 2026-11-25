@@ -1,56 +1,136 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="robots" content="noindex">
-    <title>Terjadi Kesalahan - 500</title>
+    <meta charset="utf-8">
+    <title>Terjadi Kendala | Evidence Command Center (ECC)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+    <meta name="robots" content="noindex">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="<?= function_exists('base_url') ? base_url('assets/vendor/bootstrap/bootstrap.min.css') : '/assets/vendor/bootstrap/bootstrap.min.css' ?>" rel="stylesheet">
     <link rel="stylesheet" href="<?= function_exists('base_url') ? base_url('assets/vendor/bootstrap-icons/bootstrap-icons.min.css') : '/assets/vendor/bootstrap-icons/bootstrap-icons.min.css' ?>">
-
     <style>
         body {
-            background-color: #f8f9fa;
-            height: 100vh;
+            background-color: #f8fafc;
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             font-family: 'Inter', sans-serif;
+            color: #0f172a;
             margin: 0;
+            padding: 16px;
         }
         .error-card {
             text-align: center;
             background: #ffffff;
-            padding: 3rem 2rem;
-            border-radius: 12px;
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08);
-            max-width: 500px;
-            width: 90%;
-            border-top: 5px solid #dc3545;
+            padding: 32px 24px;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+            max-width: 480px;
+            width: 100%;
         }
-        .error-icon { font-size: 5rem; color: #dc3545; line-height: 1; margin-bottom: 1rem; }
-        .error-title { font-weight: 700; color: #212529; font-size: 3rem; margin-bottom: 0.5rem; }
-        .error-subtitle { font-size: 1.1rem; color: #495057; margin-bottom: 1.5rem; font-weight: 500; }
-        .error-text { color: #6c757d; margin-bottom: 2rem; font-size: 0.95rem; line-height: 1.5; }
+        .error-icon-wrap {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            background-color: #fef2f2;
+            color: #dc2626;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            margin-bottom: 16px;
+        }
+        .error-title {
+            font-weight: 700;
+            color: #0f172a;
+            font-size: 1.75rem;
+            line-height: 1.25;
+            margin: 0 0 8px;
+        }
+        .error-desc {
+            color: #475569;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            margin: 0 0 24px;
+        }
+        .ref-box {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 24px;
+            font-size: 0.75rem;
+            color: #475569;
+            line-height: 1.5;
+        }
+        .ref-code {
+            display: inline-block;
+            font-weight: 700;
+            color: #0f172a;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.02em;
+            user-select: all;
+        }
+        .btn-action {
+            min-height: 44px;
+            padding: 8px 24px;
+            font-size: 0.875rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .error-meta {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.75rem;
+            color: #475569;
+            font-variant-numeric: tabular-nums;
+        }
     </style>
 </head>
 <body>
-
-    <div class="error-card">
-        <i class="bi bi-x-octagon error-icon"></i>
-        <h1 class="error-title">Oops!</h1>
-        <h4 class="error-subtitle">Terjadi Kesalahan pada Server</h4>
-        <p class="error-text">
-            Maaf, tampaknya sedang ada masalah teknis pada sistem kami. Tim teknis telah mencatat masalah ini dan akan segera memperbaikinya.
+    <main class="error-card">
+        <div class="error-icon-wrap" aria-hidden="true">
+            <i class="bi bi-exclamation-octagon" aria-hidden="true"></i>
+        </div>
+        <h1 class="error-title">Terjadi Kendala</h1>
+        <p class="error-desc">
+            Halaman sedang tidak dapat ditampilkan. Silakan coba beberapa saat lagi.
         </p>
-        <a href="<?= site_url() ?>" class="btn btn-danger px-4 py-2 fw-medium">
-            <i class="bi bi-arrow-left-circle me-2"></i>Kembali ke Beranda
-        </a>
-    </div>
-
+        <?php if (!empty($refId)): ?>
+            <div class="ref-box">
+                <div>Kode rujukan: <span class="ref-code"><?= htmlspecialchars((string) $refId, ENT_QUOTES, 'UTF-8') ?></span></div>
+                <div>Sampaikan kode ini kepada admin bila kendala berlanjut.</div>
+            </div>
+        <?php endif; ?>
+        <div class="d-flex flex-wrap justify-content-center gap-2">
+            <a href="<?= function_exists('site_url') ? site_url() : '/' ?>" class="btn btn-primary rounded-pill fw-semibold btn-action">
+                <i class="bi bi-house-door" aria-hidden="true"></i>
+                <span>Kembali ke Beranda</span>
+            </a>
+            <button type="button" id="btnReloadPage" class="btn btn-outline-secondary rounded-pill fw-semibold btn-action">
+                <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+                <span>Muat Ulang</span>
+            </button>
+        </div>
+        <p class="error-meta mb-0">Evidence Command Center (ECC) &bull; Kode 500</p>
+    </main>
+    <script>
+        (function () {
+            const btnReload = document.getElementById('btnReloadPage');
+            if (btnReload) {
+                btnReload.addEventListener('click', function () {
+                    window.location.reload();
+                });
+            }
+        })();
+    </script>
 </body>
 </html>

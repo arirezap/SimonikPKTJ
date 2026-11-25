@@ -33,10 +33,12 @@
 </head>
 <body>
 <?php
-$status   = (string) ($status ?? 'invalid');
-$periode  = $periode ?? null;
-$verified = $verified ?? null;
-$token    = (string) ($token ?? '');
+$status    = (string) ($status ?? 'invalid');
+$periode   = $periode ?? null;
+$verified  = $verified ?? null;
+$isMitra   = !empty($isMitra);
+$mitraLast = is_array($mitraLast ?? null) ? $mitraLast : null;
+$token     = (string) ($token ?? '');
 ?>
 <div class="pub-shell">
     <div class="pub-card text-center">
@@ -54,7 +56,35 @@ $token    = (string) ($token ?? '');
             <?= esc((string) ($message ?? '')) ?>
         </p>
 
-        <?php if ($status === 'selesai' && !empty($verified)): ?>
+        <?php if ($status === 'selesai' && $isMitra): ?>
+            <?php if (!empty($mitraLast)): ?>
+                <div class="p-3 rounded-3 bg-light border text-start small mb-4">
+                    <div class="fw-semibold text-dark"><?= esc((string) ($mitraLast['TSM25_INSTANSI'] ?? '')) ?></div>
+                    <div class="text-secondary">
+                        Penilai: <strong><?= esc((string) ($mitraLast['TSM25_NAMA_ATASAN'] ?? '-')) ?></strong>
+                    </div>
+                    <?php if (!empty($mitraLast['last_alumni'])): ?>
+                        <div class="text-secondary mt-1">
+                            Alumni terakhir dinilai: <strong><?= esc((string) $mitraLast['last_alumni']) ?></strong>
+                            <?php if (!empty($mitraLast['last_prodi'])): ?>
+                                (<?= esc((string) $mitraLast['last_prodi']) ?>)
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+            <div class="d-flex flex-wrap justify-content-center gap-2">
+                <?php if ($token !== ''): ?>
+                    <a href="<?= esc(ketarunaan_tracer_public_url($token)) ?>" class="btn btn-primary rounded-pill px-4 fw-semibold">
+                        Nilai Alumni PKTJ Lainnya
+                    </a>
+                    <form method="post" action="<?= esc(ketarunaan_tracer_public_url($token, 'ganti-alumni')) ?>" class="d-inline">
+                        <?= csrf_field() ?>
+                        <button type="submit" class="btn btn-outline-secondary rounded-pill px-4 fw-semibold">Selesai</button>
+                    </form>
+                <?php endif; ?>
+            </div>
+        <?php elseif ($status === 'selesai' && !empty($verified)): ?>
             <?php if (isset($verified['is_alumni_terdaftar']) && (int) $verified['is_alumni_terdaftar'] === 0): ?>
                 <div class="alert alert-info border-0 rounded-3 py-2 px-3 small text-start mb-3">
                     Data identitas alumni Anda turut tercatat dan sedang menunggu verifikasi oleh pengelola PKTJ untuk dimasukkan ke direktori alumni resmi.

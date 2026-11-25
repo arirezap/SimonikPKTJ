@@ -16,6 +16,7 @@ class TracerStudyResponsModel extends Model
         'nomor_taruna',
         'is_alumni_terdaftar',
         'nama_responden',
+        'nama_alumni_dinilai',
         'prodi_id_responden',
         'tahun_lulus_responden',
         'tanggal_lahir_responden',

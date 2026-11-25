@@ -6,10 +6,10 @@ use App\Controllers\BaseController;
 use App\Libraries\Ketarunaan\TracerStudyService;
 
 /**
- * Controller Tautan Publik Tracer Study (/tracer/{token}).
- * Memungkinkan alumni mengisi survei melalui tautan yang disebar tanpa login ECC,
- * dengan verifikasi identitas (Nomor Taruna + Tanggal Lahir), perlindungan CSRF,
- * rate limiting, dan penutupan otomatis saat periode ditutup oleh pegawai berwenang.
+ * Controller Tautan Publik Tracer Study (/tracer/{token} atau /{tracerSlug}).
+ * Mendukung dua alur sesuai dokumen resmi PKTJ 2025:
+ * 1. Target Alumni (`alumni`): verifikasi Nomor Taruna + Tanggal Lahir (atau pendaftaran alumni baru) -> Formulir Survei Lulusan.
+ * 2. Target Pengguna Lulusan (`mitra`): langsung ke Formulir Penilaian Atasan Langsung tanpa login, mendukung pengisian > 1 alumni.
  */
 class TracerStudyPublicController extends BaseController
 {
@@ -22,10 +22,7 @@ class TracerStudyPublicController extends BaseController
     }
 
     /**
-     * Halaman utama tautan publik (/tracer/{token}).
-     * - Jika periode tidak valid / tutup -> halaman status.
-     * - Jika alumni belum verifikasi -> Langkah 1 (Verifikasi Identitas).
-     * - Jika sudah verifikasi di sesi -> Langkah 2 (Formulir Survei).
+     * Halaman utama tautan publik (/{tracerSlug}).
      */
     public function index(string $token)
     {
@@ -53,9 +50,35 @@ class TracerStudyPublicController extends BaseController
             ]);
         }
 
-        $pid      = (int) $periode['id'];
-        $verified = $this->getVerifiedSession($pid);
+        $pid     = (int) $periode['id'];
+        $isMitra = !empty($periode['is_mitra']);
 
+        if ($isMitra) {
+            $ctx = $this->service->getSurveyFormContext($pid, null, false);
+            if (!$ctx['status']) {
+                return view('ketarunaan/tracer_study/public_status', [
+                    'title'   => 'Survei Tidak Tersedia - Evidence Command Center (ECC)',
+                    'heading' => 'Formulir Tidak Tersedia',
+                    'message' => (string) ($ctx['message'] ?? 'Survei sedang tidak tersedia.'),
+                    'periode' => $periode,
+                    'status'  => 'ditutup',
+                ]);
+            }
+
+            $mitraMap  = session()->get('tracer_public_mitra_prefill');
+            $mitraPrev = (is_array($mitraMap) && isset($mitraMap[$pid]) && is_array($mitraMap[$pid])) ? $mitraMap[$pid] : [];
+
+            return view('ketarunaan/tracer_study/public_mitra_form', [
+                'title'     => $periode['nama_periode'] . ' - Tracer Study ECC',
+                'token'     => $token,
+                'periode'   => $periode,
+                'ctx'       => $ctx,
+                'mitraPrev' => $mitraPrev,
+                'refs'      => $this->service->getReferenceOptions(),
+            ]);
+        }
+
+        $verified = $this->getVerifiedSession($pid);
         if (!$verified) {
             $allowUnreg = ((int) ($periode['allow_unregistered_alumni'] ?? 1) === 1);
             $showDaftar = $allowUnreg && ($this->request->getGet('daftar') === '1' || session()->getFlashdata('pub_show_daftar'));
@@ -91,7 +114,7 @@ class TracerStudyPublicController extends BaseController
     }
 
     /**
-     * Proses verifikasi identitas alumni (POST /tracer/{token}/verifikasi).
+     * Proses verifikasi identitas alumni (POST /{slug}/verifikasi).
      */
     public function verify(string $token)
     {
@@ -103,12 +126,14 @@ class TracerStudyPublicController extends BaseController
         $periode = $detail['periode'];
         $pid     = (int) $periode['id'];
 
-        // Honeypot anti-bot
+        if (!empty($periode['is_mitra'])) {
+            return redirect()->to(ketarunaan_tracer_public_url($token));
+        }
+
         if (trim((string) ($this->request->getPost('website_url') ?? '')) !== '') {
             return redirect()->to(ketarunaan_tracer_public_url($token));
         }
 
-        // Rate limiting per IP + periode untuk mencegah percobaan acak berulang
         $throttler = \Config\Services::throttler();
         $rateKey   = 'ts_pub_verify_' . md5((string) $this->request->getIPAddress() . '_' . $pid);
         if ($throttler->check($rateKey, 10, 600) === false) {
@@ -139,7 +164,7 @@ class TracerStudyPublicController extends BaseController
     }
 
     /**
-     * Proses pendaftaran identitas alumni baru (belum ada di database) sebelum mengisi survei (POST /{slug}/daftar).
+     * Proses pendaftaran identitas alumni baru sebelum mengisi survei (POST /{slug}/daftar).
      */
     public function register(string $token)
     {
@@ -151,7 +176,10 @@ class TracerStudyPublicController extends BaseController
         $periode = $detail['periode'];
         $pid     = (int) $periode['id'];
 
-        // Honeypot anti-bot
+        if (!empty($periode['is_mitra'])) {
+            return redirect()->to(ketarunaan_tracer_public_url($token));
+        }
+
         if (trim((string) ($this->request->getPost('website_url') ?? '')) !== '') {
             return redirect()->to(ketarunaan_tracer_public_url($token));
         }
@@ -186,7 +214,7 @@ class TracerStudyPublicController extends BaseController
     }
 
     /**
-     * Proses kirim jawaban survei melalui tautan publik (POST /tracer/{token}/simpan).
+     * Proses kirim jawaban survei melalui tautan publik (POST /{slug}/simpan).
      */
     public function submit(string $token)
     {
@@ -195,10 +223,74 @@ class TracerStudyPublicController extends BaseController
             return redirect()->to(ketarunaan_tracer_public_url($token));
         }
 
-        $periode  = $detail['periode'];
-        $pid      = (int) $periode['id'];
-        $verified = $this->getVerifiedSession($pid);
+        $periode = $detail['periode'];
+        $pid     = (int) $periode['id'];
+        $isMitra = !empty($periode['is_mitra']);
 
+        if ($isMitra) {
+            if (trim((string) ($this->request->getPost('website_url') ?? '')) !== '') {
+                return redirect()->to(ketarunaan_tracer_public_url($token));
+            }
+
+            $throttler = \Config\Services::throttler();
+            $rateKey   = 'ts_pub_mitra_' . md5((string) $this->request->getIPAddress() . '_' . $pid);
+            if ($throttler->check($rateKey, 30, 600) === false) {
+                return redirect()->back()->withInput()
+                    ->with('error', 'Terlalu banyak pengiriman dalam waktu singkat. Tunggu beberapa menit lalu coba lagi.');
+            }
+
+            $rawJawaban = $this->request->getPost('jawaban') ?? [];
+            $rawOther   = $this->request->getPost('jawaban_other') ?? [];
+            $result     = $this->service->submitMitraRespons($pid, [
+                'jawaban'       => $rawJawaban,
+                'jawaban_other' => $rawOther,
+            ], 'Pengguna Lulusan (Tautan Publik)', true);
+
+            if (!$result['status']) {
+                return redirect()->back()->withInput()->with('error', $result['message']);
+            }
+
+            $prefillMap = session()->get('tracer_public_mitra_prefill');
+            if (!is_array($prefillMap)) {
+                $prefillMap = [];
+            }
+            $prevCount = (int) ($prefillMap[$pid]['count_submitted'] ?? 0);
+            $emailKeep = '';
+            $hpKeep    = '';
+            foreach ($detail['pertanyaan'] as $pq) {
+                $pk   = strtoupper((string) ($pq['kode_pertanyaan'] ?? ''));
+                $pqid = (int) $pq['id'];
+                if ($pk === 'TSM25_EMAIL' && isset($rawJawaban[$pqid])) {
+                    $emailKeep = trim((string) $rawJawaban[$pqid]);
+                } elseif ($pk === 'TSM25_NO_HP' && isset($rawJawaban[$pqid])) {
+                    $hpKeep = trim((string) $rawJawaban[$pqid]);
+                }
+            }
+
+            $prefillMap[$pid] = [
+                'TSM25_NAMA_ATASAN' => (string) ($result['nama_atasan'] ?? ''),
+                'TSM25_INSTANSI'    => (string) ($result['instansi'] ?? ''),
+                'TSM25_EMAIL'       => $emailKeep,
+                'TSM25_NO_HP'       => $hpKeep,
+                'last_alumni'       => (string) ($result['nama_alumni'] ?? ''),
+                'last_prodi'        => (string) ($result['prodi_label'] ?? ''),
+                'count_submitted'   => $prevCount + 1,
+            ];
+            session()->set('tracer_public_mitra_prefill', $prefillMap);
+
+            if (function_exists('log_audit')) {
+                log_audit('SUBMIT_TRACER_MITRA_PUBLIC', 'tracer_study_respons', (string) $result['id'], null, [
+                    'periode_id'  => $pid,
+                    'instansi'    => $result['instansi'] ?? '',
+                    'nama_alumni' => $result['nama_alumni'] ?? '',
+                ]);
+            }
+
+            return redirect()->to(ketarunaan_tracer_public_url($token, 'selesai'))
+                ->with('success', $result['message']);
+        }
+
+        $verified = $this->getVerifiedSession($pid);
         if (!$verified || empty($verified['nomor_taruna'])) {
             return redirect()->to(ketarunaan_tracer_public_url($token))
                 ->with('error', 'Sesi verifikasi berakhir. Silakan verifikasi ulang identitas Anda.');
@@ -216,6 +308,7 @@ class TracerStudyPublicController extends BaseController
             'kesesuaian_jenjang'  => $this->request->getPost('kesesuaian_jenjang'),
             'sumber_pengisian'    => 'tautan_publik',
             'jawaban'             => $this->request->getPost('jawaban') ?? [],
+            'jawaban_other'       => $this->request->getPost('jawaban_other') ?? [],
         ];
 
         $actorLabel = trim((string) ($verified['nama_lengkap'] ?? $verified['nomor_taruna'])) . ' (Tautan Publik)';
@@ -237,7 +330,7 @@ class TracerStudyPublicController extends BaseController
     }
 
     /**
-     * Halaman konfirmasi selesai setelah alumni mengirim survei (/tracer/{token}/selesai).
+     * Halaman konfirmasi selesai setelah mengirim survei (/{slug}/selesai).
      */
     public function selesai(string $token)
     {
@@ -248,27 +341,46 @@ class TracerStudyPublicController extends BaseController
 
         $periode  = $detail['periode'];
         $pid      = (int) $periode['id'];
+        $isMitra  = !empty($periode['is_mitra']);
         $verified = $this->getVerifiedSession($pid);
 
+        $mitraLast = null;
+        if ($isMitra) {
+            $prefillMap = session()->get('tracer_public_mitra_prefill');
+            if (is_array($prefillMap) && isset($prefillMap[$pid]) && is_array($prefillMap[$pid])) {
+                $mitraLast = $prefillMap[$pid];
+            }
+        }
+
         return view('ketarunaan/tracer_study/public_status', [
-            'title'    => 'Terima Kasih - Tracer Study ECC',
-            'heading'  => 'Jawaban Survei Tersimpan',
-            'message'  => 'Terima kasih telah berpartisipasi dalam Tracer Study PKTJ Tegal. Data Anda sangat bermanfaat bagi peningkatan mutu pendidikan dan layanan karier.',
-            'periode'  => $periode,
-            'verified' => $verified,
-            'token'    => $token,
-            'status'   => 'selesai',
+            'title'     => 'Terima Kasih - Tracer Study ECC',
+            'heading'   => $isMitra ? 'Penilaian Lulusan Tersimpan' : 'Jawaban Survei Tersimpan',
+            'message'   => $isMitra
+                ? 'Terima kasih atas kesediaan Bapak/Ibu menilai kinerja lulusan PKTJ Tegal. Apabila terdapat alumni PKTJ lain di instansi Bapak/Ibu, formulir dapat diisi kembali.'
+                : 'Terima kasih telah berpartisipasi dalam Tracer Study PKTJ Tegal. Data Anda sangat bermanfaat bagi peningkatan mutu pendidikan dan layanan karier.',
+            'periode'   => $periode,
+            'verified'  => $verified,
+            'isMitra'   => $isMitra,
+            'mitraLast' => $mitraLast,
+            'token'     => $token,
+            'status'    => 'selesai',
         ]);
     }
 
     /**
-     * Menghapus sesi verifikasi alumni pada perangkat bersama (POST /tracer/{token}/ganti-alumni).
+     * Menghapus sesi verifikasi pada perangkat bersama (POST /{slug}/ganti-alumni).
      */
     public function resetSession(string $token)
     {
         $detail = $this->service->getPeriodeByPublicToken($token);
         if ($detail) {
-            $this->clearVerifiedSession((int) $detail['periode']['id']);
+            $pid = (int) $detail['periode']['id'];
+            $this->clearVerifiedSession($pid);
+            $mitraMap = session()->get('tracer_public_mitra_prefill');
+            if (is_array($mitraMap) && isset($mitraMap[$pid])) {
+                unset($mitraMap[$pid]);
+                session()->set('tracer_public_mitra_prefill', $mitraMap);
+            }
         }
 
         return redirect()->to(ketarunaan_tracer_public_url($token));

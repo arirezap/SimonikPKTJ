@@ -3,6 +3,7 @@
 <?= $this->section('title') ?>Profil Taruna - <?= esc($taruna['nama_lengkap']) ?><?= $this->endSection() ?>
 
 <?= $this->section('styles') ?>
+<?= view('partials/_wilayah_styles') ?>
 <style>
     .avatar-profil-lg {
         width: 64px;
@@ -302,7 +303,18 @@
 
                                 <div class="col-md-6">
                                     <label for="profilTempatLahir" class="form-label small fw-semibold">Tempat Lahir <span class="text-danger">*</span></label>
-                                    <input type="text" id="profilTempatLahir" name="tempat_lahir" class="form-control" value="<?= esc(old('tempat_lahir', $taruna['tempat_lahir'] ?? '')) ?>" placeholder="Kota tempat lahir" required style="height: 40px;" <?= !$canEditProfile ? 'readonly' : '' ?>>
+                                    <?php $valTempatLahir = (string) old('tempat_lahir', $taruna['tempat_lahir'] ?? ''); ?>
+                                    <select id="profilTempatLahir" name="tempat_lahir" class="form-select js-ecc-wilayah-kab-only"
+                                            data-allow-tags="1" data-current-value="<?= esc($valTempatLahir) ?>"
+                                            data-placeholder="-- Pilih Kabupaten / Kota --" required <?= !$canEditProfile ? 'disabled' : '' ?>>
+                                        <option value="">-- Pilih Kabupaten / Kota --</option>
+                                        <?php if ($valTempatLahir !== ''): ?>
+                                            <option value="<?= esc($valTempatLahir) ?>" selected><?= esc($valTempatLahir) ?></option>
+                                        <?php endif; ?>
+                                    </select>
+                                    <?php if (!$canEditProfile): ?>
+                                        <input type="hidden" name="tempat_lahir" value="<?= esc($valTempatLahir) ?>">
+                                    <?php endif; ?>
                                 </div>
 
                                 <div class="col-md-6">
@@ -1054,6 +1066,7 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
+<?= view('partials/_wilayah_scripts') ?>
 <script>
     function bindKelasCascade(prodiId, tingkatId, kelasId, angkatanId) {
         const selProdi    = document.getElementById(prodiId);

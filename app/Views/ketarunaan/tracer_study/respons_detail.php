@@ -19,6 +19,7 @@ $bidangCat    = ketarunaan_tracer_kesesuaian_bidang_catalog();
 $jenjangCat   = ketarunaan_tracer_kesesuaian_jenjang_catalog();
 $tMeta        = $transisiCat[$respons['status_transisi'] ?? ''] ?? ['label' => $respons['status_transisi'] ?? '-', 'badge_class' => 'bg-light text-dark border'];
 $pid          = (int) ($respons['periode_id'] ?? 0);
+$isMitra      = (($respons['target_responden'] ?? 'alumni') === 'mitra');
 ?>
 <div class="container-fluid px-0">
     <?= $this->include('ketarunaan/tracer_study/_nav_tabs') ?>
@@ -57,48 +58,82 @@ $pid          = (int) ($respons['periode_id'] ?? 0);
             <div>
                 <h2 class="h5 fw-bold text-dark mb-1"><?= esc((string) ($respons['nama_lengkap'] ?: $respons['nomor_taruna'])) ?></h2>
                 <div class="ecc-text-muted-aa small ecc-num">
-                    Nomor Taruna: <strong><?= esc((string) $respons['nomor_taruna']) ?></strong>
-                    &bull; Prodi: <strong><?= esc((string) ($respons['kode_prodi'] ?: '-')) ?></strong>
-                    &bull; Lulus: <strong><?= esc((string) ($respons['tahun_lulus'] ?: '-')) ?></strong>
+                    <?php if ($isMitra): ?>
+                        Kode Respons: <strong><?= esc((string) $respons['nomor_taruna']) ?></strong>
+                        &bull; Instansi: <strong><?= esc((string) ($respons['nama_instansi'] ?: '-')) ?></strong>
+                    <?php else: ?>
+                        Nomor Taruna: <strong><?= esc((string) $respons['nomor_taruna']) ?></strong>
+                        &bull; Prodi: <strong><?= esc((string) ($respons['kode_prodi'] ?: '-')) ?></strong>
+                        &bull; Lulus: <strong><?= esc((string) ($respons['tahun_lulus'] ?: '-')) ?></strong>
+                    <?php endif; ?>
                 </div>
             </div>
             <div class="d-flex flex-wrap gap-2">
-                <span class="badge rounded-pill px-3 py-1 fw-semibold <?= esc($tMeta['badge_class']) ?>" style="font-size: 0.75rem;">
-                    <?= esc($tMeta['label']) ?>
-                </span>
+                <?php if ($isMitra): ?>
+                    <?= ketarunaan_tracer_target_badge('mitra') ?>
+                <?php else: ?>
+                    <span class="badge rounded-pill px-3 py-1 fw-semibold <?= esc($tMeta['badge_class']) ?>" style="font-size: 0.75rem;">
+                        <?= esc($tMeta['label']) ?>
+                    </span>
+                <?php endif; ?>
                 <?= ketarunaan_tracer_status_periode_badge((string) ($respons['status_periode'] ?? 'dibuka')) ?>
             </div>
         </div>
 
-        <div class="row g-3 small">
-            <div class="col-6 col-md-4">
-                <div class="ecc-text-muted-aa">Periode Survei</div>
-                <div class="fw-semibold text-dark"><?= esc((string) ($respons['nama_periode'] ?? '-')) ?></div>
-            </div>
-            <div class="col-6 col-md-4">
-                <div class="ecc-text-muted-aa">Instansi / Usaha</div>
-                <div class="fw-semibold text-dark"><?= esc((string) ($respons['nama_instansi'] ?: '-')) ?></div>
-            </div>
-            <div class="col-6 col-md-4">
-                <div class="ecc-text-muted-aa">Jabatan / Posisi</div>
-                <div class="fw-semibold text-dark"><?= esc((string) ($respons['jabatan_posisi'] ?: '-')) ?></div>
-            </div>
-            <div class="col-6 col-md-4">
-                <div class="ecc-text-muted-aa">Sektor &amp; Kota</div>
-                <div class="fw-semibold text-dark"><?= esc((string) ($respons['sektor_industri'] ?: '-')) ?><?= !empty($respons['kota_kerja']) ? (' — ' . esc((string) $respons['kota_kerja'])) : '' ?></div>
-            </div>
-            <div class="col-6 col-md-4">
-                <div class="ecc-text-muted-aa">Masa Tunggu Kerja</div>
-                <div class="fw-semibold text-dark ecc-num"><?= $respons['masa_tunggu_bulan'] !== null ? ((int) $respons['masa_tunggu_bulan'] . ' bulan') : '-' ?></div>
-            </div>
-            <div class="col-6 col-md-4">
-                <div class="ecc-text-muted-aa">Kesesuaian Bidang / Jenjang</div>
-                <div class="fw-semibold text-dark">
-                    <?= esc($bidangCat[$respons['kesesuaian_bidang'] ?? ''] ?? '-') ?> /
-                    <?= esc($jenjangCat[$respons['kesesuaian_jenjang'] ?? ''] ?? '-') ?>
+        <?php if ($isMitra): ?>
+            <div class="row g-3 small">
+                <div class="col-6 col-md-4">
+                    <div class="ecc-text-muted-aa">Periode Survei</div>
+                    <div class="fw-semibold text-dark"><?= esc((string) ($respons['nama_periode'] ?? '-')) ?></div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <div class="ecc-text-muted-aa">Alumni PKTJ yang Dinilai</div>
+                    <div class="fw-semibold text-dark"><?= esc((string) ($respons['nama_alumni_dinilai'] ?: '-')) ?></div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <div class="ecc-text-muted-aa">Program Studi Alumni</div>
+                    <div class="fw-semibold text-dark"><?= esc((string) ($respons['kode_prodi'] ? ($respons['kode_prodi'] . ' — ' . $respons['nama_prodi']) : '-')) ?></div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <div class="ecc-text-muted-aa">Email Atasan Langsung</div>
+                    <div class="fw-semibold text-dark"><?= esc((string) ($respons['email_alumni'] ?: '-')) ?></div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <div class="ecc-text-muted-aa">No. Handphone Atasan</div>
+                    <div class="fw-semibold text-dark ecc-num"><?= esc((string) ($respons['telepon_alumni'] ?: '-')) ?></div>
                 </div>
             </div>
-        </div>
+        <?php else: ?>
+            <div class="row g-3 small">
+                <div class="col-6 col-md-4">
+                    <div class="ecc-text-muted-aa">Periode Survei</div>
+                    <div class="fw-semibold text-dark"><?= esc((string) ($respons['nama_periode'] ?? '-')) ?></div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <div class="ecc-text-muted-aa">Instansi / Usaha</div>
+                    <div class="fw-semibold text-dark"><?= esc((string) ($respons['nama_instansi'] ?: '-')) ?></div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <div class="ecc-text-muted-aa">Jabatan / Posisi</div>
+                    <div class="fw-semibold text-dark"><?= esc((string) ($respons['jabatan_posisi'] ?: '-')) ?></div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <div class="ecc-text-muted-aa">Sektor &amp; Kota</div>
+                    <div class="fw-semibold text-dark"><?= esc((string) ($respons['sektor_industri'] ?: '-')) ?><?= !empty($respons['kota_kerja']) ? (' — ' . esc((string) $respons['kota_kerja'])) : '' ?></div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <div class="ecc-text-muted-aa">Masa Tunggu Kerja</div>
+                    <div class="fw-semibold text-dark ecc-num"><?= $respons['masa_tunggu_bulan'] !== null ? ((int) $respons['masa_tunggu_bulan'] . ' bulan') : '-' ?></div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <div class="ecc-text-muted-aa">Kesesuaian Bidang / Jenjang</div>
+                    <div class="fw-semibold text-dark">
+                        <?= esc($bidangCat[$respons['kesesuaian_bidang'] ?? ''] ?? '-') ?> /
+                        <?= esc($jenjangCat[$respons['kesesuaian_jenjang'] ?? ''] ?? '-') ?>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
     </div>
 
     <!-- Jawaban Pertanyaan Bundel -->
@@ -114,7 +149,7 @@ $pid          = (int) ($respons['periode_id'] ?? 0);
                         <div class="fw-semibold text-dark small mb-2"><?= ($idx + 1) . '. ' . esc((string) $qa['teks_pertanyaan']) ?></div>
                         <div class="p-2 px-3 rounded-3 bg-light border small text-dark">
                             <?php if ($qa['tipe_jawaban'] === 'skala_likert' && $qa['nilai_angka'] !== null): ?>
-                                <strong class="text-primary ecc-num">Skor <?= (int) round((float) $qa['nilai_angka']) ?> / 5</strong>
+                                <strong class="text-primary ecc-num">Skor <?= (int) round((float) $qa['nilai_angka']) ?> / <?= (int) ($qa['max_scale'] ?? 5) ?></strong>
                             <?php else: ?>
                                 <?= nl2br(esc((string) ($qa['nilai_teks'] ?: '-'))) ?>
                             <?php endif; ?>
