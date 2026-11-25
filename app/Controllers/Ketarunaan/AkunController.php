@@ -39,7 +39,11 @@ class AkunController extends BaseController
         $user   = $this->userModel->select('id, username, nama_lengkap, email, role')->find($userId);
 
         if (!$user) {
-            return redirect()->to(site_url('logout'));
+            session()->remove(['id', 'user_id', 'username', 'nama', 'nip', 'role', 'all_roles', 'unit', 'unit_id', 'jabatan', 'pangkat', 'status_pegawai', 'foto', 'user_agent_fingerprint', 'isLoggedIn']);
+            session()->regenerate(true);
+            helper('cookie');
+            delete_cookie('remember_me', '', '/');
+            return redirect()->to(site_url('login'))->withCookies();
         }
 
         return view('ketarunaan/akun/keamanan', [
@@ -63,7 +67,11 @@ class AkunController extends BaseController
         $user   = $this->userModel->select('id, username, password')->find($userId);
 
         if (!$user) {
-            return redirect()->to(site_url('logout'));
+            session()->remove(['id', 'user_id', 'username', 'nama', 'nip', 'role', 'all_roles', 'unit', 'unit_id', 'jabatan', 'pangkat', 'status_pegawai', 'foto', 'user_agent_fingerprint', 'isLoggedIn']);
+            session()->regenerate(true);
+            helper('cookie');
+            delete_cookie('remember_me', '', '/');
+            return redirect()->to(site_url('login'))->withCookies();
         }
 
         $rules = [

@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <title>Masuk ke Akun - Evidence Command Center (ECC)</title>
     <link rel="shortcut icon" type="image/png" href="<?= base_url('assets/logo_pktj.png') ?>">
     <link href="<?= base_url('assets/vendor/bootstrap/bootstrap.min.css') ?>" rel="stylesheet">
     <link rel="stylesheet" href="<?= base_url('assets/vendor/bootstrap-icons/bootstrap-icons.min.css') ?>">
-    
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=2.0.' . filemtime(FCPATH . 'assets/css/style.css')) ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/style.css?v=2.1.' . filemtime(FCPATH . 'assets/css/style.css')) ?>">
     <style>
         body.login-page {
             background-color: #f1f5f9;
@@ -22,24 +23,23 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             color: #1e293b;
             margin: 0;
-            padding: 1.5rem;
+            padding: 24px;
         }
 
-        /* 1. Main Card Container (100% Solid, Stabil & Elegan - Zero Motion) */
+        /* 1. Main Card Container (Solid & Stabil — 8-Point Grid) */
         .fit-card-wrapper {
             width: 100%;
-            max-width: 820px;
+            max-width: 824px;
             z-index: 1;
             position: relative;
         }
 
         .fit-card {
-            border-radius: 1rem;
+            border-radius: 16px;
             border: 1px solid #e2e8f0;
-            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.07), 0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.9) inset;
             background: #ffffff;
         }
 
@@ -49,127 +49,164 @@
             border-right: 1px solid #e2e8f0;
             position: relative;
         }
-        
+
         .fit-img {
             max-height: 300px;
             object-fit: contain;
             filter: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.06));
         }
 
-        /* 3. Form Ergonomics & Stable Controls */
+        .fit-heading {
+            font-size: 1.75rem;
+            line-height: 1.25;
+            letter-spacing: -0.02em;
+            color: #0f172a;
+        }
+
+        .fit-subtitle {
+            font-size: 0.875rem;
+            color: #475569;
+        }
+
+        /* 3. Form Ergonomics & Stable Controls (4px / 8-Point Grid) */
         .fit-label {
-            font-size: 0.8125rem;
+            font-size: 0.875rem;
             font-weight: 600;
             color: #334155;
-            letter-spacing: 0.01em;
-            margin-bottom: 0.375rem;
+            margin-bottom: 8px;
             display: block;
         }
-        
+
         .fit-input {
-            border-radius: 0.5rem;
+            border-radius: 8px;
             border: 1px solid #cbd5e1;
-            padding: 0.65rem 0.875rem;
-            font-size: 0.9rem;
+            padding: 8px 12px;
+            font-size: 0.875rem;
             color: #0f172a;
             background-color: #ffffff;
             transition: border-color 0.15s ease, box-shadow 0.15s ease;
-            height: 42px;
+            height: 44px;
         }
-        
+
+        .fit-input-password {
+            padding-right: 48px;
+        }
+
         .fit-input:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
             background-color: #ffffff;
             outline: none;
         }
 
         .fit-input.is-invalid-auth {
             border-color: #ef4444;
-            background-color: #fffaf0;
+            background-color: #fef2f2;
         }
-        
+
         .fit-input.is-invalid-auth:focus {
             box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
         }
 
+        /* Centered without transform so prefers-reduced-motion never shifts it */
+        .fit-password-wrap {
+            position: relative;
+        }
+
         .fit-toggle-pwd {
-            color: #94a3b8;
-            padding: 0.35rem 0.6rem;
-            border-radius: 0.375rem;
-            transition: color 0.15s ease;
-            min-height: 36px;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 4px;
+            margin: auto 0;
+            height: 36px;
             min-width: 44px;
+            padding: 4px 8px;
+            border: 0;
+            background: transparent;
+            border-radius: 8px;
+            color: #475569;
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            cursor: pointer;
+            transition: color 0.15s ease, background-color 0.15s ease;
         }
-        
+
         .fit-toggle-pwd:hover {
-            color: #2563eb;
+            color: #0d6efd;
+            background-color: #f1f5f9;
         }
 
         .fit-toggle-pwd:focus-visible {
-            outline: 2px solid #2563eb;
+            outline: 2px solid #0d6efd;
             outline-offset: 1px;
         }
 
         .fit-checkbox {
-            width: 1.1rem;
-            height: 1.1rem;
-            border-radius: 0.3rem;
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
             border: 1.5px solid #cbd5e1;
             cursor: pointer;
             transition: background-color 0.15s ease, border-color 0.15s ease;
         }
-        
+
         .fit-checkbox:checked {
             background-color: #1e3a8a;
             border-color: #1e3a8a;
         }
 
         .fit-checkbox:focus-visible {
-            outline: 2px solid #2563eb;
+            outline: 2px solid #0d6efd;
             outline-offset: 2px;
         }
 
+        .fit-option-label {
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: #475569;
+            line-height: 1.25;
+        }
+
         .fit-link {
-            color: #2563eb;
+            color: #1e40af;
+            font-size: 0.875rem;
             transition: color 0.15s ease;
         }
-        
+
         .fit-link:hover {
-            color: #1d4ed8;
+            color: #1e3a8a;
             text-decoration: underline !important;
         }
 
         .fit-link:focus-visible {
-            outline: 2px solid #2563eb;
+            outline: 2px solid #0d6efd;
             outline-offset: 2px;
+            border-radius: 4px;
         }
 
-        /* 4. Primary CTA Button (Kokoh, Berbobot, Tanpa Lompat) */
+        /* 4. Primary CTA Button */
         .fit-btn-primary {
             background-color: #1e3a8a;
             border: 1px solid #1e3a8a;
             color: #ffffff;
-            border-radius: 0.5rem;
-            padding: 0.7rem 1.25rem;
-            font-size: 0.925rem;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 0.95rem;
             font-weight: 600;
-            letter-spacing: 0.015em;
             box-shadow: 0 2px 4px rgba(30, 58, 138, 0.12);
             transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
             min-height: 44px;
         }
-        
+
         .fit-btn-primary:hover {
             background-color: #172554;
             border-color: #172554;
             color: #ffffff;
             box-shadow: 0 4px 8px rgba(30, 58, 138, 0.2);
         }
-        
+
         .fit-btn-primary:active {
             background-color: #0f172a;
             border-color: #0f172a;
@@ -177,42 +214,71 @@
         }
 
         .fit-btn-primary:focus-visible {
-            outline: 3px solid rgba(37, 99, 235, 0.4);
-            outline-offset: 2px;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.35);
         }
 
         .fit-spinner {
             display: inline-block;
-            width: 1rem;
-            height: 1rem;
+            width: 16px;
+            height: 16px;
             border: 2px solid rgba(255, 255, 255, 0.35);
             border-top-color: #ffffff;
             border-radius: 50%;
             animation: spin 0.6s linear infinite;
             vertical-align: text-bottom;
-            margin-right: 0.45rem;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+            margin-right: 8px;
         }
 
-        @media (prefers-reduced-motion: reduce) {
-            .fit-spinner {
-                animation: none !important;
-            }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         /* 5. Clean Error Alert Box */
         .fit-error-alert {
             background-color: #fef2f2;
-            border: 1px solid #fecaca;
+            border: 1px solid #fca5a5;
             color: #991b1b;
-            border-radius: 0.5rem;
-            padding: 0.65rem 0.85rem;
-            font-size: 0.825rem;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 0.875rem;
             line-height: 1.4;
-            margin-bottom: 1rem;
+            margin-bottom: 16px;
+        }
+
+        .fit-footer {
+            font-size: 0.75rem;
+            color: #475569;
+        }
+
+        .fit-version-badge {
+            font-size: 0.75rem;
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum";
+        }
+
+        @media (max-width: 767.98px) {
+            body.login-page {
+                padding: 16px;
+            }
+            .fit-input {
+                font-size: var(--bs-body-font-size, 1rem);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .fit-spinner,
+            .fit-input,
+            .fit-toggle-pwd,
+            .fit-checkbox,
+            .fit-link,
+            .fit-btn-primary {
+                animation: none !important;
+                transition: none !important;
+            }
+            .fit-btn-primary:active {
+                transform: none !important;
+            }
         }
     </style>
 </head>
@@ -230,14 +296,14 @@
             <div class="fit-right-panel p-4 p-sm-5 d-flex flex-column justify-content-center" style="width: 100%; flex: 1;">
                 <div class="text-start mb-3">
                     <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ" class="mb-2" style="height: 44px; width: auto;" width="44" height="44" decoding="async">
-                    <h1 class="fw-bold text-dark mb-1" style="letter-spacing: -0.025em; font-size: 1.45rem;">Masuk ke Akun</h1>
-                    <p class="text-muted mb-0 fw-medium" style="font-size: 0.8125rem;">Evidence Command Center (ECC) &bull; PKTJ Tegal</p>
+                    <h1 class="fw-bold mb-1 fit-heading">Masuk ke Akun</h1>
+                    <p class="mb-0 fw-medium fit-subtitle">Evidence Command Center (ECC) &middot; PKTJ Tegal</p>
                 </div>
 
-                <!-- Inline Error Alert (Tenang & Jelas Tanpa Efek Gerak) -->
+                <!-- Inline Error Alert -->
                 <?php if (session()->getFlashdata('error')): ?>
                 <div class="fit-error-alert d-flex align-items-center gap-2" role="alert" id="authErrorAlert">
-                    <i class="bi bi-exclamation-triangle-fill text-danger flex-shrink-0" style="font-size: 0.95rem;"></i>
+                    <i class="bi bi-exclamation-triangle-fill text-danger flex-shrink-0" style="font-size: 0.95rem;" aria-hidden="true"></i>
                     <div class="fw-medium">
                         <?= esc(session()->getFlashdata('error')) ?>
                     </div>
@@ -258,7 +324,7 @@
                                name="username" 
                                id="username" 
                                class="form-control fit-input <?= $hasError ? 'is-invalid-auth' : '' ?>" 
-                               placeholder="Masukkan username..." 
+                               placeholder="Masukkan nama pengguna..." 
                                value="<?= esc($currentUsername) ?>" 
                                autocomplete="username" 
                                autocapitalize="none" 
@@ -270,11 +336,11 @@
 
                     <div class="mb-3">
                         <label for="password" class="form-label fit-label">Kata Sandi</label>
-                        <div class="position-relative">
+                        <div class="fit-password-wrap">
                             <input type="password" 
                                    name="password" 
                                    id="password" 
-                                   class="form-control fit-input pe-5 <?= $hasError ? 'is-invalid-auth' : '' ?>" 
+                                   class="form-control fit-input fit-input-password <?= $hasError ? 'is-invalid-auth' : '' ?>" 
                                    placeholder="Masukkan kata sandi..." 
                                    autocomplete="current-password" 
                                    required 
@@ -282,35 +348,37 @@
                                    <?= !empty($currentUsername) ? 'autofocus' : '' ?>>
                             <button type="button" 
                                     id="togglePassword" 
-                                    class="btn btn-link fit-toggle-pwd position-absolute top-50 end-0 translate-middle-y text-decoration-none me-2" 
-                                    aria-label="Tampilkan kata sandi">
-                                <i class="bi bi-eye-slash" style="font-size: 0.95rem;"></i>
+                                    class="fit-toggle-pwd" 
+                                    aria-label="Tampilkan kata sandi"
+                                    aria-pressed="false">
+                                <i class="bi bi-eye-slash" style="font-size: 0.95rem;" aria-hidden="true"></i>
                             </button>
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4 gap-2">
                         <div class="form-check m-0 p-0 d-flex align-items-center gap-2">
                             <input class="form-check-input fit-checkbox m-0" type="checkbox" value="1" id="rememberMe" name="remember" <?= $isRemembered ? 'checked' : '' ?> style="margin-left: 0 !important;">
-                            <label class="form-check-label text-muted user-select-none" for="rememberMe" style="cursor: pointer; font-size: 0.825rem; line-height: 1.2;">
+                            <label class="form-check-label user-select-none fit-option-label" for="rememberMe">
                                 Ingat sesi
                             </label>
                         </div>
-                        <button type="button" class="btn btn-link p-0 text-decoration-none fw-medium fit-link border-0 align-baseline" onclick="forgotPassword();" style="font-size: 0.825rem;">
+                        <button type="button" id="btnForgotPassword" class="btn btn-link p-0 text-decoration-none fw-medium fit-link border-0 align-baseline">
                             Lupa Kata Sandi?
                         </button>
                     </div>
 
                     <div class="d-grid mb-2">
                         <button type="submit" class="btn fit-btn-primary d-flex align-items-center justify-content-center" id="loginBtn">
-                            <i class="bi bi-box-arrow-in-right me-2"></i>
+                            <i class="bi bi-box-arrow-in-right me-2" aria-hidden="true"></i>
                             <span>Masuk</span>
                         </button>
                     </div>
                 </form>
 
-                <div class="text-center mt-3 pt-1">
-                    <p class="text-muted mb-0" style="font-size: 0.75rem; color: #64748b;">&copy; <?= date("Y"); ?> Evidence Command Center (ECC) &bull; PKTJ Tegal &bull; <span class="badge bg-light text-secondary border rounded-pill px-2 py-1" style="font-size: 0.75rem; font-variant-numeric: tabular-nums;">v 2.0</span></p>
+                <div class="d-flex flex-wrap align-items-center justify-content-center gap-2 mt-4 pt-1 fit-footer">
+                    <span>&copy; <?= date('Y') ?> Evidence Command Center (ECC) &middot; PKTJ Tegal</span>
+                    <span class="badge bg-light text-secondary-emphasis border rounded-pill px-2 py-1 fit-version-badge">v 2.0</span>
                 </div>
             </div>
             
@@ -323,8 +391,13 @@
         const togglePasswordButton = document.getElementById('togglePassword');
         const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
+        const btnForgotPassword = document.getElementById('btnForgotPassword');
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const defaultLoginBtnHtml = loginBtn ? loginBtn.innerHTML : '';
+        let isSubmitting = false;
 
-        // Otomatis fokus ke input password jika username sudah terisi
+        // Otomatis fokus ke input kata sandi jika nama pengguna sudah terisi
         if (usernameInput && passwordInput && usernameInput.value.trim() !== '') {
             passwordInput.focus();
         }
@@ -332,9 +405,9 @@
         if (togglePasswordButton && passwordInput) {
             togglePasswordButton.addEventListener('click', function () {
                 const isPassword = passwordInput.getAttribute('type') === 'password';
-                const newType = isPassword ? 'text' : 'password';
-                passwordInput.setAttribute('type', newType);
+                passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
                 this.setAttribute('aria-label', isPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi');
+                this.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
 
                 const icon = this.querySelector('i');
                 if (icon) {
@@ -344,10 +417,12 @@
             });
         }
 
-        // Loading state pada tombol login (hanya jika form valid, dengan perlindungan anti-double submit)
-        const loginForm = document.getElementById('loginForm');
+        if (btnForgotPassword) {
+            btnForgotPassword.addEventListener('click', forgotPassword);
+        }
+
+        // Loading state pada tombol masuk (anti-double submit + reset saat kembali via bfcache)
         if (loginForm) {
-            let isSubmitting = false;
             loginForm.addEventListener('submit', function(e) {
                 if (isSubmitting) {
                     e.preventDefault();
@@ -355,17 +430,25 @@
                 }
                 if (loginForm.checkValidity()) {
                     isSubmitting = true;
-                    const btn = document.getElementById('loginBtn');
-                    if (btn) {
-                        btn.innerHTML = '<span class="fit-spinner"></span> <span>Memproses...</span>';
-                        btn.style.opacity = '0.9';
+                    if (loginBtn) {
+                        loginBtn.innerHTML = '<span class="fit-spinner" aria-hidden="true"></span><span>Memproses...</span>';
+                        loginBtn.style.opacity = '0.9';
                         setTimeout(function() {
-                            btn.disabled = true;
+                            loginBtn.disabled = true;
                         }, 10);
                     }
                 }
             });
         }
+
+        window.addEventListener('pageshow', function () {
+            isSubmitting = false;
+            if (loginBtn && defaultLoginBtnHtml) {
+                loginBtn.disabled = false;
+                loginBtn.style.opacity = '';
+                loginBtn.innerHTML = defaultLoginBtnHtml;
+            }
+        });
     });
 
     function forgotPassword() {
@@ -373,8 +456,8 @@
             Swal.fire({
                 icon: 'info',
                 title: 'Lupa Kata Sandi?',
-                text: 'Silakan hubungi Administrator atau Unit Kepegawaian untuk mereset kata sandi akun Anda.',
-                confirmButtonText: '<i class="bi bi-check-lg me-1"></i> Mengerti',
+                text: 'Hubungi Administrator atau Bagian Kepegawaian untuk mengatur ulang kata sandi akun Anda.',
+                confirmButtonText: '<i class="bi bi-check-lg me-1" aria-hidden="true"></i> Mengerti',
                 customClass: {
                     popup: 'rounded-4 shadow-lg border-0 p-4',
                     title: 'fw-bold text-dark fs-5 mb-2',
@@ -384,11 +467,11 @@
                 buttonsStyling: false
             });
         } else {
-            alert('Lupa Kata Sandi?\n\nSilakan hubungi Administrator atau Unit Kepegawaian untuk mereset kata sandi akun Anda.');
+            alert('Lupa Kata Sandi?\n\nHubungi Administrator atau Bagian Kepegawaian untuk mengatur ulang kata sandi akun Anda.');
         }
     }
 
-    // Tampilkan Toast Elegan Jika Ada Sukses (Misal: setelah logout) - Non-blocking
+    // Toast non-blocking setelah keluar dari ECC
     <?php if (session()->getFlashdata('success')): ?>
     const successText = '<?= esc(session()->getFlashdata('success'), 'js') ?>';
     if (typeof Swal !== 'undefined') {

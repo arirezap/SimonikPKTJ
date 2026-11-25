@@ -165,25 +165,25 @@
                                     <?php $selfPortalHref = site_url(ltrim(\App\Libraries\Ketarunaan\KetarunaanPolicy::getSelfPortalUrl(), '/')); ?>
                                     <li>
                                         <a class="dropdown-item btn-tactile" href="<?= esc($selfPortalHref) ?>">
-                                            <i class="bi bi-person-circle me-2"></i> Profil Saya
+                                            <i class="bi bi-person-circle me-2" aria-hidden="true"></i> Profil Saya
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item btn-tactile" href="<?= site_url('ketarunaan/keamanan-akun') ?>">
-                                            <i class="bi bi-key me-2"></i> Ubah Kata Sandi
+                                            <i class="bi bi-key me-2" aria-hidden="true"></i> Ubah Kata Sandi
                                         </a>
                                     </li>
                                 <?php else: ?>
                                     <li>
                                         <a class="dropdown-item btn-tactile" href="<?= site_url('profile') ?>">
-                                            <i class="bi bi-person-circle me-2"></i> Profil Saya
+                                            <i class="bi bi-person-circle me-2" aria-hidden="true"></i> Profil Saya
                                         </a>
                                     </li>
                                 <?php endif; ?>
                                 <li>
-                                    <a class="dropdown-item text-danger btn-tactile" href="<?= site_url('logout') ?>" onclick="confirmLogout(event)">
-                                        <i class="bi bi-box-arrow-right me-2"></i> Keluar
-                                    </a>
+                                    <button type="button" class="dropdown-item text-danger btn-tactile" onclick="confirmLogout(event)">
+                                        <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i> Keluar
+                                    </button>
                                 </li>
                             </ul>
                             <!-- Form Tersembunyi untuk Logout via POST (Anti-CSRF Protection) -->
@@ -270,31 +270,39 @@
     });
 
     function confirmLogout(event) {
-        event.preventDefault();
+        if (event) event.preventDefault();
+        const executeLogout = function() {
+            const logoutForm = document.getElementById('logoutPostForm');
+            if (logoutForm) {
+                logoutForm.submit();
+            }
+        };
+
         if (typeof Swal !== 'undefined') {
             Swal.fire({
-                title: 'Keluar dari Aplikasi?',
+                title: 'Keluar dari ECC?',
                 text: 'Sesi Anda saat ini akan diakhiri.',
-                icon: 'warning',
+                icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#dc3545',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Ya, Keluar',
+                confirmButtonText: '<i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i> Ya, Keluar',
                 cancelButtonText: 'Batal',
                 reverseButtons: true,
                 customClass: {
-                    popup: 'rounded-4 shadow border-0'
-                }
+                    popup: 'rounded-4 shadow-lg border-0 p-4',
+                    title: 'fw-bold text-dark fs-5 mb-2',
+                    htmlContainer: 'text-muted small mb-4',
+                    confirmButton: 'btn btn-danger btn-tactile rounded-pill px-4 py-2 fw-semibold shadow-sm',
+                    cancelButton: 'btn btn-secondary btn-tactile rounded-pill px-4 py-2 fw-semibold shadow-sm'
+                },
+                buttonsStyling: false
             }).then((result) => {
                 if (result.isConfirmed) {
                     Swal.showLoading();
-                    document.getElementById('logoutPostForm').submit();
+                    executeLogout();
                 }
             });
-        } else {
-            if (confirm('Keluar dari aplikasi?')) {
-                document.getElementById('logoutPostForm').submit();
-            }
+        } else if (confirm('Keluar dari ECC?')) {
+            executeLogout();
         }
     }
     </script>

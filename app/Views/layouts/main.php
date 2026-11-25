@@ -164,25 +164,25 @@
                                     <?php $selfPortalHref = site_url(ltrim(\App\Libraries\Ketarunaan\KetarunaanPolicy::getSelfPortalUrl(), '/')); ?>
                                     <li>
                                         <a class="dropdown-item btn-tactile" href="<?= esc($selfPortalHref) ?>">
-                                            <i class="bi bi-person-circle me-2"></i> Profil Saya
+                                            <i class="bi bi-person-circle me-2" aria-hidden="true"></i> Profil Saya
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item btn-tactile" href="<?= site_url('ketarunaan/keamanan-akun') ?>">
-                                            <i class="bi bi-key me-2"></i> Ubah Kata Sandi
+                                            <i class="bi bi-key me-2" aria-hidden="true"></i> Ubah Kata Sandi
                                         </a>
                                     </li>
                                 <?php else: ?>
                                     <li>
                                         <a class="dropdown-item btn-tactile" href="<?= site_url('profile') ?>">
-                                            <i class="bi bi-person-circle me-2"></i> Profil Saya
+                                            <i class="bi bi-person-circle me-2" aria-hidden="true"></i> Profil Saya
                                         </a>
                                     </li>
                                 <?php endif; ?>
                                 <li>
-                                    <a class="dropdown-item text-danger btn-tactile" href="<?= site_url('logout') ?>" onclick="confirmLogout(event)">
-                                        <i class="bi bi-box-arrow-right me-2"></i> Keluar
-                                    </a>
+                                    <button type="button" class="dropdown-item text-danger btn-tactile" onclick="confirmLogout(event)">
+                                        <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i> Keluar
+                                    </button>
                                 </li>
                             </ul>
                             <!-- Form Tersembunyi untuk Logout via POST (Anti-CSRF Protection) -->
@@ -283,18 +283,16 @@
             const logoutForm = document.getElementById('logoutPostForm');
             if (logoutForm) {
                 logoutForm.submit();
-            } else {
-                window.location.href = '<?= site_url('logout') ?>';
             }
         };
 
         if (typeof Swal !== 'undefined') {
             Swal.fire({
-                title: 'Keluar dari Aplikasi?',
+                title: 'Keluar dari ECC?',
                 text: 'Sesi Anda saat ini akan diakhiri.',
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonText: '<i class="bi bi-box-arrow-right me-2"></i> Ya, Keluar',
+                confirmButtonText: '<i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i> Ya, Keluar',
                 cancelButtonText: 'Batal',
                 reverseButtons: true,
                 customClass: {
@@ -311,7 +309,7 @@
                     executeLogout();
                 }
             });
-        } else if (confirm('Keluar dari aplikasi?')) {
+        } else if (confirm('Keluar dari ECC?')) {
             executeLogout();
         }
     }

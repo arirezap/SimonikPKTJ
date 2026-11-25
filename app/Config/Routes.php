@@ -38,7 +38,7 @@ $routes->get('/', 'Home::index');
 // Authentication Routes
 $routes->get('login', 'Auth::login');
 $routes->post('login', 'Auth::processLogin');
-$routes->match(['get', 'post'], 'logout', 'Auth::logout');
+$routes->post('logout', 'Auth::logout');
 
 // Tautan Singkat & Publik Tracer Study Alumni (contoh: /tracerstudy2026 atau /tracer/{token})
 $routes->group('tracer', static function ($routes) {

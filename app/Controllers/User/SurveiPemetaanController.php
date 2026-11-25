@@ -714,7 +714,7 @@ class SurveiPemetaanController extends BaseController
         $row = $db->table('users')
                   ->select('id, nama_lengkap, nip, username, jabatan, pangkat, unit, unit_id, role, status_pegawai, tmt_selesai')
                   ->where('id', $uid)
-                  ->where('role !=', 'admin')
+                  ->whereNotIn('role', ['admin', 'taruna', 'alumni', 'pengguna_lulusan'])
                   ->where('nip IS NOT NULL', null, false)
                   ->where("TRIM(nip) != ''", null, false)
                   ->limit(1)
@@ -757,7 +757,7 @@ class SurveiPemetaanController extends BaseController
         $db      = \Config\Database::connect();
         $builder = $db->table('users')
                       ->select($cols)
-                      ->where('role !=', 'admin')
+                      ->whereNotIn('role', ['admin', 'taruna', 'alumni', 'pengguna_lulusan'])
                       ->where('nip IS NOT NULL', null, false)
                       ->where("TRIM(nip) != ''", null, false)
                       ->groupStart()
@@ -1546,7 +1546,7 @@ class SurveiPemetaanController extends BaseController
     }
 
     /**
-     * Tolak akses akun layanan mandiri (taruna / alumni) dari survei khusus pegawai ASN.
+     * Tolak akses akun non-pegawai (taruna / alumni / pengguna lulusan) dari survei khusus pegawai ASN.
      */
     private function rejectSelfAccountIfLoggedIn(bool $asJson): ?\CodeIgniter\HTTP\ResponseInterface
     {
@@ -1555,7 +1555,7 @@ class SurveiPemetaanController extends BaseController
         }
 
         helper('role');
-        if (!\App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfAccountOnly()) {
+        if (\App\Libraries\Ketarunaan\KetarunaanPolicy::hasEmployeeRole()) {
             return null;
         }
 
@@ -1566,7 +1566,9 @@ class SurveiPemetaanController extends BaseController
             ], 403);
         }
 
-        $portalUrl = site_url(ltrim(\App\Libraries\Ketarunaan\KetarunaanPolicy::getSelfPortalUrl(), '/'));
+        $portalUrl = \App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfAccountOnly()
+            ? site_url(ltrim(\App\Libraries\Ketarunaan\KetarunaanPolicy::getSelfPortalUrl(), '/'))
+            : null;
 
         return $this->response->setStatusCode(403)->setBody(view('errors/html/error_403_portal', [
             'backUrl'  => $portalUrl,

@@ -11,6 +11,9 @@ class Auth extends BaseController
     {
         // Cek jika user sudah login
         if (session()->get('isLoggedIn')) {
+            if (\App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfAccountOnly()) {
+                return redirect()->to(site_url(ltrim(\App\Libraries\Ketarunaan\KetarunaanPolicy::getSelfPortalUrl(), '/')));
+            }
             return redirect()->to(site_url('dashboard'));
         }
 
@@ -35,17 +38,18 @@ class Auth extends BaseController
             return redirect()->to(site_url('login'))->withInput();
         }
         
-        // --- PROTEKSI BRUTE FORCE ATTACK (THROTTLING) ---
-        $throttler = \Config\Services::throttler();
-        $ipAddress = $this->request->getIPAddress();
+        // --- PROTEKSI BRUTE FORCE ATTACK (THROTTLING PER AKUN & PER IP) ---
+        $throttler   = \Config\Services::throttler();
+        $ipAddress   = $this->request->getIPAddress();
         $throttleKey = md5($ipAddress . '_' . strtolower($username) . '_login');
-        if ($throttler->check($throttleKey, 10, MINUTE) === false) {
+        $ipKey       = md5($ipAddress . '_login_ip');
+        if ($throttler->check($throttleKey, 10, MINUTE) === false || $throttler->check($ipKey, 30, MINUTE) === false) {
             log_audit('RATE_LIMIT_LOGIN', 'auth', null, null, [
                 'username' => $username,
                 'ip'       => $ipAddress,
                 'reason'   => 'brute_force_throttled'
             ]);
-            $session->setFlashdata('error', 'Terlalu banyak percobaan login yang gagal untuk akun ini. Silakan tunggu 1 menit.');
+            $session->setFlashdata('error', 'Terlalu banyak percobaan masuk. Coba lagi dalam 1 menit.');
             return redirect()->to(site_url('login'))->withInput();
         }
 
@@ -142,7 +146,8 @@ class Auth extends BaseController
                     // Simpan username agar otomatis terisi di form login
                     set_cookie('saved_username', $data['username'], 2592000, '', '/', '', $isSecure, true, 'Lax');
                 } else {
-                    delete_cookie('saved_username');
+                    set_cookie('remember_me', '', -3600, '', '/', '', $isSecure, true, 'Lax');
+                    set_cookie('saved_username', '', -3600, '', '/', '', $isSecure, true, 'Lax');
                 }
                 // -------------------------
 
@@ -156,19 +161,43 @@ class Auth extends BaseController
                 // Arahkan kembali ke tautan tujuan yang sempat dibuka sebelum login (jika aman & sesuai peran)
                 $intendedUrl = (string) ($session->get('intended_url') ?? '');
                 $session->remove('intended_url');
+                $isEmployee = \App\Libraries\Ketarunaan\KetarunaanPolicy::hasEmployeeRole();
+                $isSelfOnly = \App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfAccountOnly();
+
                 if (
                     $intendedUrl !== ''
                     && strpos($intendedUrl, '/') === 0
                     && strpos($intendedUrl, '//') !== 0
                     && !preg_match('/[\r\n]/', $intendedUrl)
                 ) {
-                    $isSelfOnly = \App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfAccountOnly();
-                    if (!$isSelfOnly || strpos($intendedUrl, '/ketarunaan/') === 0) {
-                        return redirect()->to(site_url(ltrim($intendedUrl, '/')));
+                    if ($isEmployee) {
+                        return redirect()->to(site_url(ltrim($intendedUrl, '/')))->withCookies();
+                    }
+
+                    $blockedSelfPrefixes = [
+                        '/ketarunaan/dashboard',
+                        '/ketarunaan/data-dosen',
+                        '/ketarunaan/validasi',
+                        '/ketarunaan/laporan',
+                        '/ketarunaan/pengaturan',
+                    ];
+                    $isBlockedSelfTarget = false;
+                    foreach ($blockedSelfPrefixes as $prefix) {
+                        if (strpos($intendedUrl, $prefix) === 0) {
+                            $isBlockedSelfTarget = true;
+                            break;
+                        }
+                    }
+                    if ($isSelfOnly && strpos($intendedUrl, '/ketarunaan/') === 0 && !$isBlockedSelfTarget) {
+                        return redirect()->to(site_url(ltrim($intendedUrl, '/')))->withCookies();
                     }
                 }
 
-                return redirect()->to(site_url('dashboard'));
+                if ($isSelfOnly) {
+                    return redirect()->to(site_url(ltrim(\App\Libraries\Ketarunaan\KetarunaanPolicy::getSelfPortalUrl(), '/')))->withCookies();
+                }
+
+                return redirect()->to(site_url('dashboard'))->withCookies();
                 
             } else {
                 // Catat Log Percobaan Login Gagal (Password Salah)
@@ -194,25 +223,36 @@ class Auth extends BaseController
 
     public function logout()
     {
-        $userId = session()->get('id') ?? session()->get('user_id');
-        $username = session()->get('username') ?? 'unknown';
+        $session  = session();
+        $userId   = $session->get('id') ?? $session->get('user_id');
+        $username = $session->get('username') ?? 'unknown';
         
         if ($userId) {
             log_audit('LOGOUT', 'users', $userId, null, [
                 'username'   => $username,
                 'ip_address' => $this->request->getIPAddress(),
-                'user_agent' => (string)$this->request->getUserAgent()
+                'user_agent' => (string) $this->request->getUserAgent()
             ]);
         }
 
-        // Hancurkan data sesi dan hapus cookie remember_me
-        session()->destroy();
-        helper('cookie');
-        delete_cookie('remember_me');
+        // Bersihkan seluruh data sesi terautentikasi & regenerasi ID sesi (hapus sesi lama di server)
+        $session->remove([
+            'id', 'user_id', 'username', 'nama', 'nip', 'role', 'all_roles',
+            'unit', 'unit_id', 'jabatan', 'pangkat', 'status_pegawai', 'foto',
+            'user_agent_fingerprint', 'isLoggedIn', 'intended_url',
+            'penilaian_active_tab', 'nomor_taruna',
+        ]);
+        $session->regenerate(true);
 
-        // Kembalikan ke halaman login dengan flash message dan proteksi cache-control
+        // Hapus cookie remember_me dengan atribut cocok agar benar-benar terhapus di browser
+        helper('cookie');
+        $isSecure = $this->request->isSecure();
+        set_cookie('remember_me', '', -3600, '', '/', '', $isSecure, true, 'Lax');
+
+        // Kembalikan ke halaman login beserta Set-Cookie penghapusan, flash message bersih, dan anti-cache
         return redirect()->to(site_url('login'))
-            ->with('success', 'Anda telah berhasil keluar dari sistem.')
+            ->withCookies()
+            ->with('success', 'Anda telah keluar dari ECC.')
             ->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0')
             ->setHeader('Pragma', 'no-cache')
             ->setHeader('Expires', 'Sat, 26 Jul 1997 05:00:00 GMT');

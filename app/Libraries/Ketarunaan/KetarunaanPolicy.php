@@ -455,7 +455,7 @@ class KetarunaanPolicy
     }
 
     /**
-     * Daftar peran staf/pimpinan internal PKTJ yang bukan akun layanan mandiri.
+     * Daftar peran staf/pimpinan internal PKTJ yang bukan akun layanan mandiri (modul ECC 2.0).
      */
     private const STAFF_OR_LEADERSHIP_ROLES = [
         'admin',
@@ -471,6 +471,35 @@ class KetarunaanPolicy
         'karir_alumni',
         'kerjasama',
         'kepegawaian',
+    ];
+
+    /**
+     * Allowlist resmi seluruh peran pegawai/staf/pimpinan PKTJ yang berhak mengakses modul ECC 1.0.
+     * Akun di luar daftar ini (taruna, alumni, pengguna_lulusan, atau peran tidak dikenal)
+     * diblokir dari seluruh modul staf/pegawai.
+     */
+    public const EMPLOYEE_ROLES = [
+        'admin',
+        'direktur',
+        'wadir',
+        'kabag',
+        'kabag_aak',
+        'kabag_kuk',
+        'manajemen',
+        'kanit',
+        'katim',
+        'kapokja',
+        'kepegawaian',
+        'user',
+        'pegawai',
+        'dosen',
+        'spm',
+        'tugas_belajar',
+        'ketarunaan',
+        'ketarunaan_validator',
+        'pusbangkar',
+        'karir_alumni',
+        'kerjasama',
     ];
 
     /**
@@ -710,11 +739,27 @@ class KetarunaanPolicy
     }
 
     /**
-     * Menentukan apakah pengguna memiliki salah satu peran staf atau pimpinan PKTJ.
+     * Menentukan apakah pengguna memiliki salah satu peran staf atau pimpinan PKTJ (lingkup ECC 2.0).
      */
     public static function hasStaffOrLeadershipRole(): bool
     {
         return function_exists('hasAnyRole') && hasAnyRole(self::STAFF_OR_LEADERSHIP_ROLES);
+    }
+
+    /**
+     * Menentukan apakah pengguna memiliki peran pegawai/staf resmi PKTJ (Allowlist ECC 1.0).
+     */
+    public static function hasEmployeeRole(): bool
+    {
+        return function_exists('hasAnyRole') && hasAnyRole(self::EMPLOYEE_ROLES);
+    }
+
+    /**
+     * Penanda akun non-pegawai (taruna, alumni, pengguna_lulusan, atau peran tidak dikenal).
+     */
+    public static function isNonEmployeeAccount(): bool
+    {
+        return !self::hasEmployeeRole();
     }
 
     /**
@@ -726,7 +771,7 @@ class KetarunaanPolicy
             return false;
         }
 
-        return !self::hasStaffOrLeadershipRole();
+        return !self::hasEmployeeRole();
     }
 
     /**
@@ -738,11 +783,11 @@ class KetarunaanPolicy
             return false;
         }
 
-        return !self::hasStaffOrLeadershipRole();
+        return !self::hasEmployeeRole();
     }
 
     /**
-     * Penanda bahwa akun merupakan pengguna layanan mandiri (taruna atau alumni tanpa peran staf).
+     * Penanda bahwa akun merupakan pengguna layanan mandiri (taruna atau alumni tanpa peran pegawai).
      */
     public static function isSelfAccountOnly(): bool
     {

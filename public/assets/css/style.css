@@ -1202,111 +1202,8 @@ h1, h2, h3, h4, .card-title {
 .review-notes textarea[readonly] { background-color: #e9ecef; cursor: not-allowed; }
 
 /* -------------------------------------------------------------------
-   8. LOGIN PAGE STYLING (FIT CARD)
+   8. LOGIN PAGE STYLING (Managed cleanly inside app/Views/login.php)
    ------------------------------------------------------------------- */
-body.login-page {
-    background: #f8fafc;
-    background: radial-gradient(circle at 50% 20%, #eff6ff 0%, #f8fafc 80%);
-}
-.fit-card {
-    border-radius: 1.25rem !important;
-    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.07), 0 0 0 1px rgba(0, 0, 0, 0.02) !important;
-    border: 1px solid #e2e8f0 !important;
-    overflow: hidden;
-}
-.fit-left-panel {
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
-    border-right: 1px solid #e2e8f0;
-}
-.fit-img {
-    transition: transform 0.5s ease;
-}
-.fit-card:hover .fit-img {
-    transform: scale(1.02);
-}
-.fit-label {
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: #475569;
-    letter-spacing: 0.2px;
-    margin-bottom: 0.35rem;
-    display: block;
-}
-.fit-input {
-    background-color: #ffffff !important;
-    border: 1px solid #cbd5e1 !important;
-    border-radius: 0.6rem !important;
-    padding: 0.65rem 0.85rem !important;
-    font-size: 0.9rem !important;
-    color: #0f172a !important;
-    transition: all 0.2s ease !important;
-}
-.fit-input:focus {
-    background-color: #ffffff !important;
-    border-color: #2563eb !important;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
-    outline: none !important;
-}
-.fit-toggle-pwd {
-    color: #94a3b8 !important;
-    padding: 0.25rem 0.5rem !important;
-    border-radius: 6px !important;
-    transition: color 0.15s ease;
-}
-.fit-toggle-pwd:hover {
-    color: #2563eb !important;
-}
-.fit-checkbox {
-    width: 1.05rem;
-    height: 1.05rem;
-    border-radius: 4px;
-    border: 1.5px solid #cbd5e1;
-    cursor: pointer;
-}
-.fit-checkbox:checked {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
-}
-.fit-link {
-    color: #2563eb;
-    transition: color 0.15s ease;
-}
-.fit-link:hover {
-    color: #1d4ed8;
-    text-decoration: underline !important;
-}
-.fit-btn-primary {
-    background-color: #1e3a8a !important;
-    border: 1px solid #1e3a8a !important;
-    color: #ffffff !important;
-    border-radius: 0.6rem !important;
-    padding: 0.7rem 1.25rem !important;
-    font-size: 0.92rem !important;
-    font-weight: 600;
-    letter-spacing: 0.2px;
-    box-shadow: 0 4px 12px rgba(30, 58, 138, 0.2) !important;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-}
-.fit-btn-primary:hover {
-    background-color: #172554 !important;
-    border-color: #172554 !important;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(30, 58, 138, 0.28) !important;
-}
-.fit-spinner {
-    display: inline-block;
-    width: 1.1rem;
-    height: 1.1rem;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    border-top-color: #ffffff;
-    animation: fit-spin 0.8s linear infinite;
-    vertical-align: text-bottom;
-    margin-right: 0.4rem;
-}
-@keyframes fit-spin {
-    to { transform: rotate(360deg); }
-}
 
 /* -------------------------------------------------------------------
    9. DOKUMEN CETAK A4 (KONTRAK KINERJA & PAKTA INTEGRITAS)
@@ -2051,6 +1948,14 @@ body.login-page {
 
 /* Accessibility Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
+    .btn,
+    .btn-tactile {
+        animation: none !important;
+        transition: none !important;
+    }
+    .btn-tactile:active {
+        transform: none !important;
+    }
     .sidebar .nav-link,
     .sidebar .sub-link,
     .sidebar .nav-link i,
@@ -2060,8 +1965,6 @@ body.login-page {
     .header-promax,
     .bento-stagger,
     .tab-content > .tab-pane,
-    .btn-tactile,
-    .btn,
     .row-slide-in,
     .row-slide-out,
     .badge-satuan-pop,

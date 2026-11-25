@@ -23,7 +23,7 @@ class EmployeeOnlyFilter implements FilterInterface
         }
 
         helper('role');
-        if (!KetarunaanPolicy::isSelfAccountOnly()) {
+        if (KetarunaanPolicy::hasEmployeeRole()) {
             return;
         }
 
@@ -31,7 +31,8 @@ class EmployeeOnlyFilter implements FilterInterface
             helper('audit');
             $userId = session()->get('id') ?? session()->get('user_id');
             if (function_exists('log_audit')) {
-                log_audit('BLOCKED_SELF_ACCOUNT_ECC1', 'security', (string) ($userId ?? ''), null, [
+                log_audit('BLOCKED_NON_EMPLOYEE_ECC1', 'security', (string) ($userId ?? ''), null, [
+                    'role'   => (string) (session()->get('role') ?? ''),
                     'uri'    => uri_string(),
                     'method' => strtoupper($request->getMethod()),
                     'ip'     => $request->getIPAddress(),
@@ -52,11 +53,13 @@ class EmployeeOnlyFilter implements FilterInterface
         if ($request->isAJAX() || $isNonGet || $isApiRoute || str_contains($accept, 'application/json')) {
             return $response->setStatusCode(403)->setJSON([
                 'status'  => 'error',
-                'message' => 'Akses ditolak. Halaman ini tidak tersedia untuk akun Anda.',
+                'message' => 'Akses ditolak. Halaman ini khusus untuk pegawai.',
             ]);
         }
 
-        $portalUrl = site_url(ltrim(KetarunaanPolicy::getSelfPortalUrl(), '/'));
+        $portalUrl = KetarunaanPolicy::isSelfAccountOnly()
+            ? site_url(ltrim(KetarunaanPolicy::getSelfPortalUrl(), '/'))
+            : null;
 
         return $response->setStatusCode(403)->setBody(view('errors/html/error_403_portal', [
             'backUrl'  => $portalUrl,

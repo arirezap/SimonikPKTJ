@@ -39,26 +39,27 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
+            font-size: 1.75rem;
             margin-bottom: 16px;
         }
         .error-code {
             font-weight: 700;
             color: #0f172a;
-            font-size: 2rem;
-            line-height: 1.2;
+            font-size: 1.75rem;
+            line-height: 1.25;
             margin-bottom: 8px;
             font-variant-numeric: tabular-nums;
         }
         .error-desc {
-            color: #64748b;
-            font-size: 0.9375rem;
+            color: #475569;
+            font-size: 0.875rem;
             line-height: 1.6;
             margin-bottom: 24px;
         }
         .btn-portal {
-            height: 40px;
-            padding: 0 24px;
+            min-height: 44px;
+            padding: 8px 24px;
+            font-size: 0.875rem;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -69,7 +70,7 @@
 <body>
     <main class="error-card">
         <div class="error-icon-wrap" aria-hidden="true">
-            <i class="bi bi-shield-lock-fill"></i>
+            <i class="bi bi-shield-lock-fill" aria-hidden="true"></i>
         </div>
         <h1 class="error-code">Akses Terbatas</h1>
         <p class="error-desc">
@@ -77,10 +78,21 @@
                 ? 'Halaman ini tidak tersedia untuk akun taruna.'
                 : 'Halaman ini hanya tersedia untuk akun pegawai.' ?>
         </p>
-        <a href="<?= esc($backUrl ?? site_url('ketarunaan/dashboard')) ?>" class="btn btn-primary rounded-pill fw-semibold btn-portal">
-            <i class="bi bi-arrow-left"></i>
-            <span><?= !empty($isTaruna) ? 'Kembali ke Portal Taruna' : 'Kembali ke Portal' ?></span>
-        </a>
+        <div class="d-flex flex-wrap justify-content-center gap-2">
+            <?php if (!empty($backUrl)): ?>
+                <a href="<?= esc($backUrl) ?>" class="btn btn-primary rounded-pill fw-semibold btn-portal">
+                    <i class="bi bi-arrow-left" aria-hidden="true"></i>
+                    <span><?= !empty($isTaruna) ? 'Kembali ke Portal Taruna' : 'Kembali ke Portal' ?></span>
+                </a>
+            <?php endif; ?>
+            <form action="<?= function_exists('site_url') ? site_url('logout') : '/logout' ?>" method="post" class="d-inline">
+                <?= function_exists('csrf_field') ? csrf_field() : '' ?>
+                <button type="submit" class="btn btn-outline-danger rounded-pill fw-semibold btn-portal">
+                    <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                    <span>Keluar</span>
+                </button>
+            </form>
+        </div>
     </main>
 </body>
 </html>

@@ -56,12 +56,18 @@ class AuthFilter implements FilterInterface
                 ]);
             }
 
-            session()->destroy();
+            session()->remove([
+                'id', 'user_id', 'username', 'nama', 'nip', 'role', 'all_roles',
+                'unit', 'unit_id', 'jabatan', 'pangkat', 'status_pegawai', 'foto',
+                'user_agent_fingerprint', 'isLoggedIn', 'intended_url', 'nomor_taruna',
+            ]);
+            session()->regenerate(true);
             helper('cookie');
-            delete_cookie('remember_me');
+            delete_cookie('remember_me', '', '/');
 
-            session()->setFlashdata('error', 'Sesi Anda telah berakhir demi keamanan. Silakan masuk kembali.');
-            return redirect()->to('/login');
+            return redirect()->to('/login')
+                ->with('error', 'Sesi Anda berakhir demi keamanan. Silakan masuk kembali.')
+                ->withCookies();
         }
 
         // 3. Cek apakah rute ini memerlukan peran tertentu
@@ -80,6 +86,12 @@ class AuthFilter implements FilterInterface
             if (!hasAnyRole($allowed_roles)) {
                 if (\App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfAccountOnly()) {
                     return redirect()->to(\App\Libraries\Ketarunaan\KetarunaanPolicy::getSelfPortalUrl());
+                }
+                if (!\App\Libraries\Ketarunaan\KetarunaanPolicy::hasEmployeeRole()) {
+                    return service('response')->setStatusCode(403)->setBody(view('errors/html/error_403_portal', [
+                        'backUrl'  => null,
+                        'isTaruna' => false,
+                    ]));
                 }
                 // Jika tidak diizinkan, kembalikan ke dashboard
                 return redirect()->to('/dashboard');

@@ -12,7 +12,13 @@ class DashboardController extends BaseController
             return redirect()->to(\App\Libraries\Ketarunaan\KetarunaanPolicy::getSelfPortalUrl());
         }
 
-        $role = session()->get('role');
+        if (!\App\Libraries\Ketarunaan\KetarunaanPolicy::hasEmployeeRole()) {
+            return $this->response->setStatusCode(403)->setBody(view('errors/html/error_403_portal', [
+                'backUrl'  => null,
+                'isTaruna' => false,
+            ]));
+        }
+
         $adminRoles = ['admin', 'direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'spm', 'kepegawaian'];
         
         if (hasAnyRole($adminRoles)) {
