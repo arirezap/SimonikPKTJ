@@ -3,6 +3,7 @@
 namespace App\Controllers\Kepegawaian;
 
 use App\Controllers\BaseController;
+use App\Libraries\RiwayatPenugasanService;
 use App\Models\User;
 use App\Models\LaporanHarian;
 use App\Models\LogTugasTambahan;
@@ -40,11 +41,9 @@ class DashboardKepegawaian extends BaseController
         $unitFilter    = $this->request->getGet('unit') ?? '';
         $roleFilter    = $this->request->getGet('role') ?? '';
 
-        // Ambil daftar unit untuk dropdown filter
-        $unitQuery = $userModel->select('unit')->distinct()->where('unit !=', null)->where('unit !=', '');
-        User::excludeSelfServiceFromQuery($unitQuery);
-        $units = $unitQuery->orderBy('unit', 'ASC')->findAll();
-        $daftarUnit = array_column($units, 'unit');
+        // Ambil daftar unit (unit aktif + unit historis riwayat_atasan pada tahun terpilih)
+        $riwayatService = new RiwayatPenugasanService(null, $userModel);
+        $daftarUnit     = $riwayatService->getSelectableUnitsForYear((int) $tahunTerpilih);
 
         $dataset = $this->preparePegawaiDataset($bulanTerpilih, $tahunTerpilih, $unitFilter, $roleFilter, false);
 
@@ -107,10 +106,6 @@ class DashboardKepegawaian extends BaseController
                     ->groupEnd();
         }
 
-        if (!empty($unitFilter)) {
-            $builder->where('unit', $unitFilter);
-        }
-
         // MP-01: Filter Kategori Jabatan dengan dukungan Multi-Role Pivot (user_roles)
         if (!empty($roleFilter)) {
             if ($roleFilter === 'pimpinan') {
@@ -141,6 +136,15 @@ class DashboardKepegawaian extends BaseController
         }
 
         $semuaPegawai = $builder->findAll();
+
+        // Selaraskan unit, jabatan, dan atasan efektif pada periode terpilih (riwayat_atasan) lalu terapkan filter unit
+        $riwayatService = new RiwayatPenugasanService($db, $userModel);
+        $semuaPegawai   = $riwayatService->applyPeriodAssignmentsAndUnitFilter(
+            $semuaPegawai,
+            $unitFilter,
+            $bulanTerpilih,
+            (int) $tahunTerpilih
+        );
         $semuaPegawai = $this->sortPegawaiByHierarchy($semuaPegawai);
 
         // MP-03: Mapping atasan untuk lookup cepat (Hanya fetch atasan yang relevan)
@@ -386,26 +390,8 @@ class DashboardKepegawaian extends BaseController
             $uId = $pegawai['id'];
             $atasanNama = '-';
 
-            // Penyelarasan Atasan Langsung & Penugasan Berdasarkan Periode Bulan/Tahun Terpilih
-            $bulanCek = ($bulanTerpilih !== 'all' && $bulanTerpilih !== '') ? (int)$bulanTerpilih : (int)date('n');
-            $penugasanBulan = $userModel->getPenugasanPeriode($uId, $bulanCek, (int)$tahunTerpilih);
-            if ($penugasanBulan) {
-                $pegawai['jabatan'] = $penugasanBulan['jabatan'] ?: $pegawai['jabatan'];
-                $pegawai['unit']    = $penugasanBulan['unit'] ?: $pegawai['unit'];
-                if (!empty($penugasanBulan['nama_atasan'])) {
-                    $atasanNama = $penugasanBulan['nama_atasan'];
-                } elseif (!empty($penugasanBulan['atasan_id'])) {
-                    $atasanIdPeriode = (int)$penugasanBulan['atasan_id'];
-                    if (isset($userMap[$atasanIdPeriode])) {
-                        $atasanNama = $userMap[$atasanIdPeriode]['nama_lengkap'];
-                    } else {
-                        $bossRow = $userModel->select('nama_lengkap')->find($atasanIdPeriode);
-                        $atasanNama = $bossRow['nama_lengkap'] ?? '-';
-                    }
-                }
-            }
-
-            if ($atasanNama === '-' && isset($pegawai['atasan_id']) && isset($userMap[$pegawai['atasan_id']])) {
+            // Unit, jabatan, dan atasan_id efektif periode telah diselaraskan batch via RiwayatPenugasanService
+            if (!empty($pegawai['atasan_id']) && isset($userMap[$pegawai['atasan_id']])) {
                 $atasanNama = $userMap[$pegawai['atasan_id']]['nama_lengkap'];
             }
             $pegawai['atasan_nama'] = $atasanNama;

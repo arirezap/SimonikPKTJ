@@ -1,7 +1,7 @@
 <?= $this->extend('layouts/main') ?>
 
 <?= $this->section('content') ?>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha384-Yv5O+t3uE3hunW8uyrbpPW3iw6/5/Y7HitWJBLgqfMoA36NogMmy+8wWZMpn3HWc" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 
 
@@ -29,7 +29,7 @@
             <div class="paper-container paper-container-pakta" id="element-to-print">
                 
                 <div class="header-center">
-                    <img src="<?= base_url('assets/logo_kemenhub.png') ?>" alt="Kemenhub" class="logo-kemenhub">
+                    <img src="<?= base_url('assets/logo_kemenhub.png') ?>" alt="Kemenhub" class="logo-kemenhub" width="65" height="65" decoding="async">
                     <div class="header-text">KEMENTERIAN PERHUBUNGAN</div>
                     <div class="header-title">PAKTA INTEGRITAS</div>
                 </div>

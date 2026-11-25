@@ -11,6 +11,7 @@ use App\Models\SettingModel;
 use App\Models\TargetKinerja;
 use App\Models\User;
 use App\Libraries\PenilaianKinerjaPolicy;
+use App\Libraries\RiwayatPenugasanService;
 
 class PenilaianKinerjaController extends BaseController
 {
@@ -45,12 +46,14 @@ class PenilaianKinerjaController extends BaseController
         $reqTahun = $this->request->getVar('tahun');
         $reqStafId = $this->request->getVar('staf_id');
         $reqUnitKerja = $this->request->getVar('unit_kerja');
+        $reqActiveTab = $this->request->getVar('active_tab');
 
         if (!empty($reqBulan) && is_numeric($reqBulan)) session()->set('penilaian_bulan', (int)$reqBulan);
         if (!empty($reqTahun) && is_numeric($reqTahun)) session()->set('penilaian_tahun', (int)$reqTahun);
         if ($reqStafId !== null) {
             if (!empty($reqStafId)) {
                 session()->set('penilaian_staf_id', $reqStafId);
+                session()->set('penilaian_active_tab', 'staf');
             } else {
                 session()->remove('penilaian_staf_id');
             }
@@ -61,14 +64,20 @@ class PenilaianKinerjaController extends BaseController
             } else {
                 session()->remove('penilaian_unit_kerja');
             }
+            if ($reqActiveTab !== 'individu') {
+                session()->set('penilaian_active_tab', 'staf');
+            }
+        }
+        if (in_array($reqActiveTab, ['individu', 'staf'], true)) {
+            session()->set('penilaian_active_tab', $reqActiveTab);
         }
 
         // Gunakan PRG pattern agar terhindar dari form resubmission dan error 403 saat POST non-AJAX
         if ($this->request->getMethod() === 'POST' || $this->request->getMethod() === 'post') {
             $hash = '';
-            if ($this->request->getPost('active_tab')) {
-                $activeTab = $this->request->getPost('active_tab');
-                $hash = '#' . $activeTab;
+            $postTab = $this->request->getPost('active_tab');
+            if (in_array($postTab, ['individu', 'staf'], true)) {
+                $hash = '#' . $postTab;
             }
             return redirect()->to(site_url('penilaian-kinerja') . $hash);
         }
@@ -84,15 +93,11 @@ class PenilaianKinerjaController extends BaseController
         // Catatan: Role Wadir tidak memiliki akses menilai kinerja staf
         $isSuper = hasAnyRole(['admin', 'direktur']);
 
-        // Ambil daftar unit kerja untuk filter (Hanya untuk Admin Utama dan Direktur)
+        // Ambil daftar unit kerja untuk filter (Hanya untuk Admin Utama dan Direktur, termasuk unit historis riwayat_atasan)
         $daftarUnit = [];
+        $riwayatService = new RiwayatPenugasanService(null, $userModel);
         if ($isSuper) {
-            $unitQuery = $userModel->select('unit')->distinct()->where('unit !=', null)->where('unit !=', '');
-            User::excludeSelfServiceFromQuery($unitQuery);
-            $units = $unitQuery->orderBy('unit', 'ASC')->findAll();
-            foreach ($units as $u) {
-                $daftarUnit[] = $u['unit'];
-            }
+            $daftarUnit = $riwayatService->getSelectableUnitsForYear((int) $tahunTerpilih);
         }
 
         $periodDate = sprintf('%04d-%02d-01', (int)$tahunTerpilih, (int)$bulanTerpilih);
@@ -100,7 +105,7 @@ class PenilaianKinerjaController extends BaseController
 
         // Cek apakah user punya staf atau punya akses penuh admin
         if ($isSuper) {
-            $builder = $userModel->select('id, nama_lengkap, nip, username, jabatan, pangkat, unit, role, status_pegawai, tmt_selesai, foto, atasan_id')
+            $builder = $userModel->select('id, nama_lengkap, nip, username, jabatan, pangkat, unit, unit_id, role, status_pegawai, tmt_selesai, foto, atasan_id')
                                  ->where('id !=', $userId);
             User::excludeSelfServiceFromQuery($builder);
             $builder = $builder->groupStart()
@@ -111,10 +116,13 @@ class PenilaianKinerjaController extends BaseController
                                          ->where('tmt_selesai >=', $periodMonth . '-01')
                                      ->groupEnd()
                                  ->groupEnd();
-            if (!empty($unitKerjaTerpilih)) {
-                $builder = $builder->where('unit', $unitKerjaTerpilih);
-            }
             $daftarStaf = $builder->orderBy('nama_lengkap', 'ASC')->findAll();
+            $daftarStaf = $riwayatService->applyPeriodAssignmentsAndUnitFilter(
+                $daftarStaf,
+                (string) $unitKerjaTerpilih,
+                (string) $bulanTerpilih,
+                (int) $tahunTerpilih
+            );
             $isAtasan = true;
         } elseif (hasRole('wadir')) {
             // Role Wakil Direktur tidak menilai staf (hanya mengelola rekap Target Saya)
@@ -288,8 +296,18 @@ class PenilaianKinerjaController extends BaseController
         $daftarTahun = array_values(array_unique(array_map('intval', $daftarTahunSet)));
         rsort($daftarTahun);
 
+        $activeTab = (string) (session()->get('penilaian_active_tab') ?? '');
+        if (!$isAtasan) {
+            $activeTab = 'individu';
+        } elseif (!empty($stafIdTerpilih)) {
+            $activeTab = 'staf';
+        } elseif (!in_array($activeTab, ['individu', 'staf'], true)) {
+            $activeTab = 'individu';
+        }
+
         $data = [
             'title' => 'Rekap & Penilaian Kinerja',
+            'active_tab' => $activeTab,
             'bulan_terpilih' => $bulanTerpilih,
             'tahun_terpilih' => $tahunTerpilih,
             'daftar_tahun' => $daftarTahun,

@@ -204,6 +204,9 @@
             min-height: 44px;
             height: 44px;
         }
+        .dp-control {
+            font-size: var(--bs-body-font-size, 1rem);
+        }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -256,8 +259,8 @@ $getAriaSort = function (string $colKey) use ($sort_by, $sort_order): string {
 
 $statusNonAktifLabels = [
     'mutasi_keluar' => ['label' => 'Mutasi Keluar', 'class' => 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'],
-    'pensiun'       => ['label' => 'Pensiun', 'class' => 'bg-secondary-subtle text-secondary border border-secondary-subtle'],
-    'nonaktif'      => ['label' => 'Nonaktif', 'class' => 'bg-danger-subtle text-danger border border-danger-subtle'],
+    'pensiun'       => ['label' => 'Pensiun', 'class' => 'bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle'],
+    'nonaktif'      => ['label' => 'Nonaktif', 'class' => 'bg-danger-subtle text-danger-emphasis border border-danger-subtle'],
 ];
 ?>
 <div class="container-fluid px-2 px-md-3 py-2">
@@ -374,7 +377,7 @@ $statusNonAktifLabels = [
                     <?php if (empty($users)): ?>
                         <tr>
                             <td colspan="5" class="text-center py-5 text-secondary dp-body">
-                                Tidak ada data pegawai yang sesuai dengan filter saat ini.
+                                Belum ada data pegawai untuk filter ini.
                             </td>
                         </tr>
                     <?php else: ?>
@@ -430,7 +433,7 @@ $statusNonAktifLabels = [
     <div class="d-md-none mb-3">
         <?php if (empty($users)): ?>
             <div class="card-bento-ecc text-center py-4 text-secondary dp-body">
-                Tidak ada data pegawai yang sesuai dengan filter saat ini.
+                Belum ada data pegawai untuk filter ini.
             </div>
         <?php else: ?>
             <div class="d-flex flex-column gap-2">

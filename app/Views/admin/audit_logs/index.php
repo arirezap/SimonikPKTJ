@@ -3,7 +3,6 @@
 <?= $this->section('title') ?>Log Aktivitas Sistem<?= $this->endSection() ?>
 
 <?= $this->section('styles') ?>
-<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
 <style>
     @media (max-width: 767.98px) {
         .form-control, .form-select {
@@ -300,7 +299,6 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 let currentJsonText = '';
 

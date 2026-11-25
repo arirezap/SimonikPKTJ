@@ -5,6 +5,8 @@
 <?= $this->section('styles') ?>
 <link rel="stylesheet" href="<?= base_url('assets/vendor/flatpickr/flatpickr.min.css') ?>">
 <link rel="stylesheet" href="<?= base_url('assets/vendor/flatpickr/themes/airbnb.css') ?>">
+<link rel="stylesheet" href="<?= base_url('assets/vendor/select2/select2.min.css') ?>">
+<link rel="stylesheet" href="<?= base_url('assets/vendor/select2/select2-bootstrap-5-theme.min.css') ?>">
 <style>
     .num-tabular {
         font-variant-numeric: tabular-nums;
@@ -68,31 +70,31 @@
         padding-right: 8px !important;
     }
     .col-target-log {
-        width: 25%;
+        width: 24%;
     }
     .col-deskripsi-log {
         width: auto;
     }
     .col-capaian-log {
-        width: 19%;
+        width: 20%;
     }
     .col-bukti-log {
-        width: 19%;
+        width: 18%;
     }
     .col-aksi-log {
-        width: 72px;
+        width: 64px;
         white-space: nowrap !important;
         padding-left: 8px !important;
         padding-right: 8px !important;
     }
     .tabel-log-bento.is-locked-table .col-target-log {
-        width: 27%;
+        width: 26%;
     }
     .tabel-log-bento.is-locked-table .col-deskripsi-log {
         width: auto;
     }
     .tabel-log-bento.is-locked-table .col-capaian-log {
-        width: 19%;
+        width: 20%;
     }
     .tabel-log-bento.is-locked-table .col-bukti-log {
         width: 18%;
@@ -107,39 +109,182 @@
         -moz-appearance: textfield;
         min-width: 0;
     }
-    .badge-capaian-satuan {
-        max-width: 48%;
+
+    /* Unified Horizontal Capaian Control (Tugas Pokok & Tugas Tambahan) */
+    .capaian-input-group {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: stretch;
+        gap: 1px;
+        width: 100%;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background-color: #e2e8f0;
+        transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .capaian-input-group:focus-within {
+        border-color: var(--ecc-primary, #0d6efd);
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+    }
+    .capaian-input-group:has(.is-invalid) {
+        border-color: #ef4444;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+    }
+    .capaian-input-group .input-capaian-num {
+        flex: 0 0 72px;
+        width: 72px;
+        min-width: 72px;
+        height: 36px;
+        border: 0 !important;
+        border-radius: 8px 0 0 8px !important;
+        padding: 4px 8px !important;
+        font-size: 0.875rem;
+        background-color: #ffffff;
+        box-shadow: none !important;
+        text-align: center;
+    }
+    .capaian-input-group .badge-capaian-satuan,
+    .capaian-input-group .input-satuan-tambahan {
+        flex: 1 1 0;
+        min-width: 0;
+        width: auto;
+        height: 36px;
+        border: 0 !important;
+        border-radius: 0 8px 8px 0 !important;
+        padding: 4px 8px !important;
+        font-size: 0.75rem !important;
+        line-height: 1.4;
+        background-color: #f8fafc;
+        color: #475569;
+        text-align: center;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        box-shadow: none !important;
+    }
+    .capaian-input-group .badge-capaian-satuan {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
         transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, color 0.2s ease;
     }
-    .input-satuan-val {
-        min-width: 0;
-        width: 100%;
+    .capaian-input-group .input-satuan-tambahan {
+        color: #0f172a;
+        font-weight: 500;
+        transition: background-color 0.2s ease, color 0.2s ease;
     }
-    .capaian-tambahan-stack {
+    .capaian-input-group .input-satuan-tambahan::placeholder {
+        color: #64748b;
+        font-weight: 400;
+    }
+    .capaian-input-group .input-satuan-tambahan:focus {
+        background-color: #ffffff;
+        text-overflow: clip;
+    }
+    .capaian-input-group .input-capaian-num:focus,
+    .capaian-input-group .input-satuan-tambahan:focus {
+        box-shadow: none !important;
+        border-color: transparent !important;
+    }
+    .col-capaian-log .readonly-capaian-box {
+        width: 100%;
+        min-height: 36px;
         display: flex;
-        flex-direction: column;
-        gap: 8px;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.875rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
-    /* Auto-Grow Textarea & Full RHK Preview Support */
+    /* Auto-Grow Textarea & Multi-Line Target RHK Dropdown (Tanpa Search) */
     .tabel-log-bento textarea.auto-grow-textarea.form-control {
         overflow-y: hidden !important;
         resize: none !important;
+        width: 100%;
+        height: auto;
         min-height: 56px;
+        field-sizing: content;
         line-height: 1.45;
         white-space: pre-wrap;
         overflow-wrap: anywhere;
     }
-    .target-preview-text {
-        white-space: normal;
+    .tabel-log-bento .select2-container--bootstrap-5 {
+        width: 100% !important;
+    }
+    .select2-container--bootstrap-5 .select2-selection--single.target-rhk-selection {
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 8px !important;
+        background-color: #ffffff !important;
+        background-position: right 12px center !important;
+        min-height: 36px !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        padding: 8px 32px 8px 12px !important;
+        font-size: 0.875rem !important;
+        transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .select2-container--bootstrap-5 .select2-selection--single.target-rhk-selection .select2-selection__rendered {
+        display: block;
+        padding: 0 !important;
+        white-space: normal !important;
         overflow-wrap: anywhere;
         word-break: break-word;
+        line-height: 1.45 !important;
+        color: #0f172a !important;
+        font-size: 0.875rem !important;
+    }
+    .select2-container--bootstrap-5 .select2-selection--single.target-rhk-selection .select2-selection__placeholder {
+        color: #64748b !important;
+    }
+    .select2-container--bootstrap-5.select2-container--focus .select2-selection--single.target-rhk-selection,
+    .select2-container--bootstrap-5.select2-container--open .select2-selection--single.target-rhk-selection {
+        border-color: var(--ecc-primary, #0d6efd) !important;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15) !important;
+    }
+    select.is-invalid + .select2-container--bootstrap-5 .select2-selection--single.target-rhk-selection {
+        border-color: #ef4444 !important;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+        animation: invalidPulse 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .select2-container--bootstrap-5 .select2-dropdown.target-rhk-dropdown {
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 12px !important;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12) !important;
+        overflow: hidden;
+        min-width: 360px;
+        max-width: min(480px, calc(100vw - 32px));
+    }
+    .select2-container--bootstrap-5 .select2-dropdown.target-rhk-dropdown .select2-results__options {
+        max-height: 360px !important;
+        overflow-y: auto;
+    }
+    .select2-container--bootstrap-5 .select2-dropdown.target-rhk-dropdown .select2-results__option {
+        white-space: normal !important;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        padding: 8px 12px !important;
+        font-size: 0.875rem !important;
         line-height: 1.45;
-        font-size: 0.75rem;
-        color: #475569;
+        color: #0f172a;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .select2-container--bootstrap-5 .select2-dropdown.target-rhk-dropdown .select2-results__option:last-child {
+        border-bottom: 0;
+    }
+    .select2-container--bootstrap-5 .select2-dropdown.target-rhk-dropdown .select2-results__option--highlighted,
+    .select2-container--bootstrap-5 .select2-dropdown.target-rhk-dropdown .select2-results__option--selectable:hover {
+        background-color: #eff6ff !important;
+        color: #1e40af !important;
+    }
+    .select2-container--bootstrap-5 .select2-dropdown.target-rhk-dropdown .select2-results__option--selected {
+        background-color: #0d6efd !important;
+        color: #ffffff !important;
+        font-weight: 600;
     }
 
     /* Table Input Focus & Hover Micro-Interactions */
@@ -322,7 +467,7 @@
     }
     .flatpickr-current-month {
         font-weight: 700;
-        font-size: 0.95rem;
+        font-size: 0.875rem;
     }
     .flatpickr-weekday {
         font-weight: 700 !important;
@@ -367,8 +512,8 @@
         bottom: 4px;
         left: 50%;
         transform: translateX(-50%);
-        width: 6px;
-        height: 6px;
+        width: 4px;
+        height: 4px;
         border-radius: 50%;
         pointer-events: none;
     }
@@ -556,6 +701,27 @@
         .btn-hapus-baris {
             min-width: 44px;
         }
+        .capaian-input-group .input-capaian-num {
+            flex: 0 0 80px;
+            width: 80px;
+            min-width: 80px;
+            height: 44px;
+            min-height: 44px;
+        }
+        .capaian-input-group .badge-capaian-satuan,
+        .capaian-input-group .input-satuan-tambahan {
+            height: 44px;
+            min-height: 44px;
+            font-size: var(--bs-body-font-size, 1rem) !important;
+        }
+        .select2-container--bootstrap-5 .select2-selection--single.target-rhk-selection {
+            min-height: 44px !important;
+            padding: 12px 32px 12px 12px !important;
+        }
+        .select2-container--bootstrap-5 .select2-dropdown.target-rhk-dropdown {
+            min-width: 0;
+            max-width: calc(100vw - 32px);
+        }
         .date-nav-btn {
             width: 44px;
             min-width: 44px;
@@ -727,28 +893,28 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
 
                         <div class="d-flex align-items-center gap-2 flex-wrap">
                             <a href="<?= site_url('log-kegiatan') ?>?tanggal=<?= $prevDay ?>" class="date-nav-btn btn-tactile" title="Hari Sebelumnya (<?= date('d/m/Y', strtotime($prevDay)) ?>)" aria-label="Hari Sebelumnya">
-                                <i class="bi bi-chevron-left"></i>
+                                <i class="bi bi-chevron-left" aria-hidden="true"></i>
                             </a>
 
                             <div class="date-selector-wrapper position-relative">
                                 <div class="input-group input-group-sm rounded-3 overflow-hidden date-selector-box d-flex align-items-center px-1" id="dateSelectorGroup" title="Pilih tanggal kegiatan">
                                     <span class="input-group-text bg-primary text-white border-0 rounded-2 px-2 py-1">
-                                        <i class="bi bi-calendar-date-fill"></i>
+                                        <i class="bi bi-calendar-date-fill" aria-hidden="true"></i>
                                     </span>
                                     <input type="text" id="tanggalPicker" class="form-control border-0 fw-bold date-btn-input shadow-none h-100" value="<?= esc($tanggal_terpilih) ?>" placeholder="Pilih tanggal..." aria-label="Pilih Tanggal Kegiatan" readonly>
                                     <span class="input-group-text bg-transparent border-0 text-primary px-2 h-100">
-                                        <i class="bi bi-chevron-down fw-bold"></i>
+                                        <i class="bi bi-chevron-down fw-bold" aria-hidden="true"></i>
                                     </span>
                                 </div>
                             </div>
 
                             <?php if ($nextDay <= $maxAllowedDate): ?>
                                 <a href="<?= site_url('log-kegiatan') . '?tanggal=' . $nextDay ?>" class="date-nav-btn btn-tactile" title="Hari Berikutnya (<?= date('d/m/Y', strtotime($nextDay)) ?>)" aria-label="Hari Berikutnya">
-                                    <i class="bi bi-chevron-right"></i>
+                                    <i class="bi bi-chevron-right" aria-hidden="true"></i>
                                 </a>
                             <?php else: ?>
                                 <button type="button" class="date-nav-btn opacity-50" disabled aria-disabled="true" tabindex="-1" title="Batas akhir tanggal tersedia" aria-label="Hari Berikutnya">
-                                    <i class="bi bi-chevron-right"></i>
+                                    <i class="bi bi-chevron-right" aria-hidden="true"></i>
                                 </button>
                             <?php endif; ?>
 
@@ -782,22 +948,22 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
 
             <!-- SINGLE UNIFIED TOP ALERT NOTIFICATION -->
             <?php if ($is_locked): ?>
-                <div class="alert alert-warning mb-3 shadow-sm py-3 px-3 d-flex align-items-center gap-2 small rounded-4">
-                    <i class="bi bi-lock-fill text-warning-emphasis fs-5 flex-shrink-0"></i>
+                <div class="alert alert-warning mb-3 shadow-sm py-3 px-3 d-flex align-items-center gap-2 small rounded-4" role="alert">
+                    <i class="bi bi-lock-fill text-warning-emphasis fs-5 flex-shrink-0" aria-hidden="true"></i>
                     <div>
                         <strong>Laporan Terkunci.</strong> <?= esc(!empty($lock_reason) ? $lock_reason : 'Laporan tanggal ini sudah dikirim dan tidak dapat diubah.') ?>
                     </div>
                 </div>
             <?php elseif (!empty($is_future_date)): ?>
-                <div class="alert alert-info border-info-subtle bg-info-subtle text-info-emphasis mb-3 shadow-sm py-3 px-3 small rounded-4">
+                <div class="alert alert-info border-info-subtle bg-info-subtle text-info-emphasis mb-3 shadow-sm py-3 px-3 small rounded-4" role="status">
                     <strong>Rencana Kegiatan.</strong> Simpan sebagai draf terlebih dahulu. Laporan baru dapat dikirim saat hari kegiatan tiba.
                 </div>
             <?php elseif (isset($target_status) && $target_status === 'belum_ada'): ?>
-                <div class="alert alert-danger mb-3 shadow-sm py-3 px-3 small rounded-4">
+                <div class="alert alert-danger mb-3 shadow-sm py-3 px-3 small rounded-4" role="alert">
                     <strong>Target Belum Ada.</strong> Buat target di menu <strong>Target Kinerja Bulanan</strong> terlebih dahulu.
                 </div>
             <?php elseif (isset($target_status) && $target_status === 'belum_disetujui'): ?>
-                <div class="alert alert-warning mb-3 shadow-sm py-3 px-3 small rounded-4">
+                <div class="alert alert-warning mb-3 shadow-sm py-3 px-3 small rounded-4" role="alert">
                     <strong>Target Belum Disetujui.</strong> Menunggu persetujuan atasan sebelum dapat mengisi laporan.
                 </div>
             <?php endif; ?>
@@ -824,13 +990,13 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
                     <table class="table table-bordered table-hover mb-0 tabel-log-bento <?= $is_locked ? 'is-locked-table' : '' ?>" id="tabelLog">
                         <thead>
                             <tr>
-                                <th class="col-no-log text-center">No</th>
-                                <th class="col-target-log">Indikator RHK / Tugas</th>
-                                <th class="col-deskripsi-log">Deskripsi Kegiatan</th>
-                                <th class="col-capaian-log text-center">Capaian</th>
-                                <th class="col-bukti-log">Bukti Pekerjaan</th>
+                                <th scope="col" class="col-no-log text-center">No</th>
+                                <th scope="col" class="col-target-log">Indikator RHK / Tugas</th>
+                                <th scope="col" class="col-deskripsi-log">Deskripsi Kegiatan</th>
+                                <th scope="col" class="col-capaian-log text-center">Capaian</th>
+                                <th scope="col" class="col-bukti-log">Bukti Pekerjaan</th>
                                 <?php if ($showAksiCol): ?>
-                                    <th class="col-aksi-log text-center">Aksi</th>
+                                    <th scope="col" class="col-aksi-log text-center">Aksi</th>
                                 <?php endif; ?>
                             </tr>
                         </thead>
@@ -854,9 +1020,15 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
                             <?php if (!empty($rekap_data)): ?>
                                 <?php foreach ($rekap_data as $row): ?>
                                     <?php $currentNum = $rowIndex++; ?>
+                                    <?php $isPokokRowLocked = ($is_locked || (isset($row['status']) && $row['status'] === 'terkirim')); ?>
                                     <tr class="row-tugas-pokok">
-                                        <td class="td-no nomor-baris text-center fw-bold ecc-text-muted-aa" data-label="Baris"><?= $currentNum ?></td>
-                                        <?php if ($is_locked || (isset($row['status']) && $row['status'] === 'terkirim')): ?>
+                                        <td class="td-no text-center fw-bold ecc-text-muted-aa" data-label="Baris">
+                                            <span class="nomor-baris"><?= $currentNum ?></span>
+                                            <?php if (!$isPokokRowLocked): ?>
+                                                <input type="hidden" name="log_id[]" value="<?= esc($row['id']) ?>">
+                                            <?php endif; ?>
+                                        </td>
+                                        <?php if ($isPokokRowLocked): ?>
                                             <!-- Read-only View -->
                                             <td data-label="Indikator RHK / Tugas">
                                                 <?php
@@ -890,7 +1062,7 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
                                                 <?php if ($safeLink): ?>
                                                     <div class="text-center">
                                                         <a href="<?= esc($safeLink) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-light text-primary border btn-bukti-link btn-tactile" title="Buka tautan bukti pekerjaan">
-                                                            <i class="bi bi-box-arrow-up-right"></i> Bukti
+                                                            <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i> Bukti
                                                         </a>
                                                     </div>
                                                 <?php else: ?>
@@ -899,15 +1071,13 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
                                             </td>
                                             <?php if ($showAksiCol): ?>
                                                 <td class="td-aksi text-center">
-                                                    <i class="bi bi-lock-fill text-warning-emphasis fs-6" title="Terkunci"></i>
+                                                    <i class="bi bi-lock-fill text-warning-emphasis fs-6" title="Terkunci" aria-hidden="true"></i>
                                                 </td>
                                             <?php endif; ?>
                                         <?php else: ?>
                                             <!-- Editable Draft View -->
-                                            <input type="hidden" name="log_id[]" value="<?= esc($row['id']) ?>">
                                             <td data-label="Indikator RHK / Tugas">
-                                                <?php $selectedTargetLabel = ''; ?>
-                                                <select name="target_id[]" class="form-select form-select-sm" aria-label="Pilih Target RHK baris <?= $currentNum ?>">
+                                                <select name="target_id[]" class="form-select form-select-sm target-rhk-select" aria-label="Pilih Target RHK baris <?= $currentNum ?>">
                                                     <option value="">-- Pilih Target / RHK --</option>
                                                     <?php
                                                     $foundSelected = false;
@@ -918,26 +1088,23 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
                                                         $selected = ($target['id'] == $row['target_id']) ? 'selected' : '';
                                                         if ($selected) {
                                                             $foundSelected = true;
-                                                            $selectedTargetLabel = $labelTarget;
                                                         }
                                                     ?>
                                                         <option value="<?= esc($target['id']) ?>" data-satuan="<?= $cleanSatuan ?>" <?= $selected ?>><?= $labelTarget ?></option>
                                                     <?php endforeach; ?>
                                                     <?php if (!$foundSelected && !empty($row['target_id']) && !empty($row['indikator_kinerja'])): ?>
                                                         <?php $fallbackLabel = esc($row['indikator_kinerja']) . ' (' . esc($row['satuan'] ?? '') . ')'; ?>
-                                                        <?php $selectedTargetLabel = $fallbackLabel; ?>
                                                         <option value="<?= esc($row['target_id']) ?>" data-satuan="<?= esc($row['satuan'] ?? '') ?>" selected><?= $fallbackLabel ?></option>
                                                     <?php endif; ?>
                                                 </select>
-                                                <div class="target-preview-text mt-2 px-2 py-2 rounded-3 bg-light border<?= $selectedTargetLabel === '' ? ' d-none' : '' ?>"><?= $selectedTargetLabel ?></div>
                                             </td>
                                             <td data-label="Deskripsi Kegiatan">
                                                 <textarea name="deskripsi_kegiatan[]" class="form-control form-control-sm auto-grow-textarea" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..." aria-label="Deskripsi Kegiatan Pokok baris <?= $currentNum ?>"><?= esc($row['deskripsi_kegiatan']) ?></textarea>
                                             </td>
                                             <td class="col-capaian-log" data-label="Capaian">
-                                                <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
+                                                <div class="capaian-input-group">
                                                     <input type="number" step="0.0001" min="0.0001" max="999999999999999" name="jumlah_capaian[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-primary" placeholder="0" value="<?= esc($formatInputDecimal($row['jumlah_capaian'])) ?>" title="<?= $formatDisplayDecimal($row['jumlah_capaian']) ?>" aria-label="Jumlah Capaian Pokok baris <?= $currentNum ?>">
-                                                    <span class="input-group-text badge-capaian-satuan bg-light" title="<?= esc($row['satuan'] ?? '-') ?>"><?= esc($row['satuan'] ?? '-') ?></span>
+                                                    <span class="badge-capaian-satuan" title="<?= esc($row['satuan'] ?? '-') ?>"><?= esc($row['satuan'] ?? '-') ?></span>
                                                 </div>
                                             </td>
                                             <td data-label="Bukti Pekerjaan">
@@ -946,7 +1113,7 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
                                             <?php if ($showAksiCol): ?>
                                                 <td class="td-aksi text-center">
                                                     <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris btn-tactile btn-hapus-baris" data-id="<?= esc($row['id']) ?>" title="Hapus baris" aria-label="Hapus kegiatan pokok baris <?= $currentNum ?>">
-                                                        <i class="bi bi-trash3"></i>
+                                                        <i class="bi bi-trash3" aria-hidden="true"></i>
                                                     </button>
                                                 </td>
                                             <?php endif; ?>
@@ -958,10 +1125,12 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
                             <?php if (!$is_locked && empty($rekap_data)): ?>
                                 <!-- Baris Input Baru Default Tugas Pokok -->
                                 <tr class="row-tugas-pokok input-row">
-                                    <input type="hidden" name="log_id[]" value="">
-                                    <td class="td-no nomor-baris text-center fw-bold ecc-text-muted-aa" data-label="Baris">1</td>
+                                    <td class="td-no text-center fw-bold ecc-text-muted-aa" data-label="Baris">
+                                        <span class="nomor-baris">1</span>
+                                        <input type="hidden" name="log_id[]" value="">
+                                    </td>
                                     <td data-label="Indikator RHK / Tugas">
-                                        <select name="target_id[]" class="form-select form-select-sm" aria-label="Pilih Target RHK baris 1">
+                                        <select name="target_id[]" class="form-select form-select-sm target-rhk-select" aria-label="Pilih Target RHK baris 1">
                                             <option value="">-- Pilih Target / RHK --</option>
                                             <?php foreach ($daftar_target as $target): ?>
                                                 <?php
@@ -972,15 +1141,14 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
                                                 <option value="<?= esc($target['id']) ?>" data-satuan="<?= $cleanSatuan ?>"><?= $labelTarget ?></option>
                                             <?php endforeach; ?>
                                         </select>
-                                        <div class="target-preview-text mt-2 px-2 py-2 rounded-3 bg-light border d-none"></div>
                                     </td>
                                     <td data-label="Deskripsi Kegiatan">
                                         <textarea name="deskripsi_kegiatan[]" class="form-control form-control-sm auto-grow-textarea" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..." aria-label="Deskripsi Kegiatan Pokok baris 1"></textarea>
                                     </td>
                                     <td class="col-capaian-log" data-label="Capaian">
-                                        <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
+                                        <div class="capaian-input-group">
                                             <input type="number" step="0.0001" min="0.0001" max="999999999999999" name="jumlah_capaian[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-primary" placeholder="0" aria-label="Jumlah Capaian Pokok baris 1">
-                                            <span class="input-group-text badge-capaian-satuan bg-light">-</span>
+                                            <span class="badge-capaian-satuan" title="-">-</span>
                                         </div>
                                     </td>
                                     <td data-label="Bukti Pekerjaan">
@@ -988,7 +1156,7 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
                                     </td>
                                     <td class="td-aksi text-center">
                                         <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris btn-tactile btn-hapus-baris" title="Hapus baris" aria-label="Hapus kegiatan pokok baris 1">
-                                            <i class="bi bi-trash3"></i>
+                                            <i class="bi bi-trash3" aria-hidden="true"></i>
                                         </button>
                                     </td>
                                 </tr>
@@ -1013,9 +1181,15 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
                             <?php if (!empty($rekap_data_tambahan)): ?>
                                 <?php foreach ($rekap_data_tambahan as $rowTmb): ?>
                                     <?php $currentTmbNum = $rowTmbIndex++; ?>
+                                    <?php $isTmbRowLocked = ($is_locked || (isset($rowTmb['status']) && $rowTmb['status'] === 'terkirim')); ?>
                                     <tr class="row-tugas-tambahan">
-                                        <td class="td-no nomor-baris-tmb text-center fw-bold ecc-text-muted-aa" data-label="Baris"><?= $currentTmbNum ?></td>
-                                        <?php if ($is_locked || (isset($rowTmb['status']) && $rowTmb['status'] === 'terkirim')): ?>
+                                        <td class="td-no text-center fw-bold ecc-text-muted-aa" data-label="Baris">
+                                            <span class="nomor-baris-tmb"><?= $currentTmbNum ?></span>
+                                            <?php if (!$isTmbRowLocked): ?>
+                                                <input type="hidden" name="log_tambahan_id[]" value="<?= esc($rowTmb['id']) ?>">
+                                            <?php endif; ?>
+                                        </td>
+                                        <?php if ($isTmbRowLocked): ?>
                                             <!-- Read-only View -->
                                             <td data-label="Kategori">
                                                 <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-3 py-1 rounded-pill fw-semibold">
@@ -1038,7 +1212,7 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
                                                 <?php if ($safeLinkTmb): ?>
                                                     <div class="text-center">
                                                         <a href="<?= esc($safeLinkTmb) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-light text-primary border btn-bukti-link btn-tactile" title="Buka tautan bukti pekerjaan">
-                                                            <i class="bi bi-box-arrow-up-right"></i> Bukti
+                                                            <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i> Bukti
                                                         </a>
                                                     </div>
                                                 <?php else: ?>
@@ -1047,12 +1221,11 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
                                             </td>
                                             <?php if ($showAksiCol): ?>
                                                 <td class="td-aksi text-center">
-                                                    <i class="bi bi-lock-fill text-warning-emphasis fs-6" title="Terkunci"></i>
+                                                    <i class="bi bi-lock-fill text-warning-emphasis fs-6" title="Terkunci" aria-hidden="true"></i>
                                                 </td>
                                             <?php endif; ?>
                                         <?php else: ?>
                                             <!-- Editable Draft View -->
-                                            <input type="hidden" name="log_tambahan_id[]" value="<?= esc($rowTmb['id']) ?>">
                                             <td data-label="Kategori">
                                                 <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-3 py-1 rounded-pill fw-semibold">
                                                     Tugas Tambahan
@@ -1062,9 +1235,9 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
                                                 <textarea name="deskripsi_kegiatan_tambahan[]" class="form-control form-control-sm auto-grow-textarea" rows="2" placeholder="Jelaskan tugas tambahan Anda..." aria-label="Deskripsi Kegiatan Tambahan baris <?= $currentTmbNum ?>"><?= esc($rowTmb['deskripsi_kegiatan']) ?></textarea>
                                             </td>
                                             <td class="col-capaian-log" data-label="Capaian">
-                                                <div class="capaian-tambahan-stack">
-                                                    <input type="number" step="0.0001" min="0.0001" max="999999999999999" name="jumlah_capaian_tambahan[]" class="form-control form-control-sm input-capaian-num input-target-val text-center num-tabular fw-bold text-success-emphasis shadow-sm" placeholder="0" value="<?= isset($rowTmb['jumlah_capaian']) ? esc($formatInputDecimal($rowTmb['jumlah_capaian'])) : '' ?>" title="<?= isset($rowTmb['jumlah_capaian']) ? $formatDisplayDecimal($rowTmb['jumlah_capaian']) : '' ?>" aria-label="Jumlah Capaian Tambahan baris <?= $currentTmbNum ?>">
-                                                    <input type="text" name="satuan_tambahan[]" class="form-control form-control-sm input-satuan-val text-center shadow-sm" placeholder="Satuan" list="daftarSatuanStandar" value="<?= esc($rowTmb['satuan'] ?? '') ?>" title="<?= esc($rowTmb['satuan'] ?? '') ?>" aria-label="Satuan Capaian Tambahan baris <?= $currentTmbNum ?>">
+                                                <div class="capaian-input-group">
+                                                    <input type="number" step="0.0001" min="0.0001" max="999999999999999" name="jumlah_capaian_tambahan[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-success-emphasis" placeholder="0" value="<?= isset($rowTmb['jumlah_capaian']) ? esc($formatInputDecimal($rowTmb['jumlah_capaian'])) : '' ?>" title="<?= isset($rowTmb['jumlah_capaian']) ? $formatDisplayDecimal($rowTmb['jumlah_capaian']) : '' ?>" aria-label="Jumlah Capaian Tambahan baris <?= $currentTmbNum ?>">
+                                                    <input type="text" name="satuan_tambahan[]" class="form-control input-satuan-val input-satuan-tambahan text-center" placeholder="Satuan" list="daftarSatuanStandar" value="<?= esc($rowTmb['satuan'] ?? '') ?>" title="<?= esc($rowTmb['satuan'] ?? '') ?>" aria-label="Satuan Capaian Tambahan baris <?= $currentTmbNum ?>">
                                                 </div>
                                             </td>
                                             <td data-label="Bukti Pekerjaan">
@@ -1073,7 +1246,7 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
                                             <?php if ($showAksiCol): ?>
                                                 <td class="td-aksi text-center">
                                                     <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris-tmb btn-tactile btn-hapus-baris" data-id="<?= esc($rowTmb['id']) ?>" title="Hapus baris" aria-label="Hapus tugas tambahan baris <?= $currentTmbNum ?>">
-                                                        <i class="bi bi-trash3"></i>
+                                                        <i class="bi bi-trash3" aria-hidden="true"></i>
                                                     </button>
                                                 </td>
                                             <?php endif; ?>
@@ -1103,10 +1276,12 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
             <!-- Template DOM HTML untuk Baris Baru -->
             <template id="templateRowPokok">
                 <tr class="row-tugas-pokok input-row row-slide-in">
-                    <input type="hidden" name="log_id[]" value="">
-                    <td class="td-no nomor-baris text-center fw-bold ecc-text-muted-aa" data-label="Baris">1</td>
+                    <td class="td-no text-center fw-bold ecc-text-muted-aa" data-label="Baris">
+                        <span class="nomor-baris">1</span>
+                        <input type="hidden" name="log_id[]" value="">
+                    </td>
                     <td data-label="Indikator RHK / Tugas">
-                        <select name="target_id[]" class="form-select form-select-sm" aria-label="Pilih Target RHK">
+                        <select name="target_id[]" class="form-select form-select-sm target-rhk-select" aria-label="Pilih Target RHK">
                             <option value="">-- Pilih Target / RHK --</option>
                             <?php if (!empty($daftar_target)): ?>
                                 <?php foreach ($daftar_target as $target): ?>
@@ -1119,15 +1294,14 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
                                 <?php endforeach; ?>
                             <?php endif; ?>
                         </select>
-                        <div class="target-preview-text mt-2 px-2 py-2 rounded-3 bg-light border d-none"></div>
                     </td>
                     <td data-label="Deskripsi Kegiatan">
                         <textarea name="deskripsi_kegiatan[]" class="form-control form-control-sm auto-grow-textarea" rows="2" placeholder="Jelaskan apa yang Anda kerjakan hari ini..." aria-label="Deskripsi Kegiatan Pokok"></textarea>
                     </td>
                     <td class="col-capaian-log" data-label="Capaian">
-                        <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden">
+                        <div class="capaian-input-group">
                             <input type="number" step="0.0001" min="0.0001" max="999999999999999" name="jumlah_capaian[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-primary" placeholder="0" aria-label="Jumlah Capaian Pokok">
-                            <span class="input-group-text badge-capaian-satuan bg-light">-</span>
+                            <span class="badge-capaian-satuan" title="-">-</span>
                         </div>
                     </td>
                     <td data-label="Bukti Pekerjaan">
@@ -1135,7 +1309,7 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
                     </td>
                     <td class="td-aksi text-center">
                         <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris btn-tactile btn-hapus-baris" title="Hapus baris" aria-label="Hapus kegiatan pokok">
-                            <i class="bi bi-trash3"></i>
+                            <i class="bi bi-trash3" aria-hidden="true"></i>
                         </button>
                     </td>
                 </tr>
@@ -1143,8 +1317,10 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
 
             <template id="templateRowTambahan">
                 <tr class="row-tugas-tambahan row-slide-in">
-                    <input type="hidden" name="log_tambahan_id[]" value="">
-                    <td class="td-no nomor-baris-tmb text-center fw-bold ecc-text-muted-aa" data-label="Baris">1</td>
+                    <td class="td-no text-center fw-bold ecc-text-muted-aa" data-label="Baris">
+                        <span class="nomor-baris-tmb">1</span>
+                        <input type="hidden" name="log_tambahan_id[]" value="">
+                    </td>
                     <td data-label="Kategori">
                         <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle px-3 py-1 rounded-pill fw-semibold">
                             Tugas Tambahan
@@ -1154,9 +1330,9 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
                         <textarea name="deskripsi_kegiatan_tambahan[]" class="form-control form-control-sm auto-grow-textarea" rows="2" placeholder="Jelaskan tugas tambahan yang Anda kerjakan hari ini..." aria-label="Deskripsi Kegiatan Tambahan"></textarea>
                     </td>
                     <td class="col-capaian-log" data-label="Capaian">
-                        <div class="capaian-tambahan-stack">
-                            <input type="number" step="0.0001" min="0.0001" max="999999999999999" name="jumlah_capaian_tambahan[]" class="form-control form-control-sm input-capaian-num input-target-val text-center num-tabular fw-bold text-success-emphasis shadow-sm" placeholder="0" aria-label="Jumlah Capaian Tambahan">
-                            <input type="text" name="satuan_tambahan[]" class="form-control form-control-sm input-satuan-val text-center shadow-sm" placeholder="Satuan" list="daftarSatuanStandar" aria-label="Satuan Capaian Tambahan">
+                        <div class="capaian-input-group">
+                            <input type="number" step="0.0001" min="0.0001" max="999999999999999" name="jumlah_capaian_tambahan[]" class="form-control input-capaian-num input-target-val text-center num-tabular fw-bold text-success-emphasis" placeholder="0" aria-label="Jumlah Capaian Tambahan">
+                            <input type="text" name="satuan_tambahan[]" class="form-control input-satuan-val input-satuan-tambahan text-center" placeholder="Satuan" list="daftarSatuanStandar" aria-label="Satuan Capaian Tambahan">
                         </div>
                     </td>
                     <td data-label="Bukti Pekerjaan">
@@ -1164,7 +1340,7 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
                     </td>
                     <td class="td-aksi text-center">
                         <button type="button" class="btn btn-outline-danger btn-sm rounded-circle hapus-baris-tmb btn-tactile btn-hapus-baris" title="Hapus" aria-label="Hapus tugas tambahan">
-                            <i class="bi bi-trash3"></i>
+                            <i class="bi bi-trash3" aria-hidden="true"></i>
                         </button>
                     </td>
                 </tr>
@@ -1177,6 +1353,7 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
 
 <?= $this->section('scripts') ?>
 <script src="<?= base_url('assets/vendor/jquery/jquery.min.js') ?>"></script>
+<script src="<?= base_url('assets/vendor/select2/select2.min.js') ?>"></script>
 <script src="<?= base_url('assets/vendor/flatpickr/flatpickr.min.js') ?>"></script>
 <script src="<?= base_url('assets/vendor/flatpickr/l10n/id.js') ?>"></script>
 <script>
@@ -1184,13 +1361,16 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
         const tabelLog = $('#tabelLog tbody');
         const idNumberFormatter = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 4 });
 
+        const supportsFieldSizing = typeof CSS !== 'undefined' && typeof CSS.supports === 'function' && CSS.supports('field-sizing', 'content');
+
         function autoGrowTextarea(el) {
-            if (!el) return;
+            if (supportsFieldSizing || !el) return;
             el.style.height = 'auto';
             el.style.height = Math.max(56, el.scrollHeight + 4) + 'px';
         }
 
         function resizeAllTextareas(container) {
+            if (supportsFieldSizing) return;
             const textareas = $(container || document).find('textarea.auto-grow-textarea').get();
             if (!textareas.length) return;
             textareas.forEach(function(el) {
@@ -1204,17 +1384,23 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
             });
         }
 
-        function syncTargetPreview(selectEl) {
-            const $select = $(selectEl);
-            const $preview = $select.closest('td').find('.target-preview-text');
-            if (!$preview.length) return;
-            const val = ($select.val() || '').trim();
-            if (!val) {
-                $preview.text('').addClass('d-none');
-            } else {
-                const label = $select.find('option:selected').text().trim();
-                $preview.text(label).removeClass('d-none');
-            }
+        function initTargetRhkSelect(scope) {
+            if (!$.fn.select2) return;
+            $(scope || tabelLog).find('select.target-rhk-select').each(function() {
+                const $sel = $(this);
+                if ($sel.hasClass('select2-hidden-accessible')) {
+                    return;
+                }
+                const ariaLabel = $sel.attr('aria-label') || 'Pilih Target RHK';
+                $sel.select2({
+                    theme: 'bootstrap-5',
+                    width: '100%',
+                    minimumResultsForSearch: Infinity,
+                    selectionCssClass: 'target-rhk-selection',
+                    dropdownCssClass: 'target-rhk-dropdown'
+                });
+                $sel.next('.select2-container').find('.select2-selection--single').attr('aria-label', ariaLabel);
+            });
         }
 
         function updateCapaianTooltip(inputEl) {
@@ -1227,21 +1413,23 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
             }
         }
 
-        resizeAllTextareas(document);
-        $(window).one('load', function() {
+        if (!supportsFieldSizing) {
             resizeAllTextareas(document);
-        });
-        let resizeDebounceTimer = null;
-        $(window).on('resize', function() {
-            clearTimeout(resizeDebounceTimer);
-            resizeDebounceTimer = setTimeout(function() {
+            $(window).one('load', function() {
                 resizeAllTextareas(document);
-            }, 100);
-        });
+            });
+            let resizeDebounceTimer = null;
+            $(window).on('resize', function() {
+                clearTimeout(resizeDebounceTimer);
+                resizeDebounceTimer = setTimeout(function() {
+                    resizeAllTextareas(document);
+                }, 100);
+            });
 
-        tabelLog.on('input', 'textarea.auto-grow-textarea', function() {
-            autoGrowTextarea(this);
-        });
+            tabelLog.on('input', 'textarea.auto-grow-textarea', function() {
+                autoGrowTextarea(this);
+            });
+        }
 
         tabelLog.on('input change', 'input[type="url"]', function() {
             $(this).attr('title', $(this).val() || '');
@@ -1254,16 +1442,21 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
             updateCapaianTooltip(this);
         });
 
-        // Cegah perubahan nilai angka saat pengguna scrolling halaman
-        $(document).on('wheel', 'input[type="number"]', function() {
-            $(this).blur();
-        });
+        // Cegah perubahan nilai angka saat pengguna scrolling halaman (passive listener)
+        document.addEventListener('wheel', function() {
+            const active = document.activeElement;
+            if (active && active.tagName === 'INPUT' && active.type === 'number') {
+                active.blur();
+            }
+        }, { passive: true });
 
         function updateRowNumbers() {
             tabelLog.find('tr.row-tugas-pokok').each(function(index) {
                 const num = index + 1;
                 $(this).find('.nomor-baris').text(num);
-                $(this).find('select[name="target_id[]"]').attr('aria-label', `Pilih Target RHK baris ${num}`);
+                const $targetSelect = $(this).find('select[name="target_id[]"]');
+                $targetSelect.attr('aria-label', `Pilih Target RHK baris ${num}`);
+                $targetSelect.next('.select2-container').find('.select2-selection--single').attr('aria-label', `Pilih Target RHK baris ${num}`);
                 $(this).find('textarea[name="deskripsi_kegiatan[]"]').attr('aria-label', `Deskripsi Kegiatan Pokok baris ${num}`);
                 $(this).find('input[name="jumlah_capaian[]"]').attr('aria-label', `Jumlah Capaian Pokok baris ${num}`);
                 $(this).find('input[name="link_bukti[]"]').attr('aria-label', `Tautan Bukti Pekerjaan Pokok baris ${num}`);
@@ -1305,35 +1498,25 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
             setRowControlsDisabled(false);
         });
 
-        // Tambah Baris Tugas Pokok
+        // Tambah Baris Tugas Pokok (selalu instansiasi bersih dari template agar Select2 tidak terduplikasi)
         $('#tambahBaris').on('click', function() {
-            const templateRow = tabelLog.find('tr.row-tugas-pokok:first');
-            let newRow;
-
-            if (templateRow.length > 0 && templateRow.find('select[name="target_id[]"]').length > 0) {
-                newRow = templateRow.clone();
-                newRow.removeClass('row-slide-out').addClass('row-slide-in');
-                newRow.find('input[name="log_id[]"]').val('');
-                newRow.find('input[type="number"]').val('').removeAttr('title');
-                newRow.find('input[type="url"]').val('').removeAttr('title');
-                newRow.find('textarea').val('').css('height', '');
-                newRow.find('select').val('');
-                newRow.find('.target-preview-text').text('').addClass('d-none');
-                newRow.find('.input-group-text').text('-');
-                newRow.find('.hapus-baris').removeAttr('data-id');
-                newRow.find('.is-invalid').removeClass('is-invalid');
-            } else {
-                const tpl = document.getElementById('templateRowPokok');
-                newRow = $(tpl.content.cloneNode(true)).find('tr');
-            }
+            const tpl = document.getElementById('templateRowPokok');
+            if (!tpl) return;
+            const newRow = $(tpl.content.cloneNode(true)).find('tr');
 
             $('#rowHeaderTambahan').before(newRow);
+            initTargetRhkSelect(newRow);
             updateRowNumbers();
             updateDropdownOptions();
             resizeAllTextareas(newRow);
 
             setTimeout(() => {
-                $(newRow).find('select[name="target_id[]"]').focus();
+                const $s2Trigger = newRow.find('.select2-selection--single');
+                if ($s2Trigger.length) {
+                    $s2Trigger.trigger('focus');
+                } else {
+                    newRow.find('select[name="target_id[]"]').trigger('focus');
+                }
             }, 80);
         });
 
@@ -1352,6 +1535,9 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
             const animateRemoveRow = function() {
                 row.addClass('row-slide-out');
                 setTimeout(() => {
+                    if ($.fn.select2) {
+                        row.find('select.select2-hidden-accessible').select2('destroy');
+                    }
                     row.remove();
                     updateRowNumbers();
                     updateDropdownOptions();
@@ -1551,27 +1737,26 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
             }
         });
 
-        // Update satuan & full RHK preview text
+        // Update satuan saat Target RHK berubah
         tabelLog.on('change', 'select[name="target_id[]"]', function() {
-            const selectedOption = $(this).find('option:selected');
+            const $sel = $(this);
+            $sel.removeClass('is-invalid');
+            const selectedOption = $sel.find('option:selected');
             let satuan = selectedOption.data('satuan') || selectedOption.attr('data-satuan');
             if (!satuan) {
                 const selectedText = selectedOption.text();
                 const matches = selectedText.match(/\((\d+(?:[\.,]\d+)?)\s+(.+)\)$/);
                 satuan = matches ? matches[2] : '-';
             }
-            const badge = $(this).closest('tr').find('.badge-capaian-satuan');
+            const badge = $sel.closest('tr').find('.badge-capaian-satuan');
             badge.text(satuan || '-').attr('title', satuan || '-').addClass('badge-satuan-pop');
             setTimeout(() => {
                 badge.removeClass('badge-satuan-pop');
             }, 200);
-            syncTargetPreview(this);
             updateDropdownOptions();
         });
 
-        tabelLog.find('select[name="target_id[]"]').each(function() {
-            syncTargetPreview(this);
-        });
+        initTargetRhkSelect(tabelLog);
         updateDropdownOptions();
 
         function checkUpperBounds() {
@@ -1871,15 +2056,19 @@ $maxAllowedDate = $max_future_date ?? date('Y-m-t', strtotime($today));
                     }
 
                     const status = dateStatusMap[dateStr];
+                    const baseAriaLabel = dayElem.getAttribute('aria-label') || dateStr;
                     if (status === 'terkirim') {
                         dayElem.classList.add('has-log-sent');
-                        dayElem.innerHTML += '<span class="fp-dot fp-dot-sent" title="Laporan Terkirim"></span>';
+                        dayElem.setAttribute('aria-label', baseAriaLabel + ' — Laporan terkirim');
+                        dayElem.innerHTML += '<span class="fp-dot fp-dot-sent" aria-hidden="true" title="Laporan Terkirim"></span>';
                     } else if (status === 'draft') {
                         dayElem.classList.add('has-log-draft');
-                        dayElem.innerHTML += '<span class="fp-dot fp-dot-draft" title="Draf Tersimpan"></span>';
+                        dayElem.setAttribute('aria-label', baseAriaLabel + ' — Draf tersimpan');
+                        dayElem.innerHTML += '<span class="fp-dot fp-dot-draft" aria-hidden="true" title="Draf Tersimpan"></span>';
                     } else if (isWorkingDay && isPastOrToday) {
                         dayElem.classList.add('has-log-missing');
-                        dayElem.innerHTML += '<span class="fp-dot fp-dot-missing" title="Hari Kerja Belum Diisi"></span>';
+                        dayElem.setAttribute('aria-label', baseAriaLabel + ' — Hari kerja belum diisi');
+                        dayElem.innerHTML += '<span class="fp-dot fp-dot-missing" aria-hidden="true" title="Hari Kerja Belum Diisi"></span>';
                     }
                 },
                 onChange: function(selectedDates, dateStr) {

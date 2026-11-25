@@ -28,14 +28,14 @@ $isSelfServiceAccount = \App\Libraries\Ketarunaan\KetarunaanPolicy::isSelfAccoun
 
     <div class="sidebar-header d-none d-lg-flex">
         <a href="<?= $isSelfServiceAccount ? site_url(ltrim(\App\Libraries\Ketarunaan\KetarunaanPolicy::getSelfPortalUrl(), '/')) : site_url('dashboard') ?>" title="Evidence Command Center (ECC) PKTJ" class="text-decoration-none">
-            <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ Tegal" class="sidebar-logo" width="48" height="48" style="width: 48px; height: 48px; object-fit: contain;" loading="eager">
+            <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ Tegal" class="sidebar-logo" width="48" height="48" style="width: 48px; height: 48px; object-fit: contain;" loading="eager" decoding="async">
         </a>
     </div>
     
     <!-- Header Sidebar Mobile (Offcanvas) -->
     <div class="offcanvas-header d-lg-none border-bottom px-3 py-2.5">
         <div class="d-flex align-items-center gap-2">
-            <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ Tegal" class="sidebar-logo" width="40" height="40" style="width: 40px; height: 40px; object-fit: contain;" loading="eager">
+            <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ Tegal" class="sidebar-logo" width="40" height="40" style="width: 40px; height: 40px; object-fit: contain;" loading="eager" decoding="async">
             <span class="fw-bold text-dark fs-6" id="sidebarOffcanvasLabel">ECC PKTJ</span>
         </div>
         <button type="button" class="btn-close text-reset btn-tactile" data-bs-dismiss="offcanvas" data-bs-target="#sidebarOffcanvas" aria-label="Tutup navigasi"></button>

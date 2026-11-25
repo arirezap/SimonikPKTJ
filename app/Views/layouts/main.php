@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <!-- Cache Control: Paksa browser selalu ambil halaman terbaru dari server -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -150,7 +151,7 @@
                                         $foto_header_path = 'assets/uploads/profile/' . $foto_session;
                                         if (!empty($foto_session) && file_exists(FCPATH . $foto_header_path)) :
                                     ?>
-                                        <img src="<?= base_url($foto_header_path) ?>" alt="Foto Profil" class="rounded-circle" style="width: 100%; height: 100%; object-fit: cover;" width="40" height="40">
+                                        <img src="<?= base_url($foto_header_path) ?>" alt="Foto Profil" class="rounded-circle" style="width: 100%; height: 100%; object-fit: cover;" width="40" height="40" decoding="async">
                                     <?php else : ?>
                                         <span class="text-primary fw-bold" style="font-size: 1.05rem; letter-spacing: 0.5px;"><?= $initials ?></span>
                                     <?php endif; ?>

@@ -81,7 +81,7 @@ $formAction = $isEdit && !empty($capaian['id'])
             <div class="col-12 col-md-4 d-flex align-items-center gap-3">
                 <div class="ecc-avatar-lg">
                     <?php if ($fotoHeaderUrl !== null): ?>
-                        <img src="<?= esc($fotoHeaderUrl) ?>" alt="Foto <?= esc($namaTarunaHeader) ?>" style="width: 100%; height: 100%; object-fit: cover;">
+                        <img src="<?= esc($fotoHeaderUrl) ?>" alt="Foto <?= esc($namaTarunaHeader) ?>" width="64" height="64" decoding="async" style="width: 100%; height: 100%; object-fit: cover;">
                     <?php else: ?>
                         <?= esc($inisialHeader) ?>
                     <?php endif; ?>

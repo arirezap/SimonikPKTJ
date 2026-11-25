@@ -7,6 +7,8 @@
    1. ROOT DESIGN TOKENS & BASE RESET
    ------------------------------------------------------------------- */
 :root {
+    color-scheme: light;
+    accent-color: var(--ecc-primary);
     --primary-color: #1e3a8a;       /* Navy Blue Primary */
     --accent-color: #f59e0b;        /* Amber Warning Accent */
     --danger-color: #ef4444;        /* Danger Red */
@@ -54,6 +56,15 @@ body {
     overflow-x: hidden;
     font-size: 0.95rem; 
     color: var(--text-dark);
+}
+
+::selection {
+    background-color: var(--ecc-primary-subtle);
+    color: var(--text-dark);
+}
+
+h1, h2, h3, h4, .card-title {
+    text-wrap: balance;
 }
 
 /* Tabular number font feature for precision metrics */
@@ -987,59 +998,7 @@ body {
 .text-nowrap-cell { white-space: nowrap !important; }
 .readonly-text { font-weight: 600; }
 
-/* Log Kegiatan Harian Column Specs */
-.col-target-log { min-width: 240px; word-break: break-word; overflow-wrap: anywhere; }
-.col-deskripsi-log { min-width: 280px; word-break: break-word; overflow-wrap: anywhere; }
-.col-capaian-log { width: 215px !important; min-width: 215px !important; }
-.col-bukti-log { min-width: 180px; word-break: break-all; overflow-wrap: anywhere; }
-
-.col-capaian-log .input-group {
-    width: 100% !important;
-    max-width: 200px !important;
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    margin: 0 auto !important;
-}
-.col-capaian-log .input-capaian-num {
-    width: 75px !important;
-    min-width: 75px !important;
-    max-width: 75px !important;
-    flex: 0 0 75px !important;
-    text-align: center !important;
-    padding-left: 4px !important;
-    padding-right: 4px !important;
-    font-size: 0.85rem;
-}
-.col-capaian-log .badge-capaian-satuan {
-    flex: 1 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    padding-left: 6px !important;
-    padding-right: 6px !important;
-    font-weight: 500 !important;
-    font-size: 0.8125rem !important;
-    text-align: center !important;
-    justify-content: center !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    color: #475569;
-    background-color: #f1f5f9;
-}
-.col-capaian-log .readonly-capaian-box {
-    width: 100% !important;
-    max-width: 200px !important;
-    margin: 0 auto !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    min-height: 38px !important;
-    font-weight: 600 !important;
-    font-size: 0.85rem !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-}
+/* Log Kegiatan Harian Column Specs dikelola terpusat di app/Views/user/log_kegiatan/index.php */
 
 /* Compact Table & Select2 Helpers */
 .compact-table td, 

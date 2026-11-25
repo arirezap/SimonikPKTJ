@@ -81,7 +81,7 @@
     height: 32px;
     padding: 4px 12px;
     border-radius: 50rem;
-    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: background-color 0.18s cubic-bezier(0.16, 1, 0.3, 1), color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     border: 1px solid #e2e8f0;
     background-color: #ffffff;
     color: #475569;
@@ -204,20 +204,35 @@
     word-break: normal !important;
 }
 
-/* Sortable Table Header */
+/* Sortable Table Header (Preserves <th> ARIA columnheader role) */
 .sortable-th {
-    cursor: pointer;
     user-select: none;
     position: relative;
     transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
+.btn-sort-th {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    font: inherit;
+    color: inherit;
+    text-transform: inherit;
+    letter-spacing: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.btn-sort-th:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
 .sortable-th:hover {
     background-color: #f1f5f9 !important;
     color: #0d6efd !important;
-}
-.sortable-th:focus-visible {
-    outline: none;
-    box-shadow: inset 0 0 0 2px #0d6efd !important;
 }
 .sortable-th.th-sorted {
     background-color: #eff6ff !important;
@@ -245,21 +260,37 @@
 }
 .pegawai-row.cursor-pointer {
     transition: background-color 0.15s ease;
-    outline: none;
 }
 .pegawai-row.cursor-pointer:hover td {
     background-color: #f8fafc !important;
 }
-.pegawai-row.cursor-pointer:hover .pegawai-nama-text {
+.btn-row-name {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    color: #0f172a;
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-align: left;
+    line-height: 1.3;
+    transition: color 0.15s ease;
+}
+.pegawai-row.cursor-pointer:hover .btn-row-name,
+.btn-row-name:hover {
     color: #0d6efd !important;
     text-decoration: underline !important;
+}
+.btn-row-name:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+    border-radius: 4px;
 }
 .pegawai-row.cursor-pointer:hover .row-hover-hint {
     opacity: 1 !important;
     transform: translateX(0) !important;
 }
-.pegawai-row.cursor-pointer:focus-visible {
-    box-shadow: inset 0 0 0 2px #0d6efd !important;
+.table-modal-target {
+    min-width: 720px;
 }
 .row-hover-hint {
     opacity: 0;
@@ -349,14 +380,25 @@
     .form-select {
         font-size: var(--bs-body-font-size, 1rem) !important;
     }
+    .filter-select-custom,
+    .filter-input-year {
+        height: 44px !important;
+    }
     .desktop-table-view {
         display: none !important;
     }
     .mobile-cards-view {
         display: block !important;
     }
-    .btn-export-action {
+    .btn-export-action,
+    .btn-reset-filter,
+    .btn-modal-action {
         min-height: 44px;
+    }
+    .filter-pill {
+        min-height: 44px;
+        height: auto;
+        padding: 8px 14px;
     }
 }
 @media (min-width: 768px) {
@@ -372,6 +414,10 @@
     .bento-stagger,
     .filter-pill,
     .pegawai-row,
+    .btn-row-name,
+    .sort-indicator,
+    .row-hover-hint,
+    .skeleton-bar,
     .mobile-pegawai-card,
     .btn-tactile,
     #modalDetailTarget .modal-content {
@@ -398,10 +444,10 @@ $persenSetujuFormatted = str_replace('.', ',', (string) ($persen_setuju ?? 0));
         </div>
         <div class="d-flex align-items-center gap-2 flex-wrap">
             <a href="<?= site_url('kepegawaian/target-kinerja/export-excel') ?>?bulan=<?= esc($bulan_terpilih) ?>&tahun=<?= esc($tahun_terpilih) ?>&unit=<?= urlencode($unit_filter) ?>&role=<?= urlencode($role_filter) ?>&status=<?= urlencode($status_filter) ?>" class="btn btn-sm btn-success shadow-sm rounded-pill px-3 py-2 fw-bold d-inline-flex align-items-center gap-2 btn-tactile btn-export-action" id="btnExportExcel" title="Unduh Excel">
-                <i class="bi bi-file-earmark-excel-fill"></i> Export Excel
+                <i class="bi bi-file-earmark-excel-fill" aria-hidden="true"></i> Export Excel
             </a>
             <a href="<?= site_url('kepegawaian/target-kinerja/export-pdf') ?>?bulan=<?= esc($bulan_terpilih) ?>&tahun=<?= esc($tahun_terpilih) ?>&unit=<?= urlencode($unit_filter) ?>&role=<?= urlencode($role_filter) ?>&status=<?= urlencode($status_filter) ?>" class="btn btn-sm btn-danger shadow-sm rounded-pill px-3 py-2 fw-bold d-inline-flex align-items-center gap-2 btn-tactile btn-export-action" id="btnExportPdf" title="Unduh PDF">
-                <i class="bi bi-file-earmark-pdf-fill"></i> Export PDF
+                <i class="bi bi-file-earmark-pdf-fill" aria-hidden="true"></i> Export PDF
             </a>
         </div>
     </div>
@@ -438,7 +484,7 @@ $persenSetujuFormatted = str_replace('.', ',', (string) ($persen_setuju ?? 0));
                 <div class="card-header bg-light py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
                     <h2 class="h6 fw-bold text-dark mb-0">Filter Periode, Unit &amp; Kategori</h2>
                     <?php if (!empty($unit_filter) || !empty($role_filter) || !empty($status_filter)): ?>
-                        <a href="<?= site_url('kepegawaian/target-kinerja') ?>?bulan=<?= esc($bulan_terpilih) ?>&tahun=<?= esc($tahun_terpilih) ?>" class="badge bg-light ecc-text-muted-aa border text-decoration-none rounded-pill px-3 py-1 fw-semibold">
+                        <a href="<?= site_url('kepegawaian/target-kinerja') ?>?bulan=<?= esc($bulan_terpilih) ?>&tahun=<?= esc($tahun_terpilih) ?>" class="badge bg-light ecc-text-muted-aa border text-decoration-none rounded-pill px-3 py-1 fw-semibold d-inline-flex align-items-center btn-reset-filter">
                             Reset Filter
                         </a>
                     <?php endif; ?>
@@ -548,10 +594,10 @@ $persenSetujuFormatted = str_replace('.', ',', (string) ($persen_setuju ?? 0));
         <div class="card-header bg-light py-3 px-3 border-bottom d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
             <div>
                 <h2 class="h6 fw-bold text-dark mb-1">Daftar Status Target Pegawai</h2>
-                <div class="small ecc-text-muted-aa" id="visibleCounter">Menampilkan <?= count($rekap_target) ?> pegawai · <?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?> · Pilih baris untuk rincian</div>
+                <div class="small ecc-text-muted-aa" id="visibleCounter" aria-live="polite" aria-atomic="true">Menampilkan <?= count($rekap_target) ?> pegawai · <?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?> · Pilih baris untuk rincian</div>
             </div>
             <div class="input-group input-group-sm" style="max-width: 260px;">
-                <span class="input-group-text bg-white border-end-0 ecc-text-muted-aa"><i class="bi bi-search"></i></span>
+                <span class="input-group-text bg-white border-end-0 ecc-text-muted-aa"><i class="bi bi-search" aria-hidden="true"></i></span>
                 <input type="text" id="liveSearchInput" class="form-control border-start-0 ps-0 ecc-focus-ring" placeholder="Cari nama, NIP, unit..." autocomplete="off" aria-label="Pencarian cepat pegawai">
             </div>
         </div>
@@ -559,22 +605,22 @@ $persenSetujuFormatted = str_replace('.', ',', (string) ($persen_setuju ?? 0));
         <!-- Quick Status Filter Pills (Wrap Cleanly, Zero Clipping) -->
         <div class="bg-white border-bottom" id="pillFilterGroup">
             <span class="ecc-text-muted-aa small fw-bold me-1">Filter Cepat:</span>
-            <button type="button" class="filter-pill <?= empty($status_filter) ? 'active' : '' ?>" data-status="" aria-label="Semua Pegawai">
+            <button type="button" class="filter-pill <?= empty($status_filter) ? 'active' : '' ?>" data-status="" aria-pressed="<?= empty($status_filter) ? 'true' : 'false' ?>">
                 Semua (<span class="num-tabular"><?= esc($stat_total_pegawai) ?></span>)
             </button>
-            <button type="button" class="filter-pill <?= ($status_filter === 'sudah_mengirim') ? 'active' : '' ?>" data-status="sudah_mengirim" aria-label="Sudah Mengirim">
+            <button type="button" class="filter-pill <?= ($status_filter === 'sudah_mengirim') ? 'active' : '' ?>" data-status="sudah_mengirim" aria-pressed="<?= ($status_filter === 'sudah_mengirim') ? 'true' : 'false' ?>">
                 Sudah Mengirim (<span class="num-tabular"><?= esc($stat_sudah_mengirim) ?></span>)
             </button>
-            <button type="button" class="filter-pill <?= ($status_filter === 'disetujui') ? 'active' : '' ?>" data-status="disetujui" aria-label="Sudah Disetujui">
+            <button type="button" class="filter-pill <?= ($status_filter === 'disetujui') ? 'active' : '' ?>" data-status="disetujui" aria-pressed="<?= ($status_filter === 'disetujui') ? 'true' : 'false' ?>">
                 Disetujui (<span class="num-tabular"><?= esc($stat_sudah_disetujui) ?></span>)
             </button>
-            <button type="button" class="filter-pill <?= ($status_filter === 'menunggu_persetujuan') ? 'active' : '' ?>" data-status="menunggu_persetujuan" aria-label="Menunggu Persetujuan">
+            <button type="button" class="filter-pill <?= ($status_filter === 'menunggu_persetujuan') ? 'active' : '' ?>" data-status="menunggu_persetujuan" aria-pressed="<?= ($status_filter === 'menunggu_persetujuan') ? 'true' : 'false' ?>">
                 Menunggu (<span class="num-tabular"><?= esc($stat_menunggu_persetujuan) ?></span>)
             </button>
-            <button type="button" class="filter-pill <?= ($status_filter === 'draft') ? 'active' : '' ?>" data-status="draft" aria-label="Draf">
+            <button type="button" class="filter-pill <?= ($status_filter === 'draft') ? 'active' : '' ?>" data-status="draft" aria-pressed="<?= ($status_filter === 'draft') ? 'true' : 'false' ?>">
                 Draf (<span class="num-tabular"><?= esc($stat_draft) ?></span>)
             </button>
-            <button type="button" class="filter-pill <?= ($status_filter === 'belum_mengisi') ? 'active' : '' ?>" data-status="belum_mengisi" aria-label="Belum Mengisi">
+            <button type="button" class="filter-pill <?= ($status_filter === 'belum_mengisi') ? 'active' : '' ?>" data-status="belum_mengisi" aria-pressed="<?= ($status_filter === 'belum_mengisi') ? 'true' : 'false' ?>">
                 Belum Mengisi (<span class="num-tabular"><?= esc($stat_belum_mengisi) ?></span>)
             </button>
         </div>
@@ -585,55 +631,55 @@ $persenSetujuFormatted = str_replace('.', ',', (string) ($persen_setuju ?? 0));
                 <table class="table table-hover table-bento mb-0 align-middle" id="tableMonitoringTarget">
                     <thead>
                         <tr>
-                            <th class="col-mt-no text-center sortable-th th-sorted" data-sort-key="no" data-sort-type="number" tabindex="0" role="button" aria-sort="ascending" title="Urutkan berdasarkan nomor">
-                                <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                            <th scope="col" class="col-mt-no text-center sortable-th th-sorted" data-sort-key="no" data-sort-type="number" aria-sort="ascending">
+                                <button type="button" class="btn-sort-th justify-content-center" aria-label="Urutkan berdasarkan nomor">
                                     <span>No</span>
-                                    <i class="bi bi-arrow-up sort-indicator text-primary fw-bold"></i>
-                                </div>
+                                    <i class="bi bi-arrow-up sort-indicator text-primary fw-bold" aria-hidden="true"></i>
+                                </button>
                             </th>
-                            <th class="col-mt-pegawai sortable-th" data-sort-key="nama" data-sort-type="string" tabindex="0" role="button" aria-sort="none" title="Urutkan berdasarkan nama">
-                                <div class="d-flex align-items-center justify-content-between gap-1">
+                            <th scope="col" class="col-mt-pegawai sortable-th" data-sort-key="nama" data-sort-type="string" aria-sort="none">
+                                <button type="button" class="btn-sort-th justify-content-between" aria-label="Urutkan berdasarkan nama pegawai">
                                     <span>Pegawai &amp; Jabatan</span>
-                                    <i class="bi bi-arrow-down-up sort-indicator"></i>
-                                </div>
+                                    <i class="bi bi-arrow-down-up sort-indicator" aria-hidden="true"></i>
+                                </button>
                             </th>
-                            <th class="col-mt-unit sortable-th" data-sort-key="unit" data-sort-type="string" tabindex="0" role="button" aria-sort="none" title="Urutkan berdasarkan unit kerja">
-                                <div class="d-flex align-items-center justify-content-between gap-1">
+                            <th scope="col" class="col-mt-unit sortable-th" data-sort-key="unit" data-sort-type="string" aria-sort="none">
+                                <button type="button" class="btn-sort-th justify-content-between" aria-label="Urutkan berdasarkan unit kerja">
                                     <span>Unit Kerja</span>
-                                    <i class="bi bi-arrow-down-up sort-indicator"></i>
-                                </div>
+                                    <i class="bi bi-arrow-down-up sort-indicator" aria-hidden="true"></i>
+                                </button>
                             </th>
-                            <th class="col-mt-atasan sortable-th" data-sort-key="atasan" data-sort-type="string" tabindex="0" role="button" aria-sort="none" title="Urutkan berdasarkan atasan">
-                                <div class="d-flex align-items-center justify-content-between gap-1">
+                            <th scope="col" class="col-mt-atasan sortable-th" data-sort-key="atasan" data-sort-type="string" aria-sort="none">
+                                <button type="button" class="btn-sort-th justify-content-between" aria-label="Urutkan berdasarkan atasan langsung">
                                     <span>Atasan Langsung</span>
-                                    <i class="bi bi-arrow-down-up sort-indicator"></i>
-                                </div>
+                                    <i class="bi bi-arrow-down-up sort-indicator" aria-hidden="true"></i>
+                                </button>
                             </th>
-                            <th class="col-mt-rhk text-center sortable-th" data-sort-key="rhk" data-sort-type="number" tabindex="0" role="button" aria-sort="none" title="Urutkan berdasarkan jumlah Target RHK">
-                                <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                            <th scope="col" class="col-mt-rhk text-center sortable-th" data-sort-key="rhk" data-sort-type="number" aria-sort="none">
+                                <button type="button" class="btn-sort-th justify-content-center" aria-label="Urutkan berdasarkan jumlah target RHK">
                                     <span>Target (RHK)</span>
-                                    <i class="bi bi-arrow-down-up sort-indicator"></i>
-                                </div>
+                                    <i class="bi bi-arrow-down-up sort-indicator" aria-hidden="true"></i>
+                                </button>
                             </th>
-                            <th class="col-mt-status text-center sortable-th" data-sort-key="status-kirim" data-sort-type="status-kirim" tabindex="0" role="button" aria-sort="none" title="Urutkan berdasarkan status pengiriman">
-                                <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                            <th scope="col" class="col-mt-status text-center sortable-th" data-sort-key="status-kirim" data-sort-type="status-kirim" aria-sort="none">
+                                <button type="button" class="btn-sort-th justify-content-center" aria-label="Urutkan berdasarkan status pengiriman">
                                     <span>Status Pengiriman</span>
-                                    <i class="bi bi-arrow-down-up sort-indicator"></i>
-                                </div>
+                                    <i class="bi bi-arrow-down-up sort-indicator" aria-hidden="true"></i>
+                                </button>
                             </th>
-                            <th class="col-mt-appr text-center sortable-th" data-sort-key="status-appr" data-sort-type="status-appr" tabindex="0" role="button" aria-sort="none" title="Urutkan berdasarkan status persetujuan">
-                                <div class="d-inline-flex align-items-center justify-content-center gap-1">
+                            <th scope="col" class="col-mt-appr text-center sortable-th" data-sort-key="status-appr" data-sort-type="status-appr" aria-sort="none">
+                                <button type="button" class="btn-sort-th justify-content-center" aria-label="Urutkan berdasarkan status persetujuan">
                                     <span>Status Persetujuan</span>
-                                    <i class="bi bi-arrow-down-up sort-indicator"></i>
-                                </div>
+                                    <i class="bi bi-arrow-down-up sort-indicator" aria-hidden="true"></i>
+                                </button>
                             </th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($rekap_target)): ?>
-                            <tr>
+                            <tr class="no-data-row">
                                 <td colspan="7" class="text-center py-5 ecc-text-muted-aa">
-                                    Tidak ditemukan data pegawai yang sesuai dengan kriteria filter.
+                                    Belum ada data pegawai untuk filter ini.
                                 </td>
                             </tr>
                         <?php else: ?>
@@ -646,8 +692,6 @@ $persenSetujuFormatted = str_replace('.', ',', (string) ($persen_setuju ?? 0));
                                     $atasanSortKey = ($user['role'] === 'direktur') ? 'aaa direktur auto approve' : (!empty($atasan['nama_lengkap']) ? strtolower($atasan['nama_lengkap']) : 'zzz');
                                 ?>
                                 <tr class="pegawai-row cursor-pointer btn-detail-target-trigger"
-                                    role="button"
-                                    tabindex="0"
                                     title="Lihat rincian target <?= esc($user['nama_lengkap']) ?>"
                                     data-user-id="<?= esc($user['id']) ?>"
                                     data-bulan="<?= esc($bulan_terpilih) ?>"
@@ -673,19 +717,19 @@ $persenSetujuFormatted = str_replace('.', ',', (string) ($persen_setuju ?? 0));
                                                 $initialTgt = strtoupper(substr(trim($user['nama_lengkap'] ?? 'P'), 0, 1));
                                             ?>
                                             <?php if ($hasPhotoTgt): ?>
-                                                <img src="<?= base_url($fotoPathTgt) ?>" alt="<?= esc($user['nama_lengkap']) ?>" class="object-fit-cover shadow-sm flex-shrink-0 avatar-bento-ecc" width="40" height="40" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                                <div class="bg-primary-subtle text-primary-emphasis fw-bold align-items-center justify-content-center flex-shrink-0 avatar-bento-ecc" style="display: none;">
+                                                <img src="<?= base_url($fotoPathTgt) ?>" alt="<?= esc($user['nama_lengkap']) ?>" class="object-fit-cover shadow-sm flex-shrink-0 avatar-bento-ecc" width="40" height="40" loading="lazy" decoding="async" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                <div class="bg-primary-subtle text-primary-emphasis fw-bold align-items-center justify-content-center flex-shrink-0 avatar-bento-ecc" style="display: none;" aria-hidden="true">
                                                     <?= esc($initialTgt) ?>
                                                 </div>
                                             <?php else: ?>
-                                                <div class="bg-primary-subtle text-primary-emphasis fw-bold d-flex align-items-center justify-content-center flex-shrink-0 avatar-bento-ecc">
+                                                <div class="bg-primary-subtle text-primary-emphasis fw-bold d-flex align-items-center justify-content-center flex-shrink-0 avatar-bento-ecc" aria-hidden="true">
                                                     <?= esc($initialTgt) ?>
                                                 </div>
                                             <?php endif; ?>
                                             <div class="flex-grow-1" style="min-width: 0;">
                                                 <div class="d-flex align-items-center justify-content-between gap-1">
                                                     <div class="d-flex align-items-center gap-2 flex-wrap">
-                                                        <span class="fw-bold text-dark pegawai-nama-text"><?= esc($user['nama_lengkap']) ?></span>
+                                                        <button type="button" class="btn-row-name text-start pegawai-nama-text"><?= esc($user['nama_lengkap']) ?></button>
                                                         <?php if (($user['status_pegawai'] ?? 'aktif') === 'mutasi_keluar'): ?>
                                                             <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2 py-1" title="Mutasi Keluar <?= !empty($user['tmt_selesai']) ? 'TMT ' . date('d/m/Y', strtotime($user['tmt_selesai'])) : '' ?>">Mutasi</span>
                                                         <?php elseif (($user['status_pegawai'] ?? 'aktif') === 'pensiun'): ?>
@@ -694,7 +738,7 @@ $persenSetujuFormatted = str_replace('.', ',', (string) ($persen_setuju ?? 0));
                                                             <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle rounded-pill px-2 py-1">Nonaktif</span>
                                                         <?php endif; ?>
                                                     </div>
-                                                    <span class="row-hover-hint" title="Lihat rincian"><i class="bi bi-chevron-right"></i></span>
+                                                    <span class="row-hover-hint" aria-hidden="true"><i class="bi bi-chevron-right" aria-hidden="true"></i></span>
                                                 </div>
                                                 <div class="ecc-text-muted-aa small">
                                                     NIP: <span class="num-tabular"><?= !empty($user['nip']) ? esc($user['nip']) : '-' ?></span>
@@ -761,6 +805,13 @@ $persenSetujuFormatted = str_replace('.', ',', (string) ($persen_setuju ?? 0));
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
+                        <tr id="desktopLiveSearchEmpty" style="display: none;">
+                            <td colspan="7" class="text-center py-5">
+                                <div class="ecc-text-muted-aa small fw-semibold">
+                                    Tidak ada pegawai yang sesuai dengan "<strong id="desktopSearchQueryTerm" class="text-dark"></strong>".
+                                </div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -769,7 +820,7 @@ $persenSetujuFormatted = str_replace('.', ',', (string) ($persen_setuju ?? 0));
             <div class="mobile-cards-view p-3">
                 <?php if (empty($rekap_target)): ?>
                     <div class="text-center py-4 ecc-text-muted-aa">
-                        Tidak ditemukan data pegawai yang sesuai.
+                        Belum ada data pegawai untuk filter ini.
                     </div>
                 <?php else: ?>
                     <?php foreach ($rekap_target as $index => $row): ?>
@@ -814,12 +865,12 @@ $persenSetujuFormatted = str_replace('.', ',', (string) ($persen_setuju ?? 0));
                                     $initialTgtMob = strtoupper(substr(trim($user['nama_lengkap'] ?? 'P'), 0, 1));
                                 ?>
                                 <?php if ($hasPhotoTgtMob): ?>
-                                    <img src="<?= base_url($fotoPathTgtMob) ?>" alt="<?= esc($user['nama_lengkap']) ?>" class="object-fit-cover shadow-sm flex-shrink-0 avatar-bento-ecc" width="40" height="40" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                    <div class="bg-primary-subtle text-primary-emphasis fw-bold align-items-center justify-content-center flex-shrink-0 avatar-bento-ecc" style="display: none;">
+                                    <img src="<?= base_url($fotoPathTgtMob) ?>" alt="<?= esc($user['nama_lengkap']) ?>" class="object-fit-cover shadow-sm flex-shrink-0 avatar-bento-ecc" width="40" height="40" loading="lazy" decoding="async" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <div class="bg-primary-subtle text-primary-emphasis fw-bold align-items-center justify-content-center flex-shrink-0 avatar-bento-ecc" style="display: none;" aria-hidden="true">
                                         <?= esc($initialTgtMob) ?>
                                     </div>
                                 <?php else: ?>
-                                    <div class="bg-primary-subtle text-primary-emphasis fw-bold d-flex align-items-center justify-content-center flex-shrink-0 avatar-bento-ecc">
+                                    <div class="bg-primary-subtle text-primary-emphasis fw-bold d-flex align-items-center justify-content-center flex-shrink-0 avatar-bento-ecc" aria-hidden="true">
                                         <?= esc($initialTgtMob) ?>
                                     </div>
                                 <?php endif; ?>
@@ -855,12 +906,15 @@ $persenSetujuFormatted = str_replace('.', ',', (string) ($persen_setuju ?? 0));
                                 </div>
                                 <div class="d-flex align-items-center gap-1 text-primary-emphasis small fw-semibold">
                                     <span>Lihat Rincian</span>
-                                    <i class="bi bi-chevron-right"></i>
+                                    <i class="bi bi-chevron-right" aria-hidden="true"></i>
                                 </div>
                             </div>
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
+                <div id="mobileLiveSearchEmpty" style="display: none;" class="text-center py-5">
+                    <div class="ecc-text-muted-aa small fw-semibold">Tidak ada pegawai yang sesuai dengan pencarian.</div>
+                </div>
             </div>
         </div>
 
@@ -923,17 +977,17 @@ $persenSetujuFormatted = str_replace('.', ',', (string) ($persen_setuju ?? 0));
                         </div>
                     </div>
 
-                    <div class="border rounded-4 bg-white overflow-hidden mb-2">
-                        <table class="table table-bordered table-hover table-bento mb-0 align-middle">
+                    <div class="table-responsive border rounded-4 bg-white overflow-hidden mb-2">
+                        <table class="table table-bordered table-hover table-bento table-modal-target mb-0 align-middle">
                             <thead id="modalTargetTableHead">
                                 <tr>
-                                    <th class="col-mt-no text-center">No</th>
-                                    <th class="text-start">Rencana Hasil Kerja (RHK)</th>
-                                    <th class="text-start">Indikator Kinerja Individu</th>
-                                    <th class="text-center" style="width: 12%;">Target</th>
-                                    <th class="text-center" style="width: 11%;">Satuan</th>
-                                    <th class="text-center" style="width: 14%;">Status Pengiriman</th>
-                                    <th class="text-center" style="width: 15%;">Status Persetujuan</th>
+                                    <th scope="col" class="col-mt-no text-center">No</th>
+                                    <th scope="col" class="text-start">Rencana Hasil Kerja (RHK)</th>
+                                    <th scope="col" class="text-start">Indikator Kinerja Individu</th>
+                                    <th scope="col" class="text-center" style="width: 12%;">Target</th>
+                                    <th scope="col" class="text-center" style="width: 11%;">Satuan</th>
+                                    <th scope="col" class="text-center" style="width: 14%;">Status Pengiriman</th>
+                                    <th scope="col" class="text-center" style="width: 15%;">Status Persetujuan</th>
                                 </tr>
                             </thead>
                             <tbody id="modalTargetTableBody"></tbody>
@@ -942,10 +996,16 @@ $persenSetujuFormatted = str_replace('.', ',', (string) ($persen_setuju ?? 0));
 
                 </div>
 
+                <div id="modalTargetError" style="display: none;" class="text-center py-4">
+                    <h3 class="h6 fw-bold text-dark mb-1">Gagal Memuat Data</h3>
+                    <p class="ecc-text-muted-aa small mb-3" id="modalTargetErrorMessage">Gagal memuat rincian target. Silakan coba lagi.</p>
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-4 fw-semibold btn-tactile btn-modal-action" id="btnRetryTargetDetail">Coba Lagi</button>
+                </div>
+
             </div>
 
             <div class="modal-footer bg-light border-top d-flex justify-content-end align-items-center px-3 px-md-4 py-2">
-                <button type="button" class="btn btn-secondary rounded-pill px-4 fw-semibold btn-tactile" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-secondary rounded-pill px-4 fw-semibold btn-tactile btn-modal-action" data-bs-dismiss="modal">Tutup</button>
             </div>
 
         </div>
@@ -958,12 +1018,31 @@ $persenSetujuFormatted = str_replace('.', ',', (string) ($persen_setuju ?? 0));
 document.addEventListener('DOMContentLoaded', function() {
 
     const liveSearchInput = document.getElementById('liveSearchInput');
-    const tableRows = document.querySelectorAll('.pegawai-row');
+    const desktopRows = document.querySelectorAll('#tableMonitoringTarget tbody tr.pegawai-row');
+    const mobileCards = document.querySelectorAll('.mobile-cards-view .mobile-pegawai-card');
+    const desktopEmpty = document.getElementById('desktopLiveSearchEmpty');
+    const mobileEmpty = document.getElementById('mobileLiveSearchEmpty');
+    const desktopQueryTerm = document.getElementById('desktopSearchQueryTerm');
     const visibleCounter = document.getElementById('visibleCounter');
     const btnExportExcel = document.getElementById('btnExportExcel');
     const btnExportPdf = document.getElementById('btnExportPdf');
     const namaBulanPeriode = <?= json_encode($nama_bulan . ' ' . $tahun_terpilih) ?>;
     let currentPillStatus = '<?= esc($status_filter) ?>';
+
+    const statusLabelMap = {
+        'sudah_mengirim': 'Sudah Mengirim',
+        'disetujui': 'Disetujui',
+        'menunggu_persetujuan': 'Menunggu',
+        'draft': 'Draf',
+        'belum_mengisi': 'Belum Mengisi'
+    };
+
+    const filterTahun = document.getElementById('filterTahun');
+    if (filterTahun) {
+        filterTahun.addEventListener('wheel', function() {
+            this.blur();
+        }, { passive: true });
+    }
 
     function syncExportUrls() {
         [btnExportExcel, btnExportPdf].forEach(btn => {
@@ -980,43 +1059,68 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function matchesTargetCriteria(row, query) {
+        const nama = row.getAttribute('data-nama') || '';
+        const nip = row.getAttribute('data-nip') || '';
+        const unit = row.getAttribute('data-unit') || '';
+        const jabatan = row.getAttribute('data-jabatan') || '';
+        const stKirim = row.getAttribute('data-status-kirim') || '';
+        const stAppr = row.getAttribute('data-status-appr') || '';
+
+        const matchSearch = (query === '' || nama.includes(query) || nip.includes(query) || unit.includes(query) || jabatan.includes(query));
+
+        let matchStatus = true;
+        if (currentPillStatus === 'sudah_mengirim') {
+            matchStatus = (stKirim === 'terkirim' || stKirim === 'disetujui' || stKirim === 'sebagian_disetujui');
+        } else if (currentPillStatus === 'disetujui') {
+            matchStatus = (stAppr === 'disetujui');
+        } else if (currentPillStatus === 'menunggu_persetujuan') {
+            matchStatus = (stAppr === 'menunggu_persetujuan' || stAppr === 'sebagian_disetujui');
+        } else if (currentPillStatus === 'draft') {
+            matchStatus = (stKirim === 'draft');
+        } else if (currentPillStatus === 'belum_mengisi') {
+            matchStatus = (stKirim === 'belum_mengisi');
+        }
+
+        return matchSearch && matchStatus;
+    }
+
     function applyFilters() {
         const query = (liveSearchInput ? liveSearchInput.value : '').toLowerCase().trim();
         let visibleCount = 0;
 
-        tableRows.forEach(row => {
-            const nama = row.getAttribute('data-nama') || '';
-            const nip = row.getAttribute('data-nip') || '';
-            const unit = row.getAttribute('data-unit') || '';
-            const jabatan = row.getAttribute('data-jabatan') || '';
-            const stKirim = row.getAttribute('data-status-kirim') || '';
-            const stAppr = row.getAttribute('data-status-appr') || '';
-
-            const matchSearch = (query === '' || nama.includes(query) || nip.includes(query) || unit.includes(query) || jabatan.includes(query));
-
-            let matchStatus = true;
-            if (currentPillStatus === 'sudah_mengirim') {
-                matchStatus = (stKirim === 'terkirim' || stKirim === 'disetujui' || stKirim === 'sebagian_disetujui');
-            } else if (currentPillStatus === 'disetujui') {
-                matchStatus = (stAppr === 'disetujui');
-            } else if (currentPillStatus === 'menunggu_persetujuan') {
-                matchStatus = (stAppr === 'menunggu_persetujuan' || stAppr === 'sebagian_disetujui');
-            } else if (currentPillStatus === 'draft') {
-                matchStatus = (stKirim === 'draft');
-            } else if (currentPillStatus === 'belum_mengisi') {
-                matchStatus = (stKirim === 'belum_mengisi');
-            }
-
-            if (matchSearch && matchStatus) {
+        desktopRows.forEach(row => {
+            if (matchesTargetCriteria(row, query)) {
                 row.style.display = '';
-                if (row.tagName === 'TR') visibleCount++;
+                visibleCount++;
             } else {
                 row.style.display = 'none';
             }
         });
 
+        mobileCards.forEach(card => {
+            card.style.display = matchesTargetCriteria(card, query) ? '' : 'none';
+        });
+
+        if (desktopEmpty) {
+            if (visibleCount === 0 && desktopRows.length > 0) {
+                desktopEmpty.style.display = '';
+                if (desktopQueryTerm) {
+                    desktopQueryTerm.textContent = query || statusLabelMap[currentPillStatus] || currentPillStatus;
+                }
+            } else {
+                desktopEmpty.style.display = 'none';
+            }
+        }
+
+        if (mobileEmpty) {
+            mobileEmpty.style.display = (visibleCount === 0 && mobileCards.length > 0) ? 'block' : 'none';
+        }
+
         if (visibleCounter) {
-            visibleCounter.innerText = `Menampilkan ${visibleCount} pegawai · ${namaBulanPeriode} · Pilih baris untuk rincian`;
+            visibleCounter.textContent = (visibleCount === desktopRows.length)
+                ? `Menampilkan ${visibleCount} pegawai · ${namaBulanPeriode} · Pilih baris untuk rincian`
+                : `Menampilkan ${visibleCount} dari ${desktopRows.length} pegawai · ${namaBulanPeriode}`;
         }
         syncExportUrls();
     }
@@ -1032,8 +1136,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const pills = document.querySelectorAll('.filter-pill');
     pills.forEach(pill => {
         pill.addEventListener('click', function() {
-            pills.forEach(p => p.classList.remove('active'));
+            pills.forEach(p => {
+                p.classList.remove('active');
+                p.setAttribute('aria-pressed', 'false');
+            });
             this.classList.add('active');
+            this.setAttribute('aria-pressed', 'true');
 
             currentPillStatus = this.getAttribute('data-status') || '';
             const inputStatusFilter = document.getElementById('inputStatusFilter');
@@ -1093,19 +1201,22 @@ document.addEventListener('DOMContentLoaded', function() {
             return direction === 'asc' ? result : -result;
         };
 
-        rows.sort(comparator);
-        rows.forEach(r => tableTbody.appendChild(r));
+        if (rows.length > 0) {
+            rows.sort(comparator);
+            tableTbody.replaceChildren(...rows, ...(desktopEmpty ? [desktopEmpty] : []));
+        }
 
         if (mobileCardsContainer && cards.length > 0) {
             cards.sort(comparator);
-            cards.forEach(c => mobileCardsContainer.appendChild(c));
+            mobileCardsContainer.replaceChildren(...cards, ...(mobileEmpty ? [mobileEmpty] : []));
         }
     }
 
     sortableHeaders.forEach(th => {
-        th.addEventListener('click', function() {
-            const sortKey = this.getAttribute('data-sort-key');
-            const sortType = this.getAttribute('data-sort-type') || 'string';
+        const trigger = th.querySelector('.btn-sort-th') || th;
+        trigger.addEventListener('click', function() {
+            const sortKey = th.getAttribute('data-sort-key');
+            const sortType = th.getAttribute('data-sort-type') || 'string';
 
             if (currentSortKey === sortKey) {
                 currentSortDir = (currentSortDir === 'asc') ? 'desc' : 'asc';
@@ -1121,21 +1232,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (icon) icon.className = 'bi bi-arrow-down-up sort-indicator';
             });
 
-            this.classList.add(currentSortDir === 'asc' ? 'sorted-asc' : 'sorted-desc', 'th-sorted');
-            this.setAttribute('aria-sort', currentSortDir === 'asc' ? 'ascending' : 'descending');
-            const currentIcon = this.querySelector('.sort-indicator');
+            th.classList.add(currentSortDir === 'asc' ? 'sorted-asc' : 'sorted-desc', 'th-sorted');
+            th.setAttribute('aria-sort', currentSortDir === 'asc' ? 'ascending' : 'descending');
+            const currentIcon = th.querySelector('.sort-indicator');
             if (currentIcon) {
                 currentIcon.className = (currentSortDir === 'asc') ? 'bi bi-arrow-up sort-indicator text-primary fw-bold' : 'bi bi-arrow-down sort-indicator text-primary fw-bold';
             }
 
             sortElements(sortKey, sortType, currentSortDir);
-        });
-
-        th.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                this.click();
-            }
         });
     });
 
@@ -1144,8 +1248,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const bsModal = modalEl ? new bootstrap.Modal(modalEl) : null;
     const skeleton = document.getElementById('modalTargetSkeleton');
     const content = document.getElementById('modalTargetContent');
+    const errorBox = document.getElementById('modalTargetError');
+    const errorMsgEl = document.getElementById('modalTargetErrorMessage');
+    const retryBtn = document.getElementById('btnRetryTargetDetail');
     const tableBody = document.getElementById('modalTargetTableBody');
     const tableHead = document.getElementById('modalTargetTableHead');
+    let lastTriggerEl = null;
+    let lastFetchParams = null;
+
+    if (modalEl) {
+        modalEl.addEventListener('hidden.bs.modal', function() {
+            if (lastTriggerEl && document.body.contains(lastTriggerEl) && typeof lastTriggerEl.focus === 'function') {
+                lastTriggerEl.focus();
+            }
+        });
+    }
 
     function formatTargetDecimal(val) {
         if (val === null || val === undefined || val === '') return '0';
@@ -1154,69 +1271,63 @@ document.addEventListener('DOMContentLoaded', function() {
         return num.toFixed(4).replace(/\.?0+$/, '').replace('.', ',');
     }
 
-    function openTargetDetail(element) {
-        const userId = element.getAttribute('data-user-id');
-        const bulan = element.getAttribute('data-bulan');
-        const tahun = element.getAttribute('data-tahun');
-
+    function fetchTargetDetail(userId, bulan, tahun) {
         if (!bsModal || !userId) return;
+        lastFetchParams = { userId, bulan, tahun };
 
         skeleton.style.display = 'block';
         content.style.display = 'none';
-        tableBody.innerHTML = '';
-        bsModal.show();
+        if (errorBox) errorBox.style.display = 'none';
+        tableBody.replaceChildren();
 
         fetch(`<?= site_url('kepegawaian/target-kinerja/detail-pegawai') ?>?user_id=${encodeURIComponent(userId)}&bulan=${encodeURIComponent(bulan)}&tahun=${encodeURIComponent(tahun)}`)
             .then(res => res.json())
             .then(data => {
                 if (!data.success) {
-                    skeleton.style.display = 'none';
-                    tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-danger-emphasis">${escapeHtml(data.message || 'Gagal memuat rincian target.')}</td></tr>`;
-                    content.style.display = 'block';
-                    return;
+                    throw new Error(data.message || 'Gagal memuat rincian target.');
                 }
 
                 const isAllYear = (data.periode.bulan === 'all');
 
-                document.getElementById('modalTargetPeriode').innerText = `Periode: ${data.periode.nama_bulan} ${data.periode.tahun}`;
-                document.getElementById('modalUserNama').innerText = data.user.nama_lengkap;
-                document.getElementById('modalUserNip').innerText = data.user.nip;
-                document.getElementById('modalUserUnit').innerText = data.user.unit;
-                document.getElementById('modalUserJabatan').innerText = data.user.jabatan;
+                document.getElementById('modalTargetPeriode').textContent = `Periode: ${data.periode.nama_bulan} ${data.periode.tahun}`;
+                document.getElementById('modalUserNama').textContent = data.user.nama_lengkap;
+                document.getElementById('modalUserNip').textContent = data.user.nip;
+                document.getElementById('modalUserUnit').textContent = data.user.unit;
+                document.getElementById('modalUserJabatan').textContent = data.user.jabatan;
 
                 const avatarContainer = document.getElementById('modalUserAvatarContainer');
                 const initial = (data.user.nama_lengkap || 'P').charAt(0).toUpperCase();
                 if (data.user.foto) {
                     avatarContainer.innerHTML = `
-                        <img src="${escapeHtml(data.user.foto)}" alt="Foto" class="object-fit-cover shadow-sm avatar-bento-lg" width="48" height="48" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                        <div class="bg-primary-subtle text-primary-emphasis fw-bold align-items-center justify-content-center avatar-bento-lg" style="display: none;">${escapeHtml(initial)}</div>
+                        <img src="${escapeHtml(data.user.foto)}" alt="" class="object-fit-cover shadow-sm avatar-bento-lg" width="48" height="48" decoding="async" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="bg-primary-subtle text-primary-emphasis fw-bold align-items-center justify-content-center avatar-bento-lg" style="display: none;" aria-hidden="true">${escapeHtml(initial)}</div>
                     `;
                 } else {
-                    avatarContainer.innerHTML = `<div class="bg-primary-subtle text-primary-emphasis fw-bold d-flex align-items-center justify-content-center avatar-bento-lg">${escapeHtml(initial)}</div>`;
+                    avatarContainer.innerHTML = `<div class="bg-primary-subtle text-primary-emphasis fw-bold d-flex align-items-center justify-content-center avatar-bento-lg" aria-hidden="true">${escapeHtml(initial)}</div>`;
                 }
 
                 if (data.user.role === 'direktur') {
                     document.getElementById('modalAtasanNama').innerHTML = '<span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle rounded-pill px-3 py-1 fw-bold">Otomatis Disetujui (Direktur)</span>';
-                    document.getElementById('modalAtasanJabatan').innerText = 'Pimpinan Tertinggi';
+                    document.getElementById('modalAtasanJabatan').textContent = 'Pimpinan Tertinggi';
                 } else if (data.atasan) {
-                    document.getElementById('modalAtasanNama').innerText = data.atasan.nama_lengkap;
-                    document.getElementById('modalAtasanJabatan').innerText = data.atasan.jabatan || '-';
+                    document.getElementById('modalAtasanNama').textContent = data.atasan.nama_lengkap;
+                    document.getElementById('modalAtasanJabatan').textContent = data.atasan.jabatan || '-';
                 } else {
-                    document.getElementById('modalAtasanNama').innerText = '-';
-                    document.getElementById('modalAtasanJabatan').innerText = 'Belum Ditentukan';
+                    document.getElementById('modalAtasanNama').textContent = '-';
+                    document.getElementById('modalAtasanJabatan').textContent = 'Belum Ditentukan';
                 }
 
                 if (tableHead) {
                     tableHead.innerHTML = `
                         <tr>
-                            <th class="col-mt-no text-center">No</th>
-                            ${isAllYear ? '<th class="text-center" style="width: 11%;">Bulan</th>' : ''}
-                            <th class="text-start">Rencana Hasil Kerja (RHK)</th>
-                            <th class="text-start">Indikator Kinerja Individu</th>
-                            <th class="text-center" style="width: 11%;">Target</th>
-                            <th class="text-center" style="width: 10%;">Satuan</th>
-                            <th class="text-center" style="width: 13%;">Status Pengiriman</th>
-                            <th class="text-center" style="width: 14%;">Status Persetujuan</th>
+                            <th scope="col" class="col-mt-no text-center">No</th>
+                            ${isAllYear ? '<th scope="col" class="text-center" style="width: 11%;">Bulan</th>' : ''}
+                            <th scope="col" class="text-start">Rencana Hasil Kerja (RHK)</th>
+                            <th scope="col" class="text-start">Indikator Kinerja Individu</th>
+                            <th scope="col" class="text-center" style="width: 11%;">Target</th>
+                            <th scope="col" class="text-center" style="width: 10%;">Satuan</th>
+                            <th scope="col" class="text-center" style="width: 13%;">Status Pengiriman</th>
+                            <th scope="col" class="text-center" style="width: 14%;">Status Persetujuan</th>
                         </tr>
                     `;
                 }
@@ -1266,25 +1377,49 @@ document.addEventListener('DOMContentLoaded', function() {
                 skeleton.style.display = 'none';
                 content.style.display = 'block';
             })
-            .catch(() => {
+            .catch(err => {
                 skeleton.style.display = 'none';
-                const isAllYear = (document.getElementById('modalTargetTableHead') && document.getElementById('modalTargetTableHead').innerText.includes('Bulan'));
-                const colSpanCount = isAllYear ? 8 : 7;
-                tableBody.innerHTML = `<tr><td colspan="${colSpanCount}" class="text-center py-4 text-danger-emphasis">Gagal memuat rincian target.</td></tr>`;
-                content.style.display = 'block';
+                content.style.display = 'none';
+                if (errorMsgEl) {
+                    errorMsgEl.textContent = (err && err.message) ? err.message : 'Gagal memuat rincian target. Silakan coba lagi.';
+                }
+                if (errorBox) errorBox.style.display = 'block';
             });
+    }
+
+    function openTargetDetail(element, triggerEl) {
+        const userId = element.getAttribute('data-user-id');
+        const bulan = element.getAttribute('data-bulan');
+        const tahun = element.getAttribute('data-tahun');
+        if (!bsModal || !userId) return;
+
+        lastTriggerEl = triggerEl || element;
+        bsModal.show();
+        fetchTargetDetail(userId, bulan, tahun);
+    }
+
+    if (retryBtn) {
+        retryBtn.addEventListener('click', function() {
+            if (lastFetchParams) {
+                fetchTargetDetail(lastFetchParams.userId, lastFetchParams.bulan, lastFetchParams.tahun);
+            }
+        });
     }
 
     document.querySelectorAll('.btn-detail-target-trigger').forEach(triggerEl => {
         triggerEl.addEventListener('click', function() {
-            openTargetDetail(this);
+            const focusBackEl = (this.tagName === 'TR') ? (this.querySelector('.btn-row-name') || this) : this;
+            openTargetDetail(this, focusBackEl);
         });
-        triggerEl.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                openTargetDetail(this);
-            }
-        });
+
+        if (triggerEl.tagName !== 'TR') {
+            triggerEl.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openTargetDetail(this, this);
+                }
+            });
+        }
     });
 
     async function triggerExportWithLoading(btnEl, typeText, defaultFilename) {
@@ -1379,10 +1514,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function escapeHtml(str) {
-        if (!str) return '';
-        const div = document.createElement('div');
-        div.innerText = str;
-        return div.innerHTML;
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
 });

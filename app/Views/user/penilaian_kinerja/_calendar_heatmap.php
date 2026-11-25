@@ -87,9 +87,7 @@ $headingTxt = $isStaf ? 'Distribusi & Konsistensi Kerja Harian Staf' : 'Distribu
                 }
                 $tooltipTitle .= ' (' . (int) $day['count_logs'] . ' Kegiatan)';
             ?>
-            <div class="heatmap-day-cell <?= $levelClass ?> <?= $tanggalMerahClass ?> <?= $draftClass ?>"
-                 role="button"
-                 tabindex="0"
+            <button type="button" class="heatmap-day-cell <?= $levelClass ?> <?= $tanggalMerahClass ?> <?= $draftClass ?>"
                  aria-label="<?= esc($day['date_formatted']) ?>, <?= (int) $day['count_logs'] ?> kegiatan<?= !empty($day['is_holiday']) ? ', libur ' . esc($day['holiday_name']) : '' ?>"
                  data-is-staf="<?= $isStaf ? '1' : '0' ?>"
                  data-staf-id="<?= esc($stafIdAttr) ?>"
@@ -114,13 +112,13 @@ $headingTxt = $isStaf ? 'Distribusi & Konsistensi Kerja Harian Staf' : 'Distribu
                     <?php if (!empty($day['is_holiday'])): ?>
                         <i class="bi bi-sun-fill holiday-indicator small d-none d-sm-inline" aria-hidden="true" title="<?= esc($day['holiday_name']) ?>"></i>
                     <?php elseif (!empty($day['is_weekend'])): ?>
-                        <i class="bi bi-moon-stars ecc-text-muted-aa small d-none d-sm-inline" aria-hidden="true"></i>
+                        <i class="bi bi-moon-stars heatmap-status-icon ecc-text-muted-aa small d-none d-sm-inline" aria-hidden="true"></i>
                     <?php elseif ($isRevisi): ?>
                         <i class="bi bi-pencil-square text-warning-emphasis small d-none d-sm-inline" aria-hidden="true" title="Mode Revisi Aktif"></i>
                     <?php elseif (!empty($day['has_draft'])): ?>
                         <i class="bi bi-pencil-fill text-warning-emphasis small d-none d-sm-inline" aria-hidden="true"></i>
                     <?php elseif ((int) $day['count_logs'] > 0): ?>
-                        <i class="bi bi-check2-circle text-success-emphasis small d-none d-sm-inline" aria-hidden="true"></i>
+                        <i class="bi bi-check2-circle heatmap-status-icon text-success-emphasis small d-none d-sm-inline" aria-hidden="true"></i>
                     <?php endif; ?>
                 </div>
                 <div class="day-footer">
@@ -136,7 +134,7 @@ $headingTxt = $isStaf ? 'Distribusi & Konsistensi Kerja Harian Staf' : 'Distribu
                         </span>
                     <?php endif; ?>
                 </div>
-            </div>
+            </button>
         <?php endforeach; ?>
     </div>
 

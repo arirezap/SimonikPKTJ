@@ -415,7 +415,7 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="<?= base_url('assets/vendor/chartjs/chart.umd.min.js') ?>"></script>
 <script>
 // Helper: Smooth KPI Metric Count-Up Number Ticker
 function animateValue(elementId, start, end, duration = 800, suffix = '', decimals = 0) {

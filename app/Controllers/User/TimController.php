@@ -3,6 +3,7 @@
 namespace App\Controllers\User;
 
 use App\Controllers\BaseController;
+use App\Libraries\RiwayatPenugasanService;
 use App\Models\User;
 use App\Models\UnitKerja;
 
@@ -174,6 +175,27 @@ class TimController extends BaseController
                 'unit_id'   => $myUnitId
             ];
 
+        $riwayatService = new RiwayatPenugasanService($db, $this->userModel);
+        $newUnitFinal   = $isInOwnedSubUnit ? ($targetUser['unit'] ?? '') : $myUnit;
+        $newUnitIdFinal = $isInOwnedSubUnit ? ($targetUser['unit_id'] ?? null) : $myUnitId;
+        if ((int) ($targetUser['atasan_id'] ?? 0) !== (int) $myId || trim((string) ($targetUser['unit'] ?? '')) !== trim((string) $newUnitFinal)) {
+            $riwayatService->recordMutation(
+                (int) $stafId,
+                $targetUser,
+                [
+                    'atasan_id' => (int) $myId,
+                    'unit'      => $newUnitFinal,
+                    'unit_id'   => $newUnitIdFinal,
+                    'jabatan'   => $targetUser['jabatan'] ?? '',
+                    'role'      => $targetUser['role'] ?? 'user',
+                ],
+                (int) date('n'),
+                (int) date('Y'),
+                'Penambahan ke tim melalui Kelola Tim Saya',
+                (int) $myId
+            );
+        }
+
         $this->userModel->update($stafId, $newData);
         log_audit('UPDATE', 'users', $stafId, $oldData, ['action' => 'ADD_TO_TEAM', 'old' => $oldData, 'new' => $newData]);
 
@@ -218,6 +240,26 @@ class TimController extends BaseController
             'unit'      => '',
             'unit_id'   => null
         ];
+
+        // Kunci riwayat bulan sebelumnya sebelum staf dikeluarkan dari tim
+        if (!empty($staf['unit']) || !empty($staf['atasan_id'])) {
+            $riwayatService = new RiwayatPenugasanService($db, $this->userModel);
+            $riwayatService->recordMutation(
+                (int) $stafId,
+                $staf,
+                [
+                    'atasan_id' => 0,
+                    'unit'      => '',
+                    'unit_id'   => null,
+                    'jabatan'   => $staf['jabatan'] ?? '',
+                    'role'      => $staf['role'] ?? 'user',
+                ],
+                (int) date('n'),
+                (int) date('Y'),
+                'Pengeluaran dari tim melalui Kelola Tim Saya',
+                (int) $myId
+            );
+        }
 
         $this->userModel->update($stafId, $newData);
         log_audit('UPDATE', 'users', $stafId, $oldData, ['action' => 'REMOVE_FROM_TEAM', 'old' => $oldData, 'new' => $newData]);
@@ -312,6 +354,26 @@ class TimController extends BaseController
             'unit'      => $staf['unit'],
             'unit_id'   => $staf['unit_id']
         ];
+
+        $newAtasanFinal = !empty($updateData['atasan_id']) ? (int) $updateData['atasan_id'] : 0;
+        if (trim((string) ($staf['unit'] ?? '')) !== trim((string) $unitNama) || (int) ($staf['atasan_id'] ?? 0) !== $newAtasanFinal) {
+            $riwayatService = new RiwayatPenugasanService($db, $this->userModel);
+            $riwayatService->recordMutation(
+                (int) $userId,
+                $staf,
+                [
+                    'atasan_id' => $newAtasanFinal,
+                    'unit'      => $unitNama,
+                    'unit_id'   => $unitId,
+                    'jabatan'   => $staf['jabatan'] ?? '',
+                    'role'      => $staf['role'] ?? 'user',
+                ],
+                (int) date('n'),
+                (int) date('Y'),
+                'Perubahan unit melalui Kelola Tim Saya',
+                (int) $myId
+            );
+        }
 
         $this->userModel->update($userId, $updateData);
         log_audit('UPDATE', 'users', $userId, $oldData, ['action' => 'UPDATE_UNIT_TIM', 'old' => $oldData, 'new' => $updateData]);

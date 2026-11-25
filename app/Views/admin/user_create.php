@@ -3,8 +3,8 @@
 <?= $this->section('title') ?><?= esc($title ?? 'Tambah Pengguna') ?><?= $this->endSection() ?>
 
 <?= $this->section('styles') ?>
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+<link href="<?= base_url('assets/vendor/select2/select2.min.css') ?>" rel="stylesheet" />
+<link rel="stylesheet" href="<?= base_url('assets/vendor/select2/select2-bootstrap-5-theme.min.css') ?>" />
 <style>
     @media (max-width: 767.98px) {
         .form-control, .form-select {
@@ -57,7 +57,7 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-dark mb-1">Kata Sandi <span class="text-danger">*</span></label>
-                                <input type="password" name="password" class="form-control form-control-sm" placeholder="Kata sandi akun..." required>
+                                <input type="password" name="password" class="form-control form-control-sm" placeholder="Kata sandi akun..." autocomplete="new-password" required>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-dark mb-1">Role Primer</label>
@@ -210,8 +210,8 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="<?= base_url('assets/vendor/jquery/jquery.min.js') ?>"></script>
+<script src="<?= base_url('assets/vendor/select2/select2.min.js') ?>"></script>
 <script>
 $(document).ready(function() {
     if ($.fn.select2) {

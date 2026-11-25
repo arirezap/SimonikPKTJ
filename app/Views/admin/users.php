@@ -3,40 +3,24 @@
 <?= $this->section('title') ?><?= esc($title ?? 'Kelola Pengguna') ?><?= $this->endSection() ?>
 
 <?= $this->section('styles') ?>
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
-<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+<link href="<?= base_url('assets/vendor/select2/select2.min.css') ?>" rel="stylesheet" />
+<link rel="stylesheet" href="<?= base_url('assets/vendor/select2/select2-bootstrap-5-theme.min.css') ?>" />
 <style>
 /* ==========================================================================
    ECC DESIGN SYSTEM — 8-POINT GRID SCALE & BENTO TOKENS
    ========================================================================== */
-:root {
-    --ecc-space-0-5: 4px;
-    --ecc-space-1: 8px;
-    --ecc-space-1-5: 12px;
-    --ecc-space-2: 16px;
-    --ecc-space-3: 24px;
-    --ecc-space-4: 32px;
-    --ecc-space-5: 40px;
-    --ecc-space-6: 48px;
-    --ecc-space-8: 64px;
+.ecc-text-muted-aa {
+    color: #475569 !important;
 }
 
-@media (max-width: 767.98px) {
-    .form-control, .form-select {
-        font-size: 16px !important;
-    }
-}
-
-/* Staggered Entrance Animations */
+/* Staggered Entrance Animations (zero resting will-change) */
 @keyframes bentoEntrance {
     0% { opacity: 0; transform: translateY(12px); }
     100% { opacity: 1; transform: translateY(0); }
 }
 
 .bento-stagger {
-    animation: bentoEntrance 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-    will-change: transform, opacity;
+    animation: bentoEntrance 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .bento-stagger-1 { animation-delay: 0.04s; }
 .bento-stagger-2 { animation-delay: 0.10s; }
@@ -44,10 +28,60 @@
 
 /* Tactile Micro-Interactions */
 .btn-tactile {
-    transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease, background-color 0.15s ease;
+    transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
 }
 .btn-tactile:active {
     transform: scale(0.97) !important;
+}
+.btn-tactile:focus-visible,
+.sort-header-link:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.2) !important;
+}
+
+/* Standardized Control & Button Sizing (36px Desktop, 44px Mobile) */
+.btn-ecc-toolbar,
+.btn-modal-action {
+    min-height: 36px;
+    padding: 8px 16px;
+    font-size: 0.875rem;
+}
+.ecc-filter-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #475569;
+    margin-bottom: 4px;
+}
+.ecc-filter-control {
+    height: 36px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    border-color: #cbd5e1;
+}
+.ecc-filter-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+}
+.ecc-filter-icon {
+    height: 36px;
+    border-radius: 8px 0 0 8px;
+    border-color: #cbd5e1;
+}
+.ecc-search-input {
+    border-radius: 0 8px 8px 0;
+}
+.btn-icon-action {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    font-size: 0.75rem;
+}
+.btn-mobile-card-action {
+    min-height: 36px;
+    padding: 4px 12px;
+    font-size: 0.75rem;
 }
 
 /* Tabular Numerics */
@@ -56,18 +90,41 @@
     font-feature-settings: "tnum";
 }
 
+/* Typography Helpers on DESIGN.md Ramp */
+.ecc-text-sm {
+    font-size: 0.875rem;
+}
+.ecc-text-xs {
+    font-size: 0.75rem;
+}
+.ecc-text-title {
+    font-size: 0.95rem;
+}
+.ecc-badge-pill {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 50rem;
+    line-height: 1.25;
+}
+
 /* KPI Bento Summary Card */
 .kpi-bento-card {
     background-color: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 16px;
-    padding: 16px 20px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    padding: 16px 24px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 .kpi-bento-card:hover {
     border-color: #cbd5e1;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+.kpi-icon-box {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
 }
 
 /* Bento Table Standard */
@@ -80,33 +137,44 @@
     background-color: #f8fafc !important;
     color: #475569 !important;
     font-weight: 700;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     border-bottom: 2px solid #e2e8f0;
-    padding: 12px 14px;
+    padding: 12px 16px;
     vertical-align: middle;
 }
 .table-bento tbody td {
-    padding: 12px 14px;
+    padding: 12px 16px;
     vertical-align: middle;
     border-color: #f1f5f9;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     line-height: 1.35;
     transition: background-color 0.15s ease;
 }
 .table-bento tbody tr:hover td {
     background-color: #f8fafc;
 }
+.sort-header-link {
+    color: #475569;
+    text-decoration: none;
+    border-radius: 4px;
+    padding: 4px;
+    margin: -4px;
+    transition: color 0.15s ease;
+}
+.sort-header-link:hover {
+    color: #0d6efd;
+}
 
 /* Custom Styled Select Dropdown in Table */
 .unit-kerja-select-custom {
     height: 36px !important;
-    font-size: 0.8125rem !important;
+    font-size: 0.875rem !important;
     border-radius: 8px !important;
     border-color: #cbd5e1 !important;
     background-color: #ffffff !important;
-    padding: 4px 28px 4px 10px !important;
+    padding: 4px 32px 4px 12px !important;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .unit-kerja-select-custom:focus {
@@ -116,6 +184,25 @@
 
 /* Dual-View Mobile Toggle */
 @media (max-width: 767.98px) {
+    .form-control,
+    .form-select,
+    .ecc-filter-control {
+        font-size: var(--bs-body-font-size, 1rem) !important;
+    }
+    .ecc-filter-control,
+    .ecc-filter-icon {
+        height: 44px;
+    }
+    .btn-ecc-toolbar,
+    .btn-modal-action,
+    .btn-mobile-card-action {
+        min-height: 44px;
+        height: auto;
+    }
+    .btn-icon-action {
+        width: 44px;
+        height: 44px;
+    }
     .desktop-table-view {
         display: none !important;
     }
@@ -136,22 +223,39 @@
 .mobile-user-card {
     background: #ffffff;
     border: 1px solid #e2e8f0;
-    border-radius: 14px;
-    padding: 14px 16px;
+    border-radius: 12px;
+    padding: 16px;
     margin-bottom: 12px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
     transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 .mobile-user-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+/* Modal Top Accents (DESIGN.md Tokens) */
+.modal-accent-primary {
+    border-top: 4px solid var(--ecc-primary, #0d6efd) !important;
+}
+.modal-accent-success {
+    border-top: 4px solid #10b981 !important;
+}
+.modal-accent-sky {
+    border-top: 4px solid #0284c7 !important;
+}
+.modal-icon-box {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
 }
 
 /* Select2 8-Point Grid Alignment */
 .select2-container--bootstrap-5 .select2-selection {
     border-radius: 8px !important;
-    padding: 6px 12px !important;
-    min-height: 38px !important;
+    padding: 4px 12px !important;
+    min-height: 36px !important;
     border-color: #cbd5e1 !important;
+    font-size: 0.875rem !important;
 }
 .select2-container--bootstrap-5.select2-container--focus .select2-selection,
 .select2-container--bootstrap-5.select2-container--open .select2-selection {
@@ -161,7 +265,12 @@
 
 /* Accessibility: Prefers Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
-    .bento-stagger, .btn-tactile, .kpi-bento-card, .mobile-user-card {
+    .bento-stagger,
+    .btn-tactile,
+    .kpi-bento-card,
+    .mobile-user-card,
+    .sort-header-link,
+    .table-bento tbody td {
         animation: none !important;
         transition: none !important;
         transform: none !important;
@@ -174,59 +283,62 @@
 <div class="container-fluid px-2 px-md-3">
 
     <!-- PAGE HEADER & ACTION TOOLBAR (8-Point Grid Scale) -->
-    <div class="d-flex justify-content-between flex-wrap align-items-center pt-2 pb-2 mb-3 border-bottom gap-2 bento-stagger bento-stagger-1">
+    <div class="d-flex justify-content-between flex-wrap align-items-center pt-2 pb-3 mb-3 border-bottom gap-2 bento-stagger bento-stagger-1">
         <div>
-            <h1 class="h4 mb-0 fw-bold text-dark"><i class="bi bi-people-fill text-primary me-2"></i>Kelola Pengguna</h1>
-            <p class="text-muted small mb-0">Manajemen akun pengguna, hierarki pimpinan, hak akses peran, dan penempatan unit kerja.</p>
+            <h1 class="h3 mb-1 fw-bold text-dark">Kelola Pengguna</h1>
+            <p class="ecc-text-muted-aa small mb-0">Manajemen akun pengguna, hierarki pimpinan, hak akses peran, dan penempatan unit kerja.</p>
         </div>
         
         <div class="d-flex align-items-center gap-2 flex-wrap">
-            <button type="button" class="btn btn-outline-info btn-tactile rounded-pill px-3 py-1.5 fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5" id="batchEditBtn" style="height: 36px; font-size: 0.8125rem;" title="Ubah atasan banyak pengguna sekaligus">
-                <i class="bi bi-people-fill"></i><span>Batch Edit Atasan</span>
+            <button type="button" class="btn btn-outline-primary btn-tactile btn-ecc-toolbar rounded-pill fw-semibold shadow-sm d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalRotasiAtasan" title="Alihkan staf dari atasan lama ke atasan baru mulai bulan tertentu">
+                <i class="bi bi-arrow-left-right" aria-hidden="true"></i><span>Rotasi Atasan</span>
             </button>
-            <button type="button" class="btn btn-outline-success btn-tactile rounded-pill px-3 py-1.5 fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5" data-bs-toggle="modal" data-bs-target="#importModal" style="height: 36px; font-size: 0.8125rem;" title="Impor pengguna dari file Excel">
-                <i class="bi bi-file-earmark-excel-fill text-success"></i><span>Impor Excel</span>
+            <button type="button" class="btn btn-outline-info btn-tactile btn-ecc-toolbar rounded-pill fw-semibold shadow-sm d-inline-flex align-items-center gap-2" id="batchEditBtn" title="Ubah atasan beberapa pengguna terpilih">
+                <i class="bi bi-people-fill" aria-hidden="true"></i><span>Batch Edit Atasan</span>
             </button>
-            <a href="<?= site_url('users/export') ?>" class="btn btn-outline-secondary btn-tactile rounded-pill px-3 py-1.5 fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5" style="height: 36px; font-size: 0.8125rem;" title="Unduh template Excel">
-                <i class="bi bi-download"></i><span>Template Excel</span>
+            <button type="button" class="btn btn-outline-success btn-tactile btn-ecc-toolbar rounded-pill fw-semibold shadow-sm d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#importModal" title="Impor pengguna dari berkas Excel">
+                <i class="bi bi-file-earmark-excel-fill" aria-hidden="true"></i><span>Impor Excel</span>
+            </button>
+            <a href="<?= site_url('users/export') ?>" class="btn btn-outline-secondary btn-tactile btn-ecc-toolbar rounded-pill fw-semibold shadow-sm d-inline-flex align-items-center gap-2" title="Unduh template Excel">
+                <i class="bi bi-download" aria-hidden="true"></i><span>Template Excel</span>
             </a>
-            <a href="<?= site_url('users/create') ?>" class="btn btn-primary btn-tactile rounded-pill px-3.5 py-1.5 fw-bold shadow-xs d-inline-flex align-items-center gap-1.5 ms-md-1" style="height: 36px; font-size: 0.8125rem;">
-                <i class="bi bi-person-plus-fill"></i><span>Tambah Pengguna</span>
+            <a href="<?= site_url('users/create') ?>" class="btn btn-primary btn-tactile btn-ecc-toolbar rounded-pill fw-bold shadow-sm d-inline-flex align-items-center gap-2 ms-md-1">
+                <i class="bi bi-person-plus-fill" aria-hidden="true"></i><span>Tambah Pengguna</span>
             </a>
         </div>
     </div>
 
     <!-- FLASH MESSAGES -->
     <?php if (session()->has('import_errors')): ?>
-        <div class="alert alert-danger alert-dismissible fade show border-0 shadow-xs rounded-4 mb-3 p-3 bento-stagger bento-stagger-1" role="alert">
+        <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm rounded-4 mb-3 p-3 bento-stagger bento-stagger-1" role="alert">
             <div class="d-flex align-items-start gap-2">
-                <i class="bi bi-exclamation-triangle-fill text-danger fs-5 mt-0.5"></i>
+                <i class="bi bi-exclamation-triangle-fill text-danger fs-5" aria-hidden="true"></i>
                 <div class="flex-grow-1">
-                    <strong class="d-block mb-1">Terjadi kesalahan saat import data:</strong>
+                    <strong class="d-block mb-1">Terjadi kesalahan saat impor data:</strong>
                     <ul class="mb-0 ps-3 small">
                         <?php foreach (session('import_errors') as $error): ?>
                             <li><?= esc($error) ?></li>
                         <?php endforeach; ?>
                     </ul>
                 </div>
-                <button type="button" class="btn-close shadow-none" data-bs-dismiss="alert" aria-label="Close" style="font-size: 0.75rem;"></button>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="alert" aria-label="Tutup"></button>
             </div>
         </div>
     <?php endif; ?>
 
     <?php if (session()->getFlashdata('success')): ?>
-        <div class="alert alert-success alert-dismissible fade show border-0 shadow-xs rounded-4 mb-3 d-flex align-items-center gap-2 py-2.5 px-3 bento-stagger bento-stagger-1" role="alert">
-            <i class="bi bi-check-circle-fill text-success fs-5"></i>
-            <div class="small fw-medium text-dark flex-grow-1"><?= session()->getFlashdata('success') ?></div>
-            <button type="button" class="btn-close shadow-none" data-bs-dismiss="alert" aria-label="Close" style="font-size: 0.75rem;"></button>
+        <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-4 mb-3 d-flex align-items-center gap-2 py-2 px-3 bento-stagger bento-stagger-1" role="alert">
+            <i class="bi bi-check-circle-fill text-success fs-5" aria-hidden="true"></i>
+            <div class="small fw-medium text-dark flex-grow-1"><?= esc(session()->getFlashdata('success')) ?></div>
+            <button type="button" class="btn-close shadow-none" data-bs-dismiss="alert" aria-label="Tutup"></button>
         </div>
     <?php endif; ?>
     
     <?php if (session()->getFlashdata('error')): ?>
-        <div class="alert alert-danger alert-dismissible fade show border-0 shadow-xs rounded-4 mb-3 d-flex align-items-center gap-2 py-2.5 px-3 bento-stagger bento-stagger-1" role="alert">
-            <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
-            <div class="small fw-medium text-dark flex-grow-1"><?= session()->getFlashdata('error') ?></div>
-            <button type="button" class="btn-close shadow-none" data-bs-dismiss="alert" aria-label="Close" style="font-size: 0.75rem;"></button>
+        <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm rounded-4 mb-3 d-flex align-items-center gap-2 py-2 px-3 bento-stagger bento-stagger-1" role="alert">
+            <i class="bi bi-exclamation-triangle-fill text-danger fs-5" aria-hidden="true"></i>
+            <div class="small fw-medium text-dark flex-grow-1"><?= esc(session()->getFlashdata('error')) ?></div>
+            <button type="button" class="btn-close shadow-none" data-bs-dismiss="alert" aria-label="Tutup"></button>
         </div>
     <?php endif; ?>
 
@@ -248,25 +360,12 @@
         <div class="col-12 col-md-4">
             <div class="kpi-bento-card d-flex align-items-center justify-content-between h-100 gap-3">
                 <div style="min-width: 0;" class="flex-grow-1">
-                    <span class="text-muted small fw-semibold text-uppercase d-block" style="font-size: 0.6875rem; letter-spacing: 0.05em;">Total Pengguna</span>
-                    <h3 class="fw-bold text-primary mb-0 mt-1 num-tabular"><?= $totalUsers ?></h3>
-                    <small class="text-secondary d-block mt-0.5" style="font-size: 0.72rem;">Akun aktif terdaftar di sistem</small>
+                    <span class="ecc-text-muted-aa ecc-text-xs fw-bold text-uppercase d-block" style="letter-spacing: 0.04em;">Total Pengguna</span>
+                    <div class="h3 fw-bold text-primary mb-0 mt-1 num-tabular"><?= $totalUsers ?></div>
+                    <small class="ecc-text-muted-aa ecc-text-xs d-block mt-1">Akun aktif terdaftar di ECC</small>
                 </div>
-                <div class="bg-primary-subtle text-primary d-flex align-items-center justify-content-center flex-shrink-0 shadow-xs" style="width: 44px; height: 44px; border-radius: 12px;">
-                    <i class="bi bi-people-fill fs-5"></i>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-12 col-md-4">
-            <div class="kpi-bento-card d-flex align-items-center justify-content-between h-100 gap-3">
-                <div style="min-width: 0;" class="flex-grow-1">
-                    <span class="text-muted small fw-semibold text-uppercase d-block" style="font-size: 0.6875rem; letter-spacing: 0.05em;">Master Unit Kerja</span>
-                    <h3 class="fw-bold text-success mb-0 mt-1 num-tabular"><?= $totalUnits ?></h3>
-                    <small class="text-secondary d-block mt-0.5" style="font-size: 0.72rem;">Unit kerja struktural & fungsional</small>
-                </div>
-                <div class="bg-success-subtle text-success d-flex align-items-center justify-content-center flex-shrink-0 shadow-xs" style="width: 44px; height: 44px; border-radius: 12px;">
-                    <i class="bi bi-building-check fs-5"></i>
+                <div class="bg-primary-subtle text-primary d-flex align-items-center justify-content-center flex-shrink-0 kpi-icon-box" aria-hidden="true">
+                    <i class="bi bi-people-fill fs-5" aria-hidden="true"></i>
                 </div>
             </div>
         </div>
@@ -274,14 +373,27 @@
         <div class="col-12 col-md-4">
             <div class="kpi-bento-card d-flex align-items-center justify-content-between h-100 gap-3">
                 <div style="min-width: 0;" class="flex-grow-1">
-                    <span class="text-muted small fw-semibold text-uppercase d-block" style="font-size: 0.6875rem; letter-spacing: 0.05em;">Komposisi Peran</span>
-                    <div class="fw-bold text-dark mt-1 lh-sm num-tabular" style="font-size: 0.9375rem;">
-                        <span class="text-info-emphasis"><?= $pimpinanCount ?> Pimpinan</span> • <span class="text-secondary"><?= $stafCount ?> Staf</span>
+                    <span class="ecc-text-muted-aa ecc-text-xs fw-bold text-uppercase d-block" style="letter-spacing: 0.04em;">Master Unit Kerja</span>
+                    <div class="h3 fw-bold text-success mb-0 mt-1 num-tabular"><?= $totalUnits ?></div>
+                    <small class="ecc-text-muted-aa ecc-text-xs d-block mt-1">Unit kerja struktural &amp; fungsional</small>
+                </div>
+                <div class="bg-success-subtle text-success d-flex align-items-center justify-content-center flex-shrink-0 kpi-icon-box" aria-hidden="true">
+                    <i class="bi bi-building-check fs-5" aria-hidden="true"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <div class="kpi-bento-card d-flex align-items-center justify-content-between h-100 gap-3">
+                <div style="min-width: 0;" class="flex-grow-1">
+                    <span class="ecc-text-muted-aa ecc-text-xs fw-bold text-uppercase d-block" style="letter-spacing: 0.04em;">Komposisi Peran</span>
+                    <div class="fw-bold text-dark mt-1 lh-sm num-tabular ecc-text-title">
+                        <span class="text-info-emphasis"><?= $pimpinanCount ?> Pimpinan</span> &middot; <span class="ecc-text-muted-aa"><?= $stafCount ?> Staf</span>
                     </div>
-                    <small class="text-secondary d-block mt-1" style="font-size: 0.72rem;">Distribusi jabatan struktural & operasional</small>
+                    <small class="ecc-text-muted-aa ecc-text-xs d-block mt-1">Distribusi jabatan struktural &amp; operasional</small>
                 </div>
-                <div class="bg-info-subtle text-info-emphasis d-flex align-items-center justify-content-center flex-shrink-0 shadow-xs" style="width: 44px; height: 44px; border-radius: 12px;">
-                    <i class="bi bi-shield-check fs-5"></i>
+                <div class="bg-info-subtle text-info-emphasis d-flex align-items-center justify-content-center flex-shrink-0 kpi-icon-box" aria-hidden="true">
+                    <i class="bi bi-shield-check fs-5" aria-hidden="true"></i>
                 </div>
             </div>
         </div>
@@ -292,16 +404,16 @@
         <div class="card-body p-3">
             <form action="<?= site_url('users') ?>" method="GET" class="row g-2 align-items-end">
                 <div class="col-12 col-md-3">
-                    <label for="search" class="form-label text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.6875rem; letter-spacing: 0.04em;">Pencarian</label>
+                    <label for="search" class="form-label ecc-filter-label">Pencarian</label>
                     <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-light border-end-0 text-muted ps-2.5 pe-2" style="border-radius: 8px 0 0 8px; height: 38px;"><i class="bi bi-search"></i></span>
-                        <input type="text" name="search" id="search" class="form-control border-start-0 ps-1" placeholder="Nama, NIP, atau Username..." value="<?= esc($search ?? '') ?>" style="border-radius: 0 8px 8px 0; height: 38px; font-size: 0.8125rem;">
+                        <span class="input-group-text bg-light border-end-0 ecc-text-muted-aa ps-2 pe-2 ecc-filter-icon"><i class="bi bi-search" aria-hidden="true"></i></span>
+                        <input type="text" name="search" id="search" class="form-control border-start-0 ps-1 ecc-filter-control ecc-search-input" placeholder="Nama, NIP, atau Nama Pengguna..." value="<?= esc($search ?? '') ?>">
                     </div>
                 </div>
                 <div class="col-12 col-sm-6 col-md-2">
-                    <label for="role" class="form-label text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.6875rem; letter-spacing: 0.04em;">Role</label>
-                    <select name="role" id="role" class="form-select form-select-sm" style="height: 38px; border-radius: 8px; font-size: 0.8125rem;">
-                        <option value="">Semua Role</option>
+                    <label for="role" class="form-label ecc-filter-label">Peran</label>
+                    <select name="role" id="role" class="form-select form-select-sm ecc-filter-control">
+                        <option value="">Semua Peran</option>
                         <option value="admin" <?= (isset($filter_role) && $filter_role == 'admin') ? 'selected' : '' ?>>Administrator</option>
                         <option value="direktur" <?= (isset($filter_role) && $filter_role == 'direktur') ? 'selected' : '' ?>>Direktur</option>
                         <option value="wadir" <?= (isset($filter_role) && $filter_role == 'wadir') ? 'selected' : '' ?>>Wakil Direktur</option>
@@ -315,25 +427,25 @@
                         <option value="ketarunaan" <?= (isset($filter_role) && $filter_role == 'ketarunaan') ? 'selected' : '' ?>>Ketarunaan (PIC Taruna)</option>
                         <option value="ketarunaan_validator" <?= (isset($filter_role) && $filter_role == 'ketarunaan_validator') ? 'selected' : '' ?>>Validator Ketarunaan</option>
                         <option value="pusbangkar" <?= (isset($filter_role) && $filter_role == 'pusbangkar') ? 'selected' : '' ?>>Pusbangkar</option>
-                        <option value="karir_alumni" <?= (isset($filter_role) && $filter_role == 'karir_alumni') ? 'selected' : '' ?>>Karier & Alumni</option>
+                        <option value="karir_alumni" <?= (isset($filter_role) && $filter_role == 'karir_alumni') ? 'selected' : '' ?>>Karier &amp; Alumni</option>
                         <option value="kerjasama" <?= (isset($filter_role) && $filter_role == 'kerjasama') ? 'selected' : '' ?>>Kerjasama &amp; Mitra</option>
                         <option value="taruna" <?= (isset($filter_role) && $filter_role == 'taruna') ? 'selected' : '' ?>>Taruna</option>
                         <option value="alumni" <?= (isset($filter_role) && $filter_role == 'alumni') ? 'selected' : '' ?>>Alumni</option>
                     </select>
                 </div>
                 <div class="col-12 col-sm-6 col-md-3">
-                    <label for="unit" class="form-label text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.6875rem; letter-spacing: 0.04em;">Unit Kerja</label>
-                    <select name="unit" id="unit" class="form-select form-select-sm" style="height: 38px; border-radius: 8px; font-size: 0.8125rem;">
+                    <label for="unit" class="form-label ecc-filter-label">Unit Kerja</label>
+                    <select name="unit" id="unit" class="form-select form-select-sm ecc-filter-control">
                         <option value="">Semua Unit Kerja</option>
-                        <option value="kosong" <?= (isset($filter_unit) && $filter_unit === 'kosong') ? 'selected' : '' ?>>-- Belum Diatur / Kosong --</option>
+                        <option value="kosong" <?= (isset($filter_unit) && $filter_unit === 'kosong') ? 'selected' : '' ?>>Belum Diatur</option>
                         <?php foreach($unit_kerja_list as $uk): ?>
                             <option value="<?= esc($uk['nama_unit']) ?>" <?= (isset($filter_unit) && $filter_unit == $uk['nama_unit']) ? 'selected' : '' ?>><?= esc($uk['nama_unit']) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="col-12 col-sm-6 col-md-2">
-                    <label for="status_pegawai" class="form-label text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.6875rem; letter-spacing: 0.04em;">Status</label>
-                    <select name="status_pegawai" id="status_pegawai" class="form-select form-select-sm" style="height: 38px; border-radius: 8px; font-size: 0.8125rem;">
+                    <label for="status_pegawai" class="form-label ecc-filter-label">Status</label>
+                    <select name="status_pegawai" id="status_pegawai" class="form-select form-select-sm ecc-filter-control">
                         <option value="">Semua Status</option>
                         <option value="aktif" <?= (isset($filter_status_pegawai) && $filter_status_pegawai == 'aktif') ? 'selected' : '' ?>>Aktif</option>
                         <option value="mutasi_keluar" <?= (isset($filter_status_pegawai) && $filter_status_pegawai == 'mutasi_keluar') ? 'selected' : '' ?>>Mutasi Keluar</option>
@@ -341,13 +453,13 @@
                         <option value="nonaktif" <?= (isset($filter_status_pegawai) && $filter_status_pegawai == 'nonaktif') ? 'selected' : '' ?>>Nonaktif</option>
                     </select>
                 </div>
-                <div class="col-12 col-md-2 d-flex gap-1.5">
-                    <button type="submit" class="btn btn-primary btn-tactile flex-grow-1 fw-bold shadow-xs px-3 d-inline-flex align-items-center justify-content-center gap-1" style="height: 38px; border-radius: 8px; font-size: 0.8125rem;">
-                        <i class="bi bi-funnel-fill"></i><span>Filter</span>
+                <div class="col-12 col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-tactile btn-ecc-toolbar flex-grow-1 fw-bold shadow-sm px-3 d-inline-flex align-items-center justify-content-center gap-1" style="border-radius: 8px;">
+                        <i class="bi bi-funnel-fill" aria-hidden="true"></i><span>Filter</span>
                     </button>
                     <?php if (!empty($search) || !empty($filter_role) || !empty($filter_unit) || !empty($filter_status_pegawai) || (!empty($sortBy) && $sortBy !== 'users.nama_lengkap') || (!empty($sortOrder) && $sortOrder !== 'asc')): ?>
-                        <a href="<?= site_url('users') ?>" class="btn btn-outline-secondary btn-tactile d-inline-flex align-items-center justify-content-center px-2.5" title="Reset Filter" style="height: 38px; border-radius: 8px;">
-                            <i class="bi bi-arrow-counterclockwise"></i>
+                        <a href="<?= site_url('users') ?>" class="btn btn-outline-secondary btn-tactile btn-ecc-toolbar d-inline-flex align-items-center justify-content-center px-3" title="Reset Filter" aria-label="Atur ulang filter" style="border-radius: 8px;">
+                            <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
                         </a>
                     <?php endif; ?>
                 </div>
@@ -364,6 +476,12 @@
         unset($params['page_users']);
         return site_url('users?' . http_build_query($params));
     }
+    $getAriaSort = function (string $column) use ($sortBy, $sortOrder): string {
+        if ($sortBy !== $column) {
+            return 'none';
+        }
+        return ($sortOrder === 'asc') ? 'ascending' : 'descending';
+    };
     ?>
 
     <!-- MAIN BENTO TABLE & MOBILE CONTAINER -->
@@ -374,80 +492,80 @@
             <table class="table table-hover align-middle table-bento mb-0" id="dataTable" width="100%">
                 <thead>
                     <tr>
-                        <th style="width: 40px;" class="text-center">
-                            <input class="form-check-input" type="checkbox" id="selectAll" title="Pilih semua">
+                        <th scope="col" style="width: 40px;" class="text-center">
+                            <input class="form-check-input" type="checkbox" id="selectAll" title="Pilih semua" aria-label="Pilih semua pengguna">
                         </th>
-                        <th style="width: 50px;" class="text-center">
-                            <a href="<?= getSortUrl('users.id', $queryParams, $sortBy, $sortOrder) ?>" class="text-dark text-decoration-none d-inline-flex align-items-center justify-content-center gap-1" title="Urutkan berdasar No / ID">
+                        <th scope="col" style="width: 56px;" class="text-center" aria-sort="<?= $getAriaSort('users.id') ?>">
+                            <a href="<?= getSortUrl('users.id', $queryParams, $sortBy, $sortOrder) ?>" class="sort-header-link d-inline-flex align-items-center justify-content-center gap-1" title="Urutkan berdasarkan nomor">
                                 <span>No</span>
                                 <?php if ($sortBy === 'users.id'): ?>
-                                    <i class="bi bi-sort-numeric-<?= ($sortOrder === 'asc') ? 'down' : 'down-alt' ?> text-primary fw-bold"></i>
+                                    <i class="bi bi-sort-numeric-<?= ($sortOrder === 'asc') ? 'down' : 'down-alt' ?> text-primary fw-bold" aria-hidden="true"></i>
                                 <?php else: ?>
-                                    <i class="bi bi-arrow-down-up text-muted opacity-50" style="font-size: 0.65rem;"></i>
+                                    <i class="bi bi-arrow-down-up opacity-50 ecc-text-xs" aria-hidden="true"></i>
                                 <?php endif; ?>
                             </a>
                         </th>
-                        <th style="min-width: 230px;">
-                            <a href="<?= getSortUrl('users.nama_lengkap', $queryParams, $sortBy, $sortOrder) ?>" class="text-dark text-decoration-none d-inline-flex align-items-center gap-1" title="Urutkan berdasar Nama">
-                                <span>Nama & NIP</span>
+                        <th scope="col" style="min-width: 232px;" aria-sort="<?= $getAriaSort('users.nama_lengkap') ?>">
+                            <a href="<?= getSortUrl('users.nama_lengkap', $queryParams, $sortBy, $sortOrder) ?>" class="sort-header-link d-inline-flex align-items-center gap-1" title="Urutkan berdasarkan nama">
+                                <span>Nama &amp; NIP</span>
                                 <?php if ($sortBy === 'users.nama_lengkap'): ?>
-                                    <i class="bi bi-sort-alpha-<?= ($sortOrder === 'asc') ? 'down' : 'down-alt' ?> text-primary fw-bold"></i>
+                                    <i class="bi bi-sort-alpha-<?= ($sortOrder === 'asc') ? 'down' : 'down-alt' ?> text-primary fw-bold" aria-hidden="true"></i>
                                 <?php else: ?>
-                                    <i class="bi bi-arrow-down-up text-muted opacity-50" style="font-size: 0.7rem;"></i>
+                                    <i class="bi bi-arrow-down-up opacity-50 ecc-text-xs" aria-hidden="true"></i>
                                 <?php endif; ?>
                             </a>
                         </th>
-                        <th style="min-width: 170px;">
-                            <a href="<?= getSortUrl('users.jabatan', $queryParams, $sortBy, $sortOrder) ?>" class="text-dark text-decoration-none d-inline-flex align-items-center gap-1" title="Urutkan berdasar Jabatan">
+                        <th scope="col" style="min-width: 176px;" aria-sort="<?= $getAriaSort('users.jabatan') ?>">
+                            <a href="<?= getSortUrl('users.jabatan', $queryParams, $sortBy, $sortOrder) ?>" class="sort-header-link d-inline-flex align-items-center gap-1" title="Urutkan berdasarkan jabatan">
                                 <span>Jabatan / Pangkat</span>
                                 <?php if ($sortBy === 'users.jabatan'): ?>
-                                    <i class="bi bi-sort-alpha-<?= ($sortOrder === 'asc') ? 'down' : 'down-alt' ?> text-primary fw-bold"></i>
+                                    <i class="bi bi-sort-alpha-<?= ($sortOrder === 'asc') ? 'down' : 'down-alt' ?> text-primary fw-bold" aria-hidden="true"></i>
                                 <?php else: ?>
-                                    <i class="bi bi-arrow-down-up text-muted opacity-50" style="font-size: 0.7rem;"></i>
+                                    <i class="bi bi-arrow-down-up opacity-50 ecc-text-xs" aria-hidden="true"></i>
                                 <?php endif; ?>
                             </a>
                         </th>
-                        <th style="min-width: 210px;">
-                            <a href="<?= getSortUrl('users.unit', $queryParams, $sortBy, $sortOrder) ?>" class="text-dark text-decoration-none d-inline-flex align-items-center gap-1" title="Urutkan berdasar Unit Kerja">
+                        <th scope="col" style="min-width: 208px;" aria-sort="<?= $getAriaSort('users.unit') ?>">
+                            <a href="<?= getSortUrl('users.unit', $queryParams, $sortBy, $sortOrder) ?>" class="sort-header-link d-inline-flex align-items-center gap-1" title="Urutkan berdasarkan unit kerja">
                                 <span>Unit Kerja</span>
                                 <?php if ($sortBy === 'users.unit'): ?>
-                                    <i class="bi bi-sort-alpha-<?= ($sortOrder === 'asc') ? 'down' : 'down-alt' ?> text-primary fw-bold"></i>
+                                    <i class="bi bi-sort-alpha-<?= ($sortOrder === 'asc') ? 'down' : 'down-alt' ?> text-primary fw-bold" aria-hidden="true"></i>
                                 <?php else: ?>
-                                    <i class="bi bi-arrow-down-up text-muted opacity-50" style="font-size: 0.7rem;"></i>
+                                    <i class="bi bi-arrow-down-up opacity-50 ecc-text-xs" aria-hidden="true"></i>
                                 <?php endif; ?>
                             </a>
                         </th>
-                        <th style="min-width: 165px;">
-                            <a href="<?= getSortUrl('users.role', $queryParams, $sortBy, $sortOrder) ?>" class="text-dark text-decoration-none d-inline-flex align-items-center gap-1" title="Urutkan berdasar Role">
-                                <span>Role &amp; Peran</span>
+                        <th scope="col" style="min-width: 168px;" aria-sort="<?= $getAriaSort('users.role') ?>">
+                            <a href="<?= getSortUrl('users.role', $queryParams, $sortBy, $sortOrder) ?>" class="sort-header-link d-inline-flex align-items-center gap-1" title="Urutkan berdasarkan peran">
+                                <span>Peran</span>
                                 <?php if ($sortBy === 'users.role'): ?>
-                                    <i class="bi bi-sort-alpha-<?= ($sortOrder === 'asc') ? 'down' : 'down-alt' ?> text-primary fw-bold"></i>
+                                    <i class="bi bi-sort-alpha-<?= ($sortOrder === 'asc') ? 'down' : 'down-alt' ?> text-primary fw-bold" aria-hidden="true"></i>
                                 <?php else: ?>
-                                    <i class="bi bi-arrow-down-up text-muted opacity-50" style="font-size: 0.7rem;"></i>
+                                    <i class="bi bi-arrow-down-up opacity-50 ecc-text-xs" aria-hidden="true"></i>
                                 <?php endif; ?>
                             </a>
                         </th>
-                        <th class="text-center" style="width: 100px;">
-                            <a href="<?= getSortUrl('users.unit', $queryParams, $sortBy, $sortOrder) ?>" class="text-dark text-decoration-none d-inline-flex align-items-center justify-content-center gap-1" title="Urutkan berdasar Unit Kabag">
+                        <th scope="col" class="text-center" style="width: 104px;" aria-sort="<?= $getAriaSort('users.unit') ?>">
+                            <a href="<?= getSortUrl('users.unit', $queryParams, $sortBy, $sortOrder) ?>" class="sort-header-link d-inline-flex align-items-center justify-content-center gap-1" title="Urutkan berdasarkan unit kabag">
                                 <span>Unit Kabag</span>
                                 <?php if ($sortBy === 'users.unit'): ?>
-                                    <i class="bi bi-sort-alpha-<?= ($sortOrder === 'asc') ? 'down' : 'down-alt' ?> text-primary fw-bold"></i>
+                                    <i class="bi bi-sort-alpha-<?= ($sortOrder === 'asc') ? 'down' : 'down-alt' ?> text-primary fw-bold" aria-hidden="true"></i>
                                 <?php else: ?>
-                                    <i class="bi bi-arrow-down-up text-muted opacity-50" style="font-size: 0.7rem;"></i>
+                                    <i class="bi bi-arrow-down-up opacity-50 ecc-text-xs" aria-hidden="true"></i>
                                 <?php endif; ?>
                             </a>
                         </th>
-                        <th style="min-width: 220px;">
-                            <a href="<?= getSortUrl('atasan.nama_lengkap', $queryParams, $sortBy, $sortOrder) ?>" class="text-dark text-decoration-none d-inline-flex align-items-center gap-1" title="Urutkan berdasar Atasan Langsung">
+                        <th scope="col" style="min-width: 224px;" aria-sort="<?= $getAriaSort('atasan.nama_lengkap') ?>">
+                            <a href="<?= getSortUrl('atasan.nama_lengkap', $queryParams, $sortBy, $sortOrder) ?>" class="sort-header-link d-inline-flex align-items-center gap-1" title="Urutkan berdasarkan atasan langsung">
                                 <span>Atasan Langsung</span>
                                 <?php if ($sortBy === 'atasan.nama_lengkap'): ?>
-                                    <i class="bi bi-sort-alpha-<?= ($sortOrder === 'asc') ? 'down' : 'down-alt' ?> text-primary fw-bold"></i>
+                                    <i class="bi bi-sort-alpha-<?= ($sortOrder === 'asc') ? 'down' : 'down-alt' ?> text-primary fw-bold" aria-hidden="true"></i>
                                 <?php else: ?>
-                                    <i class="bi bi-arrow-down-up text-muted opacity-50" style="font-size: 0.7rem;"></i>
+                                    <i class="bi bi-arrow-down-up opacity-50 ecc-text-xs" aria-hidden="true"></i>
                                 <?php endif; ?>
                             </a>
                         </th>
-                        <th class="text-center" style="width: 90px;">Aksi</th>
+                        <th scope="col" class="text-center" style="width: 112px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -455,9 +573,8 @@
                     $i = 1;
                     if (empty($users)): ?>
                         <tr>
-                            <td colspan="9" class="text-center py-5 text-muted">
-                                <i class="bi bi-person-x fs-2 d-block mb-1 text-secondary opacity-50"></i>
-                                <span class="fw-semibold">Tidak ada data pengguna ditemukan.</span>
+                            <td colspan="9" class="text-center py-5 ecc-text-muted-aa">
+                                <span class="fw-semibold">Belum ada data pengguna untuk filter ini.</span>
                             </td>
                         </tr>
                     <?php endif;
@@ -471,28 +588,28 @@
                             <?php if (!$isSuperAdminAccount): ?>
                                 <input class="form-check-input user-checkbox" type="checkbox" value="<?= $user['id'] ?>" aria-label="Pilih pengguna <?= esc($user['nama_lengkap']) ?>">
                             <?php else: ?>
-                                <i class="bi bi-shield-lock-fill text-muted opacity-50" title="Akun Superadmin dikunci"></i>
+                                <i class="bi bi-shield-lock-fill ecc-text-muted-aa opacity-50" title="Akun Superadmin dikunci" aria-hidden="true"></i>
                             <?php endif; ?>
                         </td>
-                        <td class="text-center fw-bold text-muted num-tabular" style="font-size: 0.8rem;"><?= $i++ ?></td>
+                        <td class="text-center fw-bold ecc-text-muted-aa num-tabular ecc-text-xs"><?= $i++ ?></td>
                         <td>
-                            <div class="d-flex align-items-center gap-2.5">
+                            <div class="d-flex align-items-center gap-2">
                                 <?= render_user_avatar($user, $user['nama_lengkap'], 36) ?>
                                 <div class="d-flex flex-column" style="min-width: 0;">
-                                    <div class="d-flex align-items-center gap-1.5 flex-wrap">
-                                        <span class="fw-bold text-dark text-truncate lh-sm mb-0.5" style="font-size: 0.875rem;" title="<?= esc($user['nama_lengkap']) ?>"><?= esc($user['nama_lengkap']) ?></span>
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                        <span class="fw-bold text-dark text-truncate lh-sm ecc-text-sm" title="<?= esc($user['nama_lengkap']) ?>"><?= esc($user['nama_lengkap']) ?></span>
                                         <?php if (($user['status_pegawai'] ?? 'aktif') === 'mutasi_keluar'): ?>
-                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Mutasi Keluar <?= !empty($user['tmt_selesai']) ? 'TMT ' . date('d/m/Y', strtotime($user['tmt_selesai'])) : '' ?>">Mutasi</span>
+                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle ecc-badge-pill" title="Mutasi Keluar <?= !empty($user['tmt_selesai']) ? 'TMT ' . date('d/m/Y', strtotime($user['tmt_selesai'])) : '' ?>">Mutasi</span>
                                         <?php elseif (($user['status_pegawai'] ?? 'aktif') === 'pensiun'): ?>
-                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Pensiun">Pensiun</span>
+                                            <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle ecc-badge-pill" title="Pensiun">Pensiun</span>
                                         <?php elseif (($user['status_pegawai'] ?? 'aktif') === 'nonaktif'): ?>
-                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Nonaktif">Nonaktif</span>
+                                            <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle ecc-badge-pill" title="Nonaktif">Nonaktif</span>
                                         <?php endif; ?>
                                         <?php if (!empty($user['dispensasi_lampau_sampai']) && $user['dispensasi_lampau_sampai'] >= date('Y-m-d')): ?>
-                                            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Dispensasi s.d. <?= date('d/m/Y', strtotime($user['dispensasi_lampau_sampai'])) ?>">Dispensasi</span>
+                                            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle ecc-badge-pill" title="Dispensasi s.d. <?= date('d/m/Y', strtotime($user['dispensasi_lampau_sampai'])) ?>">Dispensasi</span>
                                         <?php endif; ?>
                                     </div>
-                                    <span class="text-muted small num-tabular font-monospace" style="font-size: 0.72rem;">
+                                    <span class="ecc-text-muted-aa ecc-text-xs num-tabular font-monospace">
                                         <?= esc($user['nip'] ?: ($user['username'] ?: '-')) ?>
                                     </span>
                                 </div>
@@ -504,21 +621,21 @@
                             $hasPangkat = !empty(trim((string)($user['pangkat'] ?? '')));
                             ?>
                             <?php if ($hasJabatan || $hasPangkat): ?>
-                                <span class="d-block text-dark fw-semibold lh-sm" style="font-size: 0.8125rem;"><?= esc($user['jabatan'] ?: 'Staf Pelaksana') ?></span>
-                                <small class="text-muted num-tabular d-block mt-0.5" style="font-size: 0.72rem;"><?= esc($user['pangkat'] ?: '-') ?></small>
+                                <span class="d-block text-dark fw-semibold lh-sm ecc-text-sm"><?= esc($user['jabatan'] ?: 'Staf Pelaksana') ?></span>
+                                <small class="ecc-text-muted-aa num-tabular d-block mt-1 ecc-text-xs"><?= esc($user['pangkat'] ?: '-') ?></small>
                             <?php else: ?>
-                                <span class="text-muted small fst-italic" style="font-size: 0.78rem;">Staf Pelaksana</span>
+                                <span class="ecc-text-muted-aa ecc-text-xs fst-italic">Staf Pelaksana</span>
                             <?php endif; ?>
                         </td>
                         <td>
                             <?php if ($user['role'] === 'direktur'): ?>
-                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2.5 py-1">Direktur</span>
+                                <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle rounded-pill px-3 py-1 ecc-text-xs">Direktur</span>
                             <?php elseif ($user['role'] === 'wadir'): ?>
-                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2.5 py-1">Wakil Direktur</span>
+                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-3 py-1 ecc-text-xs">Wakil Direktur</span>
                             <?php else: ?>
-                                <div class="unit-kerja-select-wrapper" style="max-width: 220px;">
+                                <div class="unit-kerja-select-wrapper" style="max-width: 224px;">
                                     <select class="form-select form-select-sm unit-kerja-select-custom unit-kerja-select w-100" data-user-id="<?= $user['id'] ?>" aria-label="Pilih unit kerja untuk <?= esc($user['nama_lengkap']) ?>">
-                                        <option value="">-- Pilih --</option>
+                                        <option value="">Pilih Unit Kerja</option>
                                         <?php if (!empty($unit_kerja_list)): ?>
                                             <?php foreach ($unit_kerja_list as $unit_kerja): ?>
                                                 <option value="<?= esc($unit_kerja['nama_unit']) ?>" <?= ($user['unit'] == $unit_kerja['nama_unit']) ? 'selected' : '' ?>>
@@ -527,7 +644,7 @@
                                             <?php endforeach; ?>
                                         <?php endif; ?>
                                     </select>
-                                    <div class="update-status small mt-1" style="min-height: 18px; font-size: 0.7rem;"></div>
+                                    <div class="update-status ecc-text-xs mt-1" style="min-height: 16px;" aria-live="polite"></div>
                                 </div>
                             <?php endif; ?>
                         </td>
@@ -557,33 +674,33 @@
                                 }
                             ?>
                             <?php if(!empty($atasan_display) && $atasan_display !== '-'): ?>
-                                <span class="badge <?= $is_auto_synced ? 'bg-info-subtle text-info-emphasis border border-info-subtle' : 'bg-success-subtle text-success border border-success-subtle' ?> px-2.5 py-1 text-wrap text-start lh-sm" style="font-size: 0.75rem; font-weight: 500;" <?= $is_auto_synced ? 'title="Disinkronisasi otomatis dari Unit Kerja"' : '' ?>>
+                                <span class="badge <?= $is_auto_synced ? 'bg-info-subtle text-info-emphasis border border-info-subtle' : 'bg-success-subtle text-success-emphasis border border-success-subtle' ?> px-2 py-1 text-wrap text-start lh-sm ecc-text-xs fw-medium" <?= $is_auto_synced ? 'title="Disinkronisasi otomatis dari Unit Kerja"' : '' ?>>
                                     <span><?= esc($atasan_display) ?></span>
                                 </span>
                             <?php else: ?>
-                                <span class="text-muted fst-italic small" style="font-size: 0.75rem;">Tidak diset / Pimpinan</span>
+                                <span class="ecc-text-muted-aa fst-italic ecc-text-xs">Belum diatur / Pimpinan</span>
                             <?php endif; ?>
                         </td>
 
                         <td class="text-center">
                             <?php $qs = !empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : ''; ?>
-                            <div class="d-inline-flex align-items-center gap-1" role="group">
-                                <a href="<?= site_url('users/edit/'.$user['id']) . $qs ?>" class="btn btn-outline-warning btn-tactile rounded-circle d-inline-flex align-items-center justify-content-center p-0" style="width: 32px; height: 32px;" title="Edit Data Pengguna">
-                                    <i class="bi bi-pencil-square" style="font-size: 0.75rem;"></i>
+                            <div class="d-inline-flex align-items-center gap-1" role="group" aria-label="Aksi untuk <?= esc($user['nama_lengkap']) ?>">
+                                <a href="<?= site_url('users/edit/'.$user['id']) . $qs ?>" class="btn btn-outline-warning btn-tactile btn-icon-action rounded-circle d-inline-flex align-items-center justify-content-center" title="Edit Data Pengguna" aria-label="Edit <?= esc($user['nama_lengkap']) ?>">
+                                    <i class="bi bi-pencil-square" aria-hidden="true"></i>
                                 </a>
-                                <button type="button" class="btn btn-outline-primary btn-tactile rounded-circle d-inline-flex align-items-center justify-content-center p-0 btn-riwayat-penugasan" style="width: 32px; height: 32px;" data-user-id="<?= $user['id'] ?>" data-user-name="<?= esc($user['nama_lengkap']) ?>" data-user-nip="<?= esc($user['nip'] ?: '-') ?>" data-user-unit="<?= esc($user['unit'] ?: '') ?>" data-user-jabatan="<?= esc($user['jabatan'] ?: '') ?>" data-user-role="<?= esc($user['role'] ?: 'pegawai') ?>" data-user-atasan="<?= esc($user['atasan_id'] ?? '') ?>" title="Riwayat Penugasan & Atasan">
-                                    <i class="bi bi-clock-history" style="font-size: 0.75rem;"></i>
+                                <button type="button" class="btn btn-outline-primary btn-tactile btn-icon-action rounded-circle d-inline-flex align-items-center justify-content-center btn-riwayat-penugasan" data-user-id="<?= $user['id'] ?>" data-user-name="<?= esc($user['nama_lengkap']) ?>" data-user-nip="<?= esc($user['nip'] ?: '-') ?>" data-user-unit="<?= esc($user['unit'] ?: '') ?>" data-user-jabatan="<?= esc($user['jabatan'] ?: '') ?>" data-user-role="<?= esc($user['role'] ?: 'pegawai') ?>" data-user-atasan="<?= esc($user['atasan_id'] ?? '') ?>" title="Riwayat Penugasan &amp; Atasan" aria-label="Riwayat penugasan <?= esc($user['nama_lengkap']) ?>">
+                                    <i class="bi bi-clock-history" aria-hidden="true"></i>
                                 </button>
                                 <?php if (!$isSuperAdminAccount): ?>
                                     <form action="<?= site_url('users/delete/'.$user['id']) ?>" method="POST" class="d-inline form-delete-user">
                                         <?= csrf_field() ?>
-                                        <button type="button" class="btn btn-outline-danger btn-tactile rounded-circle d-inline-flex align-items-center justify-content-center p-0 btn-delete-user" style="width: 32px; height: 32px;" data-user-name="<?= esc($user['nama_lengkap']) ?>" title="Hapus Pengguna">
-                                            <i class="bi bi-trash" style="font-size: 0.75rem;"></i>
+                                        <button type="button" class="btn btn-outline-danger btn-tactile btn-icon-action rounded-circle d-inline-flex align-items-center justify-content-center btn-delete-user" data-user-name="<?= esc($user['nama_lengkap']) ?>" title="Hapus Pengguna" aria-label="Hapus <?= esc($user['nama_lengkap']) ?>">
+                                            <i class="bi bi-trash" aria-hidden="true"></i>
                                         </button>
                                     </form>
                                 <?php else: ?>
-                                    <button class="btn btn-outline-secondary rounded-circle d-inline-flex align-items-center justify-content-center p-0" disabled style="width: 32px; height: 32px;" title="Superadmin Terkunci">
-                                        <i class="bi bi-lock-fill" style="font-size: 0.75rem;"></i>
+                                    <button type="button" class="btn btn-outline-secondary btn-icon-action rounded-circle d-inline-flex align-items-center justify-content-center" disabled title="Superadmin Terkunci" aria-label="Akun Superadmin terkunci">
+                                        <i class="bi bi-lock-fill" aria-hidden="true"></i>
                                     </button>
                                 <?php endif; ?>
                             </div>
@@ -597,9 +714,8 @@
         <!-- MOBILE CARDS VIEW (<768px) -->
         <div class="mobile-cards-view p-2 p-md-3">
             <?php if (empty($users)): ?>
-                <div class="text-center py-4 text-muted">
-                    <i class="bi bi-person-x fs-2 d-block mb-1 text-secondary opacity-50"></i>
-                    <span class="fw-semibold">Tidak ada data pengguna ditemukan.</span>
+                <div class="text-center py-4 ecc-text-muted-aa">
+                    <span class="fw-semibold">Belum ada data pengguna untuk filter ini.</span>
                 </div>
             <?php else: ?>
                 <?php 
@@ -623,9 +739,9 @@
                             <?php if (!$isSuperAdminAccount): ?>
                                 <input class="form-check-input user-checkbox" type="checkbox" value="<?= $user['id'] ?>" aria-label="Pilih <?= esc($user['nama_lengkap']) ?>">
                             <?php else: ?>
-                                <i class="bi bi-shield-lock-fill text-muted opacity-50 small" title="Superadmin"></i>
+                                <i class="bi bi-shield-lock-fill ecc-text-muted-aa opacity-50 small" title="Superadmin" aria-hidden="true"></i>
                             <?php endif; ?>
-                            <span class="badge bg-light text-secondary border rounded-pill px-2.5 py-1 small font-monospace">
+                            <span class="badge bg-light ecc-text-muted-aa border rounded-pill px-2 py-1 ecc-text-xs font-monospace">
                                 <?= esc($user['nip'] ?: ($user['username'] ?: '-')) ?>
                             </span>
                         </div>
@@ -641,56 +757,56 @@
                         </div>
                     </div>
 
-                    <div class="d-flex align-items-center gap-2.5 mb-2.5">
-                        <?= render_user_avatar($user, $user['nama_lengkap'], 38) ?>
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <?= render_user_avatar($user, $user['nama_lengkap'], 40) ?>
                         <div class="lh-sm flex-grow-1" style="min-width: 0;">
-                            <div class="d-flex align-items-center gap-1.5 flex-wrap">
-                                <span class="fw-bold text-dark text-truncate" style="font-size: 0.9375rem;"><?= esc($user['nama_lengkap']) ?></span>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <span class="fw-bold text-dark text-truncate ecc-text-title"><?= esc($user['nama_lengkap']) ?></span>
                                 <?php if (($user['status_pegawai'] ?? 'aktif') === 'mutasi_keluar'): ?>
-                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Mutasi Keluar <?= !empty($user['tmt_selesai']) ? 'TMT ' . date('d/m/Y', strtotime($user['tmt_selesai'])) : '' ?>">Mutasi</span>
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle ecc-badge-pill" title="Mutasi Keluar <?= !empty($user['tmt_selesai']) ? 'TMT ' . date('d/m/Y', strtotime($user['tmt_selesai'])) : '' ?>">Mutasi</span>
                                 <?php elseif (($user['status_pegawai'] ?? 'aktif') === 'pensiun'): ?>
-                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Pensiun">Pensiun</span>
+                                    <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle ecc-badge-pill" title="Pensiun">Pensiun</span>
                                 <?php elseif (($user['status_pegawai'] ?? 'aktif') === 'nonaktif'): ?>
-                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Nonaktif">Nonaktif</span>
+                                    <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle ecc-badge-pill" title="Nonaktif">Nonaktif</span>
                                 <?php endif; ?>
                                 <?php if (!empty($user['dispensasi_lampau_sampai']) && $user['dispensasi_lampau_sampai'] >= date('Y-m-d')): ?>
-                                    <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;" title="Dispensasi s.d. <?= date('d/m/Y', strtotime($user['dispensasi_lampau_sampai'])) ?>">Dispensasi</span>
+                                    <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle ecc-badge-pill" title="Dispensasi s.d. <?= date('d/m/Y', strtotime($user['dispensasi_lampau_sampai'])) ?>">Dispensasi</span>
                                 <?php endif; ?>
                             </div>
-                            <small class="text-muted" style="font-size: 0.75rem;"><?= esc($user['jabatan'] ?: 'Staf Pelaksana') ?> <?= !empty($user['pangkat']) ? '• ' . esc($user['pangkat']) : '' ?></small>
+                            <small class="ecc-text-muted-aa ecc-text-xs"><?= esc($user['jabatan'] ?: 'Staf Pelaksana') ?> <?= !empty($user['pangkat']) ? '&middot; ' . esc($user['pangkat']) : '' ?></small>
                         </div>
                     </div>
 
-                    <div class="bg-light p-2.5 rounded-3 mb-2.5 border border-light-subtle small" style="font-size: 0.78rem;">
-                        <div class="d-flex justify-content-between align-items-center mb-1.5">
-                            <span class="text-muted fw-semibold">Unit Kerja:</span>
-                            <span class="fw-medium text-dark text-end text-truncate" style="max-width: 200px;"><?= !empty($user['unit']) ? esc($user['unit']) : '<span class="text-muted fst-italic">Belum Diatur</span>' ?></span>
+                    <div class="bg-light p-3 rounded-3 mb-3 border border-light-subtle ecc-text-xs">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="ecc-text-muted-aa fw-semibold">Unit Kerja:</span>
+                            <span class="fw-medium text-dark text-end text-truncate" style="max-width: 200px;"><?= !empty($user['unit']) ? esc($user['unit']) : '<span class="ecc-text-muted-aa fst-italic">Belum Diatur</span>' ?></span>
                         </div>
                         <div class="d-flex justify-content-between align-items-center">
-                            <span class="text-muted fw-semibold">Atasan:</span>
+                            <span class="ecc-text-muted-aa fw-semibold">Atasan:</span>
                             <?php if(!empty($atasan_display) && $atasan_display !== '-'): ?>
-                                <span class="badge <?= $is_auto_synced ? 'bg-info-subtle text-info-emphasis' : 'bg-success-subtle text-success' ?> px-2 py-0.5 text-truncate" style="max-width: 190px;">
+                                <span class="badge <?= $is_auto_synced ? 'bg-info-subtle text-info-emphasis' : 'bg-success-subtle text-success-emphasis' ?> px-2 py-1 text-truncate" style="max-width: 192px;">
                                     <?= esc($atasan_display) ?>
                                 </span>
                             <?php else: ?>
-                                <span class="text-muted fst-italic">Tidak diset / Pimpinan</span>
+                                <span class="ecc-text-muted-aa fst-italic">Belum diatur / Pimpinan</span>
                             <?php endif; ?>
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-end gap-1.5 pt-2 border-top">
+                    <div class="d-flex justify-content-end gap-2 pt-2 border-top flex-wrap">
                         <?php $qs = !empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : ''; ?>
-                        <a href="<?= site_url('users/edit/'.$user['id']) . $qs ?>" class="btn btn-sm btn-outline-warning btn-tactile py-1 px-2.5 rounded-pill" style="font-size: 0.78rem;">
-                            <i class="bi bi-pencil-square me-1"></i> Edit
+                        <a href="<?= site_url('users/edit/'.$user['id']) . $qs ?>" class="btn btn-sm btn-outline-warning btn-tactile btn-mobile-card-action rounded-pill d-inline-flex align-items-center gap-1">
+                            <i class="bi bi-pencil-square" aria-hidden="true"></i><span>Edit</span>
                         </a>
-                        <button type="button" class="btn btn-sm btn-outline-primary btn-tactile py-1 px-2.5 rounded-pill btn-riwayat-penugasan" data-user-id="<?= $user['id'] ?>" data-user-name="<?= esc($user['nama_lengkap']) ?>" data-user-nip="<?= esc($user['nip'] ?: '-') ?>" data-user-unit="<?= esc($user['unit'] ?: '') ?>" data-user-jabatan="<?= esc($user['jabatan'] ?: '') ?>" data-user-role="<?= esc($user['role'] ?: 'pegawai') ?>" data-user-atasan="<?= esc($user['atasan_id'] ?? '') ?>" style="font-size: 0.78rem;">
-                            <i class="bi bi-clock-history me-1"></i> Penugasan
+                        <button type="button" class="btn btn-sm btn-outline-primary btn-tactile btn-mobile-card-action rounded-pill btn-riwayat-penugasan d-inline-flex align-items-center gap-1" data-user-id="<?= $user['id'] ?>" data-user-name="<?= esc($user['nama_lengkap']) ?>" data-user-nip="<?= esc($user['nip'] ?: '-') ?>" data-user-unit="<?= esc($user['unit'] ?: '') ?>" data-user-jabatan="<?= esc($user['jabatan'] ?: '') ?>" data-user-role="<?= esc($user['role'] ?: 'pegawai') ?>" data-user-atasan="<?= esc($user['atasan_id'] ?? '') ?>">
+                            <i class="bi bi-clock-history" aria-hidden="true"></i><span>Penugasan</span>
                         </button>
                         <?php if (!$isSuperAdminAccount): ?>
                             <form action="<?= site_url('users/delete/'.$user['id']) ?>" method="POST" class="d-inline form-delete-user">
                                 <?= csrf_field() ?>
-                                <button type="button" class="btn btn-sm btn-outline-danger btn-tactile py-1 px-2.5 rounded-pill btn-delete-user" data-user-name="<?= esc($user['nama_lengkap']) ?>" style="font-size: 0.78rem;">
-                                    <i class="bi bi-trash me-1"></i> Hapus
+                                <button type="button" class="btn btn-sm btn-outline-danger btn-tactile btn-mobile-card-action rounded-pill btn-delete-user d-inline-flex align-items-center gap-1" data-user-name="<?= esc($user['nama_lengkap']) ?>">
+                                    <i class="bi bi-trash" aria-hidden="true"></i><span>Hapus</span>
                                 </button>
                             </form>
                         <?php endif; ?>
@@ -705,45 +821,45 @@
             <div class="spinner-border spinner-border-sm text-primary mb-1" role="status">
                 <span class="visually-hidden">Memuat...</span>
             </div>
-            <div class="text-muted small" style="font-size: 0.75rem;">Memuat pengguna berikutnya...</div>
+            <div class="ecc-text-muted-aa ecc-text-xs">Memuat pengguna berikutnya...</div>
         </div>
     </div>
 </div>
 
-<!-- MODAL IMPORT EXCEL -->
+<!-- MODAL IMPOR EXCEL -->
 <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden" style="border-top: 4px solid #198754 !important;">
+        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden modal-accent-success">
             <div class="modal-header bg-light border-bottom px-3 px-md-4 py-3">
-                <div class="d-flex align-items-center" style="gap: 12px;">
-                    <div class="bg-success text-white d-flex align-items-center justify-content-center flex-shrink-0 shadow-xs" style="width: 40px; height: 40px; border-radius: 12px;">
-                        <i class="bi bi-file-earmark-excel-fill fs-5"></i>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-success text-white d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm modal-icon-box" aria-hidden="true">
+                        <i class="bi bi-file-earmark-excel-fill fs-5" aria-hidden="true"></i>
                     </div>
                     <div>
-                        <h6 class="modal-title fw-bold text-dark mb-0" id="importModalLabel" style="font-size: 1rem;">Import Pengguna Excel</h6>
-                        <small class="text-secondary" style="font-size: 0.75rem;">Unggah berkas spreadsheet untuk menambahkan pengguna massal</small>
+                        <h2 class="h5 modal-title fw-bold text-dark mb-0 ecc-text-title" id="importModalLabel">Impor Pengguna Excel</h2>
+                        <small class="ecc-text-muted-aa ecc-text-xs">Unggah berkas Excel untuk menambahkan pengguna massal</small>
                     </div>
                 </div>
-                <button type="button" class="btn-close btn-tactile" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-tactile" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <form action="<?= site_url('users/import') ?>" method="post" enctype="multipart/form-data" autocomplete="off" id="formImportUsers">
                 <?= csrf_field() ?>
                 <div class="modal-body p-3 p-md-4">
-                    <p class="small text-muted mb-2.5">
-                        Pastikan struktur kolom pada berkas Excel sesuai dengan template resmi sistem.
+                    <p class="ecc-text-sm ecc-text-muted-aa mb-3">
+                        Pastikan struktur kolom pada berkas Excel sesuai dengan template resmi ECC.
                     </p>
-                    <a href="<?= site_url('users/export') ?>" class="btn btn-outline-success btn-tactile rounded-pill mb-3 w-100 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5" style="height: 38px; font-size: 0.8125rem;">
-                        <i class="bi bi-file-earmark-arrow-down-fill"></i><span>Unduh Template Excel (.xlsx)</span>
+                    <a href="<?= site_url('users/export') ?>" class="btn btn-outline-success btn-tactile btn-modal-action rounded-pill mb-3 w-100 fw-semibold d-inline-flex align-items-center justify-content-center gap-2">
+                        <i class="bi bi-file-earmark-arrow-down-fill" aria-hidden="true"></i><span>Unduh Template Excel</span>
                     </a>
                     <div class="mb-2">
-                        <label for="file_excel" class="form-label small fw-bold text-secondary mb-1">PILIH BERKAS EXCEL / CSV</label>
-                        <input class="form-control" type="file" name="file_excel" id="file_excel" required accept=".xlsx, .xls, .csv" style="border-radius: 8px; font-size: 0.8125rem;">
+                        <label for="file_excel" class="form-label ecc-filter-label">Pilih Berkas Excel / CSV</label>
+                        <input class="form-control ecc-filter-control" type="file" name="file_excel" id="file_excel" required accept=".xlsx, .xls, .csv">
                     </div>
                 </div>
-                <div class="modal-footer border-top bg-light px-3 px-md-4 py-2.5 gap-2">
-                    <button type="button" class="btn btn-outline-secondary btn-tactile rounded-pill px-3 py-1.5 fw-semibold shadow-xs" data-bs-dismiss="modal" style="height: 36px; font-size: 0.8125rem;">Batal</button>
-                    <button type="submit" class="btn btn-success btn-tactile rounded-pill px-3.5 py-1.5 fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5" id="btnSubmitImport" style="height: 36px; font-size: 0.8125rem;">
-                        <i class="bi bi-upload"></i><span>Mulai Impor</span>
+                <div class="modal-footer border-top bg-light px-3 px-md-4 py-3 gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-tactile btn-modal-action rounded-pill fw-semibold shadow-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success btn-tactile btn-modal-action rounded-pill fw-semibold shadow-sm d-inline-flex align-items-center gap-2" id="btnSubmitImport">
+                        <i class="bi bi-upload" aria-hidden="true"></i><span>Mulai Impor</span>
                     </button>
                 </div>
             </form>
@@ -754,18 +870,18 @@
 <!-- MODAL BATCH EDIT ATASAN -->
 <div class="modal fade" id="batchEditModal" tabindex="-1" aria-labelledby="batchEditModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden" style="border-top: 4px solid #0dcaf0 !important;">
+        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden modal-accent-sky">
             <div class="modal-header bg-light border-bottom px-3 px-md-4 py-3">
-                <div class="d-flex align-items-center" style="gap: 12px;">
-                    <div class="bg-info text-white d-flex align-items-center justify-content-center flex-shrink-0 shadow-xs" style="width: 40px; height: 40px; border-radius: 12px;">
-                        <i class="bi bi-people-fill fs-5"></i>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-info text-white d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm modal-icon-box" aria-hidden="true">
+                        <i class="bi bi-people-fill fs-5" aria-hidden="true"></i>
                     </div>
                     <div>
-                        <h6 class="modal-title fw-bold text-dark mb-0" id="batchEditModalLabel" style="font-size: 1rem;">Batch Edit Atasan</h6>
-                        <small class="text-secondary" style="font-size: 0.75rem;">Perbarui atasan langsung untuk beberapa pengguna sekaligus</small>
+                        <h2 class="h5 modal-title fw-bold text-dark mb-0 ecc-text-title" id="batchEditModalLabel">Batch Edit Atasan</h2>
+                        <small class="ecc-text-muted-aa ecc-text-xs">Perbarui atasan langsung untuk beberapa pengguna sekaligus</small>
                     </div>
                 </div>
-                <button type="button" class="btn-close btn-tactile" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-tactile" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <form action="<?= site_url('users/batch_update') ?>" method="post" autocomplete="off" id="formBatchUpdate">
                 <?= csrf_field() ?>
@@ -773,22 +889,139 @@
                 <?php $qs = !empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : ''; ?>
                 <input type="hidden" name="return_qs" value="<?= esc($qs) ?>">
                 <div class="modal-body p-3 p-md-4">
-                    <p class="small mb-3">Tugaskan atasan langsung baru untuk <strong id="batchEditCount" class="text-primary fs-6">0</strong> pengguna terpilih:</p>
-                    <div class="mb-2">
-                        <label for="atasan_id_batch" class="form-label small fw-bold text-secondary mb-1">ATASAN LANGSUNG BARU</label>
-                        <select name="atasan_id" id="atasan_id_batch" class="form-select" style="border-radius: 8px; font-size: 0.8125rem;">
-                            <option value="">-- Hapus Atasan (Tanpa Atasan) --</option>
+                    <?php
+                        $bulanIndoModal = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                        $curMonthModal  = (int) date('n');
+                        $curYearModal   = (int) date('Y');
+                    ?>
+                    <p class="ecc-text-sm mb-3">Tugaskan atasan langsung baru untuk <strong id="batchEditCount" class="text-primary num-tabular">0</strong> pengguna terpilih:</p>
+                    <div class="mb-3">
+                        <label for="atasan_id_batch" class="form-label ecc-filter-label">Atasan Langsung Baru</label>
+                        <select name="atasan_id" id="atasan_id_batch" class="form-select ecc-filter-control">
+                            <option value="">Tanpa Atasan</option>
                             <?php foreach ($potential_bosses as $boss): ?>
                                 <option value="<?= $boss['id'] ?>"><?= esc($boss['nama_lengkap']) ?> - <?= esc($boss['jabatan'] ?? 'Tanpa Jabatan') ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <div class="form-text small mt-1 text-muted" style="font-size: 0.72rem;">Seluruh pengguna terpilih akan disinkronkan ke atasan yang dipilih.</div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="ecc-filter-label">Jenis Perubahan</div>
+                        <div class="d-flex flex-column gap-2">
+                            <label class="d-flex align-items-start gap-2 p-2 bg-light border rounded-3 mb-0" style="cursor: pointer;">
+                                <input type="radio" name="mode_perubahan" value="mutasi" class="form-check-input mt-1 batch-mode-radio" checked>
+                                <span class="ecc-text-xs">
+                                    <strong class="d-block text-dark">Rotasi / Mutasi Baru</strong>
+                                    <span class="ecc-text-muted-aa">Penilaian bulan sebelumnya tetap tercatat pada atasan lama.</span>
+                                </span>
+                            </label>
+                            <label class="d-flex align-items-start gap-2 p-2 bg-white border rounded-3 mb-0" style="cursor: pointer;">
+                                <input type="radio" name="mode_perubahan" value="koreksi" class="form-check-input mt-1 batch-mode-radio">
+                                <span class="ecc-text-xs">
+                                    <strong class="d-block text-dark">Koreksi Salah Input</strong>
+                                    <span class="ecc-text-muted-aa">Hanya memperbarui profil aktif tanpa memotong riwayat penugasan.</span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-2" id="batchPeriodeWrapper">
+                        <div class="col-7">
+                            <label for="batchBulanEfektif" class="form-label ecc-filter-label">Mulai Efektif Bulan</label>
+                            <select name="bulan_efektif" id="batchBulanEfektif" class="form-select form-select-sm ecc-filter-control">
+                                <?php foreach ($bulanIndoModal as $idxBln => $nmBln): ?>
+                                    <option value="<?= $idxBln + 1 ?>" <?= ($curMonthModal === $idxBln + 1) ? 'selected' : '' ?>><?= esc($nmBln) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-5">
+                            <label for="batchTahunEfektif" class="form-label ecc-filter-label">Tahun</label>
+                            <input type="number" name="tahun_efektif" id="batchTahunEfektif" class="form-control form-control-sm num-tabular ecc-filter-control" value="<?= $curYearModal ?>" min="2020" max="2099">
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer border-top bg-light px-3 px-md-4 py-2.5 gap-2">
-                    <button type="button" class="btn btn-outline-secondary btn-tactile rounded-pill px-3 py-1.5 fw-semibold shadow-xs" data-bs-dismiss="modal" style="height: 36px; font-size: 0.8125rem;">Batal</button>
-                    <button type="submit" class="btn btn-primary btn-tactile rounded-pill px-3.5 py-1.5 fw-semibold shadow-xs d-inline-flex align-items-center gap-1.5" id="btnSubmitBatch" style="height: 36px; font-size: 0.8125rem;">
-                        <i class="bi bi-check-lg"></i><span>Simpan Perubahan</span>
+                <div class="modal-footer border-top bg-light px-3 px-md-4 py-3 gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-tactile btn-modal-action rounded-pill fw-semibold shadow-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-tactile btn-modal-action rounded-pill fw-semibold shadow-sm d-inline-flex align-items-center gap-2" id="btnSubmitBatch">
+                        <i class="bi bi-check-lg" aria-hidden="true"></i><span>Simpan Perubahan</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL ROTASI ATASAN LANGSUNG MASSAL PER PEJABAT / UNIT -->
+<div class="modal fade" id="modalRotasiAtasan" tabindex="-1" aria-labelledby="modalRotasiAtasanLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden modal-accent-primary">
+            <div class="modal-header bg-light border-bottom px-3 px-md-4 py-3">
+                <div>
+                    <h2 class="h5 modal-title fw-bold text-dark mb-0 ecc-text-title" id="modalRotasiAtasanLabel">Rotasi Atasan Langsung Massal</h2>
+                    <small class="ecc-text-muted-aa ecc-text-xs">Alihkan seluruh staf dari pejabat lama ke pejabat baru mulai bulan efektif</small>
+                </div>
+                <button type="button" class="btn-close btn-tactile" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <form action="<?= site_url('users/rotasi-atasan') ?>" method="post" autocomplete="off" id="formRotasiAtasan">
+                <?= csrf_field() ?>
+                <input type="hidden" name="return_qs" value="<?= esc($qs) ?>">
+                <div class="modal-body p-3 p-md-4">
+                    <div class="alert alert-primary bg-primary-subtle text-primary-emphasis border border-primary-subtle rounded-3 ecc-text-xs py-2 px-3 mb-3">
+                        Penilaian bulan sebelum bulan efektif tetap tercatat pada <strong>Atasan Lama</strong>. Mulai bulan efektif, staf beralih ke <strong>Atasan Baru</strong>.
+                    </div>
+                    <div class="mb-3">
+                        <label for="rotasiAtasanLama" class="form-label ecc-filter-label">Atasan Lama (Yang Diganti) <span class="text-danger">*</span></label>
+                        <select name="atasan_lama_id" id="rotasiAtasanLama" class="form-select form-select-sm ecc-filter-control" required>
+                            <option value="">Pilih Atasan Lama</option>
+                            <?php foreach ($potential_bosses as $boss): ?>
+                                <?php $jmlStafBoss = (int) ($staf_count_by_atasan[(int) $boss['id']] ?? 0); ?>
+                                <option value="<?= esc($boss['id']) ?>">
+                                    <?= esc($boss['nama_lengkap']) ?> — <?= esc($boss['jabatan'] ?? 'Tanpa Jabatan') ?> (<?= $jmlStafBoss ?> staf)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="rotasiAtasanBaru" class="form-label ecc-filter-label">Atasan Baru (Pengganti) <span class="text-danger">*</span></label>
+                        <select name="atasan_baru_id" id="rotasiAtasanBaru" class="form-select form-select-sm ecc-filter-control" required>
+                            <option value="">Pilih Atasan Baru</option>
+                            <?php foreach ($potential_bosses as $boss): ?>
+                                <option value="<?= esc($boss['id']) ?>">
+                                    <?= esc($boss['nama_lengkap']) ?> — <?= esc($boss['jabatan'] ?? 'Tanpa Jabatan') ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="rotasiUnitFilter" class="form-label ecc-filter-label">Batasi Unit Kerja (Opsional)</label>
+                        <select name="unit_filter" id="rotasiUnitFilter" class="form-select form-select-sm ecc-filter-control">
+                            <option value="">Semua Staf di Bawah Atasan Lama</option>
+                            <?php foreach ($unit_kerja_list as $uk): ?>
+                                <option value="<?= esc($uk['nama_unit']) ?>"><?= esc($uk['nama_unit']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-7">
+                            <label for="rotasiBulanEfektif" class="form-label ecc-filter-label">Mulai Efektif Bulan <span class="text-danger">*</span></label>
+                            <select name="bulan_efektif" id="rotasiBulanEfektif" class="form-select form-select-sm ecc-filter-control" required>
+                                <?php foreach ($bulanIndoModal as $idxBln => $nmBln): ?>
+                                    <option value="<?= $idxBln + 1 ?>" <?= ($curMonthModal === $idxBln + 1) ? 'selected' : '' ?>><?= esc($nmBln) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-5">
+                            <label for="rotasiTahunEfektif" class="form-label ecc-filter-label">Tahun <span class="text-danger">*</span></label>
+                            <input type="number" name="tahun_efektif" id="rotasiTahunEfektif" class="form-control form-control-sm num-tabular ecc-filter-control" value="<?= $curYearModal ?>" min="2020" max="2099" required>
+                        </div>
+                    </div>
+                    <div class="mb-1">
+                        <label for="rotasiKeterangan" class="form-label ecc-filter-label">Catatan / Nomor SK (Opsional)</label>
+                        <input type="text" name="keterangan" id="rotasiKeterangan" class="form-control form-control-sm ecc-filter-control" maxlength="200" placeholder="Contoh: Serah terima jabatan Katim per SK...">
+                    </div>
+                </div>
+                <div class="modal-footer border-top bg-light px-3 px-md-4 py-3 gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-tactile btn-modal-action rounded-pill fw-semibold shadow-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-tactile btn-modal-action rounded-pill fw-semibold shadow-sm" id="btnSubmitRotasi">
+                        Terapkan Rotasi
                     </button>
                 </div>
             </form>
@@ -799,25 +1032,25 @@
 <!-- MODAL RIWAYAT PENUGASAN & ATASAN LANGSUNG -->
 <div class="modal fade" id="modalRiwayatPenugasan" tabindex="-1" aria-labelledby="modalRiwayatPenugasanLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden" style="border-top: 4px solid var(--ecc-primary, #0d6efd) !important;">
+        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden modal-accent-primary">
             <div class="modal-header bg-light border-bottom px-3 px-md-4 py-3 d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center" style="gap: 12px;">
-                    <div class="bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0 shadow-xs" style="width: 40px; height: 40px; border-radius: 12px;">
-                        <i class="bi bi-clock-history fs-5"></i>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm modal-icon-box" aria-hidden="true">
+                        <i class="bi bi-clock-history fs-5" aria-hidden="true"></i>
                     </div>
                     <div>
-                        <h6 class="modal-title fw-bold text-dark mb-0" id="modalRiwayatPenugasanLabel" style="font-size: 1rem;">Riwayat Penugasan & Atasan Langsung</h6>
-                        <small class="text-secondary" style="font-size: 0.75rem;">
-                            <span id="riwayatModalUserName" class="fw-bold text-dark">-</span> 
-                            (<span id="riwayatModalUserNip" class="font-monospace">-</span>)
+                        <h2 class="h5 modal-title fw-bold text-dark mb-0 ecc-text-title" id="modalRiwayatPenugasanLabel">Riwayat Penugasan &amp; Atasan Langsung</h2>
+                        <small class="ecc-text-muted-aa ecc-text-xs">
+                            <span id="riwayatModalUserName" class="fw-bold text-dark">-</span>
+                            (<span id="riwayatModalUserNip" class="font-monospace num-tabular">-</span>)
                         </small>
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1 fw-bold d-inline-flex align-items-center gap-1 btn-tactile" id="btnToggleFormRiwayat" style="font-size: 0.78rem;">
-                        <i class="bi bi-plus-lg"></i> <span id="labelToggleForm">Tambah Periode</span>
+                    <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1 fw-bold d-inline-flex align-items-center gap-1 btn-tactile btn-modal-action" id="btnToggleFormRiwayat">
+                        <i class="bi bi-plus-lg" aria-hidden="true"></i> <span id="labelToggleForm">Tambah Periode</span>
                     </button>
-                    <button type="button" class="btn-close btn-tactile" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-tactile" data-bs-dismiss="modal" aria-label="Tutup"></button>
                 </div>
             </div>
 
@@ -825,24 +1058,22 @@
                 <!-- FORM CONTAINER (COLLAPSIBLE) -->
                 <div id="containerFormRiwayat" class="d-none mb-4 p-3 rounded-3 bg-light border">
                     <div class="d-flex align-items-center justify-content-between pb-2 mb-3 border-bottom">
-                        <span class="fw-bold text-dark small" id="formRiwayatTitle">
-                            <i class="bi bi-journal-plus text-primary me-1"></i> Form Periode Penugasan
-                        </span>
-                        <button type="button" class="btn-close small" id="btnCloseFormRiwayat" aria-label="Tutup form" style="font-size: 0.7rem;"></button>
+                        <span class="fw-bold text-dark ecc-text-sm" id="formRiwayatTitle">Form Periode Penugasan</span>
+                        <button type="button" class="btn-close" id="btnCloseFormRiwayat" aria-label="Tutup form"></button>
                     </div>
 
                     <form id="formRiwayatPenugasan" autocomplete="off">
                         <input type="hidden" name="id" id="inputRiwayatId" value="">
                         <input type="hidden" name="user_id" id="inputRiwayatUserId" value="">
                         
-                        <div class="row g-2.5">
+                        <div class="row g-3">
                             <div class="col-md-4">
-                                <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.72rem;">TAHUN <span class="text-danger">*</span></label>
-                                <input type="number" name="tahun" id="inputRiwayatTahun" class="form-control form-control-sm" min="2020" max="2099" value="<?= date('Y') ?>" required style="border-radius: 8px;">
+                                <label for="inputRiwayatTahun" class="form-label ecc-filter-label">Tahun <span class="text-danger">*</span></label>
+                                <input type="number" name="tahun" id="inputRiwayatTahun" class="form-control form-control-sm num-tabular ecc-filter-control" min="2020" max="2099" value="<?= date('Y') ?>" required>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.72rem;">BULAN MULAI <span class="text-danger">*</span></label>
-                                <select name="bulan_mulai" id="inputRiwayatBulanMulai" class="form-select form-select-sm" required style="border-radius: 8px;">
+                                <label for="inputRiwayatBulanMulai" class="form-label ecc-filter-label">Bulan Mulai <span class="text-danger">*</span></label>
+                                <select name="bulan_mulai" id="inputRiwayatBulanMulai" class="form-select form-select-sm ecc-filter-control" required>
                                     <?php 
                                     $bulanNames = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
                                     foreach ($bulanNames as $bNum => $bName): ?>
@@ -851,8 +1082,8 @@
                                 </select>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.72rem;">BULAN SELESAI <span class="text-danger">*</span></label>
-                                <select name="bulan_selesai" id="inputRiwayatBulanSelesai" class="form-select form-select-sm" required style="border-radius: 8px;">
+                                <label for="inputRiwayatBulanSelesai" class="form-label ecc-filter-label">Bulan Selesai <span class="text-danger">*</span></label>
+                                <select name="bulan_selesai" id="inputRiwayatBulanSelesai" class="form-select form-select-sm ecc-filter-control" required>
                                     <?php foreach ($bulanNames as $bNum => $bName): ?>
                                         <option value="<?= $bNum ?>" <?= $bNum === 12 ? 'selected' : '' ?>><?= $bName ?></option>
                                     <?php endforeach; ?>
@@ -860,9 +1091,9 @@
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.72rem;">UNIT KERJA <span class="text-danger">*</span></label>
-                                <select name="unit" id="inputRiwayatUnit" class="form-select form-select-sm" required style="border-radius: 8px;">
-                                    <option value="">-- Pilih Unit Kerja --</option>
+                                <label for="inputRiwayatUnit" class="form-label ecc-filter-label">Unit Kerja <span class="text-danger">*</span></label>
+                                <select name="unit" id="inputRiwayatUnit" class="form-select form-select-sm ecc-filter-control" required>
+                                    <option value="">Pilih Unit Kerja</option>
                                     <?php if (!empty($unit_kerja_list)): ?>
                                         <?php foreach ($unit_kerja_list as $uk): ?>
                                             <option value="<?= esc($uk['nama_unit']) ?>"><?= esc($uk['nama_unit']) ?></option>
@@ -871,14 +1102,14 @@
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.72rem;">JABATAN DINAS <span class="text-danger">*</span></label>
-                                <input type="text" name="jabatan" id="inputRiwayatJabatan" class="form-control form-control-sm" placeholder="Contoh: Kapokja Humas / Dosen" required maxlength="100" style="border-radius: 8px;">
+                                <label for="inputRiwayatJabatan" class="form-label ecc-filter-label">Jabatan Dinas <span class="text-danger">*</span></label>
+                                <input type="text" name="jabatan" id="inputRiwayatJabatan" class="form-control form-control-sm ecc-filter-control" placeholder="Contoh: Kapokja Humas / Dosen" required maxlength="100">
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.72rem;">ATASAN LANGSUNG <span class="text-danger">*</span></label>
-                                <select name="atasan_id" id="inputRiwayatAtasanId" class="form-select form-select-sm" required style="border-radius: 8px;">
-                                    <option value="">-- Pilih Atasan Langsung --</option>
+                                <label for="inputRiwayatAtasanId" class="form-label ecc-filter-label">Atasan Langsung <span class="text-danger">*</span></label>
+                                <select name="atasan_id" id="inputRiwayatAtasanId" class="form-select form-select-sm ecc-filter-control" required>
+                                    <option value="">Pilih Atasan Langsung</option>
                                     <?php if (!empty($potential_bosses)): ?>
                                         <?php foreach ($potential_bosses as $boss): ?>
                                             <option value="<?= $boss['id'] ?>"><?= esc($boss['nama_lengkap']) ?> - <?= esc($boss['jabatan'] ?? 'Pimpinan') ?></option>
@@ -887,9 +1118,9 @@
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.72rem;">ROLE AKUN <span class="text-muted fw-normal">(opsional)</span></label>
-                                <select name="role" id="inputRiwayatRole" class="form-select form-select-sm" style="border-radius: 8px;">
-                                    <option value="pegawai">Pegawai</option>
+                                <label for="inputRiwayatRole" class="form-label ecc-filter-label">Peran Akun <span class="ecc-text-muted-aa fw-normal">(opsional)</span></label>
+                                <select name="role" id="inputRiwayatRole" class="form-select form-select-sm ecc-filter-control">
+                                    <option value="pegawai">Staf</option>
                                     <option value="dosen">Dosen</option>
                                     <option value="katim">Katim</option>
                                     <option value="kapokja">Kapokja</option>
@@ -904,15 +1135,15 @@
                             </div>
 
                             <div class="col-12">
-                                <label class="form-label small fw-bold text-secondary mb-1" style="font-size: 0.72rem;">NO. SK / KETERANGAN PENUGASAN <span class="text-muted fw-normal">(opsional)</span></label>
-                                <input type="text" name="keterangan" id="inputRiwayatKeterangan" class="form-control form-control-sm" placeholder="Contoh: SK Direktur No. 04/2025 tentang Rotasi Jabatan" maxlength="255" style="border-radius: 8px;">
+                                <label for="inputRiwayatKeterangan" class="form-label ecc-filter-label">No. SK / Keterangan Penugasan <span class="ecc-text-muted-aa fw-normal">(opsional)</span></label>
+                                <input type="text" name="keterangan" id="inputRiwayatKeterangan" class="form-control form-control-sm ecc-filter-control" placeholder="Contoh: SK Direktur No. 04/2025 tentang Rotasi Jabatan" maxlength="255">
                             </div>
                         </div>
 
                         <div class="d-flex justify-content-end gap-2 mt-3 pt-2 border-top">
-                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 btn-tactile" id="btnCancelFormRiwayat" style="font-size: 0.78rem;">Batal</button>
-                            <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3.5 py-1 fw-bold btn-tactile d-inline-flex align-items-center gap-1" id="btnSaveRiwayat" style="font-size: 0.78rem;">
-                                <i class="bi bi-check-lg"></i> <span id="labelSaveRiwayat">Simpan Penugasan</span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill btn-tactile btn-modal-action" id="btnCancelFormRiwayat">Batal</button>
+                            <button type="submit" class="btn btn-sm btn-primary rounded-pill fw-bold btn-tactile btn-modal-action d-inline-flex align-items-center gap-1" id="btnSaveRiwayat">
+                                <i class="bi bi-check-lg" aria-hidden="true"></i> <span id="labelSaveRiwayat">Simpan Penugasan</span>
                             </button>
                         </div>
                     </form>
@@ -920,26 +1151,28 @@
 
                 <!-- LOADING SPINNER -->
                 <div id="loadingRiwayatList" class="text-center py-4 d-none">
-                    <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
-                    <div class="text-muted small" style="font-size: 0.75rem;">Memuat riwayat penugasan...</div>
+                    <div class="spinner-border spinner-border-sm text-primary mb-2" role="status">
+                        <span class="visually-hidden">Memuat...</span>
+                    </div>
+                    <div class="ecc-text-muted-aa ecc-text-xs">Memuat riwayat penugasan...</div>
                 </div>
 
                 <!-- DAFTAR RIWAYAT CONTAINER -->
                 <div id="contentRiwayatList">
                     <div class="table-responsive rounded-3 border">
-                        <table class="table table-hover align-middle mb-0" style="font-size: 0.8125rem;">
-                            <thead class="table-light">
+                        <table class="table table-hover align-middle mb-0 table-bento">
+                            <thead>
                                 <tr>
-                                    <th style="min-width: 140px;">Periode Dinas</th>
-                                    <th>Jabatan & Unit Kerja</th>
-                                    <th>Atasan Langsung</th>
-                                    <th class="text-center" style="width: 110px;">Status</th>
-                                    <th class="text-center" style="width: 70px;">Aksi</th>
+                                    <th scope="col" style="min-width: 144px;">Periode Dinas</th>
+                                    <th scope="col">Jabatan &amp; Unit Kerja</th>
+                                    <th scope="col">Atasan Langsung</th>
+                                    <th scope="col" class="text-center" style="width: 112px;">Status</th>
+                                    <th scope="col" class="text-center" style="width: 80px;">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="tbodyRiwayatList">
                                 <tr>
-                                    <td colspan="5" class="text-center py-4 text-muted">Belum ada riwayat penugasan tercatat.</td>
+                                    <td colspan="5" class="text-center py-4 ecc-text-muted-aa">Belum ada riwayat penugasan tercatat.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -947,8 +1180,8 @@
                 </div>
             </div>
 
-            <div class="modal-footer border-top bg-light px-3 px-md-4 py-2.5">
-                <button type="button" class="btn btn-outline-secondary btn-tactile rounded-pill px-3.5 py-1.5 fw-semibold shadow-xs" data-bs-dismiss="modal" style="height: 36px; font-size: 0.8125rem;">Tutup</button>
+            <div class="modal-footer border-top bg-light px-3 px-md-4 py-3">
+                <button type="button" class="btn btn-outline-secondary btn-tactile btn-modal-action rounded-pill fw-semibold shadow-sm" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
@@ -956,17 +1189,57 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="<?= base_url('assets/vendor/jquery/jquery.min.js') ?>"></script>
+<script src="<?= base_url('assets/vendor/select2/select2.min.js') ?>"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    function showAlertMessage(title, text, icon) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: title,
+                text: text,
+                icon: icon || 'error',
+                confirmButtonColor: '#0d6efd',
+                customClass: { popup: 'rounded-4' }
+            });
+        } else {
+            alert(text || title);
+        }
+    }
+
+    // Passive wheel blur guard pada input tahun modal
+    ['batchTahunEfektif', 'rotasiTahunEfektif', 'inputRiwayatTahun'].forEach(function(inputId) {
+        const el = document.getElementById(inputId);
+        if (el) {
+            el.addEventListener('wheel', function() {
+                this.blur();
+            }, { passive: true });
+        }
+    });
+
+    // Focus restoration saat modal ditutup
+    ['importModal', 'batchEditModal', 'modalRotasiAtasan', 'modalRiwayatPenugasan'].forEach(function(modalId) {
+        const mEl = document.getElementById(modalId);
+        if (!mEl) return;
+        let triggerRef = null;
+        mEl.addEventListener('show.bs.modal', function(e) {
+            triggerRef = e.relatedTarget || mEl._eccTriggerEl || document.activeElement;
+        });
+        mEl.addEventListener('hidden.bs.modal', function() {
+            const target = mEl._eccTriggerEl || triggerRef;
+            mEl._eccTriggerEl = null;
+            if (target && document.body.contains(target) && typeof target.focus === 'function') {
+                target.focus();
+            }
+        });
+    });
+
     // Double submit handling untuk modal
     $('#formImportUsers').on('submit', function() {
-        $('#btnSubmitImport').html('<span class="spinner-border spinner-border-sm me-1" role="status"></span> Mengimpor...').prop('disabled', true);
+        $('#btnSubmitImport').html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Mengimpor...').prop('disabled', true);
     });
     $('#formBatchUpdate').on('submit', function() {
-        $('#btnSubmitBatch').html('<span class="spinner-border spinner-border-sm me-1" role="status"></span> Menyimpan...').prop('disabled', true);
+        $('#btnSubmitBatch').html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Menyimpan...').prop('disabled', true);
     });
 
     // Handling Konfirmasi Hapus Pengguna (SweetAlert2 & POST Form)
@@ -978,11 +1251,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 title: 'Hapus Pengguna?',
-                html: `Akun <b>${userName}</b> beserta data kinerjanya akan dihapus.`,
+                html: `Akun <b>${escapeHtml(userName)}</b> beserta data kinerjanya akan dihapus.`,
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#dc3545',
-                cancelButtonColor: '#6c757d',
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#475569',
                 confirmButtonText: 'Ya, Hapus',
                 cancelButtonText: 'Batal',
                 reverseButtons: true,
@@ -1013,52 +1286,105 @@ document.addEventListener('DOMContentLoaded', function() {
     const batchUserIdsInput = document.getElementById('batchUserIds');
     const batchEditCountSpan = document.getElementById('batchEditCount');
 
-    // Event Delegation untuk Checkbox
+    function getUniqueSelectedUserIds() {
+        const checkedBoxes = document.querySelectorAll('#dataTable .user-checkbox:checked, .mobile-cards-view .user-checkbox:checked');
+        return Array.from(new Set(Array.from(checkedBoxes).map(cb => cb.value).filter(Boolean)));
+    }
+
+    function updateSelectAllState() {
+        if (!selectAllCheckbox) return;
+        const desktopBoxes = document.querySelectorAll('#dataTable .user-checkbox');
+        if (desktopBoxes.length === 0) {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = false;
+            return;
+        }
+        const checkedCount = document.querySelectorAll('#dataTable .user-checkbox:checked').length;
+        selectAllCheckbox.checked = (checkedCount === desktopBoxes.length);
+        selectAllCheckbox.indeterminate = (checkedCount > 0 && checkedCount < desktopBoxes.length);
+    }
+
+    // Sinkronisasi checkbox desktop <-> mobile berdasarkan user ID agar tidak pernah duplikat
+    $(document).on('change', '.user-checkbox', function() {
+        const uid = this.value;
+        const isChecked = this.checked;
+        document.querySelectorAll('.user-checkbox').forEach(cb => {
+            if (cb.value === uid && cb !== this) {
+                cb.checked = isChecked;
+            }
+        });
+        updateSelectAllState();
+    });
+
     if (selectAllCheckbox) {
         selectAllCheckbox.addEventListener('change', function() {
+            const isChecked = this.checked;
             document.querySelectorAll('.user-checkbox').forEach(checkbox => {
-                checkbox.checked = this.checked;
+                checkbox.checked = isChecked;
             });
+            selectAllCheckbox.indeterminate = false;
         });
     }
 
     // Fungsi untuk tombol batch edit
     if (batchEditBtn) {
         batchEditBtn.addEventListener('click', function() {
-            const selectedIds = Array.from(document.querySelectorAll('.user-checkbox'))
-                                     .filter(checkbox => checkbox.checked)
-                                     .map(checkbox => checkbox.value);
+            const selectedIds = getUniqueSelectedUserIds();
 
             if (selectedIds.length === 0) {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        title: 'Peringatan',
-                        text: 'Silakan pilih minimal satu pengguna untuk diedit.',
-                        icon: 'warning',
-                        confirmButtonColor: '#0d6efd'
-                    });
-                } else {
-                    alert('Peringatan: Silakan pilih minimal satu pengguna untuk diedit.');
-                }
+                showAlertMessage('Peringatan', 'Pilih minimal satu pengguna terlebih dahulu.', 'warning');
                 return;
             }
 
             batchUserIdsInput.value = selectedIds.join(',');
             batchEditCountSpan.textContent = selectedIds.length;
+            if (batchEditModalEl) batchEditModalEl._eccTriggerEl = this;
             batchEditModal.show();
         });
     }
 
-    // --- EVENT DELEGATION UNTUK AJAX UNIT KERJA UPDATE ---
-    $(document).on('change', '.unit-kerja-select', function(e) {
-        const select = this;
-        const userId = select.dataset.userId;
-        const newUnit = select.value;
-        const statusDiv = select.parentElement.querySelector('.update-status');
+    // --- TOGGLE PERIODE EFEKTIF DI MODAL BATCH EDIT & VALIDASI ROTASI ATASAN ---
+    $(document).on('change', '.batch-mode-radio', function() {
+        const isMutasi = $('input[name="mode_perubahan"]:checked').val() === 'mutasi';
+        $('#batchPeriodeWrapper').toggle(isMutasi);
+    });
 
+    $('#formRotasiAtasan').on('submit', function(e) {
+        const lama = $('#rotasiAtasanLama').val();
+        const baru = $('#rotasiAtasanBaru').val();
+        if (!lama || !baru || lama === baru) {
+            e.preventDefault();
+            const msg = (!lama || !baru)
+                ? 'Pilih atasan lama dan atasan baru terlebih dahulu.'
+                : 'Atasan baru tidak boleh sama dengan atasan lama.';
+            showAlertMessage('Periksa Pilihan', msg, 'warning');
+            return false;
+        }
+        $('#btnSubmitRotasi').text('Memproses...').prop('disabled', true);
+    });
+
+    // Simpan nilai awal setiap dropdown unit agar dapat dikembalikan jika dibatalkan
+    document.querySelectorAll('.unit-kerja-select').forEach(function(sel) {
+        sel.dataset.prevUnit = sel.value;
+    });
+
+    const bulanIndoNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    let suppressUnitSelectEvent = false;
+
+    function revertUnitSelect(selectEl, prevVal) {
+        suppressUnitSelectEvent = true;
+        selectEl.value = prevVal;
+        if (typeof jQuery !== 'undefined' && jQuery.fn.select2 && jQuery(selectEl).hasClass('select2-hidden-accessible')) {
+            jQuery(selectEl).trigger('change.select2');
+        }
+        suppressUnitSelectEvent = false;
+    }
+
+    function sendAjaxUnitUpdate(select, userId, newUnit, prevUnit, modePerubahan, bulanEfektif, tahunEfektif) {
+        const statusDiv = select.parentElement.querySelector('.update-status');
         if (statusDiv) {
-            statusDiv.innerHTML = '<i class="bi bi-arrow-repeat spin-icon"></i> Menyimpan...';
-            statusDiv.className = 'update-status small mt-1 text-muted';
+            statusDiv.innerHTML = '<i class="bi bi-arrow-repeat spin-icon" aria-hidden="true"></i> Menyimpan...';
+            statusDiv.className = 'update-status ecc-text-xs mt-1 ecc-text-muted-aa';
         }
 
         const csrfTokenName = '<?= csrf_token() ?>';
@@ -1068,6 +1394,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData();
         formData.append('user_id', userId);
         formData.append('unit', newUnit);
+        formData.append('mode_perubahan', modePerubahan);
+        formData.append('bulan_efektif', String(bulanEfektif));
+        formData.append('tahun_efektif', String(tahunEfektif));
         formData.append(csrfTokenName, csrfHash);
 
         fetch('<?= site_url('users/ajax_update_unit') ?>', {
@@ -1085,39 +1414,141 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
 
+            if (data.success) {
+                if (data.should_sync_profile === false) {
+                    revertUnitSelect(select, prevUnit);
+                } else {
+                    select.dataset.prevUnit = newUnit;
+                }
+            } else {
+                revertUnitSelect(select, prevUnit);
+            }
+
             if (statusDiv) {
                 if (data.success) {
-                    statusDiv.innerHTML = '<i class="bi bi-check-circle-fill"></i> Tersimpan';
-                    statusDiv.className = 'update-status small mt-1 text-success fw-medium';
+                    const labelMsg = data.should_sync_profile === false
+                        ? 'Terjadwal (' + escapeHtml(bulanIndoNames[bulanEfektif - 1] || '') + ')'
+                        : 'Tersimpan';
+                    statusDiv.innerHTML = '<i class="bi bi-check-circle-fill" aria-hidden="true"></i> ' + labelMsg;
+                    statusDiv.className = 'update-status ecc-text-xs mt-1 text-success fw-medium';
                 } else {
-                    statusDiv.innerHTML = '<i class="bi bi-x-circle-fill"></i> Gagal';
-                    statusDiv.className = 'update-status small mt-1 text-danger';
+                    statusDiv.innerHTML = '<i class="bi bi-x-circle-fill" aria-hidden="true"></i> Gagal';
+                    statusDiv.className = 'update-status ecc-text-xs mt-1 text-danger';
                 }
-                setTimeout(() => { statusDiv.innerHTML = ''; }, 3000);
+                setTimeout(() => { statusDiv.replaceChildren(); }, 3500);
             }
         })
         .catch(error => {
             console.error('Error:', error);
+            revertUnitSelect(select, prevUnit);
             if (statusDiv) {
-                statusDiv.innerHTML = '<i class="bi bi-x-circle-fill"></i> Error!';
-                statusDiv.className = 'update-status small mt-1 text-danger';
-                setTimeout(() => { statusDiv.innerHTML = ''; }, 3000);
+                statusDiv.innerHTML = '<i class="bi bi-x-circle-fill" aria-hidden="true"></i> Gagal';
+                statusDiv.className = 'update-status ecc-text-xs mt-1 text-danger';
+                setTimeout(() => { statusDiv.replaceChildren(); }, 3000);
             }
         });
+    }
+
+    // --- EVENT DELEGATION UNTUK AJAX UNIT KERJA UPDATE (DENGAN PROTEKSI RIWAYAT) ---
+    $(document).on('change', '.unit-kerja-select', function() {
+        if (suppressUnitSelectEvent) return;
+        const select = this;
+        const userId = select.dataset.userId;
+        const newUnit = select.value;
+        const prevUnit = select.dataset.prevUnit ?? '';
+        if (newUnit === prevUnit) return;
+
+        const now = new Date();
+        const curMonth = now.getMonth() + 1;
+        const curYear = now.getFullYear();
+
+        if (typeof Swal !== 'undefined') {
+            const monthOptions = bulanIndoNames.map(function(nm, idx) {
+                const mVal = idx + 1;
+                return '<option value="' + mVal + '"' + (mVal === curMonth ? ' selected' : '') + '>' + nm + '</option>';
+            }).join('');
+
+            Swal.fire({
+                title: 'Pindahkan Unit Kerja?',
+                html: `
+                    <p class="small text-muted mb-3">Pilih cara pencatatan agar nilai kinerja di unit lama tetap terjaga.</p>
+                    <div class="text-start small">
+                        <label class="d-flex align-items-start gap-2 p-2 bg-light border rounded-3 mb-2" style="cursor:pointer;">
+                            <input type="radio" name="swalUnitMode" value="mutasi" class="form-check-input mt-1" checked>
+                            <span><strong class="d-block text-dark">Mutasi Baru (Simpan Riwayat Unit Lama)</strong><span class="text-muted">Penilaian bulan sebelumnya tetap tinggal di unit lama.</span></span>
+                        </label>
+                        <div class="row g-2 mb-3" id="swalUnitPeriodeRow">
+                            <div class="col-7">
+                                <label for="swalUnitBulan" class="form-label fw-bold text-secondary mb-1 ecc-text-xs">Mulai Efektif Bulan</label>
+                                <select id="swalUnitBulan" class="form-select form-select-sm">${monthOptions}</select>
+                            </div>
+                            <div class="col-5">
+                                <label for="swalUnitTahun" class="form-label fw-bold text-secondary mb-1 ecc-text-xs">Tahun</label>
+                                <input type="number" id="swalUnitTahun" class="form-control form-control-sm num-tabular" value="${curYear}" min="2020" max="2099">
+                            </div>
+                        </div>
+                        <label class="d-flex align-items-start gap-2 p-2 bg-white border rounded-3 mb-0" style="cursor:pointer;">
+                            <input type="radio" name="swalUnitMode" value="koreksi" class="form-check-input mt-1">
+                            <span><strong class="d-block text-dark">Koreksi Salah Input</strong><span class="text-muted">Timpa unit profil tanpa membuat riwayat mutasi.</span></span>
+                        </label>
+                    </div>
+                `,
+                showCancelButton: true,
+                reverseButtons: true,
+                confirmButtonText: 'Simpan',
+                cancelButtonText: 'Batal',
+                didOpen: function() {
+                    const radios = document.querySelectorAll('input[name="swalUnitMode"]');
+                    const row = document.getElementById('swalUnitPeriodeRow');
+                    radios.forEach(function(r) {
+                        r.addEventListener('change', function() {
+                            const checked = document.querySelector('input[name="swalUnitMode"]:checked');
+                            if (row) row.style.display = (checked && checked.value === 'mutasi') ? '' : 'none';
+                        });
+                    });
+                },
+                preConfirm: function() {
+                    const checked = document.querySelector('input[name="swalUnitMode"]:checked');
+                    const mode = checked ? checked.value : 'mutasi';
+                    const bln = parseInt((document.getElementById('swalUnitBulan') || {}).value, 10) || curMonth;
+                    const thn = parseInt((document.getElementById('swalUnitTahun') || {}).value, 10) || curYear;
+                    return { mode, bln, thn };
+                }
+            }).then(function(result) {
+                if (result.isConfirmed && result.value) {
+                    sendAjaxUnitUpdate(select, userId, newUnit, prevUnit, result.value.mode, result.value.bln, result.value.thn);
+                } else {
+                    revertUnitSelect(select, prevUnit);
+                }
+            });
+        } else if (confirm('Pindahkan unit kerja pegawai ini mulai bulan ' + bulanIndoNames[curMonth - 1] + ' ' + curYear + '?')) {
+            sendAjaxUnitUpdate(select, userId, newUnit, prevUnit, 'mutasi', curMonth, curYear);
+        } else {
+            revertUnitSelect(select, prevUnit);
+        }
     });
 
-    // Inisialisasi Select2 untuk dropdown unit kerja
-    if (typeof jQuery !== 'undefined' && $.fn.select2) {
-        $('.unit-kerja-select').select2({
-            theme: 'bootstrap-5',
-            width: '100%',
-            placeholder: '-- Pilih --'
+    // Inisialisasi Select2 bertahap (hanya baris terlihat) untuk mempercepat muat awal
+    function initUnitSelect2($selects) {
+        if (typeof jQuery === 'undefined' || !$.fn.select2 || !$selects || !$selects.length) return;
+        $selects.each(function() {
+            const $el = $(this);
+            if ($el.hasClass('select2-hidden-accessible')) return;
+            $el.select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Pilih Unit Kerja'
+            });
         });
+    }
+
+    if (typeof jQuery !== 'undefined' && $.fn.select2) {
+        initUnitSelect2($('tr.user-row-visible .unit-kerja-select'));
 
         $(document).on('select2:open', () => {
             setTimeout(() => {
                 const searchField = document.querySelector('.select2-search__field');
-                if(searchField) searchField.focus();
+                if (searchField) searchField.focus();
             }, 50);
         });
     }
@@ -1155,19 +1586,24 @@ document.addEventListener('DOMContentLoaded', function() {
         isLoading = true;
         setTimeout(() => {
             const limit = 10;
+            const revealedRows = [];
             for (let i = 0; i < limit; i++) {
                 if (hiddenRows[i]) {
                     hiddenRows[i].classList.remove('d-none', 'user-row-hidden');
                     hiddenRows[i].classList.add('user-row-visible');
+                    revealedRows.push(hiddenRows[i]);
                 }
                 if (hiddenCards[i]) {
                     hiddenCards[i].classList.remove('d-none', 'user-card-hidden');
                     hiddenCards[i].classList.add('user-card-visible');
                 }
             }
+            if (revealedRows.length > 0 && typeof jQuery !== 'undefined') {
+                initUnitSelect2($(revealedRows).find('.unit-kerja-select'));
+            }
             isLoading = false;
             checkRemainingRows();
-        }, 300);
+        }, 250);
     }
 
     // =========================================================================
@@ -1211,11 +1647,18 @@ document.addEventListener('DOMContentLoaded', function() {
         // Sembunyikan form dulu saat modal pertama dibuka
         hideFormRiwayat();
 
+        if (modalRiwayatEl) modalRiwayatEl._eccTriggerEl = this;
         if (modalRiwayat) {
             modalRiwayat.show();
         }
 
         loadRiwayatData(userId);
+    });
+
+    $(document).on('click', '.btn-retry-riwayat', function() {
+        if (currentRiwayatUserId) {
+            loadRiwayatData(currentRiwayatUserId);
+        }
     });
 
     // Toggle Tampilkan / Sembunyikan Form
@@ -1236,10 +1679,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function showFormRiwayat(isEdit = false) {
         containerFormRiwayat.classList.remove('d-none');
         if (isEdit) {
-            $('#formRiwayatTitle').html('<i class="bi bi-pencil-square text-warning me-1"></i> Edit Periode Penugasan');
+            $('#formRiwayatTitle').text('Edit Periode Penugasan');
             $('#labelSaveRiwayat').text('Perbarui Penugasan');
         } else {
-            $('#formRiwayatTitle').html('<i class="bi bi-journal-plus text-primary me-1"></i> Form Periode Penugasan');
+            $('#formRiwayatTitle').text('Form Periode Penugasan');
             $('#labelSaveRiwayat').text('Simpan Penugasan');
         }
         if (labelToggleForm) labelToggleForm.textContent = 'Tutup Form';
@@ -1283,7 +1726,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error load riwayat:', err);
             loadingRiwayat.classList.add('d-none');
             contentRiwayat.classList.remove('d-none');
-            tbodyRiwayat.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-danger">Gagal memuat riwayat penugasan.</td></tr>';
+            tbodyRiwayat.innerHTML = '<tr><td colspan="5" class="text-center py-4"><div class="text-danger mb-2 ecc-text-sm">Gagal memuat riwayat penugasan.</div><button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 btn-tactile btn-modal-action btn-retry-riwayat">Coba Lagi</button></td></tr>';
         });
     }
 
@@ -1296,14 +1739,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderRiwayatTable(list) {
         if (!list || list.length === 0) {
-            tbodyRiwayat.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted"><i class="bi bi-info-circle me-1"></i>Belum ada riwayat penugasan tercatat. Klik "Tambah Periode" untuk menetapkan penugasan resmi.</td></tr>';
+            tbodyRiwayat.innerHTML = '<tr><td colspan="5" class="text-center py-4 ecc-text-muted-aa">Belum ada riwayat penugasan tercatat. Pilih "Tambah Periode" untuk menambahkan.</td></tr>';
             return;
         }
 
         const namaBulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
         const curDate = new Date();
         const curYear = curDate.getFullYear();
-        const curMonth = curDate.getMonth() + 1; // 1-12
+        const curMonth = curDate.getMonth() + 1;
         let html = '';
 
         list.forEach(item => {
@@ -1311,35 +1754,33 @@ document.addEventListener('DOMContentLoaded', function() {
             const blnMulai = parseInt(item.bulan_mulai) || 1;
             const blnSelesai = parseInt(item.bulan_selesai) || 12;
 
-            // Tentukan status badge
             let statusBadge = '';
             if (tahun === curYear && blnMulai <= curMonth && blnSelesai >= curMonth) {
-                statusBadge = '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 fw-semibold small">Aktif</span>';
+                statusBadge = '<span class="badge bg-success-subtle text-success-emphasis border border-success-subtle rounded-pill px-2 py-1 fw-semibold ecc-text-xs">Aktif</span>';
             } else if (tahun < curYear || (tahun === curYear && blnSelesai < curMonth)) {
-                statusBadge = '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2.5 py-1 small">Lampau</span>';
+                statusBadge = '<span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle rounded-pill px-2 py-1 ecc-text-xs">Lampau</span>';
             } else {
-                statusBadge = '<span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-2.5 py-1 fw-semibold small">Mendatang</span>';
+                statusBadge = '<span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-2 py-1 fw-semibold ecc-text-xs">Mendatang</span>';
             }
 
             const periodeStr = (blnMulai === blnSelesai)
                 ? (namaBulan[blnMulai] || blnMulai) + ' ' + tahun
                 : (namaBulan[blnMulai] || blnMulai) + ' &mdash; ' + (namaBulan[blnSelesai] || blnSelesai) + ' ' + tahun;
 
-            const namaAtasan = item.nama_atasan ? escapeHtml(item.nama_atasan) : 'ID #' + item.atasan_id;
-            const jabatanAtasan = item.jabatan_atasan ? '<small class="d-block text-muted" style="font-size:0.71rem;">' + escapeHtml(item.jabatan_atasan) + '</small>' : '';
-            const ketSk = item.keterangan ? '<div class="text-muted small mt-0.5" style="font-size:0.7rem;"><i class="bi bi-file-text me-1"></i>' + escapeHtml(item.keterangan) + '</div>' : '';
+            const namaAtasan = item.nama_atasan ? escapeHtml(item.nama_atasan) : '-';
+            const jabatanAtasan = item.jabatan_atasan ? '<small class="d-block ecc-text-muted-aa ecc-text-xs">' + escapeHtml(item.jabatan_atasan) + '</small>' : '';
+            const ketSk = item.keterangan ? '<div class="ecc-text-muted-aa ecc-text-xs mt-1"><i class="bi bi-file-text me-1" aria-hidden="true"></i>' + escapeHtml(item.keterangan) + '</div>' : '';
 
-            // Item encoded for edit button
             const itemAttr = escapeHtml(JSON.stringify(item));
 
             html += `<tr>
-                <td class="num-tabular font-monospace small">
+                <td class="num-tabular font-monospace ecc-text-xs">
                     <span class="fw-semibold text-dark">${periodeStr}</span>
                     ${ketSk}
                 </td>
                 <td>
                     <strong class="text-dark d-block lh-sm">${escapeHtml(item.jabatan) || '-'}</strong>
-                    <span class="text-secondary small">${escapeHtml(item.unit) || '-'}</span>
+                    <span class="ecc-text-muted-aa ecc-text-xs">${escapeHtml(item.unit) || '-'}</span>
                 </td>
                 <td>
                     <span class="fw-semibold text-dark d-block lh-sm">${namaAtasan}</span>
@@ -1348,11 +1789,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td class="text-center">${statusBadge}</td>
                 <td class="text-center">
                     <div class="d-inline-flex align-items-center gap-1">
-                        <button type="button" class="btn btn-outline-warning btn-sm rounded-circle d-inline-flex align-items-center justify-content-center p-0 btn-edit-riwayat" style="width: 28px; height: 28px;" data-item='${itemAttr}' title="Edit Penugasan">
-                            <i class="bi bi-pencil" style="font-size: 0.7rem;"></i>
+                        <button type="button" class="btn btn-outline-warning btn-tactile btn-icon-action rounded-circle d-inline-flex align-items-center justify-content-center btn-edit-riwayat" data-item='${itemAttr}' title="Edit Penugasan" aria-label="Edit riwayat ${escapeHtml(periodeStr.replace('&mdash;', '-'))}">
+                            <i class="bi bi-pencil" aria-hidden="true"></i>
                         </button>
-                        <button type="button" class="btn btn-outline-danger btn-sm rounded-circle d-inline-flex align-items-center justify-content-center p-0 btn-delete-riwayat" style="width: 28px; height: 28px;" data-id="${item.id}" title="Hapus Riwayat">
-                            <i class="bi bi-trash" style="font-size: 0.7rem;"></i>
+                        <button type="button" class="btn btn-outline-danger btn-tactile btn-icon-action rounded-circle d-inline-flex align-items-center justify-content-center btn-delete-riwayat" data-id="${escapeHtml(item.id)}" title="Hapus Riwayat" aria-label="Hapus riwayat ${escapeHtml(periodeStr.replace('&mdash;', '-'))}">
+                            <i class="bi bi-trash" aria-hidden="true"></i>
                         </button>
                     </div>
                 </td>
@@ -1390,15 +1831,15 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             const btnSave = document.getElementById('btnSaveRiwayat');
             btnSave.disabled = true;
-            btnSave.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Menyimpan...';
+            btnSave.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Menyimpan...';
 
             const csrfTokenName = '<?= csrf_token() ?>';
             const csrfInput = document.querySelector('input[name="' + csrfTokenName + '"]');
             const csrfHash = csrfInput ? csrfInput.value : '';
 
             const formData = new FormData(formRiwayat);
-            formData.append('user_id', currentRiwayatUserId);
-            formData.append(csrfTokenName, csrfHash);
+            formData.set('user_id', currentRiwayatUserId);
+            formData.set(csrfTokenName, csrfHash);
 
             fetch('<?= site_url('users/riwayat-penugasan/store') ?>', {
                 method: 'POST',
@@ -1408,7 +1849,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(res => res.json())
             .then(res => {
                 btnSave.disabled = false;
-                btnSave.innerHTML = '<i class="bi bi-check-lg me-1"></i> Simpan Penugasan';
+                btnSave.innerHTML = '<i class="bi bi-check-lg" aria-hidden="true"></i> <span id="labelSaveRiwayat">Simpan Penugasan</span>';
 
                 if (res.csrf_hash) {
                     updateCsrfTokens(res.csrf_hash);
@@ -1428,24 +1869,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                     }
                 } else {
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({
-                            title: 'Gagal Menyimpan',
-                            text: res.message || 'Periksa kembali data penugasan.',
-                            icon: 'error',
-                            confirmButtonColor: '#0d6efd',
-                            customClass: { popup: 'rounded-4' }
-                        });
-                    } else {
-                        alert(res.message || 'Gagal menyimpan riwayat penugasan.');
-                    }
+                    showAlertMessage('Gagal Menyimpan', res.message || 'Periksa kembali data penugasan.', 'error');
                 }
             })
             .catch(err => {
                 console.error('Error simpan riwayat:', err);
                 btnSave.disabled = false;
-                btnSave.innerHTML = '<i class="bi bi-check-lg me-1"></i> Simpan Penugasan';
-                alert('Gagal menyimpan riwayat penugasan. Silakan coba lagi.');
+                btnSave.innerHTML = '<i class="bi bi-check-lg" aria-hidden="true"></i> <span id="labelSaveRiwayat">Simpan Penugasan</span>';
+                showAlertMessage('Gagal Menyimpan', 'Gagal menyimpan riwayat penugasan. Silakan coba lagi.', 'error');
             });
         });
     }
@@ -1488,12 +1919,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                     }
                 } else {
-                    alert(res.message || 'Gagal menghapus riwayat penugasan.');
+                    showAlertMessage('Gagal Menghapus', res.message || 'Gagal menghapus riwayat penugasan.', 'error');
                 }
             })
             .catch(err => {
                 console.error('Error delete riwayat:', err);
-                alert('Gagal menghapus riwayat penugasan.');
+                showAlertMessage('Gagal Menghapus', 'Gagal menghapus riwayat penugasan. Silakan coba lagi.', 'error');
             });
         };
 
@@ -1503,8 +1934,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 text: 'Riwayat penugasan ini akan dihapus.',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#dc3545',
-                cancelButtonColor: '#6c757d',
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#475569',
                 confirmButtonText: 'Ya, Hapus',
                 cancelButtonText: 'Batal',
                 reverseButtons: true,

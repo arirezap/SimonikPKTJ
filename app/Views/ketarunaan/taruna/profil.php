@@ -182,7 +182,7 @@
             <div class="d-flex align-items-center gap-3">
                 <div class="avatar-profil-lg">
                     <?php if ($fotoPath): ?>
-                        <img src="<?= esc($fotoPath) ?>" alt="Foto <?= esc($taruna['nama_lengkap']) ?>" style="width: 100%; height: 100%; object-fit: cover;">
+                        <img src="<?= esc($fotoPath) ?>" alt="Foto <?= esc($taruna['nama_lengkap']) ?>" width="64" height="64" decoding="async" style="width: 100%; height: 100%; object-fit: cover;">
                     <?php else: ?>
                         <i class="bi bi-person-fill"></i>
                     <?php endif; ?>
@@ -321,7 +321,7 @@
                                     <div class="foto-upload-box mb-3">
                                         <div id="fotoPreviewBox" data-initial-src="<?= esc($fotoPath ?? '') ?>" class="mx-auto mb-3 rounded-4 d-flex align-items-center justify-content-center overflow-hidden bg-white border" style="width: 120px; height: 144px;">
                                             <?php if ($fotoPath): ?>
-                                                <img id="previewFotoTaruna" src="<?= esc($fotoPath) ?>" alt="Foto Taruna" style="width: 100%; height: 100%; object-fit: cover;">
+                                                <img id="previewFotoTaruna" src="<?= esc($fotoPath) ?>" alt="Foto Taruna" width="120" height="144" loading="lazy" decoding="async" style="width: 100%; height: 100%; object-fit: cover;">
                                             <?php else: ?>
                                                 <i id="iconPlaceholderFoto" class="bi bi-person-bounding-box text-secondary fs-1"></i>
                                             <?php endif; ?>
@@ -356,7 +356,7 @@
                                                 <a href="<?= esc($pendingFotoUrl) ?>" target="_blank" rel="noopener noreferrer" class="small fw-semibold text-decoration-none" style="color: #1e40af;">Lihat Foto</a>
                                             </div>
                                             <div class="d-flex align-items-center gap-2">
-                                                <img src="<?= esc($pendingFotoUrl) ?>" alt="Foto pengajuan baru" class="rounded-3 border flex-shrink-0" style="width: 48px; height: 56px; object-fit: cover;">
+                                                <img src="<?= esc($pendingFotoUrl) ?>" alt="Foto pengajuan baru" class="rounded-3 border flex-shrink-0" width="48" height="56" loading="lazy" decoding="async" style="width: 48px; height: 56px; object-fit: cover;">
                                                 <div class="small" style="color: #475569;">
                                                     <?= !empty($can_validate_foto) ? 'Taruna mengajukan pembaruan foto profil.' : 'Menunggu persetujuan petugas sebelum menggantikan foto resmi.' ?>
                                                 </div>
@@ -1077,7 +1077,7 @@
             const tkt = selTingkat.value;
             const aid = selAngkatan ? selAngkatan.value : '';
             const currentVal = selKelas.value;
-            selKelas.innerHTML = '';
+            selKelas.replaceChildren();
 
             const exactMatches = allOptions.filter(function (item) {
                 return item.value !== '' && item.prodiId === pid && item.tingkat === tkt && (!aid || item.angkatanId === aid);

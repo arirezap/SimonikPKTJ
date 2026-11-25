@@ -1,7 +1,7 @@
 <?= $this->extend('layouts/main') ?>
 
 <?= $this->section('content') ?>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha384-Yv5O+t3uE3hunW8uyrbpPW3iw6/5/Y7HitWJBLgqfMoA36NogMmy+8wWZMpn3HWc" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 
 
@@ -33,7 +33,7 @@
                 <div class="content-frame">
                     
                     <div class="header-layout">
-                        <img src="<?= base_url('assets/logo_kemenhub.png') ?>" alt="Kemenhub" class="header-logo" onerror="this.style.opacity='0'">
+                        <img src="<?= base_url('assets/logo_kemenhub.png') ?>" alt="Kemenhub" class="header-logo" width="60" height="60" decoding="async" onerror="this.style.opacity='0'">
                         
                         <div class="header-text">
                             <h3>KONTRAK KINERJA</h3>
@@ -44,7 +44,7 @@
                             <h3>TAHUN <?= esc($tahun) ?></h3>
                         </div>
 
-                        <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="PKTJ" class="header-logo">
+                        <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="PKTJ" class="header-logo" width="60" height="60" decoding="async">
                     </div>
 
                     <div class="doc-text-justify">

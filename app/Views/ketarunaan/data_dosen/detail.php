@@ -64,7 +64,7 @@ $initials     = strtoupper(substr(trim((string) ($dosen['nama_lengkap'] ?? 'D'))
             <div class="d-flex align-items-center gap-3">
                 <div class="dsn-avatar-lg">
                     <?php if ($fotoFile): ?>
-                        <img src="<?= esc($fotoFile) ?>" alt="<?= esc((string) $dosen['nama_lengkap']) ?>" style="width: 100%; height: 100%; object-fit: cover;">
+                        <img src="<?= esc($fotoFile) ?>" alt="<?= esc((string) $dosen['nama_lengkap']) ?>" width="64" height="64" decoding="async" style="width: 100%; height: 100%; object-fit: cover;">
                     <?php else: ?>
                         <?= esc($initials) ?>
                     <?php endif; ?>

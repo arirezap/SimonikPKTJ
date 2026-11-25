@@ -432,7 +432,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             function renderPagination(totalPages) {
                 if(!pageNumbersContainer) return;
-                pageNumbersContainer.innerHTML = "";
+                pageNumbersContainer.replaceChildren();
                 
                 if (totalPages <= 1) {
                     if(btnPrev) btnPrev.disabled = true;

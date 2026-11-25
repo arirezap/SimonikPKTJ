@@ -157,7 +157,6 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     // Live Search Standar
     document.getElementById('searchStandar').addEventListener('input', function() {

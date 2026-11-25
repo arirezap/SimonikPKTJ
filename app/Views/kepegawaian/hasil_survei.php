@@ -2304,7 +2304,7 @@ $exportQuery = http_build_query([
             if (!banner) return;
             if (!activeRespondenUnitFilter) {
                 banner.classList.add('d-none');
-                banner.innerHTML = '';
+                banner.replaceChildren();
                 return;
             }
             banner.classList.remove('d-none');
@@ -2351,7 +2351,7 @@ $exportQuery = http_build_query([
             if (!banner) return;
             if (!activeAsnBelumUnitFilter) {
                 banner.classList.add('d-none');
-                banner.innerHTML = '';
+                banner.replaceChildren();
                 return;
             }
             banner.classList.remove('d-none');
@@ -2420,7 +2420,7 @@ $exportQuery = http_build_query([
             const banner = document.getElementById('activeKeahlianFilterBanner');
             if (type === 'all') {
                 document.getElementById('cardKeahlianSemua')?.classList.add('is-active-filter');
-                if (banner) { banner.classList.add('d-none'); banner.innerHTML = ''; }
+                if (banner) { banner.classList.add('d-none'); banner.replaceChildren(); }
             } else if (type === 'product') {
                 document.getElementById('cardKeahlianProduk')?.classList.add('is-active-filter');
                 if (banner) {
@@ -2535,7 +2535,7 @@ $exportQuery = http_build_query([
             if (!banner) return;
             if (!labelType || !labelValue) {
                 banner.classList.add('d-none');
-                banner.innerHTML = '';
+                banner.replaceChildren();
                 return;
             }
             banner.classList.remove('d-none');
@@ -2553,7 +2553,7 @@ $exportQuery = http_build_query([
             if (!banner) return;
             if (!labelType || !labelValue) {
                 banner.classList.add('d-none');
-                banner.innerHTML = '';
+                banner.replaceChildren();
                 return;
             }
             banner.classList.remove('d-none');

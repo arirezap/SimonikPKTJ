@@ -82,7 +82,7 @@ $canDecideNow  = !empty($canValidate) && in_array($statusVal, ['diajukan', 'perl
         <div class="col-12 col-md-4 d-flex align-items-center gap-3">
             <div class="ecc-avatar-lg">
                 <?php if ($fotoUrl !== null): ?>
-                    <img src="<?= esc($fotoUrl) ?>" alt="Foto <?= esc($namaLengkap) ?>" style="width: 100%; height: 100%; object-fit: cover;">
+                    <img src="<?= esc($fotoUrl) ?>" alt="Foto <?= esc($namaLengkap) ?>" width="64" height="64" decoding="async" style="width: 100%; height: 100%; object-fit: cover;">
                 <?php else: ?>
                     <?= esc($inisial) ?>
                 <?php endif; ?>
@@ -221,7 +221,8 @@ $canDecideNow  = !empty($canValidate) && in_array($statusVal, ['diajukan', 'perl
                                  alt="Pratinjau <?= esc($namaBerkas) ?>"
                                  class="img-fluid rounded-2"
                                  style="max-height: 224px; object-fit: contain;"
-                                 loading="lazy">
+                                 loading="lazy"
+                                 decoding="async">
                         <?php else: ?>
                             <div class="text-secondary small">
                                 <i class="bi bi-file-earmark-pdf-fill text-danger d-block mb-2 fs-1" aria-hidden="true"></i>

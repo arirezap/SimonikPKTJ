@@ -3,6 +3,7 @@
 namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
+use App\Libraries\RiwayatPenugasanService;
 use App\Models\User;
 use App\Models\UnitKerja; // Tambahkan model UnitKerja
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -155,12 +156,27 @@ class UserController extends BaseController
         $data['sortBy'] = $sortBy;
         $data['sortOrder'] = $sortOrder;
 
-        // Ambil data pimpinan untuk dropdown atasan di modal batch edit (hanya role pimpinan & kolom selektif)
+        // Ambil data pimpinan untuk dropdown atasan di modal batch edit & rotasi atasan (hanya role pimpinan & kolom selektif)
         $bossRoles = ['direktur', 'wadir', 'manajemen', 'kabag', 'kabag_aak', 'kabag_kuk', 'kanit', 'katim', 'kapokja', 'kepegawaian'];
         $data['potential_bosses'] = $this->userModel->select('id, nama_lengkap, jabatan, role')
                                                     ->whereIn('role', $bossRoles)
                                                     ->orderBy('nama_lengkap', 'ASC')
                                                     ->findAll();
+
+        // Hitung jumlah staf aktif langsung per atasan untuk informasi pada modal Rotasi Atasan
+        $dbCount = \Config\Database::connect();
+        $stafCountRows = $dbCount->table('users')
+            ->select('atasan_id, COUNT(id) AS total_staf')
+            ->where('status_pegawai', 'aktif')
+            ->where('atasan_id >', 0)
+            ->groupBy('atasan_id')
+            ->get()
+            ->getResultArray();
+        $stafCountByAtasan = [];
+        foreach ($stafCountRows as $scRow) {
+            $stafCountByAtasan[(int) $scRow['atasan_id']] = (int) $scRow['total_staf'];
+        }
+        $data['staf_count_by_atasan'] = $stafCountByAtasan;
 
         $secondaryRolesMap = $this->fetchSecondaryRolesMap($data['users']);
 
@@ -511,15 +527,66 @@ class UserController extends BaseController
             $data['password'] = password_hash($password, PASSWORD_DEFAULT);
         }
 
+        $modePerubahan = strtolower(trim((string) ($this->request->getPost('mode_perubahan') ?: 'mutasi')));
+        $bulanEfektif  = max(1, min(12, (int) ($this->request->getPost('bulan_efektif') ?: date('n'))));
+        $tahunEfektif  = (int) ($this->request->getPost('tahun_efektif') ?: date('Y'));
+        if ($tahunEfektif < 2020 || $tahunEfektif > 2099) {
+            $tahunEfektif = (int) date('Y');
+        }
+        $catatanMutasi = trim((string) ($this->request->getPost('catatan_mutasi') ?? '')) ?: null;
+
+        $oldUnitNorm   = trim((string) ($existingUser['unit'] ?? ''));
+        $oldUnitIdNorm = !empty($existingUser['unit_id']) ? (int) $existingUser['unit_id'] : null;
+        $oldAtasanNorm = (int) ($existingUser['atasan_id'] ?? 0);
+        $newUnitNorm   = trim((string) ($data['unit'] ?? ''));
+        $newUnitIdNorm = !empty($data['unit_id']) ? (int) $data['unit_id'] : null;
+        $newAtasanNorm = (int) ($data['atasan_id'] ?? 0);
+
+        $isAssignmentChanged = ($oldUnitNorm !== $newUnitNorm)
+            || ($oldUnitIdNorm !== $newUnitIdNorm)
+            || ($oldAtasanNorm !== $newAtasanNorm);
+
+        $actorId = (int) (session()->get('id') ?? session()->get('user_id') ?? 0) ?: null;
+
         $db = \Config\Database::connect();
         $db->transStart();
         try {
+            $mutationResult = null;
+            if ($existingUser && $isAssignmentChanged && $modePerubahan !== 'koreksi') {
+                $riwayatService = new RiwayatPenugasanService($db, $this->userModel);
+                $mutationResult = $riwayatService->recordMutation(
+                    (int) $id,
+                    $existingUser,
+                    [
+                        'unit'      => $data['unit'],
+                        'unit_id'   => $data['unit_id'],
+                        'atasan_id' => $data['atasan_id'],
+                        'jabatan'   => $data['jabatan'],
+                        'role'      => $data['role'],
+                    ],
+                    $bulanEfektif,
+                    $tahunEfektif,
+                    $catatanMutasi,
+                    $actorId
+                );
+
+                // Jika mutasi dijadwalkan untuk periode mendatang, pertahankan unit & atasan aktif hari ini di tabel users
+                if (isset($mutationResult['should_sync_profile']) && !$mutationResult['should_sync_profile']) {
+                    $data['unit']      = $existingUser['unit'] ?? '';
+                    $data['unit_id']   = $existingUser['unit_id'] ?? null;
+                    $data['atasan_id'] = $existingUser['atasan_id'] ?? 0;
+                }
+            }
+
             $this->userModel->update($id, $data);
 
             // Update Multi-Roles (Pivot Table) secara bersih & bebas duplikasi
             $this->syncUserRoles($db, (int) $id, $role, $this->request->getPost('secondary_roles'));
 
-            log_audit('UPDATE', 'users', $id, null, $data);
+            log_audit('UPDATE', 'users', $id, null, array_merge($data, [
+                'mode_perubahan' => $isAssignmentChanged ? $modePerubahan : 'profil',
+                'riwayat_sync'   => $mutationResult,
+            ]));
             $db->transComplete();
 
             if ($db->transStatus() === false) {
@@ -532,10 +599,19 @@ class UserController extends BaseController
                 $redirectUrl .= '?' . $returnQs;
             }
 
-            return redirect()->to($redirectUrl)->with('success', 'Data pengguna berhasil diperbarui.');
+            $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            $successMsg = 'Data pengguna berhasil diperbarui.';
+            if ($mutationResult && !empty($mutationResult['recorded'])) {
+                $namaBlnEfektif = $bulanIndo[$bulanEfektif - 1] ?? ('Bulan ' . $bulanEfektif);
+                $successMsg = !empty($mutationResult['should_sync_profile'])
+                    ? "Data pengguna diperbarui dan riwayat penugasan lama dikunci sebelum {$namaBlnEfektif} {$tahunEfektif}."
+                    : "Data pengguna diperbarui. Mutasi unit/atasan dijadwalkan efektif mulai {$namaBlnEfektif} {$tahunEfektif}.";
+            }
+
+            return redirect()->to($redirectUrl)->with('success', $successMsg);
         } catch (\Throwable $e) {
             $db->transRollback();
-            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui data pengguna: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui data pengguna. Silakan coba lagi.');
         }
     }
 
@@ -617,7 +693,11 @@ class UserController extends BaseController
             }
         }
 
-        $targetUser = $this->userModel->select('id, role')->find($userId);
+        $targetUser = $this->userModel->select('id, role, unit, unit_id, jabatan, atasan_id')->find($userId);
+        if (!$targetUser) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Pengguna tidak ditemukan.', csrf_token() => csrf_hash()])->setStatusCode(404);
+        }
+
         $targetRole = strtolower(trim((string) ($targetUser['role'] ?? '')));
         $isExecutiveTarget = in_array($targetRole, ['direktur', 'wadir', 'kabag', 'kabag_aak', 'kabag_kuk'], true);
 
@@ -638,19 +718,89 @@ class UserController extends BaseController
                 : 0;
         }
 
-        if ($this->userModel->update($userId, $updateData)) {
-            log_audit('UPDATE', 'users', $userId, null, $updateData);
-            // SOLUSI: Sertakan token CSRF yang baru di dalam response
-            $response_data = [
-                'success' => true, 
-                'message' => 'Unit kerja berhasil diperbarui.',
-                csrf_token() => csrf_hash() // Menambahkan token baru ke response
-            ];
-            return $this->response->setJSON($response_data);
-        } else {
-            // Juga sertakan di response gagal untuk konsistensi
-            $response_data = ['success' => false, 'message' => 'Gagal memperbarui unit kerja.', csrf_token() => csrf_hash()];
-            return $this->response->setJSON($response_data)->setStatusCode(500);
+        $modePerubahan = strtolower(trim((string) ($this->request->getPost('mode_perubahan') ?: 'mutasi')));
+        $bulanEfektif  = max(1, min(12, (int) ($this->request->getPost('bulan_efektif') ?: date('n'))));
+        $tahunEfektif  = (int) ($this->request->getPost('tahun_efektif') ?: date('Y'));
+        if ($tahunEfektif < 2020 || $tahunEfektif > 2099) {
+            $tahunEfektif = (int) date('Y');
+        }
+        $keterangan = trim((string) ($this->request->getPost('keterangan') ?? '')) ?: null;
+        $actorId    = (int) (session()->get('id') ?? session()->get('user_id') ?? 0) ?: null;
+
+        $oldUnitNorm   = trim((string) ($targetUser['unit'] ?? ''));
+        $newUnitNorm   = trim((string) ($updateData['unit'] ?? ''));
+        $newAtasanNorm = array_key_exists('atasan_id', $updateData) ? (int) $updateData['atasan_id'] : (int) ($targetUser['atasan_id'] ?? 0);
+        $isChanged     = ($oldUnitNorm !== $newUnitNorm) || ((int) ($targetUser['atasan_id'] ?? 0) !== $newAtasanNorm);
+
+        $db = \Config\Database::connect();
+        $db->transStart();
+        try {
+            $shouldSyncProfile = true;
+            $mutationResult = null;
+
+            if ($isChanged && $modePerubahan !== 'koreksi') {
+                $riwayatService = new RiwayatPenugasanService($db, $this->userModel);
+                $mutationResult = $riwayatService->recordMutation(
+                    (int) $userId,
+                    $targetUser,
+                    [
+                        'unit'      => $updateData['unit'],
+                        'unit_id'   => $updateData['unit_id'],
+                        'atasan_id' => $newAtasanNorm,
+                        'jabatan'   => $targetUser['jabatan'] ?? '',
+                        'role'      => $updateData['role'] ?? ($targetUser['role'] ?? 'user'),
+                    ],
+                    $bulanEfektif,
+                    $tahunEfektif,
+                    $keterangan ?: 'Mutasi unit kerja',
+                    $actorId
+                );
+                $shouldSyncProfile = (bool) ($mutationResult['should_sync_profile'] ?? true);
+            }
+
+            if ($shouldSyncProfile) {
+                $this->userModel->update($userId, $updateData);
+            }
+
+            log_audit('UPDATE', 'users', $userId, null, array_merge($updateData, [
+                'mode_perubahan' => $modePerubahan,
+                'bulan_efektif'  => $bulanEfektif,
+                'tahun_efektif'  => $tahunEfektif,
+                'riwayat_sync'   => $mutationResult,
+            ]));
+
+            $db->transComplete();
+            if ($db->transStatus() === false) {
+                return $this->response->setJSON([
+                    'success'    => false,
+                    'message'    => 'Gagal memperbarui unit kerja.',
+                    csrf_token() => csrf_hash(),
+                ])->setStatusCode(500);
+            }
+
+            $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            $namaBln   = $bulanIndo[$bulanEfektif - 1] ?? ('Bulan ' . $bulanEfektif);
+            $msg       = 'Unit kerja berhasil diperbarui.';
+            if ($mutationResult && !empty($mutationResult['recorded'])) {
+                $msg = $shouldSyncProfile
+                    ? "Unit diperbarui (efektif {$namaBln} {$tahunEfektif}, riwayat lama tersimpan)."
+                    : "Mutasi ke {$unitNama} dijadwalkan mulai {$namaBln} {$tahunEfektif}.";
+            }
+
+            return $this->response->setJSON([
+                'success'             => true,
+                'message'             => $msg,
+                'should_sync_profile' => $shouldSyncProfile,
+                csrf_token()          => csrf_hash(),
+            ]);
+        } catch (\Throwable $e) {
+            try { @$db->transRollback(); } catch (\Throwable $t) {}
+            log_message('error', 'Error ajaxUpdateUnit: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success'    => false,
+                'message'    => 'Gagal memperbarui unit kerja. Silakan coba lagi.',
+                csrf_token() => csrf_hash(),
+            ])->setStatusCode(500);
         }
     }
 
@@ -660,52 +810,163 @@ class UserController extends BaseController
             return $redirect;
         }
 
-        $userIds = $this->request->getPost('user_ids');
-        $atasanId = $this->request->getPost('atasan_id');
+        $userIds       = $this->request->getPost('user_ids');
+        $atasanId      = $this->request->getPost('atasan_id');
+        $modePerubahan = strtolower(trim((string) ($this->request->getPost('mode_perubahan') ?: 'mutasi')));
+        $bulanEfektif  = max(1, min(12, (int) ($this->request->getPost('bulan_efektif') ?: date('n'))));
+        $tahunEfektif  = (int) ($this->request->getPost('tahun_efektif') ?: date('Y'));
+        if ($tahunEfektif < 2020 || $tahunEfektif > 2099) {
+            $tahunEfektif = (int) date('Y');
+        }
+        $keterangan = trim((string) ($this->request->getPost('keterangan') ?? '')) ?: null;
 
         if (empty($userIds)) {
-            return redirect()->to('users')->with('error', 'Tidak ada pengguna yang dipilih untuk diupdate.');
+            return redirect()->to('users')->with('error', 'Tidak ada pengguna yang dipilih.');
         }
 
-        $atasan = null;
-        if (!empty($atasanId)) {
-            $atasan = $this->userModel->find($atasanId);
+        $newAtasanId = !empty($atasanId) ? (int) $atasanId : 0;
+        $idArray     = array_values(array_unique(array_filter(array_map('intval', explode(',', (string) $userIds)), static function (int $pid) use ($newAtasanId): bool {
+            return $pid > 0 && ($newAtasanId === 0 || $pid !== $newAtasanId);
+        })));
+
+        if (empty($idArray)) {
+            return redirect()->to('users')->with('error', 'Tidak ada data valid untuk diperbarui.');
         }
 
-        // Konversi string "1,2,3" menjadi array [1, 2, 3]
-        $idArray = explode(',', $userIds);
+        $existingUsers = $this->userModel
+            ->select('id, unit, unit_id, jabatan, role, atasan_id')
+            ->whereIn('id', $idArray)
+            ->findAll();
 
-        // Siapkan data untuk batch update
-        $dataToUpdate = [];
-        foreach ($idArray as $id) {
-            $parsedId = (int)trim($id);
-            if (is_numeric(trim($id)) && $parsedId > 0) {
-                // Cegah penugasan atasan ke diri sendiri
-                if (!empty($atasanId) && $parsedId === (int)$atasanId) {
-                    continue;
+        if (empty($existingUsers)) {
+            return redirect()->to('users')->with('error', 'Pengguna terpilih tidak ditemukan.');
+        }
+
+        $actorId = (int) (session()->get('id') ?? session()->get('user_id') ?? 0) ?: null;
+        $db      = \Config\Database::connect();
+        $db->transStart();
+        try {
+            $riwayatService = new RiwayatPenugasanService($db, $this->userModel);
+            $updatedCount   = 0;
+
+            foreach ($existingUsers as $u) {
+                $uid               = (int) $u['id'];
+                $shouldSyncProfile = true;
+
+                if ($modePerubahan !== 'koreksi' && (int) ($u['atasan_id'] ?? 0) !== $newAtasanId) {
+                    $res = $riwayatService->recordMutation(
+                        $uid,
+                        $u,
+                        [
+                            'unit'      => $u['unit'] ?? '',
+                            'unit_id'   => $u['unit_id'] ?? null,
+                            'atasan_id' => $newAtasanId,
+                            'jabatan'   => $u['jabatan'] ?? '',
+                            'role'      => $u['role'] ?? 'user',
+                        ],
+                        $bulanEfektif,
+                        $tahunEfektif,
+                        $keterangan ?: 'Perubahan atasan langsung massal',
+                        $actorId
+                    );
+                    $shouldSyncProfile = (bool) ($res['should_sync_profile'] ?? true);
                 }
-                $updateItem = [
-                    'id' => $parsedId,
-                    'atasan_id' => !empty($atasanId) ? (int)$atasanId : 0
-                ];
-                $dataToUpdate[] = $updateItem;
+
+                if ($shouldSyncProfile) {
+                    $this->userModel->update($uid, ['atasan_id' => $newAtasanId]);
+                }
+                $updatedCount++;
             }
+
+            log_audit('UPDATE', 'users', 'batch', null, [
+                'user_ids'       => $idArray,
+                'atasan_id'      => $newAtasanId,
+                'mode_perubahan' => $modePerubahan,
+                'bulan_efektif'  => $bulanEfektif,
+                'tahun_efektif'  => $tahunEfektif,
+            ]);
+
+            $db->transComplete();
+            if ($db->transStatus() === false) {
+                return redirect()->to('users')->with('error', 'Gagal memperbarui atasan pengguna. Silakan coba lagi.');
+            }
+
+            $returnQs = $this->request->getPost('return_qs');
+            $redirectUrl = 'users';
+            if (!empty($returnQs)) {
+                $redirectUrl .= $returnQs;
+            }
+
+            $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            $namaBln   = $bulanIndo[$bulanEfektif - 1] ?? ('Bulan ' . $bulanEfektif);
+            $msg       = ($modePerubahan !== 'koreksi')
+                ? "{$updatedCount} staf berhasil dialihkan ke atasan baru mulai {$namaBln} {$tahunEfektif} (riwayat atasan lama terjaga)."
+                : "{$updatedCount} data pengguna berhasil diperbarui.";
+
+            return redirect()->to($redirectUrl)->with('success', $msg);
+        } catch (\Throwable $e) {
+            try { @$db->transRollback(); } catch (\Throwable $t) {}
+            log_message('error', 'Error batch_update: ' . $e->getMessage());
+            return redirect()->to('users')->with('error', 'Gagal memperbarui atasan pengguna. Silakan coba lagi.');
+        }
+    }
+
+    /**
+     * Rotasi Atasan Langsung secara massal berdasarkan pejabat penilai lama -> baru
+     * (opsional dibatasi unit kerja tertentu) dengan bulan efektif agar riwayat penilaian lama tetap terjaga.
+     */
+    public function rotasiAtasanMassal()
+    {
+        if ($redirect = $this->checkAdminOrKepegawaian()) {
+            return $redirect;
         }
 
-        if (empty($dataToUpdate)) {
-            return redirect()->to('users')->with('error', 'Tidak ada data valid untuk diupdate.');
+        $oldAtasanId  = (int) $this->request->getPost('atasan_lama_id');
+        $newAtasanId  = (int) $this->request->getPost('atasan_baru_id');
+        $unitFilter   = trim((string) ($this->request->getPost('unit_filter') ?? ''));
+        $bulanEfektif = max(1, min(12, (int) ($this->request->getPost('bulan_efektif') ?: date('n'))));
+        $tahunEfektif = (int) ($this->request->getPost('tahun_efektif') ?: date('Y'));
+        if ($tahunEfektif < 2020 || $tahunEfektif > 2099) {
+            $tahunEfektif = (int) date('Y');
+        }
+        $keterangan = trim((string) ($this->request->getPost('keterangan') ?? '')) ?: null;
+        $actorId    = (int) (session()->get('id') ?? session()->get('user_id') ?? 0) ?: null;
+
+        $returnQs    = $this->request->getPost('return_qs');
+        $redirectUrl = 'users' . (!empty($returnQs) ? $returnQs : '');
+
+        $riwayatService = new RiwayatPenugasanService(null, $this->userModel);
+        $result = $riwayatService->rotateSupervisorMass(
+            $oldAtasanId,
+            $newAtasanId,
+            $bulanEfektif,
+            $tahunEfektif,
+            $unitFilter !== '' ? $unitFilter : null,
+            $keterangan,
+            $actorId
+        );
+
+        if (empty($result['success'])) {
+            return redirect()->to($redirectUrl)->with('error', $result['message'] ?? 'Gagal memproses rotasi atasan.');
         }
 
-        $this->userModel->updateBatch($dataToUpdate, 'id');
-        log_audit('UPDATE', 'users', 'batch', null, $dataToUpdate);
+        log_audit('UPDATE', 'riwayat_atasan', 'rotasi_massal', ['atasan_lama_id' => $oldAtasanId], [
+            'atasan_baru_id' => $newAtasanId,
+            'unit_filter'    => $unitFilter,
+            'bulan_efektif'  => $bulanEfektif,
+            'tahun_efektif'  => $tahunEfektif,
+            'affected_count' => $result['affected_count'],
+            'affected_ids'   => $result['affected_ids'],
+        ]);
 
-        $returnQs = $this->request->getPost('return_qs');
-        $redirectUrl = 'users';
-        if (!empty($returnQs)) {
-            $redirectUrl .= $returnQs;
-        }
+        $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        $namaBln   = $bulanIndo[$bulanEfektif - 1] ?? ('Bulan ' . $bulanEfektif);
+        $count     = (int) ($result['affected_count'] ?? 0);
 
-        return redirect()->to($redirectUrl)->with('success', count($dataToUpdate) . ' data pengguna berhasil diperbarui.');
+        return redirect()->to($redirectUrl)->with(
+            'success',
+            "Rotasi atasan berhasil untuk {$count} staf mulai {$namaBln} {$tahunEfektif}. Penilaian bulan sebelumnya tetap tercatat pada atasan lama."
+        );
     }
     
     public function delete($id)

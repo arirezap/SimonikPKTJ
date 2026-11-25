@@ -325,7 +325,7 @@
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="avatar-taruna-sm small">
                                             <?php if ($fotoThumbUrl !== null): ?>
-                                                <img src="<?= esc($fotoThumbUrl) ?>" alt="Foto <?= esc($r['nama_lengkap']) ?>" style="width: 100%; height: 100%; object-fit: cover;">
+                                                <img src="<?= esc($fotoThumbUrl) ?>" alt="Foto <?= esc($r['nama_lengkap']) ?>" width="40" height="40" loading="lazy" decoding="async" style="width: 100%; height: 100%; object-fit: cover;">
                                             <?php else: ?>
                                                 <?= esc($initials) ?>
                                             <?php endif; ?>
@@ -642,7 +642,7 @@
                 const tkt = selTingkat.value;
                 const aid = selAngkatan ? selAngkatan.value : '';
                 const currentVal = selKelas.value;
-                selKelas.innerHTML = '';
+                selKelas.replaceChildren();
 
                 const exactMatches = allKelasOptions.filter(function (item) {
                     return item.value !== '' && item.prodiId === pid && item.tingkat === tkt && (!aid || item.angkatanId === aid);

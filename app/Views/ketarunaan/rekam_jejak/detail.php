@@ -85,7 +85,7 @@ $angkatanTxt       = !empty($taruna['angkatan'])
         <div class="col-12 col-md-4 d-flex align-items-center gap-3">
             <div class="ecc-avatar-lg">
                 <?php if ($fotoUrl !== null): ?>
-                    <img src="<?= esc($fotoUrl) ?>" alt="Foto <?= esc($namaLengkap) ?>" style="width: 100%; height: 100%; object-fit: cover;">
+                    <img src="<?= esc($fotoUrl) ?>" alt="Foto <?= esc($namaLengkap) ?>" width="64" height="64" decoding="async" style="width: 100%; height: 100%; object-fit: cover;">
                 <?php else: ?>
                     <?= esc($inisial) ?>
                 <?php endif; ?>

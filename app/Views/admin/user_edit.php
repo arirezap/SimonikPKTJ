@@ -3,9 +3,8 @@
 <?= $this->section('title') ?><?= esc($title ?? 'Edit Pengguna') ?><?= $this->endSection() ?>
 
 <?= $this->section('styles') ?>
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
-<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+<link href="<?= base_url('assets/vendor/select2/select2.min.css') ?>" rel="stylesheet" />
+<link rel="stylesheet" href="<?= base_url('assets/vendor/select2/select2-bootstrap-5-theme.min.css') ?>" />
 <style>
     @media (max-width: 767.98px) {
         .form-control, .form-select {
@@ -68,7 +67,7 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-dark mb-1">Kata Sandi Baru <small class="text-muted fw-normal">(Kosongkan jika tidak diubah)</small></label>
-                                <input type="password" name="password" class="form-control form-control-sm" placeholder="Isi hanya jika ingin mengubah kata sandi...">
+                                <input type="password" name="password" class="form-control form-control-sm" placeholder="Isi hanya jika ingin mengubah kata sandi..." autocomplete="new-password">
                             </div>
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-dark mb-1">Role Primer</label>
@@ -151,13 +150,29 @@
                                     <input type="text" name="pangkat" class="form-control form-control-sm" value="<?= esc($user['pangkat']) ?>" placeholder="Pangkat/Golongan...">
                                 </div>
                             </div>
+                            <?php
+                                $selectedUnitIdEdit = '';
+                                if (!empty($unit_kerja_list)) {
+                                    foreach ($unit_kerja_list as $ukOpt) {
+                                        if ((!empty($user['unit_id']) && $user['unit_id'] == $ukOpt['id']) || ($user['unit'] == $ukOpt['nama_unit'])) {
+                                            $selectedUnitIdEdit = (string) $ukOpt['id'];
+                                            break;
+                                        }
+                                    }
+                                }
+                                $selectedAtasanIdEdit = !empty($user['atasan_id']) ? (string) $user['atasan_id'] : '';
+                                $bulanIndoEdit = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                $curMonthEdit  = (int) old('bulan_efektif', date('n'));
+                                $curYearEdit   = (int) old('tahun_efektif', date('Y'));
+                                $curModeEdit   = (string) old('mode_perubahan', 'mutasi');
+                            ?>
                             <div class="mb-3">
-                                <label class="form-label small fw-bold text-dark mb-1">Unit Kerja</label>
-                                <select name="unit_id" class="form-select form-select-sm">
-                                    <option value="">-- Pilih Unit Kerja --</option>
+                                <label for="selectUnitEdit" class="form-label small fw-bold text-dark mb-1">Unit Kerja</label>
+                                <select name="unit_id" id="selectUnitEdit" class="form-select form-select-sm" data-initial-unit="<?= esc($selectedUnitIdEdit) ?>">
+                                    <option value="">Pilih Unit Kerja</option>
                                     <?php if (!empty($unit_kerja_list)): ?>
                                         <?php foreach ($unit_kerja_list as $unit_kerja): ?>
-                                            <option value="<?= esc($unit_kerja['id']) ?>" <?= ((!empty($user['unit_id']) && $user['unit_id'] == $unit_kerja['id']) || ($user['unit'] == $unit_kerja['nama_unit'])) ? 'selected' : '' ?>>
+                                            <option value="<?= esc($unit_kerja['id']) ?>" <?= ($selectedUnitIdEdit === (string) $unit_kerja['id']) ? 'selected' : '' ?>>
                                                 <?= esc($unit_kerja['nama_unit']) ?>
                                             </option>
                                         <?php endforeach; ?>
@@ -166,9 +181,9 @@
                             </div>
 
                             <div class="p-3 bg-white border rounded-3 mb-3">
-                                <label class="form-label small fw-bold text-dark mb-1">Atasan Langsung (Pejabat Penilai)</label>
-                                <select name="atasan_id" class="form-select form-select-sm select2" id="selectAtasanEdit">
-                                    <option value="">-- Tanpa Atasan (Misal: Direktur) --</option>
+                                <label for="selectAtasanEdit" class="form-label small fw-bold text-dark mb-1">Atasan Langsung (Pejabat Penilai)</label>
+                                <select name="atasan_id" class="form-select form-select-sm select2" id="selectAtasanEdit" data-initial-atasan="<?= esc($selectedAtasanIdEdit) ?>">
+                                    <option value="">Tanpa Atasan (Misal: Direktur)</option>
                                     <?php foreach ($potential_bosses as $boss): ?>
                                         <option value="<?= $boss['id'] ?>" <?= ($user['atasan_id'] == $boss['id']) ? 'selected' : '' ?>>
                                             <?= esc($boss['nama_lengkap']) ?> - <?= esc($boss['jabatan'] ?? 'Tanpa Jabatan') ?>
@@ -177,6 +192,47 @@
                                 </select>
                                 <div class="form-text small" style="font-size: 0.72rem;">
                                     Atasan akan menjadi pejabat penilai kinerja dan pihak kedua di kontrak kinerja.
+                                </div>
+                            </div>
+
+                            <!-- PANEL KONTEKSTUAL: PENGATURAN RIWAYAT MUTASI / ROTASI (MUNCUL SAAT UNIT ATAU ATASAN BERUBAH) -->
+                            <div class="p-3 bg-primary-subtle border border-primary-subtle rounded-3 mb-3 d-none" id="panelRiwayatMutasiEdit">
+                                <div class="fw-bold text-primary-emphasis small mb-2">Pengaturan Riwayat Penugasan</div>
+                                <div class="d-flex flex-column gap-2 mb-2">
+                                    <label class="d-flex align-items-start gap-2 p-2 bg-white border rounded-3 mb-0" style="cursor: pointer;">
+                                        <input type="radio" name="mode_perubahan" value="mutasi" class="form-check-input mt-1 edit-mode-mutasi" <?= $curModeEdit !== 'koreksi' ? 'checked' : '' ?>>
+                                        <span class="small">
+                                            <strong class="d-block text-dark">Mutasi / Rotasi Baru (Simpan Riwayat Lama)</strong>
+                                            <span class="text-muted">Penilaian bulan sebelumnya tetap tinggal di unit &amp; atasan lama.</span>
+                                        </span>
+                                    </label>
+                                    <label class="d-flex align-items-start gap-2 p-2 bg-white border rounded-3 mb-0" style="cursor: pointer;">
+                                        <input type="radio" name="mode_perubahan" value="koreksi" class="form-check-input mt-1 edit-mode-mutasi" <?= $curModeEdit === 'koreksi' ? 'checked' : '' ?>>
+                                        <span class="small">
+                                            <strong class="d-block text-dark">Koreksi Salah Input</strong>
+                                            <span class="text-muted">Hanya memperbarui profil aktif tanpa memotong riwayat penugasan.</span>
+                                        </span>
+                                    </label>
+                                </div>
+                                <div id="wrapperPeriodeMutasiEdit" class="mt-2 pt-2 border-top border-primary-subtle">
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-7">
+                                            <label for="editBulanEfektif" class="form-label small fw-bold text-dark mb-1">Mulai Efektif Bulan</label>
+                                            <select name="bulan_efektif" id="editBulanEfektif" class="form-select form-select-sm">
+                                                <?php foreach ($bulanIndoEdit as $idxBln => $nmBln): ?>
+                                                    <option value="<?= $idxBln + 1 ?>" <?= ($curMonthEdit === $idxBln + 1) ? 'selected' : '' ?>><?= esc($nmBln) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                        <div class="col-5">
+                                            <label for="editTahunEfektif" class="form-label small fw-bold text-dark mb-1">Tahun</label>
+                                            <input type="number" name="tahun_efektif" id="editTahunEfektif" class="form-control form-control-sm num-tabular" value="<?= $curYearEdit ?>" min="2020" max="2099">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label for="editCatatanMutasi" class="form-label small fw-bold text-dark mb-1">Catatan / Nomor SK (Opsional)</label>
+                                        <input type="text" name="catatan_mutasi" id="editCatatanMutasi" class="form-control form-control-sm" maxlength="200" value="<?= esc(old('catatan_mutasi', '')) ?>" placeholder="Contoh: Mutasi internal sesuai SK...">
+                                    </div>
                                 </div>
                             </div>
 
@@ -267,9 +323,8 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="<?= base_url('assets/vendor/jquery/jquery.min.js') ?>"></script>
+<script src="<?= base_url('assets/vendor/select2/select2.min.js') ?>"></script>
 <script>
 $(document).ready(function() {
     if ($.fn.select2) {
@@ -290,6 +345,24 @@ $(document).ready(function() {
     }
     $('#statusPegawaiEdit').on('change', toggleTmtField);
     toggleTmtField();
+
+    function syncMutasiPanel() {
+        var unitEl = $('#selectUnitEdit');
+        var atasanEl = $('#selectAtasanEdit');
+        var initUnit = String(unitEl.data('initial-unit') ?? '');
+        var initAtasan = String(atasanEl.data('initial-atasan') ?? '');
+        var curUnit = String(unitEl.val() ?? '');
+        var curAtasan = String(atasanEl.val() ?? '');
+        var changed = (curUnit !== initUnit) || (curAtasan !== initAtasan);
+
+        $('#panelRiwayatMutasiEdit').toggleClass('d-none', !changed);
+        var isMutasi = $('input[name="mode_perubahan"]:checked').val() !== 'koreksi';
+        $('#wrapperPeriodeMutasiEdit').toggle(isMutasi);
+    }
+
+    $('#selectUnitEdit, #selectAtasanEdit').on('change', syncMutasiPanel);
+    $(document).on('change', '.edit-mode-mutasi', syncMutasiPanel);
+    syncMutasiPanel();
 
     $('#formUserEdit').on('submit', function() {
         $('#btnSubmitUserEdit').html('<span class="spinner-border spinner-border-sm me-1" role="status"></span> Menyimpan...').prop('disabled', true);

@@ -107,6 +107,7 @@ $routes->post('notifications/read-all', 'NotificationController::markAllAsRead')
     $routes->post('users/import', 'Admin\UserController::importExcel'); // Rute untuk Import
     $routes->post('users/ajax_update_unit', 'Admin\UserController::ajaxUpdateUnit'); // Rute untuk AJAX update unit kerja
     $routes->post('users/batch_update', 'Admin\UserController::batch_update'); // Rute untuk Batch Edit
+    $routes->post('users/rotasi-atasan', 'Admin\UserController::rotasiAtasanMassal'); // Rute Rotasi Atasan Massal per Pejabat/Unit
     $routes->get('users/riwayat-penugasan/(:num)', 'Admin\UserController::getRiwayatPenugasan/$1');
     $routes->post('users/riwayat-penugasan/store', 'Admin\UserController::storeRiwayatPenugasan');
     $routes->post('users/riwayat-penugasan/delete/(:num)', 'Admin\UserController::deleteRiwayatPenugasan/$1');

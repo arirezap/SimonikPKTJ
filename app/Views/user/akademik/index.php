@@ -42,7 +42,7 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="<?= base_url('assets/vendor/chartjs/chart.umd.min.js') ?>"></script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
     const ctx = document.getElementById('prodiChart');

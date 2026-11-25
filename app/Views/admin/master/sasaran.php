@@ -153,7 +153,6 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     // Live Search Sasaran
     document.getElementById('searchSasaran').addEventListener('input', function() {

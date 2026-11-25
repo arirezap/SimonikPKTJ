@@ -426,9 +426,6 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
-<!-- SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const ledForm = document.getElementById('ledForm');
@@ -589,7 +586,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             function renderPagination(totalPages) {
                 if(!pageNumbersContainer) return;
-                pageNumbersContainer.innerHTML = "";
+                pageNumbersContainer.replaceChildren();
                 
                 if (totalPages <= 1) {
                     if(btnPrev) btnPrev.disabled = true;

@@ -95,6 +95,19 @@
         width: 12%;
     }
 
+    /* Modal Detail Log (7 Kolom): Proporsi lega di modal-xl tanpa meluber */
+    .table-modal-log thead th,
+    .table-modal-log tbody td {
+        padding: 12px 12px;
+    }
+    .table-modal-log .col-no-bento { width: 5%; min-width: 44px; }
+    .table-modal-log .col-modal-jenis { width: 11%; }
+    .table-modal-log .col-modal-desc { width: 29%; }
+    .table-modal-log .col-modal-indikator { width: 23%; }
+    .table-modal-log .col-modal-realisasi { width: 11%; }
+    .table-modal-log .col-modal-bukti { width: 10%; }
+    .table-modal-log .col-modal-status { width: 11%; }
+
     /* Number Spin Button Sanitization */
     .input-nilai-capaian::-webkit-outer-spin-button,
     .input-nilai-capaian::-webkit-inner-spin-button {
@@ -216,27 +229,22 @@
         transform: scale(0.97);
     }
 
-    /* Select2 8-Point Grid Alignment */
-    .select2-container--bootstrap-5 .select2-selection--single,
-    .select2-container--default .select2-selection--single {
+    /* Select2 Bootstrap 5 8-Point Grid Alignment */
+    .select2-container--bootstrap-5 .select2-selection--single {
         min-height: 36px !important;
-        padding: 4px 12px !important;
+        padding: 4px 32px 4px 12px !important;
         border-radius: 8px !important;
         border: 1px solid var(--bs-success) !important;
         display: flex !important;
         align-items: center !important;
         background-color: #ffffff !important;
     }
-    .select2-container--default .select2-selection--single .select2-selection__rendered {
-        line-height: 24px !important;
+    .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+        line-height: 1.4 !important;
         font-size: 0.875rem !important;
         font-weight: 600 !important;
         color: var(--bs-success-text-emphasis) !important;
-        padding-left: 4px !important;
-    }
-    .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 36px !important;
-        right: 8px !important;
+        padding: 0 !important;
     }
     .select2-dropdown {
         border-radius: 8px !important;
@@ -273,6 +281,10 @@
         color: #dc2626;
     }
     .heatmap-day-cell {
+        width: 100%;
+        font: inherit;
+        text-align: left;
+        appearance: none;
         min-height: 64px;
         border-radius: 8px;
         border: 1px solid #e2e8f0;
@@ -316,8 +328,12 @@
         font-weight: 800;
     }
     .heatmap-day-cell.heatmap-level-3.is-tanggal-merah .day-num,
-    .heatmap-day-cell.heatmap-level-4.is-tanggal-merah .day-num {
-        color: #fef2f2 !important;
+    .heatmap-day-cell.heatmap-level-4.is-tanggal-merah .day-num,
+    .heatmap-day-cell.heatmap-level-3.is-tanggal-merah .holiday-indicator,
+    .heatmap-day-cell.heatmap-level-4.is-tanggal-merah .holiday-indicator,
+    .heatmap-day-cell.heatmap-level-3 .heatmap-status-icon,
+    .heatmap-day-cell.heatmap-level-4 .heatmap-status-icon {
+        color: #ffffff !important;
     }
 
     /* Heatmap Intensity Levels (DESIGN.md Tokens + WCAG AA) */
@@ -528,8 +544,15 @@
         }
         .btn-action-container .btn,
         .btn-bukti-link,
-        .btn-buka-kunci-penilaian {
+        .btn-buka-kunci-penilaian,
+        .btn-batal-approve-target-penilaian,
+        .btn-mobile-touch,
+        #btnModalBukaKunci,
+        #btnModalGoToLapor {
             min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             width: 100%;
         }
         .table-bento-wrapper {
@@ -701,6 +724,7 @@
 <?= $this->section('content') ?>
 <?php
 $canEvaluateSelf = !empty($can_evaluate_self);
+$activeTabState = ($is_atasan && ((($active_tab ?? '') === 'staf') || !empty($staf_id_terpilih))) ? 'staf' : 'individu';
 
 $formatDisplayDecimal = static function ($val): string {
     if ($val === null || $val === '') {
@@ -804,7 +828,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
             <!-- Filter Bar Toolbar -->
             <form method="POST" action="<?= site_url('penilaian-kinerja') ?>" class="mb-3 p-3 bg-light rounded-4 border border-light-subtle" id="filterForm">
                 <?= csrf_field() ?>
-                <input type="hidden" name="active_tab" id="active_tab_input" value="<?= empty($staf_id_terpilih) ? 'individu' : 'staf' ?>">
+                <input type="hidden" name="active_tab" id="active_tab_input" value="<?= esc($activeTabState) ?>">
                 <div class="row g-3 align-items-end">
                     <div class="col-7 col-sm-4 col-md-3">
                         <label for="filterBulanSelect" class="form-label fw-bold text-dark small mb-1">Bulan</label>
@@ -824,7 +848,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                     </div>
 
                     <?php if ($is_super): ?>
-                        <div class="col-12 col-sm-5 col-md-4 <?= empty($staf_id_terpilih) ? 'd-none' : '' ?>" id="filterUnitCol">
+                        <div class="col-12 col-sm-5 col-md-4 <?= ($activeTabState !== 'staf') ? 'd-none' : '' ?>" id="filterUnitCol">
                             <label for="filterUnitSelect" class="form-label fw-bold text-dark small mb-1">Unit Kerja</label>
                             <select name="unit_kerja" id="filterUnitSelect" class="form-select form-select-sm border-primary fw-semibold ecc-focus-ring pk-filter-control" aria-label="Pilih Unit Kerja">
                                 <option value="">Semua Unit Kerja</option>
@@ -863,12 +887,12 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
             <?php if ($is_atasan): ?>
             <ul class="nav segmented-control mb-4 bento-stagger bento-stagger-2" id="penilaianTabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link btn-tactile <?= empty($staf_id_terpilih) ? 'active' : '' ?>" id="individu-tab" data-bs-toggle="tab" data-bs-target="#individu" type="button" role="tab" aria-controls="individu" aria-selected="<?= empty($staf_id_terpilih) ? 'true' : 'false' ?>">
+                    <button class="nav-link btn-tactile <?= ($activeTabState === 'individu') ? 'active' : '' ?>" id="individu-tab" data-bs-toggle="tab" data-bs-target="#individu" type="button" role="tab" aria-controls="individu" aria-selected="<?= ($activeTabState === 'individu') ? 'true' : 'false' ?>">
                         Target Saya
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link btn-tactile <?= !empty($staf_id_terpilih) ? 'active' : '' ?>" id="staf-tab" data-bs-toggle="tab" data-bs-target="#staf" type="button" role="tab" aria-controls="staf" aria-selected="<?= !empty($staf_id_terpilih) ? 'true' : 'false' ?>">
+                    <button class="nav-link btn-tactile <?= ($activeTabState === 'staf') ? 'active' : '' ?>" id="staf-tab" data-bs-toggle="tab" data-bs-target="#staf" type="button" role="tab" aria-controls="staf" aria-selected="<?= ($activeTabState === 'staf') ? 'true' : 'false' ?>">
                         Penilaian Staf
                     </button>
                 </li>
@@ -878,7 +902,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
             <div class="tab-content" id="penilaianTabsContent">
 
                 <!-- ==================== TAB 1: TARGET INDIVIDU SAYA ==================== -->
-                <div class="tab-pane fade <?= empty($staf_id_terpilih) ? 'show active' : '' ?>" id="individu" role="tabpanel" aria-labelledby="individu-tab">
+                <div class="tab-pane fade <?= ($activeTabState === 'individu') ? 'show active' : '' ?>" id="individu" role="tabpanel" aria-labelledby="individu-tab">
                     <?php if (empty($rekap_data_sendiri)): ?>
                         <div class="card bg-light border-0 rounded-4 p-5 text-center my-3">
                             <h2 class="h5 fw-bold text-dark mb-1">Belum Ada Target Kinerja</h2>
@@ -953,12 +977,12 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                             <table class="table table-bordered table-hover mb-0 table-bento table-bento-rhk" id="tablePenilaianMandiri">
                                 <thead>
                                     <tr>
-                                        <th class="col-no-bento text-center">No</th>
-                                        <th class="col-target text-start">Indikator Kinerja / RHK</th>
-                                        <th class="col-metric text-center">Target Bulanan</th>
-                                        <th class="col-metric text-center">Total Realisasi</th>
-                                        <th class="col-metric text-center">Selisih (Gap)</th>
-                                        <th class="col-nilai text-center">Nilai Capaian</th>
+                                        <th scope="col" class="col-no-bento text-center">No</th>
+                                        <th scope="col" class="col-target text-start">Indikator Kinerja / RHK</th>
+                                        <th scope="col" class="col-metric text-center">Target Bulanan</th>
+                                        <th scope="col" class="col-metric text-center">Total Realisasi</th>
+                                        <th scope="col" class="col-metric text-center">Selisih</th>
+                                        <th scope="col" class="col-nilai text-center">Nilai Capaian</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -989,7 +1013,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                                 <?php if ($canEvaluateSelf): ?>
                                                     <input type="hidden" name="laporan_id[]" value="<?= esc($row['id']) ?>">
                                                     <div class="input-group input-group-sm mb-2">
-                                                        <input type="number" step="0.01" min="0" max="150" name="nilai_capaian[<?= esc($row['id']) ?>]" class="form-control text-center text-primary-emphasis fw-bold num-tabular input-nilai-capaian" value="<?= esc(old('nilai_capaian.' . $row['id'], old('nilai_capaian.' . $index, $formatInputNumber($row['nilai_capaian'])))) ?>" data-status-penilaian="<?= $isTerbit ? 'terbit' : ($hasSelfRowVal ? 'draft' : 'none') ?>" data-initial-value="<?= esc($formatInputNumber($row['nilai_capaian'])) ?>" placeholder="0 - 150" aria-label="Nilai Capaian Mandiri RHK: <?= esc($row['indikator_kinerja']) ?>">
+                                                        <input type="number" step="0.01" min="0" max="150" name="nilai_capaian[<?= esc($row['id']) ?>]" class="form-control text-center text-primary-emphasis fw-bold num-tabular input-nilai-capaian" value="<?= esc(old('nilai_capaian.' . $row['id'], old('nilai_capaian.' . $index, $formatInputNumber($row['nilai_capaian'])))) ?>" data-status-penilaian="<?= $isTerbit ? 'terbit' : ($hasSelfRowVal ? 'draft' : 'none') ?>" data-initial-value="<?= esc($formatInputNumber($row['nilai_capaian'])) ?>" data-error="errMandiriRhk<?= esc($row['id']) ?>" aria-invalid="false" placeholder="0 - 150" aria-label="Nilai Capaian Mandiri RHK: <?= esc($row['indikator_kinerja']) ?>">
                                                         <span class="input-group-text bg-light fw-bold">%</span>
                                                     </div>
                                                     <div class="predikat-badge-container d-flex align-items-center justify-content-center gap-1 flex-wrap">
@@ -1004,7 +1028,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                                             <span class="badge bg-light ecc-text-muted-aa border rounded-pill px-2 py-1">Belum dinilai</span>
                                                         <?php endif; ?>
                                                     </div>
-                                                    <div class="invalid-feedback small">Nilai harus 0 - 150%.</div>
+                                                    <div id="errMandiriRhk<?= esc($row['id']) ?>" class="invalid-feedback small">Nilai harus 0 - 150%.</div>
                                                 <?php else: ?>
                                                     <?php if ($isTerbit): ?>
                                                         <span class="fw-bold text-primary-emphasis num-tabular"><?= $formatDisplayDecimal($row['nilai_capaian']) ?>%</span>
@@ -1033,11 +1057,11 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                             <table class="table table-bordered table-hover mb-0 table-bento">
                                 <thead>
                                     <tr>
-                                        <th class="col-no-bento text-center">No</th>
-                                        <th class="col-target text-start">Deskripsi Tugas Tambahan</th>
-                                        <th class="col-tanggal-bento text-center">Tanggal</th>
-                                        <th class="col-metric text-center">Capaian / Output</th>
-                                        <th class="col-nilai text-center">Bukti</th>
+                                        <th scope="col" class="col-no-bento text-center">No</th>
+                                        <th scope="col" class="col-target text-start">Deskripsi Tugas Tambahan</th>
+                                        <th scope="col" class="col-tanggal-bento text-center">Tanggal</th>
+                                        <th scope="col" class="col-metric text-center">Capaian / Output</th>
+                                        <th scope="col" class="col-nilai text-center">Bukti</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1068,7 +1092,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                                     ?>
                                                     <?php if ($isSafeBuktiSendiri): ?>
                                                         <a href="<?= esc($linkBuktiSendiri) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-light btn-sm text-primary-emphasis border btn-bukti-link btn-tactile" title="Buka tautan bukti pekerjaan">
-                                                            <i class="bi bi-box-arrow-up-right"></i> Bukti
+                                                            <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i> Bukti
                                                         </a>
                                                     <?php else: ?>
                                                         <span class="ecc-text-muted-aa">-</span>
@@ -1085,7 +1109,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                             <td class="text-center fw-bold num-tabular" data-label="Nilai Tugas Tambahan (0 - 150%)">
                                                 <?php if ($canEvaluateSelf): ?>
                                                     <div class="input-group input-group-sm mb-2">
-                                                        <input type="number" step="0.01" min="0" max="150" name="nilai_tugas_tambahan_gabungan" id="inputNilaiTambahanMandiri" class="form-control text-center text-success-emphasis fw-bold num-tabular input-nilai-capaian" value="<?= esc(old('nilai_tugas_tambahan_gabungan', $formatInputNumber($scoreTambahanDirekturForm))) ?>" data-status-penilaian="<?= $isMandiriTmbTerbit ? 'terbit' : ($isMandiriTmbDraft ? 'draft' : 'none') ?>" data-initial-value="<?= esc($formatInputNumber($scoreTambahanDirekturForm)) ?>" placeholder="0 - 150" aria-label="Nilai Tugas Tambahan Mandiri">
+                                                        <input type="number" step="0.01" min="0" max="150" name="nilai_tugas_tambahan_gabungan" id="inputNilaiTambahanMandiri" class="form-control text-center text-success-emphasis fw-bold num-tabular input-nilai-capaian" value="<?= esc(old('nilai_tugas_tambahan_gabungan', $formatInputNumber($scoreTambahanDirekturForm))) ?>" data-status-penilaian="<?= $isMandiriTmbTerbit ? 'terbit' : ($isMandiriTmbDraft ? 'draft' : 'none') ?>" data-initial-value="<?= esc($formatInputNumber($scoreTambahanDirekturForm)) ?>" data-error="errMandiriTambahan" aria-invalid="false" placeholder="0 - 150" aria-label="Nilai Tugas Tambahan Mandiri">
                                                         <span class="input-group-text bg-light fw-bold">%</span>
                                                     </div>
                                                     <div id="hintTambahanMandiriContainer" class="d-flex align-items-center justify-content-center gap-1">
@@ -1097,7 +1121,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                                             <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2 py-1">Draf</span>
                                                         <?php endif; ?>
                                                     </div>
-                                                    <div class="invalid-feedback small">Nilai harus 0 - 150%.</div>
+                                                    <div id="errMandiriTambahan" class="invalid-feedback small">Nilai harus 0 - 150%.</div>
                                                 <?php else: ?>
                                                     <span class="text-success-emphasis"><?= $scoreTambahanIndividu !== null ? $formatDisplayDecimal($scoreTambahanIndividu) . '%' : '<span class="ecc-text-muted-aa fw-normal">-</span>' ?></span>
                                                 <?php endif; ?>
@@ -1183,7 +1207,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                 <div>
                                     <strong>Perhatian:</strong> Terdapat laporan harian berstatus draf yang belum dikirim dan belum masuk perhitungan realisasi.
                                 </div>
-                                <a href="<?= site_url('log-kegiatan') ?>" class="btn btn-sm btn-warning btn-tactile text-dark fw-bold flex-shrink-0 rounded-pill px-3">
+                                <a href="<?= site_url('log-kegiatan') ?>" class="btn btn-sm btn-warning btn-tactile btn-mobile-touch text-dark fw-bold flex-shrink-0 rounded-pill px-3">
                                     Buka &amp; Kirim Laporan
                                 </a>
                             </div>
@@ -1216,14 +1240,14 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                             <table class="table table-bordered table-hover mb-0 table-bento">
                                                 <thead>
                                                     <tr>
-                                                        <th class="col-no-bento text-center">No</th>
-                                                        <th class="col-tanggal-bento text-center">Tanggal</th>
-                                                        <th class="col-jenis-bento text-center">Jenis</th>
-                                                        <th class="col-target">Indikator RHK / Sasaran</th>
-                                                        <th class="col-target">Deskripsi Aktivitas</th>
-                                                        <th class="col-tanggal-bento text-center">Realisasi</th>
-                                                        <th class="col-bukti-bento text-center">Bukti</th>
-                                                        <th class="col-jenis-bento text-center">Status</th>
+                                                        <th scope="col" class="col-no-bento text-center">No</th>
+                                                        <th scope="col" class="col-tanggal-bento text-center">Tanggal</th>
+                                                        <th scope="col" class="col-jenis-bento text-center">Jenis</th>
+                                                        <th scope="col" class="col-target">Indikator RHK / Sasaran</th>
+                                                        <th scope="col" class="col-target">Deskripsi Aktivitas</th>
+                                                        <th scope="col" class="col-tanggal-bento text-center">Realisasi</th>
+                                                        <th scope="col" class="col-bukti-bento text-center">Bukti</th>
+                                                        <th scope="col" class="col-jenis-bento text-center">Status</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -1256,7 +1280,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                                                 ?>
                                                                 <?php if (!empty($rawLink) && $isSafeUrl): ?>
                                                                     <a href="<?= esc($rawLink) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-light text-primary-emphasis border btn-bukti-link btn-tactile" title="Lihat bukti pekerjaan">
-                                                                        <i class="bi bi-box-arrow-up-right"></i> Bukti
+                                                                        <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i> Bukti
                                                                     </a>
                                                                 <?php else: ?>
                                                                     <span class="ecc-text-muted-aa">-</span>
@@ -1298,10 +1322,11 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
 
                 <?php if ($is_atasan): ?>
                     <!-- ==================== TAB 2: PENILAIAN STAF (ATASAN / DIREKTUR / ADMIN) ==================== -->
-                    <div class="tab-pane fade <?= !empty($staf_id_terpilih) ? 'show active' : '' ?>" id="staf" role="tabpanel" aria-labelledby="staf-tab">
+                    <div class="tab-pane fade <?= ($activeTabState === 'staf') ? 'show active' : '' ?>" id="staf" role="tabpanel" aria-labelledby="staf-tab">
 
                         <form method="POST" action="<?= site_url('penilaian-kinerja') ?>" class="mb-4 p-3 bg-light rounded-4 border border-light-subtle" id="formPilihStaf">
                             <?= csrf_field() ?>
+                            <input type="hidden" name="active_tab" value="staf">
                             <input type="hidden" name="bulan" value="<?= esc($bulan_terpilih) ?>">
                             <input type="hidden" name="tahun" value="<?= esc($tahun_terpilih) ?>">
                             <input type="hidden" name="unit_kerja" value="<?= esc($unit_kerja_terpilih) ?>">
@@ -1310,7 +1335,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                 <div class="col-md-6">
                                     <label for="selectStaf" class="form-label fw-bold text-success-emphasis mb-1 small">Pilih Staf yang Akan Dinilai</label>
                                     <select name="staf_id" id="selectStaf" class="form-select border-success form-select-sm ecc-focus-ring" aria-label="Pilih Staf yang Akan Dinilai">
-                                        <option value="">-- Pilih Staf --</option>
+                                        <option value="">Pilih Staf</option>
                                         <?php foreach ($daftar_staf as $b): ?>
                                             <option value="<?= esc($b['id']) ?>" <?= ($b['id'] == $staf_id_terpilih) ? 'selected' : '' ?>>
                                                 <?= esc($b['nama_lengkap']) ?>
@@ -1397,7 +1422,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                                 <?= !empty($target_staf_unapproved_count) ? (int) $target_staf_unapproved_count . ' target ' : 'Target ' ?>periode <?= esc($bulan_indo[$bulan_terpilih - 1] ?? '') ?> <?= esc($tahun_terpilih) ?> belum disetujui. Setujui target terlebih dahulu sebelum menilai.
                                             </p>
                                         </div>
-                                        <a href="<?= site_url('laporan-harian?staf_id=' . esc($staf_id_terpilih) . '&bulan=' . esc($bulan_terpilih) . '&tahun=' . esc($tahun_terpilih) . '&source_tab=staf') ?>" class="btn btn-warning btn-sm btn-tactile text-dark fw-bold rounded-pill px-3 py-2">
+                                        <a href="<?= site_url('laporan-harian?staf_id=' . esc($staf_id_terpilih) . '&bulan=' . esc($bulan_terpilih) . '&tahun=' . esc($tahun_terpilih) . '&source_tab=staf') ?>" class="btn btn-warning btn-sm btn-tactile btn-mobile-touch text-dark fw-bold rounded-pill px-3 py-2">
                                             Setujui Target Kinerja
                                         </a>
                                     </div>
@@ -1432,7 +1457,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                                 data-bulan="<?= esc($bulan_terpilih) ?>"
                                                 data-tahun="<?= esc($tahun_terpilih) ?>"
                                                 title="Batalkan persetujuan target bulanan staf agar staf dapat merevisi target">
-                                                <i class="bi bi-x-circle-fill"></i> Batalkan Target (Admin)
+                                                <i class="bi bi-x-circle-fill" aria-hidden="true"></i> Batalkan Target (Admin)
                                             </button>
                                         <?php endif; ?>
                                     </div>
@@ -1441,12 +1466,12 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                         <table class="table table-bordered table-hover mb-0 table-bento table-bento-rhk" id="tablePenilaianStaf">
                                             <thead>
                                                 <tr>
-                                                    <th class="col-no-bento text-center">No</th>
-                                                    <th class="col-target text-start">Indikator Kinerja / RHK</th>
-                                                    <th class="col-metric text-center">Target Bulanan</th>
-                                                    <th class="col-metric text-center">Total Realisasi</th>
-                                                    <th class="col-metric text-center">Selisih (Gap)</th>
-                                                    <th class="col-nilai text-center">Input Nilai Capaian</th>
+                                                    <th scope="col" class="col-no-bento text-center">No</th>
+                                                    <th scope="col" class="col-target text-start">Indikator Kinerja / RHK</th>
+                                                    <th scope="col" class="col-metric text-center">Target Bulanan</th>
+                                                    <th scope="col" class="col-metric text-center">Total Realisasi</th>
+                                                    <th scope="col" class="col-metric text-center">Selisih</th>
+                                                    <th scope="col" class="col-nilai text-center">Input Nilai Capaian</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -1496,7 +1521,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                                                 </div>
                                                             <?php else: ?>
                                                                 <div class="input-group input-group-sm mb-2">
-                                                                    <input type="number" name="nilai_capaian[<?= esc($row['id']) ?>]" class="form-control text-center input-nilai-capaian fw-bold text-primary-emphasis num-tabular" value="<?= esc(old('nilai_capaian.' . $row['id'], old('nilai_capaian.' . $index, $formatInputNumber($nilai_capaian)))) ?>" step="0.01" min="0" max="150" placeholder="0 - 150" data-status-penilaian="<?= $isRowTerbit ? 'terbit' : ($isRowDraft ? 'draft' : 'none') ?>" data-initial-value="<?= esc($formatInputNumber($nilai_capaian)) ?>" aria-label="Input Nilai Capaian RHK: <?= esc($row['indikator_kinerja']) ?>">
+                                                                    <input type="number" name="nilai_capaian[<?= esc($row['id']) ?>]" class="form-control text-center input-nilai-capaian fw-bold text-primary-emphasis num-tabular" value="<?= esc(old('nilai_capaian.' . $row['id'], old('nilai_capaian.' . $index, $formatInputNumber($nilai_capaian)))) ?>" step="0.01" min="0" max="150" placeholder="0 - 150" data-status-penilaian="<?= $isRowTerbit ? 'terbit' : ($isRowDraft ? 'draft' : 'none') ?>" data-initial-value="<?= esc($formatInputNumber($nilai_capaian)) ?>" data-error="errStafRhk<?= esc($row['id']) ?>" aria-invalid="false" aria-label="Input Nilai Capaian RHK: <?= esc($row['indikator_kinerja']) ?>">
                                                                     <span class="input-group-text bg-primary-subtle text-primary-emphasis fw-bold">%</span>
                                                                 </div>
                                                                 <div class="predikat-badge-container d-flex align-items-center justify-content-center gap-1 flex-wrap">
@@ -1507,7 +1532,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                                                     <?php endif; ?>
                                                                     <span class="badge <?= esc($predikatBadge) ?> rounded-pill px-2 py-1 badge-predikat-val"><?= esc($predikatLabel) ?></span>
                                                                 </div>
-                                                                <div class="invalid-feedback small">Nilai harus 0 - 150%.</div>
+                                                                <div id="errStafRhk<?= esc($row['id']) ?>" class="invalid-feedback small">Nilai harus 0 - 150%.</div>
                                                             <?php endif; ?>
                                                         </td>
                                                     </tr>
@@ -1525,11 +1550,11 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                         <table class="table table-bordered table-hover mb-0 table-bento">
                                             <thead>
                                                 <tr>
-                                                    <th class="col-no-bento text-center">No</th>
-                                                    <th class="col-target text-start">Deskripsi Tugas Tambahan</th>
-                                                    <th class="col-tanggal-bento text-center">Tanggal</th>
-                                                    <th class="col-metric text-center">Capaian / Output</th>
-                                                    <th class="col-nilai text-center">Bukti</th>
+                                                    <th scope="col" class="col-no-bento text-center">No</th>
+                                                    <th scope="col" class="col-target text-start">Deskripsi Tugas Tambahan</th>
+                                                    <th scope="col" class="col-tanggal-bento text-center">Tanggal</th>
+                                                    <th scope="col" class="col-metric text-center">Capaian / Output</th>
+                                                    <th scope="col" class="col-nilai text-center">Bukti</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -1558,7 +1583,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                                                 ?>
                                                                 <?php if ($isSafeBuktiStaf): ?>
                                                                     <a href="<?= esc($linkBuktiStaf) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-light btn-sm text-primary-emphasis border btn-bukti-link btn-tactile" title="Lihat bukti pekerjaan">
-                                                                        <i class="bi bi-box-arrow-up-right"></i> Bukti
+                                                                        <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i> Bukti
                                                                     </a>
                                                                 <?php else: ?>
                                                                     <span class="ecc-text-muted-aa">-</span>
@@ -1574,7 +1599,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                                         <td colspan="4" class="text-end text-dark fw-bold d-none d-md-table-cell">Nilai Tugas Tambahan (0 - 150%):</td>
                                                         <td class="text-center col-nilai" data-label="Nilai Tugas Tambahan (0 - 150%)">
                                                             <div class="input-group input-group-sm mb-2">
-                                                                <input type="number" step="0.01" max="150" min="0" name="nilai_tugas_tambahan_gabungan" id="inputNilaiTambahanGabungan" class="form-control text-center fw-bold <?= (isset($is_target_staf_disetujui) && !$is_target_staf_disetujui) ? 'ecc-text-muted-aa bg-light' : 'text-success-emphasis' ?> num-tabular input-nilai-capaian" value="<?= esc(old('nilai_tugas_tambahan_gabungan', $formatInputNumber($scoreTambahanStafInput))) ?>" placeholder="<?= (isset($is_target_staf_disetujui) && !$is_target_staf_disetujui) ? 'Terkunci' : '0 - 150' ?>" data-status-penilaian="<?= $isTmbTerbit ? 'terbit' : ($isTmbDraft ? 'draft' : 'none') ?>" data-initial-value="<?= esc($formatInputNumber($scoreTambahanStafInput)) ?>" aria-label="Input Nilai Akumulasi Tugas Tambahan Staf" <?= (!$is_penilai || (isset($is_target_staf_disetujui) && !$is_target_staf_disetujui)) ? 'disabled' : '' ?>>
+                                                                <input type="number" step="0.01" max="150" min="0" name="nilai_tugas_tambahan_gabungan" id="inputNilaiTambahanGabungan" class="form-control text-center fw-bold <?= (isset($is_target_staf_disetujui) && !$is_target_staf_disetujui) ? 'ecc-text-muted-aa bg-light' : 'text-success-emphasis' ?> num-tabular input-nilai-capaian" value="<?= esc(old('nilai_tugas_tambahan_gabungan', $formatInputNumber($scoreTambahanStafInput))) ?>" placeholder="<?= (isset($is_target_staf_disetujui) && !$is_target_staf_disetujui) ? 'Terkunci' : '0 - 150' ?>" data-status-penilaian="<?= $isTmbTerbit ? 'terbit' : ($isTmbDraft ? 'draft' : 'none') ?>" data-initial-value="<?= esc($formatInputNumber($scoreTambahanStafInput)) ?>" data-error="errStafTambahan" aria-invalid="false" aria-label="Input Nilai Akumulasi Tugas Tambahan Staf" <?= (!$is_penilai || (isset($is_target_staf_disetujui) && !$is_target_staf_disetujui)) ? 'disabled' : '' ?>>
                                                                 <span class="input-group-text bg-success-subtle text-success-emphasis fw-bold">%</span>
                                                             </div>
                                                             <div id="hintTambahanContainer" class="d-flex align-items-center justify-content-center gap-1">
@@ -1586,7 +1611,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                                                     <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2 py-1">Draf</span>
                                                                 <?php endif; ?>
                                                             </div>
-                                                            <div class="invalid-feedback small">Nilai harus 0 - 150%.</div>
+                                                            <div id="errStafTambahan" class="invalid-feedback small">Nilai harus 0 - 150%.</div>
                                                         </td>
                                                     </tr>
                                                 </tfoot>
@@ -1676,15 +1701,15 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                                     <table class="table table-bordered table-hover mb-0 table-bento">
                                                         <thead>
                                                             <tr>
-                                                                <th class="col-no-bento text-center">No</th>
-                                                                <th class="col-tanggal-bento text-center">Tanggal</th>
-                                                                <th class="col-jenis-bento text-center">Jenis</th>
-                                                                <th class="col-target">Indikator RHK / Sasaran</th>
-                                                                <th class="col-target">Deskripsi Aktivitas</th>
-                                                                <th class="col-tanggal-bento text-center">Realisasi</th>
-                                                                <th class="col-bukti-bento text-center">Bukti</th>
-                                                                <th class="col-jenis-bento text-center">Status</th>
-                                                                <th class="col-aksi-bento text-center">Aksi</th>
+                                                                <th scope="col" class="col-no-bento text-center">No</th>
+                                                                <th scope="col" class="col-tanggal-bento text-center">Tanggal</th>
+                                                                <th scope="col" class="col-jenis-bento text-center">Jenis</th>
+                                                                <th scope="col" class="col-target">Indikator RHK / Sasaran</th>
+                                                                <th scope="col" class="col-target">Deskripsi Aktivitas</th>
+                                                                <th scope="col" class="col-tanggal-bento text-center">Realisasi</th>
+                                                                <th scope="col" class="col-bukti-bento text-center">Bukti</th>
+                                                                <th scope="col" class="col-jenis-bento text-center">Status</th>
+                                                                <th scope="col" class="col-aksi-bento text-center">Aksi</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
@@ -1717,7 +1742,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                                                                         ?>
                                                                         <?php if (!empty($rawLink) && $isSafeUrl): ?>
                                                                             <a href="<?= esc($rawLink) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-light text-primary-emphasis border btn-bukti-link btn-tactile" title="Lihat bukti pekerjaan">
-                                                                                <i class="bi bi-box-arrow-up-right"></i> Bukti
+                                                                                <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i> Bukti
                                                                             </a>
                                                                         <?php else: ?>
                                                                             <span class="ecc-text-muted-aa">-</span>
@@ -1795,7 +1820,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
 
 <!-- MODAL DETAIL LOG PEKERJAAN PER TANGGAL -->
 <div class="modal fade" id="modalDetailLogTanggal" tabindex="-1" aria-labelledby="modalDetailLogTanggalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
             <div class="modal-header bg-light border-bottom px-3 px-md-4 py-3">
                 <div>
@@ -1805,10 +1830,10 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                 <div class="d-flex align-items-center gap-2">
                     <div class="btn-group btn-group-sm" role="group" aria-label="Navigasi Tanggal">
                         <button type="button" class="btn btn-outline-secondary btn-nav-date btn-tactile rounded-start-3" id="btnModalPrevDay" title="Hari Sebelumnya" aria-label="Hari Sebelumnya">
-                            <i class="bi bi-chevron-left"></i>
+                            <i class="bi bi-chevron-left" aria-hidden="true"></i>
                         </button>
                         <button type="button" class="btn btn-outline-secondary btn-nav-date btn-tactile rounded-end-3" id="btnModalNextDay" title="Hari Berikutnya" aria-label="Hari Berikutnya">
-                            <i class="bi bi-chevron-right"></i>
+                            <i class="bi bi-chevron-right" aria-hidden="true"></i>
                         </button>
                     </div>
                     <button type="button" class="btn-close ms-2 btn-tactile" data-bs-dismiss="modal" aria-label="Tutup"></button>
@@ -1842,16 +1867,16 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
 
                 <h3 class="h6 fw-bold text-dark mb-2">Daftar Aktivitas &amp; Bukti Pekerjaan</h3>
                 <div class="table-bento-wrapper bg-white border rounded-4 overflow-hidden mb-3" id="modalLogTableContainer">
-                    <table class="table table-bordered table-hover mb-0 table-bento">
+                    <table class="table table-bordered table-hover mb-0 table-bento table-modal-log">
                         <thead>
                             <tr>
-                                <th class="col-no-bento text-center">No</th>
-                                <th class="col-jenis-bento text-center">Jenis</th>
-                                <th class="col-target text-start">Deskripsi Aktivitas</th>
-                                <th class="col-target text-start">Indikator Kinerja / RHK</th>
-                                <th class="col-tanggal-bento text-center">Realisasi</th>
-                                <th class="col-bukti-bento text-center">Bukti</th>
-                                <th class="col-jenis-bento text-center">Status</th>
+                                <th scope="col" class="col-no-bento text-center">No</th>
+                                <th scope="col" class="col-modal-jenis text-center">Jenis</th>
+                                <th scope="col" class="col-modal-desc text-start">Deskripsi Aktivitas</th>
+                                <th scope="col" class="col-modal-indikator text-start">Indikator Kinerja / RHK</th>
+                                <th scope="col" class="col-modal-realisasi text-center">Realisasi</th>
+                                <th scope="col" class="col-modal-bukti text-center">Bukti</th>
+                                <th scope="col" class="col-modal-status text-center">Status</th>
                             </tr>
                         </thead>
                         <tbody id="modalLogTabelBody"></tbody>
@@ -1972,6 +1997,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
         if ($('#selectStaf').length) {
             if (typeof $.fn.select2 !== 'undefined') {
                 $('#selectStaf').select2({
+                    theme: 'bootstrap-5',
                     width: '100%',
                     placeholder: 'Cari Nama Staf...',
                     allowClear: false
@@ -1992,9 +2018,11 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
             }
         }
 
-        $(document).on('wheel', 'input[type="number"]', function() {
-            $(this).blur();
-        });
+        document.addEventListener('wheel', function() {
+            if (document.activeElement && document.activeElement.type === 'number') {
+                document.activeElement.blur();
+            }
+        }, { passive: true });
 
         function mapBadgeClassForContrast(badgeClass) {
             if (badgeClass === 'bg-danger') return 'bg-danger text-white';
@@ -2204,19 +2232,34 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
             recalculateFormSummary(mandiriScoreConfig);
         }
 
+        function setNilaiInvalidState($input, isInvalid) {
+            const el = $input[0];
+            if (!el) return;
+            const errorId = el.dataset ? el.dataset.error : '';
+            el.setAttribute('aria-invalid', isInvalid ? 'true' : 'false');
+            if (errorId) {
+                const ids = (el.getAttribute('aria-describedby') || '').split(/\s+/).filter(function(id) { return id && id !== errorId; });
+                if (isInvalid) ids.push(errorId);
+                if (ids.length) el.setAttribute('aria-describedby', ids.join(' '));
+                else el.removeAttribute('aria-describedby');
+            }
+            $input.toggleClass('is-invalid', isInvalid);
+            const $error = errorId ? $('#' + errorId) : $input.parent().siblings('.invalid-feedback');
+            if (isInvalid) $error.show();
+            else $error.hide();
+        }
+
         $(document).on('input change keyup', '.input-nilai-capaian, #inputNilaiTambahanGabungan, #inputNilaiTambahanMandiri', function() {
-            const val = parseFloat($(this).val());
-            const $error = $(this).parent().siblings('.invalid-feedback');
-            const $form = $(this).closest('form');
+            const $input = $(this);
+            const val = parseFloat($input.val());
+            const $form = $input.closest('form');
             const $btnSubmit = $form.find('button[type="submit"]');
 
             if (!isNaN(val) && (val < 0 || val > 150)) {
-                $(this).addClass('is-invalid');
-                $error.show();
+                setNilaiInvalidState($input, true);
                 $btnSubmit.prop('disabled', true);
             } else {
-                $(this).removeClass('is-invalid');
-                $error.hide();
+                setNilaiInvalidState($input, false);
                 if ($form.find('.input-nilai-capaian.is-invalid').length === 0) {
                     $btnSubmit.prop('disabled', false);
                 }
@@ -2233,8 +2276,11 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
         $('#formPenilaian button[type="reset"], #btnResetNilaiStaf').on('click', function(e) {
             e.preventDefault();
             function doResetStaf() {
-                $('#formPenilaian .input-nilai-capaian, #formPenilaian #inputNilaiTambahanGabungan').val('').removeClass('is-invalid border-warning shadow-sm').removeAttr('title');
-                $('#formPenilaian .invalid-feedback').hide();
+                $('#formPenilaian .input-nilai-capaian, #formPenilaian #inputNilaiTambahanGabungan').each(function() {
+                    const $el = $(this);
+                    $el.val('').removeClass('border-warning shadow-sm').removeAttr('title');
+                    setNilaiInvalidState($el, false);
+                });
                 recalculateFormSummary(stafScoreConfig);
                 isPenilaianFormDirty = false;
                 $('#penilaianActionInput').val('reset');
@@ -2265,8 +2311,11 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
         $('#btnResetNilaiMandiri').on('click', function(e) {
             e.preventDefault();
             function doResetMandiri() {
-                $('#formPenilaianMandiri .input-nilai-capaian, #formPenilaianMandiri #inputNilaiTambahanMandiri').val('').removeClass('is-invalid border-warning shadow-sm').removeAttr('title');
-                $('#formPenilaianMandiri .invalid-feedback').hide();
+                $('#formPenilaianMandiri .input-nilai-capaian, #formPenilaianMandiri #inputNilaiTambahanMandiri').each(function() {
+                    const $el = $(this);
+                    $el.val('').removeClass('border-warning shadow-sm').removeAttr('title');
+                    setNilaiInvalidState($el, false);
+                });
                 recalculateFormSummary(mandiriScoreConfig);
                 isPenilaianFormDirty = false;
                 $('#mandiriActionInput').val('reset');
@@ -2304,22 +2353,27 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
             $('#penilaianActionInput').val(lastClickedAction);
 
             form.find('.input-nilai-capaian').each(function() {
-                const v = parseFloat($(this).val());
+                const $el = $(this);
+                const v = parseFloat($el.val());
                 if (!isNaN(v) && (v < 0 || v > 150)) {
                     hasInvalid = true;
-                    $(this).addClass('is-invalid');
+                    setNilaiInvalidState($el, true);
                 } else {
-                    $(this).removeClass('is-invalid');
+                    setNilaiInvalidState($el, false);
                 }
             });
 
             if (hasInvalid) {
                 e.preventDefault();
+                const firstInvalid = form.find('.input-nilai-capaian.is-invalid').first();
                 const invalidMsg = 'Nilai capaian harus di antara 0 dan 150%.';
                 if (typeof Swal !== 'undefined') {
-                    Swal.fire({ icon: 'error', title: 'Nilai di Luar Batas', text: invalidMsg });
+                    Swal.fire({ icon: 'error', title: 'Nilai di Luar Batas', text: invalidMsg }).then(function() {
+                        if (firstInvalid.length) firstInvalid.focus();
+                    });
                 } else {
                     alert(invalidMsg);
+                    if (firstInvalid.length) firstInvalid.focus();
                 }
                 return false;
             }
@@ -2395,22 +2449,27 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
             $('#mandiriActionInput').val(lastClickedMandiriAction);
 
             form.find('.input-nilai-capaian').each(function() {
-                const v = parseFloat($(this).val());
+                const $el = $(this);
+                const v = parseFloat($el.val());
                 if (!isNaN(v) && (v < 0 || v > 150)) {
                     hasInvalid = true;
-                    $(this).addClass('is-invalid');
+                    setNilaiInvalidState($el, true);
                 } else {
-                    $(this).removeClass('is-invalid');
+                    setNilaiInvalidState($el, false);
                 }
             });
 
             if (hasInvalid) {
                 e.preventDefault();
+                const firstInvalid = form.find('.input-nilai-capaian.is-invalid').first();
                 const invalidMsg = 'Nilai capaian harus di antara 0 dan 150%.';
                 if (typeof Swal !== 'undefined') {
-                    Swal.fire({ icon: 'error', title: 'Nilai di Luar Batas', text: invalidMsg });
+                    Swal.fire({ icon: 'error', title: 'Nilai di Luar Batas', text: invalidMsg }).then(function() {
+                        if (firstInvalid.length) firstInvalid.focus();
+                    });
                 } else {
                     alert(invalidMsg);
+                    if (firstInvalid.length) firstInvalid.focus();
                 }
                 return false;
             }
@@ -2532,12 +2591,14 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
             $('#modalLogInfoTanggal').text(tglFormatted);
             $('#modalLogBadgeTotal').text(`${totalKegiatan} Kegiatan`);
 
+            const statusHariEl = document.getElementById('modalLogInfoStatusHari');
             if (isHoliday) {
                 $('#modalLogInfoStatusHari').html(`<span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle px-3 py-1 rounded-pill fw-semibold">Libur Nasional: ${escHtml(holidayName)}</span>`).show();
             } else if (isWeekend) {
                 $('#modalLogInfoStatusHari').html('<span class="badge bg-light ecc-text-muted-aa border px-3 py-1 rounded-pill fw-semibold">Akhir Pekan (Sabtu / Minggu)</span>').show();
             } else {
-                $('#modalLogInfoStatusHari').empty().hide();
+                if (statusHariEl) statusHariEl.replaceChildren();
+                $('#modalLogInfoStatusHari').hide();
             }
 
             const canManageRevisi = <?= (hasAnyRole(['admin', 'direktur']) || $is_atasan || $is_penilai) ? 'true' : 'false' ?>;
@@ -2573,13 +2634,14 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
             $('#btnModalPrevDay').prop('disabled', !prevCell.length);
             $('#btnModalNextDay').prop('disabled', !nextCell.length);
 
-            const tbody = $('#modalLogTabelBody');
-            tbody.empty();
+            const tbodyEl = document.getElementById('modalLogTabelBody');
+            if (tbodyEl) tbodyEl.replaceChildren();
 
             if (logs && logs.length > 0) {
                 $('#modalLogEmptyState').hide();
                 $('#modalLogTableContainer').show();
 
+                const rowChunks = [];
                 logs.forEach((item, idx) => {
                     const isTambahan = item.is_tambahan == 1 || item.is_tambahan == '1';
                     const jenisBadge = isTambahan
@@ -2598,7 +2660,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
 
                     let buktiBtn = '<span class="ecc-text-muted-aa small">-</span>';
                     if (item.link_bukti && typeof item.link_bukti === 'string' && /^https?:\/\//i.test(item.link_bukti.trim())) {
-                        buktiBtn = `<a href="${escHtml(item.link_bukti.trim())}" target="_blank" rel="noopener noreferrer" class="btn btn-light btn-sm text-primary-emphasis border btn-bukti-link btn-tactile"><i class="bi bi-box-arrow-up-right"></i> Bukti</a>`;
+                        buktiBtn = `<a href="${escHtml(item.link_bukti.trim())}" target="_blank" rel="noopener noreferrer" class="btn btn-light btn-sm text-primary-emphasis border btn-bukti-link btn-tactile"><i class="bi bi-box-arrow-up-right" aria-hidden="true"></i> Bukti</a>`;
                     }
 
                     const statusBadge = (item.status === 'terkirim' || item.status === 'disetujui')
@@ -2608,7 +2670,7 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                     const descHtml = escHtml(item.deskripsi_kegiatan || '-').replace(/\n/g, '<br>');
                     const indikatorText = escHtml(item.indikator_kinerja || '-');
 
-                    const rowHtml = `
+                    rowChunks.push(`
                         <tr>
                             <td class="td-no text-center fw-bold ecc-text-muted-aa num-tabular" data-label="Baris">${idx + 1}</td>
                             <td class="text-center" data-label="Jenis">${jenisBadge}</td>
@@ -2618,9 +2680,14 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                             <td class="text-center" data-label="Bukti">${buktiBtn}</td>
                             <td class="text-center" data-label="Status">${statusBadge}</td>
                         </tr>
-                    `;
-                    tbody.append(rowHtml);
+                    `);
                 });
+                if (tbodyEl) {
+                    const tpl = document.createElement('template');
+                    tpl.innerHTML = '<table><tbody>' + rowChunks.join('') + '</tbody></table>';
+                    const builtRows = tpl.content.querySelector('tbody');
+                    if (builtRows) tbodyEl.replaceChildren(...builtRows.children);
+                }
             } else {
                 $('#modalLogTableContainer').hide();
                 if (isRevisi) {
@@ -2648,13 +2715,6 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
         $(document).on('click', '.heatmap-day-cell', function(e) {
             e.preventDefault();
             populateModalFromCell($(this));
-        });
-
-        $(document).on('keydown', '.heatmap-day-cell', function(e) {
-            if (e.key === 'Enter' || e.key === ' ' || e.keyCode === 13 || e.keyCode === 32) {
-                e.preventDefault();
-                populateModalFromCell($(this));
-            }
         });
 
         $('#modalDetailLogTanggal').on('hidden.bs.modal', function() {
@@ -2688,7 +2748,11 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
             const csrfToken = $('input[name="' + csrfName + '"]').first().val() || $('input[name="csrf_test_name"]').val();
 
             if (!tanggal || !stafId) {
-                alert('Data tanggal atau staf tidak lengkap.');
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Data Tidak Lengkap', 'Data tanggal atau staf tidak lengkap.', 'warning');
+                } else {
+                    alert('Data tanggal atau staf tidak lengkap.');
+                }
                 return;
             }
 
@@ -2745,7 +2809,8 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                     confirmButtonColor: '#d97706',
                     cancelButtonColor: '#475569',
                     confirmButtonText: 'Ya, Kembalikan',
-                    cancelButtonText: 'Batal'
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true
                 }).then((result) => {
                     if (result.isConfirmed) executeBukaKunciStaf();
                 });
@@ -2780,7 +2845,11 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
             const csrfToken = $('input[name="' + csrfName + '"]').first().val() || $('input[name="csrf_test_name"]').val();
 
             if (!stafId || !bulan || !tahun) {
-                alert('Data staf atau periode tidak lengkap.');
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Data Tidak Lengkap', 'Data staf atau periode tidak lengkap.', 'warning');
+                } else {
+                    alert('Data staf atau periode tidak lengkap.');
+                }
                 return;
             }
 
@@ -2838,7 +2907,8 @@ $mapPredikatBadgeClass = static function (string $badgeClass): string {
                     confirmButtonColor: '#dc2626',
                     cancelButtonColor: '#475569',
                     confirmButtonText: 'Ya, Batalkan',
-                    cancelButtonText: 'Batal'
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true
                 }).then((result) => {
                     if (result.isConfirmed) executeCancel();
                 });

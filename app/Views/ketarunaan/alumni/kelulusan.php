@@ -543,7 +543,7 @@ $canValidate     = !empty($perms['can_validate']);
 
                 var commitBatch = function () {
                     if (hiddenHolder) {
-                        hiddenHolder.innerHTML = '';
+                        hiddenHolder.replaceChildren();
                         selectedIds.forEach(function (idVal) {
                             var inp = document.createElement('input');
                             inp.type  = 'hidden';

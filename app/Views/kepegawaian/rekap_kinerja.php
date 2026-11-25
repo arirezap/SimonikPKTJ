@@ -121,18 +121,12 @@
     content: '';
 }
 
-/* Quick Filter Pills (32px desktop, 36px mobile touch-friendly, 8pt scale) */
+/* Quick Filter Pills (Clean Wrapping Grid, 32px desktop, 44px mobile touch-friendly) */
 #pillFilterGroup {
     padding: 12px 24px !important;
     gap: 8px !important;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
     background-color: #ffffff;
     border-bottom: 1px solid #e2e8f0;
-}
-#pillFilterGroup::-webkit-scrollbar {
-    display: none;
 }
 .filter-pill {
     cursor: pointer;
@@ -149,7 +143,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 4px;
     white-space: nowrap;
     flex-shrink: 0;
     user-select: none;
@@ -240,6 +234,35 @@
     padding-left: 8px !important;
     padding-right: 8px !important;
     white-space: nowrap;
+}
+
+/* Mode Bulanan (6 Kolom): Fit-to-Viewport Tanpa Terpotong di Kanan */
+.table-rekap-bulanan {
+    table-layout: fixed;
+    width: 100%;
+}
+.table-rekap-bulanan .col-rk-no { width: 5%; min-width: 48px; }
+.table-rekap-bulanan .col-rk-pegawai { width: 33%; }
+.table-rekap-bulanan .col-rk-unit { width: 18%; }
+.table-rekap-bulanan .col-rk-komponen { width: 17%; }
+.table-rekap-bulanan .col-rk-dinilai { width: 11%; }
+.table-rekap-bulanan .col-rk-nilai { width: 16%; }
+.table-rekap-bulanan thead th.sortable-th {
+    white-space: normal;
+    line-height: 1.25;
+}
+.table-rekap-bulanan .btn-sort-th {
+    gap: 4px;
+}
+@media (min-width: 768px) and (max-width: 1399.98px) {
+    .table-rekap-bulanan thead th,
+    .table-rekap-bulanan tbody td {
+        padding: 12px 12px;
+    }
+    .table-rekap-bulanan .col-rk-no {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
 }
 
 /* Sortable Header Button (Preserves <th> ARIA columnheader role) */
@@ -378,6 +401,9 @@
     align-items: center;
     gap: 4px;
 }
+.table-modal-rekap {
+    min-width: 680px;
+}
 
 /* Responsive Breakpoints */
 @media (max-width: 767.98px) {
@@ -391,12 +417,25 @@
     #pillFilterGroup {
         padding: 12px 16px !important;
     }
+    .filter-select-custom,
+    .filter-input-year {
+        height: 44px !important;
+        font-size: var(--bs-body-font-size, 1rem) !important;
+    }
+    .btn-tactile,
+    .btn-modal-action,
+    .btn-reset-filter {
+        min-height: 44px;
+    }
     .filter-pill {
-        height: 36px;
-        padding: 4px 12px;
+        min-height: 44px;
+        height: auto;
+        padding: 8px 14px;
     }
     .btn-bukti-modal {
-        height: 36px;
+        min-height: 44px;
+        height: auto;
+        padding: 8px 14px;
     }
 }
 @media (min-width: 768px) {
@@ -433,14 +472,14 @@
     <!-- PAGE HEADER -->
     <div class="d-flex justify-content-between flex-wrap align-items-center pt-2 pb-3 mb-3 border-bottom gap-2 bento-stagger bento-stagger-1">
         <div>
-            <h1 class="h4 mb-1 fw-bold text-dark">Monitoring Penilaian Kinerja</h1>
+            <h1 class="h3 mb-1 fw-bold text-dark">Monitoring Penilaian Kinerja</h1>
             <p class="ecc-text-muted-aa small mb-0">Pemantauan dan rekapitulasi penilaian capaian kinerja bulanan seluruh pegawai.</p>
         </div>
         <div class="d-flex align-items-center gap-2 flex-wrap">
             <a href="<?= site_url('kepegawaian/export-excel') ?>?bulan=<?= esc($bulan_terpilih) ?>&tahun=<?= esc($tahun_terpilih) ?>&unit=<?= esc($unit_filter) ?>&role=<?= esc($role_filter ?? '') ?>"
                class="btn btn-sm btn-success shadow-sm px-3 fw-bold d-inline-flex align-items-center gap-2 btn-tactile"
                id="btnExportExcel"
-               title="Unduh Rekap Excel (.xlsx)"
+               title="Unduh Rekap Excel"
                aria-label="Unduh Rekapitulasi Kinerja Excel">
                 <i class="bi bi-file-earmark-excel-fill" aria-hidden="true"></i>
                 <span>Export Excel</span>
@@ -448,7 +487,7 @@
             <a href="<?= site_url('kepegawaian/export-pdf') ?>?bulan=<?= esc($bulan_terpilih) ?>&tahun=<?= esc($tahun_terpilih) ?>&unit=<?= esc($unit_filter) ?>&role=<?= esc($role_filter ?? '') ?>"
                class="btn btn-sm btn-danger shadow-sm px-3 fw-bold d-inline-flex align-items-center gap-2 btn-tactile"
                id="btnExportPdf"
-               title="Unduh Laporan PDF (A4 Landscape)"
+               title="Unduh Laporan PDF"
                aria-label="Unduh Rekapitulasi Kinerja PDF">
                 <i class="bi bi-file-earmark-pdf-fill" aria-hidden="true"></i>
                 <span>Export PDF</span>
@@ -479,7 +518,7 @@
                     <h2 class="fw-bold text-dark mb-0" style="font-size: 0.95rem;">Filter Periode, Unit Kerja &amp; Kategori</h2>
                     <?php if (!empty($unit_filter) || !empty($role_filter)): ?>
                         <a href="<?= site_url('kepegawaian') ?>?bulan=<?= esc($bulan_terpilih) ?>&tahun=<?= esc($tahun_terpilih) ?>"
-                           class="badge bg-secondary-subtle text-dark text-decoration-none ecc-pill-badge">
+                           class="badge bg-secondary-subtle text-dark text-decoration-none ecc-pill-badge btn-reset-filter">
                             Reset Filter
                         </a>
                     <?php endif; ?>
@@ -602,30 +641,30 @@
         <div class="card-header bento-card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
             <div>
                 <h2 class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">Daftar Rekapitulasi Penilaian Kinerja</h2>
-                <div class="ecc-text-muted-aa" id="visibleCounter" style="font-size: 0.75rem;">
+                <div class="ecc-text-muted-aa" id="visibleCounter" style="font-size: 0.75rem;" aria-live="polite" aria-atomic="true">
                     Menampilkan <?= count($rekap_kinerja) ?> pegawai · Pilih baris untuk rincian
                 </div>
             </div>
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-                <div class="input-group input-group-sm" style="max-width: 240px;">
+            <div class="d-flex align-items-center justify-content-md-end gap-2 flex-wrap flex-md-nowrap">
+                <div class="input-group input-group-sm" style="width: 224px; max-width: 100%;">
                     <span class="input-group-text bg-white border-end-0 ecc-text-subtle"><i class="bi bi-search" aria-hidden="true"></i></span>
                     <input type="text" id="liveSearchInput" class="form-control border-start-0 ps-0" style="height: 36px; font-size: 0.875rem;" placeholder="Cari nama, NIP, unit..." autocomplete="off" aria-label="Cari pegawai, NIP, jabatan, atau unit kerja">
                 </div>
-                <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle ecc-pill-badge">
+                <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle ecc-pill-badge flex-shrink-0">
                     <?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?>
                 </span>
             </div>
         </div>
 
         <!-- Quick Status Filter Pills -->
-        <div class="d-flex align-items-center flex-nowrap" id="pillFilterGroup">
+        <div class="d-flex align-items-center flex-wrap" id="pillFilterGroup">
             <span class="ecc-text-muted-aa fw-bold me-1 flex-shrink-0" style="font-size: 0.75rem;">Filter Cepat:</span>
-            <button type="button" class="filter-pill active" data-filter="all">Semua</button>
-            <button type="button" class="filter-pill" data-filter="sudah"><i class="bi bi-check-circle-fill text-success" aria-hidden="true"></i> Sudah Dinilai</button>
-            <button type="button" class="filter-pill" data-filter="belum"><i class="bi bi-hourglass-split text-warning" aria-hidden="true"></i> Belum Dinilai</button>
-            <button type="button" class="filter-pill" data-filter="tidak_mengerjakan"><i class="bi bi-x-circle-fill text-danger" aria-hidden="true"></i> Tidak Mengerjakan</button>
-            <button type="button" class="filter-pill" data-filter="perhatian"><i class="bi bi-exclamation-triangle-fill text-warning" aria-hidden="true"></i> &lt; 75 (Perhatian)</button>
-            <button type="button" class="filter-pill" data-filter="baik"><i class="bi bi-stars text-primary" aria-hidden="true"></i> &ge; 90 (Baik)</button>
+            <button type="button" class="filter-pill active" data-filter="all" aria-pressed="true">Semua</button>
+            <button type="button" class="filter-pill" data-filter="sudah" aria-pressed="false">Sudah Dinilai</button>
+            <button type="button" class="filter-pill" data-filter="belum" aria-pressed="false">Belum Dinilai</button>
+            <button type="button" class="filter-pill" data-filter="tidak_mengerjakan" aria-pressed="false">Tidak Mengerjakan</button>
+            <button type="button" class="filter-pill" data-filter="perhatian" aria-pressed="false">&lt; 75 (Perhatian)</button>
+            <button type="button" class="filter-pill" data-filter="baik" aria-pressed="false">&ge; 90 (Baik)</button>
         </div>
 
         <div class="card-body p-0">
@@ -648,23 +687,23 @@
             </div>
 
             <!-- DESKTOP TABLE VIEW -->
-            <div class="table-responsive desktop-table-view" id="tableContent">
-                <table class="table table-hover table-bento mb-0 align-middle" id="mainDataTable">
+            <div class="<?= ($bulan_terpilih === 'all') ? 'table-responsive' : '' ?> desktop-table-view" id="tableContent">
+                <table class="table table-hover table-bento <?= ($bulan_terpilih !== 'all') ? 'table-rekap-bulanan' : '' ?> mb-0 align-middle" id="mainDataTable">
                     <thead>
                         <tr>
-                            <th class="col-rk-no text-center sortable-th th-sorted" data-sort="no" aria-sort="ascending">
+                            <th scope="col" class="col-rk-no text-center sortable-th th-sorted" data-sort="no" aria-sort="ascending">
                                 <button type="button" class="btn-sort-th justify-content-center" aria-label="Urutkan berdasarkan nomor">
                                     <span>No</span>
                                     <i class="bi bi-arrow-up sort-indicator" aria-hidden="true"></i>
                                 </button>
                             </th>
-                            <th style="min-width: 270px;" class="sortable-th" data-sort="nama" aria-sort="none">
+                            <th scope="col" <?= ($bulan_terpilih === 'all') ? 'style="min-width: 270px;"' : '' ?> class="col-rk-pegawai sortable-th" data-sort="nama" aria-sort="none">
                                 <button type="button" class="btn-sort-th justify-content-between" aria-label="Urutkan berdasarkan nama pegawai">
                                     <span>Pegawai &amp; Jabatan</span>
                                     <i class="bi bi-arrow-down-up sort-indicator" aria-hidden="true"></i>
                                 </button>
                             </th>
-                            <th style="min-width: 160px;" class="sortable-th" data-sort="unit" aria-sort="none">
+                            <th scope="col" <?= ($bulan_terpilih === 'all') ? 'style="min-width: 160px;"' : '' ?> class="col-rk-unit sortable-th" data-sort="unit" aria-sort="none">
                                 <button type="button" class="btn-sort-th justify-content-between" aria-label="Urutkan berdasarkan unit kerja">
                                     <span>Unit Kerja</span>
                                     <i class="bi bi-arrow-down-up sort-indicator" aria-hidden="true"></i>
@@ -672,29 +711,29 @@
                             </th>
                             <?php if ($bulan_terpilih === 'all'): ?>
                                 <?php foreach (['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'] as $m): ?>
-                                    <th class="text-center" style="min-width: 48px;"><?= $m ?></th>
+                                    <th scope="col" class="text-center" style="min-width: 48px;"><?= $m ?></th>
                                 <?php endforeach; ?>
-                                <th class="text-center border-start bg-light sortable-th" data-sort="target" aria-sort="none" style="min-width: 136px;">
+                                <th scope="col" class="text-center border-start bg-light sortable-th" data-sort="target" aria-sort="none" style="min-width: 136px;">
                                     <button type="button" class="btn-sort-th justify-content-center" aria-label="Urutkan berdasarkan target tahunan">
                                         <span>Target &amp; Tambahan</span>
                                         <i class="bi bi-arrow-down-up sort-indicator" aria-hidden="true"></i>
                                     </button>
                                 </th>
                             <?php else: ?>
-                                <th class="text-center sortable-th" data-sort="target" aria-sort="none" style="min-width: 144px;">
+                                <th scope="col" class="col-rk-komponen text-center sortable-th" data-sort="target" aria-sort="none">
                                     <button type="button" class="btn-sort-th justify-content-center" aria-label="Urutkan berdasarkan komponen kinerja">
                                         <span>Komponen Kinerja</span>
                                         <i class="bi bi-arrow-down-up sort-indicator" aria-hidden="true"></i>
                                     </button>
                                 </th>
                             <?php endif; ?>
-                            <th class="text-center sortable-th" data-sort="dinilai" aria-sort="none" style="width: 120px;">
+                            <th scope="col" class="col-rk-dinilai text-center sortable-th" data-sort="dinilai" aria-sort="none" <?= ($bulan_terpilih === 'all') ? 'style="width: 120px;"' : '' ?>>
                                 <button type="button" class="btn-sort-th justify-content-center" aria-label="Urutkan berdasarkan jumlah komponen dinilai">
                                     <span>Dinilai</span>
                                     <i class="bi bi-arrow-down-up sort-indicator" aria-hidden="true"></i>
                                 </button>
                             </th>
-                            <th class="text-center pe-3 sortable-th" data-sort="nilai" aria-sort="none" style="width: 144px;">
+                            <th scope="col" class="col-rk-nilai text-center sortable-th" data-sort="nilai" aria-sort="none" <?= ($bulan_terpilih === 'all') ? 'style="width: 144px;"' : '' ?>>
                                 <button type="button" class="btn-sort-th justify-content-center" aria-label="Urutkan berdasarkan nilai akhir">
                                     <span>Nilai Akhir</span>
                                     <i class="bi bi-arrow-down-up sort-indicator" aria-hidden="true"></i>
@@ -745,7 +784,7 @@
                                     $initial = strtoupper(substr(trim($item['pegawai']['nama_lengkap'] ?? 'P'), 0, 1));
                                 ?>
                                 <tr class="desktop-pegawai-row cursor-pointer btn-detail-pegawai"
-                                    title="Klik untuk melihat rincian capaian kinerja <?= esc($item['pegawai']['nama_lengkap']) ?>"
+                                    title="Lihat rincian kinerja <?= esc($item['pegawai']['nama_lengkap']) ?>"
                                     data-user-id="<?= $item['pegawai']['id'] ?>"
                                     data-nama="<?= esc(strtolower($item['pegawai']['nama_lengkap'])) ?>"
                                     data-nip="<?= esc(strtolower($item['pegawai']['nip'] ?? '')) ?>"
@@ -766,7 +805,7 @@
                                     <td>
                                         <div class="d-flex align-items-center gap-3">
                                             <?php if ($hasPhoto): ?>
-                                                <img src="<?= base_url($fotoPath) ?>" alt="<?= esc($item['pegawai']['nama_lengkap']) ?>" class="rounded-circle object-fit-cover shadow-sm flex-shrink-0" width="40" height="40" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                <img src="<?= base_url($fotoPath) ?>" alt="<?= esc($item['pegawai']['nama_lengkap']) ?>" class="rounded-circle object-fit-cover shadow-sm flex-shrink-0" width="40" height="40" loading="lazy" decoding="async" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                                 <div class="rounded-circle bg-primary-subtle text-primary-emphasis fw-bold align-items-center justify-content-center flex-shrink-0" style="display: none; width: 40px; height: 40px; font-size: 0.95rem;" aria-hidden="true">
                                                     <?= $initial ?>
                                                 </div>
@@ -943,7 +982,7 @@
 
                                 <div class="d-flex align-items-center gap-3 mb-3">
                                     <?php if ($hasPhotoMob): ?>
-                                        <img src="<?= base_url($fotoPathMob) ?>" alt="<?= esc($item['pegawai']['nama_lengkap']) ?>" class="rounded-circle object-fit-cover shadow-sm flex-shrink-0" width="40" height="40" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                        <img src="<?= base_url($fotoPathMob) ?>" alt="<?= esc($item['pegawai']['nama_lengkap']) ?>" class="rounded-circle object-fit-cover shadow-sm flex-shrink-0" width="40" height="40" loading="lazy" decoding="async" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                         <div class="rounded-circle bg-primary-subtle text-primary-emphasis fw-bold align-items-center justify-content-center flex-shrink-0" style="display: none; width: 40px; height: 40px; font-size: 0.95rem;" aria-hidden="true">
                                             <?= $initialMob ?>
                                         </div>
@@ -1001,7 +1040,7 @@
 
 <!-- MODAL DETAIL KINERJA PEGAWAI -->
 <div class="modal fade" id="modalDetailPegawai" tabindex="-1" aria-labelledby="detailNamaPegawai" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
             <div class="modal-header bg-light border-bottom" style="padding: 16px 24px;">
                 <div class="d-flex align-items-center gap-3">
@@ -1009,7 +1048,7 @@
                         <i class="bi bi-person-badge fs-5" aria-hidden="true"></i>
                     </div>
                     <div>
-                        <h5 class="modal-title fw-bold text-dark mb-0" id="detailNamaPegawai" style="font-size: 0.95rem;">Rincian Kinerja Pegawai</h5>
+                        <h2 class="h5 modal-title fw-bold text-dark mb-0" id="detailNamaPegawai" style="font-size: 0.95rem;">Rincian Kinerja Pegawai</h2>
                         <div class="ecc-text-muted-aa" id="detailSubPegawai" style="font-size: 0.75rem;">Periode: <?= esc($nama_bulan) ?> <?= esc($tahun_terpilih) ?></div>
                     </div>
                 </div>
@@ -1050,19 +1089,19 @@
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="fw-bold text-dark mb-0" style="font-size: 0.875rem;">A. Rincian Target Kinerja (Tugas Pokok)</h6>
+                        <h3 class="h6 fw-bold text-dark mb-0" style="font-size: 0.875rem;">A. Rincian Target Kinerja (Tugas Pokok)</h3>
                         <span class="badge bg-light text-dark border ecc-pill-badge" id="modalBadgeCountRhk">0 Target Pokok</span>
                     </div>
                     <div class="table-responsive bg-white border rounded-3 overflow-hidden mb-4">
-                        <table class="table table-bordered table-hover align-middle mb-0 table-bento">
+                        <table class="table table-bordered table-hover align-middle mb-0 table-bento table-modal-rekap">
                             <thead>
                                 <tr>
-                                    <th class="col-rk-no text-center">No</th>
-                                    <th class="text-start">Indikator Kinerja / RHK</th>
-                                    <th style="width: 120px;" class="text-center">Target</th>
-                                    <th style="width: 120px;" class="text-center">Realisasi</th>
-                                    <th style="width: 128px;" class="text-center">Selisih</th>
-                                    <th style="width: 112px;" class="text-center">Nilai Capaian</th>
+                                    <th scope="col" class="col-rk-no text-center" style="width: 56px;">No</th>
+                                    <th scope="col" class="text-start">Indikator Kinerja / RHK</th>
+                                    <th scope="col" style="width: 13%;" class="text-center">Target</th>
+                                    <th scope="col" style="width: 13%;" class="text-center">Realisasi</th>
+                                    <th scope="col" style="width: 15%;" class="text-center">Selisih</th>
+                                    <th scope="col" style="width: 13%;" class="text-center">Nilai Capaian</th>
                                 </tr>
                             </thead>
                             <tbody id="modalTableRhkBody"></tbody>
@@ -1070,18 +1109,18 @@
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="fw-bold text-dark mb-0" style="font-size: 0.875rem;">B. Tugas Tambahan</h6>
+                        <h3 class="h6 fw-bold text-dark mb-0" style="font-size: 0.875rem;">B. Tugas Tambahan</h3>
                         <span class="badge bg-light text-dark border ecc-pill-badge" id="modalBadgeScoreTambahan">Nilai: -</span>
                     </div>
                     <div class="table-responsive bg-white border rounded-3 overflow-hidden mb-2">
-                        <table class="table table-bordered table-hover align-middle mb-0 table-bento">
+                        <table class="table table-bordered table-hover align-middle mb-0 table-bento table-modal-rekap">
                             <thead>
                                 <tr>
-                                    <th class="col-rk-no text-center">No</th>
-                                    <th class="text-start">Deskripsi Kegiatan</th>
-                                    <th style="width: 112px;" class="text-center">Tanggal</th>
-                                    <th style="width: 120px;" class="text-center">Capaian</th>
-                                    <th style="width: 96px;" class="text-center">Bukti</th>
+                                    <th scope="col" class="col-rk-no text-center" style="width: 56px;">No</th>
+                                    <th scope="col" class="text-start">Deskripsi Kegiatan</th>
+                                    <th scope="col" style="width: 14%;" class="text-center">Tanggal</th>
+                                    <th scope="col" style="width: 15%;" class="text-center">Capaian</th>
+                                    <th scope="col" style="width: 12%;" class="text-center">Bukti</th>
                                 </tr>
                             </thead>
                             <tbody id="modalTableTambahanBody"></tbody>
@@ -1090,13 +1129,13 @@
                 </div>
 
                 <div id="modalDetailError" style="display: none;" class="text-center py-4">
-                    <h6 class="fw-bold text-dark mb-1">Gagal Memuat Data</h6>
+                    <h3 class="h6 fw-bold text-dark mb-1">Gagal Memuat Data</h3>
                     <p class="ecc-text-muted-aa small mb-3" id="modalDetailErrorMessage">Gagal mengambil rincian data pegawai. Silakan coba lagi.</p>
-                    <button type="button" class="btn btn-sm btn-outline-primary btn-tactile px-3" onclick="retryFetchDetail()">Coba Lagi</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-4 fw-semibold btn-tactile btn-modal-action" onclick="retryFetchDetail()">Coba Lagi</button>
                 </div>
             </div>
             <div class="modal-footer bg-light border-top" style="padding: 12px 24px;">
-                <button type="button" class="btn btn-sm btn-secondary rounded-pill px-4 fw-semibold" style="height: 36px; font-size: 0.875rem;" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-secondary rounded-pill px-4 fw-semibold btn-tactile btn-modal-action" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
@@ -1163,16 +1202,20 @@ function showSkeletonAndSubmit() {
 
 let lastActiveUserId = null;
 let lastActiveUserNama = '';
+let lastDetailTriggerEl = null;
 
 function retryFetchDetail() {
     if (lastActiveUserId) {
-        loadDetailPegawai(lastActiveUserId, lastActiveUserNama);
+        loadDetailPegawai(lastActiveUserId, lastActiveUserNama, lastDetailTriggerEl);
     }
 }
 
-function loadDetailPegawai(userId, nama) {
+function loadDetailPegawai(userId, nama, triggerEl) {
     lastActiveUserId = userId;
     lastActiveUserNama = nama;
+    if (triggerEl) {
+        lastDetailTriggerEl = triggerEl;
+    }
 
     const modalEl = document.getElementById('modalDetailPegawai');
     const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
@@ -1220,8 +1263,8 @@ function loadDetailPegawai(userId, nama) {
             // Tabel A: RHK (Tugas Pokok)
             document.getElementById('modalBadgeCountRhk').textContent = `${data.total_pokok || data.total_rhk || 0} Target Pokok`;
             const rhkBody = document.getElementById('modalTableRhkBody');
-            rhkBody.innerHTML = '';
             if (data.rekap_rhk && data.rekap_rhk.length > 0) {
+                const rhkFrag = document.createDocumentFragment();
                 data.rekap_rhk.forEach((rhk, i) => {
                     const selisih = Math.round((Number(rhk.selisih) || 0) * 10000) / 10000;
                     const safeSatuan = escapeHtml(rhk.satuan || '');
@@ -1249,15 +1292,15 @@ function loadDetailPegawai(userId, nama) {
                         <td class="text-center num-tabular">${selisihBadge}</td>
                         <td class="text-center align-middle">${nilaiText}</td>
                     `;
-                    rhkBody.appendChild(tr);
+                    rhkFrag.appendChild(tr);
                 });
+                rhkBody.replaceChildren(rhkFrag);
             } else {
                 rhkBody.innerHTML = `<tr><td colspan="6" class="text-center ecc-text-muted-aa py-4 small">Tidak ada data target RHK pada periode ini.</td></tr>`;
             }
 
             // Tabel B: Tugas Tambahan
             const tambBody = document.getElementById('modalTableTambahanBody');
-            tambBody.innerHTML = '';
             const badgeTambahan = document.getElementById('modalBadgeScoreTambahan');
             if (data.score_tambahan !== null) {
                 badgeTambahan.className = 'badge bg-success-subtle text-success-emphasis border border-success-subtle ecc-pill-badge';
@@ -1271,6 +1314,7 @@ function loadDetailPegawai(userId, nama) {
             }
 
             if (data.tugas_tambahan && data.tugas_tambahan.length > 0) {
+                const tambFrag = document.createDocumentFragment();
                 data.tugas_tambahan.forEach((tmb, idx) => {
                     const safeBuktiUrl = sanitizeUrl(tmb.link_bukti);
                     const buktiBtn = safeBuktiUrl
@@ -1288,8 +1332,9 @@ function loadDetailPegawai(userId, nama) {
                         <td class="text-center fw-semibold text-dark num-tabular">${capaianText}</td>
                         <td class="text-center">${buktiBtn}</td>
                     `;
-                    tambBody.appendChild(tr);
+                    tambFrag.appendChild(tr);
                 });
+                tambBody.replaceChildren(tambFrag);
             } else {
                 tambBody.innerHTML = `<tr><td colspan="5" class="text-center ecc-text-muted-aa py-4 small">Tidak ada tugas tambahan pada periode ini.</td></tr>`;
             }
@@ -1330,8 +1375,25 @@ document.addEventListener('DOMContentLoaded', function() {
     if (filterTahun) {
         filterTahun.addEventListener('wheel', function() {
             this.blur();
+        }, { passive: true });
+    }
+
+    const modalDetailEl = document.getElementById('modalDetailPegawai');
+    if (modalDetailEl) {
+        modalDetailEl.addEventListener('hidden.bs.modal', function() {
+            if (lastDetailTriggerEl && document.body.contains(lastDetailTriggerEl) && typeof lastDetailTriggerEl.focus === 'function') {
+                lastDetailTriggerEl.focus();
+            }
         });
     }
+
+    const filterCategoryLabels = {
+        'sudah': 'Sudah Dinilai',
+        'belum': 'Belum Dinilai',
+        'tidak_mengerjakan': 'Tidak Mengerjakan',
+        'perhatian': '< 75 (Perhatian)',
+        'baik': '≥ 90 (Baik)'
+    };
 
     let currentSearchTerm = '';
     let currentFilterCategory = 'all';
@@ -1376,7 +1438,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (desktopEmpty) {
             if (visibleCount === 0 && desktopRows.length > 0) {
                 desktopEmpty.style.display = '';
-                if (desktopQueryTerm) desktopQueryTerm.textContent = currentSearchTerm || currentFilterCategory;
+                if (desktopQueryTerm) {
+                    desktopQueryTerm.textContent = currentSearchTerm || filterCategoryLabels[currentFilterCategory] || currentFilterCategory;
+                }
             } else {
                 desktopEmpty.style.display = 'none';
             }
@@ -1407,8 +1471,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     pillButtons.forEach(pill => {
         pill.addEventListener('click', function() {
-            pillButtons.forEach(p => p.classList.remove('active'));
+            pillButtons.forEach(p => {
+                p.classList.remove('active');
+                p.setAttribute('aria-pressed', 'false');
+            });
             this.classList.add('active');
+            this.setAttribute('aria-pressed', 'true');
             currentFilterCategory = this.getAttribute('data-filter');
             applyFilterAndSearch();
         });
@@ -1479,13 +1547,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 return currentSortDir === 'asc' ? valA - valB : valB - valA;
             };
 
-            rowsArray.sort(comparator);
-            rowsArray.forEach(row => tableBody.appendChild(row));
-            if (desktopEmpty) tableBody.appendChild(desktopEmpty);
+            if (rowsArray.length > 0) {
+                rowsArray.sort(comparator);
+                tableBody.replaceChildren(...rowsArray, ...(desktopEmpty ? [desktopEmpty] : []));
+            }
 
             if (mobileCardsContainer && cardsArray.length > 0) {
                 cardsArray.sort(comparator);
-                cardsArray.forEach(card => mobileCardsContainer.appendChild(card));
+                mobileCardsContainer.replaceChildren(...cardsArray);
             }
         });
     });
@@ -1495,7 +1564,8 @@ document.addEventListener('DOMContentLoaded', function() {
         el.addEventListener('click', function() {
             const userId = this.getAttribute('data-user-id');
             const nama = this.getAttribute('data-val-nama') || this.getAttribute('data-nama');
-            loadDetailPegawai(userId, nama);
+            const focusBackEl = (this.tagName === 'TR') ? (this.querySelector('.btn-row-name') || this) : this;
+            loadDetailPegawai(userId, nama, focusBackEl);
         });
 
         if (el.tagName !== 'TR') {
@@ -1504,7 +1574,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     e.preventDefault();
                     const userId = this.getAttribute('data-user-id');
                     const nama = this.getAttribute('data-val-nama') || this.getAttribute('data-nama');
-                    loadDetailPegawai(userId, nama);
+                    loadDetailPegawai(userId, nama, this);
                 }
             });
         }

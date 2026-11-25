@@ -265,7 +265,7 @@ $exportQuery = http_build_query($filters);
                                     <div class="d-flex align-items-center gap-3">
                                         <div class="dsn-avatar-sm">
                                             <?php if ($fotoFile): ?>
-                                                <img src="<?= esc($fotoFile) ?>" alt="<?= esc((string) $r['nama_lengkap']) ?>" style="width: 100%; height: 100%; object-fit: cover;">
+                                                <img src="<?= esc($fotoFile) ?>" alt="<?= esc((string) $r['nama_lengkap']) ?>" width="40" height="40" loading="lazy" decoding="async" style="width: 100%; height: 100%; object-fit: cover;">
                                             <?php else: ?>
                                                 <?= esc($initials) ?>
                                             <?php endif; ?>

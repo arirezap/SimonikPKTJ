@@ -51,14 +51,16 @@
     }
     .table-bento tbody td {
         padding: 12px;
-        vertical-align: middle;
+        vertical-align: top;
         border-color: #f1f5f9;
         font-size: 0.875rem;
         transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .table-bento tbody td[data-label^="Rencana"],
-    .table-bento tbody td[data-label^="Indikator"] {
-        vertical-align: top;
+    .table-bento tbody td.td-no {
+        padding-top: 20px;
+    }
+    .table-bento tbody td .status-badge {
+        margin-top: 4px;
     }
     .table-bento tbody tr:hover td {
         background-color: #f8fafc;
@@ -68,19 +70,26 @@
     }
 
     .col-no { width: 48px; }
-    .col-rhk { width: 23%; }
-    .col-indikator { width: 23%; }
-    .col-target { width: 136px; }
-    .col-satuan { width: 132px; }
-    .col-status { width: 140px; }
+    .col-rhk { width: auto; }
+    .col-indikator { width: auto; }
+    .col-target { width: 112px; }
+    .col-satuan { width: 128px; }
+    .col-status { width: 136px; }
     .col-aksi { width: 56px; }
 
     .tabel-target textarea.auto-grow-textarea.form-control {
         overflow-y: hidden !important;
         resize: none !important;
+        width: 100%;
+        height: auto;
         min-height: 56px;
+        field-sizing: content;
         line-height: 1.45;
         font-size: 0.875rem;
+    }
+    .tabel-target input.input-target-val,
+    .tabel-target input.input-satuan-val {
+        min-height: 36px;
     }
 
     .input-target-val::-webkit-outer-spin-button,
@@ -106,10 +115,10 @@
     }
 
     .hapus-baris {
-        width: 32px;
-        height: 32px;
-        min-width: 32px;
-        min-height: 32px;
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        min-height: 36px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -258,15 +267,19 @@
             color: #475569;
             margin-bottom: 4px;
         }
-        .table-bento tbody td.nomor-baris {
+        .table-bento tbody td.td-no {
             display: inline-flex;
             align-items: center;
             gap: 8px;
+            padding-top: 0;
             padding-bottom: 8px;
         }
-        .table-bento tbody td.nomor-baris::before {
+        .table-bento tbody td.td-no::before {
             content: "Target #";
             margin-bottom: 0;
+        }
+        .table-bento tbody td .status-badge {
+            margin-top: 0;
         }
         .table-bento input.input-target-val,
         .table-bento input.input-satuan-val {
@@ -321,6 +334,7 @@
     <?php endif; ?>
 
     <?php $isTabStafActive = !empty($is_atasan) && (($active_tab ?? '') === 'staf' || !empty($staf_id_terpilih)); ?>
+    <?php if ($is_atasan): ?>
     <!-- Navigasi Tab -->
     <ul class="nav segmented-control mb-3" id="targetKinerjaTab" role="tablist">
         <li class="nav-item" role="presentation">
@@ -328,14 +342,13 @@
                 Target Saya
             </button>
         </li>
-        <?php if ($is_atasan): ?>
         <li class="nav-item" role="presentation">
             <button class="nav-link gov-touch-ctrl <?= $isTabStafActive ? 'active' : '' ?>" id="staf-tab" data-bs-toggle="tab" data-bs-target="#staf" type="button" role="tab" aria-controls="staf" aria-selected="<?= $isTabStafActive ? 'true' : 'false' ?>">
                 Persetujuan Target Staf
             </button>
         </li>
-        <?php endif; ?>
     </ul>
+    <?php endif; ?>
 
 <datalist id="daftarSatuanStandar">
     <?php if (!empty($daftar_satuan)): ?>
@@ -384,7 +397,7 @@
                         </div>
                         <div class="col-12 col-md-7 ecc-text-muted-aa small pb-1">
                             <?php if (session()->get('role') !== 'direktur' && !empty($atasan_periode['nama_lengkap'])): ?>
-                                Target periode ini diajukan ke <strong class="text-dark"><?= esc($atasan_periode['nama_lengkap']) ?></strong>.
+                                Target periode ini diajukan ke <strong class="text-dark"><?= esc(rtrim((string) $atasan_periode['nama_lengkap'], '.')) ?></strong>.
                             <?php else: ?>
                                 Rancang dan kelola target kinerja bulanan Anda pada tabel di bawah.
                             <?php endif; ?>
@@ -510,29 +523,29 @@
                     ?>
 
                     <?php if ($isDirektur): ?>
-                        <div class="alert alert-success mb-3 py-2 px-3 border border-success-subtle small rounded-4">
+                        <div class="alert alert-success mb-3 py-2 px-3 border border-success-subtle small rounded-4" role="status">
                             <strong>Akun Direktur:</strong> Target Kinerja Bulanan Anda otomatis disetujui dan dapat direvisi sendiri sewaktu-waktu.
                         </div>
                     <?php elseif (!empty($is_revision) && empty($is_post_tmt) && !$is_locked): ?>
-                        <div class="alert alert-info border-info-subtle bg-info-subtle text-info-emphasis mb-3 py-2 px-3 small rounded-4">
+                        <div class="alert alert-info border-info-subtle bg-info-subtle text-info-emphasis mb-3 py-2 px-3 small rounded-4" role="status">
                             <strong>Mode Revisi.</strong> Persetujuan target telah dibatalkan agar dapat disesuaikan. Perbaiki rincian target lalu ajukan kembali.
                         </div>
                     <?php elseif ($allApproved): ?>
                         <!-- Banner konfirmasi ada di bawah tabel -->
                     <?php elseif ($hasApproved && !$allApproved): ?>
-                        <div class="alert alert-warning mb-3 py-2 px-3 border border-warning-subtle small rounded-4">
+                        <div class="alert alert-warning mb-3 py-2 px-3 border border-warning-subtle small rounded-4" role="status">
                             <strong>Disetujui Sebagian.</strong> Lengkapi target yang belum disetujui, lalu klik <strong>Ajukan Target</strong>.
                         </div>
                     <?php elseif ($hasTerkirim && !$hasDraft): ?>
-                        <div class="alert alert-info mb-3 py-2 px-3 border border-info-subtle small rounded-4">
+                        <div class="alert alert-info mb-3 py-2 px-3 border border-info-subtle small rounded-4" role="status">
                             <strong>Menunggu Persetujuan.</strong> Seluruh target telah diajukan ke atasan langsung. Anda masih dapat mengedit atau menambah target sebelum disetujui.
                         </div>
                     <?php elseif ($hasTerkirim && $hasDraft): ?>
-                        <div class="alert alert-info mb-3 py-2 px-3 border border-info-subtle small rounded-4">
+                        <div class="alert alert-info mb-3 py-2 px-3 border border-info-subtle small rounded-4" role="status">
                             <strong>Menunggu Persetujuan.</strong> Terdapat pembaruan draf. Klik <strong>Perbarui &amp; Ajukan Ulang</strong> untuk mengirim seluruh target ke atasan.
                         </div>
                     <?php elseif ($hasDraft): ?>
-                        <div class="alert alert-secondary mb-3 py-2 px-3 border border-secondary-subtle small rounded-4">
+                        <div class="alert alert-secondary mb-3 py-2 px-3 border border-secondary-subtle small rounded-4" role="status">
                             <strong>Draf Target.</strong> Rancang target kinerja Anda di bawah, lalu klik <strong>Ajukan Target</strong> agar diperiksa atasan.
                         </div>
                     <?php endif; ?>
@@ -572,14 +585,16 @@
                                             $isRowLocked = ($is_locked || ($isRowApproved && !$isDirektur));
                                         ?>
                                         <tr data-client-id="<?= esc($row['client_row_id'] ?? ('c_row_' . ($row['id'] ?? $index))) ?>" data-approved="<?= $isRowApproved ? '1' : '0' ?>">
-                                            <input type="hidden" name="client_row_id[]" value="<?= esc($row['client_row_id'] ?? ('c_row_' . ($row['id'] ?? $index))) ?>">
-                                            <input type="hidden" name="laporan_id[]" value="<?= esc($row['id'] ?? '') ?>">
-                                            <td class="nomor-baris text-center fw-bold ecc-text-muted-aa num-tabular"><?= $index + 1 ?></td>
+                                            <td class="td-no text-center fw-bold ecc-text-muted-aa num-tabular">
+                                                <span class="nomor-baris"><?= $index + 1 ?></span>
+                                                <input type="hidden" name="client_row_id[]" value="<?= esc($row['client_row_id'] ?? ('c_row_' . ($row['id'] ?? $index))) ?>">
+                                                <input type="hidden" name="laporan_id[]" value="<?= esc($row['id'] ?? '') ?>">
+                                            </td>
                                             <td data-label="Rencana Hasil Kerja (RHK)">
-                                                <textarea name="sasaran_program[]" maxlength="255" class="form-control form-control-sm auto-grow-textarea" rows="2" placeholder="Sasaran Program Unit..." aria-label="Sasaran Program Unit baris <?= $index + 1 ?>" <?= $isRowLocked ? 'readonly' : '' ?>><?= esc($row['sasaran_program']) ?></textarea>
+                                                <textarea name="sasaran_program[]" maxlength="255" class="form-control form-control-sm auto-grow-textarea" rows="2" placeholder="Tulis rencana hasil kerja..." aria-label="Rencana Hasil Kerja baris <?= $index + 1 ?>" <?= $isRowLocked ? 'readonly' : '' ?>><?= esc($row['sasaran_program']) ?></textarea>
                                             </td>
                                             <td data-label="Indikator Kinerja Individu">
-                                                <textarea name="indikator_kinerja[]" maxlength="255" class="form-control form-control-sm auto-grow-textarea" rows="2" placeholder="Indikator / RHK..." aria-label="Indikator Kinerja Individu baris <?= $index + 1 ?>" <?= $isRowLocked ? 'readonly' : '' ?>><?= esc($row['indikator_kinerja']) ?></textarea>
+                                                <textarea name="indikator_kinerja[]" maxlength="255" class="form-control form-control-sm auto-grow-textarea" rows="2" placeholder="Tulis indikator kinerja individu..." aria-label="Indikator Kinerja Individu baris <?= $index + 1 ?>" <?= $isRowLocked ? 'readonly' : '' ?>><?= esc($row['indikator_kinerja']) ?></textarea>
                                             </td>
                                             <td data-label="Target <?= esc($nama_bulan) ?>">
                                                 <input type="number" step="any" min="0.0001" max="999999999999999" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary input-target-val" placeholder="Target" aria-label="Target Kuantitatif baris <?= $index + 1 ?>" value="<?= esc($formatInputDecimal($row['target_bulanan'] ?? null)) ?>" <?= $isRowLocked ? 'readonly' : '' ?>>
@@ -619,14 +634,16 @@
                                 <?php elseif (!$is_locked): ?>
                                     <!-- Baris Kosong Default -->
                                     <tr data-client-id="c_row_init_0" data-approved="0">
-                                        <input type="hidden" name="client_row_id[]" value="c_row_init_0">
-                                        <input type="hidden" name="laporan_id[]" value="">
-                                        <td class="nomor-baris text-center fw-bold ecc-text-muted-aa num-tabular">1</td>
+                                        <td class="td-no text-center fw-bold ecc-text-muted-aa num-tabular">
+                                            <span class="nomor-baris">1</span>
+                                            <input type="hidden" name="client_row_id[]" value="c_row_init_0">
+                                            <input type="hidden" name="laporan_id[]" value="">
+                                        </td>
                                         <td data-label="Rencana Hasil Kerja (RHK)">
-                                            <textarea name="sasaran_program[]" maxlength="255" class="form-control form-control-sm auto-grow-textarea" rows="2" placeholder="Sasaran Program Unit..." aria-label="Sasaran Program Unit baris 1"></textarea>
+                                            <textarea name="sasaran_program[]" maxlength="255" class="form-control form-control-sm auto-grow-textarea" rows="2" placeholder="Tulis rencana hasil kerja..." aria-label="Rencana Hasil Kerja baris 1"></textarea>
                                         </td>
                                         <td data-label="Indikator Kinerja Individu">
-                                            <textarea name="indikator_kinerja[]" maxlength="255" class="form-control form-control-sm auto-grow-textarea" rows="2" placeholder="Indikator / RHK..." aria-label="Indikator Kinerja Individu baris 1"></textarea>
+                                            <textarea name="indikator_kinerja[]" maxlength="255" class="form-control form-control-sm auto-grow-textarea" rows="2" placeholder="Tulis indikator kinerja individu..." aria-label="Indikator Kinerja Individu baris 1"></textarea>
                                         </td>
                                         <td data-label="Target <?= esc($nama_bulan) ?>">
                                             <input type="number" step="any" min="0.0001" max="999999999999999" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary input-target-val" placeholder="Target" aria-label="Target Kuantitatif baris 1">
@@ -671,7 +688,7 @@
                         </div>
                     </div>
                     <?php elseif ($allApproved && !$isDirektur): ?>
-                    <div class="alert alert-success mt-4 mb-0 d-flex justify-content-between align-items-center flex-wrap gap-2 py-2 px-3 small rounded-4">
+                    <div class="alert alert-success mt-4 mb-0 d-flex justify-content-between align-items-center flex-wrap gap-2 py-2 px-3 small rounded-4" role="status">
                         <div>Semua target kinerja bulan ini telah <strong>disetujui</strong> dan dikunci oleh atasan.</div>
                         <?php if (hasRole('admin')): ?>
                         <button type="button" class="btn btn-sm btn-outline-danger btn-tactile rounded-pill px-3 fw-semibold gov-touch-ctrl btn-batal-approve-target"
@@ -887,14 +904,16 @@
                                         <?php foreach ($displayRowsStaf as $index => $row): ?>
                                             <?php $isStafApproved = ($row['status_approval'] === 'disetujui'); ?>
                                             <tr data-client-id="<?= esc($row['client_row_id'] ?? ('c_row_staf_' . ($row['id'] ?? $index))) ?>" data-approved="<?= $isStafApproved ? '1' : '0' ?>">
-                                                <input type="hidden" name="client_row_id[]" value="<?= esc($row['client_row_id'] ?? ('c_row_staf_' . ($row['id'] ?? $index))) ?>">
-                                                <input type="hidden" name="laporan_id[]" value="<?= esc($row['id'] ?? '') ?>">
-                                                <td class="nomor-baris text-center fw-bold ecc-text-muted-aa num-tabular"><?= $index + 1 ?></td>
+                                                <td class="td-no text-center fw-bold ecc-text-muted-aa num-tabular">
+                                                    <span class="nomor-baris"><?= $index + 1 ?></span>
+                                                    <input type="hidden" name="client_row_id[]" value="<?= esc($row['client_row_id'] ?? ('c_row_staf_' . ($row['id'] ?? $index))) ?>">
+                                                    <input type="hidden" name="laporan_id[]" value="<?= esc($row['id'] ?? '') ?>">
+                                                </td>
                                                 <td data-label="Rencana Hasil Kerja (RHK)">
-                                                    <textarea name="sasaran_program[]" maxlength="255" class="form-control form-control-sm auto-grow-textarea staf-input <?= $isStafApproved ? 'locked-approved' : '' ?>" rows="2" placeholder="Sasaran Program Unit..." aria-label="Sasaran Program Unit Staf baris <?= $index + 1 ?>" required readonly><?= esc($row['sasaran_program']) ?></textarea>
+                                                    <textarea name="sasaran_program[]" maxlength="255" class="form-control form-control-sm auto-grow-textarea staf-input <?= $isStafApproved ? 'locked-approved' : '' ?>" rows="2" placeholder="Tulis rencana hasil kerja..." aria-label="Rencana Hasil Kerja Staf baris <?= $index + 1 ?>" required readonly><?= esc($row['sasaran_program']) ?></textarea>
                                                 </td>
                                                 <td data-label="Indikator Kinerja Individu">
-                                                    <textarea name="indikator_kinerja[]" maxlength="255" class="form-control form-control-sm auto-grow-textarea staf-input <?= $isStafApproved ? 'locked-approved' : '' ?>" rows="2" placeholder="Indikator / RHK..." aria-label="Indikator Kinerja Individu Staf baris <?= $index + 1 ?>" required readonly><?= esc($row['indikator_kinerja']) ?></textarea>
+                                                    <textarea name="indikator_kinerja[]" maxlength="255" class="form-control form-control-sm auto-grow-textarea staf-input <?= $isStafApproved ? 'locked-approved' : '' ?>" rows="2" placeholder="Tulis indikator kinerja individu..." aria-label="Indikator Kinerja Individu Staf baris <?= $index + 1 ?>" required readonly><?= esc($row['indikator_kinerja']) ?></textarea>
                                                 </td>
                                                 <td data-label="Target">
                                                     <input type="number" step="any" min="0.0001" max="999999999999999" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary staf-input input-target-val <?= $isStafApproved ? 'locked-approved' : '' ?>" aria-label="Target Kuantitatif Staf baris <?= $index + 1 ?>" value="<?= esc($formatInputDecimal($row['target_bulanan'] ?? null)) ?>" required readonly>
@@ -946,7 +965,7 @@
                                 </div>
                             </div>
                             <?php else: ?>
-                            <div class="alert alert-success mt-4 mb-0 d-flex justify-content-between align-items-center flex-wrap gap-2 py-2 px-3 small rounded-4">
+                            <div class="alert alert-success mt-4 mb-0 d-flex justify-content-between align-items-center flex-wrap gap-2 py-2 px-3 small rounded-4" role="status">
                                 <div>Target kinerja staf bulan ini telah <strong>disetujui</strong>.</div>
                                 <?php if (hasRole('admin')): ?>
                                 <button type="button" class="btn btn-sm btn-outline-danger btn-tactile rounded-pill px-3 fw-semibold gov-touch-ctrl btn-batal-approve-target"
@@ -982,7 +1001,7 @@
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
             <div class="modal-header bg-light border-bottom p-3 p-md-4">
                 <div>
-                    <h2 class="modal-title fw-bold text-dark mb-0" id="modalSalinTargetLabel" style="font-size: 1.15rem; line-height: 1.3;">Salin Target Kinerja</h2>
+                    <h2 class="modal-title fw-bold text-dark mb-0" id="modalSalinTargetLabel" style="font-size: 1.125rem; line-height: 1.3;">Salin Target Kinerja</h2>
                     <p class="ecc-text-muted-aa mb-0 mt-1" style="font-size: 0.75rem;">Duplikasi target dari periode pilihan Anda</p>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
@@ -1049,36 +1068,52 @@
 <script>
     $(document).ready(function() {
 
-        // Auto-grow tinggi seluruh textarea RHK & Indikator agar teks panjang tampil utuh
+        // Auto-grow tinggi seluruh textarea RHK & Indikator (CSS field-sizing: content native dengan fallback JS)
+        const supportsFieldSizing = typeof CSS !== 'undefined' && typeof CSS.supports === 'function' && CSS.supports('field-sizing', 'content');
+
         function autoGrowTextarea(el) {
-            if (!el) return;
+            if (supportsFieldSizing || !el) return;
             el.style.height = 'auto';
             const targetHeight = Math.max(56, el.scrollHeight + 4);
             el.style.height = targetHeight + 'px';
         }
 
         function autoGrowAll(scope) {
+            if (supportsFieldSizing) return;
             const root = scope || document;
-            root.querySelectorAll('.auto-grow-textarea').forEach(autoGrowTextarea);
+            const textareas = Array.from(root.querySelectorAll('.auto-grow-textarea'));
+            if (!textareas.length) return;
+            // Fase write 1 -> read -> write 2 secara batch untuk mencegah layout thrashing
+            textareas.forEach(function(el) {
+                el.style.height = 'auto';
+            });
+            const heights = textareas.map(function(el) {
+                return Math.max(56, el.scrollHeight + 4);
+            });
+            textareas.forEach(function(el, idx) {
+                el.style.height = heights[idx] + 'px';
+            });
         }
 
-        $(document).on('input', '.auto-grow-textarea', function() {
-            autoGrowTextarea(this);
-        });
+        if (!supportsFieldSizing) {
+            $(document).on('input', '.auto-grow-textarea', function() {
+                autoGrowTextarea(this);
+            });
 
-        $('#targetKinerjaTab button[data-bs-toggle="tab"]').on('shown.bs.tab', function() {
-            autoGrowAll(document);
-        });
-
-        let resizeGrowTimer = null;
-        $(window).on('resize load', function() {
-            clearTimeout(resizeGrowTimer);
-            resizeGrowTimer = setTimeout(function() {
+            $('#targetKinerjaTab button[data-bs-toggle="tab"]').on('shown.bs.tab', function() {
                 autoGrowAll(document);
-            }, 80);
-        });
+            });
 
-        autoGrowAll(document);
+            let resizeGrowTimer = null;
+            $(window).on('resize load', function() {
+                clearTimeout(resizeGrowTimer);
+                resizeGrowTimer = setTimeout(function() {
+                    autoGrowAll(document);
+                }, 80);
+            });
+
+            autoGrowAll(document);
+        }
 
         // Pemulihan status tombol saat pengguna kembali via riwayat browser (bfcache)
         window.addEventListener('pageshow', function(e) {
@@ -1118,9 +1153,13 @@
             }
         });
 
-        $(document).on('wheel', 'input[type="number"]', function() {
-            $(this).blur();
-        });
+        // Cegah perubahan angka saat pengguna menggulir halaman (passive listener)
+        document.addEventListener('wheel', function() {
+            const active = document.activeElement;
+            if (active && active.tagName === 'INPUT' && active.type === 'number') {
+                active.blur();
+            }
+        }, { passive: true });
 
         let clientRowCounter = Date.now();
         function generateClientRowId(prefix) {
@@ -1144,14 +1183,16 @@
 
             const row = $(`
                 <tr class="row-slide-in" data-client-id="${clientId}" data-approved="0">
-                    <input type="hidden" name="client_row_id[]" value="${clientId}">
-                    <input type="hidden" name="laporan_id[]" value="">
-                    <td class="nomor-baris text-center fw-bold ecc-text-muted-aa num-tabular">1</td>
+                    <td class="td-no text-center fw-bold ecc-text-muted-aa num-tabular">
+                        <span class="nomor-baris">1</span>
+                        <input type="hidden" name="client_row_id[]" value="${clientId}">
+                        <input type="hidden" name="laporan_id[]" value="">
+                    </td>
                     <td data-label="Rencana Hasil Kerja (RHK)">
-                        <textarea name="sasaran_program[]" maxlength="255" class="form-control form-control-sm auto-grow-textarea ${stafInputClass}" rows="2" placeholder="Sasaran Program Unit..."></textarea>
+                        <textarea name="sasaran_program[]" maxlength="255" class="form-control form-control-sm auto-grow-textarea ${stafInputClass}" rows="2" placeholder="Tulis rencana hasil kerja..."></textarea>
                     </td>
                     <td data-label="Indikator Kinerja Individu">
-                        <textarea name="indikator_kinerja[]" maxlength="255" class="form-control form-control-sm auto-grow-textarea ${stafInputClass}" rows="2" placeholder="Indikator / RHK..."></textarea>
+                        <textarea name="indikator_kinerja[]" maxlength="255" class="form-control form-control-sm auto-grow-textarea ${stafInputClass}" rows="2" placeholder="Tulis indikator kinerja individu..."></textarea>
                     </td>
                     <td data-label="${targetLabel}">
                         <input type="number" step="any" min="0.0001" max="999999999999999" name="target_bulanan[]" class="form-control form-control-sm text-center num-tabular fw-bold text-primary input-target-val ${stafInputClass}" placeholder="Target">

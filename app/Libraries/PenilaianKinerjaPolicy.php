@@ -173,8 +173,7 @@ class PenilaianKinerjaPolicy
         }
 
         $atasanIdEfektif = self::resolveAtasanId($staf, $bulan, $tahun);
-        $isAtasanLangsung = (!empty($atasanIdEfektif) && $atasanIdEfektif === $operatorId)
-                        || (!empty($staf['atasan_id']) && (int)$staf['atasan_id'] === $operatorId);
+        $isAtasanLangsung = !empty($atasanIdEfektif) && ($atasanIdEfektif === $operatorId);
         if ($isAtasanLangsung) {
             return true;
         }

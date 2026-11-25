@@ -223,13 +223,13 @@
             
             <!-- Left Panel: Illustration -->
             <div class="fit-left-panel d-none d-lg-flex flex-column justify-content-center align-items-center p-4" style="width: 48%;">
-                <img src="<?= base_url('assets/login_illustration_new.jpg') ?>" alt="Ilustrasi Kampus Politeknik Keselamatan Transportasi Jalan" class="img-fluid fit-img" style="mix-blend-mode: multiply;" width="360" height="300" loading="eager">
+                <img src="<?= base_url('assets/login_illustration_new.jpg') ?>" alt="Ilustrasi Kampus Politeknik Keselamatan Transportasi Jalan" class="img-fluid fit-img" style="mix-blend-mode: multiply;" width="360" height="300" loading="eager" fetchpriority="high">
             </div>
 
             <!-- Right Panel: Login Form -->
             <div class="fit-right-panel p-4 p-sm-5 d-flex flex-column justify-content-center" style="width: 100%; flex: 1;">
                 <div class="text-start mb-3">
-                    <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ" class="mb-2" style="height: 44px; width: auto;" width="44" height="44">
+                    <img src="<?= base_url('assets/logo_pktj.png') ?>" alt="Logo PKTJ" class="mb-2" style="height: 44px; width: auto;" width="44" height="44" decoding="async">
                     <h1 class="fw-bold text-dark mb-1" style="letter-spacing: -0.025em; font-size: 1.45rem;">Masuk ke Akun</h1>
                     <p class="text-muted mb-0 fw-medium" style="font-size: 0.8125rem;">Evidence Command Center (ECC) &bull; PKTJ Tegal</p>
                 </div>

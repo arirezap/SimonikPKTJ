@@ -98,7 +98,7 @@
         <div class="d-flex align-items-center gap-3">
             <div class="avatar-profil-lg">
                 <?php if ($fotoPath): ?>
-                    <img src="<?= esc($fotoPath) ?>" alt="Foto <?= esc($taruna['nama_lengkap']) ?>" style="width: 100%; height: 100%; object-fit: cover;">
+                    <img src="<?= esc($fotoPath) ?>" alt="Foto <?= esc($taruna['nama_lengkap']) ?>" width="64" height="64" decoding="async" style="width: 100%; height: 100%; object-fit: cover;">
                 <?php else: ?>
                     <i class="bi bi-person-fill"></i>
                 <?php endif; ?>

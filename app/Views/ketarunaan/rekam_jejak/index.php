@@ -273,7 +273,7 @@ $getAriaSort = static function (string $colKey) use ($sortBy, $sortOrder): strin
                                 <div class="d-flex align-items-center gap-2">
                                     <div class="ecc-avatar-sm">
                                         <?php if ($fotoThumbUrl !== null): ?>
-                                            <img src="<?= esc($fotoThumbUrl) ?>" alt="Foto <?= esc($row['nama_lengkap']) ?>" style="width: 100%; height: 100%; object-fit: cover;">
+                                            <img src="<?= esc($fotoThumbUrl) ?>" alt="Foto <?= esc($row['nama_lengkap']) ?>" width="40" height="40" loading="lazy" decoding="async" style="width: 100%; height: 100%; object-fit: cover;">
                                         <?php else: ?>
                                             <?= esc($initials) ?>
                                         <?php endif; ?>

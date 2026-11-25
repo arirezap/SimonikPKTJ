@@ -304,7 +304,7 @@
                     
                     <!-- Single Streamlined Avatar Interaction (Klik untuk Unggah) -->
                     <div class="avatar-wrapper mb-3" id="avatarWrapper" title="Pilih foto profil" role="button" tabindex="0" aria-label="Pilih foto profil">
-                        <img src="<?= $foto_url ?>" id="profilePreview" class="img-profile rounded-circle shadow-sm <?= $hasPhoto ? '' : 'd-none' ?>" alt="Foto Profil" style="width: 150px; height: 150px; object-fit: cover; border: 4px solid #ffffff; box-shadow: 0 10px 24px rgba(0,0,0,0.06);">
+                        <img src="<?= $foto_url ?>" id="profilePreview" class="img-profile rounded-circle shadow-sm <?= $hasPhoto ? '' : 'd-none' ?>" alt="Foto Profil" width="150" height="150" decoding="async" style="width: 150px; height: 150px; object-fit: cover; border: 4px solid #ffffff; box-shadow: 0 10px 24px rgba(0,0,0,0.06);">
                         
                         <div id="profilePreviewInitials" class="bg-primary bg-opacity-10 text-primary rounded-circle align-items-center justify-content-center shadow-sm <?= $hasPhoto ? 'd-none' : 'd-flex' ?>" style="width: 150px; height: 150px; border: 4px solid #ffffff; font-size: 3.5rem; font-weight: bold; box-shadow: 0 10px 24px rgba(0,0,0,0.06);">
                             <?= $initials ?>

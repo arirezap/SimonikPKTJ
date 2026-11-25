@@ -594,7 +594,7 @@ $canSeeRekamJejak = static function (string $nomorTaruna) use ($isSelfOnly, $own
                                     <div class="ecc-file-item">
                                         <div class="d-flex align-items-center gap-2 text-truncate min-w-0">
                                             <?php if ($hasDiskFoto): ?>
-                                                <img src="<?= esc($previewUrl) ?>" alt="Dokumentasi <?= esc($itemLabel) ?>" class="ecc-doc-thumb" loading="lazy">
+                                                <img src="<?= esc($previewUrl) ?>" alt="Dokumentasi <?= esc($itemLabel) ?>" class="ecc-doc-thumb" loading="lazy" decoding="async">
                                             <?php else: ?>
                                                 <i class="bi <?= $isItemUrl ? 'bi-link-45deg text-primary' : 'bi-file-earmark-image text-secondary' ?> fs-5 flex-shrink-0" aria-hidden="true"></i>
                                             <?php endif; ?>

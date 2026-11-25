@@ -3,6 +3,7 @@
 namespace App\Controllers\Kepegawaian;
 
 use App\Controllers\BaseController;
+use App\Libraries\RiwayatPenugasanService;
 use App\Models\User;
 use App\Models\TargetKinerja;
 use App\Models\SettingModel;
@@ -46,12 +47,9 @@ class MonitoringTargetController extends BaseController
 
         $dataset = $this->prepareMonitoringDataset($bulanTerpilih, $tahunTerpilih, $unitFilter, $roleFilter, $statusFilter);
 
-        // Ambil daftar unit kerja untuk filter dropdown
-        $userModel = new User();
-        $unitQuery = $userModel->select('unit')->distinct()->where('unit !=', null)->where('unit !=', '');
-        User::excludeSelfServiceFromQuery($unitQuery);
-        $units = $unitQuery->orderBy('unit', 'ASC')->findAll();
-        $daftarUnit = array_column($units, 'unit');
+        // Ambil daftar unit kerja (aktif + historis riwayat_atasan tahun terpilih)
+        $riwayatService = new RiwayatPenugasanService();
+        $daftarUnit     = $riwayatService->getSelectableUnitsForYear((int) $tahunTerpilih);
 
         // Pengecekan informasi deadline target
         $settingModel = new SettingModel();
@@ -519,10 +517,6 @@ class MonitoringTargetController extends BaseController
                     ->groupEnd();
         }
 
-        if (!empty($unitFilter)) {
-            $builder->where('unit', $unitFilter);
-        }
-
         // MT-01: Filter Kategori Jabatan dengan dukungan Multi-Role Pivot (user_roles)
         if (!empty($roleFilter)) {
             if ($roleFilter === 'pimpinan') {
@@ -553,6 +547,15 @@ class MonitoringTargetController extends BaseController
         }
 
         $semuaPegawai = $builder->findAll();
+
+        // Selaraskan unit, jabatan, dan atasan efektif pada periode terpilih (riwayat_atasan) lalu filter unit
+        $riwayatService = new RiwayatPenugasanService($db, $userModel);
+        $semuaPegawai   = $riwayatService->applyPeriodAssignmentsAndUnitFilter(
+            $semuaPegawai,
+            $unitFilter,
+            $bulanTerpilih,
+            (int) $tahunTerpilih
+        );
 
         // Urutkan berdasarkan hierarki resmi institusi
         $semuaPegawai = $this->sortPegawaiByHierarchy($semuaPegawai);
@@ -667,32 +670,10 @@ class MonitoringTargetController extends BaseController
                 }
             }
 
-            // Lookup atasan langsung & penugasan dinamis periode
+            // Lookup atasan langsung efektif periode (telah diselaraskan batch via RiwayatPenugasanService)
             $atasanInfo = null;
-            $bulanCek = ($bulanTerpilih !== 'all' && !empty($bulanTerpilih)) ? (int)$bulanTerpilih : (int)date('n');
-            $penugasanBulan = $userModel->getPenugasanPeriode($pId, $bulanCek, (int)$tahunTerpilih);
-            if ($penugasanBulan) {
-                $p['jabatan'] = $penugasanBulan['jabatan'] ?: $p['jabatan'];
-                $p['unit']    = $penugasanBulan['unit'] ?: $p['unit'];
-                if (!empty($penugasanBulan['atasan_id'])) {
-                    $atasanIdPeriode = (int)$penugasanBulan['atasan_id'];
-                    if (isset($userMap[$atasanIdPeriode])) {
-                        $atasanInfo = $userMap[$atasanIdPeriode];
-                    } elseif (!empty($penugasanBulan['nama_atasan'])) {
-                        $atasanInfo = [
-                            'id'           => $atasanIdPeriode,
-                            'nama_lengkap' => $penugasanBulan['nama_atasan'],
-                            'nip'          => $penugasanBulan['nip_atasan'] ?? '',
-                            'jabatan'      => $penugasanBulan['jabatan_atasan'] ?? '',
-                            'unit'         => $penugasanBulan['unit'] ?? ''
-                        ];
-                    } else {
-                        $atasanInfo = $userModel->select('id, nama_lengkap, nip, unit, jabatan')->find($atasanIdPeriode);
-                    }
-                }
-            }
-            if (!$atasanInfo && !empty($p['atasan_id']) && isset($userMap[$p['atasan_id']])) {
-                $atasanInfo = $userMap[$p['atasan_id']];
+            if (!empty($p['atasan_id']) && isset($userMap[(int) $p['atasan_id']])) {
+                $atasanInfo = $userMap[(int) $p['atasan_id']];
             }
 
             $rekapTarget[] = [
